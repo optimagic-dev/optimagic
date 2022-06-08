@@ -7,7 +7,8 @@ import pytest
 from estimagic.parameters.nonlinear_constraints import (
     _check_validity_nonlinear_constraint,
 )
-from estimagic.parameters.nonlinear_constraints import _get_positivity_transform
+from estimagic.parameters.nonlinear_constraints import _get_internal_selector_index
+from estimagic.parameters.nonlinear_constraints import _get_transformation
 from estimagic.parameters.nonlinear_constraints import _get_transformation_type
 from estimagic.parameters.nonlinear_constraints import _process_selector
 from estimagic.parameters.nonlinear_constraints import (
@@ -16,11 +17,21 @@ from estimagic.parameters.nonlinear_constraints import (
 from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
+from pybaum import tree_just_flatten
 
 
-########################################################################################
+@dataclass
+class Converter:
+    def params_from_internal(self, x):
+        return x
+
+    def params_to_internal(self, params):
+        return np.array(tree_just_flatten(params))
+
+
+# ======================================================================================
 # _get_transformation_type
-########################################################################################
+# ======================================================================================
 TEST_CASES = [
     (0, np.inf, "identity"),  # (lower_bounds, upper_bounds, expected)
     (-1, 2, "stack"),
@@ -36,9 +47,50 @@ def test_get_transformation_type(lower_bounds, upper_bounds, expected):
     assert got == expected
 
 
-########################################################################################
+# ======================================================================================
+# _get_transformation
+# ======================================================================================
+
+TEST_CASES = [
+    #  (lower_bounds, upper_bounds, case, expected)  # noqa: E800
+    (0, 0, "func", {"name": "stack", "out": np.array([1, -1])}),
+    (1, 1, "func", {"name": "stack", "out": np.array([0, 0])}),
+    (0, 0, "derivative", {"name": "stack", "out": np.array([1, -1])}),
+    (1, 1, "derivative", {"name": "stack", "out": np.array([1, -1])}),
+    (1, np.inf, "func", {"name": "subtract_lb", "out": np.array([0])}),
+    (0, np.inf, "derivative", {"name": "identity", "out": np.array([1])}),
+]
+
+
+@pytest.mark.parametrize("lower_bounds, upper_bounds, case, expected", TEST_CASES)
+def test_get_positivity_transform(lower_bounds, upper_bounds, case, expected):
+    transform = _get_transformation(lower_bounds, upper_bounds)
+
+    got = transform[case](np.array([1]))
+    assert np.all(got == expected["out"])
+    assert transform["name"] == expected["name"]
+
+
+# ======================================================================================
+# _get_internal_selector_index
+# ======================================================================================
+
+
+def test_get_internal_selector_index():
+
+    converter = Converter()
+    params = {"a": [0, 1, 2], "b": [3, 4, 5]}
+    selector = lambda p: p["a"]
+
+    expected = [0, 1, 2]
+    got = _get_internal_selector_index(params, selector, converter)
+
+    assert expected == got
+
+
+# ======================================================================================
 # _process_selector
-########################################################################################
+# ======================================================================================
 TEST_CASES = [
     ({"selector": lambda x: x**2}, 10, 100),  # (constraint, params, expected)
     ({"loc": "a"}, pd.Series([0, 1], index=["a", "b"]), 0),
@@ -61,9 +113,9 @@ def test_process_selector(constraint, params, expected):
         assert got == expected
 
 
-########################################################################################
+# ======================================================================================
 # _check_validity_nonlinear_constraint
-########################################################################################
+# ======================================================================================
 TEST_CASES = [
     {},  # no fun
     {"func": 10},  # non-callable fun
@@ -104,12 +156,12 @@ def test_check_validity_nonlinear_constraint_correct_example():
         "lower_bounds": np.arange(4),
         "selector": lambda x: x[:1],
     }
-    _check_validity_nonlinear_constraint(constr, params=np.arange(4))
+    _check_validity_nonlinear_constraint(constr, params=np.arange(4), skip_checks=False)
 
 
-########################################################################################
+# ======================================================================================
 # equality_as_inequality_constraints
-########################################################################################
+# ======================================================================================
 TEST_CASES = [
     (
         [
@@ -155,36 +207,9 @@ def test_equality_as_inequality_constraints(constraints, expected):
         assert g["type"] == "ineq"
 
 
-########################################################################################
-# _get_positivity_transform
-########################################################################################
-TEST_CASES = [
-    #  (pis_pos_constr, lower_bounds, upper_bounds, case, expected)  # noqa: E800
-    ("stack", 0, 0, "fun", np.array([1, -1])),
-    ("stack", 1, 1, "fun", np.array([0, 0])),
-    ("stack", 0, 0, "jac", np.array([1, -1])),
-    ("stack", 1, 1, "jac", np.array([1, -1])),
-    ("identity", 0, 1, "fun", np.array([1])),
-    ("identity", 1, 0, "jac", np.array([1])),
-]
-
-
-@pytest.mark.parametrize(
-    "is_pos_constr, lower_bounds, upper_bounds, case, expected", TEST_CASES
-)
-def test_get_positivity_transform(
-    is_pos_constr, lower_bounds, upper_bounds, case, expected
-):
-    transform = _get_positivity_transform(
-        is_pos_constr, lower_bounds, upper_bounds, case
-    )
-    got = transform(np.array([1]))
-    assert np.all(got == expected)
-
-
-########################################################################################
+# ======================================================================================
 # process_nonlinear_constraints
-########################################################################################
+# ======================================================================================
 
 
 def test_process_nonlinear_constraints():
@@ -201,22 +226,19 @@ def test_process_nonlinear_constraints():
 
     params = np.array([1.0])
 
-    @dataclass
-    class Converter:
-        def params_from_internal(self, x):
-            return x
-
     converter = Converter()
 
+    numdiff_options = {"lower_bounds": params, "upper_bounds": params}
+
     got = process_nonlinear_constraints(
-        nonlinear_constraints, params, converter, None, None, None, False
+        nonlinear_constraints, params, converter, numdiff_options, skip_checks=False
     )
 
     expected = [
-        {"type": "eq", "func": lambda x: np.dot(x, x) - 1.0, "n_constr": 1},
+        {"type": "eq", "fun": lambda x: np.dot(x, x) - 1.0, "n_constr": 1},
         {
             "type": "ineq",
-            "func": lambda x: np.concatenate((x + 1.0, 2.0 - x), axis=0),
+            "fun": lambda x: np.concatenate((x + 1.0, 2.0 - x), axis=0),
             "n_constr": 2,
         },
     ]
@@ -226,6 +248,6 @@ def test_process_nonlinear_constraints():
         assert g["n_constr"] == e["n_constr"]
         for x in [0.1, 0.2, 1.2, -2.0]:
             x = np.array([x])
-            assert_array_equal(g["func"](x), e["func"](x))
-        assert "derivative" in g
+            assert_array_equal(g["fun"](x), e["fun"](x))
+        assert "jac" in g
         assert "tol" in g

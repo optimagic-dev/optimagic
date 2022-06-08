@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pytest
 from estimagic import maximize
+from estimagic import minimize
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -13,6 +14,10 @@ NLC_ALGORITHMS = [
     for name, algo in AVAILABLE_ALGORITHMS.items()
     if "nonlinear_constraints" in algo._algorithm_info.arguments
 ]
+
+# ======================================================================================
+# Two-dimension example with equality and inequality constraints
+# ======================================================================================
 
 
 @pytest.fixture()
@@ -137,3 +142,42 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
         decimal = 4
 
     aaae(result.params, solution_x, decimal=decimal)
+
+
+# ======================================================================================
+# Documentation example
+# ======================================================================================
+
+
+def criterion(params):
+    offset = np.linspace(1, 0, len(params))
+    x = params - offset
+    return x @ x
+
+
+@pytest.mark.parametrize("algorithm", NLC_ALGORITHMS)
+def test_documentation_example(algorithm):
+    if algorithm == "nlopt_mma":
+        pytest.skip(msg="Very slow and low accuracy.")
+
+    kwargs = {
+        "lower_bounds": np.zeros(6),
+        "upper_bounds": 2 * np.ones(6),
+    }
+
+    if algorithm == "scipy_cobyla":
+        del kwargs["lower_bounds"]
+        del kwargs["upper_bounds"]
+
+    minimize(
+        criterion=criterion,
+        params=np.ones(6),
+        algorithm=algorithm,
+        constraints={
+            "type": "nonlinear",
+            "selector": lambda x: x[:-1],
+            "func": lambda x: np.prod(x),
+            "value": 1.0,
+        },
+        **kwargs
+    )

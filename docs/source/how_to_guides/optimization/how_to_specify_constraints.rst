@@ -10,25 +10,25 @@ Constraints vs bounds
 
 Estimagic distinguishes between bounds and constraints. Bounds are lower and upper
 bounds for parameters. In the literature they are sometimes called box constraints.
-Bounds are specified as "lower_bound" and "upper_bound" column of a params DataFrame
-or as pytrees via the ``lower_bounds`` and ``upper_bounds`` argument to ``maximize`` and
-``minimize``.
+Bounds are specified as ``lower_bounds`` and ``upper_bounds`` argument to ``maximize``
+and ``minimize``.
 
 Examples with bounds can be found in `this tutorial`_.
 
 .. _this tutorial: ../../getting_started/first_optimization_with_estimagic.ipynb
 
-Constraints are more general constraints on the parameters. This ranges from rather
-simple ones (e.g. Parameters are fixed to a value, a group of parameters is required
-to be equal) to more complex ones (like general linear constraints).
+To specify more general constraints on the parameters you use can use the argument
+``constraints``. This ranges from rather simple ones (e.g. parameters are fixed to a
+value, a group of parameters is required to be equal) to more complex ones (like general
+linear constraints, or even nonlinear constraints).
 
 Can you use constraints with all optimizers?
 ============================================
 
-We implement constraints via reparametrizations. Details are explained `here`_. This
-means that you can use all of the constraints with any optimizer that supports
-bounds. Some constraints (e.g. fixing parameters) can even be used with optimizers
-that do not support bounds.
+With the exception of general nonlinear constraints, we implement constraints via
+reparametrizations. Details are explained `here`_. This means that you can use all of
+the constraints with any optimizer that supports bounds. Some constraints (e.g. fixing
+parameters) can even be used with optimizers that do not support bounds.
 
 .. _here: ../../explanations/optimization/implementation_of_constraints.rst
 
@@ -315,6 +315,44 @@ flat numpy array are explained in the next section.
     can also be arrays (or even pytrees) with bounds and weights for each selected
     parameter.
 
+.. tabbed:: nonlinear
+
+    .. warning::
+
+        General nonlinear constraints that are specified via a black-box constraint
+        function can only be used if you choose an optimizer that supports it.
+        The feature is currently supported by the algorithms:
+
+        * ``ipopt``
+        * ``nlopt``: ``cobyla``, ``slsqp``, ``isres``, ``mma``
+        * ``scipy``: ``cobyla``, ``slsqp``, ``trust_constr``
+
+    You can use nonlinear constraints to express restrictions of the form
+    ``lower_bound <= func(x) <= upper_bound`` or
+    ``func(x) = value`` where ``x`` are the selected parameters and ``func`` is the
+    constraint function.
+
+    Let's impose the constraint that the product of all but the last parameter is 1.
+
+    .. code-block:: python
+
+        res = minimize(
+            criterion=criterion,
+            params=np.ones(6),
+            algorithm="scipy_slsqp",
+            constraints={
+                "type": "nonlinear",
+                "selector": lambda x: x[:-1],
+                "func": lambda x: np.prod(x),
+                "value": 1.0,
+            },
+        )
+
+    This yields:
+
+    >>> array([ 1.31,  1.16,  1.01,  0.87,  0.75, -0.  ])
+
+    Where the product of the all but the last parameters is equal to 1.
 
 
 Imposing multiple constraints at once

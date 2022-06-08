@@ -24,6 +24,14 @@ constraints into constrained optimizers. Reparametrization and penalties. Below 
 explain what both approaches are, why we chose the reparametrization approach over
 penalties and which reparametrizations we are using for each type of constraint.
 
+.. note::
+
+    In this text we focus on constraints that can solved by estimagic via bijective and
+    differentiable transformations. General nonlinear constraints do not fall into this
+    category. If you want to use nonlinear constraints you can still do so, but
+    estimagic will simply pass the constraints to your chosen optimizer. See
+    :ref:`constraints` for more details.
+
 
 Possible approaches
 -------------------

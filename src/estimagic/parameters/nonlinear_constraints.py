@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_just_flatten
+from pybaum import tree_unflatten
 
 
 CONVERGENCE_ABSOLUTE_CONSTRAINT_TOLERANCE = 1e-5
@@ -18,8 +21,6 @@ def process_nonlinear_constraints(
     params,
     converter,
     numdiff_options,
-    lower_bounds,
-    upper_bounds,
     skip_checks,
 ):
     """Process and prepare nonlinear constraints for internal use.
@@ -35,12 +36,8 @@ def process_nonlinear_constraints(
             external parameters, derivatives and function outputs.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives. See :ref:`first_derivative` for details. Note that the default
-            method is changed to "forward" for speed reasons.
-        lower_bounds (pytree): A pytree with the same structure as params with lower
-            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
-            bound. These are only used for the internal finite difference derivative.
-        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
-            no upper bound.
+            method is changed to "forward" for speed reasons. Contains lower and upper
+            bounds of parameters.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast constraint functions. Default
             False.
@@ -57,21 +54,24 @@ def process_nonlinear_constraints(
         params=params,
         converter=converter,
         numdiff_options=numdiff_options,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
     )
 
     processed = [_processor(c) for c in nonlinear_constraints]
     return processed
 
 
-def _process_nonlinear_constraint(
-    c, params, converter, numdiff_options, lower_bounds, upper_bounds
-):
+def _process_nonlinear_constraint(c, params, converter, numdiff_options):
     """Process a single nonlinear constraint."""
 
     constraint_fun = c["func"]
-    selector = _process_selector(c)
+
+    # ==================================================================================
+    # Process selectors for external and internal params
+    # ==================================================================================
+    external_selector = _process_selector(c)
+    internal_selector_mask = _get_internal_selector_index(
+        params, external_selector, converter
+    )
 
     # ==================================================================================
     # Retrieve number of constraints
@@ -79,12 +79,18 @@ def _process_nonlinear_constraint(
     if "n_constr" in c:
         _n_constr = c["n_constr"]
     else:
-        constraint_value = constraint_fun(selector(params))
+        constraint_value = constraint_fun(external_selector(params))
         _n_constr = len(np.atleast_1d(constraint_value))
 
     # ==================================================================================
     # Consolidate and transform jacobian
     # ==================================================================================
+
+    # Process numdiff_options
+    numdiff_options = numdiff_options.copy()
+    numdiff_options["lower_bounds"] = external_selector(numdiff_options["lower_bounds"])
+    numdiff_options["upper_bounds"] = external_selector(numdiff_options["upper_bounds"])
+
     if "derivative" in c:
         if not callable(c["derivative"]):
             msg = "Jacobian of constraints needs to be callable."
@@ -96,15 +102,18 @@ def _process_nonlinear_constraint(
             return first_derivative(
                 constraint_fun,
                 p,
-                lower_bounds=lower_bounds,
-                upper_bounds=upper_bounds,
                 **numdiff_options,
             )["derivative"]
 
     def _jacobian_from_internal(x):
         params = converter.params_from_internal(x)
-        select = selector(params)
-        return np.atleast_1d(jacobian(select)).reshape(_n_constr, -1)
+        select = external_selector(params)
+        value = np.zeros((_n_constr, len(x)))
+        # here we could return a sparse jacobian
+        value[:, internal_selector_mask] = np.atleast_1d(jacobian(select)).reshape(
+            _n_constr, -1
+        )
+        return value
 
     # ==================================================================================
     # Transform constraint function and derive bounds
@@ -123,7 +132,7 @@ def _process_nonlinear_constraint(
 
         def constraint_from_internal(x):
             params = converter.params_from_internal(x)
-            select = selector(params)
+            select = external_selector(params)
             out = np.atleast_1d(constraint_fun(select)) - _value
             return out
 
@@ -142,7 +151,7 @@ def _process_nonlinear_constraint(
 
         def _constraint_from_internal(x):
             params = converter.params_from_internal(x)
-            select = selector(params)
+            select = external_selector(params)
             return np.atleast_1d(constraint_fun(select))
 
         lower_bounds = c.get("lower_bounds", 0)
@@ -158,7 +167,7 @@ def _process_nonlinear_constraint(
             _jacobian_from_internal, transformation["derivative"]
         )
 
-        n_constr = 2 * _n_constr if transformation.name == "stack" else _n_constr
+        n_constr = 2 * _n_constr if transformation["name"] == "stack" else _n_constr
 
     internal_constr = {
         "n_constr": n_constr,
@@ -203,7 +212,7 @@ def _equality_to_inequality(c):
 
 
 def _compose_funcs(f, g):
-    return lambda x: f(g(x))
+    return lambda x: g(f(x))
 
 
 def _get_transformation(lower_bounds, upper_bounds):
@@ -230,6 +239,7 @@ def _get_transformation(lower_bounds, upper_bounds):
             ),
             "derivative": lambda v: np.concatenate((v, -v), axis=0),
         }
+    transformer["name"] = transformation_type
     return transformer
 
 
@@ -265,6 +275,15 @@ def _process_selector(c):
     else:
         selector = _identity
     return selector
+
+
+def _get_internal_selector_index(params, selector, converter):
+    registry = get_registry(extended=True)
+    x = converter.params_to_internal(params)
+    flat_params_indices = np.arange(len(x))
+    params_indices = tree_unflatten(params, flat_params_indices, registry=registry)
+    index = tree_just_flatten(selector(params_indices), registry=registry)
+    return index
 
 
 def _identity(x):
