@@ -157,3 +157,22 @@ def test_estimate_msm_with_jacobian():
 
     aaae(calculated.params, expected_params)
     aaae(calculated.cov(), cov_np)
+
+
+def test_to_pickle(tmp_path):
+    start_params = np.array([3, 2, 1])
+
+    # abuse simulate_moments to get empirical moments in correct format
+    empirical_moments = _sim_np(np.zeros(3))
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    calculated = estimate_msm(
+        simulate_moments=_sim_np,
+        empirical_moments=empirical_moments,
+        moments_cov=cov_np,
+        params=start_params,
+        optimize_options="scipy_lbfgsb",
+    )
+
+    calculated.to_pickle(tmp_path / "bla.pkl")

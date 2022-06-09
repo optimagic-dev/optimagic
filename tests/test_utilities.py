@@ -10,11 +10,13 @@ from estimagic.utilities import cov_to_sds_and_corr
 from estimagic.utilities import dimension_to_number_of_triangular_elements
 from estimagic.utilities import hash_array
 from estimagic.utilities import number_of_triangular_elements_to_dimension
+from estimagic.utilities import read_pickle
 from estimagic.utilities import robust_cholesky
 from estimagic.utilities import robust_inverse
 from estimagic.utilities import sdcorr_params_to_matrix
 from estimagic.utilities import sdcorr_params_to_sds_and_corr
 from estimagic.utilities import sds_and_corr_to_cov
+from estimagic.utilities import to_pickle
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -166,3 +168,11 @@ def test_initial_trust_radius_large_x():
     expected = 2.05
     res = calculate_trustregion_initial_radius(x)
     assert expected == pytest.approx(res, abs=1e-8)
+
+
+def test_pickling(tmp_path):
+    a = [1, 2, 3]
+    path = tmp_path / "bla.pkl"
+    to_pickle(a, path)
+    b = read_pickle(path)
+    assert a == b

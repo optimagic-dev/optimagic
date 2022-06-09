@@ -298,3 +298,21 @@ def test_estimate_ml_general_pytree(normal_inputs):
         np.abs(true["mean"] - got.summary(method="jacobian")["mean"]["value"][0]) < 1e-1
     )
     assert np.abs(true["sd"] - got.summary(method="jacobian")["sd"]["value"][0]) < 1e-1
+
+
+def test_to_pickle(normal_inputs, tmp_path):
+    kwargs = {"y": normal_inputs["y"]}
+
+    start_params = {"mean": 5, "sd": 3}
+
+    got = estimate_ml(
+        loglike=normal_loglike,
+        params=start_params,
+        loglike_kwargs=kwargs,
+        optimize_options="scipy_lbfgsb",
+        lower_bounds={"sd": 0.0001},
+        jacobian_kwargs=kwargs,
+        constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
+    )
+
+    got.to_pickle(tmp_path / "bla.pkl")
