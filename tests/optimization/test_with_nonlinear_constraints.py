@@ -195,9 +195,7 @@ def general_example():
 
     def criterion(params):
         weights = np.array([0, 1, 2, 3])
-        _crit = params["a"] @ weights
-        _crit += params["b"].sum()
-        return _crit
+        return params["a"] @ weights + params["b"].sum()
 
     def selector_probability_constraint(params):
         return params["a"]
@@ -232,14 +230,17 @@ def general_example():
     return kwargs
 
 
-@pytest.mark.parametrize("algorithm", ["ipopt"])
-def test_general_example(general_example, algorithm):
+TEST_CASES = list(itertools.product(["ipopt"], [True, False]))
+
+
+@pytest.mark.parametrize("algorithm, skip_checks", TEST_CASES)
+def test_general_example(general_example, algorithm, skip_checks):
 
     kwargs = general_example
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        res = minimize(algorithm=algorithm, **kwargs)
+        res = minimize(algorithm=algorithm, skip_checks=skip_checks, **kwargs)
 
     optimal_p1 = 0.5 + np.sqrt(3 / 20)  # can be derived analytically
     optimal_p2 = 1 - optimal_p1

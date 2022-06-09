@@ -3,22 +3,14 @@ from functools import partial
 import numpy as np
 import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
+from estimagic.exceptions import InvalidConstraintError
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_flatten
 from pybaum import tree_just_flatten
 from pybaum import tree_unflatten
-
-
-CONVERGENCE_ABSOLUTE_CONSTRAINT_TOLERANCE = 1e-5
-"""float: Allowed tolerance of the equality and inequality constraints for values to be
-considered 'feasible'.
-
-"""
-
-# ======================================================================================
-# Process nonlinear constraints
-# ======================================================================================
 
 
 def process_nonlinear_constraints(
@@ -51,21 +43,25 @@ def process_nonlinear_constraints(
         list[dict]: List of processed constraints.
 
     """
-    constraint_evals = [
-        _check_validity_and_return_evaluation(c, params, skip_checks)
-        for c in nonlinear_constraints
-    ]
+    # do checks first to fail fast
+    constraint_evals = []
+    for _constraint in nonlinear_constraints:
 
-    _processor = partial(
-        _process_nonlinear_constraint,
-        params=params,
-        converter=converter,
-        numdiff_options=numdiff_options,
-    )
+        _eval = _check_validity_and_return_evaluation(_constraint, params, skip_checks)
+        constraint_evals.append(_eval)
 
-    processed = [
-        _processor(c, e) for c, e in zip(nonlinear_constraints, constraint_evals)
-    ]
+    processed = []
+    for _constraint, _eval in zip(nonlinear_constraints, constraint_evals):
+
+        _processed_constraint = _process_nonlinear_constraint(
+            _constraint,
+            constraint_eval=_eval,
+            params=params,
+            converter=converter,
+            numdiff_options=numdiff_options,
+        )
+        processed.append(_processed_constraint)
+
     return processed
 
 
@@ -75,31 +71,18 @@ def _process_nonlinear_constraint(
     """Process a single nonlinear constraint."""
 
     # ==================================================================================
-    # Process selectors for params (functional) and flat_params (indices)
+    # Process selector and evaluate functions if necessary
     # ==================================================================================
 
     external_selector = _process_selector(c)  # functional selector
 
-    selection_indices, n_params = _get_selection_indices(params, external_selector)
-
-    # ==================================================================================
-    # Evaluate constraint function and selector
-    # ==================================================================================
-    selected = external_selector(params)
-
     constraint_func = c["func"]
 
     if constraint_eval is None:
+        selected = external_selector(params)
         constraint_eval = constraint_func(selected)
 
-    # ==================================================================================
-    # Retrieve number of constraints
-    # ==================================================================================
-    if "n_constr" in c:
-        _n_constr = c["n_constr"]
-    else:
-        constraint_value = constraint_func(external_selector(params))
-        _n_constr = len(np.atleast_1d(constraint_value))
+    _n_constr = len(np.atleast_1d(constraint_eval))
 
     # ==================================================================================
     # Consolidate and transform jacobian
@@ -124,7 +107,11 @@ def _process_nonlinear_constraint(
                 **options,
             )["derivative"]
 
-    def _jacobian_from_internal(x):
+    # To define the internal Jacobian we need to know which parameters enter the
+    # contraint function.
+    selection_indices, n_params = _get_selection_indices(params, external_selector)
+
+    def _internal_jacobian(x):
         """Return Jacobian of constraint at internal parameters.
 
         The constraint function is written to be evaluated on a selection of the
@@ -136,11 +123,13 @@ def _process_nonlinear_constraint(
 
         """
         params = converter.params_from_internal(x)
-        select = external_selector(params)
-        jac = jacobian(select)
+        selected = external_selector(params)
+        jac = jacobian(selected)
         jac_matrix = block_tree_to_matrix(jac, constraint_eval, selected)
-        jac_sparse = _extend_jacobian(jac_matrix, selection_indices, n_params)
-        jac_internal = converter.derivative_to_internal(jac_sparse, x, jac_is_flat=True)
+        jac_extended = _extend_jacobian(jac_matrix, selection_indices, n_params)
+        jac_internal = converter.derivative_to_internal(
+            jac_extended, x, jac_is_flat=True
+        )
         return np.atleast_2d(jac_internal)
 
     # ==================================================================================
@@ -158,13 +147,13 @@ def _process_nonlinear_constraint(
 
         _value = np.atleast_1d(np.array(c["value"], dtype=float))
 
-        def constraint_from_internal(x):
+        def internal_constraint_func(x):
             params = converter.params_from_internal(x)
             select = external_selector(params)
             out = np.atleast_1d(constraint_func(select)) - _value
             return out
 
-        jacobian_from_internal = _jacobian_from_internal
+        jacobian_from_internal = _internal_jacobian
         n_constr = _n_constr
 
     else:
@@ -177,7 +166,7 @@ def _process_nonlinear_constraint(
         # satify this condition we do not change anything, otherwise we need to perform
         # a transformation.
 
-        def _constraint_from_internal(x):
+        def _internal_constraint_func(x):
             params = converter.params_from_internal(x)
             select = external_selector(params)
             return np.atleast_1d(constraint_func(select))
@@ -187,12 +176,12 @@ def _process_nonlinear_constraint(
 
         transformation = _get_transformation(lower_bounds, upper_bounds)
 
-        constraint_from_internal = _compose_funcs(
-            _constraint_from_internal, transformation["func"]
+        internal_constraint_func = _compose_funcs(
+            _internal_constraint_func, transformation["func"]
         )
 
         jacobian_from_internal = _compose_funcs(
-            _jacobian_from_internal, transformation["derivative"]
+            _internal_jacobian, transformation["derivative"]
         )
 
         n_constr = 2 * _n_constr if transformation["name"] == "stack" else _n_constr
@@ -200,17 +189,12 @@ def _process_nonlinear_constraint(
     internal_constr = {
         "n_constr": n_constr,
         "type": _type,
-        "fun": constraint_from_internal,  # internal name for 'func'
+        "fun": internal_constraint_func,  # internal name for 'func'
         "jac": jacobian_from_internal,  # internal name for 'derivative'
-        "tol": c.get("tol", CONVERGENCE_ABSOLUTE_CONSTRAINT_TOLERANCE),
+        "tol": c.get("tol", CONSTRAINTS_ABSOLUTE_TOLERANCE),
     }
 
     return internal_constr
-
-
-# ======================================================================================
-# Transform equality constraints to inequality constraints
-# ======================================================================================
 
 
 def equality_as_inequality_constraints(nonlinear_constraints):
@@ -230,7 +214,8 @@ def _equality_to_inequality(c):
     if c["type"] == "eq":
 
         def transform(x, func):
-            return np.concatenate((func(x), -func(x)), axis=0)
+            value = func(x)
+            return np.concatenate((value, -value), axis=0)
 
         out = {
             "fun": partial(transform, func=c["fun"]),
@@ -296,13 +281,15 @@ def _extend_jacobian(jac_mat, selection_indices, n_params):
 def _get_selection_indices(params, selector):
     """Get index of selected flat params and number of flat params."""
     registry = get_registry(extended=True)
-    flat_params = tree_just_flatten(params, registry=registry)
+    flat_params, params_treedef = tree_flatten(params, registry=registry)
     n_params = len(flat_params)
-    flat_params_indices = np.arange(n_params, dtype=int)
-    params_indices = tree_unflatten(params, flat_params_indices, registry=registry)
+    indices = np.arange(n_params, dtype=int)
+    params_indices = tree_unflatten(params_treedef, indices, registry=registry)
     selected = selector(params_indices)
-    indices = np.array(tree_just_flatten(selected, registry=registry), dtype=int)
-    return indices, n_params
+    selection_indices = np.array(
+        tree_just_flatten(selected, registry=registry), dtype=int
+    )
+    return selection_indices, n_params
 
 
 # ======================================================================================
@@ -372,15 +359,19 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
     # ==================================================================================
 
     if "func" not in c:
-        raise ValueError(
+        raise InvalidConstraintError(
             "Constraint needs to have entry 'fun', representing the constraint "
             "function."
         )
     if not callable(c["func"]):
-        raise ValueError("Entry 'fun' in nonlinear constraints has be callable.")
+        raise InvalidConstraintError(
+            "Entry 'fun' in nonlinear constraints has be callable."
+        )
 
     if "derivative" in c and not callable(c["derivative"]):
-        raise ValueError("Entry 'jac' in nonlinear constraints has be callable.")
+        raise InvalidConstraintError(
+            "Entry 'jac' in nonlinear constraints has be callable."
+        )
 
     # ==================================================================================
     # check bounds
@@ -390,21 +381,21 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
 
     if is_equality_constraint:
         if "lower_bounds" in c or "upper_bounds" in c:
-            raise ValueError(
+            raise InvalidConstraintError(
                 "Only one of 'value' or ('lower_bounds', 'upper_bounds') can be "
                 "passed to a nonlinear constraint."
             )
 
     if not is_equality_constraint:
         if "lower_bounds" not in c and "upper_bounds" not in c:
-            raise ValueError(
+            raise InvalidConstraintError(
                 "For inequality constraint at least one of ('lower_bounds', "
                 "'upper_bounds') has to be passed to the nonlinear constraint."
             )
 
     if "lower_bounds" in c and "upper_bounds" in c:
         if not np.all(np.array(c["lower_bounds"]) <= np.array(c["upper_bounds"])):
-            raise ValueError(
+            raise InvalidConstraintError(
                 "If lower bounds need to less than or equal to upper bounds."
             )
 
@@ -414,7 +405,7 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
 
     if "selector" in c:
         if not callable(c["selector"]):
-            raise ValueError(
+            raise InvalidConstraintError(
                 f"'selector' entry needs to be callable in constraint {c}."
             )
         else:
@@ -428,25 +419,27 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
 
     elif "loc" in c:
         if not isinstance(params, (pd.Series, pd.DataFrame)):
-            raise ValueError(
+            raise InvalidConstraintError(
                 "params needs to be pd.Series or pd.DataFrame to use 'loc' selector in "
                 f"in consrtaint {c}."
             )
         try:
             params.loc[c["loc"]]
         except (KeyError, IndexError):
-            raise ValueError("'loc' string is invalid.")
+            raise InvalidConstraintError("'loc' string is invalid.")
 
     elif "query" in c:
         if not isinstance(params, pd.DataFrame):
-            raise ValueError(
+            raise InvalidConstraintError(
                 "params needs to be pd.DataFrame to use 'query' selector in "
                 f"constraints {c}."
             )
         try:
             params.query(c["query"])
         except Exception:
-            raise ValueError(f"'query' string is invalid in constraint {c}.")
+            raise InvalidConstraintError(
+                f"'query' string is invalid in constraint {c}."
+            )
 
     # ==================================================================================
     # check that constraints can be evaluated

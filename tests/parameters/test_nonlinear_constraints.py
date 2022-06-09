@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.exceptions import InvalidConstraintError
 from estimagic.parameters.nonlinear_constraints import (
     _check_validity_and_return_evaluation,
 )
@@ -147,7 +148,7 @@ TEST_CASES = list(
 
 @pytest.mark.parametrize("constraint, params", TEST_CASES)
 def test_check_validity_nonlinear_constraint(constraint, params):
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidConstraintError):
         _check_validity_and_return_evaluation(constraint, params, skip_checks=False)
 
 
