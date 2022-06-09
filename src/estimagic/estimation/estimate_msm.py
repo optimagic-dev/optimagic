@@ -39,6 +39,7 @@ from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from estimagic.utilities import to_pickle
 from pybaum import leaf_names
 from pybaum import tree_just_flatten
 
@@ -107,7 +108,7 @@ def estimate_msm(
             Note that "optimal" refers to the asymptotically optimal weighting matrix
             and is often not a good choice due to large finite sample bias.
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
             The dashboard can only be used when logging is used.
@@ -259,7 +260,7 @@ def estimate_msm(
     else:
         func_eval = {"contributions": sim_mom_eval}
 
-    converter, flat_estimates = get_converter(
+    converter, internal_estimates = get_converter(
         func=helper,
         params=estimates,
         constraints=constraints,
@@ -289,9 +290,9 @@ def estimate_msm(
 
         int_jac = first_derivative(
             func=func,
-            params=flat_estimates.values,
-            lower_bounds=flat_estimates.lower_bounds,
-            upper_bounds=flat_estimates.upper_bounds,
+            params=internal_estimates.values,
+            lower_bounds=internal_estimates.lower_bounds,
+            upper_bounds=internal_estimates.upper_bounds,
             **numdiff_options,
         )["derivative"]
 
@@ -320,7 +321,7 @@ def estimate_msm(
     res = MomentsResult(
         params=estimates,
         weights=weights,
-        _flat_params=flat_estimates,
+        _flat_params=internal_estimates,
         _converter=converter,
         _internal_weights=internal_weights,
         _internal_moments_cov=internal_moments_cov,
@@ -659,7 +660,7 @@ class MomentsResult:
 
         summary = calculate_inference_quantities(
             estimates=self.params,
-            flat_estimates=self._flat_params,
+            internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,
         )
@@ -930,3 +931,12 @@ class MomentsResult:
             )
             raise ValueError(msg)
         return out
+
+    def to_pickle(self, path):
+        """Save the MomentsResult object to pickle.
+
+        Args:
+            path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
+        """
+        to_pickle(self, path=path)

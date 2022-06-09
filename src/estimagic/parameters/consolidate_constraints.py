@@ -208,7 +208,7 @@ def _consolidate_fixes_with_equality_constraints(
             assert (
                 len(valcounts) == 1
             ), "Equality constrained parameters cannot be fixed to different values."
-            fixed_value[eq["index"]] = valcounts.index[0]
+            fixed_value[eq["index"]] = valcounts[0]
 
     return fixed_value
 

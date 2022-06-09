@@ -62,3 +62,12 @@ def test_create_stars():
     calculated = _create_stars(sr).tolist()
     expected = ["***", "** ", "*  ", "   ", "   "]
     assert calculated == expected
+
+
+def test_to_pickle(base_inputs, convergence_report, tmp_path):
+
+    res = OptimizeResult(
+        convergence_report=convergence_report,
+        **base_inputs,
+    )
+    res.to_pickle(tmp_path / "bla.pkl")

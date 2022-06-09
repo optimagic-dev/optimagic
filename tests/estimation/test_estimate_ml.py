@@ -10,6 +10,7 @@ from estimagic.examples.logit import logit_derivative
 from estimagic.examples.logit import logit_hessian
 from estimagic.examples.logit import logit_loglike
 from estimagic.examples.logit import logit_loglike_and_derivative as llad
+from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel
 
 
@@ -19,8 +20,55 @@ def aaae(obj1, obj2, decimal=3):
     np.testing.assert_array_almost_equal(arr1, arr2, decimal=decimal)
 
 
+# ==================================================================================
+# Test case with constraints using multivariate Normal model
+# ==================================================================================
+
+
+def multivariate_normal_loglike(params, data):
+    mean = params["mean"]
+    cov = params["cov"]
+    mn = multivariate_normal(mean=mean, cov=cov)
+    contributions = mn.logpdf(data)
+    return {
+        "contributions": contributions,
+        "value": contributions.sum(),
+    }
+
+
+def test_estimate_ml_with_constraints():
+
+    # true parameters
+    true_mean = np.arange(1, 4)
+    true_cov = np.diag(np.arange(1, 4))
+
+    # simulate 10.000 random samples
+    mn = multivariate_normal(mean=true_mean, cov=true_cov)
+    data = mn.rvs(size=10_000)
+
+    loglike_kwargs = {"data": data}
+
+    params = {"mean": np.ones(3), "cov": np.diag(np.ones(3))}
+
+    constraints = [
+        {"type": "fixed", "selector": lambda p: p["mean"][0]},
+        {"type": "covariance", "selector": lambda p: p["cov"][np.tril_indices(3)]},
+    ]
+
+    results = estimate_ml(
+        loglike=multivariate_normal_loglike,
+        params=params,
+        loglike_kwargs=loglike_kwargs,
+        optimize_options="scipy_lbfgsb",
+        constraints=constraints,
+    )
+
+    aaae(results.params["mean"], true_mean, decimal=1)
+    aaae(results.params["cov"], true_cov, decimal=1)
+
+
 # ======================================================================================
-# logit case
+# Test case using Logit model
 # ======================================================================================
 
 
@@ -197,7 +245,7 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
 
 
 # ======================================================================================
-# (simple) normal case using dict params
+# Univariate normal case using dict params
 # ======================================================================================
 
 
@@ -249,3 +297,21 @@ def test_estimate_ml_general_pytree(normal_inputs):
         np.abs(true["mean"] - got.summary(method="jacobian")["mean"]["value"][0]) < 1e-1
     )
     assert np.abs(true["sd"] - got.summary(method="jacobian")["sd"]["value"][0]) < 1e-1
+
+
+def test_to_pickle(normal_inputs, tmp_path):
+    kwargs = {"y": normal_inputs["y"]}
+
+    start_params = {"mean": 5, "sd": 3}
+
+    got = estimate_ml(
+        loglike=normal_loglike,
+        params=start_params,
+        loglike_kwargs=kwargs,
+        optimize_options="scipy_lbfgsb",
+        lower_bounds={"sd": 0.0001},
+        jacobian_kwargs=kwargs,
+        constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
+    )
+
+    got.to_pickle(tmp_path / "bla.pkl")
