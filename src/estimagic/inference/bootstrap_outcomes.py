@@ -1,10 +1,6 @@
-import pandas as pd
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
-from estimagic.parameters.tree_registry import get_registry
-from pybaum import leaf_names
-from pybaum import tree_just_flatten
 
 
 def get_bootstrap_outcomes(
@@ -37,6 +33,7 @@ def get_bootstrap_outcomes(
     Returns:
         estimates (pandas.DataFrame): Outcomes for different bootstrap samples. The
             columns are the index of the result of ``outcome``.
+            List of pytrees.
     """
     check_inputs(data=data, cluster_by=cluster_by)
     batch_evaluator = process_batch_evaluator(batch_evaluator)
@@ -68,7 +65,6 @@ def _get_bootstrap_outcomes_from_indices(
     error_handling,
     batch_evaluator,
 ):
-    registry = get_registry(extended=True)
     arguments = [{"data": data, "indices": ind, "outcome": outcome} for ind in indices]
 
     raw_estimates = batch_evaluator(
@@ -79,16 +75,11 @@ def _get_bootstrap_outcomes_from_indices(
         error_handling=error_handling,
     )
 
-    leafnames = leaf_names(raw_estimates[0], registry=registry)
-    estimates = [
-        tree_just_flatten(est, registry=registry)
-        for est in raw_estimates
-        if not isinstance(est, str)
-    ]
+    estimates = [est for est in raw_estimates if not isinstance(est, str)]
     tracebacks = [est for est in raw_estimates if isinstance(est, str)]
 
     if estimates:
-        estimates_df = pd.DataFrame(estimates, columns=leafnames)
+        pass
     else:
         msg = (
             "Calculating of all bootstrap outcomes failed. The tracebacks of the "
@@ -104,7 +95,7 @@ def _get_bootstrap_outcomes_from_indices(
             "anything but diagnostic purposes. Check warnings for more information. "
         )
 
-    return estimates_df
+    return estimates
 
 
 def _take_indices_and_calculate_outcome(indices, data, outcome):

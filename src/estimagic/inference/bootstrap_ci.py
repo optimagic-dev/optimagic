@@ -20,7 +20,7 @@ def compute_ci(
     Args:
         data (pandas.DataFrame): original dataset.
         base_outcomes (pytree): Pytree of the base outomes, i.e. the outcomes
-            evaluated the original data set.
+            evaluated on the original data set.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
