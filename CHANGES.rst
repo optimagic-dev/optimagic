@@ -7,6 +7,12 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.3.1
+-----
+
+- :gh:`349` fixes multiple small bugs and adds test cases for all of them
+  (:ghuser:`mpetrosian`, :ghuser:`janosg` and :ghuser:`timmens`)
+
 0.3.0
 -----
 
