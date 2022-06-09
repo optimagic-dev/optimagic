@@ -125,7 +125,7 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
 
     """
     if "equality" in constr_type and algorithm == "nlopt_mma":
-        pytest.skip(msg="Very slow and low accuracy.")
+        pytest.skip(reason="Very slow and low accuracy.")
 
     solution_x, kwargs = nlc_2d_example
     if algorithm == "scipy_cobyla":
@@ -157,8 +157,8 @@ def criterion(params):
 
 @pytest.mark.parametrize("algorithm", NLC_ALGORITHMS)
 def test_documentation_example(algorithm):
-    if algorithm == "nlopt_mma":
-        pytest.skip(msg="Very slow and low accuracy.")
+    if algorithm in ("nlopt_mma", "ipopt"):
+        pytest.skip(reason="Slow.")
 
     kwargs = {
         "lower_bounds": np.zeros(6),
@@ -181,3 +181,68 @@ def test_documentation_example(algorithm):
         },
         **kwargs
     )
+
+
+# ======================================================================================
+# Test: selection + reparametrization constraint + nonlinear constraint
+# ======================================================================================
+
+
+@pytest.fixture()
+def general_example():
+
+    params = {"a": np.array([0.1, 0.3, 0.4, 0.2]), "b": np.array([1.5, 2])}
+
+    def criterion(params):
+        weights = np.array([0, 1, 2, 3])
+        _crit = params["a"] @ weights
+        _crit += params["b"].sum()
+        return _crit
+
+    def selector_probability_constraint(params):
+        return params["a"]
+
+    def selector_nonlinear_constraint(params):
+        return {"probs": params["a"][:3][::-1], "unnecessary": params["b"]}
+
+    def constraint(selected):
+        return selected["probs"] @ selected["probs"]
+
+    constraints = [
+        {"type": "probability", "selector": selector_probability_constraint},
+        {
+            "type": "nonlinear",
+            "selector": selector_nonlinear_constraint,
+            "upper_bounds": 0.8,
+            "func": constraint,
+            "tol": 0.01,
+        },
+    ]
+
+    lower_bounds = {"b": np.array([0, 0])}
+    upper_bounds = {"b": np.array([2, 2])}
+
+    kwargs = {
+        "criterion": criterion,
+        "params": params,
+        "constraints": constraints,
+        "lower_bounds": lower_bounds,
+        "upper_bounds": upper_bounds,
+    }
+    return kwargs
+
+
+@pytest.mark.parametrize("algorithm", ["ipopt"])
+def test_general_example(general_example, algorithm):
+
+    kwargs = general_example
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res = minimize(algorithm=algorithm, **kwargs)
+
+    optimal_p1 = 0.5 + np.sqrt(3 / 20)  # can be derived analytically
+    optimal_p2 = 1 - optimal_p1
+
+    aaae(res.params["a"], np.array([optimal_p1, optimal_p2, 0, 0]), decimal=4)
+    aaae(res.params["b"], np.array([0.0, 0]), decimal=5)

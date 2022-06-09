@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.parameters.nonlinear_constraints import (
-    _check_validity_nonlinear_constraint,
+    _check_validity_and_return_evaluation,
 )
-from estimagic.parameters.nonlinear_constraints import _get_internal_selector_index
+from estimagic.parameters.nonlinear_constraints import _get_selection_indices
 from estimagic.parameters.nonlinear_constraints import _get_transformation
 from estimagic.parameters.nonlinear_constraints import _get_transformation_type
 from estimagic.parameters.nonlinear_constraints import _process_selector
@@ -15,6 +15,7 @@ from estimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
 )
 from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
+from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 from pybaum import tree_just_flatten
@@ -26,7 +27,8 @@ class Converter:
         return x
 
     def params_to_internal(self, params):
-        return np.array(tree_just_flatten(params))
+        registry = get_registry(extended=True)
+        return np.array(tree_just_flatten(params, registry=registry))
 
 
 # ======================================================================================
@@ -72,20 +74,20 @@ def test_get_positivity_transform(lower_bounds, upper_bounds, case, expected):
 
 
 # ======================================================================================
-# _get_internal_selector_index
+# _get_selection_indices
 # ======================================================================================
 
 
-def test_get_internal_selector_index():
+def test_get_selection_indices():
 
-    converter = Converter()
     params = {"a": [0, 1, 2], "b": [3, 4, 5]}
     selector = lambda p: p["a"]
 
-    expected = [0, 1, 2]
-    got = _get_internal_selector_index(params, selector, converter)
+    expected = np.array([0, 1, 2], dtype=int)
+    got_index, got_n_params = _get_selection_indices(params, selector)
 
-    assert expected == got
+    assert got_n_params == 6
+    assert_array_equal(got_index, expected)
 
 
 # ======================================================================================
@@ -146,7 +148,7 @@ TEST_CASES = list(
 @pytest.mark.parametrize("constraint, params", TEST_CASES)
 def test_check_validity_nonlinear_constraint(constraint, params):
     with pytest.raises(ValueError):
-        _check_validity_nonlinear_constraint(constraint, params, skip_checks=False)
+        _check_validity_and_return_evaluation(constraint, params, skip_checks=False)
 
 
 def test_check_validity_nonlinear_constraint_correct_example():
@@ -156,7 +158,9 @@ def test_check_validity_nonlinear_constraint_correct_example():
         "lower_bounds": np.arange(4),
         "selector": lambda x: x[:1],
     }
-    _check_validity_nonlinear_constraint(constr, params=np.arange(4), skip_checks=False)
+    _check_validity_and_return_evaluation(
+        constr, params=np.arange(4), skip_checks=False
+    )
 
 
 # ======================================================================================

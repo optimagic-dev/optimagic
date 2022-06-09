@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 from pybaum import tree_unflatten
@@ -14,6 +15,10 @@ CONVERGENCE_ABSOLUTE_CONSTRAINT_TOLERANCE = 1e-5
 considered 'feasible'.
 
 """
+
+# ======================================================================================
+# Process nonlinear constraints
+# ======================================================================================
 
 
 def process_nonlinear_constraints(
@@ -46,8 +51,10 @@ def process_nonlinear_constraints(
         list[dict]: List of processed constraints.
 
     """
-    for c in nonlinear_constraints:
-        _check_validity_nonlinear_constraint(c, params=params, skip_checks=skip_checks)
+    constraint_evals = [
+        _check_validity_and_return_evaluation(c, params, skip_checks)
+        for c in nonlinear_constraints
+    ]
 
     _processor = partial(
         _process_nonlinear_constraint,
@@ -56,22 +63,34 @@ def process_nonlinear_constraints(
         numdiff_options=numdiff_options,
     )
 
-    processed = [_processor(c) for c in nonlinear_constraints]
+    processed = [
+        _processor(c, e) for c, e in zip(nonlinear_constraints, constraint_evals)
+    ]
     return processed
 
 
-def _process_nonlinear_constraint(c, params, converter, numdiff_options):
+def _process_nonlinear_constraint(
+    c, constraint_eval, params, converter, numdiff_options
+):
     """Process a single nonlinear constraint."""
 
-    constraint_fun = c["func"]
+    # ==================================================================================
+    # Process selectors for params (functional) and flat_params (indices)
+    # ==================================================================================
+
+    external_selector = _process_selector(c)  # functional selector
+
+    selection_indices, n_params = _get_selection_indices(params, external_selector)
 
     # ==================================================================================
-    # Process selectors for external and internal params
+    # Evaluate constraint function and selector
     # ==================================================================================
-    external_selector = _process_selector(c)
-    internal_selector_mask = _get_internal_selector_index(
-        params, external_selector, converter
-    )
+    selected = external_selector(params)
+
+    constraint_func = c["func"]
+
+    if constraint_eval is None:
+        constraint_eval = constraint_func(selected)
 
     # ==================================================================================
     # Retrieve number of constraints
@@ -79,17 +98,17 @@ def _process_nonlinear_constraint(c, params, converter, numdiff_options):
     if "n_constr" in c:
         _n_constr = c["n_constr"]
     else:
-        constraint_value = constraint_fun(external_selector(params))
+        constraint_value = constraint_func(external_selector(params))
         _n_constr = len(np.atleast_1d(constraint_value))
 
     # ==================================================================================
     # Consolidate and transform jacobian
     # ==================================================================================
 
-    # Process numdiff_options
-    numdiff_options = numdiff_options.copy()
-    numdiff_options["lower_bounds"] = external_selector(numdiff_options["lower_bounds"])
-    numdiff_options["upper_bounds"] = external_selector(numdiff_options["upper_bounds"])
+    # process numdiff_options for numerical derivative
+    options = numdiff_options.copy()
+    options.pop("lower_bounds", None)
+    options.pop("upper_bounds", None)
 
     if "derivative" in c:
         if not callable(c["derivative"]):
@@ -100,20 +119,29 @@ def _process_nonlinear_constraint(c, params, converter, numdiff_options):
         # use finite-differences if no closed-form jacobian is defined
         def jacobian(p):
             return first_derivative(
-                constraint_fun,
+                constraint_func,
                 p,
-                **numdiff_options,
+                **options,
             )["derivative"]
 
     def _jacobian_from_internal(x):
+        """Return Jacobian of constraint at internal parameters.
+
+        The constraint function is written to be evaluated on a selection of the
+        external parameters. The optimizer, however, only works on internal parameters.
+        These can be significantly different from the external parameters, due to
+        estimagic's reparametrization features. In this function we compute the Jacobian
+        of the constraint at the internal parameters using information on the Jacobian
+        of the constraint at the selected external parameters.
+
+        """
         params = converter.params_from_internal(x)
         select = external_selector(params)
-        value = np.zeros((_n_constr, len(x)))
-        # here we could return a sparse jacobian
-        value[:, internal_selector_mask] = np.atleast_1d(jacobian(select)).reshape(
-            _n_constr, -1
-        )
-        return value
+        jac = jacobian(select)
+        jac_matrix = block_tree_to_matrix(jac, constraint_eval, selected)
+        jac_sparse = _extend_jacobian(jac_matrix, selection_indices, n_params)
+        jac_internal = converter.derivative_to_internal(jac_sparse, x, jac_is_flat=True)
+        return np.atleast_2d(jac_internal)
 
     # ==================================================================================
     # Transform constraint function and derive bounds
@@ -133,7 +161,7 @@ def _process_nonlinear_constraint(c, params, converter, numdiff_options):
         def constraint_from_internal(x):
             params = converter.params_from_internal(x)
             select = external_selector(params)
-            out = np.atleast_1d(constraint_fun(select)) - _value
+            out = np.atleast_1d(constraint_func(select)) - _value
             return out
 
         jacobian_from_internal = _jacobian_from_internal
@@ -152,7 +180,7 @@ def _process_nonlinear_constraint(c, params, converter, numdiff_options):
         def _constraint_from_internal(x):
             params = converter.params_from_internal(x)
             select = external_selector(params)
-            return np.atleast_1d(constraint_fun(select))
+            return np.atleast_1d(constraint_func(select))
 
         lower_bounds = c.get("lower_bounds", 0)
         upper_bounds = c.get("upper_bounds", np.inf)
@@ -178,6 +206,11 @@ def _process_nonlinear_constraint(c, params, converter, numdiff_options):
     }
 
     return internal_constr
+
+
+# ======================================================================================
+# Transform equality constraints to inequality constraints
+# ======================================================================================
 
 
 def equality_as_inequality_constraints(nonlinear_constraints):
@@ -211,8 +244,70 @@ def _equality_to_inequality(c):
     return out
 
 
+# ======================================================================================
+# Helper Functions
+# ======================================================================================
+
+
+def _process_selector(c):
+    if "selector" in c:
+        selector = c["selector"]
+    elif "loc" in c:
+
+        def selector(params):
+            return params.loc[c["loc"]]
+
+    elif "query" in c:
+
+        def selector(params):
+            return params.query(c["query"])
+
+    else:
+        selector = _identity
+    return selector
+
+
 def _compose_funcs(f, g):
     return lambda x: g(f(x))
+
+
+def _identity(x):
+    return x
+
+
+# ======================================================================================
+# Jacobian helper functions
+# ======================================================================================
+
+
+def _extend_jacobian(jac_mat, selection_indices, n_params):
+    """Extend Jacobian on selected parameters to full params.
+
+    Jacobian of constraints is defined on a selection of the parameters, however, we
+    need the Jacobian on the full params. Since the Jacobian is trivially zero at the
+    non-selected params we can simply fill a zero matrix.
+
+    """
+    jac_sparse = np.zeros((jac_mat.shape[0], n_params))
+    jac_sparse[:, selection_indices] = jac_mat
+    return jac_sparse
+
+
+def _get_selection_indices(params, selector):
+    """Get index of selected flat params and number of flat params."""
+    registry = get_registry(extended=True)
+    flat_params = tree_just_flatten(params, registry=registry)
+    n_params = len(flat_params)
+    flat_params_indices = np.arange(n_params, dtype=int)
+    params_indices = tree_unflatten(params, flat_params_indices, registry=registry)
+    selected = selector(params_indices)
+    indices = np.array(tree_just_flatten(selected, registry=registry), dtype=int)
+    return indices, n_params
+
+
+# ======================================================================================
+# Transformation helper functions
+# ======================================================================================
 
 
 def _get_transformation(lower_bounds, upper_bounds):
@@ -259,38 +354,19 @@ def _get_transformation_type(lower_bounds, upper_bounds):
     return _transformation_type
 
 
-def _process_selector(c):
-    if "selector" in c:
-        selector = c["selector"]
-    elif "loc" in c:
-
-        def selector(params):
-            return params.loc[c["loc"]]
-
-    elif "query" in c:
-
-        def selector(params):
-            return params.query(c["query"])
-
-    else:
-        selector = _identity
-    return selector
+# ======================================================================================
+# Checks
+# ======================================================================================
 
 
-def _get_internal_selector_index(params, selector, converter):
-    registry = get_registry(extended=True)
-    x = converter.params_to_internal(params)
-    flat_params_indices = np.arange(len(x))
-    params_indices = tree_unflatten(params, flat_params_indices, registry=registry)
-    index = tree_just_flatten(selector(params_indices), registry=registry)
-    return index
+def _check_validity_and_return_evaluation(c, params, skip_checks):
+    """Check that nonlinear constraints are valid.
 
+    Returns:
+        constaint_eval: Evaluation of constraint at params, if skip_checks if False,
+            else None.
 
-def _identity(x):
-    return x
-
-
-def _check_validity_nonlinear_constraint(c, params, skip_checks):
+    """
     # ==================================================================================
     # check functions
     # ==================================================================================
@@ -376,13 +452,17 @@ def _check_validity_nonlinear_constraint(c, params, skip_checks):
     # check that constraints can be evaluated
     # ==================================================================================
 
+    constraint_eval = None
+
     if not skip_checks:
 
         selector = _process_selector(c)
 
         try:
-            c["func"](selector(params))
+            constraint_eval = c["func"](selector(params))
         except Exception:
             raise InvalidFunctionError(
                 f"Error when evaluating function of constraint {c}."
             )
+
+    return constraint_eval
