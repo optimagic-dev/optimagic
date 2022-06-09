@@ -285,7 +285,7 @@ def render_latex(
             r"""Proper LaTeX compilation requires the package siunitx and adding
                    \sisetup{
                        input-symbols            = (),
-                       table-align-text-post    = false
+                       table-align-text-post    = false,
                        group-digits             = false,
                     }
                     to your main tex file. To turn
