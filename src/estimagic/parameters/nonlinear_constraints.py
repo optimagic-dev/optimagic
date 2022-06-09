@@ -273,9 +273,9 @@ def _extend_jacobian(jac_mat, selection_indices, n_params):
     non-selected params we can simply fill a zero matrix.
 
     """
-    jac_sparse = np.zeros((jac_mat.shape[0], n_params))
-    jac_sparse[:, selection_indices] = jac_mat
-    return jac_sparse
+    jac_extended = np.zeros((jac_mat.shape[0], n_params))
+    jac_extended[:, selection_indices] = jac_mat
+    return jac_extended
 
 
 def _get_selection_indices(params, selector):
