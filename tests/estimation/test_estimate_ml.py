@@ -36,7 +36,6 @@ def multivariate_normal_loglike(params, data):
     }
 
 
-@pytest.mark.tryfirst
 def test_estimate_ml_with_constraints():
 
     # true parameters
