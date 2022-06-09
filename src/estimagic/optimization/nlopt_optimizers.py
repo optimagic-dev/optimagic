@@ -14,6 +14,9 @@ from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIO
 from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
+from estimagic.parameters.nonlinear_constraints import (
+    equality_as_inequality_constraints,
+)
 
 if IS_NLOPT_INSTALLED:
     import nlopt
@@ -151,6 +154,7 @@ def nlopt_cobyla(
     lower_bounds,
     upper_bounds,
     *,
+    nonlinear_constraints=(),
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
@@ -170,6 +174,7 @@ def nlopt_cobyla(
         upper_bounds,
         algorithm=nlopt.LN_COBYLA,
         derivative=None,
+        nonlinear_constraints=nonlinear_constraints,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -403,6 +408,7 @@ def nlopt_mma(
     lower_bounds,
     upper_bounds,
     *,
+    nonlinear_constraints=(),
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
@@ -415,6 +421,9 @@ def nlopt_mma(
     For details see :ref:`list_of_nlopt_algorithms`.
 
     """
+    # cannot handle equality constraints
+    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
+
     out = _minimize_nlopt(
         criterion,
         x,
@@ -422,6 +431,7 @@ def nlopt_mma(
         upper_bounds,
         algorithm=nlopt.LD_MMA,
         derivative=derivative,
+        nonlinear_constraints=nonlinear_constraints,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -492,6 +502,7 @@ def nlopt_slsqp(
     lower_bounds,
     upper_bounds,
     *,
+    nonlinear_constraints=(),
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
@@ -510,6 +521,7 @@ def nlopt_slsqp(
         upper_bounds,
         algorithm=nlopt.LD_SLSQP,
         derivative=derivative,
+        nonlinear_constraints=nonlinear_constraints,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -631,6 +643,7 @@ def nlopt_isres(
     lower_bounds,
     upper_bounds,
     *,
+    nonlinear_constraints=(),
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
@@ -648,6 +661,7 @@ def nlopt_isres(
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.GN_ISRES,
+        nonlinear_constraints=nonlinear_constraints,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -714,6 +728,7 @@ def _minimize_nlopt(
     algorithm,
     *,
     derivative=None,
+    nonlinear_constraints=(),
     convergence_xtol_rel=None,
     convergence_xtol_abs=None,
     convergence_ftol_rel=None,
@@ -748,9 +763,44 @@ def _minimize_nlopt(
         opt.set_maxeval(stopping_max_eval)
     if population_size is not None:
         opt.set_population(population_size)
+    for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="eq"):
+        opt.add_equality_mconstraint(constr["fun"], constr["tol"])
+    for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="ineq"):
+        opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
     opt.set_min_objective(func)
     solution_x = opt.optimize(x)
     return _process_nlopt_results(opt, solution_x)
+
+
+def _get_nlopt_constraints(constraints, filter_type):
+    """Transform internal nonlinear constraints to NLOPT readable format."""
+    filtered = [c for c in constraints if c["type"] == filter_type]
+    nlopt_constraints = [_internal_to_nlopt_constaint(c) for c in filtered]
+    return nlopt_constraints
+
+
+def _internal_to_nlopt_constaint(c):
+    """
+    Sign flip description:
+
+    In estimagic, inequality constraints are internally defined as g(x) >= 0. NLOPT uses
+    h(x) <= 0, which is why we need to flip the sign.
+
+    """
+    tol = c["tol"]
+    if np.isscalar(tol):
+        tol = np.tile(tol, c["n_constr"])
+
+    def _constraint(result, x, grad):
+        result[:] = -c["fun"](x)  # see docstring for sign flip
+        if grad.size > 0:
+            grad[:] = -c["jac"](x)  # see docstring for sign flip
+
+    new_constr = {
+        "fun": _constraint,
+        "tol": tol,
+    }
+    return new_constr
 
 
 def _process_nlopt_results(nlopt_obj, solution_x):

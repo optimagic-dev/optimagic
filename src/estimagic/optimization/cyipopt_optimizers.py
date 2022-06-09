@@ -24,6 +24,8 @@ def ipopt(
     lower_bounds,
     upper_bounds,
     *,
+    # nonlinear constraints
+    nonlinear_constraints=(),
     # convergence criteria
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     dual_inf_tol=1.0,
@@ -494,7 +496,7 @@ def ipopt(
         x0=x,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         jac=derivative,
-        constraints=(),
+        constraints=nonlinear_constraints,
         tol=convergence_relative_criterion_tolerance,
         options=options,
     )

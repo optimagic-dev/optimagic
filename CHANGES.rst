@@ -33,7 +33,7 @@ Breaking changes
   ``estimagic.OptimizeLogReader``.
 - Convenience functions to create namedtuples are removed from ``estimagic.utilities``.
 
-
+- :gh:`346` Add option to use nonlinear constraints (:ghuser:`timmens`)
 - :gh:`345` Moves estimation_table to new latex functionality of pandas
   (:ghuser:`mpetrosian`)
 - :gh:`344` Adds pytree support to slice_plot (:ghuser:`janosg`)

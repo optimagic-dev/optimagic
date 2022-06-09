@@ -143,8 +143,11 @@ def get_converter(
             raise ValueError(msg)
         return out
 
-    def _derivative_to_internal(derivative_eval, x):
-        jacobian = tree_converter.derivative_flatten(derivative_eval)
+    def _derivative_to_internal(derivative_eval, x, jac_is_flat=False):
+        if jac_is_flat:
+            jacobian = derivative_eval
+        else:
+            jacobian = tree_converter.derivative_flatten(derivative_eval)
         x_unscaled = scale_converter.params_from_internal(x)
         jac_with_space_conversion = space_converter.derivative_to_internal(
             jacobian, x_unscaled
@@ -224,10 +227,14 @@ def _fast_params_from_internal(x, return_type="tree"):
 
 
 def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
+    def _fast_derivative_to_internal(derivative_eval, x, jac_is_flat=True):
+        # make signature compatible with non-fast path
+        return derivative_eval
+
     converter = Converter(
         params_to_internal=lambda params: params.astype(float),
         params_from_internal=_fast_params_from_internal,
-        derivative_to_internal=lambda derivative_eval, x: derivative_eval,
+        derivative_to_internal=_fast_derivative_to_internal,
         func_to_internal=UNPACK_FUNCTIONS[primary_key],
         has_transforming_constraints=False,
     )
