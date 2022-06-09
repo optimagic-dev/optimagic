@@ -1,5 +1,3 @@
-from functools import partial
-
 import pandas as pd
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
@@ -12,7 +10,6 @@ from pybaum import tree_just_flatten
 def get_bootstrap_outcomes(
     data,
     outcome,
-    outcome_kwargs=None,
     cluster_by=None,
     seed=None,
     n_draws=1000,
@@ -44,9 +41,6 @@ def get_bootstrap_outcomes(
     batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     check_inputs(data=data, cluster_by=cluster_by)
-
-    if outcome_kwargs is not None:
-        outcome = partial(outcome, **outcome_kwargs)
 
     indices = get_bootstrap_indices(
         data=data,
