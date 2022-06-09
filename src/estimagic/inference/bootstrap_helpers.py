@@ -11,7 +11,7 @@ def check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
 
     """
 
-    ci_method_list = ["percentile", "bca", "bc", "t", "normal", "basic"]
+    ci_method_list = ["percentile", "bc", "t", "normal", "basic"]
 
     if not isinstance(data, pd.DataFrame):
         raise ValueError("Input 'data' must be DataFrame.")

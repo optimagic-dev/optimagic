@@ -94,6 +94,7 @@ def bootstrap_from_outcomes(data, outcome, bootstrap_outcomes):
         BootstrapResult: A BootstrapResult object storing information on summary
             statistics, the covariance matrix, and the estimated boostrap outcomes.
     """
+
     out = BootstrapResult(
         params=data,
         outcome=outcome,
@@ -117,12 +118,7 @@ class BootstrapResult:
     def _cov(self):
         return self.cov()
 
-    def summary(
-        self,
-        ci_method="percentile",
-        alpha=0.05,
-        n_cores=1,
-    ):
+    def summary(self, ci_method="percentile", alpha=0.05):
         """Create a summary of estimation results.
 
         Args:
@@ -143,7 +139,6 @@ class BootstrapResult:
             self.bootstrap_outcomes,
             ci_method,
             alpha,
-            n_cores,
         )
 
         summary = pd.DataFrame(self.bootstrap_outcomes.mean(axis=0), columns=["mean"])

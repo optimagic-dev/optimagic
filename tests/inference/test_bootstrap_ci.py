@@ -3,7 +3,6 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.bootstrap_ci import _jackknife
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.parameters.tree_registry import get_registry
@@ -71,7 +70,7 @@ def g_arr(data):
 
 
 TEST_CASES = itertools.product(
-    [g, g_dict, g_arr], ["percentile", "normal", "basic", "bc", "bca", "t"]
+    [g, g_dict, g_arr], ["percentile", "normal", "basic", "bc", "t"]
 )
 
 
@@ -84,17 +83,6 @@ def test_ci(outcome, method, setup, expected):
 
     ci = compute_ci(setup["df"], outcome_flat, setup["estimates"], ci_method=method)
     aaae(ci, expected[method + "_ci"])
-
-
-@pytest.mark.parametrize("outcome", [g, g_dict, g_arr])
-def test_jackknife(outcome, setup, expected):
-    registry = get_registry(extended=True)
-
-    def outcome_flat(data):
-        return tree_just_flatten(outcome(data), registry=registry)
-
-    jk_estimates = _jackknife(setup["df"], outcome_flat)
-    aaae(jk_estimates, expected["jk_estimates"])
 
 
 def test_check_inputs_data():

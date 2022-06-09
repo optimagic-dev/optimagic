@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 from estimagic.inference.bootstrap_helpers import check_inputs
-from joblib import delayed
-from joblib import Parallel
 from scipy.stats import norm
 
 
@@ -12,7 +10,6 @@ def compute_ci(
     estimates,
     ci_method="percentile",
     alpha=0.05,
-    n_cores=1,
 ):
     """Compute confidence interval of bootstrap estimates. Parts of the code of the
     subfunctions of this function are taken from Daniel Saxton's resample library, as
@@ -26,34 +23,33 @@ def compute_ci(
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
-        n_cores (int): number of jobs for parallelization.
 
     Returns:
         cis (pandas.DataFrame): DataFrame where k'th row contains CI for k'th parameter.
     """
     check_inputs(data=data, alpha=alpha, ci_method=ci_method)
 
-    funcname = "_ci_" + ci_method
+    theta = outcome(data)  # base_outcome
 
-    theta = outcome(data)
-    cis = globals()[funcname](data, outcome, estimates, theta, alpha, n_cores)
+    funcname = "_ci_" + ci_method
+    func = globals()[funcname]
+
+    if ci_method == "percentile":
+        cis = func(estimates, alpha)
+    else:
+        cis = func(estimates, theta, alpha)
 
     return pd.DataFrame(
         cis, index=estimates.columns.tolist(), columns=["lower_ci", "upper_ci"]
     )
 
 
-def _ci_percentile(data, outcome, estimates, theta, alpha, n_cores):
+def _ci_percentile(estimates, alpha):
     """Compute percentile type confidence interval of bootstrap estimates.
 
     Args:
-        data (pandas.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
-        theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
-        n_cores (int): number of jobs for parallelization.
 
     Returns:
         cis (np.ndarray): array where k'th row contains CI for k'th parameter.
@@ -70,62 +66,13 @@ def _ci_percentile(data, outcome, estimates, theta, alpha, n_cores):
     return cis
 
 
-def _ci_bca(data, outcome, estimates, theta, alpha, n_cores):
-    """Compute bca type confidence interval of bootstrap estimates.
-
-    Args:
-        data (pd.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
-        theta (pytree): Pytree of base outcomes.
-        alpha (float): significance level of choice.
-        n_cores (int): number of jobs for parallelization.
-
-    Returns:
-        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
-    """
-    num_params = estimates.shape[1]
-    boot_est = estimates.values
-    cis = np.zeros((num_params, 2))
-
-    jack_est = _jackknife(data, outcome, n_cores)
-    jack_mean = np.mean(jack_est, axis=0)
-
-    for k in range(num_params):
-
-        q = _eqf(boot_est[:, k])
-        params = boot_est[:, k]
-
-        # bias correction
-        z_naught = norm.ppf(np.mean(params <= theta[k]))
-        z_low = norm.ppf(alpha)
-        z_high = norm.ppf(1 - alpha)
-
-        # accelaration
-        acc = np.sum((jack_mean[k] - jack_est[k]) ** 3) / (
-            6 * np.sum((jack_mean[k] - jack_est[k]) ** 2) ** (3 / 2)
-        )
-
-        p1 = norm.cdf(z_naught + (z_naught + z_low) / (1 - acc * (z_naught + z_low)))
-        p2 = norm.cdf(z_naught + (z_naught + z_high) / (1 - acc * (z_naught + z_high)))
-
-        cis[k, :] = np.array([q(p1), q(p2)])
-
-    return cis
-
-
-def _ci_bc(data, outcome, estimates, theta, alpha, n_cores):
+def _ci_bc(estimates, theta, alpha):
     """Compute bc type confidence interval of bootstrap estimates.
 
     Args:
-        data (pd.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
-        n_cores (int): number of jobs for parallelization.
 
     Returns:
         cis (np.ndarray): array where k'th row contains CI for k'th parameter.
@@ -152,17 +99,13 @@ def _ci_bc(data, outcome, estimates, theta, alpha, n_cores):
     return cis
 
 
-def _ci_t(data, outcome, estimates, theta, alpha, n_cores):
+def _ci_t(estimates, theta, alpha):
     """Compute studentized confidence interval of bootstrap estimates.
 
     Args:
-        data (pd.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
-        n_cores (int): number of jobs for parallelization.
 
     Returns:
         cis (np.ndarray): array where k'th row contains CI for k'th parameter.
@@ -186,17 +129,13 @@ def _ci_t(data, outcome, estimates, theta, alpha, n_cores):
     return cis
 
 
-def _ci_normal(data, outcome, estimates, theta, alpha, n_cores):
+def _ci_normal(estimates, theta, alpha):
     """Compute approximate normal confidence interval of bootstrap estimates.
 
     Args:
-        data (pd.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
-        n_cores (int): number of jobs for parallelization.
 
     Returns:
         cis (np.ndarray): array where k'th row contains CI for k'th parameter.
@@ -216,17 +155,13 @@ def _ci_normal(data, outcome, estimates, theta, alpha, n_cores):
     return cis
 
 
-def _ci_basic(data, outcome, estimates, theta, alpha, n_cores):
+def _ci_basic(estimates, theta, alpha):
     """Compute basic bootstrap confidence interval of bootstrap estimates.
 
     Args:
-        data (pd.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
-        n_cores (int): number of jobs for parallelization.
 
     Returns:
         cis (np.ndarray): array where k'th row contains CI for k'th parameter.
@@ -244,27 +179,6 @@ def _ci_basic(data, outcome, estimates, theta, alpha, n_cores):
         )
 
     return cis
-
-
-def _jackknife(data, outcome, n_cores=1):
-    """Calculate leave-one-out estimator.
-
-    Args:
-        data (pd.DataFrame): original dataset.
-        n_cores (int): number of jobs for parallelization.
-
-    Returns:
-        jk_estimates (pytree): Pytree of estimated parameters.
-    """
-    n = len(data)
-
-    def loop(i):
-        df = data.drop(index=i)
-        return outcome(df)
-
-    jk_estimates = Parallel(n_jobs=n_cores)(delayed(loop)(i) for i in range(n))
-
-    return jk_estimates
 
 
 def _eqf(sample):
