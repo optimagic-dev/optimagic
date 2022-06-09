@@ -40,7 +40,7 @@ def test_bootstrap_from_outcomes(setup, expected):
 
     results = bootstrap_from_outcomes(
         data=setup["df"],
-        outcome=g,
+        base_outcomes=g,
         bootstrap_outcomes=setup["estimates"],
     ).summary()
 

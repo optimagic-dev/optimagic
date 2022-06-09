@@ -38,9 +38,8 @@ def get_bootstrap_outcomes(
         estimates (pandas.DataFrame): Outcomes for different bootstrap samples. The
             columns are the index of the result of ``outcome``.
     """
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
-
     check_inputs(data=data, cluster_by=cluster_by)
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     indices = get_bootstrap_indices(
         data=data,

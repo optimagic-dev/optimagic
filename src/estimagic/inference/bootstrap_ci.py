@@ -5,21 +5,22 @@ from scipy.stats import norm
 
 
 def compute_ci(
-    data,
-    outcome,
+    base_outcomes,
     estimates,
     ci_method="percentile",
     alpha=0.05,
 ):
-    """Compute confidence interval of bootstrap estimates. Parts of the code of the
+    """Compute confidence interval of bootstrap estimates.
+
+    Parts of the code of the
     subfunctions of this function are taken from Daniel Saxton's resample library, as
     found on https://github.com/dsaxton/resample/ .
 
 
     Args:
         data (pandas.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a flat general pytree.
+        base_outcomes (pytree): Pytree of the base outomes, i.e. the outcomes
+            evaluated the original data set.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
@@ -27,9 +28,7 @@ def compute_ci(
     Returns:
         cis (pandas.DataFrame): DataFrame where k'th row contains CI for k'th parameter.
     """
-    check_inputs(data=data, alpha=alpha, ci_method=ci_method)
-
-    theta = outcome(data)  # base_outcome
+    check_inputs(alpha=alpha, ci_method=ci_method)
 
     funcname = "_ci_" + ci_method
     func = globals()[funcname]
@@ -37,7 +36,7 @@ def compute_ci(
     if ci_method == "percentile":
         cis = func(estimates, alpha)
     else:
-        cis = func(estimates, theta, alpha)
+        cis = func(estimates, base_outcomes, alpha)
 
     return pd.DataFrame(
         cis, index=estimates.columns.tolist(), columns=["lower_ci", "upper_ci"]

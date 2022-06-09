@@ -81,7 +81,9 @@ def test_ci(outcome, method, setup, expected):
     def outcome_flat(data):
         return tree_just_flatten(outcome(data), registry=registry)
 
-    ci = compute_ci(setup["df"], outcome_flat, setup["estimates"], ci_method=method)
+    base_outcome = outcome_flat(setup["df"])
+    ci = compute_ci(base_outcome, setup["estimates"], ci_method=method)
+
     aaae(ci, expected[method + "_ci"])
 
 
@@ -107,7 +109,7 @@ def test_check_inputs_ci_method(setup):
         check_inputs(data=setup["df"], ci_method=ci_method)
     expected_msg = (
         "ci_method must be 'percentile', 'bc',"
-        f" 'bca', 't', 'basic' or 'normal', '{ci_method}'"
+        f" 't', 'basic' or 'normal', '{ci_method}'"
         f" was supplied"
     )
     assert str(excinfo.value) == expected_msg

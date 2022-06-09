@@ -1,5 +1,4 @@
 import functools
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -50,6 +49,7 @@ def bootstrap(
     check_inputs(data, cluster_by)
 
     registry = get_registry(extended=True)
+
     if outcome_kwargs is not None:
         outcome = functools.partial(outcome, **outcome_kwargs)
 
@@ -70,23 +70,20 @@ def bootstrap(
         batch_evaluator=batch_evaluator,
     )
 
-    out = bootstrap_from_outcomes(
-        data,
-        outcome,
-        estimates,
-    )
+    base_outcomes = outcome_flat(data)
+
+    out = bootstrap_from_outcomes(data, base_outcomes, estimates)
 
     return out
 
 
-def bootstrap_from_outcomes(data, outcome, bootstrap_outcomes):
-    """Set up results table containing mean, standard deviation and confidence interval
-    for each estimated parameter.
+def bootstrap_from_outcomes(data, base_outcomes, bootstrap_outcomes):
+    """Create BootstrapResults object.
 
     Args:
         data (pandas.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
+        base_outcomes (pytree): Pytree of the base outomes, i.e. the outcomes
+            evaluated the original data set.
         bootstrap_outcomes (pandas.DataFrame): DataFrame of bootstrap_outcomes in the
             bootstrap samples.
 
@@ -94,10 +91,11 @@ def bootstrap_from_outcomes(data, outcome, bootstrap_outcomes):
         BootstrapResult: A BootstrapResult object storing information on summary
             statistics, the covariance matrix, and the estimated boostrap outcomes.
     """
+    check_inputs(data)
 
     out = BootstrapResult(
-        params=data,
-        outcome=outcome,
+        data=data,
+        base_outcomes=base_outcomes,
         bootstrap_outcomes=bootstrap_outcomes,
     )
 
@@ -106,8 +104,8 @@ def bootstrap_from_outcomes(data, outcome, bootstrap_outcomes):
 
 @dataclass
 class BootstrapResult:
-    params: pd.DataFrame
-    outcome: Callable
+    data: pd.DataFrame
+    base_outcomes: Any
     bootstrap_outcomes: Any
 
     @property
@@ -119,23 +117,21 @@ class BootstrapResult:
         return self.cov()
 
     def summary(self, ci_method="percentile", alpha=0.05):
-        """Create a summary of estimation results.
+        """Create a summary of bootstrap results.
 
         Args:
-           ci_method (str): method of choice for confidence interval computation.
+            ci_method (str): method of choice for confidence interval computation.
             alpha (float): significance level of choice.
-            n_cores (int): number of jobs for parallelization.
 
         Returns:
             pd.DataFrame: The estimation summary as a DataFrame containing information
                 on the mean, standard errors, as well as the confindence interval.
                 Soon this will be a pytree of DataFrames.
         """
-        check_inputs(data=self.params, ci_method=ci_method, alpha=alpha)
+        check_inputs(data=self.data, ci_method=ci_method, alpha=alpha)
 
         cis = compute_ci(
-            self.params,
-            self.outcome,
+            self.base_outcomes,
             self.bootstrap_outcomes,
             ci_method,
             alpha,
