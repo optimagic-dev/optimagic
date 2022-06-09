@@ -22,7 +22,7 @@ def transform_covariance(
             internal parameter vector. For background information about internal and
             external params see :ref:`implementation_of_constraints`.
         constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         n_samples (int): Number of samples used to transform the covariance matrix of
             the internal parameter vector into the covariance matrix of the external
             parameters.
@@ -78,13 +78,13 @@ def transform_covariance(
     return free_cov
 
 
-def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level):
+def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
         params (pytree): The input parameter pytree.
-        flat_estimates (FlatParams): NamedTuple with internal estimated parameter values
-            and names, lower_bounds and upper_bounds, and free_mask.
+        internal_estimates (FlatParams): NamedTuple with internal estimated parameter
+            values and names, lower_bounds and upper_bounds, and free_mask.
         free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
             of the free parameters. If parameters were fixed (explicitly or by other
             constraints) the index is a subset of params.index. The columns are the same
@@ -101,14 +101,15 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
 
     """
     if not isinstance(free_cov, pd.DataFrame):
-        free_index = np.array(flat_estimates.names)[flat_estimates.free_mask]
+        free_index = np.array(internal_estimates.names)[internal_estimates.free_mask]
         free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
     ####################################################################################
     # Construct summary data frame for flat estimates
     ####################################################################################
+    registry = get_registry(extended=True)
 
-    df = pd.DataFrame(index=flat_estimates.names)
-    df["value"] = flat_estimates.values
+    df = pd.DataFrame(index=internal_estimates.names)
+    df["value"] = tree_just_flatten(estimates, registry=registry)
     df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
 
     df["p_value"] = calculate_p_values(
@@ -134,13 +135,11 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
     # Map summary data into params tree structure
     ####################################################################################
 
-    registry = get_registry(extended=True)
-
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(estimates, flat_estimates.names, registry=registry)
+    indices = tree_unflatten(estimates, internal_estimates.names, registry=registry)
 
-    indices_flat = tree_just_flatten(indices)
     estimates_flat = tree_just_flatten(estimates)
+    indices_flat = tree_just_flatten(indices)
 
     # use index chunks in indices_flat to access the corresponding sub data frame of df,
     # and use the index information stored in estimates_flat to form the correct (multi)

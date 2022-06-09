@@ -5,21 +5,26 @@ from estimagic.visualization.slice_plot import slice_plot
 
 @pytest.fixture
 def fixed_inputs():
-    def sphere(params):
-        x = np.array(list(params.values()))
-        return x @ x
-
     params = {"alpha": 0, "beta": 0, "gamma": 0, "delta": 0}
     lower_bounds = {name: -5 for name in params}
     upper_bounds = {name: i + 2 for i, name in enumerate(params)}
 
     out = {
-        "func": sphere,
         "params": params,
         "lower_bounds": lower_bounds,
         "upper_bounds": upper_bounds,
     }
     return out
+
+
+def sphere_with_contributions(params):
+    x = np.array(list(params.values()))
+    return {"value": x @ x, "contributions": x**2}
+
+
+def sphere(params):
+    x = np.array(list(params.values()))
+    return x @ x
 
 
 KWARGS = [
@@ -31,12 +36,16 @@ KWARGS = [
     {"share_y": False},
     {"return_dict": True},
 ]
+parametrization = [
+    (func, kwargs) for func in [sphere_with_contributions, sphere] for kwargs in KWARGS
+]
 
 
-@pytest.mark.parametrize("kwargs", KWARGS)
-def test_slice_plot(fixed_inputs, kwargs):
+@pytest.mark.parametrize("func, kwargs", parametrization)
+def test_slice_plot(fixed_inputs, func, kwargs):
 
     slice_plot(
+        func=func,
         **fixed_inputs,
         **kwargs,
     )

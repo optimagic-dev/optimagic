@@ -84,7 +84,7 @@ def maximize(
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative
@@ -282,7 +282,7 @@ def minimize(
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative

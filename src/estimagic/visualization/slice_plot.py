@@ -155,7 +155,10 @@ def slice_plot(
     )
 
     # add NaNs where an evaluation failed
-    func_values = [val if not isinstance(val, str) else np.nan for val in func_values]
+    func_values = [
+        converter.func_to_internal(val) if not isinstance(val, str) else np.nan
+        for val in func_values
+    ]
 
     func_values += [converter.func_to_internal(func_eval)] * len(selected)
     for pos in selected:
