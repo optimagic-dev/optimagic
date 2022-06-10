@@ -14,6 +14,8 @@ def get_benchmark_problems(
     additive_noise_options=None,
     multiplicative_noise=False,
     multiplicative_noise_options=None,
+    scaling=False,
+    scaling_options=None,
 ):
     """Get a dictionary of test problems for a benchmark.
 
@@ -47,6 +49,12 @@ def get_benchmark_problems(
             implement multiplicative noise as `f_noisy = f * epsilon` but by
             `f_noisy` = f + (epsilon - 1) * f_clipped` where f_clipped is bounded
             away from zero from both sides by the clipping value.
+        scaling (bool): Whether the parameter space of the problem should be rescaled.
+        scaling_options (dict): Dict containing the keys "min_scale", and "max_scale".
+            If scaling is True, the parameters the optimizer sees are the standard
+            parameters multiplied by np.linspace(min_scale, max_scale, len(params)).
+            If min_scale and max_scale have very different orders of magnitude, the
+            problem becomes harder to solve for many optimizers.
 
     Returns:
         dict: Nested dictionary with benchmark problems of the structure:
@@ -70,17 +78,26 @@ def get_benchmark_problems(
     else:
         multiplicative_options = None
 
+    if scaling:
+        scaling_options = scaling_options if scaling_options is not None else {}
+        scaling_options = {**{"min_scale": 0.1, "max_scale": 10}, **scaling_options}
+    else:
+        scaling_options = None
+
     problems = {}
     for name, specification in raw_problems.items():
         inputs = _create_problem_inputs(
             specification,
             additive_options=additive_options,
             multiplicative_options=multiplicative_options,
+            scaling_options=scaling_options,
         )
 
         problems[name] = {
             "inputs": inputs,
-            "solution": _create_problem_solution(specification),
+            "solution": _create_problem_solution(
+                specification, scaling_options=scaling_options
+            ),
             "info": specification.get("info", {}),
         }
 
@@ -117,25 +134,39 @@ def _get_raw_problems(name):
     return raw_problems
 
 
-def _create_problem_inputs(specification, additive_options, multiplicative_options):
+def _create_problem_inputs(
+    specification, additive_options, multiplicative_options, scaling_options
+):
+    _x = specification["start_x"]
+
+    if scaling_options is not None:
+        scaling_factor = _get_scaling_factor(_x, scaling_options)
+        _x = _x * scaling_factor
+    else:
+        scaling_factor = None
+
     _criterion = partial(
         _internal_criterion_template,
         criterion=specification["criterion"],
         additive_options=additive_options,
         multiplicative_options=multiplicative_options,
+        scaling_factor=scaling_factor,
     )
-    _x = specification["start_x"]
 
     inputs = {"criterion": _criterion, "params": _x}
     return inputs
 
 
-def _create_problem_solution(specification):
+def _create_problem_solution(specification, scaling_options):
     _solution_x = specification.get("solution_x")
     if _solution_x is None:
         _solution_x = specification["start_x"] * np.nan
 
     _params = _solution_x
+
+    if scaling_options is not None:
+        _params = _params * _get_scaling_factor(_params, scaling_options)
+
     _value = specification["solution_criterion"]
 
     solution = {
@@ -145,9 +176,16 @@ def _create_problem_solution(specification):
     return solution
 
 
+def _get_scaling_factor(x, options):
+    return np.linspace(options["min_scale"], options["max_scale"], len(x))
+
+
 def _internal_criterion_template(
-    params, criterion, additive_options, multiplicative_options
+    params, criterion, additive_options, multiplicative_options, scaling_factor
 ):
+    if scaling_factor is not None:
+        params = params / scaling_factor
+
     critval = criterion(params)
 
     noise = _get_combined_noise(
