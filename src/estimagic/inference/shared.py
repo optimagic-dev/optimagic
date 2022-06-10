@@ -64,7 +64,7 @@ def transform_covariance(
                 ).any():
                     raise ValueError()
 
-            transformed = _from_internal(internal=params_vec, return_type="flat")
+            transformed = _from_internal(x=params_vec, return_type="flat")
             transformed_free.append(transformed[is_free])
 
         free_cov = np.cov(
@@ -103,13 +103,14 @@ def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_l
     if not isinstance(free_cov, pd.DataFrame):
         free_index = np.array(internal_estimates.names)[internal_estimates.free_mask]
         free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
-    ####################################################################################
+    # ==================================================================================
     # Construct summary data frame for flat estimates
-    ####################################################################################
+    # ==================================================================================
     registry = get_registry(extended=True)
 
     df = pd.DataFrame(index=internal_estimates.names)
     df["value"] = tree_just_flatten(estimates, registry=registry)
+    df["free"] = internal_estimates.free_mask
     df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
 
     df["p_value"] = calculate_p_values(
@@ -131,9 +132,9 @@ def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_l
         labels=["***", "**", "*", ""],
     )
 
-    ####################################################################################
+    # ==================================================================================
     # Map summary data into params tree structure
-    ####################################################################################
+    # ==================================================================================
 
     # create tree with values corresponding to indices of df
     indices = tree_unflatten(estimates, internal_estimates.names, registry=registry)
