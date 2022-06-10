@@ -83,7 +83,13 @@ def process_selectors(constraints, params, tree_converter, param_names):
             new_constr["index"] = selected
         else:
             new_constr["indices"] = selected
-        flat_constraints.append(new_constr)
+
+        if selector_case == "one selector":
+            if len(new_constr["index"]) > 0:
+                flat_constraints.append(new_constr)
+        else:
+            if len(new_constr["indices"][0]) > 0:
+                flat_constraints.append(new_constr)
     return flat_constraints
 
 
