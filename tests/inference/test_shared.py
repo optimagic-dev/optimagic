@@ -139,7 +139,7 @@ def test_calculate_inference_quantities():
     got = calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level)
 
     # drop irrelevant columns
-    got = tree_map(lambda df: df.drop(columns=["stars", "p_value"]), got)
+    got = tree_map(lambda df: df.drop(columns=["stars", "p_value", "free"]), got)
 
     # for debugging purposes we first compare each leaf
     for got_leaf, exp_leaf in zip(tree_just_flatten(got), tree_just_flatten(expected)):
