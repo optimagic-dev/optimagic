@@ -43,11 +43,10 @@ def test_process_pandas_arguments_incompatible_names(inputs):
 def test_calculate_inference_quantities():
     """Test calculate inference quantities for many relevant cases."""
 
-    ####################################################################################
+    # ==================================================================================
     # create test inputs
-    ####################################################################################
+    # ==================================================================================
 
-    # estimates
     estimates = [
         0,
         {
@@ -64,7 +63,6 @@ def test_calculate_inference_quantities():
         },
     ]
 
-    # flat_estimates
     registry = get_registry(extended=True)
     estimates_flat = tree_just_flatten(estimates, registry=registry)
     names = leaf_names(estimates, registry=registry)
@@ -73,17 +71,15 @@ def test_calculate_inference_quantities():
         values=estimates_flat, lower_bounds=None, upper_bounds=None, names=names
     )
 
-    # free_cov
     free_cov = pd.DataFrame(
         np.diag(np.arange(len(estimates_flat))), index=names, columns=names
     )
 
-    # ci_level
     ci_level = 0  # implies that ci_lower = value = ci_upper
 
-    ####################################################################################
+    # ==================================================================================
     # create expected output
-    ####################################################################################
+    # ==================================================================================
 
     df = pd.DataFrame(
         {
@@ -136,14 +132,14 @@ def test_calculate_inference_quantities():
         },
     ]
 
-    ####################################################################################
+    # ==================================================================================
     # compute and compare
-    ####################################################################################
+    # ==================================================================================
 
     got = calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level)
 
     # drop irrelevant columns
-    got = tree_map(lambda df: df.drop(columns=["stars", "p_value"]), got)
+    got = tree_map(lambda df: df.drop(columns=["stars", "p_value", "free"]), got)
 
     # for debugging purposes we first compare each leaf
     for got_leaf, exp_leaf in zip(tree_just_flatten(got), tree_just_flatten(expected)):

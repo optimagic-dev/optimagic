@@ -36,7 +36,8 @@ def multivariate_normal_loglike(params, data):
     }
 
 
-def test_estimate_ml_with_constraints():
+@pytest.fixture()
+def multivariate_normal_example():
 
     # true parameters
     true_mean = np.arange(1, 4)
@@ -49,6 +50,13 @@ def test_estimate_ml_with_constraints():
     loglike_kwargs = {"data": data}
 
     params = {"mean": np.ones(3), "cov": np.diag(np.ones(3))}
+    true_params = {"mean": true_mean, "cov": true_cov}
+    return params, true_params, loglike_kwargs
+
+
+def test_estimate_ml_with_constraints(multivariate_normal_example):
+
+    params, true_params, loglike_kwargs = multivariate_normal_example
 
     constraints = [
         {"type": "fixed", "selector": lambda p: p["mean"][0]},
@@ -63,8 +71,13 @@ def test_estimate_ml_with_constraints():
         constraints=constraints,
     )
 
-    aaae(results.params["mean"], true_mean, decimal=1)
-    aaae(results.params["cov"], true_cov, decimal=1)
+    aaae(results.params["mean"], true_params["mean"], decimal=1)
+    aaae(results.params["cov"], true_params["cov"], decimal=1)
+
+    # test free_mask of summary
+    summary = results.summary()
+    assert np.all(summary["mean"]["free"].values == np.array([False, True, True]))
+    assert np.all(summary["cov"]["free"].values)
 
 
 # ======================================================================================
