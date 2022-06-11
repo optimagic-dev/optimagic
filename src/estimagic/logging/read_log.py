@@ -139,6 +139,15 @@ class OptimizeLogReader:
         )
         return out
 
+    def read_multistart_history(self, direction):
+        out = _read_multistart_optimization_history(
+            database=self._database,
+            params_treedef=self._treedef,
+            registry=self._registry,
+            direction=direction,
+        )
+        return out
+
     def read_start_params(self):
         return self._start_params
 
@@ -200,3 +209,57 @@ def _read_optimization_history(database, params_treedef, registry):
     history["runtime"] = times
 
     return history
+
+
+def _read_multistart_optimization_history(
+    database, params_treedef, registry, direction
+):
+    """Read multistart histories out values, parameters and other information.
+
+    Returns:
+        tuple:
+        - np.ndarray: history that led to lowest criterion
+        - np.ndarray: all other histories, sorted by descending criterion endpoint
+
+    """
+
+    raw_res, _ = read_new_rows(
+        database=database,
+        table_name="optimization_iterations",
+        last_retrieved=0,
+        return_type="list_of_dicts",
+    )
+
+    history = {"params": [], "criterion": [], "runtime": [], "step": []}
+    for data in raw_res:
+        if data["value"] is not None:
+            params = tree_unflatten(params_treedef, data["params"], registry=registry)
+            history["params"].append(params)
+            history["criterion"].append(data["value"])
+            history["runtime"].append(data["timestamp"])
+            history["step"].append(data["step"])
+
+    times = np.array(history["runtime"])
+    times -= times[0]
+    history["runtime"] = times
+
+    df = pd.DataFrame(history)
+
+    if direction == "minimize":
+        best = df[["criterion", "step"]].groupby("step").min()["criterion"]
+        idx = best.index
+        best_index = idx[best.argmin()]  # noqa: F841
+    elif direction == "maximize":
+        best = df[["criterion", "step"]].groupby("step").max()["criterion"]
+        idx = best.index
+        best_index = idx[best.argmax()]  # noqa: F841
+
+    history = (
+        df.query("step == @best_index").drop(columns="step").to_dict(orient="list")
+    )
+    local_histories = (
+        df.query("step != @best_index").drop(columns="step").to_dict(orient="list")
+    )
+    local_histories = None if len(local_histories) == 0 else None
+
+    return history, local_histories
