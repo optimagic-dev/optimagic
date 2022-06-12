@@ -103,9 +103,9 @@ def _process_optimize_options(raw_options, max_evals, disable_convergence):
         default_algo_options["stopping.max_criterion_evaluations"] = max_evals
         default_algo_options["stopping.max_iterations"] = max_evals
     if disable_convergence:
-        default_algo_options["convergence.relative_criterion_tolerance"] = 1e-20
-        default_algo_options["convergence.relative_params_tolerance"] = 1e-20
-        default_algo_options["convergence.relative_gradient_tolerance"] = 1e-20
+        default_algo_options["convergence.relative_criterion_tolerance"] = 1e-14
+        default_algo_options["convergence.relative_params_tolerance"] = 1e-14
+        default_algo_options["convergence.relative_gradient_tolerance"] = 1e-14
 
     out_options = {}
     for name, option in dict_options.items():
