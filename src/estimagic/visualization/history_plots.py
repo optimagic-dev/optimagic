@@ -18,11 +18,11 @@ from pybaum import tree_unflatten
 
 
 @dataclass
-class PlottingData:
+class CriterionPlotDataUnit:
     history: dict
     direction: str
     is_multistart: bool
-    local_histories: dict = None
+    local_histories: list = None
     stacked_local_histories: dict = None
 
 
@@ -35,6 +35,7 @@ def criterion_plot(
     base_color="#bab0ac",
     stack_multistart=False,
     monotone=False,
+    exploration=False,
 ):
     """Plot the criterion history of an optimization.
 
@@ -49,10 +50,12 @@ def criterion_plot(
         base_color (str): Hex code of the line color for local optimizations in a
             multistart optimization.
         stack_multistart (bool): Whether to combine multistart histories into a single
-            history. Default False.
+            history. Default is False.
         monotone (bool): If True, the criterion plot becomes monotone in the sense
             that only that at each iteration the current best criterion value is
-            displayed.
+            displayed. Default is False.
+        exploration (bool): If True, exploration samples are visualized as well. Default
+            is False.
 
     Returns:
         plotly.graph_objs._figure.Figure: The figure.
@@ -94,9 +97,9 @@ def criterion_plot(
     for name, _res in res.items():
 
         if isinstance(_res, OptimizeResult):
-            _data = _extract_plotting_data_from_results_object(_res)
+            _data = _extract_plotting_data_from_results_object(_res, exploration)
         elif isinstance(_res, (str, Path)):
-            _data = _extract_plotting_data_from_data_base(_res)
+            _data = _extract_plotting_data_from_data_base(_res, exploration)
         else:
             msg = "res must be an OptimizeResult or a path to a log file, but is type "
             f" {type(_res)}."
@@ -119,6 +122,8 @@ def criterion_plot(
 
     if plot_multistart:
 
+        _data = list(data.values())[0]
+
         scatter_kws = {
             "connectgaps": True,
             "showlegend": False,
@@ -128,9 +133,9 @@ def criterion_plot(
             "color": base_color,
         }
 
-        for i, local_history in enumerate(data[0].local_histories):
+        for i, local_history in enumerate(_data.local_histories):
 
-            history = get_history_arrays(local_history, data[0].direction)[key]
+            history = get_history_arrays(local_history, _data.direction)[key]
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
@@ -146,7 +151,7 @@ def criterion_plot(
             fig.add_trace(trace)
 
     # ==================================================================================
-    # Plot different optimization objects
+    # Plot main optimization objects
 
     for name, _data in data.items():
 
@@ -260,57 +265,70 @@ def params_plot(
     return fig
 
 
-def _extract_plotting_data_from_results_object(res):
+def _extract_plotting_data_from_results_object(res, plot_exploration):
 
     if res.history is None:
         raise ValueError(
-            "Criterion_plot requires a optimize_result with history. "
+            "Criterion_plot requires an optimize_result with history. "
             "Enable history collection by setting collect_history=True "
             "when calling maximize or minimize."
         )
 
     is_multistart = res.multistart_info is not None
 
-    data = PlottingData(
+    if is_multistart:
+        local_histories = [opt.history for opt in res.multistart_info["local_optima"]]
+        stacked = _get_stacked_local_histories(local_histories)
+        if plot_exploration:
+            stacked["params"] = (
+                res.multistart_info["exploration_sample"][::-1] + stacked["params"]
+            )
+            stacked["criterion"] = (
+                res.multistart_info["exploration_results"].tolist()[::-1]
+                + stacked["criterion"]
+            )
+    else:
+        local_histories, stacked = None, None
+
+    data = CriterionPlotDataUnit(
         history=res.history,
         direction=res.direction,
         is_multistart=is_multistart,
+        local_histories=local_histories,
+        stacked_local_histories=stacked,
     )
-
-    if res.multistart_info is not None:
-        data.local_histories = [
-            opt.history for opt in res.multistart_info["local_optima"]
-        ]
-        data.stacked_local_histories = _get_stacked_local_histories(
-            data.local_histories
-        )
-
     return data
 
 
-def _extract_plotting_data_from_data_base(res):
+def _extract_plotting_data_from_data_base(res, plot_exploration):
 
     reader = OptimizeLogReader(res)
     _problem_table = read_optimization_problem_table(res)
 
     direction = _problem_table["direction"].tolist()[-1]
 
-    history, local_histories = reader.read_multistart_history(direction=direction)
+    history, local_histories, exploration = reader.read_multistart_history(direction)
 
-    data = PlottingData(
+    if local_histories is not None:
+        stacked = _get_stacked_local_histories(local_histories)
+        if plot_exploration:
+            stacked["params"] = exploration["params"][::-1] + stacked["params"]
+            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]
+    else:
+        stacked = None
+
+    data = CriterionPlotDataUnit(
         history=history,
         direction=direction,
         is_multistart=local_histories is not None,
         local_histories=local_histories,
+        stacked_local_histories=stacked,
     )
-
-    if local_histories is not None:
-        data.stacked_local_histories = _get_stacked_local_histories(local_histories)
-
     return data
 
 
 def _get_stacked_local_histories(local_histories):
+    """Transform a list of dict (of same structure) to a dict of concatenated lists."""
     stacked = {key: [h[key] for h in local_histories] for key in local_histories[0]}
     stacked = {key: list(itertools.chain(*value)) for key, value in stacked.items()}
     return stacked

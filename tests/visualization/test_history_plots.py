@@ -13,7 +13,7 @@ def _minimize(kwargs):
         params=np.arange(5),
         soft_lower_bounds=np.full(5, -1),
         soft_upper_bounds=np.full(5, 6),
-        multistart_options={"n_samples": 100, "convergence.max_discoveries": 3},
+        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
         log_options={"fast_logging": True},
         **kwargs,
     )
@@ -34,47 +34,46 @@ def minimize_result():
     return out
 
 
-def test_criterion_plot_logging():
-
-    algorithms = ["scipy_neldermead", "scipy_lbfgsb"]
-
-    res = {}
-    for algorithm in algorithms:
-        _minimize(
-            {"algorithm": algorithm, "multistart": True, "logging": f"{algorithm}.db"}
-        )
-        res[algorithm] = f"{algorithm}.db"
-
-    criterion_plot(res)
-
-
 TEST_CASES = list(
     itertools.product(
         [True, False],  # multistart
         [True, False],  # monotone
         [True, False],  # stack_multistart
+        [True, False],  # exploration
     )
 )
 
 
-@pytest.mark.parametrize("multistart, monotone, stack_multistart", TEST_CASES)
+@pytest.mark.parametrize(
+    "multistart, monotone, stack_multistart, exploration", TEST_CASES
+)
 def test_criterion_plot_list_input(
-    minimize_result, multistart, monotone, stack_multistart
+    minimize_result, multistart, monotone, stack_multistart, exploration
 ):
 
     res = minimize_result[multistart]
 
     if stack_multistart and monotone:
         with pytest.raises(ValueError):
-            criterion_plot(res, monotone=monotone, stack_multistart=stack_multistart)
+            criterion_plot(
+                res,
+                monotone=monotone,
+                stack_multistart=stack_multistart,
+                exploration=exploration,
+            )
     else:
-        criterion_plot(res, monotone=monotone, stack_multistart=stack_multistart)
+        criterion_plot(
+            res,
+            monotone=monotone,
+            stack_multistart=stack_multistart,
+            exploration=exploration,
+        )
 
     for _res in res:
         params_plot(_res)
 
 
-def test_criterion_plot_logging_and_results_object():
+def test_criterion_plot_different_input_types():
 
     _minimize({"algorithm": "scipy_lbfgsb", "logging": "test.db"}),
     res = ["test.db", _minimize({"algorithm": "scipy_neldermead"})]

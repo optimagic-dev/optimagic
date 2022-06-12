@@ -1,6 +1,6 @@
-"""Functions to read data from the database used for logging.
+"""Functions to read data from the database used for loggingg
 
-The functions in the module are meant for end users of estimagic.
+teps)he functions in the module are meant for end users of estimagic.
 They do not require any knowledge of databases.
 
 When using them internally (e.g. in the dashboard), make sure to supply a database to
@@ -218,10 +218,15 @@ def _read_multistart_optimization_history(
 
     Returns:
         tuple:
-        - np.ndarray: history that led to lowest criterion
-        - np.ndarray: all other histories, sorted by descending criterion endpoint
+        - dict: history that led to lowest criterion
+        - dict: all other histories, sorted by descending criterion endpoint
+        - dict: exploration phase
 
     """
+    # ==================================================================================
+    # Process raw data
+    # ==================================================================================
+    steps = read_steps_table(database)
 
     raw_res, _ = read_new_rows(
         database=database,
@@ -243,23 +248,49 @@ def _read_multistart_optimization_history(
     times -= times[0]
     history["runtime"] = times
 
+    # ==================================================================================
+    # Format data as data frames
+    # ==================================================================================
     df = pd.DataFrame(history)
+    df = df.merge(steps[["rowid", "type"]], left_on="step", right_on="rowid")
+    df = df.drop(columns="rowid")
+
+    # ==================================================================================
+    # Extract data from df
+    # ==================================================================================
+    exploration = df.query("type == 'exploration'").drop(columns=["step", "type"])
+
+    histories = df.query("type == 'optimization'")
+    histories = histories.drop(columns="type")
+    histories = histories.set_index("step", append=True)
+
+    # ==================================================================================
+    # The best history is given by the history that attains the global minimum or
+    # maximum. All other histories are defined as local histories.
 
     if direction == "minimize":
-        best = df[["criterion", "step"]].groupby("step").min()["criterion"]
-        idx = best.index
-        best_index = idx[best.argmin()]  # noqa: F841
+        best_idx = (
+            histories["criterion"].groupby(level="step").min().idxmin()
+        )  # noqa: F841
+        exploration = exploration.sort_values(by="criterion", ascending=True)
     elif direction == "maximize":
-        best = df[["criterion", "step"]].groupby("step").max()["criterion"]
-        idx = best.index
-        best_index = idx[best.argmax()]  # noqa: F841
+        best_idx = (
+            histories["criterion"].groupby(level="step").max().idxmax()
+        )  # noqa: F841
+        exploration = exploration.sort_values(by="criterion", ascending=False)
+    else:
+        raise ValueError()
 
-    history = (
-        df.query("step == @best_index").drop(columns="step").to_dict(orient="list")
-    )
-    local_histories = (
-        df.query("step != @best_index").drop(columns="step").to_dict(orient="list")
-    )
-    local_histories = None if len(local_histories) == 0 else None
+    history = histories.xs(best_idx, level="step").to_dict(orient="list")
 
-    return history, local_histories
+    exploration = exploration.to_dict(orient="list")
+
+    local_histories = []
+    for idx in histories.index.get_level_values("step").unique().difference([best_idx]):
+        _local_history = histories.xs(idx, level="step").to_dict(orient="list")
+        local_histories.append(_local_history)
+
+    local_histories = None if len(local_histories) == 0 else local_histories
+    exploration = None if len(exploration) == 0 else exploration
+
+    return history, local_histories, exploration
