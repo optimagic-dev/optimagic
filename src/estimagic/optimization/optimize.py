@@ -625,7 +625,6 @@ def _optimize(
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
-        func=criterion,
         params=params,
         constraints=constraints,
         lower_bounds=lower_bounds,

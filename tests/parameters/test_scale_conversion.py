@@ -7,14 +7,6 @@ from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 
 
-def func_scalar(x):
-    return (x**2).sum()
-
-
-def func_vector(x):
-    return x.reshape(2, -1) ** 2
-
-
 TEST_CASES = {
     "start_values": FlatParams(
         values=np.array([0, 1, 1, 1, 1, 1]),
@@ -26,12 +18,6 @@ TEST_CASES = {
         values=np.full(6, 0.5),
         lower_bounds=np.zeros(6),
         upper_bounds=np.ones(6),
-        names=None,
-    ),
-    "gradient": FlatParams(
-        values=np.array([0, 0.5, 0.5, 0.5, 0.5, 0.5]),
-        lower_bounds=np.array([-2, 0, 1 / 4, 2 / 6, 3 / 8, 4 / 10]),
-        upper_bounds=np.array([2, 1, 3 / 4, 4 / 6, 5 / 8, 6 / 10]),
         names=None,
     ),
 }
@@ -56,7 +42,6 @@ def test_get_scale_converter_active(method, expected):
 
     converter, scaled = get_scale_converter(
         flat_params=params,
-        func=func_scalar,
         scaling=True,
         scaling_options=scaling_options,
     )
@@ -87,7 +72,6 @@ def test_scale_conversion_fast_path():
 
     converter, scaled = get_scale_converter(
         flat_params=params,
-        func=func_scalar,
         scaling=False,
         scaling_options=None,
     )
