@@ -7,19 +7,6 @@ from estimagic.visualization.history_plots import criterion_plot
 from estimagic.visualization.history_plots import params_plot
 
 
-def _minimize(kwargs):
-    _res = minimize(
-        criterion=lambda x: x @ x,
-        params=np.arange(5),
-        soft_lower_bounds=np.full(5, -1),
-        soft_upper_bounds=np.full(5, 6),
-        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
-        log_options={"fast_logging": True},
-        **kwargs,
-    )
-    return _res
-
-
 @pytest.fixture()
 def minimize_result():
 
@@ -27,10 +14,19 @@ def minimize_result():
     for multistart in [True, False]:
         res = []
         for algorithm in ["scipy_neldermead", "scipy_lbfgsb"]:
-            _res = _minimize({"algorithm": algorithm, "multistart": multistart})
+            _res = minimize(
+                criterion=lambda x: x @ x,
+                params=np.arange(5),
+                algorithm=algorithm,
+                soft_lower_bounds=np.full(5, -1),
+                soft_upper_bounds=np.full(5, 6),
+                multistart_options={
+                    "n_samples": 1000,
+                    "convergence.max_discoveries": 5,
+                },
+            )
             res.append(_res)
         out[multistart] = res
-
     return out
 
 
@@ -59,23 +55,55 @@ def test_criterion_plot_list_input(
                 res,
                 monotone=monotone,
                 stack_multistart=stack_multistart,
-                exploration=exploration,
+                show_exploration=exploration,
             )
     else:
         criterion_plot(
             res,
             monotone=monotone,
             stack_multistart=stack_multistart,
-            exploration=exploration,
+            show_exploration=exploration,
         )
 
+
+@pytest.mark.parametrize(
+    "multistart, monotone, stack_multistart, exploration", TEST_CASES
+)
+def test_params_plot_list_input(
+    minimize_result, multistart, monotone, stack_multistart, exploration
+):
+    res = minimize_result[multistart]
     for _res in res:
         params_plot(_res)
 
 
 def test_criterion_plot_different_input_types():
 
-    _minimize({"algorithm": "scipy_lbfgsb", "logging": "test.db"}),
-    res = ["test.db", _minimize({"algorithm": "scipy_neldermead"})]
+    # logged result
+    minimize(
+        criterion=lambda x: x @ x,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+        soft_lower_bounds=np.full(5, -1),
+        soft_upper_bounds=np.full(5, 6),
+        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
+        log_options={"fast_logging": True},
+        logging="test.db",
+    )
 
-    criterion_plot(res)
+    res = minimize(
+        criterion=lambda x: x @ x,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+        soft_lower_bounds=np.full(5, -1),
+        soft_upper_bounds=np.full(5, 6),
+        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
+    )
+
+    results = ["test.db", res]
+
+    criterion_plot(results)
+    criterion_plot(results, monotone=True)
+    criterion_plot(results, stack_multistart=True)
+    criterion_plot(results, monotone=True, stack_multistart=True)
+    criterion_plot(results, show_exploration=True)
