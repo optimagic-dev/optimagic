@@ -20,6 +20,7 @@ def minimize_result():
                 algorithm=algorithm,
                 soft_lower_bounds=np.full(5, -1),
                 soft_upper_bounds=np.full(5, 6),
+                multistart=multistart,
                 multistart_options={
                     "n_samples": 1000,
                     "convergence.max_discoveries": 5,
@@ -28,6 +29,11 @@ def minimize_result():
             res.append(_res)
         out[multistart] = res
     return out
+
+
+# ======================================================================================
+# Test criterion plot
+# ======================================================================================
 
 
 TEST_CASES = list(itertools.product([True, False], repeat=4))
@@ -50,11 +56,14 @@ def test_criterion_plot_list_input(
     )
 
 
-@pytest.mark.parametrize("multistart", [True, False])
-def test_params_plot_list_input(minimize_result, multistart):
-    res = minimize_result[multistart]
-    for _res in res:
-        params_plot(_res)
+def test_criterion_plot_name_input(minimize_result):
+    result = minimize_result[False]
+    criterion_plot(result[0], names="neldermead", palette="blue")
+
+
+def test_criterion_plot_wrong_results():
+    with pytest.raises(ValueError):
+        criterion_plot([10, np.array([1, 2, 3])])
 
 
 def test_criterion_plot_different_input_types():
@@ -66,6 +75,7 @@ def test_criterion_plot_different_input_types():
         algorithm="scipy_lbfgsb",
         soft_lower_bounds=np.full(5, -1),
         soft_upper_bounds=np.full(5, 6),
+        multistart=True,
         multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
         log_options={"fast_logging": True},
         logging="test.db",
@@ -77,6 +87,7 @@ def test_criterion_plot_different_input_types():
         algorithm="scipy_lbfgsb",
         soft_lower_bounds=np.full(5, -1),
         soft_upper_bounds=np.full(5, 6),
+        multistart=True,
         multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
     )
 
@@ -96,3 +107,15 @@ def test_criterion_plot_wrong_inputs():
 
     with pytest.raises(ValueError):
         criterion_plot(["bla", "bla"], names="blub")
+
+
+# ======================================================================================
+# Params plot
+# ======================================================================================
+
+
+@pytest.mark.parametrize("multistart", [True, False])
+def test_params_plot_list_input(minimize_result, multistart):
+    res = minimize_result[multistart]
+    for _res in res:
+        params_plot(_res)

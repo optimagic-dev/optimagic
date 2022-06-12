@@ -1,6 +1,6 @@
-"""Functions to read data from the database used for loggingg
+"""Functions to read data from the database used for logging.
 
-teps)he functions in the module are meant for end users of estimagic.
+The functions in the module are meant for end users of estimagic.
 They do not require any knowledge of databases.
 
 When using them internally (e.g. in the dashboard), make sure to supply a database to
@@ -283,7 +283,9 @@ def _read_multistart_optimization_history(
 
     history = histories.xs(best_idx, level="step").to_dict(orient="list")
 
-    exploration = exploration.to_dict(orient="list")
+    exploration = None if len(exploration) == 0 else exploration
+    if exploration is not None:
+        exploration = exploration.to_dict(orient="list")
 
     local_histories = []
     for idx in histories.index.get_level_values("step").unique().difference([best_idx]):
@@ -291,6 +293,5 @@ def _read_multistart_optimization_history(
         local_histories.append(_local_history)
 
     local_histories = None if len(local_histories) == 0 else local_histories
-    exploration = None if len(exploration) == 0 else exploration
 
     return history, local_histories, exploration
