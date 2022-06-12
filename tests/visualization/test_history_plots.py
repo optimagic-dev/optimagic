@@ -30,14 +30,7 @@ def minimize_result():
     return out
 
 
-TEST_CASES = list(
-    itertools.product(
-        [True, False],  # multistart
-        [True, False],  # monotone
-        [True, False],  # stack_multistart
-        [True, False],  # exploration
-    )
-)
+TEST_CASES = list(itertools.product([True, False], repeat=4))
 
 
 @pytest.mark.parametrize(
@@ -49,29 +42,16 @@ def test_criterion_plot_list_input(
 
     res = minimize_result[multistart]
 
-    if stack_multistart and monotone:
-        with pytest.raises(ValueError):
-            criterion_plot(
-                res,
-                monotone=monotone,
-                stack_multistart=stack_multistart,
-                show_exploration=exploration,
-            )
-    else:
-        criterion_plot(
-            res,
-            monotone=monotone,
-            stack_multistart=stack_multistart,
-            show_exploration=exploration,
-        )
+    criterion_plot(
+        res,
+        monotone=monotone,
+        stack_multistart=stack_multistart,
+        show_exploration=exploration,
+    )
 
 
-@pytest.mark.parametrize(
-    "multistart, monotone, stack_multistart, exploration", TEST_CASES
-)
-def test_params_plot_list_input(
-    minimize_result, multistart, monotone, stack_multistart, exploration
-):
+@pytest.mark.parametrize("multistart", [True, False])
+def test_params_plot_list_input(minimize_result, multistart):
     res = minimize_result[multistart]
     for _res in res:
         params_plot(_res)
@@ -107,3 +87,12 @@ def test_criterion_plot_different_input_types():
     criterion_plot(results, stack_multistart=True)
     criterion_plot(results, monotone=True, stack_multistart=True)
     criterion_plot(results, show_exploration=True)
+
+
+def test_criterion_plot_wrong_inputs():
+
+    with pytest.raises(ValueError):
+        criterion_plot("bla", names=[1, 2])
+
+    with pytest.raises(ValueError):
+        criterion_plot(["bla", "bla"], names="blub")

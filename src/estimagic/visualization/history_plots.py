@@ -53,6 +53,9 @@ def criterion_plot(
     # Process inputs
     # ==================================================================================
 
+    if not isinstance(names, list) and names is not None:
+        names = [names]
+
     if not isinstance(results, dict):
         if isinstance(results, list):
             names = range(len(results)) if names is None else names
