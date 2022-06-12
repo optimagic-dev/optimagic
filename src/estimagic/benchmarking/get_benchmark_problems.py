@@ -162,13 +162,29 @@ def _get_raw_problems(name):
             "chandheq",
             "arglble",
         }
+        subset_add_steps = {
+            "rosenbrock_good_start",
+            "cube_5",
+            "chebyquad_10",
+        }
         raw_problems = {}
         for k, v in MORE_WILD_PROBLEMS.items():
             if k in subset_mw:
                 raw_problems[k] = v
+            if k in subset_add_steps:
+                problem = v.copy()
+                raw_func = problem["criterion"]
+
+                def step_func(x):
+                    return raw_func(x.round(3))
+
+                problem["criterion"] = step_func
+                raw_problems[f"{k}_with_steps"] = problem
+
         for k, v in CARTIS_ROBERTS_PROBLEMS.items():
             if k in subset_cr:
                 raw_problems[k] = v
+
     else:
         raise NotImplementedError()
     return raw_problems
