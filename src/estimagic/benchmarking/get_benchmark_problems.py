@@ -115,20 +115,60 @@ def _get_raw_problems(name):
         raw_problems = CARTIS_ROBERTS_PROBLEMS
     elif name == "example":
         subset = {
-            "linear_full_rank_good_start",
             "rosenbrock_good_start",
             "helical_valley_good_start",
             "powell_singular_good_start",
             "freudenstein_roth_good_start",
             "bard_good_start",
             "box_3d",
-            "jennrich_sampson",
             "brown_dennis_good_start",
             "chebyquad_6",
             "bdqrtic_8",
             "mancino_5_good_start",
         }
         raw_problems = {k: v for k, v in MORE_WILD_PROBLEMS.items() if k in subset}
+    elif name == "estimagic":
+        subset_mw = {
+            "cube_8",
+            "chebyquad_6",
+            "bdqrtic_8",
+            "linear_full_rank_bad_start",
+            "chebyquad_7",
+            "osborne_two_bad_start",
+            "bdqrtic_10",
+            "bdqrtic_11",
+            "heart_eight_bad_start",
+            "mancino_5_bad_start",
+            "chebyquad_8",
+            "cube_6",
+            "cube_5",
+            "bdqrtic_12",
+            "chebyquad_10",
+            "chebyquad_9",
+            "chebyquad_11",
+            "mancino_8",
+            "mancino_10",
+            "mancino_12_bad_start",
+        }
+        subset_cr = {
+            "hatfldg",
+            "bratu_3d",
+            "cbratu_2d",
+            "chnrsbne",
+            "bratu_2d",
+            "vardimne",
+            "penalty_1",
+            "arglale",
+            "chandheq",
+            "arglble",
+        }
+        raw_problems = {}
+        for k, v in MORE_WILD_PROBLEMS.items():
+            if k in subset_mw:
+                raw_problems[k] = v
+        for k, v in CARTIS_ROBERTS_PROBLEMS.items():
+            if k in subset_cr:
+                raw_problems[k] = v
     else:
         raise NotImplementedError()
     return raw_problems
