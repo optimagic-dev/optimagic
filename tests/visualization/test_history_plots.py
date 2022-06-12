@@ -32,6 +32,36 @@ def minimize_result():
 
 
 # ======================================================================================
+# Params plot
+# ======================================================================================
+
+
+TEST_CASES = list(
+    itertools.product(
+        [True, False],  # multistart
+        [None, lambda x: x[:2]],  # selector
+        [None, 50],  # max_evaluations
+        [True, False],  # show_exploration
+    )
+)
+
+
+@pytest.mark.parametrize(
+    "multistart, selector, max_evaluations, show_exploration", TEST_CASES
+)
+def test_params_plot_multistart(
+    minimize_result, multistart, selector, max_evaluations, show_exploration
+):
+    for _res in minimize_result[multistart]:
+        params_plot(
+            _res,
+            selector=selector,
+            max_evaluations=max_evaluations,
+            show_exploration=show_exploration,
+        )
+
+
+# ======================================================================================
 # Test criterion plot
 # ======================================================================================
 
@@ -107,15 +137,3 @@ def test_criterion_plot_wrong_inputs():
 
     with pytest.raises(ValueError):
         criterion_plot(["bla", "bla"], names="blub")
-
-
-# ======================================================================================
-# Params plot
-# ======================================================================================
-
-
-@pytest.mark.parametrize("multistart", [True, False])
-def test_params_plot_list_input(minimize_result, multistart):
-    res = minimize_result[multistart]
-    for _res in res:
-        params_plot(_res)

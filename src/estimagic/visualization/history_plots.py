@@ -86,15 +86,15 @@ def criterion_plot(
 
         if isinstance(res, OptimizeResult):
             _data = _extract_plotting_data_from_results_object(
-                res, stack_multistart, show_exploration
+                res, stack_multistart, show_exploration, plot_name="criterion_plot"
             )
         elif isinstance(res, (str, Path)):
             _data = _extract_plotting_data_from_database(
                 res, stack_multistart, show_exploration
             )
         else:
-            msg = "res must be an OptimizeResult or a path to a log file, but is type "
-            f" {type(res)}."
+            msg = "results must be (or contain) an OptimizeResult or a path to a log"
+            f"file, but is type {type(res)}."
             raise ValueError(msg)
 
         _data["name"] = name
@@ -186,36 +186,58 @@ def criterion_plot(
 
 
 def params_plot(
-    res,
+    result,
     selector=None,
     max_evaluations=None,
     template=PLOTLY_TEMPLATE,
+    show_exploration=False,
 ):
     """Plot the params history of an optimization.
 
     Args:
-        res (OptimizeResult): An optimization result with collected history.
+        result (Union[OptimizeResult, pathlib.Path, str]): An optimization results with
+            collected history. If dict, then the key is used as the name in a legend.
         selector (callable): A callable that takes params and returns a subset
             of params. If provided, only the selected subset of params is plotted.
         max_evaluations (int): Clip the criterion history after that many entries.
-        template (str): A plotly template.
+        template (str): The template for the figure. Default is "plotly_white".
+        show_exploration (bool): If True, exploration samples of a multistart
+            optimization are visualized. Default is False.
+
+    Returns:
+        plotly.graph_objs._figure.Figure: The figure.
 
     """
-    if isinstance(res, OptimizeResult):
-        if res.history is None:
-            raise ValueError(
-                "params_plot requires a optimize_result with history. "
-                "Enable history collection by setting collect_history=True "
-                "when calling maximize or minimize."
-            )
-        history = res.history["params"]
-        start_params = res.start_params
-    elif isinstance(res, (str, Path)):
-        reader = OptimizeLogReader(res)
-        start_params = reader.read_start_params()
-        history = reader.read_history()["params"]
+    # ==================================================================================
+    # Process inputs
+    # ==================================================================================
+
+    if isinstance(result, OptimizeResult):
+        data = _extract_plotting_data_from_results_object(
+            result,
+            stack_multistart=True,
+            show_exploration=show_exploration,
+            plot_name="params_plot",
+        )
+        start_params = result.start_params
+    elif isinstance(result, (str, Path)):
+        data = _extract_plotting_data_from_database(
+            result,
+            stack_multistart=True,
+            show_exploration=show_exploration,
+        )
+        start_params = data["start_params"]
     else:
-        raise ValueError("res must be an OptimizeResult or a path to a log file.")
+        raise ValueError("result must be an OptimizeResult or a path to a log file.")
+
+    if data["stacked_local_histories"] is not None:
+        history = data["stacked_local_histories"]["params"]
+    else:
+        history = data["history"]["params"]
+
+    # ==================================================================================
+    # Create figure
+    # ==================================================================================
 
     fig = go.Figure()
 
@@ -247,19 +269,20 @@ def params_plot(
         template=template,
         xaxis_title_text="No. of criterion evaluations",
         yaxis_title_text="Parameter value",
+        legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
     )
 
     return fig
 
 
-def _extract_plotting_data_from_results_object(res, stack_multistart, show_exploration):
+def _extract_plotting_data_from_results_object(
+    res, stack_multistart, show_exploration, plot_name
+):
 
     if res.history is None:
-        raise ValueError(
-            "Criterion_plot requires an optimize_result with history. "
-            "Enable history collection by setting collect_history=True "
-            "when calling maximize or minimize."
-        )
+        msg = f"{plot_name} requires an optimize result with history. Enable history "
+        "collection by setting collect_history=True when calling maximize or minimize."
+        raise ValueError(msg)
 
     is_multistart = res.multistart_info is not None
 
@@ -301,7 +324,7 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
     history, local_histories, exploration = reader.read_multistart_history(direction)
 
     if stack_multistart and local_histories is not None:
-        stacked = _get_stacked_local_histories(local_histories)
+        stacked = _get_stacked_local_histories(local_histories, history)
         if show_exploration:
             stacked["params"] = exploration["params"][::-1] + stacked["params"]
             stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]
@@ -314,12 +337,24 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         "is_multistart": local_histories is not None,
         "local_histories": local_histories,
         "stacked_local_histories": stacked,
+        "start_params": reader.read_start_params(),
     }
     return data
 
 
-def _get_stacked_local_histories(local_histories):
-    """Transform a list of dict (of same structure) to a dict of concatenated lists."""
+def _get_stacked_local_histories(local_histories, history=None):
+    """Stack local histories.
+
+    Local histories is a list of dictionaries, each of the same structure. We transform
+    this to a dictionary of lists. Finally, when the data is read from the database we
+    append the best history at the end.
+
+    """
+    # list of dicts to dict of lists
     stacked = {key: [h[key] for h in local_histories] for key in local_histories[0]}
+    # flatten inner lists
     stacked = {key: list(itertools.chain(*value)) for key, value in stacked.items()}
+    # append additional history is necessary
+    if history is not None:
+        stacked = {key: value + history[key] for key, value in stacked.items()}
     return stacked
