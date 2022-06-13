@@ -26,7 +26,6 @@ def sos_gradient(params):
 SCALING_OPTIONS = [
     {"method": "start_values"},
     {"method": "bounds"},
-    {"method": "gradient"},
 ]
 
 PARAMETRIZATION = list(itertools.product(ALGORITHMS, SCALING_OPTIONS))
