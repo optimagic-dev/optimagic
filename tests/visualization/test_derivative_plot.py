@@ -1,5 +1,3 @@
-import itertools
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -69,16 +67,6 @@ def test__select_eval_with_lowest_and_highest_step():
     expected = np.array([[0.0, 1.1], [0.3, 10]])
 
     assert_array_equal(got, expected)
-
-
-def _powerset(iterable):
-    s = list(iterable)
-    pset = itertools.chain.from_iterable(
-        itertools.combinations(s, r) for r in range(len(s) + 1)
-    )
-    pset = [e for e in pset if len(e) > 0]
-    pset = [x if len(x) > 1 else x[0] for x in pset]
-    return pset
 
 
 def f1(x):

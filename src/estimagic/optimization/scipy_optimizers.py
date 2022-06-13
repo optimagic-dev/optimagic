@@ -59,8 +59,12 @@ from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.parameters.nonlinear_constraints import (
+    equality_as_inequality_constraints,
+)
 from estimagic.utilities import calculate_trustregion_initial_radius
 from scipy.optimize import Bounds
+from scipy.optimize import NonlinearConstraint
 
 
 @mark_minimizer(name="scipy_lbfgsb")
@@ -102,7 +106,7 @@ def scipy_lbfgsb(
     return process_scipy_result(res)
 
 
-@mark_minimizer(name="scipy_lbfgsb")
+@mark_minimizer(name="scipy_slsqp")
 def scipy_slsqp(
     criterion,
     derivative,
@@ -110,6 +114,7 @@ def scipy_slsqp(
     lower_bounds,
     upper_bounds,
     *,
+    nonlinear_constraints=(),
     convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
 ):
@@ -131,6 +136,7 @@ def scipy_slsqp(
         method="SLSQP",
         jac=derivative,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        constraints=nonlinear_constraints,
         options=options,
     )
 
@@ -304,6 +310,7 @@ def scipy_cobyla(
     criterion,
     x,
     *,
+    nonlinear_constraints=(),
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     trustregion_initial_radius=None,
@@ -318,10 +325,14 @@ def scipy_cobyla(
 
     options = {"maxiter": stopping_max_iterations, "rhobeg": trustregion_initial_radius}
 
+    # cannot handle equality constraints
+    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
+
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
         method="COBYLA",
+        constraints=nonlinear_constraints,
         options=options,
         tol=convergence_relative_params_tolerance,
     )
@@ -390,6 +401,7 @@ def scipy_trust_constr(
     lower_bounds,
     upper_bounds,
     *,
+    nonlinear_constraints=(),
     convergence_absolute_gradient_tolerance=1e-08,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
@@ -410,12 +422,16 @@ def scipy_trust_constr(
         "initial_tr_radius": trustregion_initial_radius,
     }
 
+    # cannot handle equality constraints
+    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
+
     res = scipy.optimize.minimize(
         fun=criterion_and_derivative,
         jac=True,
         x0=x,
         method="trust-constr",
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        constraints=_get_scipy_constraints(nonlinear_constraints),
         options=options,
     )
 
@@ -442,6 +458,26 @@ def process_scipy_result(scipy_results_obj):
 
 def _get_scipy_bounds(lower_bounds, upper_bounds):
     return Bounds(lb=lower_bounds, ub=upper_bounds)
+
+
+def _get_scipy_constraints(constraints):
+    """Transform internal nonlinear constraints to scipy readable format.
+
+    This format is currently only used by scipy_trust-constr.
+
+    """
+    scipy_constraints = [_internal_to_scipy_constraint(c) for c in constraints]
+    return scipy_constraints
+
+
+def _internal_to_scipy_constraint(c):
+    new_constr = NonlinearConstraint(
+        fun=c["fun"],
+        lb=np.zeros(c["n_constr"]),
+        ub=np.tile(np.inf, c["n_constr"]),
+        jac=c["jac"],
+    )
+    return new_constr
 
 
 def _scipy_least_squares(

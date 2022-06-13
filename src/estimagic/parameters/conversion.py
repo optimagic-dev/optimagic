@@ -10,7 +10,6 @@ from estimagic.parameters.tree_conversion import get_tree_converter
 
 
 def get_converter(
-    func,
     params,
     constraints,
     lower_bounds,
@@ -36,8 +35,6 @@ def get_converter(
     If possible, fast paths for some or all transformations are chosen.
 
     Args:
-        func (callable): The criterion function. Only used to calculate a scaling
-            factor.
         params (pytree): The user provided parameters.
         constraints (list): The user provided constraints.
         lower_bounds (pytree): The user provided lower_bounds
@@ -103,17 +100,8 @@ def get_converter(
         flat_params=flat_params, flat_constraints=flat_constraints
     )
 
-    def _helper(x):
-        x_external = space_converter.params_from_internal(x)
-        x_tree = tree_converter.params_unflatten(x_external)
-        f_raw = func(x_tree)
-        f_flat = tree_converter.func_flatten(f_raw)
-        f_agg = aggregate_func_output_to_value(f_flat, primary_key)
-        return f_agg
-
     scale_converter, scaled_params = get_scale_converter(
         flat_params=internal_params,
-        func=_helper,
         scaling=scaling,
         scaling_options=scaling_options,
     )
@@ -143,8 +131,11 @@ def get_converter(
             raise ValueError(msg)
         return out
 
-    def _derivative_to_internal(derivative_eval, x):
-        jacobian = tree_converter.derivative_flatten(derivative_eval)
+    def _derivative_to_internal(derivative_eval, x, jac_is_flat=False):
+        if jac_is_flat:
+            jacobian = derivative_eval
+        else:
+            jacobian = tree_converter.derivative_flatten(derivative_eval)
         x_unscaled = scale_converter.params_from_internal(x)
         jac_with_space_conversion = space_converter.derivative_to_internal(
             jacobian, x_unscaled
@@ -224,10 +215,14 @@ def _fast_params_from_internal(x, return_type="tree"):
 
 
 def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
+    def _fast_derivative_to_internal(derivative_eval, x, jac_is_flat=True):
+        # make signature compatible with non-fast path
+        return derivative_eval
+
     converter = Converter(
         params_to_internal=lambda params: params.astype(float),
         params_from_internal=_fast_params_from_internal,
-        derivative_to_internal=lambda derivative_eval, x: derivative_eval,
+        derivative_to_internal=_fast_derivative_to_internal,
         func_to_internal=UNPACK_FUNCTIONS[primary_key],
         has_transforming_constraints=False,
     )

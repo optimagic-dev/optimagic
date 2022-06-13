@@ -27,6 +27,7 @@ from estimagic.parameters.conversion import Converter
 from estimagic.parameters.conversion import get_converter
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from estimagic.utilities import to_pickle
 
 
 def estimate_ml(
@@ -81,7 +82,7 @@ def estimate_ml(
         upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
             no upper bound.
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
             The dashboard can only be used when logging is used.
@@ -211,8 +212,7 @@ def estimate_ml(
     # Get the converter for params and function outputs
     # ==================================================================================
 
-    converter, flat_estimates = get_converter(
-        func=loglike,
+    converter, internal_estimates = get_converter(
         params=estimates,
         constraints=constraints,
         lower_bounds=lower_bounds,
@@ -241,9 +241,9 @@ def estimate_ml(
 
         jac_res = first_derivative(
             func=func,
-            params=flat_estimates.values,
-            lower_bounds=flat_estimates.lower_bounds,
-            upper_bounds=flat_estimates.upper_bounds,
+            params=internal_estimates.values,
+            lower_bounds=internal_estimates.lower_bounds,
+            upper_bounds=internal_estimates.upper_bounds,
             **numdiff_options,
         )
 
@@ -284,9 +284,9 @@ def estimate_ml(
 
         hess_res = second_derivative(
             func=func,
-            params=flat_estimates.values,
-            lower_bounds=flat_estimates.lower_bounds,
-            upper_bounds=flat_estimates.upper_bounds,
+            params=internal_estimates.values,
+            lower_bounds=internal_estimates.lower_bounds,
+            upper_bounds=internal_estimates.upper_bounds,
             **numdiff_options,
         )
         int_hess = hess_res["derivative"]
@@ -335,7 +335,7 @@ def estimate_ml(
         _internal_jacobian=int_jac,
         _internal_hessian=int_hess,
         _design_info=design_info,
-        _flat_params=flat_estimates,
+        _flat_params=internal_estimates,
         _has_constraints=constraints not in [None, []],
     )
 
@@ -615,7 +615,7 @@ class LikelihoodResult:
 
         summary = calculate_inference_quantities(
             estimates=self.params,
-            flat_estimates=self._flat_params,
+            internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,
         )
@@ -737,3 +737,12 @@ class LikelihoodResult:
         out = self._converter.params_from_internal(helper)
 
         return out
+
+    def to_pickle(self, path):
+        """Save the LikelihoodResult object to pickle.
+
+        Args:
+            path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
+        """
+        to_pickle(self, path=path)

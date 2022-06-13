@@ -6,6 +6,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from estimagic.utilities import to_pickle
 
 
 @dataclass
@@ -87,6 +88,15 @@ class OptimizeResult:
         msg = "\n\n".join(sections)
 
         return msg
+
+    def to_pickle(self, path):
+        """Save the OptimizeResult object to pickle.
+
+        Args:
+            path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
+        """
+        to_pickle(self, path=path)
 
 
 def _format_convergence_report(report, algorithm):

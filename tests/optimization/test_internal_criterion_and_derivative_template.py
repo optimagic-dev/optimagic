@@ -65,7 +65,6 @@ def test_criterion_and_derivative_template(
     base_inputs, direction, crit, deriv, crit_and_deriv
 ):
     converter, _ = get_converter(
-        func=crit,
         params=base_inputs["params"],
         constraints=None,
         lower_bounds=None,
@@ -115,7 +114,6 @@ def test_criterion_and_derivative_template(
 @pytest.mark.parametrize("direction", directions)
 def test_internal_criterion_with_penalty(base_inputs, direction):
     converter, _ = get_converter(
-        func=sos_scalar_criterion,
         params=base_inputs["params"],
         constraints=None,
         lower_bounds=None,

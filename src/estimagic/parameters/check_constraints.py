@@ -86,7 +86,7 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
                 explanation = "Equality condition of linear constraint violated"
                 raise InvalidParamsError(_msg(explanation))
         elif typ == "equality":
-            if len(set(subset.tolist())) != 1:
+            if len(set(subset.tolist())) > 1:
                 raise InvalidParamsError(_msg())
 
 

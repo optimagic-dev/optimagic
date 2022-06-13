@@ -2,13 +2,11 @@ from functools import partial
 from typing import NamedTuple
 
 import numpy as np
-from estimagic.differentiation.derivatives import first_derivative
 from estimagic.parameters.tree_conversion import FlatParams
 
 
 def get_scale_converter(
     flat_params,
-    func,
     scaling,
     scaling_options,
 ):
@@ -34,8 +32,11 @@ def get_scale_converter(
         return _fast_path_scale_converter(), flat_params
 
     scaling_options = {} if scaling_options is None else scaling_options
+    valid_keys = {"method", "clipping_value", "magnitude"}
+    scaling_options = {k: v for k, v in scaling_options.items() if k in valid_keys}
+
     factor, offset = calculate_scaling_factor_and_offset(
-        flat_params=flat_params, func=func, **scaling_options
+        flat_params=flat_params, **scaling_options
     )
 
     _params_to_internal = partial(
@@ -104,11 +105,9 @@ def _fast_path_scale_converter():
 
 def calculate_scaling_factor_and_offset(
     flat_params,
-    func,
     method="start_values",
     clipping_value=0.1,
     magnitude=1,
-    numdiff_options=None,
 ):
     x = flat_params.values
     lower_bounds = flat_params.lower_bounds
@@ -120,21 +119,9 @@ def calculate_scaling_factor_and_offset(
     elif method == "bounds":
         raw_factor = upper_bounds - lower_bounds
         scaling_offset = lower_bounds
-    elif method == "gradient":
-        numdiff_options = {} if numdiff_options is None else numdiff_options
-        default_numdiff_options = {
-            "scaling_factor": 100,
-            "lower_bounds": lower_bounds,
-            "upper_bounds": upper_bounds,
-            "error_handling": "raise",
-        }
 
-        numdiff_options = {**default_numdiff_options, **numdiff_options}
-
-        gradient = first_derivative(func, x, **numdiff_options)["derivative"]
-
-        raw_factor = np.clip(np.abs(gradient), clipping_value, np.inf)
-        scaling_offset = None
+    else:
+        raise ValueError(f"Invalid scaling method: {method}")
 
     scaling_factor = raw_factor / magnitude
 

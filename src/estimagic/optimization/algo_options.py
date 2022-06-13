@@ -179,6 +179,13 @@ r"""float: Threshold for when to call the safety step (:math:`\gamma_s`).
 
 """
 
+CONSTRAINTS_ABSOLUTE_TOLERANCE = 1e-5
+"""float: Allowed tolerance of the equality and inequality constraints for values to be
+considered 'feasible'.
+
+"""
+
+
 """
 -------------------------
 Trust Region Parameters
