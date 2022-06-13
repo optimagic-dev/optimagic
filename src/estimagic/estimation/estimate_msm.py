@@ -261,7 +261,6 @@ def estimate_msm(
         func_eval = {"contributions": sim_mom_eval}
 
     converter, internal_estimates = get_converter(
-        func=helper,
         params=estimates,
         constraints=constraints,
         lower_bounds=lower_bounds,

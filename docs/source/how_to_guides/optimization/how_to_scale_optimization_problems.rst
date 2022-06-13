@@ -25,8 +25,6 @@ Heuristics to improve scaling
 =============================
 
 
-
-
 Divide by absolute value of start parameters
 --------------------------------------------
 
@@ -115,60 +113,6 @@ become the same.
         scaling=True,
         scaling_options={"method": "bounds", "clipping_value": 0.0},
     )
-
-
-Divide by gradient
-------------------
-
-Dividing all parameters by the gradient of the criterion function at the start values
-means that around the start values the problem is scaled optimally. However, for very
-nonlinear functions, it does not guarantee optimal scaling anywhere else.
-
-In practice, we do not take the exact gradient, but a numerical gradient calculated with
-a very large step size (100 times larger than the rule of thumb for optimal step sizes
-by default). This is more robust for noisy or wiggly functions.
-
-**Advantages:**
-
-- Optimal scaling near start values
-- Less arbitrary than other methods
-
-**Disadvantages:**
-
-- Computationally expensive
-- Not robust for very noisy or very wiggly functions
-- Depends on start values
-- Parameters with zero gradient need special treatment
-- Numerical derivatives are themselves sensitive to scaling and the rule of thumb for
-  step sizes basically uses the ``"start_values"`` approach to solve this problem.
-
-**How to specify this scaling:**
-
-.. code-block:: python
-
-    def sphere(params):
-        return (params["value"] ** 2).sum()
-
-
-    start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
-    start_params["lower_bound"] = 0
-    start_params["upper_bound"] = 2 * np.arange(5) + 1
-
-    minimize(
-        criterion=sphere,
-        params=start_params,
-        algorithm="scipy_lbfgsb",
-        scaling=True,
-        scaling_options={
-            "method": "gradient",
-            "clipping_value": 0.1,
-            "numdiff_options": {"n_cores": 2, "scaling_factor": 100},
-        },
-    )
-
-The ``numdiff_options`` argument of the scaling options allow to configure the
-calculation of the numerical gradient. See :ref:`first_derivative` for available
-options.
 
 
 Influencing the magnitude of parameters

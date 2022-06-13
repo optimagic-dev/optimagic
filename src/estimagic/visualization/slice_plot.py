@@ -99,7 +99,6 @@ def slice_plot(
     func_eval = func(params)
 
     converter, flat_params = get_converter(
-        func=func,
         params=params,
         constraints=None,
         lower_bounds=lower_bounds,
