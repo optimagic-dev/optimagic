@@ -104,11 +104,14 @@ def _update_bounds_and_flatten(nan_tree, bounds, direction):
         invalid = {"names": [], "bounds": []}
         for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds):
 
-            if bounds_name in flat_nan_dict:
-                flat_nan_dict[bounds_name] = bounds_leaf
-            else:
-                invalid["names"].append(bounds_name)
-                invalid["bounds"].append(bounds_leaf)
+            # if a bounds leaf is None we treat it as saying the the corresponding
+            # subtree of params has no bounds.
+            if bounds_leaf is not None:
+                if bounds_name in flat_nan_dict:
+                    flat_nan_dict[bounds_name] = bounds_leaf
+                else:
+                    invalid["names"].append(bounds_name)
+                    invalid["bounds"].append(bounds_leaf)
 
         if invalid["bounds"]:
             msg = (
