@@ -14,7 +14,6 @@ def count_free_params(params, constraints=None):
 
     """
     _, flat_params = get_converter(
-        func=None,
         params=params,
         constraints=constraints,
         lower_bounds=None,
@@ -41,7 +40,6 @@ def check_constraints(params, constraints):
 
     """
     get_converter(
-        func=None,
         params=params,
         constraints=constraints,
         lower_bounds=None,

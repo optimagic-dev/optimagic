@@ -53,9 +53,9 @@ def test_run_benchmark_list_options():
     )
 
     expected_keys = {
-        ("linear_full_rank_good_start", "scipy_lbfgsb"),
+        ("helical_valley_good_start", "scipy_lbfgsb"),
         ("rosenbrock_good_start", "scipy_lbfgsb"),
-        ("linear_full_rank_good_start", "scipy_neldermead"),
+        ("helical_valley_good_start", "scipy_neldermead"),
         ("rosenbrock_good_start", "scipy_neldermead"),
     }
     assert set(result) == expected_keys

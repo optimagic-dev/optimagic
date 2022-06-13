@@ -213,7 +213,6 @@ def estimate_ml(
     # ==================================================================================
 
     converter, internal_estimates = get_converter(
-        func=loglike,
         params=estimates,
         constraints=constraints,
         lower_bounds=lower_bounds,

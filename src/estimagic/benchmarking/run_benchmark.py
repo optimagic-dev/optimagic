@@ -9,6 +9,7 @@ TO-DO:
 import numpy as np
 import pandas as pd
 from estimagic import batch_evaluators
+from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
@@ -23,6 +24,8 @@ def run_benchmark(
     n_cores=1,
     error_handling="continue",
     seed=None,
+    max_criterion_evaluations=1_000,
+    disable_convergence=True,
 ):
     """Run problems with different optimize options.
 
@@ -43,6 +46,13 @@ def run_benchmark(
         n_cores (int): Number of optimizations that is run in parallel. Note that in
             addition to that an optimizer might parallelize.
         error_handling (str): One of "raise", "continue".
+        max_criterion_evaluations (int): Shortcut to set the maximum number of
+            criterion evaluations instead of passing them in via algo options. In case
+            an optimizer does not support this stopping criterion, we also use this as
+            max iterations.
+        disable_convergence (bool): If True, we set extremely strict convergence
+            convergence criteria by default, such that most optimizers will exploit
+            their full computation budget set by max_criterion_evaluations.
 
     Returns:
         dict: Nested Dictionary with information on the benchmark run. The outer keys
@@ -56,7 +66,11 @@ def run_benchmark(
         batch_evaluator = getattr(
             batch_evaluators, f"{batch_evaluator}_batch_evaluator"
         )
-    opt_options = _process_optimize_options(optimize_options)
+    opt_options = _process_optimize_options(
+        optimize_options,
+        max_evals=max_criterion_evaluations,
+        disable_convergence=disable_convergence,
+    )
 
     kwargs_list, names = _get_kwargs_list_and_names(problems, opt_options)
 
@@ -73,7 +87,7 @@ def run_benchmark(
     return results
 
 
-def _process_optimize_options(raw_options):
+def _process_optimize_options(raw_options, max_evals, disable_convergence):
     if not isinstance(raw_options, dict):
         dict_options = {}
         for option in raw_options:
@@ -84,10 +98,29 @@ def _process_optimize_options(raw_options):
     else:
         dict_options = raw_options
 
+    default_algo_options = {}
+    if max_evals is not None:
+        default_algo_options["stopping.max_criterion_evaluations"] = max_evals
+        default_algo_options["stopping.max_iterations"] = max_evals
+    if disable_convergence:
+        default_algo_options["convergence.relative_criterion_tolerance"] = 1e-14
+        default_algo_options["convergence.relative_params_tolerance"] = 1e-14
+        default_algo_options["convergence.relative_gradient_tolerance"] = 1e-14
+
     out_options = {}
     for name, option in dict_options.items():
         if not isinstance(option, dict):
             option = {"algorithm": option}
+        else:
+            option = option.copy()
+
+        algo_options = {**default_algo_options, **option.get("algo_options", {})}
+        algo_options = {k.replace(".", "_"): v for k, v in algo_options.items()}
+        option["algo_options"] = algo_options
+        if isinstance(option.get("algo_options"), dict):
+            option["algo_options"] = {**default_algo_options, **option["algo_options"]}
+        else:
+            option["algo_options"] = default_algo_options
 
         out_options[name] = option
 
@@ -100,7 +133,21 @@ def _get_kwargs_list_and_names(problems, opt_options):
 
     for prob_name, problem in problems.items():
         for option_name, options in opt_options.items():
+            algo = options["algorithm"]
+            if isinstance(algo, str):
+                if algo not in AVAILABLE_ALGORITHMS:
+                    raise ValueError(f"Invalid algorithm: {algo}")
+                else:
+                    valid_options = AVAILABLE_ALGORITHMS[algo]._algorithm_info.arguments
+
+            else:
+                valid_options = algo._algorithm_info.arguments
+
+            algo_options = options["algo_options"]
+            algo_options = {k: v for k, v in algo_options.items() if k in valid_options}
+
             kwargs = {**options, **problem["inputs"]}
+            kwargs["algo_options"] = algo_options
             kwargs_list.append(kwargs)
             names.append((prob_name, option_name))
 
