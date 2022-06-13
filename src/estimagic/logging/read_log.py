@@ -219,7 +219,7 @@ def _read_multistart_optimization_history(
     Returns:
         tuple:
         - dict: history that led to lowest criterion
-        - dict: all other histories, sorted by descending criterion endpoint
+        - dict: all other histories
         - dict: exploration phase
 
     """
