@@ -619,7 +619,7 @@ def _drop_redundant_linear_constraints(weights, rhs):
     new_rhs = pd.concat(
         [lb, ub, fix], axis=1, names=["lower_bound", "upper_bound", "value"]
     )
-    new_rhs = new_rhs.reindex(weights.index)
+    new_rhs = new_rhs.reindex(new_weights.index)
 
     return new_weights, new_rhs
 
