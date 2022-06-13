@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from estimagic.inference.bootstrap_helpers import check_inputs
 from scipy.stats import norm
 
@@ -18,15 +17,19 @@ def compute_ci(
 
 
     Args:
-        data (pandas.DataFrame): original dataset.
+        data (pandas.DataFrame): Original dataset.
         base_outcomes (pytree): Pytree of the base outomes, i.e. the outcomes
             evaluated on the original data set.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
-        ci_method (str): method of choice for confidence interval computation.
-        alpha (float): significance level of choice.
+        ci_method (str): Method of choice for confidence interval computation.
+        alpha (float): Significance level of choice.
 
     Returns:
-        cis (pandas.DataFrame): DataFrame where k'th row contains CI for k'th parameter.
+        tuple: Tuple containing
+        - (np.ndarray): 1d array of the lower confidence interval, where the k'th entry
+            contains the lower confidence interval for k'th parameter.
+        - (np.ndarray): 1d array of the upper confidence interval, where the k'th entry
+            contains the upper confidence interval for k'th parameter.
     """
     check_inputs(alpha=alpha, ci_method=ci_method)
 
@@ -38,9 +41,7 @@ def compute_ci(
     else:
         cis = func(estimates, base_outcomes, alpha)
 
-    return pd.DataFrame(
-        cis, index=estimates.columns.tolist(), columns=["lower_ci", "upper_ci"]
-    )
+    return cis[:, 0], cis[:, 1]
 
 
 def _ci_percentile(estimates, alpha):

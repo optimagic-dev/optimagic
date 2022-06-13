@@ -82,9 +82,10 @@ def test_ci(outcome, method, setup, expected):
         return tree_just_flatten(outcome(data), registry=registry)
 
     base_outcome = outcome_flat(setup["df"])
-    ci = compute_ci(base_outcome, setup["estimates"], ci_method=method)
+    lower, upper = compute_ci(base_outcome, setup["estimates"], ci_method=method)
 
-    aaae(ci, expected[method + "_ci"])
+    aaae(lower, expected[method + "_ci"][:, 0])
+    aaae(upper, expected[method + "_ci"][:, 1])
 
 
 def test_check_inputs_data():

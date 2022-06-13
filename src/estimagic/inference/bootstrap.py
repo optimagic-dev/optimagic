@@ -8,6 +8,7 @@ from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
+from estimagic.inference.shared import calculate_p_values
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import leaf_names
@@ -98,7 +99,7 @@ def bootstrap_from_outcomes(data, base_outcomes, bootstrap_outcomes):
         ]
         internal_outcomes = np.array(flat_outcomes)
     elif isinstance(bootstrap_outcomes, dict):
-        internal_outcomes = np.array(list(bootstrap_outcomes.values()))
+        internal_outcomes = np.array(list(bootstrap_outcomes.values())).T
     else:
         internal_outcomes = np.array(bootstrap_outcomes)
 
@@ -107,7 +108,7 @@ def bootstrap_from_outcomes(data, base_outcomes, bootstrap_outcomes):
         base_outcomes=base_outcomes,
         bootstrap_outcomes=bootstrap_outcomes,
         _internal_outcomes=internal_outcomes,
-    )  # write more tests on retrieval
+    )
 
     return out
 
@@ -144,17 +145,23 @@ class BootstrapResult:
                 "dataframe" might be the better choice.
 
         Returns:
-            Any: The boostrap outcomes as a pytree, numpy array or DataFrame.
+            Any: The boostrap outcomes as a list of pytrees, a numpy array or
+                pandas DataFrame.
         """
         if return_type == "array":
             out = self._internal_outcomes
-        elif return_type == "data_frame":
+        elif return_type == "dataframe":
             registry = get_registry(extended=True)
             leafnames = leaf_names(self.base_outcomes, registry=registry)
             free_index = np.array(leafnames)
             out = pd.DataFrame(data=self._internal_outcomes, columns=free_index)
         elif return_type == "pytree":
             out = self.bootstrap_outcomes
+        else:
+            raise TypeError(
+                "return_type must be one of pytree, array, or dataframe, "
+                "not {return_type}."
+            )
 
         return out
 
@@ -166,12 +173,30 @@ class BootstrapResult:
                 errors for the parameter estimates.
         """
         free_cov = np.cov(self._internal_outcomes, rowvar=False)
-        helper = np.sqrt(np.diagonal(free_cov))
+        free_se = np.sqrt(np.diagonal(free_cov))
 
         registry = get_registry(extended=True)
         _, treedef = tree_flatten(self.base_outcomes, registry=registry)
 
-        out = tree_unflatten(treedef, helper, registry=registry)
+        out = tree_unflatten(treedef, free_se, registry=registry)
+
+        return out
+
+    def p_values(self):
+        """Calculate p-values.
+
+        Returns:
+            Any: A pytree with the same structure as base_outcomes containing p-values
+                for the parameter estimates.
+        """
+        registry = get_registry(extended=True)
+        free_values, treedef = tree_flatten(self.base_outcomes, registry=registry)
+
+        free_cov = np.cov(self._internal_outcomes, rowvar=False)
+        free_se = np.sqrt(np.diagonal(free_cov))
+
+        free_p_values = calculate_p_values(free_values, free_se)
+        out = tree_unflatten(treedef, free_p_values, registry=registry)
 
         return out
 
@@ -199,29 +224,64 @@ class BootstrapResult:
             out = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
         elif return_type == "pytree":
             out = matrix_to_block_tree(free_cov, self.base_outcomes, self.base_outcomes)
+        else:
+            raise TypeError(
+                "return_type must be one of pytree, array, or dataframe, "
+                "not {return_type}."
+            )
 
         return out
+
+    def ci(self, ci_method="percentile", alpha=0.05):
+        """Calculate confidence intervals.
+
+        Args:
+            ci_method (str): method of choice for confidence interval computation.
+            alpha (float): Significance level of choice.
+
+        Returns:
+            Any: Pytree with the same structure as base_outcomes containing lower
+                bounds of confidence intervals.
+            Any: Pytree with the same structure as base_outcomes containing upper
+                bounds of confidence intervals.
+        """
+        check_inputs(ci_method=ci_method, alpha=alpha)
+
+        registry = get_registry(extended=True)
+        _, treedef = tree_flatten(self.base_outcomes, registry=registry)
+
+        free_lower, free_upper = compute_ci(
+            self.base_outcomes, self.bootstrap_outcomes, ci_method, alpha
+        )
+
+        lower = tree_unflatten(treedef, free_lower, registry=registry)
+        upper = tree_unflatten(treedef, free_upper, registry=registry)
+
+        return lower, upper
 
     def summary(self, ci_method="percentile", alpha=0.05):
         """Create a summary of bootstrap results.
 
         Args:
             ci_method (str): method of choice for confidence interval computation.
-            alpha (float): significance level of choice.
+            alpha (float): Significance level of choice.
 
         Returns:
             pd.DataFrame: The estimation summary as a DataFrame containing information
                 on the mean, standard errors, as well as the confindence interval.
-                Soon this will be a pytree of DataFrames.
+                Soon this will be a pytree.
         """
         check_inputs(ci_method=ci_method, alpha=alpha)
 
-        cis = compute_ci(
-            self.base_outcomes,
-            self.bootstrap_outcomes,
-            ci_method,
-            alpha,
+        lower, upper = compute_ci(
+            self.base_outcomes, self.bootstrap_outcomes, ci_method, alpha
         )
+
+        cis = pd.DataFrame(
+            np.stack([lower, upper], axis=1),
+            columns=["lower_ci", "upper_ci"],
+            index=self.bootstrap_outcomes.columns.tolist(),
+        )  # can't be expected to be DataFrame
 
         summary = pd.DataFrame(self.bootstrap_outcomes.mean(axis=0), columns=["mean"])
         summary["std"] = self.bootstrap_outcomes.std(axis=0)

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.inference.bootstrap import bootstrap_from_outcomes
+from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
@@ -14,8 +15,11 @@ def setup():
         np.array([[1, 10], [2, 7], [3, 6], [4, 5]]), columns=["x1", "x2"]
     )
 
-    x = np.array([[2.0, 8.0], [2.0, 8.0], [2.5, 7.0], [3.0, 6.0], [3.25, 5.75]])
-    out["estimates"] = pd.DataFrame(x, columns=["x1", "x2"])
+    y = np.array([[2.0, 8.0], [2.0, 8.0], [2.5, 7.0], [3.0, 6.0], [3.25, 5.75]])
+    out["estimates_arr"] = y
+    out["estimates_df"] = pd.DataFrame(y, columns=["x1", "x2"])
+    out["estimates_dict"] = {"x1": [2, 2, 2.5, 3, 3.25], "x2": [8, 8, 7, 6, 5.75]}
+    out["estimates_pytree"] = [pd.Series(row, index=["x1", "x2"]) for row in y]
 
     return out
 
@@ -26,12 +30,18 @@ def expected():
 
     z = np.array([[2.55, 0.5701, 2, 3.225], [6.95, 1.0665, 5.775, 8]])
     cov = np.array([[0.325, -0.60625], [-0.60625, 1.1375]])
+    p_values = np.array([1.15831306e-05, 5.26293752e-11])
+    lower_ci = np.array([2, 5.775])
+    upper_ci = np.array([3.225, 8])
 
-    out["results"] = pd.DataFrame(
+    out["summary"] = pd.DataFrame(
         z, columns=["mean", "std", "lower_ci", "upper_ci"], index=["x1", "x2"]
     )
+    out["lower_ci"] = pd.Series(lower_ci, index=["x1", "x2"])
+    out["upper_ci"] = pd.Series(upper_ci, index=["x1", "x2"])
     out["cov"] = pd.DataFrame(cov, columns=["x1", "x2"], index=["x1", "x2"])
     out["se"] = pd.Series(np.sqrt(np.diagonal(cov)), index=["x1", "x2"])
+    out["p_values"] = pd.Series(p_values, index=["x1", "x2"])
 
     return out
 
@@ -42,26 +52,63 @@ def g(data):
 
 def test_bootstrap_from_outcomes(setup, expected):
 
-    results = bootstrap_from_outcomes(
+    result = bootstrap_from_outcomes(
         data=setup["df"],
         base_outcomes=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates"],
-    ).summary()
+        bootstrap_outcomes=setup["estimates_df"],
+    )
 
-    standard_errors = bootstrap_from_outcomes(
-        data=setup["df"],
-        base_outcomes=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates"],
-    ).se()
-
-    covariance = bootstrap_from_outcomes(
-        data=setup["df"],
-        base_outcomes=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates"],
-    ).cov()
+    outcomes_df = result.outcomes(return_type="dataframe")
+    lower_ci, upper_ci = result.ci()
+    covariance = result.cov()
+    standard_errors = result.se()
+    p_values = result.p_values()
 
     # use rounding to adjust precision because there is no other way of handling this
     # such that it is compatible across all supported pandas versions.
-    afe(results.round(2), expected["results"].round(2))
-    ase(standard_errors.round(2), expected["se"].round(2))
+    afe(outcomes_df.round(2), setup["estimates_df"].round(2))
+    ase(lower_ci.round(2), expected["lower_ci"].round(2))
+    ase(upper_ci.round(2), expected["upper_ci"].round(2))
     afe(covariance.round(2), expected["cov"].round(2))
+    ase(standard_errors.round(2), expected["se"].round(2))
+    ase(p_values.round(2), expected["p_values"].round(2))
+
+
+@pytest.mark.parametrize("input_type", ["arr", "pytree", "dict", "df"])
+def test_different_input_types(input_type, setup):
+
+    result = bootstrap_from_outcomes(
+        data=setup["df"],
+        base_outcomes=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_" + input_type],
+    )
+    internal_outcomes = result._internal_outcomes
+    expected = np.array(setup["estimates_df"])
+
+    aaae(internal_outcomes, expected)
+
+
+@pytest.mark.parametrize("return_type", ["pytree", "array", "dataframe"])
+def test_correct_return_type(return_type, setup):
+    result = bootstrap_from_outcomes(
+        data=setup["df"],
+        base_outcomes=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_df"],
+    )
+
+    _ = result.outcomes(return_type=return_type)
+    _ = result.cov(return_type=return_type)
+
+
+def test_wrong_return_type(setup):
+    result = bootstrap_from_outcomes(
+        data=setup["df"],
+        base_outcomes=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_df"],
+    )
+
+    with pytest.raises(TypeError):
+        _ = result.outcomes(return_type="dict")
+
+    with pytest.raises(TypeError):
+        _ = result.cov(return_type="dict")
