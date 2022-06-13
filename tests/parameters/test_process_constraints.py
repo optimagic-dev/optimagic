@@ -3,6 +3,8 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
+import pytest
+from estimagic.exceptions import InvalidConstraintError
 from estimagic.optimization.optimize import maximize
 from estimagic.parameters.constraint_tools import check_constraints
 from estimagic.parameters.process_constraints import (
@@ -63,3 +65,13 @@ def test_bug_from_copenhagen_presentation():
     )
 
     assert np.allclose(res.params["work"]["hours"], start_params["time_budget"])
+
+
+def test_to_many_bounds_in_increasing_constraint_raise_good_error():
+
+    with pytest.raises(InvalidConstraintError):
+        check_constraints(
+            params=np.arange(3),
+            lower_bounds=np.arange(3) - 1,
+            constraints={"loc": [0, 1, 2], "type": "increasing"},
+        )

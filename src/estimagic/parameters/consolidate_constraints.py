@@ -8,6 +8,7 @@ Check the module docstring of process_constraints for naming conventions.
 """
 import numpy as np
 import pandas as pd
+from estimagic.exceptions import InvalidConstraintError
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
@@ -644,10 +645,14 @@ def _check_consolidated_weights(weights, param_names):
     relevant_names = [param_names[i] for i in weights.columns]
 
     if n_constraints > n_params:
-        raise ValueError(msg_too_many + msg_general.format(relevant_names, weights))
+        raise InvalidConstraintError(
+            msg_too_many + msg_general.format(relevant_names, weights)
+        )
 
     if np.linalg.matrix_rank(weights) < n_constraints:
-        raise ValueError(msg_rank + msg_general.format(relevant_names, weights))
+        raise InvalidConstraintError(
+            msg_rank + msg_general.format(relevant_names, weights)
+        )
 
 
 def _get_kernel_transformation_matrices(weights):
