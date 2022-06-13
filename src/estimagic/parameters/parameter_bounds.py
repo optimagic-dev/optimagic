@@ -1,8 +1,9 @@
 import numpy as np
+from estimagic.exceptions import InvalidBoundsError
 from estimagic.parameters.tree_registry import get_registry
+from pybaum import leaf_names
 from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_map
-from pybaum import tree_update
 
 
 def get_bounds(
@@ -48,16 +49,17 @@ def get_bounds(
     registry = get_registry(extended=True) if registry is None else registry
     n_params = len(tree_leaves(params, registry=registry))
 
-    # Fill leaves with np.nan. If params contains a data frame with bounds column, that
-    # column is not overwritten.
-    bounds_tree = tree_map(lambda leaf: np.nan, params, registry=registry)
+    # Fill leaves with np.nan. If params contains a data frame with bounds as a column,
+    # that column is NOT overwritten (as long as an extended registry is used).
+    nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)
 
     lower_flat = _update_bounds_and_flatten(
-        bounds_tree, lower_bounds, direction="lower_bound"
+        nan_tree, lower_bounds, direction="lower_bound"
     )
     upper_flat = _update_bounds_and_flatten(
-        bounds_tree, upper_bounds, direction="upper_bound"
+        nan_tree, upper_bounds, direction="upper_bound"
     )
+
     if len(lower_flat) != n_params:
         raise ValueError("lower_bounds do not match dimension of params.")
     if len(upper_flat) != n_params:
@@ -68,13 +70,13 @@ def get_bounds(
 
     if add_soft_bounds:
         lower_flat_soft = _update_bounds_and_flatten(
-            bounds_tree, soft_lower_bounds, direction="soft_lower_bound"
+            nan_tree, soft_lower_bounds, direction="soft_lower_bound"
         )
         lower_flat_soft[np.isnan(lower_flat_soft)] = -np.inf
         lower_flat = np.maximum(lower_flat, lower_flat_soft)
 
         upper_flat_soft = _update_bounds_and_flatten(
-            bounds_tree, soft_upper_bounds, direction="soft_upper_bound"
+            nan_tree, soft_upper_bounds, direction="soft_upper_bound"
         )
         upper_flat_soft[np.isnan(upper_flat_soft)] = np.inf
         upper_flat = np.minimum(upper_flat, upper_flat_soft)
@@ -86,13 +88,40 @@ def get_bounds(
     return lower_flat, upper_flat
 
 
-def _update_bounds_and_flatten(bounds_tree, bounds, direction):
+def _update_bounds_and_flatten(nan_tree, bounds, direction):
     registry = get_registry(extended=True, data_col=direction)
+    flat_nan_tree = tree_leaves(nan_tree, registry=registry)
+
     if bounds is not None:
-        bounds_tree = tree_update(bounds_tree, bounds)
-    bounds_flat = tree_leaves(bounds_tree, registry=registry)
-    bounds_flat = np.array(bounds_flat, dtype=np.float64)
-    return bounds_flat
+
+        registry = get_registry(extended=True)
+        flat_bounds = tree_leaves(bounds, registry=registry)
+        params_names = leaf_names(nan_tree, registry=registry)
+        bounds_names = leaf_names(bounds, registry=registry)
+
+        flat_nan_dict = dict(zip(params_names, flat_nan_tree))
+
+        invalid = {"names": [], "bounds": []}
+        for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds):
+
+            if bounds_name in flat_nan_dict:
+                flat_nan_dict[bounds_name] = bounds_leaf
+            else:
+                invalid["names"].append(bounds_name)
+                invalid["bounds"].append(bounds_leaf)
+
+        if invalid["bounds"]:
+            msg = (
+                f"{direction} could not be matched to params pytree. The bounds "
+                f"{invalid['bounds']} with names {invalid['names']} are not part of "
+                "params."
+            )
+            raise InvalidBoundsError(msg)
+
+        flat_nan_tree = list(flat_nan_dict.values())
+
+    updated = np.array(flat_nan_tree, dtype=np.float64)
+    return updated
 
 
 def _is_fast_path(params, lower_bounds, upper_bounds, add_soft_bounds):
