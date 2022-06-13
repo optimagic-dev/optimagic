@@ -278,7 +278,29 @@ def params_plot(
 def _extract_plotting_data_from_results_object(
     res, stack_multistart, show_exploration, plot_name
 ):
+    """Extract data for plotting from results object.
 
+    Args:
+        res (OptmizeResult): An optimization results object.
+        stack_multistart (bool): Whether to combine multistart histories into a single
+            history. Default is False.
+        show_exploration (bool): If True, exploration samples of a multistart
+            optimization are visualized. Default is False.
+        plot_name (str): Name of the plotting function that calls this function. Used
+            for rasing errors.
+
+    Returns:
+        dict:
+        - "history": The results history
+        - "direction": maximize or minimize
+        - "is_multistart": Whether the optimization used multistart
+        - "local_histories": All other multistart histories except for 'history'. If not
+        available is None. If show_exploration is True, the exploration phase is
+        added as the first entry.
+        - "stacked_local_histories": If stack_multistart is True the local histories
+        are stacked into a single one.
+
+    """
     if res.history is None:
         msg = f"{plot_name} requires an optimize result with history. Enable history "
         "collection by setting collect_history=True when calling maximize or minimize."
@@ -315,6 +337,27 @@ def _extract_plotting_data_from_results_object(
 
 
 def _extract_plotting_data_from_database(res, stack_multistart, show_exploration):
+    """Extract data for plotting from database.
+
+    Args:
+        res (str or pathlib.Path): A path to an optimization database.
+        stack_multistart (bool): Whether to combine multistart histories into a single
+            history. Default is False.
+        show_exploration (bool): If True, exploration samples of a multistart
+            optimization are visualized. Default is False.
+
+    Returns:
+        dict:
+        - "history": The results history
+        - "direction": maximize or minimize
+        - "is_multistart": Whether the optimization used multistart
+        - "local_histories": All other multistart histories except for 'history'. If not
+        available is None. If show_exploration is True, the exploration phase is
+        added as the first entry.
+        - "stacked_local_histories": If stack_multistart is True the local histories
+        are stacked into a single one.
+
+    """
 
     reader = OptimizeLogReader(res)
     _problem_table = read_optimization_problem_table(res)
