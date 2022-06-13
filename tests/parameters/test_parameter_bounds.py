@@ -19,7 +19,6 @@ def params():
 
 
 def test_get_bounds_subdataframe(params):
-    # we let the specified bounds have one less item than the params data frame
     upper_bounds = {
         "utility": pd.DataFrame([[2]] * 2, index=["b", "c"], columns=["value"]),
     }
