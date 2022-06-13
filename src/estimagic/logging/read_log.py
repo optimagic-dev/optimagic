@@ -139,6 +139,15 @@ class OptimizeLogReader:
         )
         return out
 
+    def read_multistart_history(self, direction):
+        out = _read_multistart_optimization_history(
+            database=self._database,
+            params_treedef=self._treedef,
+            registry=self._registry,
+            direction=direction,
+        )
+        return out
+
     def read_start_params(self):
         return self._start_params
 
@@ -200,3 +209,89 @@ def _read_optimization_history(database, params_treedef, registry):
     history["runtime"] = times
 
     return history
+
+
+def _read_multistart_optimization_history(
+    database, params_treedef, registry, direction
+):
+    """Read multistart histories out values, parameters and other information.
+
+    Returns:
+        tuple:
+        - dict: history that led to lowest criterion
+        - dict: all other histories
+        - dict: exploration phase
+
+    """
+    # ==================================================================================
+    # Process raw data
+    # ==================================================================================
+    steps = read_steps_table(database)
+
+    raw_res, _ = read_new_rows(
+        database=database,
+        table_name="optimization_iterations",
+        last_retrieved=0,
+        return_type="list_of_dicts",
+    )
+
+    history = {"params": [], "criterion": [], "runtime": [], "step": []}
+    for data in raw_res:
+        if data["value"] is not None:
+            params = tree_unflatten(params_treedef, data["params"], registry=registry)
+            history["params"].append(params)
+            history["criterion"].append(data["value"])
+            history["runtime"].append(data["timestamp"])
+            history["step"].append(data["step"])
+
+    times = np.array(history["runtime"])
+    times -= times[0]
+    history["runtime"] = times
+
+    # ==================================================================================
+    # Format data as data frames
+    # ==================================================================================
+    df = pd.DataFrame(history)
+    df = df.merge(steps[["rowid", "type"]], left_on="step", right_on="rowid")
+    df = df.drop(columns="rowid")
+
+    # ==================================================================================
+    # Extract data from df
+    # ==================================================================================
+    exploration = df.query("type == 'exploration'").drop(columns=["step", "type"])
+
+    histories = df.query("type == 'optimization'")
+    histories = histories.drop(columns="type")
+    histories = histories.set_index("step", append=True)
+
+    # ==================================================================================
+    # The best history is given by the history that attains the global minimum or
+    # maximum. All other histories are defined as local histories.
+
+    if direction == "minimize":
+        best_idx = (
+            histories["criterion"].groupby(level="step").min().idxmin()
+        )  # noqa: F841
+        exploration = exploration.sort_values(by="criterion", ascending=True)
+    elif direction == "maximize":
+        best_idx = (
+            histories["criterion"].groupby(level="step").max().idxmax()
+        )  # noqa: F841
+        exploration = exploration.sort_values(by="criterion", ascending=False)
+    else:
+        raise ValueError()
+
+    history = histories.xs(best_idx, level="step").to_dict(orient="list")
+
+    exploration = None if len(exploration) == 0 else exploration
+    if exploration is not None:
+        exploration = exploration.to_dict(orient="list")
+
+    local_histories = []
+    for idx in histories.index.get_level_values("step").unique().difference([best_idx]):
+        _local_history = histories.xs(idx, level="step").to_dict(orient="list")
+        local_histories.append(_local_history)
+
+    local_histories = None if len(local_histories) == 0 else local_histories
+
+    return history, local_histories, exploration
