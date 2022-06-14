@@ -130,7 +130,7 @@ def _get_params_unflatten(registry, treedef):
 
 def _get_func_flatten(registry, func_eval, primary_key):
 
-    if np.isscalar(func_eval):
+    if _is_scalar(func_eval):
         if primary_key == "value":
             func_flatten = lambda func_eval: float(func_eval)
         else:
@@ -233,3 +233,14 @@ class FlatParams(NamedTuple):
     soft_upper_bounds: np.ndarray = None
     names: list = None
     free_mask: np.ndarray = None
+
+
+def _is_scalar(candidate):
+    """Jax aware replacement for np.isscalar."""
+    if np.isscalar(candidate):
+        return True
+    # call anything a scalar that says it has 0 dimensions
+    elif getattr(candidate, "ndim", -1) == 0:
+        return True
+    else:
+        return False
