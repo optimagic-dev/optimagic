@@ -61,9 +61,9 @@ def get_bounds(
     )
 
     if len(lower_flat) != n_params:
-        raise ValueError("lower_bounds do not match dimension of params.")
+        raise InvalidBoundsError("lower_bounds do not match dimension of params.")
     if len(upper_flat) != n_params:
-        raise ValueError("upper_bounds do not match dimension of params.")
+        raise InvalidBoundsError("upper_bounds do not match dimension of params.")
 
     lower_flat[np.isnan(lower_flat)] = -np.inf
     upper_flat[np.isnan(upper_flat)] = np.inf
@@ -83,7 +83,7 @@ def get_bounds(
 
     if (lower_flat > upper_flat).any():
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
-        raise ValueError(msg)
+        raise InvalidBoundsError(msg)
 
     return lower_flat, upper_flat
 
@@ -96,8 +96,10 @@ def _update_bounds_and_flatten(nan_tree, bounds, direction):
 
         registry = get_registry(extended=True)
         flat_bounds = tree_leaves(bounds, registry=registry)
-        params_names = leaf_names(nan_tree, registry=registry)
-        bounds_names = leaf_names(bounds, registry=registry)
+
+        seperator = 10 * "$"
+        params_names = leaf_names(nan_tree, registry=registry, separator=seperator)
+        bounds_names = leaf_names(bounds, registry=registry, separator=seperator)
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree))
 
@@ -160,6 +162,6 @@ def _get_fast_path_bounds(params, lower_bounds, upper_bounds):
 
     if (lower_bounds > upper_bounds).any():
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
-        raise ValueError(msg)
+        raise InvalidBoundsError(msg)
 
     return lower_bounds, upper_bounds
