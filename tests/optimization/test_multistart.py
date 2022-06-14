@@ -207,3 +207,35 @@ def test_with_scaling():
     )
 
     aaae(res.params, np.arange(5))
+
+
+def test_with_ackley():
+    def ackley(x):
+        out = (
+            -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2)))
+            - np.exp(np.mean(np.cos(2 * np.pi * x)))
+            + 20
+            + np.exp(1)
+        )
+        return out
+
+    dim = 5
+
+    kwargs = {
+        "criterion": ackley,
+        "params": np.full(dim, -10),
+        "lower_bounds": np.full(dim, -32),
+        "upper_bounds": np.full(dim, 32),
+        "algo_options": {"stopping.max_criterion_evaluations": 1000},
+    }
+
+    minimize(
+        **kwargs,
+        algorithm="scipy_lbfgsb",
+        multistart=True,
+        multistart_options={
+            "n_samples": 200,
+            "share_optimizations": 0.1,
+            "convergence_max_discoveries": 10,
+        },
+    )
