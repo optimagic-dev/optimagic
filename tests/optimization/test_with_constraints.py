@@ -6,6 +6,8 @@
 - closed form and numerical derivatives
 
 """
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -23,6 +25,7 @@ from estimagic.examples.criterion_functions import trid_gradient
 from estimagic.examples.criterion_functions import trid_scalar_criterion
 from estimagic.exceptions import InvalidConstraintError
 from estimagic.exceptions import InvalidParamsError
+from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -213,3 +216,54 @@ def test_incompatible_constraints_raise_errors(constraints):
             algorithm="scipy_lbfgsb",
             constraints=constraints,
         )
+
+
+def test_bug_from_copenhagen_presentation():
+    # make sure maximum of work hours is optimal
+    def u(params):
+        return params["work"]["hours"] ** 2
+
+    start_params = {
+        "work": {"hourly_wage": 25.5, "hours": 2_000},
+        "time_budget": 24 * 7 * 365,
+    }
+
+    def return_all_but_working_hours(params):
+        out = deepcopy(params)
+        del out["work"]["hours"]
+        return out
+
+    res = maximize(
+        criterion=u,
+        params=start_params,
+        algorithm="scipy_lbfgsb",
+        constraints=[
+            {"selector": return_all_but_working_hours, "type": "fixed"},
+            {
+                "selector": lambda p: [p["work"]["hours"], p["time_budget"]],
+                "type": "increasing",
+            },
+        ],
+        lower_bounds={"work": {"hours": 0}},
+    )
+
+    assert np.allclose(res.params["work"]["hours"], start_params["time_budget"])
+
+
+def test_constraint_inheritance():
+    """Test that probability constraint applies both sets of parameters in a
+    pairwise equality constraint, no matter to which set they were applied
+    originally.
+
+    """
+    for loc in [[0, 1], [2, 3]]:
+        res = minimize(
+            criterion=lambda x: x @ x,
+            params=np.array([0.1, 0.9, 0.9, 0.1]),
+            algorithm="scipy_lbfgsb",
+            constraints=[
+                {"locs": [[0, 1], [3, 2]], "type": "pairwise_equality"},
+                {"loc": loc, "type": "probability"},
+            ],
+        )
+        aaae(res.params, [0.5] * 4)

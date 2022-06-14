@@ -471,6 +471,11 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         best_x = valid_new_x[best_index]
         best_y = valid_new_y[best_index]
         best_res = valid_results[best_index]
+    # handle the case that the global optimum was found in the exploration sample and
+    # due to floating point imprecisions the result of the optimization that started at
+    # the global optimum is slightly worse
+    elif best_res is None:
+        best_res = valid_results[best_index]
 
     new_x_history = current_state["x_history"] + valid_new_x
     all_x = np.array(new_x_history)
