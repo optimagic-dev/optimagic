@@ -53,62 +53,51 @@ def g(data):
 def test_bootstrap_from_outcomes(setup, expected):
 
     result = bootstrap_from_outcomes(
-        data=setup["df"],
-        base_outcomes=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates_df"],
+        base_outcome=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_pytree"],
     )
 
-    outcomes_df = result.outcomes(return_type="dataframe")
+    outcomes = result.outcomes()
     lower_ci, upper_ci = result.ci()
     covariance = result.cov()
     standard_errors = result.se()
-    p_values = result.p_values()
 
-    # use rounding to adjust precision because there is no other way of handling this
+    # Use rounding to adjust precision because there is no other way of handling this
     # such that it is compatible across all supported pandas versions.
-    afe(outcomes_df.round(2), setup["estimates_df"].round(2))
+    aaae(outcomes, setup["estimates_pytree"])
     ase(lower_ci.round(2), expected["lower_ci"].round(2))
     ase(upper_ci.round(2), expected["upper_ci"].round(2))
     afe(covariance.round(2), expected["cov"].round(2))
     ase(standard_errors.round(2), expected["se"].round(2))
-    ase(p_values.round(2), expected["p_values"].round(2))
 
 
-@pytest.mark.parametrize("input_type", ["arr", "pytree", "dict", "df"])
-def test_different_input_types(input_type, setup):
+@pytest.mark.parametrize("input_type", ["arr", "df", "dict"])
+def test_wrong_input_types(input_type, setup):
+    with pytest.raises(TypeError):
+        assert bootstrap_from_outcomes(
+            base_outcome=g(setup["df"]),
+            bootstrap_outcomes=setup["estimates_" + input_type],
+        )
 
+
+@pytest.mark.parametrize("return_type", ["array", "dataframe", "pytree"])
+def test_cov_correct_return_type(return_type, setup):
     result = bootstrap_from_outcomes(
-        data=setup["df"],
-        base_outcomes=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates_" + input_type],
+        base_outcome=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_pytree"],
     )
-    internal_outcomes = result._internal_outcomes
-    expected = np.array(setup["estimates_df"])
-
-    aaae(internal_outcomes, expected)
-
-
-@pytest.mark.parametrize("return_type", ["pytree", "array", "dataframe"])
-def test_correct_return_type(return_type, setup):
-    result = bootstrap_from_outcomes(
-        data=setup["df"],
-        base_outcomes=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates_df"],
-    )
-
-    _ = result.outcomes(return_type=return_type)
     _ = result.cov(return_type=return_type)
 
 
-def test_wrong_return_type(setup):
+def test_cov_wrong_return_type(setup):
     result = bootstrap_from_outcomes(
-        data=setup["df"],
-        base_outcomes=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates_df"],
+        base_outcome=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_pytree"],
     )
 
-    with pytest.raises(TypeError):
-        _ = result.outcomes(return_type="dict")
+    expected_msg = "return_type must be one of pytree, array, or dataframe, not dict."
 
-    with pytest.raises(TypeError):
-        _ = result.cov(return_type="dict")
+    with pytest.raises(TypeError) as error:
+        assert result.cov(return_type="dict")
+
+    assert str(error.value) == expected_msg

@@ -4,7 +4,7 @@ from scipy.stats import norm
 
 
 def compute_ci(
-    base_outcomes,
+    base_outcome_flat,
     estimates,
     ci_method="percentile",
     alpha=0.05,
@@ -17,19 +17,17 @@ def compute_ci(
 
 
     Args:
-        data (pandas.DataFrame): Original dataset.
-        base_outcomes (pytree): Pytree of the base outomes, i.e. the outcomes
-            evaluated on the original data set.
-        estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
+        base_outcome_flat (list): List of flat base outcomes, i.e. the outcome
+            statistics evaluated on the original data set.
+        estimates (np.ndarray): Array of estimates in the bootstrap samples.
         ci_method (str): Method of choice for confidence interval computation.
         alpha (float): Significance level of choice.
 
     Returns:
-        tuple: Tuple containing
-        - (np.ndarray): 1d array of the lower confidence interval, where the k'th entry
-            contains the lower confidence interval for k'th parameter.
-        - (np.ndarray): 1d array of the upper confidence interval, where the k'th entry
-            contains the upper confidence interval for k'th parameter.
+        np.ndarray: 1d array of the lower confidence interval, where the k'th entry
+            contains the lower confidence interval for the k'th parameter.
+        np.ndarray: 1d array of the upper confidence interval, where the k'th entry
+            contains the upper confidence interval for the k'th parameter.
     """
     check_inputs(alpha=alpha, ci_method=ci_method)
 
@@ -39,7 +37,7 @@ def compute_ci(
     if ci_method == "percentile":
         cis = func(estimates, alpha)
     else:
-        cis = func(estimates, base_outcomes, alpha)
+        cis = func(estimates, base_outcome_flat, alpha)
 
     return cis[:, 0], cis[:, 1]
 
@@ -48,19 +46,18 @@ def _ci_percentile(estimates, alpha):
     """Compute percentile type confidence interval of bootstrap estimates.
 
     Args:
-        estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
+        estimates (np.ndarray): Array of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
 
     Returns:
-        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
-    boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
 
-        q = _eqf(boot_est[:, k])
+        q = _eqf(estimates[:, k])
         cis[k, :] = np.array([q(alpha / 2), q(1 - alpha / 2)])
 
     return cis
@@ -70,23 +67,22 @@ def _ci_bc(estimates, theta, alpha):
     """Compute bc type confidence interval of bootstrap estimates.
 
     Args:
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        estimates (np.ndarray): Array of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
-        alpha (float): significance level of choice.
+        alpha (float): Significance level of choice.
 
     Returns:
-        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
-    boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
 
-        q = _eqf(boot_est[:, k])
-        params = boot_est[:, k]
+        q = _eqf(estimates[:, k])
+        params = estimates[:, k]
 
-        # bias correction
+        # Bias correction
         z_naught = norm.ppf(np.mean(params <= theta[k]))
         z_low = norm.ppf(alpha)
         z_high = norm.ppf(1 - alpha)
@@ -103,20 +99,19 @@ def _ci_t(estimates, theta, alpha):
     """Compute studentized confidence interval of bootstrap estimates.
 
     Args:
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        estimates (np.ndarray): Array of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
-        alpha (float): significance level of choice.
+        alpha (float): Significance level of choice.
 
     Returns:
-        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
-    boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
 
-        params = boot_est[:, k]
+        params = estimates[:, k]
 
         theta_std = np.std(params)
 
@@ -133,20 +128,19 @@ def _ci_normal(estimates, theta, alpha):
     """Compute approximate normal confidence interval of bootstrap estimates.
 
     Args:
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        estimates (np.ndarray): Array of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
-        alpha (float): significance level of choice.
+        alpha (float): Significance level of choice.
 
     Returns:
-        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
-    boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
 
-        params = boot_est[:, k]
+        params = estimates[:, k]
         theta_std = np.std(params)
         t = norm.ppf(alpha / 2)
 
@@ -159,20 +153,19 @@ def _ci_basic(estimates, theta, alpha):
     """Compute basic bootstrap confidence interval of bootstrap estimates.
 
     Args:
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        estimates (np.ndarray): Array of estimates in the bootstrap samples.
         theta (pytree): Pytree of base outcomes.
-        alpha (float): significance level of choice.
+        alpha (float): Significance level of choice.
 
     Returns:
-        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
-    boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
 
-        q = _eqf(boot_est[:, k])
+        q = _eqf(estimates[:, k])
 
         cis[k, :] = np.array(
             [2 * theta[k] - q(1 - alpha / 2), 2 * theta[k] - q(alpha / 2)]
@@ -185,10 +178,10 @@ def _eqf(sample):
     """Return empirical quantile function of the given sample.
 
     Args:
-        sample (pd.DataFrame): sample to base quantile function on.
+        sample (np.ndarray): Sample to base quantile function on.
 
     Returns:
-        f (callable): quantile function for given sample.
+        f (callable): Quantile function for given sample.
     """
 
     def f(x):

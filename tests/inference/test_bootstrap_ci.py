@@ -17,9 +17,9 @@ def setup():
     out["df"] = pd.DataFrame(
         np.array([[1, 10], [2, 7], [3, 6], [4, 5]]), columns=["x1", "x2"]
     )
-
-    x = np.array([[2.0, 8.0], [2.0, 8.0], [2.5, 7.0], [3.0, 6.0], [3.25, 5.75]])
-    out["estimates"] = pd.DataFrame(x, columns=["x1", "x2"])
+    out["estimates"] = np.array(
+        [[2.0, 8.0], [2.0, 8.0], [2.5, 7.0], [3.0, 6.0], [3.25, 5.75]]
+    )
 
     return out
 
@@ -41,18 +41,7 @@ def expected():
 
     out["bc_ci"] = np.array([[2, 3.2342835077057543], [5.877526959881923, 8]])
 
-    out["bca_ci"] = np.array([[2, 3.2058815797003826], [5.9404612332752915, 8]])
-
     out["t_ci"] = np.array([[1.775, 3], [6.0, 8.225]])
-
-    out["jk_estimates"] = np.array(
-        [
-            [3, 6],
-            [2.6666666666666665, 7],
-            [2.3333333333333335, 7.333333333333333],
-            [2, 7.666666666666667],
-        ]
-    )
 
     return out
 
@@ -70,7 +59,8 @@ def g_arr(data):
 
 
 TEST_CASES = itertools.product(
-    [g, g_dict, g_arr], ["percentile", "normal", "basic", "bc", "t"]
+    [g, g_dict, g_arr],
+    ["percentile", "normal", "basic", "bc", "t"],
 )
 
 
