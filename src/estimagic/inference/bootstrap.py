@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import compute_ci
+from estimagic.inference.bootstrap_ci import compute_p_values
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
-from estimagic.inference.shared import calculate_p_values
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import leaf_names
@@ -162,20 +162,22 @@ class BootstrapResult:
 
         return out
 
-    def p_values(self):
+    def p_values(self, alpha=0.05):
         """Calculate p-values.
+
+        Args:
+            alpha (float): Significance level of choice.
 
         Returns:
             Any: A pytree with the same structure as base_outcomes containing p-values
                 for the parameter estimates.
         """
         registry = get_registry(extended=True)
-        free_values, treedef = tree_flatten(self.base_outcome, registry=registry)
+        base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
 
-        free_cov = np.cov(self._internal_outcomes, rowvar=False)
-        free_se = np.sqrt(np.diagonal(free_cov))
-
-        free_p_values = calculate_p_values(free_values, free_se)
+        free_p_values = compute_p_values(
+            base_outcome_flat, self._internal_outcomes, alpha
+        )
         out = tree_unflatten(treedef, free_p_values, registry=registry)
 
         return out
@@ -228,10 +230,10 @@ class BootstrapResult:
         check_inputs(ci_method=ci_method, alpha=alpha)
 
         registry = get_registry(extended=True)
-        _, treedef = tree_flatten(self.base_outcome, registry=registry)
+        base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
 
         lower_flat, upper_flat = compute_ci(
-            self.base_outcome, self._internal_outcomes, ci_method, alpha
+            base_outcome_flat, self._internal_outcomes, ci_method, alpha
         )
 
         lower = tree_unflatten(treedef, lower_flat, registry=registry)

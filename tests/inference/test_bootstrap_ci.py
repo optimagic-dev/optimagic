@@ -3,11 +3,18 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.inference.bootstrap import bootstrap_from_outcomes
 from estimagic.inference.bootstrap_ci import compute_ci
+from estimagic.inference.bootstrap_ci import compute_p_values
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
+from pandas.testing import assert_series_equal as ase
 from pybaum import tree_just_flatten
+
+# ======================================================================================
+# ci
+# ======================================================================================
 
 
 @pytest.fixture
@@ -111,3 +118,105 @@ def test_check_inputs_alpha(setup):
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=setup["df"], alpha=alpha)
     assert "Input 'alpha' must be in [0,1]." == str(excinfo.value)
+
+
+# ======================================================================================
+# p-values
+# ======================================================================================
+
+
+def h(data):
+    return pd.Series(data.x.sum() / data.u.sum(), index=["x"])
+
+
+@pytest.fixture
+def example_data1():
+    out = {}
+
+    out["df"] = pd.DataFrame(
+        np.array([-3.75, -3, -1.5, 1.25, 2, 2.5, 3, 3.5]), columns=["x"]
+    )
+    out["estimates"] = np.array([-3, -1.5, 1.25, 2.5, 2.5, 3, 3.5, 3.5])
+
+    return out
+
+
+@pytest.fixture
+def example_data2():
+    out = {}
+
+    out["df"] = pd.DataFrame(
+        np.array(
+            [
+                [138, 143],
+                [93, 104],
+                [61, 69],
+                [179, 260],
+                [48, 75],
+                [37, 63],
+                [29, 50],
+                [23, 48],
+                [30, 111],
+                [2, 50],
+            ]
+        ),
+        columns=["u", "x"],
+    )
+    out["estimates"] = np.array(
+        [
+            1.485370,
+            1.492780,
+            1.380952,
+            2.223776,
+            1.650231,
+            1.221790,
+            1.590734,
+            1.784173,
+            1.348977,
+            1.726562,
+            1.376404,
+            1.412081,
+            1.726449,
+            1.587349,
+            1.629423,
+            1.290547,
+            1.387464,
+            1.727749,
+            1.371567,
+        ]
+    )
+
+    return out
+
+
+TEST_CASES = [("example_data1", g, 0.875), ("example_data2", h, 0.05263158)]
+
+
+@pytest.mark.parametrize("example_data, outcome, expected", TEST_CASES)
+def test_p_values(example_data, outcome, expected, request):
+    setup = request.getfixturevalue(example_data)
+    registry = get_registry(extended=True)
+
+    def outcome_flat(data):
+        return tree_just_flatten(outcome(data), registry=registry)
+
+    base_outcome = outcome_flat(setup["df"])
+
+    pvalue = compute_p_values(base_outcome, setup["estimates"], alpha=0.05)
+    assert np.allclose(pvalue, expected)
+
+
+@pytest.mark.parametrize("example_data, outcome, expected", TEST_CASES)
+def test_p_values_from_results(example_data, outcome, expected, request):
+    setup = request.getfixturevalue(example_data)
+
+    registry = get_registry(extended=True)
+    bootstrap_outcomes = tree_just_flatten(setup["estimates"], registry=registry)
+
+    result = bootstrap_from_outcomes(
+        base_outcome=outcome(setup["df"]),
+        bootstrap_outcomes=bootstrap_outcomes,
+    )
+
+    pvalue = result.p_values()
+    ase(pvalue.round(6), pd.Series(expected, index=["x"]).round(6))
