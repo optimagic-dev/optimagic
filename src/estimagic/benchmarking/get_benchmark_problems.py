@@ -192,7 +192,7 @@ def _get_raw_problems(name):
 def _create_problem_inputs(
     specification, additive_options, multiplicative_options, scaling_options
 ):
-    _x = specification["start_x"]
+    _x = np.array(specification["start_x"])
 
     if scaling_options is not None:
         scaling_factor = _get_scaling_factor(_x, scaling_options)
@@ -215,10 +215,10 @@ def _create_problem_inputs(
 def _create_problem_solution(specification, scaling_options):
     _solution_x = specification.get("solution_x")
     if _solution_x is None:
-        _solution_x = specification["start_x"] * np.nan
-
+        _solution_x = np.array(specification["start_x"]) * np.nan
+    elif isinstance(_solution_x, list):
+        _solution_x = np.array(_solution_x)
     _params = _solution_x
-
     if scaling_options is not None:
         _params = _params * _get_scaling_factor(_params, scaling_options)
 

@@ -24,7 +24,7 @@ def test_cartis_roberts_function_at_solution_x(name, specification):
     _x = specification["solution_x"]
     if _x is not None:
         assert isinstance(_x, list)
-        _x = np.array(_x, dtype=np.float64)
+        _x = np.array(_x)
         _contributions = _criterion(_x)
         calculated = _contributions @ _contributions
         expected = specification["solution_criterion"]

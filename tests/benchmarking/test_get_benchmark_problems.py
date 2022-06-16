@@ -34,3 +34,7 @@ def test_get_problems(name, additive_noise, multiplicative_noise, scaling):
         assert first_eval != second_eval
     else:
         assert first_eval == second_eval
+
+    for problem in problems.values():
+        assert isinstance(problem["inputs"]["params"], np.ndarray)
+        assert isinstance(problem["solution"]["params"], np.ndarray)
