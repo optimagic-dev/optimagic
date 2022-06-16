@@ -518,7 +518,7 @@ CARTIS_ROBERTS_PROBLEMS = {
     "argtrig": {
         "criterion": argtrig,
         "start_x": np.ones(100) / 100,
-        "solution_x": None,
+        "solution_x": np.zeros(100),
         "start_criterion": 32.99641,
         "solution_criterion": 0,
     },
@@ -655,7 +655,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_x": np.ones(25),
         "solution_x": None,
         "start_criterion": 27,
-        "solution_criterion": 10,
+        "solution_criterion": 0,
     },
     "integreq": {
         "criterion": integreq,
