@@ -159,7 +159,6 @@ def _get_raw_problems(name):
             "vardimne",
             "penalty_1",
             "arglale",
-            "chandheq",
             "arglble",
         }
         subset_add_steps = {

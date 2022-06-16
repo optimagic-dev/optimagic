@@ -9,11 +9,13 @@ from numpy.testing import assert_array_almost_equal
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
 def test_cartis_roberts_function_at_start_x(name, specification):
     _criterion = specification["criterion"]
-    _x = specification["start_x"]
+    _x = np.array(specification["start_x"])
+    assert isinstance(specification["start_x"], list)
     _contributions = _criterion(_x)
     calculated = _contributions @ _contributions
     expected = specification["start_criterion"]
     assert np.allclose(calculated, expected)
+    assert isinstance(specification["start_x"], list)
 
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
@@ -21,6 +23,8 @@ def test_cartis_roberts_function_at_solution_x(name, specification):
     _criterion = specification["criterion"]
     _x = specification["solution_x"]
     if _x is not None:
+        assert isinstance(_x, list)
+        _x = np.array(_x, dtype=np.float64)
         _contributions = _criterion(_x)
         calculated = _contributions @ _contributions
         expected = specification["solution_criterion"]
