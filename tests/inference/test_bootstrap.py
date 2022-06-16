@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.inference.bootstrap import bootstrap_from_outcomes
-from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
@@ -20,6 +19,7 @@ def setup():
     out["estimates_df"] = pd.DataFrame(y, columns=["x1", "x2"])
     out["estimates_dict"] = {"x1": [2, 2, 2.5, 3, 3.25], "x2": [8, 8, 7, 6, 5.75]}
     out["estimates_pytree"] = [pd.Series(row, index=["x1", "x2"]) for row in y]
+    out["estimates_pytree_x1"] = [pd.Series(row, index=["x1"]) for row in y[:, 0]]
 
     return out
 
@@ -30,7 +30,7 @@ def expected():
 
     z = np.array([[2.55, 0.5701, 2, 3.225], [6.95, 1.0665, 5.775, 8]])
     cov = np.array([[0.325, -0.60625], [-0.60625, 1.1375]])
-    p_values = np.array([1.15831306e-05, 5.26293752e-11])
+    p_values = np.array([0.0, 0.0])
     lower_ci = np.array([2, 5.775])
     upper_ci = np.array([3.225, 8])
 
@@ -39,15 +39,19 @@ def expected():
     )
     out["lower_ci"] = pd.Series(lower_ci, index=["x1", "x2"])
     out["upper_ci"] = pd.Series(upper_ci, index=["x1", "x2"])
+    out["lower_ci_x1"] = pd.Series(lower_ci[0], index=["x1"])
+    out["upper_ci_x1"] = pd.Series(upper_ci[0], index=["x1"])
     out["cov"] = pd.DataFrame(cov, columns=["x1", "x2"], index=["x1", "x2"])
     out["se"] = pd.Series(np.sqrt(np.diagonal(cov)), index=["x1", "x2"])
     out["p_values"] = pd.Series(p_values, index=["x1", "x2"])
+    out["p_value_x1"] = pd.Series(p_values[0], index=["x1"])
 
     return out
 
 
 def g(data):
-    return data.mean(axis=0)
+    # Make sure to get Series back when .mean() is applied to Series
+    return pd.DataFrame(data).mean(axis=0)
 
 
 def test_bootstrap_from_outcomes(setup, expected):
@@ -61,14 +65,37 @@ def test_bootstrap_from_outcomes(setup, expected):
     lower_ci, upper_ci = result.ci()
     covariance = result.cov()
     standard_errors = result.se()
+    pvalues = result.p_values()
 
     # Use rounding to adjust precision because there is no other way of handling this
     # such that it is compatible across all supported pandas versions.
-    aaae(outcomes, setup["estimates_pytree"])
+    for i in range(len(outcomes)):
+        ase(outcomes[i], setup["estimates_pytree"][i])
+
     ase(lower_ci.round(2), expected["lower_ci"].round(2))
     ase(upper_ci.round(2), expected["upper_ci"].round(2))
     afe(covariance.round(2), expected["cov"].round(2))
     ase(standard_errors.round(2), expected["se"].round(2))
+    ase(pvalues.round(2), expected["p_values"].round(2))
+
+
+def test_bootstrap_from_outcomes_single_outcome(setup, expected):
+
+    result = bootstrap_from_outcomes(
+        base_outcome=g(setup["df"]["x1"]),
+        bootstrap_outcomes=setup["estimates_pytree_x1"],
+    )
+
+    outcomes = result.outcomes()
+    lower_ci, upper_ci = result.ci()
+    pvalue = result.p_values()
+
+    for i in range(len(outcomes)):
+        ase(outcomes[i], setup["estimates_pytree_x1"][i])
+
+    ase(lower_ci.round(2), expected["lower_ci_x1"].round(2))
+    ase(upper_ci.round(2), expected["upper_ci_x1"].round(2))
+    ase(pvalue.round(2), expected["p_value_x1"].round(2))
 
 
 @pytest.mark.parametrize("input_type", ["arr", "df", "dict"])

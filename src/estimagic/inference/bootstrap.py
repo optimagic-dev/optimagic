@@ -152,21 +152,18 @@ class BootstrapResult:
             list: A list of pytrees containing standard errors for the bootstrapped
                 statistic.
         """
-        free_cov = np.cov(self._internal_outcomes, rowvar=False)
-        free_se = np.sqrt(np.diagonal(free_cov))
+        cov = np.cov(self._internal_outcomes, rowvar=False)
+        se = np.sqrt(np.diagonal(cov))
 
         registry = get_registry(extended=True)
         _, treedef = tree_flatten(self.base_outcome, registry=registry)
 
-        out = tree_unflatten(treedef, free_se, registry=registry)
+        out = tree_unflatten(treedef, se, registry=registry)
 
         return out
 
-    def p_values(self, alpha=0.05):
+    def p_values(self):
         """Calculate p-values.
-
-        Args:
-            alpha (float): Significance level of choice.
 
         Returns:
             Any: A pytree with the same structure as base_outcomes containing p-values
@@ -175,10 +172,8 @@ class BootstrapResult:
         registry = get_registry(extended=True)
         base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
 
-        free_p_values = compute_p_values(
-            base_outcome_flat, self._internal_outcomes, alpha
-        )
-        out = tree_unflatten(treedef, free_p_values, registry=registry)
+        p_values = compute_p_values(base_outcome_flat, self._internal_outcomes)
+        out = tree_unflatten(treedef, p_values, registry=registry)
 
         return out
 
@@ -195,17 +190,17 @@ class BootstrapResult:
             Any: The covariance matrix of the estimated parameters as a block-pytree,
                 numpy array, or pandas DataFrame.
         """
-        free_cov = np.cov(self._internal_outcomes, rowvar=False)
+        cov = np.cov(self._internal_outcomes, rowvar=False)
 
         if return_type == "array":
-            out = free_cov
+            out = cov
         elif return_type == "dataframe":
             registry = get_registry(extended=True)
             leafnames = leaf_names(self.base_outcome, registry=registry)
             free_index = np.array(leafnames)
-            out = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
+            out = pd.DataFrame(data=cov, columns=free_index, index=free_index)
         elif return_type == "pytree":
-            out = matrix_to_block_tree(free_cov, self.base_outcome, self.base_outcome)
+            out = matrix_to_block_tree(cov, self.base_outcome, self.base_outcome)
         else:
             raise TypeError(
                 "return_type must be one of pytree, array, or dataframe, "
@@ -214,12 +209,13 @@ class BootstrapResult:
 
         return out
 
-    def ci(self, ci_method="percentile", alpha=0.05):
+    def ci(self, ci_method="percentile", ci_level=0.95):
         """Calculate confidence intervals.
 
         Args:
             ci_method (str): method of choice for confidence interval computation.
-            alpha (float): Significance level of choice.
+            ci_level (float): Confidence level for the calculation of confidence
+                intervals. The default is 0.95.
 
         Returns:
             Any: Pytree with the same structure as base_outcomes containing lower
@@ -227,13 +223,13 @@ class BootstrapResult:
             Any: Pytree with the same structure as base_outcomes containing upper
                 bounds of confidence intervals.
         """
-        check_inputs(ci_method=ci_method, alpha=alpha)
+        check_inputs(ci_method=ci_method, ci_level=ci_level)
 
         registry = get_registry(extended=True)
         base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
 
         lower_flat, upper_flat = compute_ci(
-            base_outcome_flat, self._internal_outcomes, ci_method, alpha
+            base_outcome_flat, self._internal_outcomes, ci_method, ci_level
         )
 
         lower = tree_unflatten(treedef, lower_flat, registry=registry)
@@ -241,22 +237,23 @@ class BootstrapResult:
 
         return lower, upper
 
-    def summary(self, ci_method="percentile", alpha=0.05):
+    def summary(self, ci_method="percentile", ci_level=0.95):
         """Create a summary of bootstrap results.
 
         Args:
             ci_method (str): method of choice for confidence interval computation.
-            alpha (float): Significance level of choice.
+            ci_level (float): Confidence level for the calculation of confidence
+                intervals. The default is 0.95.
 
         Returns:
             pd.DataFrame: The estimation summary as a DataFrame containing information
                 on the mean, standard errors, as well as the confidence intervals.
                 Soon this will be a pytree.
         """
-        check_inputs(ci_method=ci_method, alpha=alpha)
+        check_inputs(ci_method=ci_method, ci_level=ci_level)
 
         lower, upper = compute_ci(
-            self.base_outcome, self._outcomes_internal, ci_method, alpha
+            self.base_outcome, self._outcomes_internal, ci_method, ci_level
         )
 
         cis = pd.DataFrame(

@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def check_inputs(data=None, cluster_by=None, ci_method="percentile", alpha=0.05):
+def check_inputs(data=None, cluster_by=None, ci_method="percentile", ci_level=0.95):
     """Check validity of inputs.
 
     Args:
@@ -28,5 +28,5 @@ def check_inputs(data=None, cluster_by=None, ci_method="percentile", alpha=0.05)
             " was supplied".format(method=ci_method)
         )
 
-    elif alpha > 1 or alpha < 0:
-        raise ValueError("Input 'alpha' must be in [0,1].")
+    elif ci_level > 1 or ci_level < 0:
+        raise ValueError("Input 'ci_level' must be in [0,1].")

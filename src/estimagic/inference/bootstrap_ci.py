@@ -7,7 +7,7 @@ def compute_ci(
     base_outcome_flat,
     estimates,
     ci_method="percentile",
-    alpha=0.05,
+    ci_level=0.95,
 ):
     """Compute confidence interval of bootstrap estimates.
 
@@ -19,10 +19,11 @@ def compute_ci(
     Args:
         base_outcome_flat (list): List of flat base outcomes, i.e. the outcome
             statistics evaluated on the original data set.
-            Usually referred to as theta.
-        estimates (np.ndarray): Array of estimates in the bootstrap samples.
+        estimates (np.ndarray): Array of estimates computed on the bootstrapped
+            samples.
         ci_method (str): Method of choice for confidence interval computation.
-        alpha (float): Significance level of choice.
+        ci_level (float): Confidence level for the calculation of confidence
+            intervals. The default is 0.95.
 
     Returns:
         np.ndarray: 1d array of the lower confidence interval, where the k'th entry
@@ -30,48 +31,46 @@ def compute_ci(
         np.ndarray: 1d array of the upper confidence interval, where the k'th entry
             contains the upper confidence interval for the k'th parameter.
     """
-    check_inputs(alpha=alpha, ci_method=ci_method)
+    check_inputs(ci_method=ci_method, ci_level=ci_level)
 
-    funcname = "_ci_" + ci_method
-    func = globals()[funcname]
-
-    estimates = estimates.reshape(-1, 1) if estimates.ndim < 2 else estimates
+    alpha = 1 - ci_level
 
     if ci_method == "percentile":
-        cis = func(estimates, alpha)
-    else:
-        cis = func(estimates, base_outcome_flat, alpha)
+        cis = _ci_percentile(estimates, alpha)
+    elif ci_method == "bc":
+        cis = _ci_bc(estimates, base_outcome_flat, alpha)
+    elif ci_method == "t":
+        cis = _ci_t(estimates, base_outcome_flat, alpha)
+    elif ci_method == "basic":
+        cis = _ci_basic(estimates, base_outcome_flat, alpha)
+    elif ci_method == "normal":
+        cis = _ci_normal(estimates, base_outcome_flat, alpha)
 
     return cis[:, 0], cis[:, 1]
 
 
-def compute_p_values(base_outcome_flat, estimates, alpha=0.05):
-    """Compute percentile type p-values.
+def compute_p_values(base_outcome, estimates):
+    """Compute percentile type p-values (two-sided) under the assumption of equal tails.
 
     Args:
-        base_outcome_flat (list): List of flat base outcomes, i.e. the outcome
+        base_outcome (list): List of flat base outcomes, i.e. the outcome
             statistics evaluated on the original data set.
-            Usually referred to as theta.
-        estimates (np.ndarray): Array of estimates in the bootstrap samples.
-        alpha (float): Significance level of choice.
+        estimates (np.ndarray): Array of estimates computed on the bootstrapped
+            samples.
 
     Returns:
         pvalues (np.ndarray): Array with bootstrapped p-values. Same length as theta.
     """
-    estimates_2d = estimates.reshape(-1, 1) if estimates.ndim < 2 else estimates
-    num_params = estimates_2d.shape[1]
-
-    cis = np.zeros((num_params, 2))
-    pvalues = np.zeros_like(base_outcome_flat)
+    num_params = estimates.shape[1]
+    pvalues = np.zeros_like(base_outcome)
 
     for k in range(num_params):
 
-        q = _eqf(base_outcome_flat[k] - estimates_2d[:, k] + 1)
-        cis[k, :] = np.array([q(alpha / 2), q(1 - alpha / 2)])
+        # Assume equal tails
+        pvalue_lower = np.mean(estimates[:, k] <= 0)
+        pvalue_upper = 1 - pvalue_lower
 
-        pvalues[k] = np.mean(
-            (estimates_2d[:, k] > cis[k, 0]) & (estimates_2d[:, k] < cis[k, 1])
-        )
+        pvalues[k] = 2 * min(pvalue_lower, pvalue_upper)
 
     return pvalues
 
@@ -80,8 +79,9 @@ def _ci_percentile(estimates, alpha):
     """Compute percentile type confidence interval of bootstrap estimates.
 
     Args:
-        estimates (np.ndarray): Array of estimates in the bootstrap samples.
-        alpha (float): Significance level of choice.
+        estimates (np.ndarray): Array of estimates computed on the bootstrapped
+            samples.
+        alpha (float): Statistical significance level of choice.
 
     Returns:
         cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
@@ -97,13 +97,15 @@ def _ci_percentile(estimates, alpha):
     return cis
 
 
-def _ci_bc(estimates, theta, alpha):
+def _ci_bc(estimates, base_outcome, alpha):
     """Compute bc type confidence interval of bootstrap estimates.
 
     Args:
-        estimates (np.ndarray): Array of estimates in the bootstrap samples.
-        theta (list): List of flat base outcomes.
-        alpha (float): Significance level of choice.
+        estimates (np.ndarray): Array of estimates computed on the bootstrapped
+            samples.
+        base_outcome (list): List of flat base outcomes, i.e. the outcome
+            statistics evaluated on the original data set.
+        alpha (float): Statistical significance level of choice.
 
     Returns:
         cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
@@ -117,7 +119,7 @@ def _ci_bc(estimates, theta, alpha):
         params = estimates[:, k]
 
         # Bias correction
-        z_naught = norm.ppf(np.mean(params <= theta[k]))
+        z_naught = norm.ppf(np.mean(params <= base_outcome[k]))
         z_low = norm.ppf(alpha)
         z_high = norm.ppf(1 - alpha)
 
@@ -129,13 +131,15 @@ def _ci_bc(estimates, theta, alpha):
     return cis
 
 
-def _ci_t(estimates, theta, alpha):
+def _ci_t(estimates, base_outcome, alpha):
     """Compute studentized confidence interval of bootstrap estimates.
 
     Args:
-        estimates (np.ndarray): Array of estimates in the bootstrap samples.
-        theta (list): List of flat base outcomes.
-        alpha (float): Significance level of choice.
+        estimates (np.ndarray): Array of estimates computed on the bootstrapped
+            samples.
+        base_outcome (list): List of flat base outcomes, i.e. the outcome
+            statistics evaluated on the original data set.
+        alpha (float): Statistical significance level of choice.
 
     Returns:
         cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
@@ -149,22 +153,26 @@ def _ci_t(estimates, theta, alpha):
 
         theta_std = np.std(params)
 
-        tq = _eqf((params - theta[k]) / theta_std)
+        tq = _eqf((params - base_outcome[k]) / theta_std)
         t1 = tq(1 - alpha / 2)
         t2 = tq(alpha / 2)
 
-        cis[k, :] = np.array([theta[k] - theta_std * t1, theta[k] - theta_std * t2])
+        cis[k, :] = np.array(
+            [base_outcome[k] - theta_std * t1, base_outcome[k] - theta_std * t2]
+        )
 
     return cis
 
 
-def _ci_normal(estimates, theta, alpha):
+def _ci_normal(estimates, base_outcome, alpha):
     """Compute approximate normal confidence interval of bootstrap estimates.
 
     Args:
-        estimates (np.ndarray): Array of estimates in the bootstrap samples.
-        theta (list): List of flat base outcomes.
-        alpha (float): Significance level of choice.
+        estimates (np.ndarray): Array of estimates computed on the bootstrapped
+            samples.
+        base_outcome (list): List of flat base outcomes, i.e. the outcome
+            statistics evaluated on the original data set.
+        alpha (float): Statistical significance level of choice.
 
     Returns:
         cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
@@ -178,18 +186,22 @@ def _ci_normal(estimates, theta, alpha):
         theta_std = np.std(params)
         t = norm.ppf(alpha / 2)
 
-        cis[k, :] = np.array([theta[k] + theta_std * t, theta[k] - theta_std * t])
+        cis[k, :] = np.array(
+            [base_outcome[k] + theta_std * t, base_outcome[k] - theta_std * t]
+        )
 
     return cis
 
 
-def _ci_basic(estimates, theta, alpha):
+def _ci_basic(estimates, base_outcome, alpha):
     """Compute basic bootstrap confidence interval of bootstrap estimates.
 
     Args:
-        estimates (np.ndarray): Array of estimates in the bootstrap samples.
-        theta (list): List of flat base outcomes.
-        alpha (float): Significance level of choice.
+        estimates (np.ndarray): Array of estimates computed on the bootstrapped
+            samples.
+        base_outcome (list): List of flat base outcomes, i.e. the outcome
+            statistics evaluated on the original data set.
+        alpha (float): Statistical significance level of choice.
 
     Returns:
         cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
@@ -202,7 +214,7 @@ def _ci_basic(estimates, theta, alpha):
         q = _eqf(estimates[:, k])
 
         cis[k, :] = np.array(
-            [2 * theta[k] - q(1 - alpha / 2), 2 * theta[k] - q(alpha / 2)]
+            [2 * base_outcome[k] - q(1 - alpha / 2), 2 * base_outcome[k] - q(alpha / 2)]
         )
 
     return cis
