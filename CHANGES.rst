@@ -7,6 +7,23 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.3.3
+-----
+
+- :gh:`357` Adds jax support (:ghuser:`janosg`)
+- :gh:`359` Improves error handling with violated constaints (:ghuser:`timmens`)
+
+
+0.3.2
+-----
+
+- :gh:`355` Improves test coverage of contraints processing (:ghuser:`janosg`)
+- :gh:`354` Improves test coverage for bounds processing (:ghuser:`timmens`)
+- :gh:`353` Improves history plots (:ghuser:`timmens`)
+- :gh:`352` Improves scaling and benchmarking (:ghuser:`janosg`)
+- :gh:`351` Improves estimation summaries (:ghuser:`timmens`)
+- :gh:`350` Allow empty queries or selectors in constraints (:ghuser:`janosg`)
+
 0.3.1
 -----
 
