@@ -5,6 +5,7 @@ from estimagic.exceptions import InvalidFunctionError
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
+from estimagic.utilities import isscalar
 from pybaum import leaf_names
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten
@@ -130,7 +131,7 @@ def _get_params_unflatten(registry, treedef):
 
 def _get_func_flatten(registry, func_eval, primary_key):
 
-    if _is_scalar(func_eval):
+    if isscalar(func_eval):
         if primary_key == "value":
             func_flatten = lambda func_eval: float(func_eval)
         else:
@@ -233,14 +234,3 @@ class FlatParams(NamedTuple):
     soft_upper_bounds: np.ndarray = None
     names: list = None
     free_mask: np.ndarray = None
-
-
-def _is_scalar(candidate):
-    """Jax aware replacement for np.isscalar."""
-    if np.isscalar(candidate):
-        return True
-    # call anything a scalar that says it has 0 dimensions
-    elif getattr(candidate, "ndim", -1) == 0:
-        return True
-    else:
-        return False
