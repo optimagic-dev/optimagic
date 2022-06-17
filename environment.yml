@@ -44,7 +44,7 @@ dependencies:
   - sphinx-panels
   - pygmo
   - nb_black
-  - pybaum
+  - pybaum>=0.1.2
 
   - pip:
       - black
