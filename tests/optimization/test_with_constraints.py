@@ -267,3 +267,18 @@ def test_constraint_inheritance():
             ],
         )
         aaae(res.params, [0.5] * 4)
+
+
+def test_invalid_start_params():
+    def criterion(x):
+        return np.dot(x, x)
+
+    x = np.arange(3)
+
+    with pytest.raises(InvalidParamsError):
+        minimize(
+            criterion,
+            params=x,
+            algorithm="scipy_lbfgsb",
+            constraints=[{"loc": [1, 2], "type": "probability"}],
+        )
