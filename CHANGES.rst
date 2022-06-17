@@ -12,6 +12,8 @@ releases are available on `Anaconda.org
 
 - :gh:`357` Adds jax support (:ghuser:`janosg`)
 - :gh:`359` Improves error handling with violated constaints (:ghuser:`timmens`)
+- :gh:`358` Improves cartis roberts set of test functions and improves the
+  default latex rendering of MultiIndex tables (:ghuser:`mpetrosian`)
 
 
 0.3.2
