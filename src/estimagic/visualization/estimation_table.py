@@ -324,6 +324,7 @@ def render_latex(
         "hrules": True,
         "siunitx": True,
         "column_format": "l" * n_levels + "S" * n_columns,
+        "multirow_align": "t",
     }
     if render_options:
         default_options.update(render_options)

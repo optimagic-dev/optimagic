@@ -171,7 +171,7 @@ prolems_dict_input = {
         "start_x": {"a": 1, "b": np.ones((2, 2, 2))},
         "solution_x": {
             "a": linear_full_rank_solution_x[0],
-            "b": linear_full_rank_solution_x[1:].reshape(2, 2, 2),
+            "b": np.array(linear_full_rank_solution_x[1:]).reshape(2, 2, 2),
         },
         "start_criterion": 72,
         "solution_criterion": 36,
