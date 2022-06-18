@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.config import IS_JAX_INSTALLED
 from estimagic.utilities import calculate_trustregion_initial_radius
 from estimagic.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.utilities import cov_matrix_to_params
@@ -9,6 +10,7 @@ from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import cov_to_sds_and_corr
 from estimagic.utilities import dimension_to_number_of_triangular_elements
 from estimagic.utilities import hash_array
+from estimagic.utilities import isscalar
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 from estimagic.utilities import read_pickle
 from estimagic.utilities import robust_cholesky
@@ -18,6 +20,9 @@ from estimagic.utilities import sdcorr_params_to_sds_and_corr
 from estimagic.utilities import sds_and_corr_to_cov
 from estimagic.utilities import to_pickle
 from numpy.testing import assert_array_almost_equal as aaae
+
+if IS_JAX_INSTALLED:
+    import jax.numpy as jnp
 
 
 def test_chol_params_to_lower_triangular_matrix():
@@ -176,3 +181,32 @@ def test_pickling(tmp_path):
     to_pickle(a, path)
     b = read_pickle(path)
     assert a == b
+
+
+SCALARS = [1, 2.0, np.pi, np.array(1), np.array(2.0), np.array(np.pi), np.nan]
+
+
+@pytest.mark.parametrize("element", SCALARS)
+def test_isscalar_true(element):
+    assert isscalar(element) is True
+
+
+NON_SCALARS = [np.arange(3), {"a": 1}, [1, 2, 3]]
+
+
+@pytest.mark.parametrize("element", NON_SCALARS)
+def test_isscalar_false(element):
+    assert isscalar(element) is False
+
+
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")
+def tets_isscalar_jax_true():
+    x = jnp.arange(3)
+    element = x @ x
+    assert isscalar(element) is True
+
+
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")
+def test_isscalar_jax_false():
+    element = jnp.arange(3)
+    assert isscalar(element) is False
