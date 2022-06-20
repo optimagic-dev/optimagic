@@ -3,18 +3,11 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.bootstrap import bootstrap_from_outcomes
-from estimagic.inference.bootstrap_ci import compute_bootstrapped_p_values
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
-from pandas.testing import assert_series_equal as ase
 from pybaum import tree_just_flatten
-
-# ======================================================================================
-# ci
-# ======================================================================================
 
 
 @pytest.fixture
@@ -118,47 +111,3 @@ def test_check_inputs_ci_level(setup):
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=setup["df"], ci_level=ci_level)
     assert "Input 'ci_level' must be in [0,1]." == str(excinfo.value)
-
-
-# ======================================================================================
-# p-values
-# ======================================================================================
-
-
-@pytest.fixture
-def setup_pval():
-    out = {}
-
-    out["df"] = pd.DataFrame(
-        np.array([-3.75, -3, -1.5, 1.25, 2, 2.5, 3, 3.5]), columns=["x"]
-    )
-    # Estimates, i.e. internal outcomes, are numpy arrays that come from a list of
-    # pytrees, so they are always 2d
-    out["estimates"] = np.array([-3, -1.5, 1.25, 2, 2, 3, 3, 3.5]).reshape(-1, 1)
-
-    return out
-
-
-def test_p_values(setup_pval):
-    registry = get_registry(extended=True)
-
-    def outcome_flat(data):
-        return tree_just_flatten(g(data), registry=registry)
-
-    base_outcome = outcome_flat(setup_pval["df"])
-
-    pvalue = compute_bootstrapped_p_values(base_outcome, setup_pval["estimates"])
-    assert np.allclose(pvalue, 0.5)
-
-
-def test_p_values_from_results(setup_pval):
-    registry = get_registry(extended=True)
-    bootstrap_outcomes = tree_just_flatten(setup_pval["estimates"], registry=registry)
-
-    result = bootstrap_from_outcomes(
-        base_outcome=g(setup_pval["df"]),
-        bootstrap_outcomes=bootstrap_outcomes,
-    )
-
-    pvalue = result.p_values()
-    ase(pvalue, pd.Series(0.5, index=["x"]))

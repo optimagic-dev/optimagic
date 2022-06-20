@@ -295,9 +295,9 @@ def calculate_p_values(flat_values, flat_standard_error):
     return pvalues
 
 
-def convert_flat_params_to_pytree(flat_statistic, flat_params, converter):
+def convert_flat_params_to_pytree(free_statistic, flat_params, converter):
     helper = np.full(len(flat_params.values), np.nan)
-    helper[flat_params.free_mask] = flat_statistic
+    helper[flat_params.free_mask] = free_statistic
     out = converter.params_from_internal(helper)
 
     return out

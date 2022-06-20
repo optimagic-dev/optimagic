@@ -11,14 +11,14 @@ def compute_ci(
 ):
     """Compute confidence interval of bootstrap estimates.
 
-    Parts of the code of the
-    subfunctions of this function are taken from Daniel Saxton's resample library, as
-    found on https://github.com/dsaxton/resample/ .
+    Parts of the code of the subfunctions of this function are taken from
+    Daniel Saxton's resample library, as found on
+    https://github.com/dsaxton/resample/
 
 
     Args:
         base_outcome_flat (list): List of flat base outcomes, i.e. the outcome
-            statistics evaluated on the original data set.
+            statistic(s) evaluated on the original data set.
         estimates (np.ndarray): Array of estimates computed on the bootstrapped
             samples.
         ci_method (str): Method of choice for confidence interval computation.
@@ -49,31 +49,6 @@ def compute_ci(
     return cis[:, 0], cis[:, 1]
 
 
-def compute_bootstrapped_p_values(base_outcome, estimates):
-    """Compute percentile type p-values (two-sided) under the assumption of equal tails.
-
-    Args:
-        base_outcome (list): List of flat base outcomes, i.e. the outcome
-            statistics evaluated on the original data set.
-        estimates (np.ndarray): Array of estimates computed on the bootstrapped
-            samples.
-
-    Returns:
-        pvalues (np.ndarray): Array with bootstrapped p-values. Same length as theta.
-    """
-    num_params = estimates.shape[1]
-    pvalues = np.zeros_like(base_outcome)
-
-    for k in range(num_params):
-
-        # Assume equal tails
-        pvalue_lower = np.mean(estimates[:, k] <= 0)
-
-        pvalues[k] = 2 * min(pvalue_lower, 1 - pvalue_lower)
-
-    return pvalues
-
-
 def _ci_percentile(estimates, alpha):
     """Compute percentile type confidence interval of bootstrap estimates.
 
@@ -83,7 +58,8 @@ def _ci_percentile(estimates, alpha):
         alpha (float): Statistical significance level of choice.
 
     Returns:
-        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
+            for k'th parameter.
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -107,7 +83,8 @@ def _ci_bc(estimates, base_outcome, alpha):
         alpha (float): Statistical significance level of choice.
 
     Returns:
-        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
+            for k'th parameter.
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -141,7 +118,8 @@ def _ci_t(estimates, base_outcome, alpha):
         alpha (float): Statistical significance level of choice.
 
     Returns:
-        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
+            for k'th parameter.
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -174,7 +152,8 @@ def _ci_normal(estimates, base_outcome, alpha):
         alpha (float): Statistical significance level of choice.
 
     Returns:
-        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
+            for k'th parameter.
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -203,7 +182,8 @@ def _ci_basic(estimates, base_outcome, alpha):
         alpha (float): Statistical significance level of choice.
 
     Returns:
-        cis (np.ndarray): Array where k'th row contains CI for k'th parameter.
+        cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
+            for k'th parameter.
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))

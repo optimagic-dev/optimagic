@@ -50,7 +50,7 @@ def expected():
 
 
 def g(data):
-    # Make sure to get Series back when .mean() is applied to Series
+    # Make sure to get Series back when .mean() is applied to a Series
     return pd.DataFrame(data).mean(axis=0)
 
 
@@ -65,7 +65,6 @@ def test_bootstrap_from_outcomes(setup, expected):
     lower_ci, upper_ci = result.ci()
     covariance = result.cov()
     standard_errors = result.se()
-    pvalues = result.p_values()
 
     # Use rounding to adjust precision because there is no other way of handling this
     # such that it is compatible across all supported pandas versions.
@@ -76,7 +75,6 @@ def test_bootstrap_from_outcomes(setup, expected):
     ase(upper_ci.round(2), expected["upper_ci"].round(2))
     afe(covariance.round(2), expected["cov"].round(2))
     ase(standard_errors.round(2), expected["se"].round(2))
-    ase(pvalues.round(2), expected["p_values"].round(2))
 
 
 def test_bootstrap_from_outcomes_single_outcome(setup, expected):
@@ -88,14 +86,12 @@ def test_bootstrap_from_outcomes_single_outcome(setup, expected):
 
     outcomes = result.outcomes()
     lower_ci, upper_ci = result.ci()
-    pvalue = result.p_values()
 
     for i in range(len(outcomes)):
         ase(outcomes[i], setup["estimates_pytree_x1"][i])
 
     ase(lower_ci.round(2), expected["lower_ci_x1"].round(2))
     ase(upper_ci.round(2), expected["upper_ci_x1"].round(2))
-    ase(pvalue.round(2), expected["p_value_x1"].round(2))
 
 
 @pytest.mark.parametrize("input_type", ["arr", "df", "dict"])
@@ -128,3 +124,20 @@ def test_cov_wrong_return_type(setup):
         assert result.cov(return_type="dict")
 
     assert str(error.value) == expected_msg
+
+
+def test_not_implemented(setup):
+    result = bootstrap_from_outcomes(
+        base_outcome=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_pytree"],
+    )
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result.p_values()
+
+    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result.summary()
+
+    assert str(error.value) == "summary is not implemented yet."

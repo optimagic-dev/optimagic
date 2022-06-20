@@ -5,7 +5,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.inference.bootstrap_ci import compute_bootstrapped_p_values
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
@@ -78,8 +77,8 @@ def bootstrap_from_outcomes(base_outcome, bootstrap_outcomes):
     """Create BootstrapResults object.
 
     Args:
-        base_outcome (pytree): Pytree of base outcomes, i.e. the outcome statistics
-            evaluated on the original data set.
+        base_outcome (pytree): Pytree of base outcomes, i.e. the outcome
+            statistic(s) evaluated on the original data set.
         bootstrap_outcomes (list): List of pytrees of estimated
             bootstrap outcomes.
 
@@ -162,23 +161,6 @@ class BootstrapResult:
 
         return out
 
-    def p_values(self):
-        """Calculate p-values.
-
-        Returns:
-            Any: A pytree with the same structure as base_outcomes containing p-values
-                for the parameter estimates.
-        """
-        registry = get_registry(extended=True)
-        base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
-
-        p_values = compute_bootstrapped_p_values(
-            base_outcome_flat, self._internal_outcomes
-        )
-        out = tree_unflatten(treedef, p_values, registry=registry)
-
-        return out
-
     def cov(self, return_type="pytree"):
         """Calculate the variance-covariance matrix of the estimated parameters.
 
@@ -220,9 +202,9 @@ class BootstrapResult:
                 intervals. The default is 0.95.
 
         Returns:
-            Any: Pytree with the same structure as base_outcomes containing lower
+            Any: Pytree with the same structure as base_outcome containing lower
                 bounds of confidence intervals.
-            Any: Pytree with the same structure as base_outcomes containing upper
+            Any: Pytree with the same structure as base_outcome containing upper
                 bounds of confidence intervals.
         """
         registry = get_registry(extended=True)
@@ -237,6 +219,15 @@ class BootstrapResult:
 
         return lower, upper
 
+    def p_values(self):
+        """Calculate p-values.
+
+        Returns:
+            Any: A pytree with the same structure as base_outcome containing p-values
+                for the parameter estimates.
+        """
+        raise NotImplementedError("Bootstrapped p-values are not implemented yet.")
+
     def summary(self, ci_method="percentile", ci_level=0.95):
         """Create a summary of bootstrap results.
 
@@ -250,23 +241,4 @@ class BootstrapResult:
                 on the mean, standard errors, as well as the confidence intervals.
                 Soon this will be a pytree.
         """
-        check_inputs(ci_method=ci_method, ci_level=ci_level)
-
-        lower, upper = compute_ci(
-            self.base_outcome, self._outcomes_internal, ci_method, ci_level
-        )
-
-        cis = pd.DataFrame(
-            np.stack([lower, upper], axis=1),
-            columns=["lower_ci", "upper_ci"],
-        )
-
-        summary = pd.DataFrame(
-            np.mean(self._internal_outcomes, axis=0), columns=["mean"]
-        )
-        summary["std"] = np.std(self._internal_outcomes, axis=0)
-
-        summary["lower_ci"] = cis["lower_ci"]
-        summary["upper_ci"] = cis["upper_ci"]
-
-        return summary
+        raise NotImplementedError("summary is not implemented yet.")

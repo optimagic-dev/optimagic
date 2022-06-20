@@ -31,9 +31,7 @@ def get_bootstrap_outcomes(
             as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
 
     Returns:
-        estimates (pandas.DataFrame): Outcomes for different bootstrap samples. The
-            columns are the index of the result of ``outcome``.
-            List of pytrees.
+        estimates (list):  List of pytrees of estimated bootstrap outcomes.
     """
     check_inputs(data=data, cluster_by=cluster_by)
     batch_evaluator = process_batch_evaluator(batch_evaluator)
