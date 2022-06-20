@@ -1,7 +1,9 @@
 import pandas as pd
 
 
-def check_inputs(data=None, cluster_by=None, ci_method="percentile", ci_level=0.95):
+def check_inputs(
+    data=None, cluster_by=None, ci_method="percentile", ci_level=0.95, skipdata=False
+):
     """Check validity of inputs.
 
     Args:
@@ -9,24 +11,25 @@ def check_inputs(data=None, cluster_by=None, ci_method="percentile", ci_level=0.
         cluster_by (str): column name of variable to cluster by.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
-    """
 
+    """
     ci_method_list = ["percentile", "bc", "t", "normal", "basic"]
 
-    if not isinstance(data, pd.DataFrame) and data is not None:
-        raise ValueError("Input 'data' must be DataFrame.")
+    if not skipdata:
+        if data is None:
+            raise ValueError("Data cannot be None if outcome is callable.")
+        elif not isinstance(data, pd.DataFrame):
+            raise ValueError("Data must be a pandas.DataFrame.")
+        elif (cluster_by is not None) and (cluster_by not in data.columns.tolist()):
+            raise ValueError(
+                "Input 'cluster_by' must be None or a column name of DataFrame."
+            )
 
-    elif (cluster_by is not None) and (cluster_by not in data.columns.tolist()):
-        raise ValueError(
-            "Input 'cluster_by' must be None or a column name of DataFrame."
-        )
-
-    elif ci_method not in ci_method_list:
+    if ci_method not in ci_method_list:
         raise ValueError(
             "ci_method must be 'percentile', 'bc',"
             " 't', 'basic' or 'normal', '{method}'"
             " was supplied".format(method=ci_method)
         )
-
-    elif ci_level > 1 or ci_level < 0:
+    if ci_level > 1 or ci_level < 0:
         raise ValueError("Input 'ci_level' must be in [0,1].")

@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.bootstrap_ci import compute_ci
+from estimagic.inference.bootstrap_ci import calculate_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
@@ -72,7 +72,7 @@ def test_ci(outcome, method, setup, expected):
         return tree_just_flatten(outcome(data), registry=registry)
 
     base_outcome = outcome_flat(setup["df"])
-    lower, upper = compute_ci(base_outcome, setup["estimates"], ci_method=method)
+    lower, upper = calculate_ci(base_outcome, setup["estimates"], ci_method=method)
 
     aaae(lower, expected[method + "_ci"][:, 0])
     aaae(upper, expected[method + "_ci"][:, 1])

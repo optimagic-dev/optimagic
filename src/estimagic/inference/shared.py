@@ -330,6 +330,11 @@ def transform_free_cov_to_cov(free_cov, free_params, params, return_type):
         cov = pd.DataFrame(cov, columns=names, index=names)
     elif return_type == "pytree":
         cov = matrix_to_block_tree(cov, params, params)
+    elif return_type != "array":
+        raise ValueError(
+            "return_type must be one of pytree, array, or dataframe, "
+            f"not {return_type}."
+        )
     return cov
 
 

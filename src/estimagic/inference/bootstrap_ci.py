@@ -3,7 +3,7 @@ from estimagic.inference.bootstrap_helpers import check_inputs
 from scipy.stats import norm
 
 
-def compute_ci(
+def calculate_ci(
     base_outcome_flat,
     estimates,
     ci_method="percentile",
@@ -31,7 +31,7 @@ def compute_ci(
         np.ndarray: 1d array of the upper confidence interval, where the k'th entry
             contains the upper confidence interval for the k'th parameter.
     """
-    check_inputs(ci_method=ci_method, ci_level=ci_level)
+    check_inputs(ci_method=ci_method, ci_level=ci_level, skipdata=True)
 
     alpha = 1 - ci_level
 
