@@ -1,7 +1,7 @@
 .. _list_of_algorithms:
 
-Available optimizers and their options
-======================================
+Optimizers
+==========
 
 Check out :ref:`algorithms` to see how to select an algorithm and specify
 ``algo_options`` when using ``maximize`` or ``minimize``.

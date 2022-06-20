@@ -325,9 +325,9 @@ def estimate_ml(
     # ==================================================================================
 
     res = LikelihoodResult(
-        params=estimates,
+        _params=estimates,
         _converter=converter,
-        optimize_result=opt_res,
+        _optimize_result=opt_res,
         _jacobian=jacobian_eval,
         _no_jacobian_reason=_no_jac_reason,
         _hessian=hessian_eval,
@@ -344,11 +344,13 @@ def estimate_ml(
 
 @dataclass
 class LikelihoodResult:
-    params: Any
+    """Likelihood estimation results object."""
+
+    _params: Any
     _flat_params: Any
     _converter: Converter
     _has_constraints: bool
-    optimize_result: Union[OptimizeResult, None] = None
+    _optimize_result: Union[OptimizeResult, None] = None
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
     _hessian: Any = None
@@ -422,6 +424,14 @@ class LikelihoodResult:
         )
 
         return free_cov
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def optimize_result(self):
+        return self._optimize_result
 
     @property
     def jacobian(self):
@@ -566,7 +576,7 @@ class LikelihoodResult:
                     "there are no constraints that reduce the number of free "
                     "parameters."
                 )
-            out = matrix_to_block_tree(free_cov, self.params, self.params)
+            out = matrix_to_block_tree(free_cov, self._params, self._params)
         return out
 
     def summary(
@@ -614,7 +624,7 @@ class LikelihoodResult:
         )
 
         summary = calculate_inference_quantities(
-            estimates=self.params,
+            estimates=self._params,
             internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,
