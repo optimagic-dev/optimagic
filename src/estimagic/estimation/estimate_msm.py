@@ -113,17 +113,21 @@ def estimate_msm(
             the file extension ``.db``. If the file does not exist, it will be created.
             The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "fast_logging": A boolean that determines if "unsafe" settings are used
-            to speed up write processes to the database. This should only be used for
-            very short running criterion functions where the main purpose of the log
-            is a real-time dashboard and it would not be catastrophic to get a
-            corrupted database in case of a sudden system shutdown. If one evaluation
-            of the criterion function (and gradient if applicable) takes more than
-            100 ms, the logging overhead is negligible.
-            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
-            do if the tables we want to write to already exist. Default "extend".
-            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
-            do if the database we want to write to already exists. Default "extend".
+
+            - "fast_logging" (bool):
+                A boolean that determines if "unsafe" settings are used to speed up
+                write processes to the database. This should only be used for very short
+                running criterion functions where the main purpose of the log is a
+                real-time dashboard and it would not be catastrophic to get a corrupted
+                database in case of a sudden system shutdown. If one evaluation of the
+                criterion function (and gradient if applicable) takes more than 100 ms,
+                the logging overhead is negligible.
+            - "if_table_exists" (str):
+                One of "extend", "replace", "raise". What to do if the tables we want to
+                write to already exist. Default "extend".
+            - "if_database_exists" (str):
+                One of "extend", "replace", "raise". What to do if the database we want
+                to write to already exists. Default "extend".
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details. Note that by default we increase the
@@ -318,8 +322,8 @@ def estimate_msm(
     # ==================================================================================
 
     res = MomentsResult(
-        params=estimates,
-        weights=weights,
+        _params=estimates,
+        _weights=weights,
         _flat_params=internal_estimates,
         _converter=converter,
         _internal_weights=internal_weights,
@@ -443,8 +447,10 @@ def _partial_kwargs(func, kwargs):
 
 @dataclass
 class MomentsResult:
-    params: Any
-    weights: Any
+    """Method of moments estimation results object."""
+
+    _params: Any
+    _weights: Any
     _flat_params: Any
     _converter: Converter
     _internal_moments_cov: np.ndarray
@@ -454,6 +460,14 @@ class MomentsResult:
     _has_constraints: bool
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def weights(self):
+        return self._weights
 
     @property
     def jacobian(self):
@@ -611,7 +625,7 @@ class MomentsResult:
                     "there are no constraints that reduce the number of free "
                     "parameters."
                 )
-            out = matrix_to_block_tree(free_cov, self.params, self.params)
+            out = matrix_to_block_tree(free_cov, self._params, self._params)
         return out
 
     def summary(
@@ -658,7 +672,7 @@ class MomentsResult:
         )
 
         summary = calculate_inference_quantities(
-            estimates=self.params,
+            estimates=self._params,
             internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,
@@ -793,10 +807,10 @@ class MomentsResult:
 
         The sensitivity measures are based on the following papers:
 
-        Andrews, Gentzkow & Shapiro
-        (https://academic.oup.com/qje/article/132/4/1553/3861634)
+        Andrews, Gentzkow & Shapiro (2017, Quarterly Journal of Economics)
 
-        Honore, Jorgensen & de Paula (https://papers.srn.com/abstract=3518640)
+        Honore, Jorgensen & de Paula
+        (https://onlinelibrary.wiley.com/doi/full/10.1002/jae.2779)
 
         In the papers the different kinds of sensitivity measures are just called
         m1, e2, e3, e4, e5 and e6. We try to give them more informative names, but
@@ -804,21 +818,27 @@ class MomentsResult:
 
         Args:
             kind (str): The following kinds are supported:
-                - "bias": Origally m1. How strongly would the parameter estimates be
-                   biased if the kth moment was misspecified, i.e not zero in
-                   expectation?
-                - "noise_fundamental": Originally e2. How much precision would be lost
-                   if the kth moment was subject to a little additional noise if the
-                   optimal weighting matrix was used?
-                - "noise": Originally e3. How much precision would be lost if the kth
-                  moment was subjet to a little additional noise?
-                - "removal": Originally e4. How much precision would be lost if the kth
-                  moment was excluded from the estimation?
-                - "removal_fundamental": Originally e5. How much precision would be lost
-                  if the kth moment was excluded from the estimation if the
-                  asymptotically optimal weighting matrix was used.
-                - "weighting": Originally e6. How would the precision change if the
-                  weight of the kth moment is increased a little?
+
+                - "bias":
+                    Origally m1. How strongly would the parameter estimates be biased if
+                    the kth moment was misspecified, i.e not zero in expectation?
+                - "noise_fundamental":
+                    Originally e2. How much precision would be lost if the kth moment
+                    was subject to a little additional noise if the optimal weighting
+                    matrix was used?
+                - "noise":
+                    Originally e3. How much precision would be lost if the kth moment
+                    was subjet to a little additional noise?
+                - "removal":
+                    Originally e4. How much precision would be lost if the kth moment
+                    was excluded from the estimation?
+                - "removal_fundamental":
+                    Originally e5. How much precision would be lost if the kth moment
+                    was excluded from the estimation if the asymptotically optimal
+                    weighting matrix was used.
+                - "weighting":
+                    Originally e6. How would the precision change if the weight of the
+                    kth moment is increased a little?
             n_samples (int): Number of samples used to transform the covariance matrix
                 of the internal parameter vector into the covariance matrix of the
                 external parameters. For background information about internal and
@@ -911,7 +931,7 @@ class MomentsResult:
         elif return_type == "pytree":
             out = matrix_to_block_tree(
                 raw,
-                outer_tree=self.params,
+                outer_tree=self._params,
                 inner_tree=self._empirical_moments,
             )
         elif return_type == "dataframe":

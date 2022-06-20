@@ -5,14 +5,14 @@ Core Team
 ---------
 
 +---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
-+ .. figure:: _static/images/janos.jpg                          + .. figure:: _static/images/klara.jpg                          + .. figure:: _static/images/tobi.png                               +
++ .. figure:: ../_static/images/janos.jpg                       + .. figure:: ../_static/images/klara.jpg                       + .. figure:: ../_static/images/tobi.png                            +
 +     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
 +                                                               +                                                               +                                                                   +
 +     `Janoś Gabler <https://github.com/janosg>`_               +     `Klara Röhrl <https://github.com/roecla>`_                +     `Tobias Raabe <https://github.com/tobiasraabe>`_              +
 +                                                               +                                                               +                                                                   +
 +     (BDFL)                                                    +     (Core Developer)                                          +     (Core Developer)                                              +
 +---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
-+ .. figure:: _static/images/tim.jpeg                           + .. figure:: _static/images/sebi.jpg                           + .. figure:: _static/images/hmg.jpg                                +
++ .. figure:: ../_static/images/tim.jpeg                        + .. figure:: ../_static/images/sebi.jpg                        + .. figure:: ../_static/images/hmg.jpg                             +
 +     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
 +                                                               +                                                               +                                                                   +
 +     `Tim Mensinger <https://github.com/timmens>`_             +     `Sebastian Gsell <https://github.com/segsell>`_           +     `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_ +
@@ -58,7 +58,7 @@ Acknowledgements
 Funded by the `TRA Modelling`_ (University of Bonn) as part of the Excellence Strategy
 of the federal and state governments.
 
-.. figure:: _static/images/tra_logo.png
+.. figure:: ../_static/images/tra_logo.png
     :width: 200px
 
 ----------------------------------------------------------------------------------------
