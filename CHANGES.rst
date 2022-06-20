@@ -7,6 +7,12 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.3.4
+-----
+
+- :gh:`360` Update results object documentation (:ghuser:`timmens`)
+
+
 0.3.3
 -----
 
