@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.inference.bootstrap import bootstrap
 from estimagic.inference.bootstrap import bootstrap_from_outcomes
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
@@ -49,9 +50,21 @@ def expected():
     return out
 
 
-def g(data):
+def g(data, shift=0):
     # Make sure to get Series back when .mean() is applied to a Series
-    return pd.DataFrame(data).mean(axis=0)
+    mean = pd.DataFrame(data).mean(axis=0) + shift
+
+    return mean
+
+
+@pytest.mark.parametrize("shift", [0, 10, -10])
+def test_bootstrap_with_outcome_kwargs(shift, setup):
+    result = bootstrap(
+        data=(setup["df"]), outcome=g, seed=123, outcome_kwargs={"shift": shift}
+    )
+
+    expected = pd.Series([2.5, 7.0], index=["x1", "x2"])
+    ase(result.base_outcome, expected + shift)
 
 
 def test_bootstrap_from_outcomes(setup, expected):
@@ -66,8 +79,8 @@ def test_bootstrap_from_outcomes(setup, expected):
     covariance = result.cov()
     standard_errors = result.se()
 
-    # Use rounding to adjust precision because there is no other way of handling this
-    # such that it is compatible across all supported pandas versions.
+    # Use rounding to adjust precision and ensure reproducibility accross all
+    # supported pandas versions.
     for i in range(len(outcomes)):
         ase(outcomes[i], setup["estimates_pytree"][i])
 
@@ -103,6 +116,23 @@ def test_wrong_input_types(input_type, setup):
         )
 
 
+def test_not_implemented(setup):
+    result = bootstrap_from_outcomes(
+        base_outcome=g(setup["df"]),
+        bootstrap_outcomes=setup["estimates_pytree"],
+    )
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result.p_values()
+
+    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result.summary()
+
+    assert str(error.value) == "summary is not implemented yet."
+
+
 @pytest.mark.parametrize("return_type", ["array", "dataframe", "pytree"])
 def test_cov_correct_return_type(return_type, setup):
     result = bootstrap_from_outcomes(
@@ -124,20 +154,3 @@ def test_cov_wrong_return_type(setup):
         assert result.cov(return_type="dict")
 
     assert str(error.value) == expected_msg
-
-
-def test_not_implemented(setup):
-    result = bootstrap_from_outcomes(
-        base_outcome=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates_pytree"],
-    )
-
-    with pytest.raises(NotImplementedError) as error:
-        assert result.p_values()
-
-    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
-
-    with pytest.raises(NotImplementedError) as error:
-        assert result.summary()
-
-    assert str(error.value) == "summary is not implemented yet."
