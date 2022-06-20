@@ -30,7 +30,9 @@ def get_registry(extended=False, data_col="value"):
         dict: The pytree registry.
 
     """
-    types = ["numpy.ndarray", "pandas.Series"] if extended else None
+    types = (
+        ["numpy.ndarray", "pandas.Series", "jax.numpy.ndarray"] if extended else None
+    )
     registry = get_pybaum_registry(types=types)
     if extended:
         registry[pd.DataFrame] = {

@@ -132,6 +132,7 @@ def test_get_next_trust_region_points_latin_hypercube_single_use(
     aaae(sample.mean(axis=0), center, decimal=decimal)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "optimality_criterion",
     ["a-optimal", "e-optimal", "d-optimal", "g-optimal", "maximin"],

@@ -195,6 +195,9 @@ def maximize(
             optimization faster, especially for very fast criterion functions. Default
             False.
 
+    Returns:
+        OptimizeResult: The optmization result.
+
     """
     return _optimize(
         direction="maximize",
@@ -392,6 +395,9 @@ def minimize(
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
+
+    Returns:
+        OptimizeResult: The optmization result.
 
     """
     return _optimize(

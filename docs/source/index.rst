@@ -171,6 +171,4 @@ Numerical differentiation
   :hidden:
 
   development/index
-  changes
-  credits
   algorithms
