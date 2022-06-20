@@ -23,7 +23,7 @@ from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
 from estimagic.inference.shared import transform_free_cov_to_cov
-from estimagic.inference.shared import transform_free_params_to_params
+from estimagic.inference.shared import transform_free_values_to_params_treedef
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.block_trees import block_tree_to_matrix
@@ -433,15 +433,15 @@ class LikelihoodResult:
         )
         return free_cov
 
-    @cached_property
+    @property
     def params(self):
         return self._params
 
-    @cached_property
+    @property
     def optimize_result(self):
         return self._optimize_result
 
-    @cached_property
+    @property
     def jacobian(self):
         if self._jacobian is None:
             raise NotAvailableError(
@@ -449,7 +449,7 @@ class LikelihoodResult:
             )
         return self._jacobian
 
-    @cached_property
+    @property
     def hessian(self):
         if self._hessian is None:
             raise NotAvailableError(
@@ -517,8 +517,11 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        se = transform_free_params_to_params(
-            free_params=np.sqrt(np.diagonal(free_cov)),
+        free_se = np.sqrt(np.diagonal(free_cov))
+
+        se = transform_free_values_to_params_treedef(
+            values=free_se,
+            free_params=self._free_estimates,
             params=self._params,
         )
         return se
@@ -619,7 +622,7 @@ class LikelihoodResult:
 
         summary = calculate_estimation_summary(
             estimates=self._params,
-            internal_estimates=self._internal_estimates,
+            free_estimates=self._free_estimates,
             free_cov=free_cov,
             ci_level=ci_level,
         )
@@ -677,8 +680,10 @@ class LikelihoodResult:
         )
 
         lower, upper = (
-            transform_free_params_to_params(free, params=self._params)
-            for free in (free_lower, free_upper)
+            transform_free_values_to_params_treedef(
+                values, free_params=self._free_estimates, params=self._params
+            )
+            for values in (free_lower, free_upper)
         )
         return lower, upper
 
@@ -729,7 +734,9 @@ class LikelihoodResult:
             flat_standard_errors=np.sqrt(np.diagonal(free_cov)),
         )
 
-        p_values = transform_free_params_to_params(free_p_values, params=self._params)
+        p_values = transform_free_values_to_params_treedef(
+            free_p_values, free_params=self._free_estimates, params=self._params
+        )
         return p_values
 
     def to_pickle(self, path):

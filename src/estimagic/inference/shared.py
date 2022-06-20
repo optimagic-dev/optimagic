@@ -87,13 +87,13 @@ def transform_covariance(
     return free_cov
 
 
-def calculate_estimation_summary(estimates, internal_estimates, free_cov, ci_level):
+def calculate_estimation_summary(estimates, free_estimates, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
         estimates (pytree): The input parameter pytree.
-        internal_estimates (FlatParams): NamedTuple with internal estimated parameter
-            values and names, lower_bounds and upper_bounds, and free_mask.
+        free_estimates (FreeParams): NamedTuple with internal estimated parameter values
+            and names, lower_bounds and upper_bounds, and free_mask.
         free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
             of the free parameters. If parameters were fixed (explicitly or by other
             constraints) the index is a subset of params.index. The columns are the same
@@ -110,7 +110,7 @@ def calculate_estimation_summary(estimates, internal_estimates, free_cov, ci_lev
 
     """
     if not isinstance(free_cov, pd.DataFrame):
-        free_index = np.array(internal_estimates.free_names)
+        free_index = np.array(free_estimates.free_names)
         free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
 
     # ==================================================================================
@@ -118,9 +118,9 @@ def calculate_estimation_summary(estimates, internal_estimates, free_cov, ci_lev
     # ==================================================================================
     registry = get_registry(extended=True)
 
-    df = pd.DataFrame(index=internal_estimates.allnames)
+    df = pd.DataFrame(index=free_estimates.all_names)
     df["value"] = tree_just_flatten(estimates, registry=registry)
-    df["free"] = internal_estimates.free_mask
+    df["free"] = free_estimates.free_mask
     df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
 
     df["p_value"] = calculate_p_values(
@@ -147,7 +147,7 @@ def calculate_estimation_summary(estimates, internal_estimates, free_cov, ci_lev
     # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(estimates, internal_estimates.names, registry=registry)
+    indices = tree_unflatten(estimates, free_estimates.all_names, registry=registry)
 
     estimates_flat = tree_just_flatten(estimates)
     indices_flat = tree_just_flatten(indices)
@@ -298,8 +298,8 @@ def calculate_ci(flat_values, flat_standard_errors, ci_level):
     return lower, upper
 
 
-def calculate_p_values(flat_values, flat_standard_error):
-    tvalues = flat_values / np.clip(flat_standard_error, 1e-300, np.inf)
+def calculate_p_values(flat_values, flat_standard_errors):
+    tvalues = flat_values / np.clip(flat_standard_errors, 1e-300, np.inf)
     pvalues = 2 * scipy.stats.norm.sf(np.abs(tvalues))
     return pvalues
 
@@ -321,6 +321,7 @@ def calculate_free_estimates(estimates, internal_estimates):
 
 
 def transform_free_cov_to_cov(free_cov, free_params, params, return_type):
+    """Fill non-free values and project to params block-tree."""
     mask = free_params.free_mask
     cov = np.full((len(mask), len(mask)), np.nan)
     cov[np.ix_(mask, mask)] = free_cov
@@ -332,10 +333,11 @@ def transform_free_cov_to_cov(free_cov, free_params, params, return_type):
     return cov
 
 
-def transform_free_params_to_params(free_params, params):
+def transform_free_values_to_params_treedef(values, free_params, params):
+    """Fill non-free values and project to params treedef."""
     mask = free_params.free_mask
     flat = np.full(len(mask), np.nan)
-    flat[np.ix_(mask)] = free_params.values
+    flat[np.ix_(mask)] = values
     registry = get_registry(extended=True)
     pytree = tree_unflatten(params, flat, registry=registry)
     return pytree
