@@ -4,11 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.inference.bootstrap_outcomes import (
-    _get_bootstrap_outcomes_from_indices,
-)
+from estimagic.inference.bootstrap_outcomes import _get_bootstrap_outcomes_from_indices
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
-from pandas.testing import assert_frame_equal as afe
+from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.fixture
@@ -17,10 +15,34 @@ def data():
     return df
 
 
-def test_get_bootstrap_estimates_runs(data):
+def _mean_return_series(data):
+    out = np.mean(data, axis=0)
+    return out
+
+
+def _mean_return_dict(data):
+    out = np.mean(data, axis=0)
+    return out.to_dict()
+
+
+def _mean_return_array(data):
+    out = np.mean(data, axis=0).to_numpy()
+    return out
+
+
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        (functools.partial(np.mean, axis=0)),
+        (_mean_return_series),
+        (_mean_return_dict),
+        (_mean_return_array),
+    ],
+)
+def test_get_bootstrap_estimates_runs(outcome, data):
     get_bootstrap_outcomes(
         data=data,
-        outcome=functools.partial(np.mean, axis=0),
+        outcome=outcome,
         n_draws=5,
     )
 
@@ -35,8 +57,8 @@ def test_bootstrap_estimates_from_indices_without_errors(data):
         batch_evaluator=joblib_batch_evaluator,
     )
 
-    expected = pd.DataFrame([[3.0, 6.0], [2, 8]], columns=["x1", "x2"])
-    afe(calculated, expected)
+    expected = [[3.0, 6.0], [2, 8]]
+    aaae(calculated, expected)
 
 
 def test_get_bootstrap_estimates_with_error_and_raise(data):
@@ -69,7 +91,7 @@ def test_get_bootstrap_estimates_with_some_errors_and_continue(data):
         return data.mean()
 
     with pytest.warns(UserWarning):
-        res = get_bootstrap_outcomes(
+        res_flat = get_bootstrap_outcomes(
             data=data,
             outcome=_raise_assertion_error_sometimes,
             n_draws=100,
@@ -77,4 +99,4 @@ def test_get_bootstrap_estimates_with_some_errors_and_continue(data):
             seed=123,
         )
 
-    assert 30 <= len(res) <= 70
+    assert 30 <= len(res_flat) <= 70

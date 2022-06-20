@@ -17,6 +17,7 @@ from estimagic.inference.shared import calculate_ci
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import calculate_p_values
 from estimagic.inference.shared import check_is_optimized_and_derivative_case
+from estimagic.inference.shared import convert_flat_params_to_pytree
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import maximize
@@ -502,8 +503,7 @@ class LikelihoodResult:
 
         Returns:
             Any: A pytree with the same structure as params containing standard errors
-            for the parameter estimates.
-
+                for the parameter estimates.
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -512,10 +512,8 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = np.sqrt(np.diagonal(free_cov))
-
-        out = self._converter.params_from_internal(helper)
+        free_se = np.sqrt(np.diagonal(free_cov))
+        out = convert_flat_params_to_pytree(free_se, self._flat_params, self._converter)
 
         return out
 
@@ -556,7 +554,6 @@ class LikelihoodResult:
         Returns:
             Any: The covariance matrix of the estimated parameters as block-pytree or
                 numpy array.
-
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -611,10 +608,8 @@ class LikelihoodResult:
             seed (int): Seed for the random number generator. Only used if there are
                 transforming constraints.
 
-
         Returns:
             Any: The estimation summary as pytree of DataFrames.
-
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -668,7 +663,6 @@ class LikelihoodResult:
                 confidence intervals.
             Any: Pytree with the same structure as params containing upper bounds of
                 confidence intervals.
-
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -682,13 +676,12 @@ class LikelihoodResult:
 
         free_lower, free_upper = calculate_ci(free_values, free_se, ci_level)
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_lower
-        lower = self._converter.params_from_internal(helper)
-
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_upper
-        upper = self._converter.params_from_internal(helper)
+        lower = convert_flat_params_to_pytree(
+            free_lower, self._flat_params, self._converter
+        )
+        upper = convert_flat_params_to_pytree(
+            free_upper, self._flat_params, self._converter
+        )
 
         return lower, upper
 
@@ -699,7 +692,7 @@ class LikelihoodResult:
         bounds_handling="clip",
         seed=None,
     ):
-        """Calculate p_values.
+        """Calculate p-values.
 
         Args:
             method (str): One of "jacobian", "hessian", "robust", "cluster_robust",
@@ -724,11 +717,8 @@ class LikelihoodResult:
                 transforming constraints.
 
         Returns:
-            Any: Pytree with the same structure as params containing lower bounds of
-                confidence intervals.
-            Any: Pytree with the same structure as params containing upper bounds of
-                confidence intervals.
-
+            Any: Pytree with the same structure as params containing p-values.
+            Any: Pytree with the same structure as params containing p-values.
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -739,12 +729,11 @@ class LikelihoodResult:
 
         free_values = self._flat_params.values[self._flat_params.free_mask]
         free_se = np.sqrt(np.diagonal(free_cov))
-
         free_p_values = calculate_p_values(free_values, free_se)
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_p_values
-        out = self._converter.params_from_internal(helper)
+        out = convert_flat_params_to_pytree(
+            free_p_values, self._flat_params, self._converter
+        )
 
         return out
 
@@ -753,6 +742,5 @@ class LikelihoodResult:
 
         Args:
             path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
-
         """
         to_pickle(self, path=path)

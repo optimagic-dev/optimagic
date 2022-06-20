@@ -37,7 +37,6 @@ def transform_covariance(
             parameters. If parameters were fixed (explicitly or by other constraints),
             the index is a subset of params.index. The columns are the same as the
             index.
-
     """
     if isinstance(internal_cov, pd.DataFrame):
         internal_cov = internal_cov.to_numpy()
@@ -293,3 +292,11 @@ def calculate_p_values(flat_values, flat_standard_error):
     tvalues = flat_values / np.clip(flat_standard_error, 1e-300, np.inf)
     pvalues = 2 * scipy.stats.norm.sf(np.abs(tvalues))
     return pvalues
+
+
+def convert_flat_params_to_pytree(free_statistic, flat_params, converter):
+    helper = np.full(len(flat_params.values), np.nan)
+    helper[flat_params.free_mask] = free_statistic
+    out = converter.params_from_internal(helper)
+
+    return out
