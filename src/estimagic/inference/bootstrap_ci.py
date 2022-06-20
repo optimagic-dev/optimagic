@@ -49,7 +49,7 @@ def compute_ci(
     return cis[:, 0], cis[:, 1]
 
 
-def compute_p_values(base_outcome, estimates):
+def compute_bootstrapped_p_values(base_outcome, estimates):
     """Compute percentile type p-values (two-sided) under the assumption of equal tails.
 
     Args:
@@ -68,9 +68,8 @@ def compute_p_values(base_outcome, estimates):
 
         # Assume equal tails
         pvalue_lower = np.mean(estimates[:, k] <= 0)
-        pvalue_upper = 1 - pvalue_lower
 
-        pvalues[k] = 2 * min(pvalue_lower, pvalue_upper)
+        pvalues[k] = 2 * min(pvalue_lower, 1 - pvalue_lower)
 
     return pvalues
 

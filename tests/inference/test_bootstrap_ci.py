@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.inference.bootstrap import bootstrap_from_outcomes
+from estimagic.inference.bootstrap_ci import compute_bootstrapped_p_values
 from estimagic.inference.bootstrap_ci import compute_ci
-from estimagic.inference.bootstrap_ci import compute_p_values
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
@@ -147,7 +147,7 @@ def test_p_values(setup_pval):
 
     base_outcome = outcome_flat(setup_pval["df"])
 
-    pvalue = compute_p_values(base_outcome, setup_pval["estimates"])
+    pvalue = compute_bootstrapped_p_values(base_outcome, setup_pval["estimates"])
     assert np.allclose(pvalue, 0.5)
 
 

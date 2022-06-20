@@ -5,8 +5,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from estimagic.batch_evaluators import joblib_batch_evaluator
+from estimagic.inference.bootstrap_ci import compute_bootstrapped_p_values
 from estimagic.inference.bootstrap_ci import compute_ci
-from estimagic.inference.bootstrap_ci import compute_p_values
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 from estimagic.parameters.block_trees import matrix_to_block_tree
@@ -172,7 +172,9 @@ class BootstrapResult:
         registry = get_registry(extended=True)
         base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
 
-        p_values = compute_p_values(base_outcome_flat, self._internal_outcomes)
+        p_values = compute_bootstrapped_p_values(
+            base_outcome_flat, self._internal_outcomes
+        )
         out = tree_unflatten(treedef, p_values, registry=registry)
 
         return out
@@ -223,8 +225,6 @@ class BootstrapResult:
             Any: Pytree with the same structure as base_outcomes containing upper
                 bounds of confidence intervals.
         """
-        check_inputs(ci_method=ci_method, ci_level=ci_level)
-
         registry = get_registry(extended=True)
         base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
 
