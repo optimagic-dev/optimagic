@@ -82,7 +82,7 @@ def test_check_inputs_data():
     data = "this is not a data frame"
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=data)
-    assert "Input 'data' must be DataFrame." == str(excinfo.value)
+    assert "Data must be a pandas.DataFrame." == str(excinfo.value)
 
 
 def test_check_inputs_cluster_by(setup):

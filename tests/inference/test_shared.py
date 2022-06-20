@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.inference.shared import calculate_estimation_summary
+from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import process_pandas_arguments
-from estimagic.parameters.space_conversion import InternalParams
 from estimagic.parameters.tree_registry import get_registry
 from pandas.testing import assert_frame_equal
 from pybaum import leaf_names
@@ -40,11 +40,11 @@ def test_process_pandas_arguments_incompatible_names(inputs):
         process_pandas_arguments(**inputs)
 
 
-def test_calculate_inference_quantities():
-    """Test calculate inference quantities for many relevant cases."""
+def test_calculate_estimation_summary():
+    """Test calculate estimation summary for many relevant cases."""
 
     # ==================================================================================
-    # create test inputs
+    # create test inputsF
     # ==================================================================================
 
     estimates = [
@@ -67,8 +67,11 @@ def test_calculate_inference_quantities():
     estimates_flat = tree_just_flatten(estimates, registry=registry)
     names = leaf_names(estimates, registry=registry)
 
-    flat_estimates = InternalParams(
-        values=estimates_flat, lower_bounds=None, upper_bounds=None, names=names
+    free_estimates = FreeParams(
+        values=estimates_flat,
+        free_mask=None,
+        all_names=names,
+        free_names=names,
     )
 
     free_cov = pd.DataFrame(
@@ -83,10 +86,10 @@ def test_calculate_inference_quantities():
 
     df = pd.DataFrame(
         {
-            "value": flat_estimates.values,
+            "value": free_estimates.values,
             "standard_error": np.sqrt(np.diag(free_cov)),
-            "ci_lower": flat_estimates.values,
-            "ci_upper": flat_estimates.values,
+            "ci_lower": free_estimates.values,
+            "ci_upper": free_estimates.values,
         },
         index=names,
     )
@@ -136,7 +139,7 @@ def test_calculate_inference_quantities():
     # compute and compare
     # ==================================================================================
 
-    got = calculate_estimation_summary(estimates, flat_estimates, free_cov, ci_level)
+    got = calculate_estimation_summary(estimates, free_estimates, free_cov, ci_level)
 
     # drop irrelevant columns
     got = tree_map(lambda df: df.drop(columns=["stars", "p_value", "free"]), got)
