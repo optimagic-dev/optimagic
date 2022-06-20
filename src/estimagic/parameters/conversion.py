@@ -5,7 +5,7 @@ import numpy as np
 from estimagic.parameters.process_selectors import process_selectors
 from estimagic.parameters.scale_conversion import get_scale_converter
 from estimagic.parameters.space_conversion import get_space_converter
-from estimagic.parameters.tree_conversion import FlatParams
+from estimagic.parameters.space_conversion import InternalParams
 from estimagic.parameters.tree_conversion import get_tree_converter
 
 
@@ -97,11 +97,11 @@ def get_converter(
     )
 
     space_converter, internal_params = get_space_converter(
-        flat_params=flat_params, flat_constraints=flat_constraints
+        internal_params=flat_params, internal_constraints=flat_constraints
     )
 
     scale_converter, scaled_params = get_scale_converter(
-        flat_params=internal_params,
+        internal_params=internal_params,
         scaling=scaling,
         scaling_options=scaling_options,
     )
@@ -237,7 +237,7 @@ def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
     else:
         upper_bounds = upper_bounds.astype(float)
 
-    flat_params = FlatParams(
+    flat_params = InternalParams(
         values=params.astype(float),
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,

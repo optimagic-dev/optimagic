@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import process_pandas_arguments
-from estimagic.parameters.tree_conversion import FlatParams
+from estimagic.parameters.space_conversion import InternalParams
 from estimagic.parameters.tree_registry import get_registry
 from pandas.testing import assert_frame_equal
 from pybaum import leaf_names
@@ -67,7 +67,7 @@ def test_calculate_inference_quantities():
     estimates_flat = tree_just_flatten(estimates, registry=registry)
     names = leaf_names(estimates, registry=registry)
 
-    flat_estimates = FlatParams(
+    flat_estimates = InternalParams(
         values=estimates_flat, lower_bounds=None, upper_bounds=None, names=names
     )
 

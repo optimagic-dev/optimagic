@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 import numpy as np
 import pandas as pd
 import scipy
@@ -7,7 +9,7 @@ from pybaum import tree_unflatten
 
 
 def transform_covariance(
-    flat_params,
+    internal_params,
     internal_cov,
     converter,
     n_samples,
@@ -16,8 +18,15 @@ def transform_covariance(
     """Transform the internal covariance matrix to an external one, given constraints.
 
     Args:
-        flat_params (FlatParams): NamedTuple with internal parameter values and names,
-            lower_bounds and upper_bounds, and free_mask.
+        internal_params (InternalParams): NamedTuple with entries:
+            - value (np.ndarray): Internal parameter values.
+            - lower_bounds (np.ndarray): Lower bounds on the internal params.
+            - upper_bounds (np.ndarray): Upper bounds on the internal params.
+            - soft_lower_bounds (np.ndarray): Soft lower bounds on the internal params.
+            - soft_upper_bounds (np.ndarray): Soft upper bounds on the internal params.
+            - name (list): List of names of the external parameters.
+            - free_mask (np.ndarray): Boolean mask representing which external parameter
+              is free.
         internal_cov (np.ndarray or pandas.DataFrame) with a covariance matrix of the
             internal parameter vector. For background information about internal and
             external params see :ref:`implementation_of_constraints`.
@@ -45,12 +54,12 @@ def transform_covariance(
     if converter.has_transforming_constraints:
         _from_internal = converter.params_from_internal
 
-        is_free = flat_params.free_mask
-        lower_bounds = flat_params.lower_bounds
-        upper_bounds = flat_params.upper_bounds
+        is_free = internal_params.free_mask
+        lower_bounds = internal_params.lower_bounds
+        upper_bounds = internal_params.upper_bounds
 
         sample = np.random.multivariate_normal(
-            mean=flat_params.values,
+            mean=internal_params.values,
             cov=internal_cov,
             size=n_samples,
         )
@@ -82,7 +91,7 @@ def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_l
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
-        params (pytree): The input parameter pytree.
+        estimates (pytree): The input parameter pytree.
         internal_estimates (FlatParams): NamedTuple with internal estimated parameter
             values and names, lower_bounds and upper_bounds, and free_mask.
         free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
@@ -293,3 +302,26 @@ def calculate_p_values(flat_values, flat_standard_error):
     tvalues = flat_values / np.clip(flat_standard_error, 1e-300, np.inf)
     pvalues = 2 * scipy.stats.norm.sf(np.abs(tvalues))
     return pvalues
+
+
+def calculate_free_estimates(estimates, internal_estimates):
+    mask = internal_estimates.free_mask
+    names = internal_estimates.names
+
+    registry = get_registry(extended=True)
+    external_flat = np.array(tree_just_flatten(estimates, registry=registry))
+
+    free_estimates = FreeParams(
+        values=external_flat[mask],
+        free_mask=mask,
+        all_names=names,
+        free_names=np.array(names)[mask].tolist(),
+    )
+    return free_estimates
+
+
+class FreeParams(NamedTuple):
+    values: np.ndarray  # free external parameter values
+    free_mask: np.ndarray  # boolean mask to filter free params from external params
+    free_names: list  # names of free external parameters
+    all_names: list  # names of all external parameters

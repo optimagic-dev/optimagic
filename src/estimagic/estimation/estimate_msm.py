@@ -491,7 +491,7 @@ class MomentsResult:
         np.random.seed(seed)
 
         free_cov = transform_covariance(
-            flat_params=flat_params,
+            internal_params=flat_params,
             internal_cov=int_cov,
             converter=converter,
             n_samples=n_samples,

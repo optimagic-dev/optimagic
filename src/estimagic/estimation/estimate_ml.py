@@ -14,9 +14,11 @@ from estimagic.inference.ml_covs import cov_jacobian
 from estimagic.inference.ml_covs import cov_robust
 from estimagic.inference.ml_covs import cov_strata_robust
 from estimagic.inference.shared import calculate_ci
+from estimagic.inference.shared import calculate_free_estimates
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import calculate_p_values
 from estimagic.inference.shared import check_is_optimized_and_derivative_case
+from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import maximize
@@ -25,6 +27,7 @@ from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.conversion import Converter
 from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.space_conversion import InternalParams
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
 from estimagic.utilities import to_pickle
@@ -229,8 +232,9 @@ def estimate_ml(
     # ==================================================================================
 
     if jac_case == "closed-form":
-        x = converter.params_to_internal(estimates)
-        int_jac = converter.derivative_to_internal(jacobian_eval, x)
+        int_jac = converter.derivative_to_internal(
+            jacobian_eval, internal_estimates.values
+        )
     elif jac_case == "numerical":
 
         def func(x):
@@ -324,6 +328,8 @@ def estimate_ml(
     # create a LikelihoodResult object
     # ==================================================================================
 
+    free_estimates = calculate_free_estimates(estimates, internal_estimates)
+
     res = LikelihoodResult(
         params=estimates,
         _converter=converter,
@@ -335,7 +341,8 @@ def estimate_ml(
         _internal_jacobian=int_jac,
         _internal_hessian=int_hess,
         _design_info=design_info,
-        _flat_params=internal_estimates,
+        _internal_estimates=internal_estimates,
+        _free_estimates=free_estimates,
         _has_constraints=constraints not in [None, []],
     )
 
@@ -345,7 +352,8 @@ def estimate_ml(
 @dataclass
 class LikelihoodResult:
     params: Any
-    _flat_params: Any
+    _internal_estimates: InternalParams
+    _free_estimates: FreeParams
     _converter: Converter
     _has_constraints: bool
     optimize_result: Union[OptimizeResult, None] = None
@@ -391,8 +399,6 @@ class LikelihoodResult:
         internal_jac = self._internal_jacobian
         internal_hess = self._internal_hessian
         design_info = self._design_info
-        converter = self._converter
-        flat_params = self._flat_params
 
         if method == "jacobian":
             int_cov = cov_jacobian(internal_jac)
@@ -414,9 +420,9 @@ class LikelihoodResult:
         np.random.seed(seed)
 
         free_cov = transform_covariance(
-            flat_params=flat_params,
+            internal_params=self._internal_estimates,
             internal_cov=int_cov,
-            converter=converter,
+            converter=self._converter,
             n_samples=n_samples,
             bounds_handling=bounds_handling,
         )
@@ -502,8 +508,8 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = np.sqrt(np.diagonal(free_cov))
+        helper = np.full(len(self._internal_estimates.values), np.nan)
+        helper[self._internal_estimates.free_mask] = np.sqrt(np.diagonal(free_cov))
 
         out = self._converter.params_from_internal(helper)
 
@@ -557,10 +563,12 @@ class LikelihoodResult:
         if return_type == "array":
             out = free_cov
         elif return_type == "dataframe":
-            free_index = np.array(self._flat_params.names)[self._flat_params.free_mask]
+            free_index = np.array(self._internal_estimates.names)[
+                self._internal_estimates.free_mask
+            ]
             out = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
         elif return_type == "pytree":
-            if len(free_cov) != len(self._flat_params.values):
+            if len(free_cov) != len(self._internal_estimates.values):
                 raise NotAvailableError(
                     "Covariance matrices in block-pytree format are only available if "
                     "there are no constraints that reduce the number of free "
@@ -615,7 +623,7 @@ class LikelihoodResult:
 
         summary = calculate_inference_quantities(
             estimates=self.params,
-            internal_estimates=self._flat_params,
+            internal_estimates=self._internal_estimates,
             free_cov=free_cov,
             ci_level=ci_level,
         )
@@ -667,17 +675,19 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        free_values = self._flat_params.values[self._flat_params.free_mask]
+        free_values = self._internal_estimates.values[
+            self._internal_estimates.free_mask
+        ]
         free_se = np.sqrt(np.diagonal(free_cov))
 
         free_lower, free_upper = calculate_ci(free_values, free_se, ci_level)
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_lower
+        helper = np.full(len(self._internal_estimates.values), np.nan)
+        helper[self._internal_estimates.free_mask] = free_lower
         lower = self._converter.params_from_internal(helper)
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_upper
+        helper = np.full(len(self._internal_estimates.values), np.nan)
+        helper[self._internal_estimates.free_mask] = free_upper
         upper = self._converter.params_from_internal(helper)
 
         return lower, upper
@@ -727,13 +737,15 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        free_values = self._flat_params.values[self._flat_params.free_mask]
+        free_values = self._internal_estimates.values[
+            self._internal_estimates.free_mask
+        ]
         free_se = np.sqrt(np.diagonal(free_cov))
 
         free_p_values = calculate_p_values(free_values, free_se)
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_p_values
+        helper = np.full(len(self._internal_estimates.values), np.nan)
+        helper[self._internal_estimates.free_mask] = free_p_values
         out = self._converter.params_from_internal(helper)
 
         return out

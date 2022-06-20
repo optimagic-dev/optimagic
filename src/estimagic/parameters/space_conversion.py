@@ -38,12 +38,11 @@ from typing import NamedTuple
 import estimagic.parameters.kernel_transformations as kt
 import numpy as np
 from estimagic.parameters.process_constraints import process_constraints
-from estimagic.parameters.tree_conversion import FlatParams
 
 
 def get_space_converter(
-    flat_params,
-    flat_constraints,
+    internal_params,
+    internal_constraints,
 ):
     """Get functions to convert between in-/external space of params and derivatives.
 
@@ -51,21 +50,29 @@ def get_space_converter(
     for bounds.
 
     Args:
-        flat_params (FlatParams): NamedTuple with flattened parameter values and bounds.
-        flat_constraints (list): List of constraints with processed selector fields.
+        internal_params (InternalParams): NamedTuple with internal parameter values and
+            bounds.
+        internal_constraints (list): List of constraints with processed selector fields.
 
     Returns:
-        SpaceConverter
-        FlatParams: NamedTuple of 1d numpy array with flat and internal params and
-            bounds.
+        SpaceConverter: The space converter.
+        InternalParams: NamedTuple with entries:
+            - value (np.ndarray): Internal parameter values.
+            - lower_bounds (np.ndarray): Lower bounds on the internal params.
+            - upper_bounds (np.ndarray): Upper bounds on the internal params.
+            - soft_lower_bounds (np.ndarray): Soft lower bounds on the internal params.
+            - soft_upper_bounds (np.ndarray): Soft upper bounds on the internal params.
+            - name (list): List of names of the external parameters.
+            - free_mask (np.ndarray): Boolean mask representing which external parameter
+              is free.
 
     """
     transformations, constr_info = process_constraints(
-        constraints=flat_constraints,
-        params_vec=flat_params.values,
-        lower_bounds=flat_params.lower_bounds,
-        upper_bounds=flat_params.upper_bounds,
-        param_names=flat_params.names,
+        constraints=internal_constraints,
+        params_vec=internal_params.values,
+        lower_bounds=internal_params.lower_bounds,
+        upper_bounds=internal_params.upper_bounds,
+        param_names=internal_params.names,
     )
     _params_to_internal = partial(
         reparametrize_to_internal,
@@ -110,27 +117,33 @@ def get_space_converter(
     )
 
     free_mask = constr_info["internal_free"]
-    if flat_params.soft_lower_bounds is not None and not _has_transforming_constraints:
-        _soft_lower = flat_params.soft_lower_bounds[free_mask]
+    if (
+        internal_params.soft_lower_bounds is not None
+        and not _has_transforming_constraints
+    ):
+        _soft_lower = internal_params.soft_lower_bounds[free_mask]
     else:
         _soft_lower = None
 
-    if flat_params.soft_upper_bounds is not None and not _has_transforming_constraints:
-        _soft_upper = flat_params.soft_upper_bounds[free_mask]
+    if (
+        internal_params.soft_upper_bounds is not None
+        and not _has_transforming_constraints
+    ):
+        _soft_upper = internal_params.soft_upper_bounds[free_mask]
     else:
         _soft_upper = None
 
-    internal_params = FlatParams(
-        values=converter.params_to_internal(flat_params.values),
+    params = InternalParams(
+        values=converter.params_to_internal(internal_params.values),
         lower_bounds=constr_info["lower_bounds"],
         upper_bounds=constr_info["upper_bounds"],
-        names=flat_params.names,
+        names=internal_params.names,
         free_mask=free_mask,
         soft_lower_bounds=_soft_lower,
         soft_upper_bounds=_soft_upper,
     )
 
-    return converter, internal_params
+    return converter, params
 
 
 class SpaceConverter(NamedTuple):
@@ -494,3 +507,13 @@ def post_replace_jacobian(post_replacements):
     jacobian[positions_out, :] *= 0
     jacobian[positions_out, positions_in] = 1
     return jacobian
+
+
+class InternalParams(NamedTuple):
+    values: np.ndarray
+    lower_bounds: np.ndarray
+    upper_bounds: np.ndarray
+    soft_lower_bounds: np.ndarray = None
+    soft_upper_bounds: np.ndarray = None
+    names: list = None
+    free_mask: np.ndarray = None
