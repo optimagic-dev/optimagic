@@ -46,20 +46,20 @@ def expected():
     return out
 
 
-def g(data):
+def _outcome_fun_series(data):
     return data.mean(axis=0)
 
 
-def g_dict(data):
+def _outcome_func_dict(data):
     return data.mean(axis=0).to_dict()
 
 
-def g_arr(data):
+def _outcome_func_arr(data):
     return np.array(data.mean(axis=0))
 
 
 TEST_CASES = itertools.product(
-    [g, g_dict, g_arr],
+    [_outcome_fun_series, _outcome_func_dict, _outcome_func_arr],
     ["percentile", "normal", "basic", "bc", "t"],
 )
 

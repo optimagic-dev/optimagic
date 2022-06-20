@@ -37,7 +37,6 @@ def transform_covariance(
             parameters. If parameters were fixed (explicitly or by other constraints),
             the index is a subset of params.index. The columns are the same as the
             index.
-
     """
     if isinstance(internal_cov, pd.DataFrame):
         internal_cov = internal_cov.to_numpy()

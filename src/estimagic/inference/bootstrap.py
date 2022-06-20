@@ -32,13 +32,13 @@ def bootstrap(
     for statistic of interest in given original sample.
 
     Args:
-        data (pandas.DataFrame): original dataset.
-        outcome (callable): function of the data calculating statistic of interest.
+        data (pandas.DataFrame): Original dataset.
+        outcome (callable): Function of the data calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         outcome_kwargs (dict): Additional keyword arguments for outcome.
         n_draws (int): number of bootstrap samples to draw.
-        cluster_by (str): column name of variable to cluster by or None.
-        seeds (numpy.array): array of seeds for bootstrap samples, default is none.
+        cluster_by (str): Column name of variable to cluster by or None.
+        seeds (numpy.array): Array of seeds for bootstrap samples, default is none.
         n_cores (int): number of jobs for parallelization.
         error_handling (str): One of "continue", "raise". Default "continue" which means
             that bootstrap estimates are only calculated for those samples where no
@@ -100,7 +100,7 @@ def bootstrap_from_outcomes(base_outcome, bootstrap_outcomes):
         )
 
     out = BootstrapResult(
-        base_outcome=base_outcome,
+        _base_outcome=base_outcome,
         _internal_outcomes=internal_outcomes,
     )
 
@@ -109,16 +109,12 @@ def bootstrap_from_outcomes(base_outcome, bootstrap_outcomes):
 
 @dataclass
 class BootstrapResult:
-    base_outcome: Any
+    _base_outcome: Any
     _internal_outcomes: np.ndarray
 
     @property
     def _outcomes(self):
         return self.outcomes()
-
-    @property
-    def _summary(self):
-        return self.summary()
 
     @property
     def _se(self):
@@ -128,6 +124,27 @@ class BootstrapResult:
     def _cov(self):
         return self.cov()
 
+    @property
+    def _ci(self):
+        return self.ci()
+
+    @property
+    def _p_values(self):
+        return self.p_values()
+
+    @property
+    def _summary(self):
+        return self.summary()
+
+    def base_outcome(self):
+        """Returns the base outcome statistic(s).
+
+        Returns:
+            pytree: Pytree of base outcomes, i.e. the outcome statistic(s) evaluated
+                on the original data set.
+        """
+        return self._base_outcome
+
     def outcomes(self):
         """Returns the estimated bootstrap outcomes.
 
@@ -135,7 +152,7 @@ class BootstrapResult:
             Any: The boostrap outcomes as a list of pytrees.
         """
         registry = get_registry(extended=True)
-        _, treedef = tree_flatten(self.base_outcome, registry=registry)
+        _, treedef = tree_flatten(self._base_outcome, registry=registry)
 
         outcomes = [
             tree_unflatten(treedef, out, registry=registry)
@@ -155,7 +172,7 @@ class BootstrapResult:
         se = np.sqrt(np.diagonal(cov))
 
         registry = get_registry(extended=True)
-        _, treedef = tree_flatten(self.base_outcome, registry=registry)
+        _, treedef = tree_flatten(self._base_outcome, registry=registry)
 
         out = tree_unflatten(treedef, se, registry=registry)
 
@@ -169,6 +186,7 @@ class BootstrapResult:
                 If "array", a 2d numpy array with the covariance is returned. If
                 "dataframe", a pandas DataFrame with parameter names in the
                 index and columns are returned.
+                The default is "pytree".
 
         Returns:
             Any: The covariance matrix of the estimated parameters as a block-pytree,
@@ -180,11 +198,11 @@ class BootstrapResult:
             out = cov
         elif return_type == "dataframe":
             registry = get_registry(extended=True)
-            leafnames = leaf_names(self.base_outcome, registry=registry)
+            leafnames = leaf_names(self._base_outcome, registry=registry)
             free_index = np.array(leafnames)
             out = pd.DataFrame(data=cov, columns=free_index, index=free_index)
         elif return_type == "pytree":
-            out = matrix_to_block_tree(cov, self.base_outcome, self.base_outcome)
+            out = matrix_to_block_tree(cov, self._base_outcome, self._base_outcome)
         else:
             raise TypeError(
                 "return_type must be one of pytree, array, or dataframe, "
@@ -197,7 +215,8 @@ class BootstrapResult:
         """Calculate confidence intervals.
 
         Args:
-            ci_method (str): method of choice for confidence interval computation.
+            ci_method (str): Method of choice for confidence interval computation.
+                The default is "percentile".
             ci_level (float): Confidence level for the calculation of confidence
                 intervals. The default is 0.95.
 
@@ -208,7 +227,7 @@ class BootstrapResult:
                 bounds of confidence intervals.
         """
         registry = get_registry(extended=True)
-        base_outcome_flat, treedef = tree_flatten(self.base_outcome, registry=registry)
+        base_outcome_flat, treedef = tree_flatten(self._base_outcome, registry=registry)
 
         lower_flat, upper_flat = compute_ci(
             base_outcome_flat, self._internal_outcomes, ci_method, ci_level
@@ -232,7 +251,8 @@ class BootstrapResult:
         """Create a summary of bootstrap results.
 
         Args:
-            ci_method (str): method of choice for confidence interval computation.
+            ci_method (str): Method of choice for confidence interval computation.
+                The default is "percentile".
             ci_level (float): Confidence level for the calculation of confidence
                 intervals. The default is 0.95.
 

@@ -50,27 +50,39 @@ def expected():
     return out
 
 
-def g(data, shift=0):
-    # Make sure to get Series back when .mean() is applied to a Series
-    mean = pd.DataFrame(data).mean(axis=0) + shift
+def _outcome_func(data, shift=0):
+    """Compute column means.
 
-    return mean
+    Args:
+        data (pd.Series or pd.DataFrame): The data set.
+        shift (float): Scalar that is added to the column means.
+
+    Returns:
+        pd.Series: Series where the k-th row corresponds to the mean
+            of the k-th column of the input data.
+    """
+    # Return pd.Series when .mean() is applied to a Series
+    # Only applying .mean() to a pd.Series would yield a float
+    return pd.DataFrame(data).mean(axis=0) + shift
 
 
 @pytest.mark.parametrize("shift", [0, 10, -10])
 def test_bootstrap_with_outcome_kwargs(shift, setup):
     result = bootstrap(
-        data=(setup["df"]), outcome=g, seed=123, outcome_kwargs={"shift": shift}
+        data=setup["df"],
+        outcome=_outcome_func,
+        seed=123,
+        outcome_kwargs={"shift": shift},
     )
 
     expected = pd.Series([2.5, 7.0], index=["x1", "x2"])
-    ase(result.base_outcome, expected + shift)
+    ase(result._base_outcome, expected + shift)
 
 
 def test_bootstrap_from_outcomes(setup, expected):
 
     result = bootstrap_from_outcomes(
-        base_outcome=g(setup["df"]),
+        base_outcome=_outcome_func(setup["df"]),
         bootstrap_outcomes=setup["estimates_pytree"],
     )
 
@@ -78,6 +90,14 @@ def test_bootstrap_from_outcomes(setup, expected):
     lower_ci, upper_ci = result.ci()
     covariance = result.cov()
     standard_errors = result.se()
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result._p_values()
+    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result._summary()
+    assert str(error.value) == "summary is not implemented yet."
 
     # Use rounding to adjust precision and ensure reproducibility accross all
     # supported pandas versions.
@@ -90,10 +110,39 @@ def test_bootstrap_from_outcomes(setup, expected):
     ase(standard_errors.round(2), expected["se"].round(2))
 
 
+def test_bootstrap_from_outcomes_private_methods(setup, expected):
+
+    result = bootstrap_from_outcomes(
+        base_outcome=_outcome_func(setup["df"]),
+        bootstrap_outcomes=setup["estimates_pytree"],
+    )
+
+    outcomes = result._outcomes
+    lower_ci, upper_ci = result._ci
+    covariance = result._cov
+    standard_errors = result._se
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result._p_values()
+    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
+
+    with pytest.raises(NotImplementedError) as error:
+        assert result._summary()
+    assert str(error.value) == "summary is not implemented yet."
+
+    for i in range(len(outcomes)):
+        ase(outcomes[i], setup["estimates_pytree"][i])
+
+    ase(lower_ci.round(2), expected["lower_ci"].round(2))
+    ase(upper_ci.round(2), expected["upper_ci"].round(2))
+    afe(covariance.round(2), expected["cov"].round(2))
+    ase(standard_errors.round(2), expected["se"].round(2))
+
+
 def test_bootstrap_from_outcomes_single_outcome(setup, expected):
 
     result = bootstrap_from_outcomes(
-        base_outcome=g(setup["df"]["x1"]),
+        base_outcome=_outcome_func(setup["df"]["x1"]),
         bootstrap_outcomes=setup["estimates_pytree_x1"],
     )
 
@@ -111,32 +160,15 @@ def test_bootstrap_from_outcomes_single_outcome(setup, expected):
 def test_wrong_input_types(input_type, setup):
     with pytest.raises(TypeError):
         assert bootstrap_from_outcomes(
-            base_outcome=g(setup["df"]),
+            base_outcome=_outcome_func(setup["df"]),
             bootstrap_outcomes=setup["estimates_" + input_type],
         )
-
-
-def test_not_implemented(setup):
-    result = bootstrap_from_outcomes(
-        base_outcome=g(setup["df"]),
-        bootstrap_outcomes=setup["estimates_pytree"],
-    )
-
-    with pytest.raises(NotImplementedError) as error:
-        assert result.p_values()
-
-    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
-
-    with pytest.raises(NotImplementedError) as error:
-        assert result.summary()
-
-    assert str(error.value) == "summary is not implemented yet."
 
 
 @pytest.mark.parametrize("return_type", ["array", "dataframe", "pytree"])
 def test_cov_correct_return_type(return_type, setup):
     result = bootstrap_from_outcomes(
-        base_outcome=g(setup["df"]),
+        base_outcome=_outcome_func(setup["df"]),
         bootstrap_outcomes=setup["estimates_pytree"],
     )
     _ = result.cov(return_type=return_type)
@@ -144,7 +176,7 @@ def test_cov_correct_return_type(return_type, setup):
 
 def test_cov_wrong_return_type(setup):
     result = bootstrap_from_outcomes(
-        base_outcome=g(setup["df"]),
+        base_outcome=_outcome_func(setup["df"]),
         bootstrap_outcomes=setup["estimates_pytree"],
     )
 

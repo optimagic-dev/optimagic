@@ -67,7 +67,7 @@ def _ci_percentile(estimates, alpha):
     for k in range(num_params):
 
         q = _eqf(estimates[:, k])
-        cis[k, :] = np.array([q(alpha / 2), q(1 - alpha / 2)])
+        cis[k, :] = q(alpha / 2), q(1 - alpha / 2)
 
     return cis
 
@@ -102,7 +102,7 @@ def _ci_bc(estimates, base_outcome, alpha):
         p1 = norm.cdf(z_naught + (z_naught + z_low))
         p2 = norm.cdf(z_naught + (z_naught + z_high))
 
-        cis[k, :] = np.array([q(p1), q(p2)])
+        cis[k, :] = q(p1), q(p2)
 
     return cis
 
@@ -134,9 +134,7 @@ def _ci_t(estimates, base_outcome, alpha):
         t1 = tq(1 - alpha / 2)
         t2 = tq(alpha / 2)
 
-        cis[k, :] = np.array(
-            [base_outcome[k] - theta_std * t1, base_outcome[k] - theta_std * t2]
-        )
+        cis[k, :] = base_outcome[k] - theta_std * t1, base_outcome[k] - theta_std * t2
 
     return cis
 
@@ -164,9 +162,7 @@ def _ci_normal(estimates, base_outcome, alpha):
         theta_std = np.std(params)
         t = norm.ppf(alpha / 2)
 
-        cis[k, :] = np.array(
-            [base_outcome[k] + theta_std * t, base_outcome[k] - theta_std * t]
-        )
+        cis[k, :] = base_outcome[k] + theta_std * t, base_outcome[k] - theta_std * t
 
     return cis
 
@@ -192,8 +188,9 @@ def _ci_basic(estimates, base_outcome, alpha):
 
         q = _eqf(estimates[:, k])
 
-        cis[k, :] = np.array(
-            [2 * base_outcome[k] - q(1 - alpha / 2), 2 * base_outcome[k] - q(alpha / 2)]
+        cis[k, :] = (
+            2 * base_outcome[k] - q(1 - alpha / 2),
+            2 * base_outcome[k] - q(alpha / 2),
         )
 
     return cis

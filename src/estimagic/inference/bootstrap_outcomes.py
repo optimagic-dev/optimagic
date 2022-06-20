@@ -76,9 +76,7 @@ def _get_bootstrap_outcomes_from_indices(
     estimates = [est for est in raw_estimates if not isinstance(est, str)]
     tracebacks = [est for est in raw_estimates if isinstance(est, str)]
 
-    if estimates:
-        pass
-    else:
+    if not estimates:
         msg = (
             "Calculating of all bootstrap outcomes failed. The tracebacks of the "
             "raised Exceptions are reproduced below:"
