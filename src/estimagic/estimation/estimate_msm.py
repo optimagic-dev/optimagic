@@ -318,8 +318,8 @@ def estimate_msm(
     # ==================================================================================
 
     res = MomentsResult(
-        params=estimates,
-        weights=weights,
+        _params=estimates,
+        _weights=weights,
         _flat_params=internal_estimates,
         _converter=converter,
         _internal_weights=internal_weights,
@@ -443,45 +443,10 @@ def _partial_kwargs(func, kwargs):
 
 @dataclass
 class MomentsResult:
-    """Method of moments estimation results object.
+    """Method of moments estimation results object."""
 
-    Attributes that are *not* listed below are only used internally and should not be
-    used by the user.
-
-    **Methods**
-
-    Methods:
-        se(method="robust", n_samples=10_000, bounds_handling="clip", seed=None):
-            Calculate standard errors.
-        cov(method="robust", n_samples=10_000, bounds_handling="clip", return_type="pytree", seed=None):
-            Calculate variance-covariance matrix.
-        ci(method="robust", n_samples=10_000, ci_level=0.95, bounds_handling="clip", seed=None):
-            Calculate confidence intervals.
-        p_values(method="robsut", n_samples=10_000, bounds_handling="clip", seed=None):
-            Calculate p-values.
-        sensitivity(kind="bias", n_samples=10_000, bounds_handling="clip", seed=None, return_type="pytree"):
-            Calculate sensitivity measures for moments estimates.
-        summary(method="robust", n_samples=10_000, ci_level=0.95, bounds_handling="clip", seed=None):
-            Create a summary of the estimation results.
-        to_pickle(path): Save object to pickle.
-
-    **Attributes and Properties**
-
-    Attributes:
-        params (Any): The estimated parameters.
-        weights (Any): The estimation weighting matrix.
-        jacobian (Any): Propery: returns Jacobian of the criterion function at the
-            optimal paramaters, if available.
-        _se (Any): Property: calls method ``se`` with defaults.
-        _cov (Any): Property: calls method ``cov`` with defaults.
-        _ci (Any): Property: calls method ``ci`` with defaults.
-        _p_values (Any): Property: calls method ``p_values`` with defaults.
-        _summary (Any): Property: calls method ``summary`` with defaults.
-
-    """
-
-    params: Any
-    weights: Any
+    _params: Any
+    _weights: Any
     _flat_params: Any
     _converter: Converter
     _internal_moments_cov: np.ndarray
@@ -491,6 +456,14 @@ class MomentsResult:
     _has_constraints: bool
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def weights(self):
+        return self._weights
 
     @property
     def jacobian(self):
@@ -648,7 +621,7 @@ class MomentsResult:
                     "there are no constraints that reduce the number of free "
                     "parameters."
                 )
-            out = matrix_to_block_tree(free_cov, self.params, self.params)
+            out = matrix_to_block_tree(free_cov, self._params, self._params)
         return out
 
     def summary(
@@ -695,7 +668,7 @@ class MomentsResult:
         )
 
         summary = calculate_inference_quantities(
-            estimates=self.params,
+            estimates=self._params,
             internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,
@@ -948,7 +921,7 @@ class MomentsResult:
         elif return_type == "pytree":
             out = matrix_to_block_tree(
                 raw,
-                outer_tree=self.params,
+                outer_tree=self._params,
                 inner_tree=self._empirical_moments,
             )
         elif return_type == "dataframe":

@@ -325,9 +325,9 @@ def estimate_ml(
     # ==================================================================================
 
     res = LikelihoodResult(
-        params=estimates,
+        _params=estimates,
         _converter=converter,
-        optimize_result=opt_res,
+        _optimize_result=opt_res,
         _jacobian=jacobian_eval,
         _no_jacobian_reason=_no_jac_reason,
         _hessian=hessian_eval,
@@ -344,48 +344,13 @@ def estimate_ml(
 
 @dataclass
 class LikelihoodResult:
-    """Likelihood estimation results object.
+    """Likelihood estimation results object."""
 
-    Attributes that are *not* listed below are only used internally and should not be
-    used by the user.
-
-    **Methods**
-
-    Methods:
-        se(method="jacobian", n_samples=10_000, bounds_handling="clip", seed=None):
-            Calculate standard errors.
-        cov(method="jacobian", n_samples=10_000, bounds_handling="clip", return_type="pytree", seed=None):
-            Calculate variance-covariance matrix.
-        ci(method="jacobian", n_samples=10_000, ci_level=0.95, bounds_handling="clip", seed=None):
-            Calculate confidence intervals.
-        p_values(method="jacobian", n_samples=10_000, bounds_handling="clip", seed=None):
-            Calculate p-values.
-        summary(method="jacobian", n_samples=10_000, ci_level=0.95, bounds_handling="clip", seed=None):
-            Create a summary of the estimation results.
-        to_pickle(path): Save object to pickle.
-
-    **Attributes and Properties**
-
-    Attributes:
-        params (Any): The estimated parameters.
-        optimize_result (Union[OptimizeResult, None]): The optimization results object.
-        jacobian (Any): Propery: returns Jacobian of the criterion function at the
-            optimal paramaters, if available.
-        hessian (Any): Property: returns Hessian of the criterion function at the
-            optimal paramaters, if available.
-        _se (Any): Property: calls method ``se`` with defaults.
-        _cov (Any): Property: calls method ``cov`` with defaults.
-        _ci (Any): Property: calls method ``ci`` with defaults.
-        _p_values (Any): Property: calls method ``p_values`` with defaults.
-        _summary (Any): Property: calls method ``summary`` with defaults.
-
-    """
-
-    params: Any
+    _params: Any
     _flat_params: Any
     _converter: Converter
     _has_constraints: bool
-    optimize_result: Union[OptimizeResult, None] = None
+    _optimize_result: Union[OptimizeResult, None] = None
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
     _hessian: Any = None
@@ -459,6 +424,14 @@ class LikelihoodResult:
         )
 
         return free_cov
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def optimize_result(self):
+        return self._optimize_result
 
     @property
     def jacobian(self):
@@ -603,7 +576,7 @@ class LikelihoodResult:
                     "there are no constraints that reduce the number of free "
                     "parameters."
                 )
-            out = matrix_to_block_tree(free_cov, self.params, self.params)
+            out = matrix_to_block_tree(free_cov, self._params, self._params)
         return out
 
     def summary(
@@ -651,7 +624,7 @@ class LikelihoodResult:
         )
 
         summary = calculate_inference_quantities(
-            estimates=self.params,
+            estimates=self._params,
             internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,

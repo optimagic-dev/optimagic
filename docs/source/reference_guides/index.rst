@@ -1,5 +1,5 @@
-API Reference
-=============
+API
+===
 
 
 .. currentmodule:: estimagic
@@ -47,6 +47,7 @@ Optimization
 .. dropdown:: OptimizeResult
 
     .. autoclass:: OptimizeResult
+        :members:
 
 
 .. _first_derivative:
@@ -114,11 +115,13 @@ Estimation
 .. dropdown:: LikelihoodResult
 
     .. autoclass:: LikelihoodResult
+        :members:
 
 
 .. dropdown:: MomentsResult
 
     .. autoclass:: MomentsResult
+        :members:
 
 
 

@@ -13,11 +13,6 @@ from estimagic.utilities import to_pickle
 class OptimizeResult:
     """Optimization result object.
 
-    **Methods**
-
-    Methods:
-        to_pickle(path): Pickle optimization result.
-
     **Attributes**
 
     Attributes:
@@ -30,13 +25,16 @@ class OptimizeResult:
         n_free (int): Number of free parameters.
         message (Union[str, None] = None): Message returned by the underlying algorithm.
         success (Union[bool, None] = None): Whether the optimization was successful.
-        n_criterion_evaluations (Union[int, None] = None): Number of criterion evaluations.
-        n_derivative_evaluations (Union[int, None] = None): Number of derivative evaluations.
+        n_criterion_evaluations (Union[int, None] = None): Number of criterion
+            evaluations.
+        n_derivative_evaluations (Union[int, None] = None): Number of
+            derivative evaluations.
         n_iterations (Union[int, None] = None): Number of iterations until termination.
         history (Union[Dict, None] = None): Optimization history.
         convergence_report (Union[Dict, None] = None): The convergence report.
         multistart_info (Union[Dict, None] = None): Multistart information.
-        algorithm_output (Dict = field(default_factory=dict)): ?????
+        algorithm_output (Dict = field(default_factory=dict)): Additional algorithm
+            specific information.
 
     """
 
