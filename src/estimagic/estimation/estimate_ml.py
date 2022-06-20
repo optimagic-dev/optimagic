@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Any
 from typing import Union
 
@@ -14,13 +15,15 @@ from estimagic.inference.ml_covs import cov_jacobian
 from estimagic.inference.ml_covs import cov_robust
 from estimagic.inference.ml_covs import cov_strata_robust
 from estimagic.inference.shared import calculate_ci
+from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import calculate_free_estimates
-from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import calculate_p_values
 from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
+from estimagic.inference.shared import transform_free_cov_to_cov
+from estimagic.inference.shared import transform_free_params_to_params
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.block_trees import block_tree_to_matrix
@@ -354,7 +357,8 @@ class LikelihoodResult:
     """Likelihood estimation results object."""
 
     _params: Any
-    _flat_params: Any
+    _internal_estimates: InternalParams
+    _free_estimates: FreeParams
     _converter: Converter
     _has_constraints: bool
     _optimize_result: Union[OptimizeResult, None] = None
@@ -427,52 +431,49 @@ class LikelihoodResult:
             n_samples=n_samples,
             bounds_handling=bounds_handling,
         )
-
         return free_cov
 
-    @property
+    @cached_property
     def params(self):
         return self._params
 
-    @property
+    @cached_property
     def optimize_result(self):
         return self._optimize_result
 
-    @property
+    @cached_property
     def jacobian(self):
         if self._jacobian is None:
             raise NotAvailableError(
                 f"No jacobian is available because {self._no_jacobian_reason}."
             )
-
         return self._jacobian
 
-    @property
+    @cached_property
     def hessian(self):
         if self._hessian is None:
             raise NotAvailableError(
                 f"No hessian is available because {self._no_hessian_reason}."
             )
-
         return self._hessian
 
-    @property
+    @cached_property
     def _se(self):
         return self.se()
 
-    @property
+    @cached_property
     def _cov(self):
         return self.cov()
 
-    @property
+    @cached_property
     def _summary(self):
         return self.summary()
 
-    @property
+    @cached_property
     def _ci(self):
         return self.ci()
 
-    @property
+    @cached_property
     def _p_values(self):
         return self.p_values()
 
@@ -507,8 +508,7 @@ class LikelihoodResult:
 
         Returns:
             Any: A pytree with the same structure as params containing standard errors
-            for the parameter estimates.
-
+                for the parameter estimates.
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -517,12 +517,11 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        helper = np.full(len(self._internal_estimates.values), np.nan)
-        helper[self._internal_estimates.free_mask] = np.sqrt(np.diagonal(free_cov))
-
-        out = self._converter.params_from_internal(helper)
-
-        return out
+        se = transform_free_params_to_params(
+            free_params=np.sqrt(np.diagonal(free_cov)),
+            params=self._params,
+        )
+        return se
 
     def cov(
         self,
@@ -532,7 +531,7 @@ class LikelihoodResult:
         return_type="pytree",
         seed=None,
     ):
-        """Calculate the variance-covariance matrix of the estimated parameters.
+        """Calculate the variance-covariance (matrix) of the estimated parameters.
 
         Args:
             method (str): One of "jacobian", "hessian", "robust", "cluster_robust",
@@ -559,9 +558,8 @@ class LikelihoodResult:
                 transforming constraints.
 
         Returns:
-            Any: The covariance matrix of the estimated parameters as block-pytree or
-                numpy array.
-
+            Any: The covariance matrix of the estimated parameters as block-pytree,
+                numpy.ndarray or pandas.DataFrame.
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -569,22 +567,13 @@ class LikelihoodResult:
             bounds_handling=bounds_handling,
             seed=seed,
         )
-        if return_type == "array":
-            out = free_cov
-        elif return_type == "dataframe":
-            free_index = np.array(self._internal_estimates.names)[
-                self._internal_estimates.free_mask
-            ]
-            out = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
-        elif return_type == "pytree":
-            if len(free_cov) != len(self._internal_estimates.values):
-                raise NotAvailableError(
-                    "Covariance matrices in block-pytree format are only available if "
-                    "there are no constraints that reduce the number of free "
-                    "parameters."
-                )
-            out = matrix_to_block_tree(free_cov, self._params, self._params)
-        return out
+        cov = transform_free_cov_to_cov(
+            free_cov=free_cov,
+            free_params=self._free_estimates,
+            params=self._params,
+            return_type=return_type,
+        )
+        return cov
 
     def summary(
         self,
@@ -618,10 +607,8 @@ class LikelihoodResult:
             seed (int): Seed for the random number generator. Only used if there are
                 transforming constraints.
 
-
         Returns:
             Any: The estimation summary as pytree of DataFrames.
-
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -630,7 +617,7 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        summary = calculate_inference_quantities(
+        summary = calculate_estimation_summary(
             estimates=self._params,
             internal_estimates=self._internal_estimates,
             free_cov=free_cov,
@@ -675,7 +662,6 @@ class LikelihoodResult:
                 confidence intervals.
             Any: Pytree with the same structure as params containing upper bounds of
                 confidence intervals.
-
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -684,21 +670,16 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        free_values = self._internal_estimates.values[
-            self._internal_estimates.free_mask
-        ]
-        free_se = np.sqrt(np.diagonal(free_cov))
+        free_lower, free_upper = calculate_ci(
+            flat_values=self._free_estimates.values,
+            flat_standard_errors=np.sqrt(np.diagonal(free_cov)),
+            ci_level=ci_level,
+        )
 
-        free_lower, free_upper = calculate_ci(free_values, free_se, ci_level)
-
-        helper = np.full(len(self._internal_estimates.values), np.nan)
-        helper[self._internal_estimates.free_mask] = free_lower
-        lower = self._converter.params_from_internal(helper)
-
-        helper = np.full(len(self._internal_estimates.values), np.nan)
-        helper[self._internal_estimates.free_mask] = free_upper
-        upper = self._converter.params_from_internal(helper)
-
+        lower, upper = (
+            transform_free_params_to_params(free, params=self._params)
+            for free in (free_lower, free_upper)
+        )
         return lower, upper
 
     def p_values(
@@ -708,7 +689,7 @@ class LikelihoodResult:
         bounds_handling="clip",
         seed=None,
     ):
-        """Calculate p_values.
+        """Calculate p-values.
 
         Args:
             method (str): One of "jacobian", "hessian", "robust", "cluster_robust",
@@ -733,11 +714,8 @@ class LikelihoodResult:
                 transforming constraints.
 
         Returns:
-            Any: Pytree with the same structure as params containing lower bounds of
-                confidence intervals.
-            Any: Pytree with the same structure as params containing upper bounds of
-                confidence intervals.
-
+            Any: Pytree with the same structure as params containing p-values.
+            Any: Pytree with the same structure as params containing p-values.
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -746,24 +724,18 @@ class LikelihoodResult:
             seed=seed,
         )
 
-        free_values = self._internal_estimates.values[
-            self._internal_estimates.free_mask
-        ]
-        free_se = np.sqrt(np.diagonal(free_cov))
+        free_p_values = calculate_p_values(
+            flat_values=self._free_estimates.values,
+            flat_standard_errors=np.sqrt(np.diagonal(free_cov)),
+        )
 
-        free_p_values = calculate_p_values(free_values, free_se)
-
-        helper = np.full(len(self._internal_estimates.values), np.nan)
-        helper[self._internal_estimates.free_mask] = free_p_values
-        out = self._converter.params_from_internal(helper)
-
-        return out
+        p_values = transform_free_params_to_params(free_p_values, params=self._params)
+        return p_values
 
     def to_pickle(self, path):
         """Save the LikelihoodResult object to pickle.
 
         Args:
             path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
-
         """
         to_pickle(self, path=path)

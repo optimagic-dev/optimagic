@@ -1,6 +1,3 @@
-from functools import partial
-
-import pandas as pd
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
@@ -9,7 +6,6 @@ from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 def get_bootstrap_outcomes(
     data,
     outcome,
-    outcome_kwargs=None,
     cluster_by=None,
     seed=None,
     n_draws=1000,
@@ -22,7 +18,7 @@ def get_bootstrap_outcomes(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the dataset calculating statistic of interest.
-            Needs to return array-like object or pd.Series.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         cluster_by (str): column name of the variable to cluster by.
         seed (int): Random seed.
         n_draws (int): number of draws, only relevant if seeds is None.
@@ -35,16 +31,10 @@ def get_bootstrap_outcomes(
             as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
 
     Returns:
-        estimates (pandas.DataFrame): Outcomes for different bootstrap samples. The
-            columns are the index of the result of ``outcome``.
-
+        estimates (list):  List of pytrees of estimated bootstrap outcomes.
     """
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
-
     check_inputs(data=data, cluster_by=cluster_by)
-
-    if outcome_kwargs is not None:
-        outcome = partial(outcome, **outcome_kwargs)
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     indices = get_bootstrap_indices(
         data=data,
@@ -73,7 +63,6 @@ def _get_bootstrap_outcomes_from_indices(
     error_handling,
     batch_evaluator,
 ):
-
     arguments = [{"data": data, "indices": ind, "outcome": outcome} for ind in indices]
 
     raw_estimates = batch_evaluator(
@@ -87,9 +76,7 @@ def _get_bootstrap_outcomes_from_indices(
     estimates = [est for est in raw_estimates if not isinstance(est, str)]
     tracebacks = [est for est in raw_estimates if isinstance(est, str)]
 
-    if estimates:
-        estimates_df = pd.concat(estimates, axis=1).T
-    else:
+    if not estimates:
         msg = (
             "Calculating of all bootstrap outcomes failed. The tracebacks of the "
             "raised Exceptions are reproduced below:"
@@ -104,7 +91,7 @@ def _get_bootstrap_outcomes_from_indices(
             "anything but diagnostic purposes. Check warnings for more information. "
         )
 
-    return estimates_df
+    return estimates
 
 
 def _take_indices_and_calculate_outcome(indices, data, outcome):

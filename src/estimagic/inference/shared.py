@@ -3,6 +3,7 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import scipy
+from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 from pybaum import tree_unflatten
@@ -46,7 +47,6 @@ def transform_covariance(
             parameters. If parameters were fixed (explicitly or by other constraints),
             the index is a subset of params.index. The columns are the same as the
             index.
-
     """
     if isinstance(internal_cov, pd.DataFrame):
         internal_cov = internal_cov.to_numpy()
@@ -87,7 +87,7 @@ def transform_covariance(
     return free_cov
 
 
-def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_level):
+def calculate_estimation_summary(estimates, internal_estimates, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
@@ -110,14 +110,15 @@ def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_l
 
     """
     if not isinstance(free_cov, pd.DataFrame):
-        free_index = np.array(internal_estimates.names)[internal_estimates.free_mask]
+        free_index = np.array(internal_estimates.free_names)
         free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
+
     # ==================================================================================
     # Construct summary data frame for flat estimates
     # ==================================================================================
     registry = get_registry(extended=True)
 
-    df = pd.DataFrame(index=internal_estimates.names)
+    df = pd.DataFrame(index=internal_estimates.allnames)
     df["value"] = tree_just_flatten(estimates, registry=registry)
     df["free"] = internal_estimates.free_mask
     df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
@@ -290,7 +291,6 @@ def check_is_optimized_and_derivative_case(is_minimized, derivative_case):
 
 
 def calculate_ci(flat_values, flat_standard_errors, ci_level):
-
     alpha = 1 - ci_level
     scale = scipy.stats.norm.ppf(1 - alpha / 2)
     lower = flat_values - scale * flat_standard_errors
@@ -318,6 +318,27 @@ def calculate_free_estimates(estimates, internal_estimates):
         free_names=np.array(names)[mask].tolist(),
     )
     return free_estimates
+
+
+def transform_free_cov_to_cov(free_cov, free_params, params, return_type):
+    mask = free_params.free_mask
+    cov = np.full((len(mask), len(mask)), np.nan)
+    cov[np.ix_(mask, mask)] = free_cov
+    if return_type == "dataframe":
+        names = free_params.all_names
+        cov = pd.DataFrame(cov, columns=names, index=names)
+    elif return_type == "pytree":
+        cov = matrix_to_block_tree(cov, params, params)
+    return cov
+
+
+def transform_free_params_to_params(free_params, params):
+    mask = free_params.free_mask
+    flat = np.full(len(mask), np.nan)
+    flat[np.ix_(mask)] = free_params.values
+    registry = get_registry(extended=True)
+    pytree = tree_unflatten(params, flat, registry=registry)
+    return pytree
 
 
 class FreeParams(NamedTuple):

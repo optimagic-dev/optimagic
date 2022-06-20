@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.shared import calculate_inference_quantities
+from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.parameters.space_conversion import InternalParams
 from estimagic.parameters.tree_registry import get_registry
@@ -136,7 +136,7 @@ def test_calculate_inference_quantities():
     # compute and compare
     # ==================================================================================
 
-    got = calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level)
+    got = calculate_estimation_summary(estimates, flat_estimates, free_cov, ci_level)
 
     # drop irrelevant columns
     got = tree_map(lambda df: df.drop(columns=["stars", "p_value", "free"]), got)
