@@ -807,8 +807,7 @@ class MomentsResult:
 
         The sensitivity measures are based on the following papers:
 
-        Andrews, Gentzkow & Shapiro
-        (https://academic.oup.com/qje/article/132/4/1553/3861634)
+        Andrews, Gentzkow & Shapiro (https://doi.org/10.1093/qje/qjx023).
 
         Honore, Jorgensen & de Paula
         (https://onlinelibrary.wiley.com/doi/full/10.1002/jae.2779)
