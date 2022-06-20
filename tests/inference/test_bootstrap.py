@@ -76,7 +76,7 @@ def test_bootstrap_with_outcome_kwargs(shift, setup):
     )
 
     expected = pd.Series([2.5, 7.0], index=["x1", "x2"])
-    ase(result._base_outcome, expected + shift)
+    ase(result.base_outcome, expected + shift)
 
 
 def test_bootstrap_from_outcomes(setup, expected):

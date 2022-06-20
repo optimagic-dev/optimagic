@@ -136,6 +136,7 @@ class BootstrapResult:
     def _summary(self):
         return self.summary()
 
+    @property
     def base_outcome(self):
         """Returns the base outcome statistic(s).
 
