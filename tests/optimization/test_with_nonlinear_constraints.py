@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from estimagic import maximize
 from estimagic import minimize
+from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -233,6 +234,7 @@ def general_example():
 TEST_CASES = list(itertools.product(["ipopt"], [True, False]))
 
 
+@pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="Needs ipopt")
 @pytest.mark.parametrize("algorithm, skip_checks", TEST_CASES)
 def test_general_example(general_example, algorithm, skip_checks):
 

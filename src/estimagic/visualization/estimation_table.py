@@ -68,7 +68,7 @@ def estimation_table(
             a dictionary with the entries "body", "footer" and other
             information is returned. The entries can be modified by the user (
             e.g. change formatting, renameof columns or index, ...) and then passed
-            to `render_latex` or render_html`. Default "dataframe".
+            to ``render_latex`` or ``render_html``. Default "dataframe".
         render_options (dict): a dictionary with keyword arguments that are passed to
             df.style.to_latex or df.style.to_html, depending on the return_type.
             The default is None.
@@ -247,8 +247,8 @@ def render_latex(
         render_options(dict): A dictionary with custom kwargs to pass to
             pd.Styler.to_latex(), to update the default options. An example keyword
             argument is:
-                - siunitx (bool): If True, the table is structured to be compatible
-                    with siunitx package. Default is set to True internally.
+            - siunitx (bool): If True, the table is structured to be compatible
+            with siunitx package. Default is set to True internally.
             For the list of all possible arguments, see documentation of
             `pandas.io.formats.style.Styler.to_latex`.
         show_footer (bool): a boolean variable for displaying footer_df. Default True.
@@ -324,6 +324,7 @@ def render_latex(
         "hrules": True,
         "siunitx": True,
         "column_format": "l" * n_levels + "S" * n_columns,
+        "multirow_align": "t",
     }
     if render_options:
         default_options.update(render_options)

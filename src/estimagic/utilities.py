@@ -293,3 +293,14 @@ def to_pickle(obj, path):
 
 def read_pickle(path):
     return pd.read_pickle(path)
+
+
+def isscalar(element):
+    """Jax aware replacement for np.isscalar."""
+    if np.isscalar(element):
+        return True
+    # call anything a scalar that says it has 0 dimensions
+    elif getattr(element, "ndim", -1) == 0:
+        return True
+    else:
+        return False

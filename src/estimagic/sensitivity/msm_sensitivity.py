@@ -1,11 +1,10 @@
 """Implement local sensitivity measures for method of moments.
 
 measures:
-m1: Andrews, Gentzkow & Shapiro
-(https://academic.oup.com/qje/article/132/4/1553/3861634)
+m1: Andrews, Gentzkow & Shapiro (2017, Quarterly Journal of Economics)
 
 epsilon 2-6: Honore, Jorgensen & de Paula
-(https://papers.srn.com/abstract=3518640)
+(https://onlinelibrary.wiley.com/doi/full/10.1002/jae.2779)
 
 """
 import numpy as np

@@ -47,7 +47,11 @@ def process_func_of_params(func, kwargs, name="your function", skip_checks=False
         required_args = unpartialled_args.intersection(no_default_args)
         too_many_required_arguments = len(required_args) > 1
 
-        if too_many_required_arguments:
+        # Try to discover if we have a jax calculated jacobian that has a weird
+        # signature that would not pass this test:
+        skip_because_of_jax = required_args == {"args", "kwargs"}
+
+        if too_many_required_arguments and not skip_because_of_jax:
             raise InvalidKwargsError(
                 f"Too few keyword arguments for {name}. After applying all keyword "
                 "arguments at most one required argument (the params) should remain. "
