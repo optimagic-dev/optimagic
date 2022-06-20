@@ -443,6 +443,43 @@ def _partial_kwargs(func, kwargs):
 
 @dataclass
 class MomentsResult:
+    """Method of moments estimation results object.
+
+    Attributes that are *not* listed below are only used internally and should not be
+    used by the user.
+
+    **Methods**
+
+    Methods:
+        se(method="robust", n_samples=10_000, bounds_handling="clip", seed=None):
+            Calculate standard errors.
+        cov(method="robust", n_samples=10_000, bounds_handling="clip", return_type="pytree", seed=None):
+            Calculate variance-covariance matrix.
+        ci(method="robust", n_samples=10_000, ci_level=0.95, bounds_handling="clip", seed=None):
+            Calculate confidence intervals.
+        p_values(method="robsut", n_samples=10_000, bounds_handling="clip", seed=None):
+            Calculate p-values.
+        sensitivity(kind="bias", n_samples=10_000, bounds_handling="clip", seed=None, return_type="pytree"):
+            Calculate sensitivity measures for moments estimates.
+        summary(method="robust", n_samples=10_000, ci_level=0.95, bounds_handling="clip", seed=None):
+            Create a summary of the estimation results.
+        to_pickle(path): Save object to pickle.
+
+    **Attributes and Properties**
+
+    Attributes:
+        params (Any): The estimated parameters.
+        weights (Any): The estimation weighting matrix.
+        jacobian (Any): Propery: returns Jacobian of the criterion function at the
+            optimal paramaters, if available.
+        _se (Any): Property: calls method ``se`` with defaults.
+        _cov (Any): Property: calls method ``cov`` with defaults.
+        _ci (Any): Property: calls method ``ci`` with defaults.
+        _p_values (Any): Property: calls method ``p_values`` with defaults.
+        _summary (Any): Property: calls method ``summary`` with defaults.
+
+    """
+
     params: Any
     weights: Any
     _flat_params: Any

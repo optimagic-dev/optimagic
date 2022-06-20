@@ -44,6 +44,10 @@ Optimization
     .. autofunction:: check_constraints
 
 
+.. dropdown:: OptimizeResult
+
+    .. autoclass:: OptimizeResult
+
 
 .. _first_derivative:
 
@@ -81,6 +85,7 @@ Estimation
 
     .. autofunction:: estimate_msm
 
+
 .. dropdown:: get_moments_cov
 
     .. autofunction:: get_moments_cov
@@ -104,6 +109,16 @@ Estimation
 .. dropdown:: render_latex
 
     .. autofunction:: render_latex
+
+
+.. dropdown:: LikelihoodResult
+
+    .. autoclass:: LikelihoodResult
+
+
+.. dropdown:: MomentsResult
+
+    .. autoclass:: MomentsResult
 
 
 
@@ -157,21 +172,6 @@ Log reading
 .. dropdown:: OptimizeLogReader
 
     .. autoclass:: OptimizeLogReader
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
