@@ -257,10 +257,24 @@ class BootstrapResult:
         """
         registry = get_registry(extended=True)
         names = leaf_names(self.base_outcome, registry=registry)
+        summary_data = _calulcate_summary_data_bootstrap(
+            self, ci_method=ci_method, ci_level=ci_level
+        )
         summary = calculate_estimation_summary(
-            result_object=self,
+            summary_data=summary_data,
             names=names,
-            ci_level=ci_level,
-            ci_method=ci_method,
+            free_names=names,
         )
         return summary
+
+
+def _calulcate_summary_data_bootstrap(bootstrap_result, ci_method, ci_level):
+    lower, upper = bootstrap_result.ci(ci_method=ci_method, ci_level=ci_level)
+    summary_data = {
+        "params": bootstrap_result.base_outcome,
+        "standard_error": bootstrap_result.se(),
+        "ci_lower": lower,
+        "ci_upper": upper,
+        "p_value": np.full(len(lower), np.nan),  # p-values are not implemented yet
+    }
+    return summary_data

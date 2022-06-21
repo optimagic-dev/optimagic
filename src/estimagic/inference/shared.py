@@ -87,19 +87,7 @@ def transform_covariance(
     return free_cov
 
 
-def _calulcate_summary_data_bootstrap(bootstrap_result, ci_method, ci_level):
-    lower, upper = bootstrap_result.ci(ci_method=ci_method, ci_level=ci_level)
-    summary_data = {
-        "params": bootstrap_result.base_outcome,
-        "standard_error": bootstrap_result.se(),
-        "ci_lower": lower,
-        "ci_upper": upper,
-        "p_value": np.full(len(lower), np.nan),  # p-values are not implemented yet
-    }
-    return summary_data
-
-
-def _calculate_summary_data_estimation(
+def calculate_summary_data_estimation(
     estimation_result,
     free_estimates,
     ci_level,
@@ -133,46 +121,17 @@ def _calculate_summary_data_estimation(
 
 
 def calculate_estimation_summary(
-    result_object,
+    summary_data,
     names,
-    free_estimates=None,
-    method=None,
-    ci_level=None,
-    ci_method=None,
-    n_samples=None,
-    bounds_handling=None,
-    seed=None,
+    free_names,
 ):
-    """Add standard errors, pvalues and confidence intervals to params.
+    """Create estimation summary using pre-calculated results.
 
     Args:
-        result_object (Union[LikelihoodResult, MomentsResult, BootstrapResult]): The
-            result object.
+        summary_data (dict): Dictionary with entries ['params', 'p_value', 'ci_lower',
+        'ci_upper', 'standard_error'].
         names (List[str]): List of parameter names, corresponding to result_object.
-        free_estimates (FreeParams): Free estimates object of estimation result.
-        method (str): One of "robust", "optimal". Despite the name, "optimal" is
-            not recommended in finite samples and "optimal" standard errors are
-            only valid if the asymptotically optimal weighting matrix has been
-            used. It is only supported because it is needed to calculate
-            sensitivity measures.
-        ci_method (str): Method of choice for confidence interval computation.
-            The default is "percentile". Only used if estimation_result is of type
-            BootstrapResult.
-        ci_level (float): Confidence level for the calculation of confidence
-            intervals. The default is 0.95.
-        n_samples (int): Number of samples used to transform the covariance matrix
-            of the internal parameter vector into the covariance matrix of the
-            external parameters. For background information about internal and
-            external params see :ref:`implementation_of_constraints`. This is only
-            used if you are using constraints.
-        bounds_handling (str): One of "clip", "raise", "ignore". Determines how
-            bounds are handled. If "clip", confidence intervals are clipped at the
-            bounds. Standard errors are only adjusted if a sampling step is
-            necessary due to additional constraints. If "raise" and any lower or
-            upper bound is binding, we raise an Error. If "ignore", boundary
-            problems are simply ignored.
-        seed (int): Seed for the random number generator. Only used if there are
-            transforming constraints.
+        free_names (List[str]): List of parameter names for free parameters.
 
     Returns:
         pytree: A pytree with the same structure as params. Each leaf in the params
@@ -183,35 +142,6 @@ def calculate_estimation_summary(
             reproduced for convenience.
 
     """
-    # ==================================================================================
-    # Retrieve summary data from result object
-    # ==================================================================================
-
-    result_object_type = type(result_object).__name__
-
-    if result_object_type == "BootstrapResult":
-        summary_data = _calulcate_summary_data_bootstrap(
-            result_object, ci_method=ci_method, ci_level=ci_level
-        )
-        free_names = names
-    elif result_object_type in {"LikelihoodResult", "MomentsResult"}:
-        summary_data = _calculate_summary_data_estimation(
-            result_object,
-            free_estimates=free_estimates,
-            method=method,
-            ci_level=ci_level,
-            n_samples=n_samples,
-            bounds_handling=bounds_handling,
-            seed=seed,
-        )
-        free_names = free_estimates.free_names
-    else:
-        msg = (
-            "result_object type must be in {'BootstrapResult, 'LikelihoodResult', "
-            "'MomentsResult'}"
-        )
-        raise ValueError(msg)
-
     # ==================================================================================
     # Flatten summary and construct data frame for flat estimates
     # ==================================================================================
