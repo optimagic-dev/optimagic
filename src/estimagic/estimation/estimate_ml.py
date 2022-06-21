@@ -18,6 +18,7 @@ from estimagic.inference.shared import calculate_ci
 from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import calculate_free_estimates
 from estimagic.inference.shared import calculate_p_values
+from estimagic.inference.shared import calculate_summary_data_estimation
 from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
@@ -612,15 +613,19 @@ class LikelihoodResult:
         Returns:
             Any: The estimation summary as pytree of DataFrames.
         """
-        summary = calculate_estimation_summary(
-            result_object=self,
-            names=self._free_estimates.all_names,
+        summary_data = calculate_summary_data_estimation(
+            self,
             free_estimates=self._free_estimates,
             method=method,
             ci_level=ci_level,
             n_samples=n_samples,
             bounds_handling=bounds_handling,
             seed=seed,
+        )
+        summary = calculate_estimation_summary(
+            summary_data=summary_data,
+            names=self._free_estimates.all_names,
+            free_names=self._free_estimates.free_names,
         )
         return summary
 
