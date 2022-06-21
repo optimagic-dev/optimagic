@@ -90,6 +90,7 @@ def logit_np_inputs():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
     x_df = sm.add_constant(spector_data.exog)
+
     out = {
         "y": spector_data.endog,
         "x": x_df.to_numpy(),
@@ -99,8 +100,42 @@ def logit_np_inputs():
 
 
 @pytest.fixture
+def logit_np_inputs_reordered():
+    """Reorder exog params to test 'increasing' constraint."""
+    spector_data = sm.datasets.spector.load_pandas()
+    x_df = sm.add_constant(spector_data.exog)
+
+    cols = ["const", "TUCE", "PSI", "GPA"]
+    x_df = x_df[cols]
+
+    out = {
+        "y": spector_data.endog,
+        "x": x_df.to_numpy(),
+        "params": np.array([-10, 0.2, 2, 2]),
+    }
+    return out
+
+
+@pytest.fixture
 def fitted_logit_model(logit_object):
     """We need to use a generic model class to access all standard errors etc."""
+
+    class GenericLogit(GenericLikelihoodModel):
+        def nloglikeobs(self, params, *args, **kwargs):
+            return -logit_object.loglikeobs(params, *args, **kwargs)
+
+    generic_logit = GenericLogit(logit_object.endog, logit_object.exog)
+    return generic_logit.fit()
+
+
+@pytest.fixture
+def fitted_logit_model_reordered(logit_object):
+    """
+    We need to use a generic model class to access all standard errors etc.
+
+    Reorder exog params to test 'increasing' constraint.
+    """
+    logit_object.exog = logit_object.exog[:, [0, 2, 3, 1]]
 
     class GenericLogit(GenericLikelihoodModel):
         def nloglikeobs(self, params, *args, **kwargs):
@@ -131,17 +166,22 @@ test_cases = list(
         ],  # optimize_options
         [None, logit_jacobian, False],  # jacobian
         [None, logit_hessian, False],  # hessian
+        [
+            [],
+            {"type": "increasing", "loc": [1]},
+        ],  # constraints
     )
 )
 
 
-@pytest.mark.parametrize("optimize_options, jacobian, hessian", test_cases)
-def test_estimate_ml_with_logit_no_constraints(
-    fitted_logit_model,
-    logit_np_inputs,
+@pytest.mark.parametrize("optimize_options, jacobian, hessian, constraints", test_cases)
+def test_estimate_ml_with_logit(
+    fitted_logit_model_reordered,
+    logit_np_inputs_reordered,
     optimize_options,
     jacobian,
     hessian,
+    constraints,
 ):
     """
     Test that estimate_ml computes correct params and covariances under different
@@ -151,31 +191,35 @@ def test_estimate_ml_with_logit_no_constraints(
     if jacobian is False and hessian is False:
         pytest.xfail("jacobian and hessian cannot both be False.")
 
+    if hessian and constraints:
+        pytest.xfail("Closed-form Hessians are not yet compatible with constraints.")
+
     # ==================================================================================
     # estimate
     # ==================================================================================
 
-    kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
+    kwargs = {"y": logit_np_inputs_reordered["y"], "x": logit_np_inputs_reordered["x"]}
 
     if "criterion_and_derivative" in optimize_options:
         optimize_options["criterion_and_derivative_kwargs"] = kwargs
 
     got = estimate_ml(
         loglike=logit_loglike,
-        params=logit_np_inputs["params"],
+        params=logit_np_inputs_reordered["params"],
         loglike_kwargs=kwargs,
         optimize_options=optimize_options,
         jacobian=jacobian,
         jacobian_kwargs=kwargs,
         hessian=hessian,
         hessian_kwargs=kwargs,
+        constraints=constraints,
     )
 
     # ==================================================================================
     # test
     # ==================================================================================
 
-    exp = fitted_logit_model
+    exp = fitted_logit_model_reordered
 
     if jacobian is not False and hessian is not False:
         methods = ["jacobian", "hessian", "robust"]
@@ -209,7 +253,7 @@ def test_estimate_ml_with_logit_no_constraints(
 
         # compare covariance
         if method == "hessian":
-            aaae(got.cov(method=method), exp.cov_params(), decimal=3)
+            aaae(got.cov(method=method), exp.cov_params(), decimal=2)
         elif method == "robust":
             aaae(got.cov(method=method), exp.covjhj, decimal=2)
         elif method == "jacobian":
@@ -231,10 +275,10 @@ def test_estimate_ml_with_logit_no_constraints(
         aaae(got._p_values, got.p_values())
 
 
-def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
+def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_np_inputs):
     """Test that estimate_ml computes correct covariances given correct params."""
 
-    kwargs = {"y": logit_inputs["y"], "x": logit_inputs["x"]}
+    kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
 
     params = pd.DataFrame({"value": fitted_logit_model.params})
 
