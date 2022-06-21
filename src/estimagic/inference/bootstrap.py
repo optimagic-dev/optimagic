@@ -146,7 +146,7 @@ class BootstrapResult:
         """Returns the estimated bootstrap outcomes.
 
         Returns:
-            Any: The boostrap outcomes as a list of pytrees.
+            List[Any]: The boostrap outcomes as a list of pytrees.
         """
         registry = get_registry(extended=True)
         _, treedef = tree_flatten(self._base_outcome, registry=registry)
