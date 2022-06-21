@@ -166,7 +166,10 @@ test_cases = list(
         ],  # optimize_options
         [None, logit_jacobian, False],  # jacobian
         [None, logit_hessian, False],  # hessian
-        [[], {"type": "increasing", "loc": [2]}],  # constraints
+        [
+            [],
+            {"type": "increasing", "loc": [1]},
+        ],  # constraints
     )
 )
 
@@ -250,7 +253,7 @@ def test_estimate_ml_with_logit(
 
         # compare covariance
         if method == "hessian":
-            aaae(got.cov(method=method), exp.cov_params(), decimal=3)
+            aaae(got.cov(method=method), exp.cov_params(), decimal=2)
         elif method == "robust":
             aaae(got.cov(method=method), exp.covjhj, decimal=2)
         elif method == "jacobian":
