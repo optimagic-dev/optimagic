@@ -372,8 +372,3 @@ class FreeParams(NamedTuple):
     free_mask: np.ndarray  # boolean mask to filter free params from external params
     free_names: list  # names of free external parameters
     all_names: list  # names of all external parameters
-
-
-class BaseOutcomes(NamedTuple):
-    values: np.ndarray  # base outcomes of bootstrap
-    all_names: list  # names of base outcomes
