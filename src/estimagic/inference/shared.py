@@ -87,18 +87,92 @@ def transform_covariance(
     return free_cov
 
 
-def calculate_estimation_summary(estimates, free_estimates, free_cov, ci_level):
+def _calulcate_summary_data_bootstrap(bootstrap_result, ci_method, ci_level):
+    lower, upper = bootstrap_result.ci(ci_method=ci_method, ci_level=ci_level)
+    summary_data = {
+        "params": bootstrap_result.base_outcome,
+        "standard_error": bootstrap_result.se(),
+        "ci_lower": lower,
+        "ci_upper": upper,
+        "p_value": np.full(len(lower), np.nan),  # p-values are not implemented yet
+    }
+    return summary_data
+
+
+def _calculate_summary_data_estimation(
+    estimation_result,
+    free_estimates,
+    ci_level,
+    method,
+    n_samples,
+    bounds_handling,
+    seed,
+):
+    se = estimation_result.se(
+        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed
+    )
+    lower, upper = estimation_result.ci(
+        method=method,
+        n_samples=n_samples,
+        ci_level=ci_level,
+        bounds_handling=bounds_handling,
+        seed=seed,
+    )
+    p_values = estimation_result.p_values(
+        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed
+    )
+    summary_data = {
+        "params": estimation_result.params,
+        "standard_error": se,
+        "ci_lower": lower,
+        "ci_upper": upper,
+        "p_value": p_values,
+        "free": free_estimates.free_mask,
+    }
+    return summary_data
+
+
+def calculate_estimation_summary(
+    result_object,
+    names,
+    free_estimates=None,
+    method=None,
+    ci_level=None,
+    ci_method=None,
+    n_samples=None,
+    bounds_handling=None,
+    seed=None,
+):
     """Add standard errors, pvalues and confidence intervals to params.
 
-    Args
-        estimates (pytree): The input parameter pytree.
-        free_estimates (FreeParams): NamedTuple with internal estimated parameter values
-            and names, lower_bounds and upper_bounds, and free_mask.
-        free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
-            of the free parameters. If parameters were fixed (explicitly or by other
-            constraints) the index is a subset of params.index. The columns are the same
-            as the index.
-        ci_level (float): Confidence level for the calculation of confidence intervals.
+    Args:
+        result_object (Union[LikelihoodResult, MomentsResult, BootstrapResult]): The
+            result object.
+        names (List[str]): List of parameter names, corresponding to result_object.
+        free_estimates (FreeParams): Free estimates object of estimation result.
+        method (str): One of "robust", "optimal". Despite the name, "optimal" is
+            not recommended in finite samples and "optimal" standard errors are
+            only valid if the asymptotically optimal weighting matrix has been
+            used. It is only supported because it is needed to calculate
+            sensitivity measures.
+        ci_method (str): Method of choice for confidence interval computation.
+            The default is "percentile". Only used if estimation_result is of type
+            BootstrapResult.
+        ci_level (float): Confidence level for the calculation of confidence
+            intervals. The default is 0.95.
+        n_samples (int): Number of samples used to transform the covariance matrix
+            of the internal parameter vector into the covariance matrix of the
+            external parameters. For background information about internal and
+            external params see :ref:`implementation_of_constraints`. This is only
+            used if you are using constraints.
+        bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+            bounds are handled. If "clip", confidence intervals are clipped at the
+            bounds. Standard errors are only adjusted if a sampling step is
+            necessary due to additional constraints. If "raise" and any lower or
+            upper bound is binding, we raise an Error. If "ignore", boundary
+            problems are simply ignored.
+        seed (int): Seed for the random number generator. Only used if there are
+            transforming constraints.
 
     Returns:
         pytree: A pytree with the same structure as params. Each leaf in the params
@@ -109,47 +183,62 @@ def calculate_estimation_summary(estimates, free_estimates, free_cov, ci_level):
             reproduced for convenience.
 
     """
-    if not isinstance(free_cov, pd.DataFrame):
-        free_index = np.array(free_estimates.free_names)
-        free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
+    # ==================================================================================
+    # Retrieve summary data from result object
+    # ==================================================================================
+
+    result_object_type = type(result_object).__name__
+
+    if result_object_type == "BootstrapResult":
+        summary_data = _calulcate_summary_data_bootstrap(
+            result_object, ci_method=ci_method, ci_level=ci_level
+        )
+        free_names = names
+    elif result_object_type in {"LikelihoodResult", "MomentsResult"}:
+        summary_data = _calculate_summary_data_estimation(
+            result_object,
+            free_estimates=free_estimates,
+            method=method,
+            ci_level=ci_level,
+            n_samples=n_samples,
+            bounds_handling=bounds_handling,
+            seed=seed,
+        )
+        free_names = free_estimates.free_names
+    else:
+        msg = (
+            "result_object type must be in {'BootstrapResult, 'LikelihoodResult', "
+            "'MomentsResult'}"
+        )
+        raise ValueError(msg)
 
     # ==================================================================================
-    # Construct summary data frame for flat estimates
+    # Flatten summary and construct data frame for flat estimates
     # ==================================================================================
+
     registry = get_registry(extended=True)
+    flat_data = {
+        key: tree_just_flatten(val, registry=registry)
+        for key, val in summary_data.items()
+    }
 
-    df = pd.DataFrame(index=free_estimates.all_names)
-    df["value"] = tree_just_flatten(estimates, registry=registry)
-    df["free"] = free_estimates.free_mask
-    df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
+    df = pd.DataFrame(flat_data, index=names)
 
-    df["p_value"] = calculate_p_values(
-        df["value"].to_numpy(),
-        df["standard_error"].to_numpy(),
-    )
-
-    lower, upper = calculate_ci(
-        df["value"].to_numpy(),
-        df["standard_error"].to_numpy(),
-        ci_level=ci_level,
-    )
-    df["ci_lower"] = lower
-    df["ci_upper"] = upper
-
-    df.loc[free_cov.index, "stars"] = pd.cut(
-        df.loc[free_cov.index, "p_value"],
+    df.loc[free_names, "stars"] = pd.cut(
+        df.loc[free_names, "p_value"],
         bins=[-1, 0.01, 0.05, 0.1, 2],
         labels=["***", "**", "*", ""],
     )
+    df = df.rename(columns={"params": "value"})
 
     # ==================================================================================
     # Map summary data into params tree structure
     # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(estimates, free_estimates.all_names, registry=registry)
+    indices = tree_unflatten(summary_data["params"], names, registry=registry)
 
-    estimates_flat = tree_just_flatten(estimates)
+    estimates_flat = tree_just_flatten(summary_data["params"])
     indices_flat = tree_just_flatten(indices)
 
     # use index chunks in indices_flat to access the corresponding sub data frame of df,
@@ -192,7 +281,7 @@ def calculate_estimation_summary(estimates, free_estimates, free_cov, ci_level):
 
         summary_flat.append(df_chunk)
 
-    summary = tree_unflatten(estimates, summary_flat)
+    summary = tree_unflatten(summary_data["params"], summary_flat)
     return summary
 
 
@@ -290,16 +379,16 @@ def check_is_optimized_and_derivative_case(is_minimized, derivative_case):
         )
 
 
-def calculate_ci(flat_values, flat_standard_errors, ci_level):
+def calculate_ci(free_values, free_standard_errors, ci_level):
     alpha = 1 - ci_level
     scale = scipy.stats.norm.ppf(1 - alpha / 2)
-    lower = flat_values - scale * flat_standard_errors
-    upper = flat_values + scale * flat_standard_errors
+    lower = free_values - scale * free_standard_errors
+    upper = free_values + scale * free_standard_errors
     return lower, upper
 
 
-def calculate_p_values(flat_values, flat_standard_errors):
-    tvalues = flat_values / np.clip(flat_standard_errors, 1e-300, np.inf)
+def calculate_p_values(free_values, free_standard_errors):
+    tvalues = free_values / np.clip(free_standard_errors, 1e-300, np.inf)
     pvalues = 2 * scipy.stats.norm.sf(np.abs(tvalues))
     return pvalues
 
@@ -338,8 +427,8 @@ def transform_free_cov_to_cov(free_cov, free_params, params, return_type):
     return cov
 
 
-def transform_free_values_to_params_treedef(values, free_params, params):
-    """Fill non-free values and project to params treedef."""
+def transform_free_values_to_params_tree(values, free_params, params):
+    """Fill non-free values and project to params tree structure."""
     mask = free_params.free_mask
     flat = np.full(len(mask), np.nan)
     flat[np.ix_(mask)] = values
@@ -353,3 +442,8 @@ class FreeParams(NamedTuple):
     free_mask: np.ndarray  # boolean mask to filter free params from external params
     free_names: list  # names of free external parameters
     all_names: list  # names of all external parameters
+
+
+class BaseOutcomes(NamedTuple):
+    values: np.ndarray  # base outcomes of bootstrap
+    all_names: list  # names of base outcomes

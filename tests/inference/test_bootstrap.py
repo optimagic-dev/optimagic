@@ -91,10 +91,7 @@ def test_bootstrap_from_outcomes(setup, expected):
     standard_errors = result.se()
 
     with pytest.raises(NotImplementedError):
-        assert result._p_values()
-
-    with pytest.raises(NotImplementedError):
-        assert result._summary()
+        assert result._p_values
 
     # Use rounding to adjust precision and ensure reproducibility accross all
     # supported pandas versions.
@@ -120,10 +117,7 @@ def test_bootstrap_from_outcomes_private_methods(setup, expected):
     standard_errors = result._se
 
     with pytest.raises(NotImplementedError):
-        assert result._p_values()
-
-    with pytest.raises(NotImplementedError):
-        assert result._summary()
+        assert result._p_values
 
     for i in range(len(outcomes)):
         assert_series_equal(outcomes[i], setup["estimates_pytree"][i])

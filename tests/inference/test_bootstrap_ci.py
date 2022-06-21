@@ -80,7 +80,7 @@ def test_ci(outcome, method, setup, expected):
 
 def test_check_inputs_data():
     data = "this is not a data frame"
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(TypeError) as excinfo:
         check_inputs(data=data)
     assert "Data must be a pandas.DataFrame." == str(excinfo.value)
 
@@ -89,7 +89,7 @@ def test_check_inputs_cluster_by(setup):
     cluster_by = "this is not a column name of df"
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=setup["df"], cluster_by=cluster_by)
-    assert "Input 'cluster_by' must be None or a column name of DataFrame." == str(
+    assert "Input 'cluster_by' must be None or a column name of 'data'." == str(
         excinfo.value
     )
 

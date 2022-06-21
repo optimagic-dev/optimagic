@@ -22,7 +22,7 @@ from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
 from estimagic.inference.shared import transform_free_cov_to_cov
-from estimagic.inference.shared import transform_free_values_to_params_treedef
+from estimagic.inference.shared import transform_free_values_to_params_tree
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.block_trees import matrix_to_block_tree
@@ -568,7 +568,7 @@ class MomentsResult:
 
         free_se = np.sqrt(np.diagonal(free_cov))
 
-        se = transform_free_values_to_params_treedef(
+        se = transform_free_values_to_params_tree(
             values=free_se,
             free_params=self._free_estimates,
             params=self._params,
@@ -663,18 +663,15 @@ class MomentsResult:
         Returns:
             Any: The estimation summary as pytree of DataFrames.
         """
-        free_cov = self._get_free_cov(
+        summary = calculate_estimation_summary(
+            result_object=self,
+            names=self._free_estimates.all_names,
+            free_estimates=self._free_estimates,
             method=method,
+            ci_level=ci_level,
             n_samples=n_samples,
             bounds_handling=bounds_handling,
             seed=seed,
-        )
-
-        summary = calculate_estimation_summary(
-            estimates=self._params,
-            free_estimates=self._free_estimates,
-            free_cov=free_cov,
-            ci_level=ci_level,
         )
         return summary
 
@@ -725,13 +722,13 @@ class MomentsResult:
         )
 
         free_lower, free_upper = calculate_ci(
-            flat_values=self._free_estimates.values,
-            flat_standard_errors=np.sqrt(np.diagonal(free_cov)),
+            free_values=self._free_estimates.values,
+            free_standard_errors=np.sqrt(np.diagonal(free_cov)),
             ci_level=ci_level,
         )
 
         lower, upper = (
-            transform_free_values_to_params_treedef(
+            transform_free_values_to_params_tree(
                 values, free_params=self._free_estimates, params=self._params
             )
             for values in (free_lower, free_upper)
@@ -779,11 +776,11 @@ class MomentsResult:
         )
 
         free_p_values = calculate_p_values(
-            flat_values=self._free_estimates.values,
-            flat_standard_errors=np.sqrt(np.diagonal(free_cov)),
+            free_values=self._free_estimates.values,
+            free_standard_errors=np.sqrt(np.diagonal(free_cov)),
         )
 
-        p_values = transform_free_values_to_params_treedef(
+        p_values = transform_free_values_to_params_tree(
             free_p_values, free_params=self._free_estimates, params=self._params
         )
         return p_values

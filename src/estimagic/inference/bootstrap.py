@@ -9,6 +9,7 @@ from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import calculate_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
+from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import leaf_names
@@ -69,7 +70,7 @@ def bootstrap(
         if outcome_kwargs is not None:
             outcome = functools.partial(outcome, **outcome_kwargs)
 
-        bootstrap_outcomes = get_bootstrap_outcomes(
+        new_outcomes = get_bootstrap_outcomes(
             data=data,
             outcome=outcome,
             cluster_by=cluster_by,
@@ -79,22 +80,27 @@ def bootstrap(
             error_handling=error_handling,
             batch_evaluator=batch_evaluator,
         )
-        existing_outcomes += bootstrap_outcomes
         base_outcome = outcome(data)
     else:
+        new_outcomes = []
         base_outcome = outcome
+
+    all_outcomes = existing_outcomes + new_outcomes
 
     # ==================================================================================
     # Process results
     # ==================================================================================
 
     registry = get_registry(extended=True)
-    flat_outcomes = [tree_just_flatten(e, registry=registry) for e in existing_outcomes]
+    flat_outcomes = [
+        tree_just_flatten(_outcome, registry=registry) for _outcome in all_outcomes
+    ]
     internal_outcomes = np.array(flat_outcomes)
 
     result = BootstrapResult(
         _base_outcome=base_outcome,
         _internal_outcomes=internal_outcomes,
+        _internal_cov=np.cov(internal_outcomes, rowvar=False),
     )
     return result
 
@@ -103,6 +109,7 @@ def bootstrap(
 class BootstrapResult:
     _base_outcome: Any
     _internal_outcomes: np.ndarray
+    _internal_cov: np.ndarray
 
     @cached_property
     def _se(self):
@@ -157,7 +164,7 @@ class BootstrapResult:
             Any: The standard errors of the estimated parameters as a block-pytree,
                 numpy.ndarray, or pandas.DataFrame.
         """
-        cov = np.cov(self._internal_outcomes, rowvar=False)
+        cov = self._internal_cov
         se = np.sqrt(np.diagonal(cov))
 
         registry = get_registry(extended=True)
@@ -180,7 +187,7 @@ class BootstrapResult:
             Any: The covariance matrix of the estimated parameters as a block-pytree,
                 numpy.ndarray, or pandas.DataFrame.
         """
-        cov = np.cov(self._internal_outcomes, rowvar=False)
+        cov = self._internal_cov
 
         if return_type == "dataframe":
             registry = get_registry(extended=True)
@@ -248,8 +255,12 @@ class BootstrapResult:
                 on the mean, standard errors, as well as the confidence intervals.
                 Soon this will be a pytree.
         """
-        msg = (
-            "Bootstrap summary is not implemented yet, due to missing p-values. You"
-            " can still view the confidence interval through the method `ci()`."
+        registry = get_registry(extended=True)
+        names = leaf_names(self.base_outcome, registry=registry)
+        summary = calculate_estimation_summary(
+            result_object=self,
+            names=names,
+            ci_level=ci_level,
+            ci_method=ci_method,
         )
-        raise NotImplementedError(msg)
+        return summary
