@@ -133,7 +133,6 @@ def estimate_ml(
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
-
     is_optimized = optimize_options is False
 
     if not is_optimized:

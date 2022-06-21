@@ -289,7 +289,7 @@ def simplify_covariance_and_sdcorr_constraints(
 
         if uncorrelated:
             lower[diag_indices] = np.maximum(0, lower[diag_indices])
-        elif dim <= 2:
+        elif dim <= 2 and constr["type"] == "sdcorr":
             lower[diag_indices] = np.maximum(0, lower[diag_indices])
             lower[off_indices] = -1
             upper[off_indices] = 1

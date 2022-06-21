@@ -100,42 +100,8 @@ def logit_np_inputs():
 
 
 @pytest.fixture
-def logit_np_inputs_reordered():
-    """Reorder exog params to test 'increasing' constraint."""
-    spector_data = sm.datasets.spector.load_pandas()
-    x_df = sm.add_constant(spector_data.exog)
-
-    cols = ["const", "TUCE", "PSI", "GPA"]
-    x_df = x_df[cols]
-
-    out = {
-        "y": spector_data.endog,
-        "x": x_df.to_numpy(),
-        "params": np.array([-10, 0.2, 2, 2]),
-    }
-    return out
-
-
-@pytest.fixture
 def fitted_logit_model(logit_object):
     """We need to use a generic model class to access all standard errors etc."""
-
-    class GenericLogit(GenericLikelihoodModel):
-        def nloglikeobs(self, params, *args, **kwargs):
-            return -logit_object.loglikeobs(params, *args, **kwargs)
-
-    generic_logit = GenericLogit(logit_object.endog, logit_object.exog)
-    return generic_logit.fit()
-
-
-@pytest.fixture
-def fitted_logit_model_reordered(logit_object):
-    """
-    We need to use a generic model class to access all standard errors etc.
-
-    Reorder exog params to test 'increasing' constraint.
-    """
-    logit_object.exog = logit_object.exog[:, [0, 2, 3, 1]]
 
     class GenericLogit(GenericLikelihoodModel):
         def nloglikeobs(self, params, *args, **kwargs):
@@ -166,18 +132,15 @@ test_cases = list(
         ],  # optimize_options
         [None, logit_jacobian, False],  # jacobian
         [None, logit_hessian, False],  # hessian
-        [
-            [],
-            {"type": "increasing", "loc": [1]},
-        ],  # constraints
+        [[]],  # constraints
     )
 )
 
 
 @pytest.mark.parametrize("optimize_options, jacobian, hessian, constraints", test_cases)
 def test_estimate_ml_with_logit(
-    fitted_logit_model_reordered,
-    logit_np_inputs_reordered,
+    fitted_logit_model,
+    logit_np_inputs,
     optimize_options,
     jacobian,
     hessian,
@@ -198,14 +161,14 @@ def test_estimate_ml_with_logit(
     # estimate
     # ==================================================================================
 
-    kwargs = {"y": logit_np_inputs_reordered["y"], "x": logit_np_inputs_reordered["x"]}
+    kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
 
     if "criterion_and_derivative" in optimize_options:
         optimize_options["criterion_and_derivative_kwargs"] = kwargs
 
     got = estimate_ml(
         loglike=logit_loglike,
-        params=logit_np_inputs_reordered["params"],
+        params=logit_np_inputs["params"],
         loglike_kwargs=kwargs,
         optimize_options=optimize_options,
         jacobian=jacobian,
@@ -219,7 +182,7 @@ def test_estimate_ml_with_logit(
     # test
     # ==================================================================================
 
-    exp = fitted_logit_model_reordered
+    exp = fitted_logit_model
 
     if jacobian is not False and hessian is not False:
         methods = ["jacobian", "hessian", "robust"]
@@ -241,7 +204,8 @@ def test_estimate_ml_with_logit(
 
         # compare estimated standard errors
         exp_se = getattr(exp, f"bse{statsmodels_suffix_map[method]}")
-        aaae(got.se(method=method), exp_se, decimal=3)
+        got_se = got.se(method=method)
+        aaae(got_se, exp_se, decimal=3)
 
         # compare estimated confidence interval
         if method == "hessian":
@@ -253,13 +217,16 @@ def test_estimate_ml_with_logit(
 
         # compare covariance
         if method == "hessian":
-            aaae(got.cov(method=method), exp.cov_params(), decimal=2)
+            aaae(got.cov(method=method), exp.cov_params(), decimal=3)
+
         elif method == "robust":
             aaae(got.cov(method=method), exp.covjhj, decimal=2)
         elif method == "jacobian":
             aaae(got.cov(method=method), exp.covjac, decimal=4)
 
-        summary = got.summary(method=method)
+        summary = got.summary(
+            method=method,
+        )
 
         aaae(summary["value"], exp.params, decimal=4)
         aaae(summary["standard_error"], got.se(method=method))
@@ -268,7 +235,7 @@ def test_estimate_ml_with_logit(
         aaae(summary["ci_upper"], upper)
         aaae(summary["p_value"], got.p_values(method=method))
 
-    if "jacobian" in methods:
+    if "jacobian" in methods and not constraints:
         aaae(got._se, got.se())
         aaae(got._ci[0], got.ci()[0])
         aaae(got._ci[1], got.ci()[1])
