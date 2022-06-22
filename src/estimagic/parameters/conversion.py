@@ -56,7 +56,7 @@ def get_converter(
     Returns:
         Converter: NamedTuple with methods to convert between internal and external
             parameters, derivatives and function outputs.
-        FlatParams: NamedTuple with internal parameter values, lower_bounds and
+        InternalParams: NamedTuple with internal parameter values, lower_bounds and
             upper_bounds.
 
     """
