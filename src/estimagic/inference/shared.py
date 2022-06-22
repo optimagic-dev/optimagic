@@ -289,24 +289,13 @@ def _check_names_coincide(name_dict):
 
 def get_derivative_case(derivative):
     """Determine which kind of derivative should be used."""
-    if isinstance(derivative, (pd.DataFrame, np.ndarray)):
-        case = "pre-calculated"
-    elif callable(derivative):
+    if callable(derivative):
         case = "closed-form"
     elif derivative is False:
         case = "skip"
     else:
         case = "numerical"
     return case
-
-
-def check_is_optimized_and_derivative_case(is_minimized, derivative_case):
-    if (not is_minimized) and derivative_case == "pre-calculated":
-        raise ValueError(
-            "Providing a pre-calculated derivative is only possible if the "
-            "optimization was done outside of the estimate_function, i.e. if "
-            "optimize_options=False."
-        )
 
 
 def calculate_ci(free_values, free_standard_errors, ci_level):

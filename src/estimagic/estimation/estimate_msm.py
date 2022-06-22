@@ -20,7 +20,6 @@ from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import calculate_free_estimates
 from estimagic.inference.shared import calculate_p_values
 from estimagic.inference.shared import calculate_summary_data_estimation
-from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
@@ -171,8 +170,6 @@ def estimate_msm(
         )
 
     jac_case = get_derivative_case(jacobian)
-
-    check_is_optimized_and_derivative_case(is_optimized, jac_case)
 
     check_numdiff_options(numdiff_options, "estimate_msm")
 

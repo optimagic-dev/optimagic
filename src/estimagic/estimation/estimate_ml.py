@@ -21,7 +21,6 @@ from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import calculate_free_estimates
 from estimagic.inference.shared import calculate_p_values
 from estimagic.inference.shared import calculate_summary_data_estimation
-from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
@@ -150,9 +149,6 @@ def estimate_ml(
 
     jac_case = get_derivative_case(jacobian)
     hess_case = get_derivative_case(hessian)
-
-    check_is_optimized_and_derivative_case(is_optimized, jac_case)
-    check_is_optimized_and_derivative_case(is_optimized, hess_case)
 
     check_numdiff_options(numdiff_options, "estimate_ml")
     numdiff_options = {} if numdiff_options in (None, False) else numdiff_options
