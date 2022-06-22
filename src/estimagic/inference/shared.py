@@ -267,7 +267,7 @@ def _to_numpy(df_or_array, name):
     elif isinstance(df_or_array, np.ndarray):
         arr = df_or_array
     else:
-        raise ValueError(
+        raise TypeError(
             f"{name} must be a DataFrame or numpy array, not {type(df_or_array)}."
         )
     return arr
