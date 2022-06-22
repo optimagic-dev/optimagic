@@ -135,12 +135,6 @@ Bootstrap
 
     .. autofunction:: bootstrap
 
-.. dropdown:: bootstrap_from_outcomes
-
-    .. autofunction:: bootstrap_from_outcomes
-
-
-
 
 .. _benchmarking:
 
