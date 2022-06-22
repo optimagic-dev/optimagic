@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from dataclasses import field
 from functools import cached_property
 from typing import Any
+from typing import Dict
 from typing import Union
 
 import numpy as np
@@ -370,6 +372,7 @@ class LikelihoodResult:
     _internal_jacobian: Union[np.ndarray, None] = None
     _internal_hessian: Union[np.ndarray, None] = None
     _design_info: Union[pd.DataFrame, None] = None
+    _cache: Dict = field(default_factory=dict)
 
     def __post_init__(self):
         if self._internal_jacobian is None and self._internal_hessian is None:
@@ -400,38 +403,28 @@ class LikelihoodResult:
         seed,
     ):
         if method not in self._valid_methods:
-            raise ValueError()
-
-        internal_jac = self._internal_jacobian
-        internal_hess = self._internal_hessian
-        design_info = self._design_info
-
-        if method == "jacobian":
-            int_cov = cov_jacobian(internal_jac)
-        elif method == "hessian":
-            int_cov = cov_hessian(internal_hess)
-        elif method == "robust":
-            int_cov = cov_robust(jac=internal_jac, hess=internal_hess)
-        elif method == "cluster_robust":
-            int_cov = cov_cluster_robust(
-                jac=internal_jac, hess=internal_hess, design_info=design_info
-            )
-        elif method == "strata_robust":
-            int_cov = cov_strata_robust(
-                jac=internal_jac, hess=internal_hess, design_info=design_info
-            )
-        else:
             raise ValueError(f"Invalid method: {method}")
 
-        np.random.seed(seed)
+        args = (method, n_samples, bounds_handling, seed)
+        is_cached = args in self._cache
 
-        free_cov = transform_covariance(
-            internal_params=self._internal_estimates,
-            internal_cov=int_cov,
-            converter=self._converter,
-            n_samples=n_samples,
-            bounds_handling=bounds_handling,
-        )
+        if is_cached:
+            free_cov = self._cache[args]
+        else:
+            free_cov = _calculate_free_cov_ml(
+                method=method,
+                internal_estimates=self._internal_estimates,
+                converter=self._converter,
+                internal_jacobian=self._internal_jacobian,
+                internal_hessian=self._internal_hessian,
+                n_samples=n_samples,
+                design_info=self._design_info,
+                bounds_handling=bounds_handling,
+                seed=seed,
+            )
+            if seed is not None:
+                self._cache[args] = free_cov
+
         return free_cov
 
     @property
@@ -748,3 +741,41 @@ class LikelihoodResult:
             path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
         """
         to_pickle(self, path=path)
+
+
+def _calculate_free_cov_ml(
+    method,
+    internal_estimates,
+    converter,
+    internal_jacobian,
+    internal_hessian,
+    n_samples,
+    design_info,
+    bounds_handling,
+    seed,
+):
+    if method == "jacobian":
+        int_cov = cov_jacobian(internal_jacobian)
+    elif method == "hessian":
+        int_cov = cov_hessian(internal_hessian)
+    elif method == "robust":
+        int_cov = cov_robust(jac=internal_jacobian, hess=internal_hessian)
+    elif method == "cluster_robust":
+        int_cov = cov_cluster_robust(
+            jac=internal_jacobian, hess=internal_hessian, design_info=design_info
+        )
+    elif method == "strata_robust":
+        int_cov = cov_strata_robust(
+            jac=internal_jacobian, hess=internal_hessian, design_info=design_info
+        )
+
+    np.random.seed(seed)
+
+    free_cov = transform_covariance(
+        internal_params=internal_estimates,
+        internal_cov=int_cov,
+        converter=converter,
+        n_samples=n_samples,
+        bounds_handling=bounds_handling,
+    )
+    return free_cov
