@@ -82,13 +82,6 @@ except ImportError:
 else:
     IS_JAX_INSTALLED = True
 
-try:
-    import seaborn  # noqa: F401
-except ImportError:
-    IS_SEABORN_INSTALLED = False
-else:
-    IS_SEABORN_INSTALLED = True
-
 
 # =================================================================================
 # Dashboard Defaults
