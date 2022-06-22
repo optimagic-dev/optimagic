@@ -268,7 +268,7 @@ class BootstrapResult:
 def _calulcate_summary_data_bootstrap(bootstrap_result, ci_method, ci_level):
     lower, upper = bootstrap_result.ci(ci_method=ci_method, ci_level=ci_level)
     summary_data = {
-        "params": bootstrap_result.base_outcome,
+        "value": bootstrap_result.base_outcome,
         "standard_error": bootstrap_result.se(),
         "ci_lower": lower,
         "ci_upper": upper,

@@ -107,7 +107,7 @@ def calculate_summary_data_estimation(
         method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed
     )
     summary_data = {
-        "params": estimation_result.params,
+        "value": estimation_result.params,
         "standard_error": se,
         "ci_lower": lower,
         "ci_upper": upper,
@@ -156,16 +156,15 @@ def calculate_estimation_summary(
         bins=[-1, 0.01, 0.05, 0.1, 2],
         labels=["***", "**", "*", ""],
     )
-    df = df.rename(columns={"params": "value"})
 
     # ==================================================================================
     # Map summary data into params tree structure
     # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(summary_data["params"], names, registry=registry)
+    indices = tree_unflatten(summary_data["value"], names, registry=registry)
 
-    estimates_flat = tree_just_flatten(summary_data["params"])
+    estimates_flat = tree_just_flatten(summary_data["value"])
     indices_flat = tree_just_flatten(indices)
 
     # use index chunks in indices_flat to access the corresponding sub data frame of df,
@@ -208,7 +207,7 @@ def calculate_estimation_summary(
 
         summary_flat.append(df_chunk)
 
-    summary = tree_unflatten(summary_data["params"], summary_flat)
+    summary = tree_unflatten(summary_data["value"], summary_flat)
     return summary
 
 

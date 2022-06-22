@@ -15,7 +15,7 @@ def count_free_params(params, constraints=None, lower_bounds=None, upper_bounds=
         int: Number of (free) parameters
 
     """
-    _, flat_params = get_converter(
+    _, internal_params = get_converter(
         params=params,
         constraints=constraints,
         lower_bounds=lower_bounds,
@@ -26,7 +26,7 @@ def count_free_params(params, constraints=None, lower_bounds=None, upper_bounds=
         scaling_options={},
     )
 
-    return int(flat_params.free_mask.sum())
+    return int(internal_params.free_mask.sum())
 
 
 def check_constraints(params, constraints, lower_bounds=None, upper_bounds=None):

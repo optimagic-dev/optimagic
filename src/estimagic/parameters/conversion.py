@@ -51,7 +51,8 @@ def get_converter(
             func at params. Used for consistency checks.
         soft_lower_bounds (pytree): As lower_bounds
         soft_upper_bounds (pytree): As upper_bounds
-        add_soft_bounds (bool): Whether soft bounds should be added to the flat_params
+        add_soft_bounds (bool): Whether soft bounds should be added to the
+            internal_params
 
     Returns:
         Converter: NamedTuple with methods to convert between internal and external
@@ -77,7 +78,7 @@ def get_converter(
             primary_key=primary_key,
         )
 
-    tree_converter, flat_params = get_tree_converter(
+    tree_converter, internal_params = get_tree_converter(
         params=params,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -93,11 +94,11 @@ def get_converter(
         constraints=constraints,
         params=params,
         tree_converter=tree_converter,
-        param_names=flat_params.names,
+        param_names=internal_params.names,
     )
 
     space_converter, internal_params = get_space_converter(
-        internal_params=flat_params, internal_constraints=flat_constraints
+        internal_params=internal_params, internal_constraints=flat_constraints
     )
 
     scale_converter, scaled_params = get_scale_converter(
@@ -148,7 +149,7 @@ def get_converter(
     def _func_to_internal(func_eval):
         return tree_converter.func_flatten(func_eval)
 
-    flat_params = scaled_params._replace(free_mask=internal_params.free_mask)
+    internal_params = scaled_params._replace(free_mask=internal_params.free_mask)
 
     converter = Converter(
         params_to_internal=_params_to_internal,
@@ -158,7 +159,7 @@ def get_converter(
         has_transforming_constraints=space_converter.has_transforming_constraints,
     )
 
-    return converter, flat_params
+    return converter, internal_params
 
 
 class Converter(NamedTuple):
@@ -237,14 +238,14 @@ def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
     else:
         upper_bounds = upper_bounds.astype(float)
 
-    flat_params = InternalParams(
+    internal_params = InternalParams(
         values=params.astype(float),
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         free_mask=np.full(len(params), True),
         names=[str(i) for i in range(len(params))],
     )
-    return converter, flat_params
+    return converter, internal_params
 
 
 def _is_fast_path(

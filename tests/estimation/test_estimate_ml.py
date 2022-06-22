@@ -10,6 +10,7 @@ from estimagic.examples.logit import logit_derivative
 from estimagic.examples.logit import logit_hessian
 from estimagic.examples.logit import logit_loglike
 from estimagic.examples.logit import logit_loglike_and_derivative as llad
+from numpy.testing import assert_array_equal
 from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel
 
@@ -443,4 +444,4 @@ def test_caching(normal_inputs):
 
     assert got._cache == {}
     cov = got.cov(method="robust", return_type="array")
-    aaae(list(got._cache.values())[0], cov, decimal=12)
+    assert_array_equal(list(got._cache.values())[0], cov)
