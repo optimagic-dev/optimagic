@@ -3,9 +3,12 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.inference.shared import _to_numpy
+from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.inference.shared import transform_covariance
 from estimagic.inference.shared import transform_free_cov_to_cov
+from estimagic.inference.shared import transform_free_values_to_params_tree
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -177,3 +180,26 @@ def test_transform_free_cov_to_cov_invalid():
             params={"a": 1, "b": 2, "c": 3},
             return_type="bla",
         )
+
+
+def test_transform_free_values_to_params_tree():
+    got = transform_free_values_to_params_tree(
+        values=np.array([10, 11]),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+    )
+
+    assert got["a"] == 10
+    assert got["c"] == 11
+    assert np.isnan(got["b"])
+
+
+def test_get_derivative_case():
+    assert get_derivative_case(lambda x: True) == "closed-form"
+    assert get_derivative_case(False) == "skip"
+    assert get_derivative_case(None) == "numerical"
+
+
+def test_to_numpy_invalid():
+    with pytest.raises(TypeError):
+        _to_numpy(15)
