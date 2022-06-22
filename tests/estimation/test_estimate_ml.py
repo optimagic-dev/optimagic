@@ -442,11 +442,5 @@ def test_caching(normal_inputs):
     )
 
     assert got._cache == {}
-
-    got.cov(method="robust", return_type="array")
-
-    aaae(
-        list(got._cache.values())[0],
-        got.cov(method="robust", return_type="array"),
-        decimal=12,
-    )
+    cov = got.cov(method="robust", return_type="array")
+    aaae(list(got._cache.values())[0], cov, decimal=12)

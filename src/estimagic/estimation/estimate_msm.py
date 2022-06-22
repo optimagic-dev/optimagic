@@ -489,8 +489,8 @@ class MomentsResult:
                 internal_estimates=self._internal_estimates,
                 internal_jacobian=self._internal_jacobian,
                 internal_moments_cov=self._internal_moments_cov,
+                internal_weights=self._internal_weights,
                 converter=self._converter,
-                weights=self._weights,
                 method=method,
                 n_samples=n_samples,
                 bounds_handling=bounds_handling,
@@ -965,8 +965,8 @@ def _calculate_free_cov_msm(
     internal_estimates,
     internal_jacobian,
     internal_moments_cov,
+    internal_weights,
     converter,
-    weights,
     method,
     n_samples,
     bounds_handling,
@@ -974,9 +974,11 @@ def _calculate_free_cov_msm(
 ):
 
     if method == "optimal":
-        internal_cov = cov_optimal(internal_jacobian, weights)
+        internal_cov = cov_optimal(internal_jacobian, internal_weights)
     else:
-        internal_cov = cov_robust(internal_jacobian, weights, internal_moments_cov)
+        internal_cov = cov_robust(
+            internal_jacobian, internal_weights, internal_moments_cov
+        )
 
     np.random.seed(seed)
 
