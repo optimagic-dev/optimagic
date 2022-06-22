@@ -2,8 +2,10 @@
 import functools
 from collections.abc import Callable
 from dataclasses import dataclass
+from dataclasses import field
 from functools import cached_property
 from typing import Any
+from typing import Dict
 from typing import Union
 
 import numpy as np
@@ -469,29 +471,34 @@ class MomentsResult:
     _has_constraints: bool
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
+    _cache: Dict = field(default_factory=dict)
+    _seed: int = 925408
 
     def _get_free_cov(self, method, n_samples, bounds_handling, seed):
+        if method not in {"optimal", "robust"}:
+            msg = f"Invalid method {method}. method must be in {'optimal', 'robust'}"
+            raise ValueError(msg)
+        seed = self._seed if seed is None else seed
+        args = (method, n_samples, bounds_handling, seed)
+        is_cached = args in self._cache
 
-        int_jac = self._internal_jacobian
-        weights = self._internal_weights
-        converter = self._converter
-        flat_params = self._internal_estimates
-        moments_cov = self._internal_moments_cov
-
-        if method == "optimal":
-            int_cov = cov_optimal(int_jac, weights)
+        if is_cached:
+            free_cov = self._cache[args]
         else:
-            int_cov = cov_robust(int_jac, weights, moments_cov)
+            free_cov = _calculate_free_cov_msm(
+                internal_estimates=self._internal_estimates,
+                internal_jacobian=self._internal_jacobian,
+                internal_moments_cov=self._internal_moments_cov,
+                converter=self._converter,
+                weights=self._weights,
+                method=method,
+                n_samples=n_samples,
+                bounds_handling=bounds_handling,
+                seed=seed,
+            )
+            if seed is not None:
+                self._cache[args] = free_cov
 
-        np.random.seed(seed)
-
-        free_cov = transform_covariance(
-            internal_params=flat_params,
-            internal_cov=int_cov,
-            converter=converter,
-            n_samples=n_samples,
-            bounds_handling=bounds_handling,
-        )
         return free_cov
 
     @property
@@ -952,3 +959,32 @@ class MomentsResult:
             path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
         """
         to_pickle(self, path=path)
+
+
+def _calculate_free_cov_msm(
+    internal_estimates,
+    internal_jacobian,
+    internal_moments_cov,
+    converter,
+    weights,
+    method,
+    n_samples,
+    bounds_handling,
+    seed,
+):
+
+    if method == "optimal":
+        internal_cov = cov_optimal(internal_jacobian, weights)
+    else:
+        internal_cov = cov_robust(internal_jacobian, weights, internal_moments_cov)
+
+    np.random.seed(seed)
+
+    free_cov = transform_covariance(
+        internal_params=internal_estimates,
+        internal_cov=internal_cov,
+        converter=converter,
+        n_samples=n_samples,
+        bounds_handling=bounds_handling,
+    )
+    return free_cov

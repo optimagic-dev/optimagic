@@ -372,6 +372,7 @@ class LikelihoodResult:
     _internal_hessian: Union[np.ndarray, None] = None
     _design_info: Union[pd.DataFrame, None] = None
     _cache: Dict = field(default_factory=dict)
+    _seed: int = 925408
 
     def __post_init__(self):
         if self._internal_jacobian is None and self._internal_hessian is None:
@@ -402,8 +403,9 @@ class LikelihoodResult:
         seed,
     ):
         if method not in self._valid_methods:
-            raise ValueError(f"Invalid method: {method}")
-
+            msg = f"Invalid method: {method}. Valid methods are {self._valid_methods}."
+            raise ValueError(msg)
+        seed = self._seed if seed is None else seed
         args = (method, n_samples, bounds_handling, seed)
         is_cached = args in self._cache
 

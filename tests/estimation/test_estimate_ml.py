@@ -75,7 +75,7 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
     aaae(results.params["cov"], true_params["cov"], decimal=1)
 
     # test free_mask of summary
-    summary = results.summary()
+    summary = results.summary(seed=0)
     assert np.all(summary["mean"]["free"].values == np.array([False, True, True]))
     assert np.all(summary["cov"]["free"].values)
 
@@ -217,9 +217,7 @@ def test_estimate_ml_with_logit_no_constraints(
         elif method == "jacobian":
             aaae(got.cov(method=method), exp.covjac, decimal=4)
 
-        summary = got.summary(
-            method=method,
-        )
+        summary = got.summary(method=method)
 
         aaae(summary["value"], exp.params, decimal=4)
         aaae(summary["standard_error"], got.se(method=method))
@@ -229,10 +227,10 @@ def test_estimate_ml_with_logit_no_constraints(
         aaae(summary["p_value"], got.p_values(method=method))
 
     if "jacobian" in methods:
-        aaae(got._se, got.se())
-        aaae(got._ci[0], got.ci()[0])
-        aaae(got._ci[1], got.ci()[1])
-        aaae(got._p_values, got.p_values())
+        aaae(got._se, got.se(seed=0))
+        aaae(got._ci[0], got.ci(seed=0)[0])
+        aaae(got._ci[1], got.ci(seed=0)[1])
+        aaae(got._p_values, got.p_values(seed=0))
 
 
 test_cases_constr = list(
@@ -343,7 +341,7 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_np_inputs)
         optimize_options=False,
     )
 
-    summary = got.summary()
+    summary = got.summary(seed=0)
 
     # compare estimated parameters
     aaae(summary["value"], fitted_logit_model.params, decimal=4)
@@ -426,3 +424,29 @@ def test_to_pickle(normal_inputs, tmp_path):
     )
 
     got.to_pickle(tmp_path / "bla.pkl")
+
+
+def test_caching(normal_inputs):
+    kwargs = {"y": normal_inputs["y"]}
+
+    start_params = {"mean": 5, "sd": 3}
+
+    got = estimate_ml(
+        loglike=normal_loglike,
+        params=start_params,
+        loglike_kwargs=kwargs,
+        optimize_options="scipy_lbfgsb",
+        lower_bounds={"sd": 0.0001},
+        jacobian_kwargs=kwargs,
+        constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
+    )
+
+    assert got._cache == {}
+
+    got.cov(method="robust", return_type="array")
+
+    aaae(
+        list(got._cache.values())[0],
+        got.cov(method="robust", return_type="array"),
+        decimal=12,
+    )
