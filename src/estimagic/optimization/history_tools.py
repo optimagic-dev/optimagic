@@ -6,8 +6,15 @@ from pybaum import tree_just_flatten
 
 
 def get_history_arrays(history, direction):
-    registry = get_registry(extended=True)
-    to_internal = partial(tree_just_flatten, registry=registry)
+    parhist = history["params"]
+    is_flat = (
+        len(parhist) > 0 and isinstance(parhist[0], np.ndarray) and parhist[0].ndim == 1
+    )
+    if is_flat:
+        to_internal = lambda x: x.tolist()
+    else:
+        registry = get_registry(extended=True)
+        to_internal = partial(tree_just_flatten, registry=registry)
 
     critvals = np.array(history["criterion"])
 
