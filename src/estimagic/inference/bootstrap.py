@@ -235,10 +235,7 @@ class BootstrapResult:
             Any: A pytree with the same structure as base_outcome containing p-values
                 for the parameter estimates.
         """
-        msg = (
-            "Bootstrap p-values are not implemented yet, due to missing p-values. You"
-            " can still view the confidence interval through the method `ci()`."
-        )
+        msg = "Bootstrap p_values are not yet implemented."
         raise NotImplementedError(msg)
 
     def summary(self, ci_method="percentile", ci_level=0.95):
