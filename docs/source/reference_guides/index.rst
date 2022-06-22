@@ -135,6 +135,12 @@ Bootstrap
 
     .. autofunction:: bootstrap
 
+.. dropdown::  BootstrapResult
+
+    .. autoclass:: BootstrapResult
+        :members:
+
+
 
 .. _benchmarking:
 
