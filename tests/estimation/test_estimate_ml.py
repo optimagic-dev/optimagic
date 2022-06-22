@@ -237,26 +237,21 @@ def test_estimate_ml_with_logit_no_constraints(
 
 test_cases_constr = list(
     itertools.product(
-        [{"algorithm": "scipy_lbfgsb"}],  # optimize_options
-        [None, logit_jacobian, False],  # jacobian
-        [None, False],  # hessian
+        [None, logit_jacobian],  # jacobian
         [
             {"loc": [1, 2, 3], "type": "covariance"},
             {"loc": [0, 1], "type": "linear", "lower_bound": -20, "weights": 1},
-        ],  # constraints
+            {"loc": [0, 1], "type": "increasing"},
+        ],
     )
 )
 
 
-@pytest.mark.parametrize(
-    "optimize_options, jacobian, hessian, constraints", test_cases_constr
-)
+@pytest.mark.parametrize("jacobian, constraints", test_cases_constr)
 def test_estimate_ml_with_logit_constraints(
     fitted_logit_model,
     logit_np_inputs,
-    optimize_options,
     jacobian,
-    hessian,
     constraints,
 ):
     """
@@ -265,14 +260,16 @@ def test_estimate_ml_with_logit_constraints(
     """
     seed = 1234
 
-    if jacobian is False and hessian is False:
-        pytest.xfail("jacobian and hessian cannot both be False.")
-
     # ==================================================================================
     # estimate
     # ==================================================================================
 
     kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
+
+    optimize_options = {
+        "algorithm": "scipy_lbfgsb",
+        "algo_options": {"convergence.relative_criterion_tolerance": 1e-12},
+    }
 
     if "criterion_and_derivative" in optimize_options:
         optimize_options["criterion_and_derivative_kwargs"] = kwargs
@@ -284,8 +281,6 @@ def test_estimate_ml_with_logit_constraints(
         optimize_options=optimize_options,
         jacobian=jacobian,
         jacobian_kwargs=kwargs,
-        hessian=hessian,
-        hessian_kwargs=kwargs,
         constraints=constraints,
     )
 
@@ -295,12 +290,7 @@ def test_estimate_ml_with_logit_constraints(
 
     exp = fitted_logit_model
 
-    if jacobian is not False and hessian is not False:
-        methods = ["jacobian", "hessian", "robust"]
-    elif jacobian is not False:
-        methods = ["jacobian"]
-    elif hessian is not False:
-        methods = ["hessian"]
+    methods = ["jacobian", "hessian", "robust"]
 
     statsmodels_suffix_map = {
         "jacobian": "jac",
@@ -309,7 +299,7 @@ def test_estimate_ml_with_logit_constraints(
     }
 
     # compare estimated parameters
-    aaae(got.params, exp.params, decimal=4)
+    aaae(got.params, exp.params, decimal=3)
 
     for method in methods:
 
@@ -331,7 +321,7 @@ def test_estimate_ml_with_logit_constraints(
 
         summary = got.summary(method=method, seed=seed)
 
-        aaae(summary["value"], exp.params, decimal=4)
+        aaae(summary["value"], exp.params, decimal=3)
         aaae(summary["standard_error"], got.se(method=method, seed=seed))
         lower, upper = got.ci(method=method, seed=seed)
         aaae(summary["ci_lower"], lower)
