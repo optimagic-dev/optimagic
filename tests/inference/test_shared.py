@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.inference.shared import transform_covariance
+from estimagic.inference.shared import transform_free_cov_to_cov
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -115,4 +116,64 @@ def test_transform_covariance_invalid_bounds():
             converter=converter,
             n_samples=10,
             bounds_handling="raise",
+        )
+
+
+class FakeFreeParams(NamedTuple):
+    free_mask: np.ndarray = np.array([True, False, True])
+    all_names: list = ["a", "b", "c"]
+    free_names: list = ["a", "c"]
+
+
+def test_transform_free_cov_to_cov_pytree():
+    got = transform_free_cov_to_cov(
+        free_cov=np.eye(2),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+        return_type="pytree",
+    )
+
+    assert got["a"]["a"] == 1
+    assert got["c"]["c"] == 1
+    assert got["a"]["c"] == 0
+    assert got["c"]["a"] == 0
+    assert np.isnan(got["a"]["b"])
+
+
+def test_transform_free_cov_to_cov_array():
+    got = transform_free_cov_to_cov(
+        free_cov=np.eye(2),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+        return_type="array",
+    )
+
+    expected = np.array([[1, np.nan, 0], [np.nan, np.nan, np.nan], [0, np.nan, 1]])
+
+    assert np.array_equal(got, expected, equal_nan=True)
+
+
+def test_transform_free_cov_to_cov_dataframe():
+    got = transform_free_cov_to_cov(
+        free_cov=np.eye(2),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+        return_type="dataframe",
+    )
+
+    expected = np.array([[1, np.nan, 0], [np.nan, np.nan, np.nan], [0, np.nan, 1]])
+
+    assert np.array_equal(got.to_numpy(), expected, equal_nan=True)
+    assert isinstance(got, pd.DataFrame)
+    assert list(got.columns) == list("abc")
+    assert list(got.index) == list("abc")
+
+
+def test_transform_free_cov_to_cov_invalid():
+    with pytest.raises(ValueError):
+        transform_free_cov_to_cov(
+            free_cov=np.eye(2),
+            free_params=FakeFreeParams(),
+            params={"a": 1, "b": 2, "c": 3},
+            return_type="bla",
         )

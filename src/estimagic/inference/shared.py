@@ -48,9 +48,6 @@ def transform_covariance(
             the index is a subset of params.index. The columns are the same as the
             index.
     """
-    if isinstance(internal_cov, pd.DataFrame):
-        internal_cov = internal_cov.to_numpy()
-
     if converter.has_transforming_constraints:
         _from_internal = converter.params_from_internal
 
