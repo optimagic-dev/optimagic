@@ -150,7 +150,7 @@ def test_constrained_minimization(
         algorithm=algorithm,
         derivative=derivative,
         constraints=constraints,
-        algo_options={"convergence.relative_criterion_tolerance": 1e-9},
+        algo_options={"convergence.relative_criterion_tolerance": 1e-12},
     )
 
     if params_type == "pandas":
