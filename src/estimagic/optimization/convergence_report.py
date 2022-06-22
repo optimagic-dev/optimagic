@@ -7,7 +7,6 @@ def get_convergence_report(history, direction, converter=None):
     history_arrs = get_history_arrays(
         history=history,
         direction=direction,
-        converter=converter,
     )
 
     critvals = history_arrs["criterion"][history_arrs["is_accepted"]]

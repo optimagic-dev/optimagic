@@ -5,13 +5,9 @@ from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
 
-def get_history_arrays(history, direction, converter=None):
-
-    if converter is not None:
-        to_internal = converter.params_to_internal
-    else:
-        registry = get_registry(extended=True)
-        to_internal = partial(tree_just_flatten, registry=registry)
+def get_history_arrays(history, direction):
+    registry = get_registry(extended=True)
+    to_internal = partial(tree_just_flatten, registry=registry)
 
     critvals = np.array(history["criterion"])
 
