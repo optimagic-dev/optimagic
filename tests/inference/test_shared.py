@@ -10,6 +10,7 @@ from estimagic.inference.shared import process_pandas_arguments
 from estimagic.inference.shared import transform_covariance
 from estimagic.inference.shared import transform_free_cov_to_cov
 from estimagic.inference.shared import transform_free_values_to_params_tree
+from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import leaf_names
 from pybaum import tree_equal
@@ -233,7 +234,6 @@ def test_calculate_estimation_summary():
         },
         "free": np.array([True, True, True]),
     }
-    from estimagic.parameters.tree_registry import get_registry
 
     registry = get_registry(extended=True)
     names = leaf_names(summary_data["value"], registry=registry)
