@@ -10,6 +10,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from estimagic.config import DEFAULT_SEED
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import InvalidFunctionError
@@ -469,13 +470,11 @@ class MomentsResult:
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
     _cache: Dict = field(default_factory=dict)
-    _seed: int = 925408
 
     def _get_free_cov(self, method, n_samples, bounds_handling, seed):
         if method not in {"optimal", "robust"}:
             msg = f"Invalid method {method}. method must be in {'optimal', 'robust'}"
             raise ValueError(msg)
-        seed = self._seed if seed is None else seed
         args = (method, n_samples, bounds_handling, seed)
         is_cached = args in self._cache
 
@@ -535,7 +534,7 @@ class MomentsResult:
         method="robust",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate standard errors.
 
@@ -586,7 +585,7 @@ class MomentsResult:
         n_samples=10_000,
         bounds_handling="clip",
         return_type="pytree",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate the variance-covariance matrix of the estimated parameters.
 
@@ -639,7 +638,7 @@ class MomentsResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Create a summary of estimation results.
 
@@ -690,7 +689,7 @@ class MomentsResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate confidence intervals.
 
@@ -749,7 +748,7 @@ class MomentsResult:
         method="robust",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate p-values.
 
@@ -799,7 +798,7 @@ class MomentsResult:
         kind="bias",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
         return_type="pytree",
     ):
         """Calculate sensitivity measures for moments estimates.

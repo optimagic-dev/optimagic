@@ -38,12 +38,13 @@ def bootstrap(
             of interest, or an evaluation of that function. If it is an evaluation,
             existing_outcomes must be passed, and the evaluation step is skipped.
         data (pd.DataFrame): Dataset. Default None.
-        existing_outcomes (List[Any]): Evaluations of the outcome function. If None,
-            then outcome must be callable and new outcomes are generated. If not None
-            and outcome is callable, the new evaluations are appended to the existing
-            ones. Default None.
+        existing_outcomes (Union[BootstrapResult, List[Any]]): Evaluations of the
+            outcome function. If None, then outcome must be callable and new outcomes
+            are generated. If not None and outcome is callable, the new evaluations are
+            appended to the existing ones. Default None.
         outcome_kwargs (dict): Additional keyword arguments for outcome.
-        n_draws (int): number of bootstrap samples to draw.
+        n_draws (int): Number of bootstrap samples to draw. If len(existing_outcomes) >=
+            n_draws, a random subset of existing_outcomes is used.
         cluster_by (str): Column name of variable to cluster by or None.
         seeds (numpy.array): Array of seeds for bootstrap samples, default is none.
         n_cores (int): number of jobs for parallelization.
@@ -60,10 +61,14 @@ def bootstrap(
     """
     if existing_outcomes is None:
         existing_outcomes = []
+    elif isinstance(existing_outcomes, BootstrapResult):
+        existing_outcomes = existing_outcomes.outcomes
     elif not isinstance(existing_outcomes, list):
-        raise ValueError("existing_outcomes must be a list.")
+        raise ValueError("existing_outcomes must be a list or BootstrapResult.")
 
-    if callable(outcome):
+    n_existing = len(existing_outcomes)
+
+    if callable(outcome) and n_draws > n_existing:
 
         check_inputs(data=data, cluster_by=cluster_by)
 
@@ -75,7 +80,7 @@ def bootstrap(
             outcome=outcome,
             cluster_by=cluster_by,
             seed=seed,
-            n_draws=n_draws,
+            n_draws=n_draws - n_existing,
             n_cores=n_cores,
             error_handling=error_handling,
             batch_evaluator=batch_evaluator,
@@ -85,7 +90,12 @@ def bootstrap(
         new_outcomes = []
         base_outcome = outcome
 
-    all_outcomes = existing_outcomes + new_outcomes
+    if n_draws <= n_existing:
+        np.random.seed(seed)
+        random_indices = np.random.choice(n_existing, n_draws, replace=False)
+        all_outcomes = [existing_outcomes[k] for k in random_indices]
+    else:
+        all_outcomes = existing_outcomes + new_outcomes
 
     # ==================================================================================
     # Process results

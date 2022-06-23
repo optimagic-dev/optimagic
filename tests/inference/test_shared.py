@@ -4,12 +4,15 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.inference.shared import _to_numpy
+from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.inference.shared import transform_covariance
 from estimagic.inference.shared import transform_free_cov_to_cov
 from estimagic.inference.shared import transform_free_values_to_params_tree
 from numpy.testing import assert_array_almost_equal as aaae
+from pybaum import leaf_names
+from pybaum import tree_equal
 
 
 @pytest.fixture
@@ -203,3 +206,68 @@ def test_get_derivative_case():
 def test_to_numpy_invalid():
     with pytest.raises(TypeError):
         _to_numpy(15)
+
+
+def test_calculate_estimation_summary():
+    # input data
+    summary_data = {
+        "value": {
+            "a": pd.Series([0], index=["i"]),
+            "b": pd.DataFrame({"c1": [1], "c2": [2]}),
+        },
+        "standard_error": {
+            "a": pd.Series([0.1], index=["i"]),
+            "b": pd.DataFrame({"c1": [0.2], "c2": [0.3]}),
+        },
+        "ci_lower": {
+            "a": pd.Series([-0.2], index=["i"]),
+            "b": pd.DataFrame({"c1": [-0.4], "c2": [-0.6]}),
+        },
+        "ci_upper": {
+            "a": pd.Series([0.2], index=["i"]),
+            "b": pd.DataFrame({"c1": [0.4], "c2": [0.6]}),
+        },
+        "p_value": {
+            "a": pd.Series([0.001], index=["i"]),
+            "b": pd.DataFrame({"c1": [0.2], "c2": [0.07]}),
+        },
+        "free": np.array([True, True, True]),
+    }
+    from estimagic.parameters.tree_registry import get_registry
+
+    registry = get_registry(extended=True)
+    names = leaf_names(summary_data["value"], registry=registry)
+    free_names = names
+
+    # function call
+    summary = calculate_estimation_summary(summary_data, names, free_names)
+
+    # expectations
+    expectation = {
+        "a": pd.DataFrame(
+            {
+                "value": 0,
+                "standard_error": 0.1,
+                "ci_lower": -0.2,
+                "ci_upper": 0.2,
+                "p_value": 0.001,
+                "free": True,
+                "stars": "***",
+            },
+            index=["i"],
+        ),
+        "b": pd.DataFrame(
+            {
+                "value": [1, 2],
+                "standard_error": [0.2, 0.3],
+                "ci_lower": [-0.4, -0.6],
+                "ci_upper": [0.4, 0.6],
+                "p_value": [0.2, 0.7],
+                "free": [True, True],
+                "stars": ["", "*"],
+            },
+            index=pd.MultiIndex.from_tuples([(0, "c1"), (0, "c2")]),
+        ),
+    }
+
+    tree_equal(summary, expectation)

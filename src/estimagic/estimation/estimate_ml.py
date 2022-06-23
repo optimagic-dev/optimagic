@@ -7,6 +7,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from estimagic.config import DEFAULT_SEED
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.differentiation.derivatives import second_derivative
 from estimagic.exceptions import InvalidFunctionError
@@ -368,7 +369,6 @@ class LikelihoodResult:
     _internal_hessian: Union[np.ndarray, None] = None
     _design_info: Union[pd.DataFrame, None] = None
     _cache: Dict = field(default_factory=dict)
-    _seed: int = 925408
 
     def __post_init__(self):
         if self._internal_jacobian is None and self._internal_hessian is None:
@@ -401,7 +401,6 @@ class LikelihoodResult:
         if method not in self._valid_methods:
             msg = f"Invalid method: {method}. Valid methods are {self._valid_methods}."
             raise ValueError(msg)
-        seed = self._seed if seed is None else seed
         args = (method, n_samples, bounds_handling, seed)
         is_cached = args in self._cache
 
@@ -473,7 +472,7 @@ class LikelihoodResult:
         method="jacobian",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate standard errors.
 
@@ -523,7 +522,7 @@ class LikelihoodResult:
         n_samples=10_000,
         bounds_handling="clip",
         return_type="pytree",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate the variance-covariance (matrix) of the estimated parameters.
 
@@ -575,7 +574,7 @@ class LikelihoodResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Create a summary of estimation results.
 
@@ -626,7 +625,7 @@ class LikelihoodResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate confidence intervals.
 
@@ -684,7 +683,7 @@ class LikelihoodResult:
         method="jacobian",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=None,
+        seed=DEFAULT_SEED,
     ):
         """Calculate p-values.
 

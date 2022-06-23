@@ -78,6 +78,22 @@ def test_bootstrap_with_outcome_kwargs(shift, setup):
     assert_series_equal(result.base_outcome, expected + shift)
 
 
+def test_bootstrap_existing_outcomes(setup):
+    result = bootstrap(
+        data=setup["df"],
+        outcome=_outcome_func,
+        n_draws=2,
+    )
+    assert len(result.outcomes) == 2
+    result = bootstrap(
+        data=setup["df"],
+        outcome=_outcome_func,
+        existing_outcomes=result,
+        n_draws=1,
+    )
+    assert len(result.outcomes) == 1
+
+
 def test_bootstrap_from_outcomes(setup, expected):
 
     result = bootstrap(

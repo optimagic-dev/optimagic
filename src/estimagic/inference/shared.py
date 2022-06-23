@@ -177,20 +177,20 @@ def calculate_estimation_summary(
             loc = [index_leaf]
             index = [0]
         elif isinstance(params_leaf, pd.DataFrame) and "value" in params_leaf:
-            loc = index_leaf["value"].values.flatten()
+            loc = index_leaf["value"].to_numpy().flatten()
             index = params_leaf.index
         elif isinstance(params_leaf, pd.DataFrame):
-            loc = index_leaf.values.flatten()
+            loc = index_leaf.to_numpy().flatten()
             # use product of existing index and columns for regular pd.DataFrame
             index = pd.MultiIndex.from_tuples(
                 [
-                    (*row, col)
+                    (*row, col) if isinstance(row, tuple) else (row, col)
                     for row in params_leaf.index
                     for col in params_leaf.columns
                 ]
             )
         elif isinstance(params_leaf, pd.Series):
-            loc = index_leaf.values.flatten()
+            loc = index_leaf.to_numpy().flatten()
             index = params_leaf.index
         else:
             # array case (numpy or jax)

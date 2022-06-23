@@ -76,7 +76,7 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
     aaae(results.params["cov"], true_params["cov"], decimal=1)
 
     # test free_mask of summary
-    summary = results.summary(seed=0)
+    summary = results.summary()
     assert np.all(summary["mean"]["free"].values == np.array([False, True, True]))
     assert np.all(summary["cov"]["free"].values)
 
@@ -228,10 +228,10 @@ def test_estimate_ml_with_logit_no_constraints(
         aaae(summary["p_value"], got.p_values(method=method))
 
     if "jacobian" in methods:
-        aaae(got._se, got.se(seed=0))
-        aaae(got._ci[0], got.ci(seed=0)[0])
-        aaae(got._ci[1], got.ci(seed=0)[1])
-        aaae(got._p_values, got.p_values(seed=0))
+        aaae(got._se, got.se())
+        aaae(got._ci[0], got.ci()[0])
+        aaae(got._ci[1], got.ci()[1])
+        aaae(got._p_values, got.p_values())
 
 
 test_cases_constr = list(
@@ -342,7 +342,7 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_np_inputs)
         optimize_options=False,
     )
 
-    summary = got.summary(seed=0)
+    summary = got.summary()
 
     # compare estimated parameters
     aaae(summary["value"], fitted_logit_model.params, decimal=4)
