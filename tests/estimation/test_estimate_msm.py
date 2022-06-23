@@ -8,6 +8,7 @@ from estimagic.estimation.estimate_msm import estimate_msm
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
 from numpy.testing import assert_array_almost_equal as aaae
+from numpy.testing import assert_array_equal
 
 
 def _sim_pd(params):
@@ -176,3 +177,24 @@ def test_to_pickle(tmp_path):
     )
 
     calculated.to_pickle(tmp_path / "bla.pkl")
+
+
+def test_caching():
+    start_params = np.array([3, 2, 1])
+
+    # abuse simulate_moments to get empirical moments in correct format
+    empirical_moments = _sim_np(np.zeros(3))
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    got = estimate_msm(
+        simulate_moments=_sim_np,
+        empirical_moments=empirical_moments,
+        moments_cov=cov_np,
+        params=start_params,
+        optimize_options="scipy_lbfgsb",
+    )
+
+    assert got._cache == {}
+    cov = got.cov(method="robust", return_type="array")
+    assert_array_equal(list(got._cache.values())[0], cov)

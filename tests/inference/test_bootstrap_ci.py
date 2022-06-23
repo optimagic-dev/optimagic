@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.bootstrap_ci import compute_ci
+from estimagic.inference.bootstrap_ci import calculate_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
@@ -72,7 +72,7 @@ def test_ci(outcome, method, setup, expected):
         return tree_just_flatten(outcome(data), registry=registry)
 
     base_outcome = outcome_flat(setup["df"])
-    lower, upper = compute_ci(base_outcome, setup["estimates"], ci_method=method)
+    lower, upper = calculate_ci(base_outcome, setup["estimates"], ci_method=method)
 
     aaae(lower, expected[method + "_ci"][:, 0])
     aaae(upper, expected[method + "_ci"][:, 1])
@@ -80,16 +80,16 @@ def test_ci(outcome, method, setup, expected):
 
 def test_check_inputs_data():
     data = "this is not a data frame"
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(TypeError) as excinfo:
         check_inputs(data=data)
-    assert "Input 'data' must be DataFrame." == str(excinfo.value)
+    assert "Data must be a pandas.DataFrame." == str(excinfo.value)
 
 
 def test_check_inputs_cluster_by(setup):
     cluster_by = "this is not a column name of df"
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=setup["df"], cluster_by=cluster_by)
-    assert "Input 'cluster_by' must be None or a column name of DataFrame." == str(
+    assert "Input 'cluster_by' must be None or a column name of 'data'." == str(
         excinfo.value
     )
 

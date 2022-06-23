@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.inference.bootstrap import bootstrap
-from estimagic.inference.bootstrap import bootstrap_from_outcomes
-from pandas.testing import assert_frame_equal as afe
-from pandas.testing import assert_series_equal as ase
+from pandas.testing import assert_frame_equal
+from pandas.testing import assert_series_equal
 
 
 @pytest.fixture
@@ -76,113 +75,119 @@ def test_bootstrap_with_outcome_kwargs(shift, setup):
     )
 
     expected = pd.Series([2.5, 7.0], index=["x1", "x2"])
-    ase(result.base_outcome, expected + shift)
+    assert_series_equal(result.base_outcome, expected + shift)
+
+
+def test_bootstrap_existing_outcomes(setup):
+    result = bootstrap(
+        data=setup["df"],
+        outcome=_outcome_func,
+        n_draws=2,
+    )
+    assert len(result.outcomes) == 2
+    result = bootstrap(
+        data=setup["df"],
+        outcome=_outcome_func,
+        existing_outcomes=result,
+        n_draws=1,
+    )
+    assert len(result.outcomes) == 1
 
 
 def test_bootstrap_from_outcomes(setup, expected):
 
-    result = bootstrap_from_outcomes(
-        base_outcome=_outcome_func(setup["df"]),
-        bootstrap_outcomes=setup["estimates_pytree"],
+    result = bootstrap(
+        outcome=_outcome_func(setup["df"]),
+        existing_outcomes=setup["estimates_pytree"],
     )
 
-    outcomes = result.outcomes()
+    outcomes = result.outcomes
     lower_ci, upper_ci = result.ci()
     covariance = result.cov()
     standard_errors = result.se()
 
-    with pytest.raises(NotImplementedError) as error:
-        assert result._p_values()
-    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
-
-    with pytest.raises(NotImplementedError) as error:
-        assert result._summary()
-    assert str(error.value) == "summary is not implemented yet."
+    with pytest.raises(NotImplementedError):
+        assert result._p_values
 
     # Use rounding to adjust precision and ensure reproducibility accross all
     # supported pandas versions.
     for i in range(len(outcomes)):
-        ase(outcomes[i], setup["estimates_pytree"][i])
+        assert_series_equal(outcomes[i], setup["estimates_pytree"][i])
 
-    ase(lower_ci.round(2), expected["lower_ci"].round(2))
-    ase(upper_ci.round(2), expected["upper_ci"].round(2))
-    afe(covariance.round(2), expected["cov"].round(2))
-    ase(standard_errors.round(2), expected["se"].round(2))
+    assert_series_equal(lower_ci.round(2), expected["lower_ci"].round(2))
+    assert_series_equal(upper_ci.round(2), expected["upper_ci"].round(2))
+    assert_frame_equal(covariance.round(2), expected["cov"].round(2))
+    assert_series_equal(standard_errors.round(2), expected["se"].round(2))
 
 
 def test_bootstrap_from_outcomes_private_methods(setup, expected):
 
-    result = bootstrap_from_outcomes(
-        base_outcome=_outcome_func(setup["df"]),
-        bootstrap_outcomes=setup["estimates_pytree"],
+    result = bootstrap(
+        outcome=_outcome_func(setup["df"]),
+        existing_outcomes=setup["estimates_pytree"],
     )
 
-    outcomes = result._outcomes
+    outcomes = result.outcomes
     lower_ci, upper_ci = result._ci
     covariance = result._cov
     standard_errors = result._se
 
-    with pytest.raises(NotImplementedError) as error:
-        assert result._p_values()
-    assert str(error.value) == "Bootstrapped p-values are not implemented yet."
-
-    with pytest.raises(NotImplementedError) as error:
-        assert result._summary()
-    assert str(error.value) == "summary is not implemented yet."
+    with pytest.raises(NotImplementedError):
+        assert result._p_values
 
     for i in range(len(outcomes)):
-        ase(outcomes[i], setup["estimates_pytree"][i])
+        assert_series_equal(outcomes[i], setup["estimates_pytree"][i])
 
-    ase(lower_ci.round(2), expected["lower_ci"].round(2))
-    ase(upper_ci.round(2), expected["upper_ci"].round(2))
-    afe(covariance.round(2), expected["cov"].round(2))
-    ase(standard_errors.round(2), expected["se"].round(2))
+    assert_series_equal(lower_ci.round(2), expected["lower_ci"].round(2))
+    assert_series_equal(upper_ci.round(2), expected["upper_ci"].round(2))
+    assert_frame_equal(covariance.round(2), expected["cov"].round(2))
+    assert_series_equal(standard_errors.round(2), expected["se"].round(2))
 
 
 def test_bootstrap_from_outcomes_single_outcome(setup, expected):
 
-    result = bootstrap_from_outcomes(
-        base_outcome=_outcome_func(setup["df"]["x1"]),
-        bootstrap_outcomes=setup["estimates_pytree_x1"],
+    result = bootstrap(
+        outcome=_outcome_func(setup["df"]["x1"]),
+        existing_outcomes=setup["estimates_pytree_x1"],
     )
 
-    outcomes = result.outcomes()
+    outcomes = result.outcomes
     lower_ci, upper_ci = result.ci()
 
     for i in range(len(outcomes)):
-        ase(outcomes[i], setup["estimates_pytree_x1"][i])
+        assert_series_equal(outcomes[i], setup["estimates_pytree_x1"][i])
 
-    ase(lower_ci.round(2), expected["lower_ci_x1"].round(2))
-    ase(upper_ci.round(2), expected["upper_ci_x1"].round(2))
+    assert_series_equal(lower_ci.round(2), expected["lower_ci_x1"].round(2))
+    assert_series_equal(upper_ci.round(2), expected["upper_ci_x1"].round(2))
 
 
 @pytest.mark.parametrize("input_type", ["arr", "df", "dict"])
 def test_wrong_input_types(input_type, setup):
-    with pytest.raises(TypeError):
-        assert bootstrap_from_outcomes(
-            base_outcome=_outcome_func(setup["df"]),
-            bootstrap_outcomes=setup["estimates_" + input_type],
+    with pytest.raises(ValueError):
+        assert bootstrap(
+            outcome=_outcome_func(setup["df"]),
+            existing_outcomes=setup["estimates_" + input_type],
         )
 
 
 @pytest.mark.parametrize("return_type", ["array", "dataframe", "pytree"])
 def test_cov_correct_return_type(return_type, setup):
-    result = bootstrap_from_outcomes(
-        base_outcome=_outcome_func(setup["df"]),
-        bootstrap_outcomes=setup["estimates_pytree"],
+    result = bootstrap(
+        outcome=_outcome_func(setup["df"]),
+        existing_outcomes=setup["estimates_pytree"],
     )
     _ = result.cov(return_type=return_type)
 
 
 def test_cov_wrong_return_type(setup):
-    result = bootstrap_from_outcomes(
-        base_outcome=_outcome_func(setup["df"]),
-        bootstrap_outcomes=setup["estimates_pytree"],
+    result = bootstrap(
+        outcome=_outcome_func(setup["df"]),
+        existing_outcomes=setup["estimates_pytree"],
     )
 
     expected_msg = "return_type must be one of pytree, array, or dataframe, not dict."
 
-    with pytest.raises(TypeError) as error:
+    with pytest.raises(ValueError) as error:
         assert result.cov(return_type="dict")
 
     assert str(error.value) == expected_msg
