@@ -45,7 +45,6 @@ def process_internal_optimizer_result(
             conv_report = get_convergence_report(
                 history=hist,
                 direction=fixed_kwargs["direction"],
-                converter=converter,
             )
 
             res.convergence_report = conv_report
@@ -101,7 +100,6 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
         conv_report = get_convergence_report(
             history=res["history"],
             direction=fixed_kwargs["direction"],
-            converter=converter,
         )
 
     else:

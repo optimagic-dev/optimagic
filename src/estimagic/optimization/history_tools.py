@@ -5,10 +5,13 @@ from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
 
-def get_history_arrays(history, direction, converter=None):
-
-    if converter is not None:
-        to_internal = converter.params_to_internal
+def get_history_arrays(history, direction):
+    parhist = history["params"]
+    is_flat = (
+        len(parhist) > 0 and isinstance(parhist[0], np.ndarray) and parhist[0].ndim == 1
+    )
+    if is_flat:
+        to_internal = lambda x: x.tolist()
     else:
         registry = get_registry(extended=True)
         to_internal = partial(tree_just_flatten, registry=registry)

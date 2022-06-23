@@ -135,10 +135,10 @@ Bootstrap
 
     .. autofunction:: bootstrap
 
-.. dropdown:: bootstrap_from_outcomes
+.. dropdown::  BootstrapResult
 
-    .. autofunction:: bootstrap_from_outcomes
-
+    .. autoclass:: BootstrapResult
+        :members:
 
 
 

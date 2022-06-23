@@ -1,20 +1,20 @@
 import numpy as np
 import pytest
 from estimagic import first_derivative
+from estimagic.parameters.conversion import InternalParams
 from estimagic.parameters.scale_conversion import get_scale_converter
-from estimagic.parameters.tree_conversion import FlatParams
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 
 
 TEST_CASES = {
-    "start_values": FlatParams(
+    "start_values": InternalParams(
         values=np.array([0, 1, 1, 1, 1, 1]),
         lower_bounds=np.array([-2, 0, 0.5, 2 / 3, 3 / 4, 4 / 5]),
         upper_bounds=np.array([2, 2, 1.5, 4 / 3, 5 / 4, 6 / 5]),
         names=None,
     ),
-    "bounds": FlatParams(
+    "bounds": InternalParams(
         values=np.full(6, 0.5),
         lower_bounds=np.zeros(6),
         upper_bounds=np.ones(6),
@@ -28,7 +28,7 @@ PARAMETRIZATION = list(TEST_CASES.items())
 
 @pytest.mark.parametrize("method, expected", PARAMETRIZATION, ids=IDS)
 def test_get_scale_converter_active(method, expected):
-    params = FlatParams(
+    params = InternalParams(
         values=np.arange(6),
         lower_bounds=np.arange(6) - 1,
         upper_bounds=np.arange(6) + 1,
@@ -41,7 +41,7 @@ def test_get_scale_converter_active(method, expected):
     }
 
     converter, scaled = get_scale_converter(
-        flat_params=params,
+        internal_params=params,
         scaling=True,
         scaling_options=scaling_options,
     )
@@ -63,7 +63,7 @@ def test_get_scale_converter_active(method, expected):
 
 
 def test_scale_conversion_fast_path():
-    params = FlatParams(
+    params = InternalParams(
         values=np.arange(6),
         lower_bounds=np.arange(6) - 1,
         upper_bounds=np.arange(6) + 1,
@@ -71,7 +71,7 @@ def test_scale_conversion_fast_path():
     )
 
     converter, scaled = get_scale_converter(
-        flat_params=params,
+        internal_params=params,
         scaling=False,
         scaling_options=None,
     )

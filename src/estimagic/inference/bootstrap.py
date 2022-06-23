@@ -1,13 +1,15 @@
 import functools
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Any
 
 import numpy as np
 import pandas as pd
 from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.inference.bootstrap_ci import compute_ci
+from estimagic.inference.bootstrap_ci import calculate_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
+from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import leaf_names
@@ -17,9 +19,10 @@ from pybaum import tree_unflatten
 
 
 def bootstrap(
-    data,
     outcome,
     *,
+    data=None,
+    existing_outcomes=None,
     outcome_kwargs=None,
     n_draws=1_000,
     cluster_by=None,
@@ -28,15 +31,20 @@ def bootstrap(
     error_handling="continue",
     batch_evaluator=joblib_batch_evaluator,
 ):
-    """Calculate bootstrap estimates, standard errors and confidence intervals
-    for statistic of interest in given original sample.
+    """Use the bootstrap to calculate inference quantities.
 
     Args:
-        data (pandas.DataFrame): Original dataset.
-        outcome (callable): Function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
+        outcome (Union[callable, Any]): Either a function that computes the statistic
+            of interest, or an evaluation of that function. If it is an evaluation,
+            existing_outcomes must be passed, and the evaluation step is skipped.
+        data (pd.DataFrame): Dataset. Default None.
+        existing_outcomes (Union[BootstrapResult, List[Any]]): Evaluations of the
+            outcome function. If None, then outcome must be callable and new outcomes
+            are generated. If not None and outcome is callable, the new evaluations are
+            appended to the existing ones. Default None.
         outcome_kwargs (dict): Additional keyword arguments for outcome.
-        n_draws (int): number of bootstrap samples to draw.
+        n_draws (int): Number of bootstrap samples to draw. If len(existing_outcomes) >=
+            n_draws, a random subset of existing_outcomes is used.
         cluster_by (str): Column name of variable to cluster by or None.
         seeds (numpy.array): Array of seeds for bootstrap samples, default is none.
         n_cores (int): number of jobs for parallelization.
@@ -51,88 +59,85 @@ def bootstrap(
         BootstrapResult: A BootstrapResult object storing information on summary
             statistics, the covariance matrix, and estimated boostrap outcomes.
     """
-    check_inputs(data, cluster_by)
+    if existing_outcomes is None:
+        existing_outcomes = []
+    elif isinstance(existing_outcomes, BootstrapResult):
+        existing_outcomes = existing_outcomes.outcomes
+    elif not isinstance(existing_outcomes, list):
+        raise ValueError("existing_outcomes must be a list or BootstrapResult.")
 
-    if outcome_kwargs is not None:
-        outcome = functools.partial(outcome, **outcome_kwargs)
+    n_existing = len(existing_outcomes)
 
-    bootstrap_outcomes = get_bootstrap_outcomes(
-        data=data,
-        outcome=outcome,
-        cluster_by=cluster_by,
-        seed=seed,
-        n_draws=n_draws,
-        n_cores=n_cores,
-        error_handling=error_handling,
-        batch_evaluator=batch_evaluator,
-    )
+    if callable(outcome) and n_draws > n_existing:
 
-    base_outcome = outcome(data)
-    out = bootstrap_from_outcomes(base_outcome, bootstrap_outcomes)
+        check_inputs(data=data, cluster_by=cluster_by)
 
-    return out
+        if outcome_kwargs is not None:
+            outcome = functools.partial(outcome, **outcome_kwargs)
 
-
-def bootstrap_from_outcomes(base_outcome, bootstrap_outcomes):
-    """Create BootstrapResults object.
-
-    Args:
-        base_outcome (pytree): Pytree of base outcomes, i.e. the outcome
-            statistic(s) evaluated on the original data set.
-        bootstrap_outcomes (list): List of pytrees of estimated
-            bootstrap outcomes.
-
-    Returns:
-        BootstrapResult: A BootstrapResult object storing information on summary
-            statistics, the covariance matrix, and the estimated boostrap outcomes.
-    """
-    if isinstance(bootstrap_outcomes, list):
-        registry = get_registry(extended=True)
-
-        flat_outcomes = [
-            tree_just_flatten(est, registry=registry) for est in bootstrap_outcomes
-        ]
-        internal_outcomes = np.array(flat_outcomes)
-    else:
-        raise TypeError(
-            "bootstrap_outcomes must be a list of pytrees, "
-            f"not {type(bootstrap_outcomes)}."
+        new_outcomes = get_bootstrap_outcomes(
+            data=data,
+            outcome=outcome,
+            cluster_by=cluster_by,
+            seed=seed,
+            n_draws=n_draws - n_existing,
+            n_cores=n_cores,
+            error_handling=error_handling,
+            batch_evaluator=batch_evaluator,
         )
+        base_outcome = outcome(data)
+    else:
+        new_outcomes = []
+        base_outcome = outcome
 
-    out = BootstrapResult(
+    if n_draws <= n_existing:
+        np.random.seed(seed)
+        random_indices = np.random.choice(n_existing, n_draws, replace=False)
+        all_outcomes = [existing_outcomes[k] for k in random_indices]
+    else:
+        all_outcomes = existing_outcomes + new_outcomes
+
+    # ==================================================================================
+    # Process results
+    # ==================================================================================
+
+    registry = get_registry(extended=True)
+    flat_outcomes = [
+        tree_just_flatten(_outcome, registry=registry) for _outcome in all_outcomes
+    ]
+    internal_outcomes = np.array(flat_outcomes)
+
+    result = BootstrapResult(
         _base_outcome=base_outcome,
         _internal_outcomes=internal_outcomes,
+        _internal_cov=np.cov(internal_outcomes, rowvar=False),
     )
-
-    return out
+    return result
 
 
 @dataclass
 class BootstrapResult:
     _base_outcome: Any
     _internal_outcomes: np.ndarray
+    _internal_cov: np.ndarray
 
-    @property
-    def _outcomes(self):
-        return self.outcomes()
-
-    @property
+    @cached_property
     def _se(self):
         return self.se()
 
-    @property
+    @cached_property
     def _cov(self):
         return self.cov()
 
-    @property
+    @cached_property
     def _ci(self):
         return self.ci()
 
-    @property
+    @cached_property
     def _p_values(self):
         return self.p_values()
 
-    @property
+    @cached_property
     def _summary(self):
         return self.summary()
 
@@ -146,11 +151,12 @@ class BootstrapResult:
         """
         return self._base_outcome
 
+    @cached_property
     def outcomes(self):
         """Returns the estimated bootstrap outcomes.
 
         Returns:
-            Any: The boostrap outcomes as a list of pytrees.
+            List[Any]: The boostrap outcomes as a list of pytrees.
         """
         registry = get_registry(extended=True)
         _, treedef = tree_flatten(self._base_outcome, registry=registry)
@@ -159,25 +165,23 @@ class BootstrapResult:
             tree_unflatten(treedef, out, registry=registry)
             for out in self._internal_outcomes
         ]
-
         return outcomes
 
     def se(self):
         """Calculate standard errors.
 
         Returns:
-            list: A list of pytrees containing standard errors for the bootstrapped
-                statistic.
+            Any: The standard errors of the estimated parameters as a block-pytree,
+                numpy.ndarray, or pandas.DataFrame.
         """
-        cov = np.cov(self._internal_outcomes, rowvar=False)
+        cov = self._internal_cov
         se = np.sqrt(np.diagonal(cov))
 
         registry = get_registry(extended=True)
         _, treedef = tree_flatten(self._base_outcome, registry=registry)
 
-        out = tree_unflatten(treedef, se, registry=registry)
-
-        return out
+        se = tree_unflatten(treedef, se, registry=registry)
+        return se
 
     def cov(self, return_type="pytree"):
         """Calculate the variance-covariance matrix of the estimated parameters.
@@ -191,26 +195,22 @@ class BootstrapResult:
 
         Returns:
             Any: The covariance matrix of the estimated parameters as a block-pytree,
-                numpy array, or pandas DataFrame.
+                numpy.ndarray, or pandas.DataFrame.
         """
-        cov = np.cov(self._internal_outcomes, rowvar=False)
+        cov = self._internal_cov
 
-        if return_type == "array":
-            out = cov
-        elif return_type == "dataframe":
+        if return_type == "dataframe":
             registry = get_registry(extended=True)
-            leafnames = leaf_names(self._base_outcome, registry=registry)
-            free_index = np.array(leafnames)
-            out = pd.DataFrame(data=cov, columns=free_index, index=free_index)
+            names = np.array(leaf_names(self._base_outcome, registry=registry))
+            cov = pd.DataFrame(cov, columns=names, index=names)
         elif return_type == "pytree":
-            out = matrix_to_block_tree(cov, self._base_outcome, self._base_outcome)
-        else:
-            raise TypeError(
+            cov = matrix_to_block_tree(cov, self._base_outcome, self._base_outcome)
+        elif return_type != "array":
+            raise ValueError(
                 "return_type must be one of pytree, array, or dataframe, "
                 f"not {return_type}."
             )
-
-        return out
+        return cov
 
     def ci(self, ci_method="percentile", ci_level=0.95):
         """Calculate confidence intervals.
@@ -230,13 +230,12 @@ class BootstrapResult:
         registry = get_registry(extended=True)
         base_outcome_flat, treedef = tree_flatten(self._base_outcome, registry=registry)
 
-        lower_flat, upper_flat = compute_ci(
+        lower_flat, upper_flat = calculate_ci(
             base_outcome_flat, self._internal_outcomes, ci_method, ci_level
         )
 
         lower = tree_unflatten(treedef, lower_flat, registry=registry)
         upper = tree_unflatten(treedef, upper_flat, registry=registry)
-
         return lower, upper
 
     def p_values(self):
@@ -246,7 +245,8 @@ class BootstrapResult:
             Any: A pytree with the same structure as base_outcome containing p-values
                 for the parameter estimates.
         """
-        raise NotImplementedError("Bootstrapped p-values are not implemented yet.")
+        msg = "Bootstrap p_values are not yet implemented."
+        raise NotImplementedError(msg)
 
     def summary(self, ci_method="percentile", ci_level=0.95):
         """Create a summary of bootstrap results.
@@ -262,4 +262,26 @@ class BootstrapResult:
                 on the mean, standard errors, as well as the confidence intervals.
                 Soon this will be a pytree.
         """
-        raise NotImplementedError("summary is not implemented yet.")
+        registry = get_registry(extended=True)
+        names = leaf_names(self.base_outcome, registry=registry)
+        summary_data = _calulcate_summary_data_bootstrap(
+            self, ci_method=ci_method, ci_level=ci_level
+        )
+        summary = calculate_estimation_summary(
+            summary_data=summary_data,
+            names=names,
+            free_names=names,
+        )
+        return summary
+
+
+def _calulcate_summary_data_bootstrap(bootstrap_result, ci_method, ci_level):
+    lower, upper = bootstrap_result.ci(ci_method=ci_method, ci_level=ci_level)
+    summary_data = {
+        "value": bootstrap_result.base_outcome,
+        "standard_error": bootstrap_result.se(),
+        "ci_lower": lower,
+        "ci_upper": upper,
+        "p_value": np.full(len(lower), np.nan),  # p-values are not implemented yet
+    }
+    return summary_data
