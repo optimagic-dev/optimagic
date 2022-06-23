@@ -84,7 +84,6 @@ universal_tests = list(product(start_vec, cg_routine))
 specific_tests = [
     (np.array([1e-3, 1e-3, 1e-3]), "cg"),
     (np.array([1e-6, 1e-6, 1e-6]), "cg"),
-    (np.array([1e-6, 1e-6, 1e-6]), "steihaug_toint"),
 ]
 TEST_CASES = universal_tests + specific_tests
 
