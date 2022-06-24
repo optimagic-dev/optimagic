@@ -423,7 +423,7 @@ class LikelihoodResult:
                 self._cache[args] = free_cov
             elif self._converter.has_transforming_constraints:
                 msg = (
-                    "seed is set to None, and constraints are transforming. This leads "
+                    "seed is set to None and constraints are transforming. This leads "
                     "to randomness in the result. To avoid random behavior, choose a "
                     "non-None seed."
                 )

@@ -14,6 +14,7 @@ def get_next_trust_region_points_latin_hypercube(
     lhs_design="centered",
     target="linear",
     n_iter=10_000,
+    seed=None,
 ):
     """Generate new points at which the criterion should be evaluated.
 
@@ -49,6 +50,9 @@ def get_next_trust_region_points_latin_hypercube(
             minimizes e.g.  the variance of the least-squares estimator, while using a
             quadratic or polynomial model. Default is "linear".
         n_iter (int): Iterations considered in random search.
+        seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
+            numpy.random.default_rng is used seeded with seed. If seed is already a
+            Generator instance then that instance is used.
 
     Returns:
         out (dict): Dictionary with entries:
@@ -63,7 +67,7 @@ def get_next_trust_region_points_latin_hypercube(
             "Invalid Latin hypercube design. Must be in {'random', 'centered'}"
         )
 
-    rng = get_rng(seed=None)
+    rng = get_rng(seed)
 
     n_dim = len(center)
     dtype = np.uint8 if n_points < 256 else np.uint16
