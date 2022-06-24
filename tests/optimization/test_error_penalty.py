@@ -12,12 +12,13 @@ from estimagic.optimization.error_penalty import _penalty_root_contributions_der
 from estimagic.optimization.error_penalty import _penalty_value
 from estimagic.optimization.error_penalty import _penalty_value_derivative
 from estimagic.optimization.error_penalty import get_error_penalty_function
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.mark.parametrize("seed", range(10))
 def test_penalty_aggregations(seed):
-    rng = np.random.default_rng(seed)
+    rng = get_rng(seed)
     x = rng.uniform(size=5)
     x0 = rng.uniform(size=5)
     slope = 0.3
@@ -41,7 +42,7 @@ pairs = [
 
 @pytest.mark.parametrize("func, deriv", pairs)
 def test_penalty_derivatives(func, deriv):
-    rng = np.random.default_rng(seed=5)
+    rng = get_rng(seed=5)
     x = rng.uniform(size=5)
     x0 = rng.uniform(size=5)
     slope = 0.3
@@ -60,7 +61,7 @@ def test_penalty_derivatives(func, deriv):
 
 @pytest.mark.parametrize("seed", range(10))
 def test_penalty_aggregations_via_get_error_penalty(seed):
-    rng = np.random.default_rng(seed)
+    rng = get_rng(seed)
     x = rng.uniform(size=5)
     x0 = rng.uniform(size=5)
     slope = 0.3

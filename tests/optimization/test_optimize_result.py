@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import DEFAULT_SEED
 from estimagic.optimization.optimize_result import _create_stars
 from estimagic.optimization.optimize_result import OptimizeResult
+from estimagic.utilities import get_rng
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def convergence_report():
         ],
         columns=["one_step", "five_steps"],
     )
-    u = np.random.default_rng(DEFAULT_SEED).uniform
+    u = get_rng(seed=0).uniform
     conv_report["one_step"] = [
         u(1e-12, 1e-10),
         u(1e-9, 1e-8),

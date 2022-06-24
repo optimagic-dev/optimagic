@@ -5,11 +5,12 @@ import pandas as pd
 import pytest
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal
 
 
-rng = np.random.default_rng(1234)
+rng = get_rng(seed=1234)
 
 jac_np = rng.uniform(size=(10, 5))
 jac_pd = pd.DataFrame(jac_np)

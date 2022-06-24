@@ -7,6 +7,7 @@ import pytest
 from estimagic.config import DEFAULT_SEED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization.optimize import minimize
+from estimagic.utilities import get_rng
 
 if not IS_PETSC4PY_INSTALLED:
     pytestmark = pytest.mark.skip(reason="petsc4py is not installed.")
@@ -30,7 +31,7 @@ def get_random_params(
 
 
 def test_robustness():
-    rng = np.random.default_rng(5471)
+    rng = get_rng(5471)
     true_params = get_random_params(2, rng)
     start_params = true_params.copy()
     start_params["value"] = get_random_params(2, rng)["value"]
@@ -49,7 +50,7 @@ def test_robustness():
 
 
 def test_box_constr():
-    rng = np.random.default_rng(5472)
+    rng = get_rng(5472)
     true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
 
     start_params = true_params.copy()
@@ -64,7 +65,7 @@ def test_box_constr():
 
 
 def test_max_iters():
-    rng = np.random.default_rng(5473)
+    rng = get_rng(5473)
     true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
     start_params = true_params.copy()
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
@@ -82,7 +83,7 @@ def test_max_iters():
 
 
 def test_grtol():
-    rng = np.random.default_rng(5474)
+    rng = get_rng(5474)
     true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
     start_params = true_params.copy()
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
@@ -106,7 +107,7 @@ def test_grtol():
 
 
 def test_gatol():
-    rng = np.random.default_rng(5475)
+    rng = get_rng(5475)
     true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
     start_params = true_params.copy()
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
@@ -130,7 +131,7 @@ def test_gatol():
 
 
 def test_gttol():
-    rng = np.random.default_rng(5476)
+    rng = get_rng(5476)
     true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
     start_params = true_params.copy()
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
@@ -154,7 +155,7 @@ def test_gttol():
 
 
 def test_tol():
-    rng = np.random.default_rng(5477)
+    rng = get_rng(5477)
     true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
     start_params = true_params.copy()
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
@@ -192,7 +193,7 @@ def _ols_criterion(x, endog, exog):
 
 
 def _simulate_sample(num_agents, paras, error_term_high=0.5):
-    rng = np.random.default_rng(DEFAULT_SEED)
+    rng = get_rng(DEFAULT_SEED)
     exog = rng.uniform(0, 1, num_agents)
     error_term = rng.normal(0, error_term_high, num_agents)
     endog = (
@@ -205,7 +206,7 @@ def _simulate_sample(num_agents, paras, error_term_high=0.5):
 
 
 def _simulate_ols_sample(num_agents, paras):
-    rng = np.random.default_rng(DEFAULT_SEED)
+    rng = get_rng(DEFAULT_SEED)
     exog = rng.uniform(-5, 5, num_agents)
     error_term = rng.normal(0, 1, num_agents)
     endog = paras.at[0, "value"] + paras.at[1, "value"] * exog + error_term

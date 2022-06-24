@@ -2,7 +2,6 @@ from itertools import product
 
 import numpy as np
 import pytest
-from estimagic.config import DEFAULT_SEED
 from estimagic.optimization.trust_region_sampling import _create_upscaled_lhs_sample
 from estimagic.optimization.trust_region_sampling import _extend_upscaled_lhs_sample
 from estimagic.optimization.trust_region_sampling import _get_empty_bin_info
@@ -13,10 +12,8 @@ from estimagic.optimization.trust_region_sampling import get_existing_points
 from estimagic.optimization.trust_region_sampling import (
     get_next_trust_region_points_latin_hypercube,
 )
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
-
-
-RNG = np.random.default_rng(DEFAULT_SEED)
 
 
 def test_scaling_bijection():
@@ -24,7 +21,7 @@ def test_scaling_bijection():
         "n_points": 100,
         "n_dim": 20,
         "n_designs": 1,
-        "rng": RNG,
+        "rng": get_rng(seed=1234),
     }
     center = np.ones(params["n_dim"])
     radius = 0.1
@@ -96,8 +93,9 @@ def test_get_existing_points():
 
 def test_latin_hypercube_property():
     """Check that for each single dimension the points are uniformly distributed."""
-    n_dim, n_points = RNG.integers(2, 100, size=2)
-    sample = _create_upscaled_lhs_sample(n_dim, n_points, n_designs=1, rng=RNG)
+    rng = get_rng(seed=1234)
+    n_dim, n_points = rng.integers(2, 100, size=2)
+    sample = _create_upscaled_lhs_sample(n_dim, n_points, n_designs=1, rng=rng)
     index = np.arange(n_points)
     for j in range(n_dim):
         aaae(index, np.sort(sample[0][:, j]))
@@ -183,6 +181,7 @@ def test_extend_upscaled_lhs_sample():
     radius there is only one possible point to draw in the upscaled space: (0, 0).
 
     """
+    rng = get_rng(seed=1234)
     n_points = 2
     second_center = 0.4 * np.ones(2)
     second_radius = 0.1
@@ -197,7 +196,7 @@ def test_extend_upscaled_lhs_sample():
         empty_bins,
         n_points,
         n_designs=1,
-        rng=RNG,
+        rng=rng,
         dtype=np.uint8,
     )[0]
 

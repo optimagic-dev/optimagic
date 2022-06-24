@@ -7,6 +7,7 @@ from estimagic.estimation.msm_weighting import _assemble_block_diagonal_matrix
 from estimagic.estimation.msm_weighting import get_moments_cov
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.parameters.block_trees import block_tree_to_matrix
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -59,7 +60,7 @@ def test_assemble_block_diagonal_matrix_mixed(expected_values):
 
 
 def test_get_moments_cov_runs_with_pytrees():
-    rng = np.random.default_rng(1234)
+    rng = get_rng(1234)
     data = rng.normal(scale=[10, 5, 1], size=(100, 3))
     data = pd.DataFrame(data=data)
 

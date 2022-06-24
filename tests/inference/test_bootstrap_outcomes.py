@@ -4,13 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.config import DEFAULT_SEED
 from estimagic.inference.bootstrap_outcomes import _get_bootstrap_outcomes_from_indices
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
-
-
-RNG = np.random.default_rng(DEFAULT_SEED)
 
 
 @pytest.fixture
@@ -44,10 +41,11 @@ def _mean_return_array(data):
     ],
 )
 def test_get_bootstrap_estimates_runs(outcome, data):
+    rng = get_rng(seed=1234)
     get_bootstrap_outcomes(
         data=data,
         outcome=outcome,
-        rng=RNG,
+        rng=rng,
         n_draws=5,
     )
 
@@ -67,6 +65,8 @@ def test_bootstrap_estimates_from_indices_without_errors(data):
 
 
 def test_get_bootstrap_estimates_with_error_and_raise(data):
+    rng = get_rng(seed=1234)
+
     def _raise_assertion_error(data):
         assert 1 == 2
 
@@ -74,13 +74,15 @@ def test_get_bootstrap_estimates_with_error_and_raise(data):
         get_bootstrap_outcomes(
             data=data,
             outcome=_raise_assertion_error,
-            rng=RNG,
+            rng=rng,
             n_draws=2,
             error_handling="raise",
         )
 
 
 def test_get_bootstrap_estimates_with_all_errors_and_continue(data):
+    rng = get_rng(seed=1234)
+
     def _raise_assertion_error(data):
         assert 1 == 2
 
@@ -89,22 +91,24 @@ def test_get_bootstrap_estimates_with_all_errors_and_continue(data):
             get_bootstrap_outcomes(
                 data=data,
                 outcome=_raise_assertion_error,
-                rng=RNG,
+                rng=rng,
                 n_draws=2,
                 error_handling="continue",
             )
 
 
 def test_get_bootstrap_estimates_with_some_errors_and_continue(data):
+    rng = get_rng(seed=1234)
+
     def _raise_assertion_error_sometimes(data):
-        assert RNG.uniform() > 0.5
+        assert rng.uniform() > 0.5
         return data.mean()
 
     with pytest.warns(UserWarning):
         res_flat = get_bootstrap_outcomes(
             data=data,
             outcome=_raise_assertion_error_sometimes,
-            rng=RNG,
+            rng=rng,
             n_draws=100,
             error_handling="continue",
         )

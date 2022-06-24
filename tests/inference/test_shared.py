@@ -3,7 +3,6 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import DEFAULT_SEED
 from estimagic.inference.shared import _to_numpy
 from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import get_derivative_case
@@ -12,12 +11,10 @@ from estimagic.inference.shared import transform_covariance
 from estimagic.inference.shared import transform_free_cov_to_cov
 from estimagic.inference.shared import transform_free_values_to_params_tree
 from estimagic.parameters.tree_registry import get_registry
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import leaf_names
 from pybaum import tree_equal
-
-
-RNG = np.random.default_rng(DEFAULT_SEED)
 
 
 @pytest.fixture
@@ -74,12 +71,12 @@ def test_transform_covariance_no_bounds():
         internal_params=internal_params,
         internal_cov=internal_cov,
         converter=converter,
-        rng=np.random.default_rng(seed=5687),
+        rng=get_rng(seed=5687),
         n_samples=100,
         bounds_handling="ignore",
     )
 
-    expected_sample = np.random.default_rng(seed=5687).multivariate_normal(
+    expected_sample = get_rng(seed=5687).multivariate_normal(
         np.arange(2), np.eye(2), 100
     )
     expected = np.cov(expected_sample, rowvar=False)
@@ -88,6 +85,8 @@ def test_transform_covariance_no_bounds():
 
 
 def test_transform_covariance_with_clipping():
+    rng = get_rng(seed=1234)
+
     internal_cov = np.eye(2)
 
     converter = FakeConverter()
@@ -99,7 +98,7 @@ def test_transform_covariance_with_clipping():
         internal_params=internal_params,
         internal_cov=internal_cov,
         converter=converter,
-        rng=RNG,
+        rng=rng,
         n_samples=100,
         bounds_handling="clip",
     )
@@ -110,6 +109,8 @@ def test_transform_covariance_with_clipping():
 
 
 def test_transform_covariance_invalid_bounds():
+    rng = get_rng(seed=1234)
+
     internal_cov = np.eye(2)
 
     converter = FakeConverter()
@@ -122,7 +123,7 @@ def test_transform_covariance_invalid_bounds():
             internal_params=internal_params,
             internal_cov=internal_cov,
             converter=converter,
-            rng=RNG,
+            rng=rng,
             n_samples=10,
             bounds_handling="raise",
         )
