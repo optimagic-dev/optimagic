@@ -9,12 +9,12 @@ from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal
 
 
-np.random.seed(1234)
+rng = np.random.default_rng(1234)
 
-jac_np = np.random.uniform(size=(10, 5))
+jac_np = rng.uniform(size=(10, 5))
 jac_pd = pd.DataFrame(jac_np)
 
-moments_cov_np = np.random.uniform(size=(10, 10)) + np.eye(10) * 2.5
+moments_cov_np = rng.uniform(size=(10, 10)) + np.eye(10) * 2.5
 moments_cov_pd = pd.DataFrame(moments_cov_np)
 
 test_cases = itertools.product([jac_np, jac_pd], [moments_cov_np, moments_cov_pd])

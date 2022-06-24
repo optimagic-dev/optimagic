@@ -59,8 +59,8 @@ def test_assemble_block_diagonal_matrix_mixed(expected_values):
 
 
 def test_get_moments_cov_runs_with_pytrees():
-    np.random.seed(1234)
-    data = np.random.normal(scale=[10, 5, 1], size=(100, 3))
+    rng = np.random.default_rng(1234)
+    data = rng.normal(scale=[10, 5, 1], size=(100, 3))
     data = pd.DataFrame(data=data)
 
     def calc_moments(data, keys):

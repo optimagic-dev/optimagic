@@ -7,7 +7,6 @@ from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 
 @pytest.mark.parametrize("distribution", NOISE_DISTRIBUTIONS)
 def test_sample_from_distribution(distribution):
-    np.random.seed(1234)
     mean = 0.33
     std = 0.55
     correlation = 0.44
@@ -17,6 +16,7 @@ def test_sample_from_distribution(distribution):
         std=std,
         size=(100_000, 5),
         correlation=correlation,
+        rng=np.random.default_rng(seed=0),
     )
     calculated_mean = sample.mean()
     calculated_std = sample.std()

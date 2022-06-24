@@ -1,30 +1,30 @@
 import numpy as np
 
 
-def _standard_logistic(size):
+def _standard_logistic(size, rng):
     scale = np.sqrt(3) / np.pi
-    return np.random.logistic(loc=0, scale=scale, size=size)
+    return rng.logistic(loc=0, scale=scale, size=size)
 
 
-def _standard_uniform(size):
+def _standard_uniform(size, rng):
     ub = np.sqrt(3)
     lb = -ub
-    return np.random.uniform(lb, ub, size=size)
+    return rng.uniform(lb, ub, size=size)
 
 
-def _standard_normal(size):
-    return np.random.normal(size=size)
+def _standard_normal(size, rng):
+    return rng.normal(size=size)
 
 
-def _standard_gumbel(size):
+def _standard_gumbel(size, rng):
     gamma = 0.577215664901532
     scale = np.sqrt(6) / np.pi
     loc = -scale * gamma
-    return np.random.gumbel(loc=loc, scale=scale, size=size)
+    return rng.gumbel(loc=loc, scale=scale, size=size)
 
 
-def _standard_laplace(size):
-    return np.random.laplace(scale=np.sqrt(0.5), size=size)
+def _standard_laplace(size, rng):
+    return rng.laplace(scale=np.sqrt(0.5), size=size)
 
 
 NOISE_DISTRIBUTIONS = {

@@ -16,6 +16,9 @@ from pybaum import leaf_names
 from pybaum import tree_equal
 
 
+RNG = np.random.default_rng(seed=None)
+
+
 @pytest.fixture
 def inputs():
     jac = pd.DataFrame(np.ones((5, 3)), columns=["a", "b", "c"])
@@ -66,18 +69,18 @@ def test_transform_covariance_no_bounds():
     converter = FakeConverter()
     internal_params = FakeInternalParams()
 
-    np.random.seed(1234)
-
     got = transform_covariance(
         internal_params=internal_params,
         internal_cov=internal_cov,
         converter=converter,
+        rng=np.random.default_rng(seed=5687),
         n_samples=100,
         bounds_handling="ignore",
     )
 
-    np.random.seed(1234)
-    expected_sample = np.random.multivariate_normal(np.arange(2), np.eye(2), 100)
+    expected_sample = np.random.default_rng(seed=5687).multivariate_normal(
+        np.arange(2), np.eye(2), 100
+    )
     expected = np.cov(expected_sample, rowvar=False)
 
     aaae(got, expected)
@@ -91,12 +94,11 @@ def test_transform_covariance_with_clipping():
         lower_bounds=np.ones(2), upper_bounds=np.ones(2)
     )
 
-    np.random.seed(1234)
-
     got = transform_covariance(
         internal_params=internal_params,
         internal_cov=internal_cov,
         converter=converter,
+        rng=RNG,
         n_samples=100,
         bounds_handling="clip",
     )
@@ -114,13 +116,12 @@ def test_transform_covariance_invalid_bounds():
         lower_bounds=np.ones(2), upper_bounds=np.ones(2)
     )
 
-    np.random.seed(1234)
-
     with pytest.raises(ValueError):
         transform_covariance(
             internal_params=internal_params,
             internal_cov=internal_cov,
             converter=converter,
+            rng=RNG,
             n_samples=10,
             bounds_handling="raise",
         )

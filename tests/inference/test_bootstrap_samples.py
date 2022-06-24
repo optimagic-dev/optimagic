@@ -9,6 +9,9 @@ from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
 
+RNG = np.random.default_rng(seed=None)
+
+
 @pytest.fixture
 def data():
     df = pd.DataFrame()
@@ -18,19 +21,17 @@ def data():
 
 
 def test_get_bootstrap_indices_randomization_works_without_clustering(data):
-    np.random.seed(1234)
-    res = get_bootstrap_indices(data, n_draws=2)
+    res = get_bootstrap_indices(data, n_draws=2, rng=RNG)
     assert set(res[0]) != set(res[1])
 
 
 def test_get_bootstrap_indices_radomization_works_with_clustering(data):
-    res = get_bootstrap_indices(data, cluster_by="hh", n_draws=2, seed=12345)
+    res = get_bootstrap_indices(data, cluster_by="hh", n_draws=2, rng=RNG)
     assert set(res[0]) != set(res[1])
 
 
 def test_clustering_leaves_households_intact(data):
-    np.random.seed(1234)
-    indices = get_bootstrap_indices(data, cluster_by="hh", n_draws=1)[0]
+    indices = get_bootstrap_indices(data, cluster_by="hh", n_draws=1, rng=RNG)[0]
     sampled = data.iloc[indices]
     sampled_households = sampled["hh"].unique()
     for household in sampled_households:
@@ -56,4 +57,4 @@ def test_get_bootstrap_samples_from_indices():
 
 
 def test_get_bootstrap_samples_runs(data):
-    get_bootstrap_samples(data, n_draws=2, seed=1234)
+    get_bootstrap_samples(data, n_draws=2, rng=RNG)

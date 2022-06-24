@@ -295,8 +295,8 @@ def test_space_converter_with_params(constraints, params, expected_internal):
 
 @pytest.mark.parametrize("seed", range(5))
 def test_multiply_from_left_and_right(seed):
-    np.random.seed(seed)
-    mat_list = [np.random.uniform(size=(10, 10)) for i in range(5)]
+    rng = np.random.default_rng(seed)
+    mat_list = [rng.uniform(size=(10, 10)) for i in range(5)]
     a, b, c, d, e = mat_list
 
     expected = a @ b @ c @ d @ e

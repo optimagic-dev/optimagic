@@ -197,4 +197,6 @@ def test_caching():
 
     assert got._cache == {}
     cov = got.cov(method="robust", return_type="array")
+    assert got._cache == {}
+    cov = got.cov(method="robust", return_type="array", seed=0)
     assert_array_equal(list(got._cache.values())[0], cov)

@@ -5,6 +5,7 @@ import numpy as np
 from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
+from estimagic.utilities import get_rng
 
 
 def get_benchmark_problems(
@@ -16,6 +17,7 @@ def get_benchmark_problems(
     multiplicative_noise_options=None,
     scaling=False,
     scaling_options=None,
+    seed=None,
 ):
     """Get a dictionary of test problems for a benchmark.
 
@@ -55,6 +57,9 @@ def get_benchmark_problems(
             parameters multiplied by np.linspace(min_scale, max_scale, len(params)).
             If min_scale and max_scale have very different orders of magnitude, the
             problem becomes harder to solve for many optimizers.
+        seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
+            numpy.random.default_rng is used seeded with seed. If seed is already a
+            Generator instance then that instance is used.
 
     Returns:
         dict: Nested dictionary with benchmark problems of the structure:
@@ -64,6 +69,7 @@ def get_benchmark_problems(
             "value" and "info" might contain information about the test problem.
 
     """
+    rng = get_rng(seed)
     raw_problems = _get_raw_problems(name)
 
     if additive_noise:
@@ -91,6 +97,7 @@ def get_benchmark_problems(
             additive_options=additive_options,
             multiplicative_options=multiplicative_options,
             scaling_options=scaling_options,
+            rng=rng,
         )
 
         problems[name] = {
@@ -190,7 +197,7 @@ def _get_raw_problems(name):
 
 
 def _create_problem_inputs(
-    specification, additive_options, multiplicative_options, scaling_options
+    specification, additive_options, multiplicative_options, scaling_options, rng
 ):
     _x = np.array(specification["start_x"])
 
@@ -206,6 +213,7 @@ def _create_problem_inputs(
         additive_options=additive_options,
         multiplicative_options=multiplicative_options,
         scaling_factor=scaling_factor,
+        rng=rng,
     )
 
     inputs = {"criterion": _criterion, "params": _x}
@@ -236,7 +244,7 @@ def _get_scaling_factor(x, options):
 
 
 def _internal_criterion_template(
-    params, criterion, additive_options, multiplicative_options, scaling_factor
+    params, criterion, additive_options, multiplicative_options, scaling_factor, rng
 ):
     if scaling_factor is not None:
         params = params / scaling_factor
@@ -247,6 +255,7 @@ def _internal_criterion_template(
         critval,
         additive_options=additive_options,
         multiplicative_options=multiplicative_options,
+        rng=rng,
     )
 
     noisy_critval = critval + noise
@@ -262,7 +271,7 @@ def _internal_criterion_template(
     return out
 
 
-def _get_combined_noise(fval, additive_options, multiplicative_options):
+def _get_combined_noise(fval, additive_options, multiplicative_options, rng):
     size = len(np.atleast_1d(fval))
     if multiplicative_options is not None:
         options = multiplicative_options.copy()
@@ -270,21 +279,23 @@ def _get_combined_noise(fval, additive_options, multiplicative_options):
         clipval = options.pop("clipping_value")
         scaled_std = std * _clip_away_from_zero(fval, clipval)
         multiplicative_noise = _sample_from_distribution(
-            **options, std=scaled_std, size=size
+            **options, std=scaled_std, size=size, rng=rng
         )
     else:
         multiplicative_noise = 0
 
     if additive_options is not None:
-        additive_noise = _sample_from_distribution(**additive_options, size=size)
+        additive_noise = _sample_from_distribution(
+            **additive_options, size=size, rng=rng
+        )
     else:
         additive_noise = 0
 
     return multiplicative_noise + additive_noise
 
 
-def _sample_from_distribution(distribution, mean, std, size, correlation=0):
-    sample = NOISE_DISTRIBUTIONS[distribution](size=size)
+def _sample_from_distribution(distribution, mean, std, size, rng, correlation=0):
+    sample = NOISE_DISTRIBUTIONS[distribution](size=size, rng=rng)
     dim = size if isinstance(size, int) else size[1]
     if correlation != 0 and dim > 1:
         chol = np.linalg.cholesky(np.diag(np.ones(dim) - correlation) + correlation)

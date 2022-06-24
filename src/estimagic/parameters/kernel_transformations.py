@@ -33,6 +33,7 @@ from estimagic.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.utilities import cov_matrix_to_sdcorr_params
 from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import dimension_to_number_of_triangular_elements
+from estimagic.utilities import get_rng
 from estimagic.utilities import robust_cholesky
 from estimagic.utilities import sdcorr_params_to_matrix
 
@@ -383,7 +384,7 @@ def _elimination_matrix(dim):
     >>> import numpy as np
     >>> from numpy.testing import assert_array_almost_equal
     >>> dim = 10
-    >>> A = np.random.randn(dim, dim)
+    >>> A = np.random.default_rng().normal(size(dim, dim))
     >>> vectorized = A.ravel('F')
     >>> half_vectorized = A[np.tril_indices(dim)]
     >>> L = _elimination_matrix(dim)
@@ -429,7 +430,7 @@ def _duplication_matrix(dim):
     >>> import numpy as np
     >>> from numpy.testing import assert_array_almost_equal
     >>> dim = 10
-    >>> A = np.tril(np.random.randn(dim, dim))
+    >>> A = np.tril(np.random.default_rng().normal(size=(dim, dim)))
     >>> vectorized = A.ravel('F')
     >>> half_vectorized = A[np.tril_indices(dim)]
     >>> D = _duplication_matrix(dim)
@@ -472,7 +473,7 @@ def _transformation_matrix(dim):
     >>> from numpy.testing import assert_array_almost_equal
     >>> from estimagic.utilities import cov_matrix_to_sdcorr_params
     >>> from estimagic.utilities import cov_to_sds_and_corr
-    >>> cov = np.cov(np.random.randn(10, 4))
+    >>> cov = np.cov(np.random.default_rng().normal(size=(10, 4)))
     >>> sds, corr = cov_to_sds_and_corr(cov)
     >>> corr[np.diag_indices(len(cov))] = sds
     >>> vectorized = corr.ravel('F')
@@ -517,7 +518,7 @@ def _commutation_matrix(dim):
     >>> import numpy as np
     >>> from numpy.testing import assert_array_almost_equal
     >>> dim = 10
-    >>> A = np.random.randn(dim, dim)
+    >>> A = np.random.default_rng().normal(size=(dim, dim))
     >>> vectorized = A.ravel('F')
     >>> vectorized_transposed = A.T.ravel('F')
     >>> K = _commutation_matrix(dim)

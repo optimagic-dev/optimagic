@@ -17,9 +17,9 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 @pytest.mark.parametrize("seed", range(10))
 def test_penalty_aggregations(seed):
-    np.random.seed(seed)
-    x = np.random.uniform(size=5)
-    x0 = np.random.uniform(size=5)
+    rng = np.random.default_rng(seed)
+    x = rng.uniform(size=5)
+    x0 = rng.uniform(size=5)
     slope = 0.3
     constant = 3
     dim_out = 10
@@ -41,9 +41,9 @@ pairs = [
 
 @pytest.mark.parametrize("func, deriv", pairs)
 def test_penalty_derivatives(func, deriv):
-    np.random.seed(1234)
-    x = np.random.uniform(size=5)
-    x0 = np.random.uniform(size=5)
+    rng = np.random.default_rng(seed=5)
+    x = rng.uniform(size=5)
+    x0 = rng.uniform(size=5)
     slope = 0.3
     constant = 3
     dim_out = 8
@@ -60,9 +60,9 @@ def test_penalty_derivatives(func, deriv):
 
 @pytest.mark.parametrize("seed", range(10))
 def test_penalty_aggregations_via_get_error_penalty(seed):
-    np.random.seed(seed)
-    x = np.random.uniform(size=5)
-    x0 = np.random.uniform(size=5)
+    rng = np.random.default_rng(seed)
+    x = rng.uniform(size=5)
+    x0 = rng.uniform(size=5)
     slope = 0.3
     constant = 3
 

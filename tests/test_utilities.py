@@ -106,13 +106,13 @@ def test_dimension_to_number_of_triangular_elements():
 
 
 def random_cov(dim, seed):
-    np.random.seed(seed)
+    rng = np.random.default_rng(seed)
 
     num_elements = int(dim * (dim + 1) / 2)
     chol = np.zeros((dim, dim))
-    chol[np.tril_indices(dim)] = np.random.uniform(size=num_elements)
+    chol[np.tril_indices(dim)] = rng.uniform(size=num_elements)
     cov = chol @ chol.T
-    zero_positions = np.random.choice(range(dim), size=int(dim / 5), replace=False)
+    zero_positions = rng.choice(range(dim), size=int(dim / 5), replace=False)
     for pos in zero_positions:
         cov[:, pos] = 0
         cov[pos] = 0

@@ -20,6 +20,7 @@ def test_scaling_bijection():
         "n_points": 100,
         "n_dim": 20,
         "n_designs": 1,
+        "rng": np.random.default_rng(seed=None),
     }
     center = np.ones(params["n_dim"])
     radius = 0.1
@@ -91,8 +92,9 @@ def test_get_existing_points():
 
 def test_latin_hypercube_property():
     """Check that for each single dimension the points are uniformly distributed."""
-    n_dim, n_points = np.random.randint(2, 100, size=2)
-    sample = _create_upscaled_lhs_sample(n_dim, n_points, n_designs=1)
+    rng = np.random.default_rng(seed=None)
+    n_dim, n_points = rng.integers(2, 100, size=2)
+    sample = _create_upscaled_lhs_sample(n_dim, n_points, n_designs=1, rng=rng)
     index = np.arange(n_points)
     for j in range(n_dim):
         aaae(index, np.sort(sample[0][:, j]))
@@ -189,7 +191,11 @@ def test_extend_upscaled_lhs_sample():
     )
     empty_bins = _get_empty_bin_info(existing_scaled, n_points)
     new_points = _extend_upscaled_lhs_sample(
-        empty_bins, n_points, n_designs=1, dtype=np.uint8
+        empty_bins,
+        n_points,
+        n_designs=1,
+        rng=np.random.default_rng(seed=None),
+        dtype=np.uint8,
     )[0]
 
     assert np.all(new_points == np.array([[0, 0]]))
