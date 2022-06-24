@@ -2,6 +2,7 @@ from itertools import product
 
 import numpy as np
 import pytest
+from estimagic.config import DEFAULT_SEED
 from estimagic.optimization.trust_region_sampling import _create_upscaled_lhs_sample
 from estimagic.optimization.trust_region_sampling import _extend_upscaled_lhs_sample
 from estimagic.optimization.trust_region_sampling import _get_empty_bin_info
@@ -15,12 +16,15 @@ from estimagic.optimization.trust_region_sampling import (
 from numpy.testing import assert_array_almost_equal as aaae
 
 
+RNG = np.random.default_rng(DEFAULT_SEED)
+
+
 def test_scaling_bijection():
     params = {
         "n_points": 100,
         "n_dim": 20,
         "n_designs": 1,
-        "rng": np.random.default_rng(seed=None),
+        "rng": RNG,
     }
     center = np.ones(params["n_dim"])
     radius = 0.1
@@ -92,9 +96,8 @@ def test_get_existing_points():
 
 def test_latin_hypercube_property():
     """Check that for each single dimension the points are uniformly distributed."""
-    rng = np.random.default_rng(seed=None)
-    n_dim, n_points = rng.integers(2, 100, size=2)
-    sample = _create_upscaled_lhs_sample(n_dim, n_points, n_designs=1, rng=rng)
+    n_dim, n_points = RNG.integers(2, 100, size=2)
+    sample = _create_upscaled_lhs_sample(n_dim, n_points, n_designs=1, rng=RNG)
     index = np.arange(n_points)
     for j in range(n_dim):
         aaae(index, np.sort(sample[0][:, j]))
@@ -194,7 +197,7 @@ def test_extend_upscaled_lhs_sample():
         empty_bins,
         n_points,
         n_designs=1,
-        rng=np.random.default_rng(seed=None),
+        rng=RNG,
         dtype=np.uint8,
     )[0]
 

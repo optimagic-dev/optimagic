@@ -4,12 +4,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.batch_evaluators import joblib_batch_evaluator
+from estimagic.config import DEFAULT_SEED
 from estimagic.inference.bootstrap_outcomes import _get_bootstrap_outcomes_from_indices
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-RNG = np.random.default_rng(seed=None)
+RNG = np.random.default_rng(DEFAULT_SEED)
 
 
 @pytest.fixture

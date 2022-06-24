@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.config import DEFAULT_SEED
 from estimagic.inference.bootstrap_samples import _convert_cluster_ids_to_indices
 from estimagic.inference.bootstrap_samples import _get_bootstrap_samples_from_indices
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
@@ -9,7 +10,7 @@ from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
 
-RNG = np.random.default_rng(seed=None)
+RNG = np.random.default_rng(DEFAULT_SEED)
 
 
 @pytest.fixture

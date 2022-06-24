@@ -3,6 +3,7 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.config import DEFAULT_SEED
 from estimagic.inference.shared import _to_numpy
 from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.inference.shared import get_derivative_case
@@ -16,7 +17,7 @@ from pybaum import leaf_names
 from pybaum import tree_equal
 
 
-RNG = np.random.default_rng(seed=None)
+RNG = np.random.default_rng(DEFAULT_SEED)
 
 
 @pytest.fixture
