@@ -7,20 +7,20 @@ def check_inputs(
     """Check validity of inputs.
 
     Args:
-        data (pd.DataFrame): original dataset.
-        cluster_by (str): column name of variable to cluster by.
-        ci_method (str): method of choice for confidence interval computation.
-        alpha (float): significance level of choice.
+        data (pd.DataFrame): Dataset.
+        cluster_by (str): Column name of variable to cluster by.
+        ci_method (str): Method of choice for computing confidence intervals.
+            The default is "percentile".
+        ci_level (float): Confidence level for the calculation of confidence
+            intervals. The default is 0.95.
         skipdata (bool): Whether to skip all checks on the data argument.
 
     """
     ci_method_list = ["percentile", "bc", "t", "normal", "basic"]
 
     if not skipdata:
-        if data is None:
-            raise ValueError("Data cannot be None if outcome is callable.")
-        elif not isinstance(data, pd.DataFrame):
-            raise TypeError("Data must be a pandas.DataFrame.")
+        if not isinstance(data, pd.DataFrame) and not isinstance(data, pd.Series):
+            raise TypeError("Data must be a pandas.DataFrame or pandas.Series.")
         elif (cluster_by is not None) and (cluster_by not in data.columns.tolist()):
             raise ValueError(
                 "Input 'cluster_by' must be None or a column name of 'data'."

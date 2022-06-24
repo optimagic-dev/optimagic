@@ -29,18 +29,14 @@ def expected():
     out = {}
 
     out["percentile_ci"] = np.array([[2, 3.225], [5.775, 8.0]])
-
     out["normal_ci"] = np.array(
         [
             [1.5006105396891194, 3.499389460310881],
             [5.130313521781885, 8.869686478218114],
         ]
     )
-
     out["basic_ci"] = np.array([[1.775, 3.0], [6.0, 8.225]])
-
     out["bc_ci"] = np.array([[2, 3.2342835077057543], [5.877526959881923, 8]])
-
     out["t_ci"] = np.array([[1.775, 3], [6.0, 8.225]])
 
     return out
@@ -80,34 +76,39 @@ def test_ci(outcome, method, setup, expected):
 
 def test_check_inputs_data():
     data = "this is not a data frame"
-    with pytest.raises(TypeError) as excinfo:
+    expected_msg = "Data must be a pandas.DataFrame or pandas.Series."
+
+    with pytest.raises(TypeError) as error:
         check_inputs(data=data)
-    assert "Data must be a pandas.DataFrame." == str(excinfo.value)
+    assert str(error.value) == expected_msg
 
 
 def test_check_inputs_cluster_by(setup):
     cluster_by = "this is not a column name of df"
-    with pytest.raises(ValueError) as excinfo:
+    expected_msg = "Input 'cluster_by' must be None or a column name of 'data'."
+
+    with pytest.raises(ValueError) as error:
         check_inputs(data=setup["df"], cluster_by=cluster_by)
-    assert "Input 'cluster_by' must be None or a column name of 'data'." == str(
-        excinfo.value
-    )
+    assert str(error.value) == expected_msg
 
 
 def test_check_inputs_ci_method(setup):
     ci_method = 4
-    with pytest.raises(ValueError) as excinfo:
-        check_inputs(data=setup["df"], ci_method=ci_method)
     expected_msg = (
         "ci_method must be 'percentile', 'bc',"
         f" 't', 'basic' or 'normal', '{ci_method}'"
         f" was supplied"
     )
-    assert str(excinfo.value) == expected_msg
+
+    with pytest.raises(ValueError) as error:
+        check_inputs(data=setup["df"], ci_method=ci_method)
+    assert str(error.value) == expected_msg
 
 
 def test_check_inputs_ci_level(setup):
     ci_level = 666
-    with pytest.raises(ValueError) as excinfo:
+    expected_msg = "Input 'ci_level' must be in [0,1]."
+
+    with pytest.raises(ValueError) as error:
         check_inputs(data=setup["df"], ci_level=ci_level)
-    assert "Input 'ci_level' must be in [0,1]." == str(excinfo.value)
+    assert str(error.value) == expected_msg

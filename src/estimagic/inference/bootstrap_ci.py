@@ -4,7 +4,7 @@ from scipy.stats import norm
 
 
 def calculate_ci(
-    base_outcome_flat,
+    base_outcome,
     estimates,
     ci_method="percentile",
     ci_level=0.95,
@@ -17,11 +17,12 @@ def calculate_ci(
 
 
     Args:
-        base_outcome_flat (list): List of flat base outcomes, i.e. the outcome
+        base_outcome (list): List of flat base outcomes, i.e. the outcome
             statistic(s) evaluated on the original data set.
         estimates (np.ndarray): Array of estimates computed on the bootstrapped
             samples.
-        ci_method (str): Method of choice for confidence interval computation.
+        ci_method (str): Method of choice for computing confidence intervals.
+            The default is "percentile".
         ci_level (float): Confidence level for the calculation of confidence
             intervals. The default is 0.95.
 
@@ -38,13 +39,13 @@ def calculate_ci(
     if ci_method == "percentile":
         cis = _ci_percentile(estimates, alpha)
     elif ci_method == "bc":
-        cis = _ci_bc(estimates, base_outcome_flat, alpha)
+        cis = _ci_bc(estimates, base_outcome, alpha)
     elif ci_method == "t":
-        cis = _ci_t(estimates, base_outcome_flat, alpha)
+        cis = _ci_t(estimates, base_outcome, alpha)
     elif ci_method == "basic":
-        cis = _ci_basic(estimates, base_outcome_flat, alpha)
+        cis = _ci_basic(estimates, base_outcome, alpha)
     elif ci_method == "normal":
-        cis = _ci_normal(estimates, base_outcome_flat, alpha)
+        cis = _ci_normal(estimates, base_outcome, alpha)
 
     return cis[:, 0], cis[:, 1]
 
