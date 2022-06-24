@@ -384,7 +384,7 @@ def _elimination_matrix(dim):
     >>> import numpy as np
     >>> from numpy.testing import assert_array_almost_equal
     >>> dim = 10
-    >>> A = np.random.default_rng().normal(size(dim, dim))
+    >>> A = np.random.default_rng().normal(size=(dim, dim))
     >>> vectorized = A.ravel('F')
     >>> half_vectorized = A[np.tril_indices(dim)]
     >>> L = _elimination_matrix(dim)
