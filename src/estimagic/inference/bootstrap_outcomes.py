@@ -7,7 +7,7 @@ def get_bootstrap_outcomes(
     data,
     outcome,
     cluster_by=None,
-    seed=None,
+    rng=None,
     n_draws=1000,
     n_cores=1,
     error_handling="continue",
@@ -20,8 +20,8 @@ def get_bootstrap_outcomes(
         outcome (callable): function of the dataset calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         cluster_by (str): column name of the variable to cluster by.
-        seed (int): Random seed.
-        n_draws (int): number of draws, only relevant if seeds is None.
+        rng (numpy.random.Generator): A random number generator.
+        n_draws (int): number of bootstrap draws.
         n_cores (int): number of jobs for parallelization.
         error_handling (str): One of "continue", "raise". Default "continue" which means
             that bootstrap estimates are only calculated for those samples where no
@@ -38,8 +38,8 @@ def get_bootstrap_outcomes(
 
     indices = get_bootstrap_indices(
         data=data,
+        rng=rng,
         cluster_by=cluster_by,
-        seed=seed,
         n_draws=n_draws,
     )
 

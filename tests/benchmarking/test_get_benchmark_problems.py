@@ -26,7 +26,6 @@ def test_get_problems(name, additive_noise, multiplicative_noise, scaling):
     func = first["inputs"]["criterion"]
     params = first["inputs"]["params"]
 
-    np.random.seed()
     first_eval = func(params)["value"]
     second_eval = func(params)["value"]
 

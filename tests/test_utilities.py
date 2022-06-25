@@ -9,6 +9,7 @@ from estimagic.utilities import cov_matrix_to_sdcorr_params
 from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import cov_to_sds_and_corr
 from estimagic.utilities import dimension_to_number_of_triangular_elements
+from estimagic.utilities import get_rng
 from estimagic.utilities import hash_array
 from estimagic.utilities import isscalar
 from estimagic.utilities import number_of_triangular_elements_to_dimension
@@ -106,13 +107,13 @@ def test_dimension_to_number_of_triangular_elements():
 
 
 def random_cov(dim, seed):
-    np.random.seed(seed)
+    rng = np.random.default_rng(seed)
 
     num_elements = int(dim * (dim + 1) / 2)
     chol = np.zeros((dim, dim))
-    chol[np.tril_indices(dim)] = np.random.uniform(size=num_elements)
+    chol[np.tril_indices(dim)] = rng.uniform(size=num_elements)
     cov = chol @ chol.T
-    zero_positions = np.random.choice(range(dim), size=int(dim / 5), replace=False)
+    zero_positions = rng.choice(range(dim), size=int(dim / 5), replace=False)
     for pos in zero_positions:
         cov[:, pos] = 0
         cov[pos] = 0
@@ -210,3 +211,29 @@ def tets_isscalar_jax_true():
 def test_isscalar_jax_false():
     element = jnp.arange(3)
     assert isscalar(element) is False
+
+
+TEST_CASES = [
+    0,
+    1,
+    10,
+    1000000,
+    None,
+    np.random.default_rng(),
+    np.random.Generator(np.random.MT19937()),
+]
+
+
+@pytest.mark.parametrize("seed", TEST_CASES)
+def test_get_rng_correct_input(seed):
+    rng = get_rng(seed)
+    assert isinstance(rng, np.random.Generator)
+
+
+TEST_CASES = [0.1, "a", object(), lambda x: x**2]
+
+
+@pytest.mark.parametrize("seed", TEST_CASES)
+def test_get_rng_wrong_input(seed):
+    with pytest.raises(TypeError):
+        get_rng(seed)

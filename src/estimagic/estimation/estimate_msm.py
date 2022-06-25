@@ -1,5 +1,6 @@
 """Do a method of simlated moments estimation."""
 import functools
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from dataclasses import field
@@ -10,7 +11,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from estimagic.config import DEFAULT_SEED
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import InvalidFunctionError
@@ -47,6 +47,7 @@ from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from estimagic.utilities import get_rng
 from estimagic.utilities import to_pickle
 from pybaum import leaf_names
 from pybaum import tree_just_flatten
@@ -494,6 +495,13 @@ class MomentsResult:
             )
             if seed is not None:
                 self._cache[args] = free_cov
+            elif self._converter.has_transforming_constraints:
+                msg = (
+                    "seed is set to None and constraints are transforming. This leads "
+                    "to randomness in the result. To avoid random behavior, choose a "
+                    "non-None seed."
+                )
+                warnings.warn(msg)
 
         return free_cov
 
@@ -534,7 +542,7 @@ class MomentsResult:
         method="robust",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate standard errors.
 
@@ -585,7 +593,7 @@ class MomentsResult:
         n_samples=10_000,
         bounds_handling="clip",
         return_type="pytree",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate the variance-covariance matrix of the estimated parameters.
 
@@ -638,7 +646,7 @@ class MomentsResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Create a summary of estimation results.
 
@@ -689,7 +697,7 @@ class MomentsResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate confidence intervals.
 
@@ -748,7 +756,7 @@ class MomentsResult:
         method="robust",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate p-values.
 
@@ -798,7 +806,7 @@ class MomentsResult:
         kind="bias",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
         return_type="pytree",
     ):
         """Calculate sensitivity measures for moments estimates.
@@ -976,13 +984,14 @@ def _calculate_free_cov_msm(
             internal_jacobian, internal_weights, internal_moments_cov
         )
 
-    np.random.seed(seed)
+    rng = get_rng(seed)
 
     free_cov = transform_covariance(
         internal_params=internal_estimates,
         internal_cov=internal_cov,
         converter=converter,
         n_samples=n_samples,
+        rng=rng,
         bounds_handling=bounds_handling,
     )
     return free_cov

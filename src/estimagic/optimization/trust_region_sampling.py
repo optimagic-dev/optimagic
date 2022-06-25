@@ -2,6 +2,7 @@ import itertools
 from itertools import combinations
 
 import numpy as np
+from estimagic.utilities import get_rng
 
 
 def get_next_trust_region_points_latin_hypercube(
@@ -13,6 +14,7 @@ def get_next_trust_region_points_latin_hypercube(
     lhs_design="centered",
     target="linear",
     n_iter=10_000,
+    seed=None,
 ):
     """Generate new points at which the criterion should be evaluated.
 
@@ -48,6 +50,9 @@ def get_next_trust_region_points_latin_hypercube(
             minimizes e.g.  the variance of the least-squares estimator, while using a
             quadratic or polynomial model. Default is "linear".
         n_iter (int): Iterations considered in random search.
+        seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
+            numpy.random.default_rng is used seeded with seed. If seed is already a
+            Generator instance then that instance is used.
 
     Returns:
         out (dict): Dictionary with entries:
@@ -62,16 +67,20 @@ def get_next_trust_region_points_latin_hypercube(
             "Invalid Latin hypercube design. Must be in {'random', 'centered'}"
         )
 
+    rng = get_rng(seed)
+
     n_dim = len(center)
     dtype = np.uint8 if n_points < 256 else np.uint16
 
     if existing_points is None:
-        candidates = _create_upscaled_lhs_sample(n_dim, n_points, n_iter, dtype)
+        candidates = _create_upscaled_lhs_sample(n_dim, n_points, n_iter, rng, dtype)
         n_new_points = n_points
     else:
         existing_upscaled = _scale_up_points(existing_points, center, radius, n_points)
         empty_bins = _get_empty_bin_info(existing_upscaled, n_points)
-        candidates = _extend_upscaled_lhs_sample(empty_bins, n_points, n_iter, dtype)
+        candidates = _extend_upscaled_lhs_sample(
+            empty_bins, n_points, n_iter, rng, dtype
+        )
         existing_upscaled = np.tile(existing_upscaled, (n_iter, 1, 1))
         candidates = np.concatenate((existing_upscaled, candidates), axis=1)
         n_new_points = n_points - len(existing_points)
@@ -80,9 +89,7 @@ def get_next_trust_region_points_latin_hypercube(
     if lhs_design == "centered" and n_new_points > 0:
         candidates[:, -n_new_points:, :] += 0.5
     elif lhs_design == "random" and n_new_points > 0:
-        candidates[:, -n_new_points:, :] += np.random.uniform(
-            size=(n_new_points, n_dim)
-        )
+        candidates[:, -n_new_points:, :] += rng.uniform(size=(n_new_points, n_dim))
 
     candidates = _scale_down_points(candidates, center, radius, n_points)
 
@@ -209,13 +216,14 @@ def get_existing_points(old_sample, new_center, new_radius):
     return existing
 
 
-def _create_upscaled_lhs_sample(n_dim, n_points, n_designs, dtype=np.uint8):
+def _create_upscaled_lhs_sample(n_dim, n_points, n_designs, rng, dtype=np.uint8):
     """Create an upscaled Latin hypercube sample (LHS).
 
     Args:
         n_dim (int): Dimensionality of the problem.
         n_points (int): Number of sample points.
         n_designs (int): Number of different hypercubes to sample.
+        rng (numpy.random.Generator): A random number generator.
         dtype (np.uint8 or np.unt16): Data type of arrays. Default np.unint8.
 
     Returns:
@@ -227,7 +235,7 @@ def _create_upscaled_lhs_sample(n_dim, n_points, n_designs, dtype=np.uint8):
     sample = np.empty((n_designs, n_dim, n_points), dtype=dtype)
 
     for i, j in itertools.product(range(n_designs), range(n_dim)):
-        np.random.shuffle(index)
+        rng.shuffle(index)
         sample[i, j] = index
 
     sample = np.swapaxes(sample, 1, 2)
@@ -311,13 +319,14 @@ def _get_empty_bin_info(existing_upscaled, n_points):
     return out
 
 
-def _extend_upscaled_lhs_sample(empty_bins, n_points, n_designs, dtype=np.uint8):
+def _extend_upscaled_lhs_sample(empty_bins, n_points, n_designs, rng, dtype=np.uint8):
     """Extend a sample to a full Latin hypercube sample (LHS).
 
     Args:
         empty_bins (np.ndarray): Dimensionality of the problem.
         n_points (int): Number of (total) sample points.
         n_designs (int): Number of different hypercubes to sample.
+        rng (numpy.random.Generator): A random number generator.
         dtype (np.uint8 or np.unt16): Data type of arrays. Default np.unint8.
 
     Returns:
@@ -333,9 +342,9 @@ def _extend_upscaled_lhs_sample(empty_bins, n_points, n_designs, dtype=np.uint8)
     for j in range(n_dim):
         empty = empty_bins[:, j].copy()
         n_duplicates = mask[:, j].sum()
-        empty[mask[:, j]] = np.random.choice(n_points, size=n_duplicates, replace=False)
+        empty[mask[:, j]] = rng.choice(n_points, size=n_duplicates, replace=False)
         for k in range(n_designs):
-            np.random.shuffle(empty)
+            rng.shuffle(empty)
             sample[k, j] = empty
 
     sample = sample.swapaxes(1, 2)

@@ -13,6 +13,7 @@ def transform_covariance(
     internal_params,
     internal_cov,
     converter,
+    rng,
     n_samples,
     bounds_handling,
 ):
@@ -33,6 +34,7 @@ def transform_covariance(
             external params see :ref:`implementation_of_constraints`.
         constraints (list): List with constraint dictionaries.
             See :ref:`constraints`.
+        rng (numpy.random.Generator): A random number generator.
         n_samples (int): Number of samples used to transform the covariance matrix of
             the internal parameter vector into the covariance matrix of the external
             parameters.
@@ -55,7 +57,7 @@ def transform_covariance(
         lower_bounds = internal_params.lower_bounds
         upper_bounds = internal_params.upper_bounds
 
-        sample = np.random.multivariate_normal(
+        sample = rng.multivariate_normal(
             mean=internal_params.values,
             cov=internal_cov,
             size=n_samples,
