@@ -4,7 +4,6 @@ import functools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import DEFAULT_SEED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization.optimize import minimize
 from estimagic.utilities import get_rng
@@ -193,7 +192,7 @@ def _ols_criterion(x, endog, exog):
 
 
 def _simulate_sample(num_agents, paras, error_term_high=0.5):
-    rng = get_rng(DEFAULT_SEED)
+    rng = get_rng(seed=1234)
     exog = rng.uniform(0, 1, num_agents)
     error_term = rng.normal(0, error_term_high, num_agents)
     endog = (
@@ -206,7 +205,7 @@ def _simulate_sample(num_agents, paras, error_term_high=0.5):
 
 
 def _simulate_ols_sample(num_agents, paras):
-    rng = get_rng(DEFAULT_SEED)
+    rng = get_rng(seed=1234)
     exog = rng.uniform(-5, 5, num_agents)
     error_term = rng.normal(0, 1, num_agents)
     endog = paras.at[0, "value"] + paras.at[1, "value"] * exog + error_term
