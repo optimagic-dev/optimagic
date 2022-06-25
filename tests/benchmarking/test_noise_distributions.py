@@ -17,7 +17,7 @@ def test_sample_from_distribution(distribution):
         std=std,
         size=(100_000, 5),
         correlation=correlation,
-        rng=get_rng(seed=1234),
+        rng=get_rng(seed=0),
     )
     calculated_mean = sample.mean()
     calculated_std = sample.std()
