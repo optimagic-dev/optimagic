@@ -11,7 +11,7 @@ a terminal or shell:
 
 .. code-block::
 
-    conda config --add channels conda-forge  
+    conda config --add channels conda-forge
 
 .. code-block::
 
@@ -38,7 +38,7 @@ see :ref:`list_of_algorithms`.
 To enable all algorithms at once, do the following:
 
 .. code-block::
-      
+
     conda install nlopt
 
 .. code-block::

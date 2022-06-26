@@ -69,7 +69,7 @@ you install estimagic.
 .. dropdown::  scipy_slsqp
 
     .. code-block::
-          
+
         scipy_slsqp
 
     Minimize a scalar function of one or more variables using the SLSQP algorithm.
@@ -92,7 +92,7 @@ you install estimagic.
 
 
 .. dropdown::  scipy_neldermead
-    
+
     .. code-block::
 
       scipy_neldermead
@@ -167,9 +167,9 @@ you install estimagic.
 
 
 .. dropdown::  scipy_bfgs
-    
+
     .. code-block::
-        
+
         scipy_bfgs
 
     Minimize a scalar function of one or more variables using the BFGS algorithm.
@@ -193,7 +193,7 @@ you install estimagic.
 
     .. code-block::
 
-        scipy_conjugate_gradient    
+        scipy_conjugate_gradient
 
     Minimize a function using a nonlinear conjugate gradient algorithm.
 
@@ -225,7 +225,7 @@ you install estimagic.
 .. dropdown::  scipy_newton_cg
 
     .. code-block::
-      
+
         scipy_newton_cg
 
     Minimize a scalar function using Newton's conjugate gradient algorithm.
@@ -271,7 +271,7 @@ you install estimagic.
 .. dropdown::  scipy_cobyla
 
   .. code-block::
-      
+
       scipy_cobyla
 
   Minimize a scalar function of one or more variables using the COBYLA algorithm.
@@ -305,7 +305,7 @@ you install estimagic.
 .. dropdown::  scipy_truncated_newton
 
     .. code-block::
-      
+
         scipy_truncated_newton
 
     Minimize a scalar function using truncated Newton algorithm.
@@ -371,7 +371,7 @@ you install estimagic.
 .. dropdown::  scipy_trust_constr
 
     .. code-block::
-      
+
         scipy_trust_constr
 
     Minimize a scalar function of one or more variables subject to constraints.
@@ -428,7 +428,7 @@ you install estimagic.
 .. dropdown::  scipy_ls_dogbox
 
     .. code-block::
-      
+
         scipy_ls_dogbox
 
     Minimize a nonlinear least squares problem using a rectangular trust region method.
@@ -468,7 +468,7 @@ you install estimagic.
 .. dropdown::  scipy_ls_trf
 
     .. code-block::
-      
+
         scipy_ls_trf
 
     Minimize a nonlinear least squares problem using a trustregion reflective method.
@@ -508,7 +508,7 @@ you install estimagic.
 .. dropdown::  scipy_ls_lm
 
     .. code-block::
-      
+
         scipy_ls_lm
 
     Minimize a nonlinear least squares problem using a Levenberg-Marquardt method.
@@ -556,7 +556,7 @@ We implement a few algorithms from scratch. They are currently considered experi
 .. dropdown:: bhhh
 
     .. code-block::
-      
+
         bhhh
 
     Minimize a likelihood function using the BHHH algorithm.
@@ -583,7 +583,7 @@ We implement a few algorithms from scratch. They are currently considered experi
 .. dropdown:: neldermead_parallel
 
     .. code-block::
-      
+
         neldermead_parallel
 
     Minimize a function using the neldermead_parallel algorithm.
@@ -622,7 +622,7 @@ We implement a few algorithms from scratch. They are currently considered experi
 .. dropdown:: pounders
 
     .. code-block::
-      
+
         pounders
 
     Minimize a function using the POUNDERS algorithm.
@@ -729,7 +729,7 @@ you need to have `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
 .. dropdown::  tao_pounders
 
     .. code-block::
-      
+
         tao_pounders
 
     Minimize a function using the POUNDERs algorithm.
@@ -813,7 +813,7 @@ install each of them separately:
 .. dropdown::  nag_dfols
 
     .. code-block::
-      
+
         nag_dfols
 
     Minimize a function with least squares structure using DFO-LS.
@@ -951,7 +951,7 @@ install each of them separately:
 .. dropdown::  nag_pybobyqa
 
     .. code-block::
-      
+
         nag_pybobyqa
 
     Minimize a function using the BOBYQA algorithm.
@@ -1078,7 +1078,7 @@ optimizers.
 .. dropdown::  pygmo_gaco
 
     .. code-block::
-      
+
         pygmo_gaco
 
     Minimize a scalar function using the generalized ant colony algorithm.
@@ -1146,7 +1146,7 @@ optimizers.
 .. dropdown::  pygmo_bee_colony
 
     .. code-block::
-      
+
         pygmo_bee_colony
 
     Minimize a scalar function using the artifical bee colony algorithm.
@@ -1170,7 +1170,7 @@ optimizers.
 .. dropdown::  pygmo_de
 
     .. code-block::
-      
+
         pygmo_de
 
     Minimize a scalar function using the differential evolution algorithm.
@@ -1214,7 +1214,7 @@ optimizers.
 .. dropdown::  pygmo_sea
 
     .. code-block::
-      
+
         pygmo_sea
 
     Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
@@ -1241,7 +1241,7 @@ optimizers.
 .. dropdown::  pygmo_sga
 
     .. code-block::
-      
+
         pygmo_sga
 
     Minimize a scalar function using a simple genetic algorithm.
@@ -1277,7 +1277,7 @@ optimizers.
 .. dropdown::  pygmo_sade
 
     .. code-block::
-      
+
         pygmo_sade
 
     Minimize a scalar function using Self-adaptive Differential Evolution.
@@ -1340,7 +1340,7 @@ optimizers.
 .. dropdown::  pygmo_cmaes
 
     .. code-block::
-      
+
         pygmo_cmaes
 
     Minimize a scalar function using the Covariance Matrix Evolutionary Strategy.
@@ -1382,7 +1382,7 @@ optimizers.
 .. dropdown::  pygmo_simulated_annealing
 
     .. code-block::
-      
+
         pygmo_simulated_annealing
 
     Minimize a function with the simulated annealing algorithm.
@@ -1417,7 +1417,7 @@ optimizers.
 .. dropdown::  pygmo_pso
 
     .. code-block::
-      
+
         pygmo_pso
 
     Minimize a scalar function using Particle Swarm Optimization.
@@ -1482,7 +1482,7 @@ optimizers.
 .. dropdown::  pygmo_pso_gen
 
     .. code-block::
-      
+
         pygmo_pso_gen
 
     Minimize a scalar function with generational Particle Swarm Optimization.
@@ -1553,9 +1553,9 @@ optimizers.
 .. dropdown::  pygmo_mbh
 
     .. code-block::
-      
+
         pygmo_mbh
-      
+
     Minimize a scalar function using generalized Monotonic Basin Hopping.
 
     Monotonic basin hopping, or simply, basin hopping, is an algorithm rooted in the
@@ -1586,7 +1586,7 @@ optimizers.
 .. dropdown::  pygmo_xnes
 
     .. code-block::
-      
+
         pygmo_xnes
 
     Minimize a scalar function using Exponential Evolution Strategies.
@@ -1630,7 +1630,7 @@ optimizers.
 .. dropdown::  pygmo_gwo
 
     .. code-block::
-      
+
         pygmo_gwo
 
     Minimize a scalar function usinng the Grey Wolf Optimizer.
@@ -1661,7 +1661,7 @@ optimizers.
 .. dropdown::  pygmo_compass_search
 
     .. code-block::
-      
+
         pygmo_compass_search
 
     Minimize a scalar function using compass search.
@@ -1684,7 +1684,7 @@ optimizers.
 .. dropdown::  pygmo_ihs
 
     .. code-block::
-      
+
         pygmo_ihs
 
     Minimize a scalar function using the improved harmony search algorithm.
@@ -1713,7 +1713,7 @@ optimizers.
 .. dropdown::  pygmo_de1220
 
     .. code-block::
-      
+
         pygmo_de1220
 
     Minimize a scalar function using Self-adaptive Differential Evolution, pygmo flavor.
@@ -1781,7 +1781,7 @@ cyipopt``).
 .. dropdown:: ipopt
 
     .. code-block::
-      
+
         ipopt
 
     Minimize a scalar function using the Interior Point Optimizer.
@@ -2981,7 +2981,7 @@ fides>=0.7.4``, make sure you have at least 0.7.1).
 .. dropdown:: fides
 
   .. code-block::
-      
+
       fides
 
   `Fides <https://fides-optimizer.readthedocs.io/en/latest>`_ implements an Interior
@@ -3090,7 +3090,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_bobyqa
 
     .. code-block::
-      
+
         nlopt_bobyqa
 
     Minimize a scalar function using the BOBYQA algorithm.
@@ -3119,7 +3119,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_neldermead
 
     .. code-block::
-      
+
         nlopt_neldermead
 
     Minimize a scalar function using the Nelder-Mead simplex algorithm.
@@ -3145,7 +3145,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_praxis
 
     .. code-block::
-      
+
         nlopt_praxis
 
     Minimize a scalar function using principal-axis method.
@@ -3188,7 +3188,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_cobyla
 
     .. code-block::
-      
+
         nlopt_cobyla
 
     Minimize a scalar function using the cobyla method.
@@ -3228,7 +3228,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_sbplx
 
     .. code-block::
-      
+
         nlopt_sbplx
 
     Minimize a scalar function using the "Subplex" algorithm.
@@ -3258,7 +3258,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_newuoa
 
     .. code-block::
-      
+
         nlopt_newuoa
 
     Minimize a scalar function using the NEWUOA algorithm.
@@ -3291,7 +3291,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_tnewton
 
     .. code-block::
-      
+
         nlopt_tnewton
 
     Minimize a scalar function using the "TNEWTON" algorithm.
@@ -3321,7 +3321,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_lbfgs
 
     .. code-block::
-      
+
         nlopt_lbfgs
 
     Minimize a scalar function using the "LBFGS" algorithm.
@@ -3351,7 +3351,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_ccsaq
 
     .. code-block::
-      
+
         nlopt_ccsaq
 
     Minimize a scalar function using CCSAQ algorithm.
@@ -3381,7 +3381,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_mma
 
     .. code-block::
-      
+
         nlopt_mma
 
     Minimize a scalar function using the method of moving asymptotes (MMA).
@@ -3411,7 +3411,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_var
 
     .. code-block::
-      
+
         nlopt_var
 
     Minimize a scalar function limited memory switching variable-metric method.
@@ -3439,7 +3439,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_slsqp
 
     .. code-block::
-      
+
         nlopt_slsqp
 
     Optimize a scalar function based on SLSQP method.
@@ -3466,7 +3466,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_direct
 
     .. code-block::
-      
+
         nlopt_direct
 
     Optimize a scalar function based on DIRECT method.
@@ -3512,7 +3512,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_esch
 
     .. code-block::
-      
+
         nlopt_esch
 
     Optimize a scalar function using the ESCH algorithm.
@@ -3538,7 +3538,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_isres
 
     .. code-block::
-      
+
         nlopt_isres
 
     Optimize a scalar function using the ISRES algorithm.
@@ -3567,7 +3567,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 .. dropdown:: nlopt_crs2_lm
 
     .. code-block::
-      
+
         nlopt_crs2_lm
 
     Optimize a scalar function using the CRS2_LM algorithm.
