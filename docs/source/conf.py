@@ -48,6 +48,7 @@ extensions = [
     "nbsphinx",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
+    "sphinx_copybutton",
 ]
 
 bibtex_bibfiles = ["refs.bib"]
