@@ -14,7 +14,7 @@ a terminal or shell:
     conda config --add channels conda-forge  
 
 .. code-block::
-    
+
     conda install estimagic
 
 The first line adds conda-forge to your conda channels. This is necessary for
@@ -51,7 +51,9 @@ To enable all algorithms at once, do the following:
 
 .. code-block::
 
-    conda install petsc4py (Not available on Windows)
+    conda install petsc4py 
+
+*Note*: ```petsc4py``` is not available on Windows.
 
 .. code-block::
 
@@ -63,4 +65,6 @@ To enable all algorithms at once, do the following:
 
 .. code-block::
 
-    pip install fides>=0.7.4 (Make sure you have at least 0.7.1)
+    pip install fides>=0.7.4
+
+*Note*: Make sure you have at least 0.7.1.
