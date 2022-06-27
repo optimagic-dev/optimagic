@@ -12,6 +12,7 @@ from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
+from estimagic.utilities import get_rng
 from pybaum import leaf_names
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten
@@ -43,7 +44,9 @@ def bootstrap(
             If len(existing_outcomes) >= n_draws, a random subset of existing_outcomes
             is used.
         cluster_by (str): Column name of variable to cluster by or None.
-        seeds (numpy.array): Array of seeds for bootstrap samples, default is none.
+        seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
+            numpy.random.default_rng is used seeded with seed. If seed is already a
+            Generator instance then that instance is used.
         n_cores (int): number of jobs for parallelization.
         error_handling (str): One of "continue", "raise". Default "continue" which means
             that bootstrap estimates are only calculated for those samples where no
@@ -57,6 +60,7 @@ def bootstrap(
             statistics, the covariance matrix, and estimated boostrap outcomes.
     """
     if callable(outcome):
+
         check_inputs(data=data, cluster_by=cluster_by)
 
         if outcome_kwargs is not None:
@@ -73,6 +77,7 @@ def bootstrap(
     else:
         raise ValueError("existing_result must be None or a BootstrapResult.")
 
+    rng = get_rng(seed)
     n_existing = len(existing_outcomes)
 
     if n_draws > n_existing:
@@ -80,7 +85,7 @@ def bootstrap(
             data=data,
             outcome=outcome,
             cluster_by=cluster_by,
-            seed=seed,
+            rng=rng,
             n_draws=n_draws - n_existing,
             n_cores=n_cores,
             error_handling=error_handling,
@@ -89,8 +94,7 @@ def bootstrap(
 
         all_outcomes = existing_outcomes + new_outcomes
     else:
-        np.random.seed(seed)
-        random_indices = np.random.choice(n_existing, n_draws, replace=False)
+        random_indices = rng.choice(n_existing, n_draws, replace=False)
         all_outcomes = [existing_outcomes[k] for k in random_indices]
 
     # ==================================================================================

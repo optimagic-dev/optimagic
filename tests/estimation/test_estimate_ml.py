@@ -76,7 +76,14 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
     aaae(results.params["cov"], true_params["cov"], decimal=1)
 
     # test free_mask of summary
-    summary = results.summary()
+    expected_msg = (
+        "seed is set to None and constraints are transforming. "
+        "This leads to randomness in the result. To avoid random behavior, "
+        "choose a non-None seed."
+    )
+    with pytest.warns(UserWarning, match=expected_msg):
+        summary = results.summary()
+
     assert np.all(summary["mean"]["free"].values == np.array([False, True, True]))
     assert np.all(summary["cov"]["free"].values)
 
@@ -443,5 +450,9 @@ def test_caching(normal_inputs):
     )
 
     assert got._cache == {}
+
     cov = got.cov(method="robust", return_type="array")
+    assert got._cache == {}
+
+    cov = got.cov(method="robust", return_type="array", seed=0)
     assert_array_equal(list(got._cache.values())[0], cov)

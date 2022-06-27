@@ -23,7 +23,6 @@ def run_benchmark(
     batch_evaluator="joblib",
     n_cores=1,
     error_handling="continue",
-    seed=None,
     max_criterion_evaluations=1_000,
     disable_convergence=True,
 ):
@@ -60,8 +59,6 @@ def run_benchmark(
             the name of the optimize options. The values are dicts with the entries:
             "params_history", "criterion_history", "time_history" and "solution".
     """
-    np.random.seed(seed)
-
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(
             batch_evaluators, f"{batch_evaluator}_batch_evaluator"

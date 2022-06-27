@@ -6,8 +6,13 @@ import pytest
 from estimagic.inference.bootstrap_ci import calculate_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.parameters.tree_registry import get_registry
-from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_just_flatten
+
+
+def aaae(obj1, obj2, decimal=6):
+    arr1 = np.asarray(obj1)
+    arr2 = np.asarray(obj2)
+    np.testing.assert_array_almost_equal(arr1, arr2, decimal=decimal)
 
 
 @pytest.fixture

@@ -304,3 +304,23 @@ def isscalar(element):
         return True
     else:
         return False
+
+
+def get_rng(seed):
+    """Construct a random number generator.
+
+    seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
+        numpy.random.default_rng is used seeded with seed. If seed is already a
+        Generator instance then that instance is used.
+
+    Returns:
+        numpy.random.Generator: The random number generator.
+
+    """
+    if isinstance(seed, np.random.Generator):
+        rng = seed
+    elif seed is None or isinstance(seed, int):
+        rng = np.random.default_rng(seed)
+    else:
+        raise TypeError("seed type must be in {None, int, numpy.random.Generator}.")
+    return rng

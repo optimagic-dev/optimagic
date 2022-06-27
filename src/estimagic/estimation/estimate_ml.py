@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from dataclasses import field
 from functools import cached_property
@@ -7,7 +8,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from estimagic.config import DEFAULT_SEED
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.differentiation.derivatives import second_derivative
 from estimagic.exceptions import InvalidFunctionError
@@ -36,6 +36,7 @@ from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.space_conversion import InternalParams
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from estimagic.utilities import get_rng
 from estimagic.utilities import to_pickle
 
 
@@ -66,7 +67,7 @@ def estimate_ml(
     While we have good defaults, you can still configure each aspect of each step
     via the optional arguments of this function. If you find it easier to do the
     maximization separately, you can do so and just provide the optimal parameters as
-    ``params`` and set ``optimize_options=False``.
+    ``params`` and set ``optimize_options=False``
 
     Args:
         loglike (callable): Likelihood function that takes a params (and potentially
@@ -420,6 +421,13 @@ class LikelihoodResult:
             )
             if seed is not None:
                 self._cache[args] = free_cov
+            elif self._converter.has_transforming_constraints:
+                msg = (
+                    "seed is set to None and constraints are transforming. This leads "
+                    "to randomness in the result. To avoid random behavior, choose a "
+                    "non-None seed."
+                )
+                warnings.warn(msg)
 
         return free_cov
 
@@ -472,7 +480,7 @@ class LikelihoodResult:
         method="jacobian",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate standard errors.
 
@@ -522,7 +530,7 @@ class LikelihoodResult:
         n_samples=10_000,
         bounds_handling="clip",
         return_type="pytree",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate the variance-covariance (matrix) of the estimated parameters.
 
@@ -574,7 +582,7 @@ class LikelihoodResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Create a summary of estimation results.
 
@@ -625,7 +633,7 @@ class LikelihoodResult:
         n_samples=10_000,
         ci_level=0.95,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate confidence intervals.
 
@@ -683,7 +691,7 @@ class LikelihoodResult:
         method="jacobian",
         n_samples=10_000,
         bounds_handling="clip",
-        seed=DEFAULT_SEED,
+        seed=None,
     ):
         """Calculate p-values.
 
@@ -765,12 +773,13 @@ def _calculate_free_cov_ml(
             jac=internal_jacobian, hess=internal_hessian, design_info=design_info
         )
 
-    np.random.seed(seed)
+    rng = get_rng(seed)
 
     free_cov = transform_covariance(
         internal_params=internal_estimates,
         internal_cov=int_cov,
         converter=converter,
+        rng=rng,
         n_samples=n_samples,
         bounds_handling=bounds_handling,
     )

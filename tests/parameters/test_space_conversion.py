@@ -5,6 +5,7 @@ from estimagic.parameters.space_conversion import _multiply_from_left
 from estimagic.parameters.space_conversion import _multiply_from_right
 from estimagic.parameters.space_conversion import get_space_converter
 from estimagic.parameters.space_conversion import InternalParams
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -295,8 +296,8 @@ def test_space_converter_with_params(constraints, params, expected_internal):
 
 @pytest.mark.parametrize("seed", range(5))
 def test_multiply_from_left_and_right(seed):
-    np.random.seed(seed)
-    mat_list = [np.random.uniform(size=(10, 10)) for i in range(5)]
+    rng = get_rng(seed)
+    mat_list = [rng.uniform(size=(10, 10)) for i in range(5)]
     a, b, c, d, e = mat_list
 
     expected = a @ b @ c @ d @ e

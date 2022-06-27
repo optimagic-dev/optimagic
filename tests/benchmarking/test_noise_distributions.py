@@ -3,11 +3,11 @@ import pandas as pd
 import pytest
 from estimagic.benchmarking.get_benchmark_problems import _sample_from_distribution
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
+from estimagic.utilities import get_rng
 
 
 @pytest.mark.parametrize("distribution", NOISE_DISTRIBUTIONS)
 def test_sample_from_distribution(distribution):
-    np.random.seed(1234)
     mean = 0.33
     std = 0.55
     correlation = 0.44
@@ -17,6 +17,7 @@ def test_sample_from_distribution(distribution):
         std=std,
         size=(100_000, 5),
         correlation=correlation,
+        rng=get_rng(seed=0),
     )
     calculated_mean = sample.mean()
     calculated_std = sample.std()

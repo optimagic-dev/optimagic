@@ -10,6 +10,9 @@ releases are available on `Anaconda.org
 0.3.4
 -----
 
+- :gh:`364` Use local random number generators (:ghuser:`timmens`)
+- :gh:`363` Fix pounders test cases (:ghuser:`segsell`)
+- :gh:`361` Update estimation code (:ghuser:`timmens`)
 - :gh:`360` Update results object documentation (:ghuser:`timmens`)
 
 

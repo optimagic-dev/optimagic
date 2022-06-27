@@ -34,11 +34,12 @@ def expected():
 
     summary = np.array(
         [
-            [2.5, 0.558457, 1.5, 3.5, np.nan, np.nan],
-            [7.0, 0.926087, 5.5, 9.0, np.nan, np.nan],
+            [2.5, 0.576222, 1.5, 3.5, np.nan, np.nan],
+            [7.0, 0.956896, 5.5, 9.0, np.nan, np.nan],
         ]
     )
-    cov = np.array([[0.311874, -0.492926], [-0.492926, 0.857637]])
+
+    cov = np.array([[0.332032, -0.528158], [-0.528158, 0.915651]])
     p_values = np.array([0.0, 0.0])
     ci_lower = np.array([1.5, 5.5])
     ci_upper = np.array([3.5, 9.0])
@@ -69,8 +70,8 @@ def seaborn_example():
     df = df.replace({"time": replacements})
     df["constant"] = 1
 
-    lower_ci = pd.Series([90.756341, 0.113098], index=["constant", "time"])
-    upper_ci = pd.Series([96.598375, 0.617271], index=["constant", "time"])
+    lower_ci = pd.Series([90.709236, 0.151193], index=["constant", "time"])
+    upper_ci = pd.Series([96.827145, 0.627507], index=["constant", "time"])
     expected = {"lower_ci": lower_ci, "upper_ci": upper_ci}
 
     out["df"] = df
