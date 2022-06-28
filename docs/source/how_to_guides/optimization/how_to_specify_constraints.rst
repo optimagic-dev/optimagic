@@ -222,7 +222,7 @@ flat numpy array are explained in the next section.
 
         >>> res = em.minimize(
         ...    criterion=criterion,
-        ...    params=np.array([0.6, 0.2, 0.1, 0.1, 1, 1]),
+        ...    params=np.array([0.5, 0.2, 0.2, 0.1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 1, 2, 3], "type": "probability"},
         ...    )
@@ -230,7 +230,7 @@ flat numpy array are explained in the next section.
     This yields again the correct result:
 
     >>> res.params.round(3)
-    array([0.535, 0.334, 0.131, 0.   , 0.2  , 0.   ])
+    array([ 0.576,  0.309,  0.115,  0.   ,  0.2  , -0.   ])
 
 
 
