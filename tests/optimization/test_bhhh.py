@@ -5,16 +5,17 @@ import numpy as np
 import pytest
 import statsmodels.api as sm
 from estimagic.optimization.bhhh import bhhh_internal
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy.stats import norm
 
 
 def generate_test_data():
-    np.random.seed(12)
+    rng = get_rng(seed=12)
 
     num_observations = 5000
-    x1 = np.random.multivariate_normal([0, 0], [[1, 0.75], [0.75, 1]], num_observations)
-    x2 = np.random.multivariate_normal([1, 4], [[1, 0.75], [0.75, 1]], num_observations)
+    x1 = rng.multivariate_normal([0, 0], [[1, 0.75], [0.75, 1]], num_observations)
+    x2 = rng.multivariate_normal([1, 4], [[1, 0.75], [0.75, 1]], num_observations)
 
     endog = np.hstack((np.zeros(num_observations), np.ones(num_observations)))
 

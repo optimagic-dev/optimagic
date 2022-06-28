@@ -53,9 +53,9 @@ def test_run_benchmark_list_options():
     )
 
     expected_keys = {
-        ("linear_full_rank_good_start", "scipy_lbfgsb"),
+        ("helical_valley_good_start", "scipy_lbfgsb"),
         ("rosenbrock_good_start", "scipy_lbfgsb"),
-        ("linear_full_rank_good_start", "scipy_neldermead"),
+        ("helical_valley_good_start", "scipy_neldermead"),
         ("rosenbrock_good_start", "scipy_neldermead"),
     }
     assert set(result) == expected_keys
@@ -171,7 +171,7 @@ prolems_dict_input = {
         "start_x": {"a": 1, "b": np.ones((2, 2, 2))},
         "solution_x": {
             "a": linear_full_rank_solution_x[0],
-            "b": linear_full_rank_solution_x[1:].reshape(2, 2, 2),
+            "b": np.array(linear_full_rank_solution_x[1:]).reshape(2, 2, 2),
         },
         "start_criterion": 72,
         "solution_criterion": 36,

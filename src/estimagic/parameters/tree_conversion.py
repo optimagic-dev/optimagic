@@ -5,6 +5,7 @@ from estimagic.exceptions import InvalidFunctionError
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
+from estimagic.utilities import isscalar
 from pybaum import leaf_names
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten
@@ -130,7 +131,7 @@ def _get_params_unflatten(registry, treedef):
 
 def _get_func_flatten(registry, func_eval, primary_key):
 
-    if np.isscalar(func_eval):
+    if isscalar(func_eval):
         if primary_key == "value":
             func_flatten = lambda func_eval: float(func_eval)
         else:

@@ -3,8 +3,6 @@ from pathlib import Path
 import plotly.express as px
 
 
-DEFAULT_SEED = 5471
-
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
 EXAMPLE_DIR = Path(__file__).parent / "examples"
@@ -81,13 +79,6 @@ except ImportError:
     IS_JAX_INSTALLED = False
 else:
     IS_JAX_INSTALLED = True
-
-try:
-    import seaborn  # noqa: F401
-except ImportError:
-    IS_SEABORN_INSTALLED = False
-else:
-    IS_SEABORN_INSTALLED = True
 
 
 # =================================================================================

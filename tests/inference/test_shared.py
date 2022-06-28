@@ -1,15 +1,20 @@
+from typing import NamedTuple
+
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.shared import calculate_inference_quantities
+from estimagic.inference.shared import _to_numpy
+from estimagic.inference.shared import calculate_estimation_summary
+from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import process_pandas_arguments
-from estimagic.parameters.tree_conversion import FlatParams
+from estimagic.inference.shared import transform_covariance
+from estimagic.inference.shared import transform_free_cov_to_cov
+from estimagic.inference.shared import transform_free_values_to_params_tree
 from estimagic.parameters.tree_registry import get_registry
-from pandas.testing import assert_frame_equal
+from estimagic.utilities import get_rng
+from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import leaf_names
 from pybaum import tree_equal
-from pybaum import tree_just_flatten
-from pybaum import tree_map
 
 
 @pytest.fixture
@@ -40,113 +45,232 @@ def test_process_pandas_arguments_incompatible_names(inputs):
         process_pandas_arguments(**inputs)
 
 
-def test_calculate_inference_quantities():
-    """Test calculate inference quantities for many relevant cases."""
+def _from_internal(x, return_type="flat"):
+    return x
 
-    ####################################################################################
-    # create test inputs
-    ####################################################################################
 
-    # estimates
-    estimates = [
-        0,
-        {
-            "a": 1,
-            "b": (2, 3),
-            "c": np.array([4, 5]),
-            "d": pd.Series([6, 7], index=["a", "b"]),
-            "e": pd.DataFrame(
-                {"col1": [8, 9, 10], "col2": [11, 12, 13]},
-                index=pd.MultiIndex.from_tuples([("a", "b"), ("c", "d"), ("e", "f")]),
-            ),
-            "f": np.array([[15, 16], [17, 18]]),
-            "g": pd.DataFrame({"value": [19, 20], "col2": [-1, -1]}, index=["g", "h"]),
+class FakeConverter(NamedTuple):
+    has_transforming_constraints: bool = True
+    params_from_internal: callable = _from_internal
+
+
+class FakeInternalParams(NamedTuple):
+    values: np.ndarray = np.arange(2)
+    lower_bounds: np.ndarray = np.full(2, -np.inf)
+    upper_bounds: np.ndarray = np.full(2, np.inf)
+    free_mask: np.ndarray = np.array([True, True])
+
+
+def test_transform_covariance_no_bounds():
+    internal_cov = np.eye(2)
+
+    converter = FakeConverter()
+    internal_params = FakeInternalParams()
+
+    got = transform_covariance(
+        internal_params=internal_params,
+        internal_cov=internal_cov,
+        converter=converter,
+        rng=get_rng(seed=5687),
+        n_samples=100,
+        bounds_handling="ignore",
+    )
+
+    expected_sample = get_rng(seed=5687).multivariate_normal(
+        np.arange(2), np.eye(2), 100
+    )
+    expected = np.cov(expected_sample, rowvar=False)
+
+    aaae(got, expected)
+
+
+def test_transform_covariance_with_clipping():
+    rng = get_rng(seed=1234)
+
+    internal_cov = np.eye(2)
+
+    converter = FakeConverter()
+    internal_params = FakeInternalParams(
+        lower_bounds=np.ones(2), upper_bounds=np.ones(2)
+    )
+
+    got = transform_covariance(
+        internal_params=internal_params,
+        internal_cov=internal_cov,
+        converter=converter,
+        rng=rng,
+        n_samples=100,
+        bounds_handling="clip",
+    )
+
+    expected = np.zeros((2, 2))
+
+    aaae(got, expected)
+
+
+def test_transform_covariance_invalid_bounds():
+    rng = get_rng(seed=1234)
+
+    internal_cov = np.eye(2)
+
+    converter = FakeConverter()
+    internal_params = FakeInternalParams(
+        lower_bounds=np.ones(2), upper_bounds=np.ones(2)
+    )
+
+    with pytest.raises(ValueError):
+        transform_covariance(
+            internal_params=internal_params,
+            internal_cov=internal_cov,
+            converter=converter,
+            rng=rng,
+            n_samples=10,
+            bounds_handling="raise",
+        )
+
+
+class FakeFreeParams(NamedTuple):
+    free_mask: np.ndarray = np.array([True, False, True])
+    all_names: list = ["a", "b", "c"]
+    free_names: list = ["a", "c"]
+
+
+def test_transform_free_cov_to_cov_pytree():
+    got = transform_free_cov_to_cov(
+        free_cov=np.eye(2),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+        return_type="pytree",
+    )
+
+    assert got["a"]["a"] == 1
+    assert got["c"]["c"] == 1
+    assert got["a"]["c"] == 0
+    assert got["c"]["a"] == 0
+    assert np.isnan(got["a"]["b"])
+
+
+def test_transform_free_cov_to_cov_array():
+    got = transform_free_cov_to_cov(
+        free_cov=np.eye(2),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+        return_type="array",
+    )
+
+    expected = np.array([[1, np.nan, 0], [np.nan, np.nan, np.nan], [0, np.nan, 1]])
+
+    assert np.array_equal(got, expected, equal_nan=True)
+
+
+def test_transform_free_cov_to_cov_dataframe():
+    got = transform_free_cov_to_cov(
+        free_cov=np.eye(2),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+        return_type="dataframe",
+    )
+
+    expected = np.array([[1, np.nan, 0], [np.nan, np.nan, np.nan], [0, np.nan, 1]])
+
+    assert np.array_equal(got.to_numpy(), expected, equal_nan=True)
+    assert isinstance(got, pd.DataFrame)
+    assert list(got.columns) == list("abc")
+    assert list(got.index) == list("abc")
+
+
+def test_transform_free_cov_to_cov_invalid():
+    with pytest.raises(ValueError):
+        transform_free_cov_to_cov(
+            free_cov=np.eye(2),
+            free_params=FakeFreeParams(),
+            params={"a": 1, "b": 2, "c": 3},
+            return_type="bla",
+        )
+
+
+def test_transform_free_values_to_params_tree():
+    got = transform_free_values_to_params_tree(
+        values=np.array([10, 11]),
+        free_params=FakeFreeParams(),
+        params={"a": 1, "b": 2, "c": 3},
+    )
+
+    assert got["a"] == 10
+    assert got["c"] == 11
+    assert np.isnan(got["b"])
+
+
+def test_get_derivative_case():
+    assert get_derivative_case(lambda x: True) == "closed-form"
+    assert get_derivative_case(False) == "skip"
+    assert get_derivative_case(None) == "numerical"
+
+
+def test_to_numpy_invalid():
+    with pytest.raises(TypeError):
+        _to_numpy(15)
+
+
+def test_calculate_estimation_summary():
+    # input data
+    summary_data = {
+        "value": {
+            "a": pd.Series([0], index=["i"]),
+            "b": pd.DataFrame({"c1": [1], "c2": [2]}),
         },
-    ]
+        "standard_error": {
+            "a": pd.Series([0.1], index=["i"]),
+            "b": pd.DataFrame({"c1": [0.2], "c2": [0.3]}),
+        },
+        "ci_lower": {
+            "a": pd.Series([-0.2], index=["i"]),
+            "b": pd.DataFrame({"c1": [-0.4], "c2": [-0.6]}),
+        },
+        "ci_upper": {
+            "a": pd.Series([0.2], index=["i"]),
+            "b": pd.DataFrame({"c1": [0.4], "c2": [0.6]}),
+        },
+        "p_value": {
+            "a": pd.Series([0.001], index=["i"]),
+            "b": pd.DataFrame({"c1": [0.2], "c2": [0.07]}),
+        },
+        "free": np.array([True, True, True]),
+    }
 
-    # flat_estimates
     registry = get_registry(extended=True)
-    estimates_flat = tree_just_flatten(estimates, registry=registry)
-    names = leaf_names(estimates, registry=registry)
+    names = leaf_names(summary_data["value"], registry=registry)
+    free_names = names
 
-    flat_estimates = FlatParams(
-        values=estimates_flat, lower_bounds=None, upper_bounds=None, names=names
-    )
+    # function call
+    summary = calculate_estimation_summary(summary_data, names, free_names)
 
-    # free_cov
-    free_cov = pd.DataFrame(
-        np.diag(np.arange(len(estimates_flat))), index=names, columns=names
-    )
+    # expectations
+    expectation = {
+        "a": pd.DataFrame(
+            {
+                "value": 0,
+                "standard_error": 0.1,
+                "ci_lower": -0.2,
+                "ci_upper": 0.2,
+                "p_value": 0.001,
+                "free": True,
+                "stars": "***",
+            },
+            index=["i"],
+        ),
+        "b": pd.DataFrame(
+            {
+                "value": [1, 2],
+                "standard_error": [0.2, 0.3],
+                "ci_lower": [-0.4, -0.6],
+                "ci_upper": [0.4, 0.6],
+                "p_value": [0.2, 0.7],
+                "free": [True, True],
+                "stars": ["", "*"],
+            },
+            index=pd.MultiIndex.from_tuples([(0, "c1"), (0, "c2")]),
+        ),
+    }
 
-    # ci_level
-    ci_level = 0  # implies that ci_lower = value = ci_upper
-
-    ####################################################################################
-    # create expected output
-    ####################################################################################
-
-    df = pd.DataFrame(
-        {
-            "value": flat_estimates.values,
-            "standard_error": np.sqrt(np.diag(free_cov)),
-            "ci_lower": flat_estimates.values,
-            "ci_upper": flat_estimates.values,
-        },
-        index=names,
-    )
-    df[["ci_lower", "ci_upper"]] = df[["ci_lower", "ci_upper"]].astype(float)
-
-    df_c = df.loc[["1_c_0", "1_c_1"]]
-    df_c.index = pd.RangeIndex(stop=2)
-
-    df_e = df.loc[
-        [
-            "1_e_a_b_col1",
-            "1_e_a_b_col2",
-            "1_e_c_d_col1",
-            "1_e_c_d_col2",
-            "1_e_e_f_col1",
-            "1_e_e_f_col2",
-        ]
-    ]
-    df_e.index = pd.MultiIndex.from_tuples(
-        [
-            ("a", "b", "col1"),
-            ("a", "b", "col2"),
-            ("c", "d", "col1"),
-            ("c", "d", "col2"),
-            ("e", "f", "col1"),
-            ("e", "f", "col2"),
-        ]
-    )
-
-    df_f = df.loc[["1_f_0_0", "1_f_0_1", "1_f_1_0", "1_f_1_1"]]
-    df_f.index = pd.MultiIndex.from_tuples([(0, 0), (0, 1), (1, 0), (1, 1)])
-
-    expected = [
-        df.loc[["0"]].set_axis([0]),
-        {
-            "a": df.loc[["1_a"]].set_axis([0]),
-            "b": (df.loc[["1_b_0"]].set_axis([0]), df.loc[["1_b_1"]].set_axis([0])),
-            "c": df_c,
-            "d": df.loc[["1_d_a", "1_d_b"]].set_axis(["a", "b"]),
-            "e": df_e,
-            "f": df_f,
-            "g": df.loc[["1_g_g", "1_g_h"]].set_axis(["g", "h"]),
-        },
-    ]
-
-    ####################################################################################
-    # compute and compare
-    ####################################################################################
-
-    got = calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level)
-
-    # drop irrelevant columns
-    got = tree_map(lambda df: df.drop(columns=["stars", "p_value"]), got)
-
-    # for debugging purposes we first compare each leaf
-    for got_leaf, exp_leaf in zip(tree_just_flatten(got), tree_just_flatten(expected)):
-        assert_frame_equal(got_leaf, exp_leaf)
-
-    assert tree_equal(expected, got)
+    tree_equal(summary, expectation)

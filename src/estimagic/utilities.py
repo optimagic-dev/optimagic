@@ -1,10 +1,15 @@
 import warnings
 from hashlib import sha1
 
+import cloudpickle
 import numpy as np
-from fuzzywuzzy import process as fw_process
+import pandas as pd
 from scipy.linalg import ldl
 from scipy.linalg import qr
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=UserWarning)
+    from fuzzywuzzy import process as fw_process
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -125,7 +130,9 @@ def propose_alternatives(requested, possibilities, number=3):
 
     """
     number = min(number, len(possibilities))
-    proposals_w_probs = fw_process.extract(requested, possibilities, limit=number)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        proposals_w_probs = fw_process.extract(requested, possibilities, limit=number)
     proposals = [proposal[0] for proposal in proposals_w_probs]
 
     return proposals
@@ -277,3 +284,43 @@ def calculate_trustregion_initial_radius(x):
     """
     x_norm = np.linalg.norm(x, ord=np.inf)
     return 0.1 * max(x_norm, 1)
+
+
+def to_pickle(obj, path):
+    with open(path, "wb") as buffer:
+        cloudpickle.dump(obj, buffer)
+
+
+def read_pickle(path):
+    return pd.read_pickle(path)
+
+
+def isscalar(element):
+    """Jax aware replacement for np.isscalar."""
+    if np.isscalar(element):
+        return True
+    # call anything a scalar that says it has 0 dimensions
+    elif getattr(element, "ndim", -1) == 0:
+        return True
+    else:
+        return False
+
+
+def get_rng(seed):
+    """Construct a random number generator.
+
+    seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
+        numpy.random.default_rng is used seeded with seed. If seed is already a
+        Generator instance then that instance is used.
+
+    Returns:
+        numpy.random.Generator: The random number generator.
+
+    """
+    if isinstance(seed, np.random.Generator):
+        rng = seed
+    elif seed is None or isinstance(seed, int):
+        rng = np.random.default_rng(seed)
+    else:
+        raise TypeError("seed type must be in {None, int, numpy.random.Generator}.")
+    return rng

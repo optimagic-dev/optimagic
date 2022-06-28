@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.parameters.kernel_transformations import cov_matrix_to_sdcorr_params
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 to_test = list(product(range(10, 30, 5), [1234, 5471]))
@@ -13,16 +14,16 @@ to_test = list(product(range(10, 30, 5), [1234, 5471]))
 
 def get_internal_cholesky(dim, seed=0):
     """Return random internal cholesky values given dimension."""
-    np.random.seed(seed)
-    chol = np.tril(np.random.randn(dim, dim))
+    rng = get_rng(seed)
+    chol = np.tril(rng.normal(size=(dim, dim)))
     internal = chol[np.tril_indices(len(chol))]
     return internal
 
 
 def get_external_covariance(dim, seed=0):
     """Return random external covariance values given dimension."""
-    np.random.seed(seed)
-    data = np.random.randn(dim, 1000)
+    rng = get_rng(seed)
+    data = rng.normal(size=(dim, 1000))
     cov = np.cov(data)
     external = cov[np.tril_indices(dim)]
     return external
@@ -30,8 +31,8 @@ def get_external_covariance(dim, seed=0):
 
 def get_internal_probability(dim, seed=0):
     """Return random internal positive values given dimension."""
-    np.random.seed(seed)
-    internal = np.random.uniform(size=dim)
+    rng = get_rng(seed)
+    internal = rng.uniform(size=dim)
     return internal
 
 
@@ -44,8 +45,8 @@ def get_external_probability(dim, seed=0):
 
 def get_external_sdcorr(dim, seed=0):
     """Return random external sdcorr values given dimension."""
-    np.random.seed(seed)
-    data = np.random.randn(dim, 1000)
+    rng = get_rng(seed)
+    data = rng.normal(size=(dim, 1000))
     cov = np.cov(data)
     external = cov_matrix_to_sdcorr_params(cov)
     return external

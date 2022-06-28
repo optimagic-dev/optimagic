@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def get_bootstrap_indices(data, cluster_by=None, seed=None, n_draws=1000):
+def get_bootstrap_indices(data, rng, cluster_by=None, n_draws=1000):
     """Draw positional indices for the construction of bootstrap samples.
 
     Storing the positional indices instead of the full bootstrap samples saves a lot
@@ -10,22 +10,20 @@ def get_bootstrap_indices(data, cluster_by=None, seed=None, n_draws=1000):
 
     Args:
         data (pandas.DataFrame): original dataset.
+        rng (numpy.random.Generator): A random number generator.
         cluster_by (str): column name of the variable to cluster by.
-        seed (int): Random seed.
         n_draws (int): number of draws, only relevant if seeds is None.
 
     Returns:
         list: list of numpy arrays with positional indices
 
     """
-    np.random.seed(seed)
-
     n_obs = len(data)
     if cluster_by is None:
-        bootstrap_indices = list(np.random.randint(0, n_obs, size=(n_draws, n_obs)))
+        bootstrap_indices = list(rng.integers(0, n_obs, size=(n_draws, n_obs)))
     else:
         clusters = data[cluster_by].unique()
-        drawn_clusters = np.random.choice(
+        drawn_clusters = rng.choice(
             clusters, size=(n_draws, len(clusters)), replace=True
         )
 
@@ -50,7 +48,7 @@ def _convert_cluster_ids_to_indices(cluster_col, drawn_clusters):
     return bootstrap_indices
 
 
-def get_bootstrap_samples(data, cluster_by=None, seed=None, n_draws=1000):
+def get_bootstrap_samples(data, rng, cluster_by=None, n_draws=1000):
     """Draw bootstrap samples.
 
     If you have memory issues you should use get_bootstrap_indices instead and construct
@@ -58,8 +56,8 @@ def get_bootstrap_samples(data, cluster_by=None, seed=None, n_draws=1000):
 
     Args:
         data (pandas.DataFrame): original dataset.
+        rng (numpy.random.Generator): A random number generator.
         cluster_by (str): column name of the variable to cluster by.
-        seed (int): Random seed.
         n_draws (int): number of draws, only relevant if seeds is None.
 
     Returns:
@@ -68,8 +66,8 @@ def get_bootstrap_samples(data, cluster_by=None, seed=None, n_draws=1000):
     """
     indices = get_bootstrap_indices(
         data=data,
+        rng=rng,
         cluster_by=cluster_by,
-        seed=seed,
         n_draws=n_draws,
     )
     datasets = _get_bootstrap_samples_from_indices(data=data, bootstrap_indices=indices)

@@ -14,8 +14,7 @@ def params():
 
 @pytest.fixture
 def upper_bounds():
-    df = pd.DataFrame({"value": [10, 10], "lower_bound": [0, 0]}, index=["c", "d"])
-    upper = ([np.inf, np.array([11, np.inf]), {"a": df, "b": np.inf}], 100)
+    upper = ([None, np.array([11, np.inf]), None], 100)
     return upper
 
 

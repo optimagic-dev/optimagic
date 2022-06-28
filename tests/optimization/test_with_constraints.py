@@ -6,9 +6,12 @@
 - closed form and numerical derivatives
 
 """
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
+import statsmodels.api as sm
 from estimagic.examples.criterion_functions import rosenbrock_dict_criterion
 from estimagic.examples.criterion_functions import rosenbrock_gradient
 from estimagic.examples.criterion_functions import (
@@ -21,11 +24,12 @@ from estimagic.examples.criterion_functions import sos_jacobian
 from estimagic.examples.criterion_functions import sos_ls_jacobian
 from estimagic.examples.criterion_functions import trid_gradient
 from estimagic.examples.criterion_functions import trid_scalar_criterion
+from estimagic.examples.logit import logit_loglike
 from estimagic.exceptions import InvalidConstraintError
 from estimagic.exceptions import InvalidParamsError
+from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
-
 
 FUNC_INFO = {
     "sos": {
@@ -146,6 +150,7 @@ def test_constrained_minimization(
         algorithm=algorithm,
         derivative=derivative,
         constraints=constraints,
+        algo_options={"convergence.relative_criterion_tolerance": 1e-12},
     )
 
     if params_type == "pandas":
@@ -186,11 +191,11 @@ def test_three_independent_constraints():
         params=params,
         algorithm="scipy_lbfgsb",
         constraints=constraints,
+        algo_options={"convergence.relative_criterion_tolerance": 1e-12},
     )
-
     expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
 
-    aaae(res.params, expected, decimal=5)
+    aaae(res.params, expected, decimal=4)
 
 
 INVALID_CONSTRAINT_COMBIS = [
@@ -213,3 +218,89 @@ def test_incompatible_constraints_raise_errors(constraints):
             algorithm="scipy_lbfgsb",
             constraints=constraints,
         )
+
+
+def test_bug_from_copenhagen_presentation():
+    # Make sure maximum of work hours is optimal
+    def u(params):
+        return params["work"]["hours"] ** 2
+
+    start_params = {
+        "work": {"hourly_wage": 25.5, "hours": 2_000},
+        "time_budget": 24 * 7 * 365,
+    }
+
+    def return_all_but_working_hours(params):
+        out = deepcopy(params)
+        del out["work"]["hours"]
+        return out
+
+    res = maximize(
+        criterion=u,
+        params=start_params,
+        algorithm="scipy_lbfgsb",
+        constraints=[
+            {"selector": return_all_but_working_hours, "type": "fixed"},
+            {
+                "selector": lambda p: [p["work"]["hours"], p["time_budget"]],
+                "type": "increasing",
+            },
+        ],
+        lower_bounds={"work": {"hours": 0}},
+    )
+
+    assert np.allclose(res.params["work"]["hours"], start_params["time_budget"])
+
+
+def test_constraint_inheritance():
+    """Test that probability constraint applies both sets of parameters in a
+    pairwise equality constraint, no matter to which set they were applied
+    originally.
+
+    """
+    for loc in [[0, 1], [2, 3]]:
+        res = minimize(
+            criterion=lambda x: x @ x,
+            params=np.array([0.1, 0.9, 0.9, 0.1]),
+            algorithm="scipy_lbfgsb",
+            constraints=[
+                {"locs": [[0, 1], [3, 2]], "type": "pairwise_equality"},
+                {"loc": loc, "type": "probability"},
+            ],
+        )
+        aaae(res.params, [0.5] * 4)
+
+
+def test_invalid_start_params():
+    def criterion(x):
+        return np.dot(x, x)
+
+    x = np.arange(3)
+
+    with pytest.raises(InvalidParamsError):
+        minimize(
+            criterion,
+            params=x,
+            algorithm="scipy_lbfgsb",
+            constraints=[{"loc": [1, 2], "type": "probability"}],
+        )
+
+
+def test_covariance_constraint_in_2_by_2_case():
+    spector_data = sm.datasets.spector.load_pandas()
+    spector_data.exog = sm.add_constant(spector_data.exog)
+    x_df = sm.add_constant(spector_data.exog)
+
+    start_params = np.array([-10, 2, 0.2, 2])
+    kwargs = {"y": spector_data.endog, "x": x_df.to_numpy()}
+
+    result = maximize(
+        criterion=logit_loglike,
+        criterion_kwargs=kwargs,
+        params=start_params,
+        algorithm="scipy_lbfgsb",
+        constraints={"loc": [1, 2, 3], "type": "covariance"},
+    )
+
+    expected = np.array([-13.0213351, 2.82611417, 0.09515704, 2.37867869])
+    aaae(result.params, expected, decimal=4)
