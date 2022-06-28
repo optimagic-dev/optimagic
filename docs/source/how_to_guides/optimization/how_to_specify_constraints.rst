@@ -231,7 +231,7 @@ flat numpy array are explained in the next section.
 
     .. code-block:: python
 
-        >>> res.params.round(2) # doctest: +NORMALIZE_WHITESPACE
+        >>> res.params.round(2) # doctest: +SKIP
         array([0.53, 0.33, 0.13, 0.  , 0.2 , 0.  ])
 
 
