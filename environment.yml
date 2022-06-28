@@ -16,7 +16,7 @@ dependencies:
   - click
   - conda-build
   - conda-verify
-  - cyipopt<0.3.0
+  - cyipopt
   - fuzzywuzzy
   - joblib
   - cloudpickle
