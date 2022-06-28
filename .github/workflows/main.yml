@@ -42,7 +42,7 @@ jobs:
         run: tox -e pytest-linux -- --cov-report=xml --cov=./
 
       - name: Upload coverage report.
-        if: runner.os == 'Linux' && matrix.python-version == '3.8'
+        if: runner.os == 'Linux' && matrix.python-version == '3.9'
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
