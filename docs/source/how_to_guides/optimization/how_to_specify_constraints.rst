@@ -222,15 +222,17 @@ flat numpy array are explained in the next section.
 
         >>> res = em.minimize(
         ...    criterion=criterion,
-        ...    params=np.array([0.5, 0.2, 0.2, 0.1, 1, 1]),
+        ...    params=np.array([0.3, 0.2, 0.25, 0.25, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 1, 2, 3], "type": "probability"},
         ...    )
 
     This yields again the correct result:
 
-    >>> res.params.round(3)
-    array([ 0.576,  0.309,  0.115,  0.   ,  0.2  , -0.   ])
+    .. code-block:: python
+
+        >>> res.params.round(2) # doctest: +NORMALIZE_WHITESPACE
+        array([0.53, 0.33, 0.13, 0.  , 0.2 , 0.  ])
 
 
 
