@@ -45,6 +45,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
+    "sphinx_toggleprompt",
     "nbsphinx",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
