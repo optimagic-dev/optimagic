@@ -51,7 +51,7 @@ To enable all algorithms at once, do the following:
 
 .. code-block::
 
-    conda install petsc4py 
+    conda install petsc4py
 
 *Note*: ```petsc4py``` is not available on Windows.
 
