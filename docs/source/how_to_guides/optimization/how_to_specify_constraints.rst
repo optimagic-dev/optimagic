@@ -47,16 +47,18 @@ you can impose and how you specify them in estimagic:
     ...     offset = np.linspace(1, 0, len(params))
     ...     x = params - offset
     ...     return x @ x
+
+
+The unconstrained optimum of a six-dimensional version of this problem is:
+
+.. code-block:: python
+
     >>> res = em.minimize(
     ...    criterion=criterion,
     ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     ...    algorithm="scipy_lbfgsb",
     ...    )
-
-
-    The unconstrained optimum of a six-dimensional version of this problem is:
-
-    >>> res.params.round(6)
+    >>> res.params.round(3)
     array([1. , 0.8, 0.6, 0.4, 0.2, 0. ])
 
 The unconstrained optimum is usually easy to see because all parameters enter the
@@ -89,7 +91,7 @@ flat numpy array are explained in the next section.
 
     Looking at the optimization result, we get:
 
-    >>> res.params.round(6)
+    >>> res.params.round(3)
     array([ 2.5,  0.8,  0.6,  0.4,  0.2, -2.5])
 
     Which is indeed the correct constrained optimum. Fixes are compatible with all
@@ -125,7 +127,7 @@ flat numpy array are explained in the next section.
 
     Looking at the optimization result, we get:
 
-    >>> res.params.round(6)
+    >>> res.params.round(3)
     array([1. , 0.6, 0.6, 0.6, 0.2, 0. ])
 
     Which is indeed the correct constrained optimum. Increasing constraints are only
@@ -159,7 +161,7 @@ flat numpy array are explained in the next section.
     smaller than the other two anyways in the unconstrained optimum, but it will change
     the optimal values of ``params[3]`` and ``params[0]``. Indeed we get:
 
-    >>> res.params.round(5)
+    >>> res.params.round(3)
     array([ 0.7,  0.8,  0.6,  0.7,  0.2, -0. ])
 
     Which is the correct optimum. Decreasing constraints are only compatible with
@@ -181,7 +183,7 @@ flat numpy array are explained in the next section.
 
     This yields:
 
-    >>> res.params.round(6)
+    >>> res.params.round(3)
     array([0.5, 0.8, 0.6, 0.4, 0.2, 0.5])
 
     Which is the correct solution. Equality constraints are compatible with all
@@ -207,7 +209,7 @@ flat numpy array are explained in the next section.
     This constraint imposes that ``params[0] == params[2]`` and
     ``params[1] == params[3]``. The optimal parameters with this constraint are:
 
-    >>> res.params.round(6)
+    >>> res.params.round(3)
     array([ 0.8,  0.6,  0.8,  0.6,  0.2, -0. ])
 
 
@@ -227,8 +229,8 @@ flat numpy array are explained in the next section.
 
     This yields again the correct result:
 
-    >>> res.params.round(5)
-    array([0.53453, 0.33422, 0.13125, 0.     , 0.2    , 0.     ])
+    >>> res.params.round(3)
+    array([0.535, 0.334, 0.131, 0.   , 0.2  , 0.   ])
 
 
 
@@ -255,19 +257,18 @@ flat numpy array are explained in the next section.
     This yields the same solution as an unconstrained estimation because the constraint
     is not binding:
 
-    >>> res.params.round(6)
-    array([ 1.006323,  0.783763,  0.610424,  0.4     ,  0.2     , -0.      ])
+    >>> res.params.round(3)
+    array([ 1.006,  0.784,  0.61 ,  0.4  ,  0.2  , -0.   ])
 
-    .. array([ 1. ,  0.8,  0.6,  0.4,  0.2, -0. ])
     We can now use one of estimagic's utility functions to actually build the covariance
     matrix out of the first three parameters:
 
     .. code-block:: python
 
         >>> from estimagic.utilities import cov_params_to_matrix
-        >>> cov_params_to_matrix(res.params[:3]).round(3) # doctest: +NORMALIZE_WHITESPACE
-        array([[1.006, 0.784],
-               [0.784, 0.61 ]])
+        >>> cov_params_to_matrix(res.params[:3]).round(2) # doctest: +NORMALIZE_WHITESPACE
+        array([[1.01, 0.78],
+               [0.78, 0.61]])
 
 
 
@@ -293,7 +294,7 @@ flat numpy array are explained in the next section.
     This yields the same solution as an unconstrained estimation because the constraint
     is not binding:
 
-    >>> res.params.round(6)
+    >>> res.params.round(3)
     array([ 1. ,  0.8,  0.6,  0.4,  0.2, -0. ])
 
     We can now use one of estimagic's utility functions to actually build the standard
@@ -303,9 +304,9 @@ flat numpy array are explained in the next section.
 
         >>> from estimagic.utilities import sdcorr_params_to_sds_and_corr
         >>> sd, corr = sdcorr_params_to_sds_and_corr(res.params[:3])
-        >>> sd.round(3)
+        >>> sd.round(2)
         array([1. , 0.8])
-        >>> corr.round(3) # doctest: +NORMALIZE_WHITESPACE
+        >>> corr.round(2) # doctest: +NORMALIZE_WHITESPACE
         array([[1. , 0.6],
                [0.6, 1. ]])
 
@@ -411,7 +412,7 @@ constraints simultaneously, simple pass in a list of constraints. For example:
 
 This yields:
 
->>> res.params.round(3)
+>>> res.params.round(2)
 array([0.9, 0.9, 1.2, 1. , 0.8, 0. ])
 
 There are limits regarding the compatibility of overlapping constraints. You will

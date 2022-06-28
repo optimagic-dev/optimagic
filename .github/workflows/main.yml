@@ -92,3 +92,7 @@ jobs:
       - name: Build docs
         shell: bash -l {0}
         run: tox -e sphinx
+
+      - name: Run doctest
+        shell: bash -l {0}
+        run: tox -e code-in-docs
