@@ -9,6 +9,7 @@ releases are available on `Anaconda.org
 
 0.4.0
 -----
+
 - :gh:`366` Update CHANGES.rst (:ghuser:`segsell`)
 - :gh:`362` Polish documentation (:ghuser:`segsell`)
 
