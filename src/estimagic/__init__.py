@@ -9,6 +9,7 @@ from estimagic.estimation.estimate_msm import estimate_msm
 from estimagic.estimation.estimate_msm import MomentsResult
 from estimagic.estimation.msm_weighting import get_moments_cov
 from estimagic.inference.bootstrap import bootstrap
+from estimagic.inference.bootstrap import BootstrapResult
 from estimagic.logging.read_log import OptimizeLogReader
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
@@ -61,6 +62,7 @@ __all__ = [
     "check_constraints",
     "OptimizeLogReader",
     "OptimizeResult",
+    "BootstrapResult",
     "LikelihoodResult",
     "MomentsResult",
     "__version__",

@@ -25,7 +25,6 @@ dependencies:
   - numpy>=1.17.0
   - pandas
   - pdbpp
-  - pygmo
   - pytest
   - pytest-cov
   - pytest-xdist
@@ -41,8 +40,6 @@ dependencies:
   - pytask>=0.0.11
   - nlopt
   - sphinx-panels
-  - sphinx-copybutton
-  - pygmo
   - nb_black
   - pybaum>=0.1.2
 

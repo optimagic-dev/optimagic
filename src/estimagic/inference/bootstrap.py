@@ -21,9 +21,9 @@ from pybaum import tree_unflatten
 
 def bootstrap(
     outcome,
+    data,
     *,
-    data=None,
-    existing_outcomes=None,
+    existing_result=None,
     outcome_kwargs=None,
     n_draws=1_000,
     cluster_by=None,
@@ -35,17 +35,14 @@ def bootstrap(
     """Use the bootstrap to calculate inference quantities.
 
     Args:
-        outcome (Union[callable, Any]): Either a function that computes the statistic
-            of interest, or an evaluation of that function. If it is an evaluation,
-            existing_outcomes must be passed, and the evaluation step is skipped.
-        data (pd.DataFrame): Dataset. Default None.
-        existing_outcomes (Union[BootstrapResult, List[Any]]): Evaluations of the
-            outcome function. If None, then outcome must be callable and new outcomes
-            are generated. If not None and outcome is callable, the new evaluations are
-            appended to the existing ones. Default None.
-        outcome_kwargs (dict): Additional keyword arguments for outcome.
-        n_draws (int): Number of bootstrap samples to draw. If len(existing_outcomes) >=
-            n_draws, a random subset of existing_outcomes is used.
+        outcome (callable): A function that computes the statistic of interest.
+        data (pd.DataFrame): Dataset.
+        existing_result (BootstrapResult): An existing BootstrapResult
+            object from a previous call of bootstrap(). Default is None.
+        outcome_kwargs (dict): Additional keyword arguments for outco me.
+        n_draws (int): Number of bootstrap samples to draw.
+            If len(existing_outcomes) >= n_draws, a random subset of existing_outcomes
+            is used.
         cluster_by (str): Column name of variable to cluster by or None.
         seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
             numpy.random.default_rng is used seeded with seed. If seed is already a
@@ -62,23 +59,28 @@ def bootstrap(
         BootstrapResult: A BootstrapResult object storing information on summary
             statistics, the covariance matrix, and estimated boostrap outcomes.
     """
-    if existing_outcomes is None:
-        existing_outcomes = []
-    elif isinstance(existing_outcomes, BootstrapResult):
-        existing_outcomes = existing_outcomes.outcomes
-    elif not isinstance(existing_outcomes, list):
-        raise ValueError("existing_outcomes must be a list or BootstrapResult.")
-
-    rng = get_rng(seed)
-    n_existing = len(existing_outcomes)
-
-    if callable(outcome) and n_draws > n_existing:
+    if callable(outcome):
 
         check_inputs(data=data, cluster_by=cluster_by)
 
         if outcome_kwargs is not None:
             outcome = functools.partial(outcome, **outcome_kwargs)
+    else:
+        raise ValueError("outcome must be a callable.")
 
+    if existing_result is None:
+        base_outcome = outcome(data)
+        existing_outcomes = []
+    elif isinstance(existing_result, BootstrapResult):
+        base_outcome = existing_result.base_outcome
+        existing_outcomes = existing_result.outcomes
+    else:
+        raise ValueError("existing_result must be None or a BootstrapResult.")
+
+    rng = get_rng(seed)
+    n_existing = len(existing_outcomes)
+
+    if n_draws > n_existing:
         new_outcomes = get_bootstrap_outcomes(
             data=data,
             outcome=outcome,
@@ -89,16 +91,11 @@ def bootstrap(
             error_handling=error_handling,
             batch_evaluator=batch_evaluator,
         )
-        base_outcome = outcome(data)
-    else:
-        new_outcomes = []
-        base_outcome = outcome
 
-    if n_draws <= n_existing:
+        all_outcomes = existing_outcomes + new_outcomes
+    else:
         random_indices = rng.choice(n_existing, n_draws, replace=False)
         all_outcomes = [existing_outcomes[k] for k in random_indices]
-    else:
-        all_outcomes = existing_outcomes + new_outcomes
 
     # ==================================================================================
     # Process results
@@ -115,6 +112,7 @@ def bootstrap(
         _internal_outcomes=internal_outcomes,
         _internal_cov=np.cov(internal_outcomes, rowvar=False),
     )
+
     return result
 
 
@@ -219,7 +217,7 @@ class BootstrapResult:
         """Calculate confidence intervals.
 
         Args:
-            ci_method (str): Method of choice for confidence interval computation.
+            ci_method (str): Method of choice for computing confidence intervals.
                 The default is "percentile".
             ci_level (float): Confidence level for the calculation of confidence
                 intervals. The default is 0.95.

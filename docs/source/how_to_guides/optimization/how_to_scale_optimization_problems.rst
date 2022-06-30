@@ -35,7 +35,7 @@ can be improved by simply dividing all parameter vectors by the start parameters
 
 **Advantages:**
 
-- very simple
+- straightforward
 - works with any type of constraints
 
 **Disadvantages:**
@@ -47,6 +47,9 @@ can be improved by simply dividing all parameter vectors by the start parameters
 
 .. code-block:: python
 
+    import estimagic as em
+
+
     def sphere(params):
         return (params["value"] ** 2).sum()
 
@@ -55,7 +58,7 @@ can be improved by simply dividing all parameter vectors by the start parameters
     start_params["lower_bound"] = 0
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-    minimize(
+    res = em.minimize(
         criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",
@@ -67,12 +70,12 @@ can be improved by simply dividing all parameter vectors by the start parameters
 Divide by bounds
 ----------------
 
-In many optimization problems one has additional information on bounds of the parameter
+In many optimization problems, one has additional information on bounds of the parameter
 space. Some of these bounds are hard (e.g. probabilities or variances are non negative),
 others are soft and derived from simple considerations (e.g. if a time discount factor
 were smaller than 0.7, we would not observe anyone to pursue a university degree in a
-structural model of educational choices or if an infection probability was higher than
-20% for distant contacts the covid pandemic would have been over after a month). For
+structural model of educational choices; or if an infection probability was higher than
+20% for distant contacts, the covid pandemic would have been over after a month). For
 parameters that strongly influence the criterion function, the bounds stemming from these
 considerations are typically tighter than for parameters that have a small effect on the
 criterion function.
@@ -84,9 +87,9 @@ become the same.
 
 **Advantages:**
 
-- very simple
+- straightforward
 - works well in many practical applications
-- scaling is independent of start value
+- scaling is independent of start values
 - No problems with division by zero
 
 **Disadvantages:**
@@ -106,7 +109,7 @@ become the same.
     start_params["lower_bound"] = 0
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-    minimize(
+    res = em.minimize(
         criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",
@@ -119,11 +122,11 @@ Influencing the magnitude of parameters
 =======================================
 
 The above approaches align the scale of parameters relative to each other. However, the
-overall magnitude is set rather arbitrarily. For example when dividing by start values,
+overall magnitude is set rather arbitrarily. For example, when dividing by start values,
 the magnitude of the scaled parameters is around one. When dividing by bounds, it is
 somewhere between zero and one.
 
-For the performance of numerical optimizers only the relative scales are important.
+For the performance of numerical optimizers, only the relative scales are important.
 
 However, influencing the overall magnitude can be helpful to trick some optimizers
 into doing things they do not want to do. For example, when there is a minimal allowed
@@ -144,7 +147,7 @@ example, if you want to scale by bounds and increase the magnitude by a factor o
     start_params["lower_bound"] = 0
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-    minimize(
+    res = em.minimize(
         criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",

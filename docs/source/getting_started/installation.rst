@@ -31,7 +31,7 @@ time you will use at least one additional package, but only very rarely will you
 of them.
 
 
-For an overview of all optimizers and the packages you need to install to enable them
+For an overview of all optimizers and the packages you need to install to enable them,
 see :ref:`list_of_algorithms`.
 
 
