@@ -3,10 +3,10 @@ How supported optimization algorithms are tested
 =======================================================================
 
 estimagic provides a unified interface that supports a large number of optimization
-algorithms from different libraries. Additionally, it allows setting constraints to
+algorithms from different libraries. Additionally, it allows putting constraints on
 the optimization problem.
-To test the external interface of all supported algorithms, we consider some criterion
-or benchmark functions and test each algorithm with every type of constraint.
+To test the external interface of all supported algorithms, we consider different criterion
+(benchmark) functions and test each algorithm with every type of constraint.
 
 Benchmark functions for testing
 ==============================================
@@ -44,7 +44,7 @@ How testcases are implemented
 
 We consider different implementations of each criterion and its gradient. All
 algorithms accept criterion functions specified in a dictionary, while a subset
-also accept the criterion specified in scalar form. Likewise, if specified, the
+also accepts the criterion specified in scalar form. Likewise, if specified, the
 gradient of a criterion can be an np.ndarray or a pandas object. We test for all
 possible cases.
 For instance, for rotated hyper ellipsoid, we implement the following functions:
@@ -66,11 +66,11 @@ of all constraints supported in estimagic, please see
 
 We write several test functions, each corresponding to the case of one constraint.
 Given the constraint, the test function considers all possible
-combinations of - algorithm, to maximize or to minimize, criterion function
+combinations of the algorithm, whether to maximize or to minimize, criterion function
 implementation, gradient implementation for that criterion (if provided),
 and whether ``criterion_and_derivative`` has been provided or not.
 
-Below we show the calculations behind the true values, for each testcase (one criterion
+Below, we show the calculations behind the true values, for each testcase (one criterion
 and one constraint).
 
 ********************************************************************
