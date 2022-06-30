@@ -11,6 +11,7 @@ dependencies:
   - black
   - sphinx
   - sphinxcontrib-bibtex
+  - sphinx-copybutton
   - sphinx-panels
   - ipython
   - ipython_genutils
@@ -20,4 +21,3 @@ dependencies:
 
   - pip:
       - ../
-      - sphinx-toggleprompt

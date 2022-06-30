@@ -45,11 +45,14 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
-    "sphinx_toggleprompt",
+    "sphinx_copybutton",
     "nbsphinx",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
 ]
+
+copybutton_prompt_text = ">>> "
+copybutton_only_copy_prompt_lines = False
 
 bibtex_bibfiles = ["refs.bib"]
 
