@@ -7,6 +7,12 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.4.0
+-----
+
+- :gh:`366` Update CHANGES.rst (:ghuser:`segsell`)
+- :gh:`362` Polish documentation (:ghuser:`segsell`)
+
 0.3.4
 -----
 

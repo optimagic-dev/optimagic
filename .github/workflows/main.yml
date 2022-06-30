@@ -42,7 +42,7 @@ jobs:
         run: tox -e pytest-linux -- --cov-report=xml --cov=./
 
       - name: Upload coverage report.
-        if: runner.os == 'Linux' && matrix.python-version == '3.8'
+        if: runner.os == 'Linux' && matrix.python-version == '3.9'
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -83,7 +83,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install core dependencies.
         shell: bash -l {0}
@@ -92,3 +92,24 @@ jobs:
       - name: Build docs
         shell: bash -l {0}
         run: tox -e sphinx
+
+
+  code-in-docs:
+
+    name: Run code snippets in documentation.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.9
+
+      - name: Install core dependencies.
+        shell: bash -l {0}
+        run: conda install -c conda-forge tox-conda
+
+      - name: Run doctest
+        shell: bash -l {0}
+        run: tox -e code-in-docs

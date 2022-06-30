@@ -67,7 +67,7 @@ def estimate_ml(
     While we have good defaults, you can still configure each aspect of each step
     via the optional arguments of this function. If you find it easier to do the
     maximization separately, you can do so and just provide the optimal parameters as
-    ``params`` and set ``optimize_options=False``.
+    ``params`` and set ``optimize_options=False``
 
     Args:
         loglike (callable): Likelihood function that takes a params (and potentially

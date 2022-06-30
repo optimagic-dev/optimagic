@@ -10,8 +10,8 @@ constraints. So the problem they can solve is:
 
     \min_{x \in \mathbb{R}^k} f(x) \quad \text{s.t.} \hspace{0.5cm} l \leq x \leq u
 
-However, in most econometric applications we also need other constraints. Examples are
-that some parameters sum to a value, that they form a covariance matrix or that they
+However, in most econometric applications, we also need other constraints. For example,
+we may require that some parameters sum to a value, form a covariance matrix, or
 are probabilities. More abstractly, the problem becomes:
 
 .. math::
@@ -19,16 +19,16 @@ are probabilities. More abstractly, the problem becomes:
     \min_{x \in \mathbb{R}^k} f(x) \quad \text{s.t.} \hspace{0.5cm} l \leq x \leq u
     \text{  and  } C(x) = 0
 
-There are two basic ways of converting optimizers that only can deal with box
-constraints into constrained optimizers. Reparametrization and penalties. Below we
+There are two basic ways of converting optimizers, which, natively, can only deal with box
+constraints, into constrained optimizers: Reparametrization and penalties. Below, we
 explain what both approaches are, why we chose the reparametrization approach over
-penalties and which reparametrizations we are using for each type of constraint.
+penalties, and which reparametrizations we are using for each type of constraint.
 
 .. note::
 
-    In this text we focus on constraints that can solved by estimagic via bijective and
+    In this text, we focus on constraints that can be solved by estimagic via bijective and
     differentiable transformations. General nonlinear constraints do not fall into this
-    category. If you want to use nonlinear constraints you can still do so, but
+    category. If you want to use nonlinear constraints, you can still do so, but
     estimagic will simply pass the constraints to your chosen optimizer. See
     :ref:`constraints` for more details.
 
@@ -40,7 +40,7 @@ Possible approaches
 Reparametrizations
 ~~~~~~~~~~~~~~~~~~
 
-In the reparametrization approach we need to find an invertible mapping
+In the reparametrization approach, we need to find an invertible mapping
 :math:`g : \mathbb{R}^{k'} \to \mathbb{R}^k`, and two new bounds :math:`l'` and
 :math:`u'` such that:
 
@@ -61,7 +61,7 @@ is equivalent to the original minimization problem.
 
 
 This sounds more complicated than it is. Let's look at the simple example of a
-two dimensional parameter vector, where the constraint is that the two parameters
+two dimensional parameter vector, where our constraint is that the two parameters
 have to sum to 5.
 
 .. math::
@@ -84,7 +84,7 @@ does this for you, for a large number of constraints that are typically used in
 econometric applications.
 
 For this approach to be efficient, it is crucial that the reparametrizations preserve
-desirable properties of the original problem. In particular the mapping :math:`g` should
+desirable properties of the original problem. In particular, the mapping :math:`g` should
 be differentiable and if possible linear. Moreover, the dimensionality of
 :math:`\tilde{x}` should be chosen as small as possible. Estimagic only implements
 constraints that can be enforced with differentiable transformations and always achieves
@@ -96,12 +96,12 @@ Penalties
 
 The penalty approach is conceptually much simpler. Whenever :math:`C(x) \neq 0`, a
 penalty term is added to the criterion function. If the penalty term is large enough
-(e.g. as large as the criterion function at start values), this makes sure that no x
-that does not satisfy the constraints can be optimal.
+(e.g. as large as the criterion function at the start values), this penalty ensures that any x
+that does not satisfy the constraints can not be optimal.
 
 While the generality and conceptual simplicity of this approach is attractive, it also
 has its drawbacks. Applying penalties in a naive way can introduce kinks,
-discontinuities and even local optima into the penalized criterion.
+discontinuities, and even local optima into the penalized criterion.
 
 
 What estimagic does
@@ -115,25 +115,25 @@ We chose to implement constraints via reparametrizations for the following reaso
 
 * Reparametrizations can often achieve a substantial dimensionality reduction. In
   particular, fixes and equality constraints are implemented at zero cost, i.e. as
-  efficiently as if you directly plug them into your problem. This is important because
+  efficiently as if you directly plugged them into your original problem. This is important because
   fixes and equality constraints often make user code much nicer and more flexible.
 
 * It is easier to preserve desirable properties such as convexity and differentiability
-  with reparametrizations than with penalties.
+  with reparametrizations rather than penalties.
 
 
-The constraints that can be implemented with this approach are available for all
+The constraints that can be implemented via reparametrizations are available for all
 optimizers. More general constraints are only available with optimizers that can deal
-natively with them. This includes all optimizers from the nlopt and ipopt library.
+natively with them. This includes all optimizers from the ``nlopt`` and ``ipopt`` libraries.
 
 
 The non-trivial reparametrizations
 ----------------------------------
 
-Fixed parameters, equality and pairwise equality constraints can be implemented
+Fixed parameters, equality, and pairwise equality constraints can be implemented
 trivially with reparametrizations by simply plugging them into the criterion function.
 Increasing and decreasing constraints are internally implemented as linear constraints.
-The following section explains how the other constraints are implemented:
+The following section explains how the other types of constraints are implemented:
 
 
 Covariance and sdcorr constraints
@@ -143,14 +143,14 @@ The main difficulty with covariance and sdcorr constraints is to keep the (impli
 covariance matrix valid, i.e. positive semi-definite. In both cases, :math:`\tilde{x}`
 contains the non-zero elements of the lower triangular cholesky factor of the (implied)
 covariance matrix. For covariance constraints, :math:`g` is then simply the product of
-the cholesky factor with its transpose. For sdcorr covariance matrix the product is
+the cholesky factor with its transpose. For the sdcorr covariance matrix, the product is
 further converted to standard deviations and the unique elements of a covariance matrix.
 
 Several papers show that the cholesky reparametrization is a very efficient way to
 optimize over covariance matrices. Examples are :cite:`Pinheiro1996` and
 :cite:`Groeneveld1994`.
 
-A limitation of this approach is that there can be no additional fixes, box constraints
+A limitation of this approach is that there can be no additional fixes, box constraints,
 or other constraints on any of the involved parameters.
 
 .. _linear_constraint_implementation:
@@ -177,7 +177,7 @@ thus have a matrix representation, say M. We are good if the following holds:
     \mathbf{x} = \mathbf{M\tilde{x}}
 
 
-A suitable choice of :math:`\mathbf{\tilde{X}}` and :math:`\mathbf{M}` are:
+Suitable choices of :math:`\mathbf{\tilde{X}}` and :math:`\mathbf{M}` are:
 
 
 .. math::
