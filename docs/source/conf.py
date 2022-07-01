@@ -49,6 +49,7 @@ extensions = [
     "nbsphinx",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
+    "sphinx_copybutton",
 ]
 
 copybutton_prompt_text = ">>> "

@@ -9,9 +9,13 @@ Basic installation
 The package can be installed via conda. To do so, type the following commands in
 a terminal or shell:
 
-``$ conda config --add channels conda-forge``
+.. code-block::
 
-``$ conda install estimagic``
+    conda config --add channels conda-forge
+
+.. code-block::
+
+    conda install estimagic
 
 The first line adds conda-forge to your conda channels. This is necessary for
 conda to find all dependencies of estimagic. The second line installs estimagic
@@ -33,16 +37,34 @@ see :ref:`list_of_algorithms`.
 
 To enable all algorithms at once, do the following:
 
-``conda install nlopt``
+.. code-block::
 
-``pip install Py-BOBYQA``
+    conda install nlopt
 
-``pip install DFO-LS``
+.. code-block::
 
-``conda install petsc4py`` (Not available on Windows)
+    pip install Py-BOBYQA
 
-``conda install cyipopt``
+.. code-block::
 
-``conda install pygmo``
+    pip install DFO-LS
 
-``pip install fides>=0.7.4 (Make sure you have at least 0.7.4)``
+.. code-block::
+
+    conda install petsc4py
+
+*Note*: ```petsc4py``` is not available on Windows.
+
+.. code-block::
+
+    conda install cyipopt
+
+.. code-block::
+
+    conda install pygmo
+
+.. code-block::
+
+    pip install fides>=0.7.4
+
+*Note*: Make sure you have at least 0.7.1.
