@@ -43,6 +43,7 @@ this interface. The mandatory conditions for an internal optimizer function are:
      first derivative jointly
    - lower_bounds: for lower bounds in form of a 1d numpy array
    - upper_bounds: for upper bounds in form of a 1d numpy array
+   - nonlinear_constraints: for nonlinear constraints in form a list of dictionaries
 
    Of course, algorithms that do not need a certain argument (e.g. unbounded or
    derivative free ones) do not need those arguments at all.
@@ -62,13 +63,10 @@ should return a dictionary with the following entries:
 - solution_x: The best parameter achieved so far
 - solution_criterion: The value of the criterion at solution_x. This can be a scalar
   or dictionary.
-- solution_derivative: The derivative evaluated at solution_x
-- solution_hessian: The (approximate) hessian evaluated at solution_x
 - n_criterion_evaluations: The number of criterion evaluations.
 - n_derivative_evaluations: The number of derivative evaluations.
 - n_iterations: The number of iterations
 - success: True if convergence was achieved
-- reached_convergence_criterion: The name of the reached convergence criterion.
 - message: A string with additional information.
 
 If some of the entries are missing, they will automatically be filled with ``None`` and
@@ -99,6 +97,53 @@ Note that a complete harmonization is not possible nor desirable, because often
 convergence criteria that clearly are the same are implemented slightly different for
 different optimizers. However, complete transparency is possible and we try to document
 the exact meaning of all options for all optimizers.
+
+
+Nonlinear constraints
+---------------------
+
+Estimagic can pass nonlinear constraints to the internal optimizer. The internal
+interface for nonlinear constraints is as follows.
+
+A nonlinear constraint is a ``list`` of ``dict`` 's, where each ``dict`` represents a
+group of constraints. In each group the constraint function can potentially be
+multi-dimensional. We distinguish between equality and inequality constraints, which is
+signalled by a dict entry ``type`` that takes values ``"eq"`` and ``"ineq"``. The
+constraint function, which takes as input an internal parameter vector, is stored under
+the entry ``fun``, while the Jacobian of that function is stored at ``jac``. The
+tolerance for the constraints is stored under ``tol``. At last, the number of
+constraints in each group is specified under ``n_constr``. An example list with one
+constraint that would be passed to the internal optimizer is given by
+
+.. code-block::
+
+  constraints = [
+      {
+          "type": "ineq",
+          "n_constr": 1,
+          "tol": 1e-5,
+          "fun": lambda x: x**3,
+          "jac": lambda x: 3 * x**2,
+      }
+  ]
+
+
+.. note::
+
+  **Equality.** Internal equality constraints assume that the constraint is met when the function is
+  zero. That is
+
+  .. math::
+
+    0 = g(x) \in \mathbb{R}^m .
+
+  **Inequality.** Internal inequality constraints assume that the constraint is met when the function is
+  greater or equal to zero. That is
+
+  .. math::
+
+    0 \leq g(x) \in \mathbb{R}^m .
+
 
 
 Other conventions

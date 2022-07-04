@@ -106,9 +106,10 @@ def generate_steps(
             x, pos, neg, method, lower_step_bounds, upper_step_bounds
         )
 
-    pos, neg = _rescale_to_accomodate_bounds(
-        base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
-    )
+    if np.isfinite(lower_bounds).any() or np.isfinite(upper_bounds).any():
+        pos, neg = _rescale_to_accomodate_bounds(
+            base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
+        )
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)

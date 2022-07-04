@@ -10,7 +10,6 @@ from numpy.testing import assert_array_almost_equal as aaae
 def test_get_converter_fast_case():
 
     converter, internal = get_converter(
-        func=lambda x: (x**2).sum(),
         params=np.arange(3),
         constraints=None,
         lower_bounds=None,
@@ -37,7 +36,6 @@ def test_get_converter_fast_case():
 
 def test_get_converter_with_constraints_and_bounds():
     converter, internal = get_converter(
-        func=lambda x: (x**2).sum(),
         params=np.arange(3),
         constraints=[{"loc": 2, "type": "fixed"}],
         lower_bounds=np.array([-1, -np.inf, -np.inf]),
@@ -65,7 +63,6 @@ def test_get_converter_with_constraints_and_bounds():
 def test_get_converter_with_scaling():
 
     converter, internal = get_converter(
-        func=lambda x: (x**2).sum(),
         params=np.arange(3),
         constraints=None,
         lower_bounds=np.arange(3) - 1,
@@ -93,7 +90,6 @@ def test_get_converter_with_scaling():
 def test_get_converter_with_trees():
     params = {"a": 0, "b": 1, "c": 2}
     converter, internal = get_converter(
-        func=lambda x: (x**2).sum(),
         params=params,
         constraints=None,
         lower_bounds=None,

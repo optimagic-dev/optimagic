@@ -48,7 +48,7 @@ def cli():
 )
 @click.option(
     "--update-chunk",
-    default=20,
+    default=50,
     help="Upper limit how many new values are updated from the database at one update.",
     type=int,
     show_default=True,

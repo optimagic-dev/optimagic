@@ -1,77 +1,78 @@
 /* Remove execution count for notebook cells. */
 div.prompt {
-    display: none;
+  display: none;
 }
 
 /* Getting started index page */
 
-.intro-card {
-    background: #fff;
-    border-radius: 0;
-    padding: 30px 10px 10px 10px;
-    margin: 10px 0px;
-    max-height: 85%;
-}
 
 .intro-card .card-text {
-    margin: 20px 0px;
+  margin: 20px 0px;
+}
+
+
+.card-title {
+  margin-top: 0.25rem;
 }
 
 div#index-container {
-    padding-bottom: 20px;
+  padding-bottom: 20px;
 }
 
 a#index-link {
-    color: #333;
-    text-decoration: none;
+  color: #333;
+  text-decoration: none;
 }
 
 /* reference to user guide */
 .gs-torefguide {
-    align-items: center;
-    font-size: 0.9rem;
+  align-items: center;
+  font-size: 0.9rem;
 }
 
 .gs-torefguide .badge {
-    background-color: #130654;
-    margin: 10px 10px 10px 0px;
-    padding: 5px;
+  background-color: #130654;
+  margin: 10px 10px 10px 0px;
+  padding: 5px;
 }
 
 .gs-torefguide a {
-    margin-left: 5px;
-    color: #130654;
-    border-bottom: 1px solid #FFCA00f3;
-    box-shadow: 0px -10px 0px #FFCA00f3 inset;
+  margin-left: 5px;
+  color: #130654;
+  border-bottom: 1px solid #FFCA00f3;
+  box-shadow: 0px -10px 0px #FFCA00f3 inset;
 }
 
 .gs-torefguide p {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }
 
 .gs-torefguide a:hover {
-    margin-left: 5px;
-    color: grey;
-    text-decoration: none;
-    border-bottom: 1px solid #b2ff80f3;
-    box-shadow: 0px -10px 0px #b2ff80f3 inset;
+  margin-left: 5px;
+  color: grey;
+  text-decoration: none;
+  border-bottom: 1px solid #b2ff80f3;
+  box-shadow: 0px -10px 0px #b2ff80f3 inset;
 }
 
 /* selecting constraints guide */
 .intro-card {
-  background:#FFF;
-  border-radius:0;
-  padding: 30px 10px 10px 10px;
+  background: #fff;
+  border-radius: 0;
+  padding: 20px 5px 5px 0px;
   margin: 10px 0px;
+  max-height: 85%;
 }
 
+
+
 .intro-card .card-text {
-  margin:20px 0px;
+  margin: 20px 0px;
   /*min-height: 150px; */
 }
 
 .intro-card .card-img-top {
-  margin: 10px;
+  margin: 0px;
 }
 
 .install-block {
@@ -80,7 +81,7 @@ a#index-link {
 
 .install-card .card-header {
   border: none;
-  background-color:white;
+  background-color: white;
   color: #150458;
   font-size: 1.1rem;
   font-weight: bold;
@@ -89,7 +90,7 @@ a#index-link {
 
 .install-card .card-footer {
   border: none;
-  background-color:white;
+  background-color: white;
 }
 
 .install-card pre {
@@ -97,7 +98,7 @@ a#index-link {
 }
 
 .custom-button {
-  background-color:#DCDCDC;
+  background-color: #DCDCDC;
   border: none;
   color: #484848;
   text-align: center;
@@ -165,20 +166,21 @@ a#index-link {
 /* tables in selecting constraints guide */
 
 table.rows th {
-    background-color: #F0F0F0;
-    border-style: solid solid solid solid;
-    border-width: 0px 0px 0px 0px;
-    border-color: #F0F0F0;
-    text-align: center;
+  background-color: #F0F0F0;
+  border-style: solid solid solid solid;
+  border-width: 0px 0px 0px 0px;
+  border-color: #F0F0F0;
+  text-align: center;
 }
 
 table.rows tr:nth-child(even) {
-    background-color: #F0F0F0;
-    text-align: right;
+  background-color: #F0F0F0;
+  text-align: right;
 }
+
 table.rows tr:nth-child(odd) {
-    background-color: #FFFFFF;
-    text-align: right;
+  background-color: #FFFFFF;
+  text-align: right;
 }
 
 
@@ -196,18 +198,20 @@ details.dropdown summary {
 }
 
 /* Vertical spacing of arrow */
-details.dropdown .summary-up, details.dropdown .summary-down {
+details.dropdown .summary-up,
+details.dropdown .summary-down {
   top: 0.5em !important;
 }
 
 /* Vertical space between dropdown boxes */
-.mb-3, .my-3 {
+.mb-3,
+.my-3 {
   margin-bottom: 0.2rem !important;
 }
 
 /* Background color of dropdown boxes */
 .card {
-  background-color: #ebf0f5 !important;
+  background-color: white !important;
 }
 
 /* Color of inline code */

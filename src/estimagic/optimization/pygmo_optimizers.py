@@ -2,7 +2,7 @@
 import warnings
 
 import numpy as np
-from estimagic import batch_evaluators
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
@@ -115,8 +115,6 @@ def pygmo_bee_colony(
     upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     max_n_trials=1,
@@ -132,10 +130,8 @@ def pygmo_bee_colony(
     )
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options={
             "limit": max_n_trials,
             "gen": int(stopping_max_iterations),
@@ -167,8 +163,6 @@ def pygmo_de(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
@@ -214,10 +208,8 @@ def pygmo_de(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -246,8 +238,6 @@ def pygmo_sea(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     stopping_max_iterations=10_000,  # Each generation will compute the objective once
@@ -264,10 +254,8 @@ def pygmo_sea(
 
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options={"gen": int(stopping_max_iterations)},
     )
 
@@ -296,8 +284,6 @@ def pygmo_sga(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
@@ -384,10 +370,8 @@ def pygmo_sga(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -416,8 +400,6 @@ def pygmo_sade(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     jde=True,
@@ -471,10 +453,8 @@ def pygmo_sade(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -503,8 +483,6 @@ def pygmo_cmaes(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     #
@@ -543,10 +521,8 @@ def pygmo_cmaes(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -575,8 +551,6 @@ def pygmo_simulated_annealing(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     #
@@ -608,10 +582,8 @@ def pygmo_simulated_annealing(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -640,8 +612,6 @@ def pygmo_pso(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
@@ -703,10 +673,8 @@ def pygmo_pso(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -829,8 +797,6 @@ def pygmo_mbh(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     inner_algorithm=None,
@@ -857,10 +823,8 @@ def pygmo_mbh(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -889,8 +853,6 @@ def pygmo_xnes(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     #
@@ -927,10 +889,8 @@ def pygmo_xnes(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -959,8 +919,6 @@ def pygmo_gwo(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
@@ -977,10 +935,8 @@ def pygmo_gwo(
     )
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options={"gen": int(stopping_max_iterations)},
     )
 
@@ -1009,8 +965,6 @@ def pygmo_compass_search(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     #
@@ -1042,10 +996,8 @@ def pygmo_compass_search(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -1074,8 +1026,6 @@ def pygmo_ihs(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     #
@@ -1110,10 +1060,8 @@ def pygmo_ihs(
     }
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -1142,8 +1090,6 @@ def pygmo_de1220(
     upper_bounds,
     *,
     population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
     seed=None,
     discard_start_params=False,
     #
@@ -1204,10 +1150,8 @@ def pygmo_de1220(
 
     algo_options = _create_algo_options(
         population_size=population_size,
-        n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
         algo_specific_options=algo_specific_options,
     )
 
@@ -1261,6 +1205,7 @@ def _minimize_pygmo(
         results (dict): Dictionary with optimization results.
 
     """
+    algo_options = algo_options.copy()
     if not IS_PYGMO_INSTALLED:
         raise NotInstalledError(
             f"The {method} algorithm requires the pygmo package to be installed. "
@@ -1270,9 +1215,8 @@ def _minimize_pygmo(
         )
 
     population_size = algo_options.pop("population_size", 1)
-    batch_evaluator = algo_options.pop("batch_evaluator", "joblib_batch_evaluator")
-    if isinstance(batch_evaluator, str):
-        batch_evaluator = getattr(batch_evaluators, batch_evaluator)
+    batch_evaluator = algo_options.pop("batch_evaluator", "joblib")
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
     n_cores = algo_options.pop("n_cores", 1)
     seed = algo_options.pop("seed", None)
     discard_start_params = algo_options.pop("discard_start_params", False)
@@ -1381,11 +1325,11 @@ def _process_pygmo_results(evolved):
 
 def _create_algo_options(
     population_size,
-    n_cores,
     seed,
     discard_start_params,
-    batch_evaluator,
     algo_specific_options,
+    n_cores=1,
+    batch_evaluator=None,
 ):
     algo_options = {
         "population_size": _replace_none(population_size, -1),

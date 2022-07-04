@@ -21,11 +21,11 @@ def ordered_logit_processing(formula, data):
     index = pd.MultiIndex.from_tuples(zip(categories, names), names=["type", "name"])
 
     # make params_df
-    np.random.seed(5471)
+    rng = np.random.default_rng(seed=5471)
     start_params = pd.DataFrame(index=index)
     start_params["value"] = np.hstack(
         [
-            np.random.uniform(low=-0.5, high=0.5, size=len(x.columns)),
+            rng.uniform(low=-0.5, high=0.5, size=len(x.columns)),
             np.arange(num_cutoffs) * 2,
         ]
     )

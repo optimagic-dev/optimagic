@@ -11,6 +11,7 @@ from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.read_log import read_steps_table
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
+from estimagic.optimization.optimize_result import OptimizeResult
 from numpy.testing import assert_array_almost_equal as aaae
 
 criteria = [sos_scalar_criterion, sos_dict_criterion]
@@ -47,15 +48,15 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
             multistart=True,
         )
 
-    assert "multistart_info" in res
-    ms_info = res["multistart_info"]
+    assert hasattr(res, "multistart_info")
+    ms_info = res.multistart_info
     assert len(ms_info["exploration_sample"]) == 40
     assert len(ms_info["exploration_results"]) == 40
     assert all(isinstance(entry, float) for entry in ms_info["exploration_results"])
-    assert all(isinstance(entry, dict) for entry in ms_info["local_optima"])
+    assert all(isinstance(entry, OptimizeResult) for entry in ms_info["local_optima"])
     assert all(isinstance(entry, pd.DataFrame) for entry in ms_info["start_parameters"])
-    assert np.allclose(res["solution_criterion"], 0)
-    aaae(res["solution_params"]["value"], np.zeros(4))
+    assert np.allclose(res.criterion, 0)
+    aaae(res.params["value"], np.zeros(4))
 
 
 def test_multistart_with_existing_sample(params):
@@ -73,7 +74,7 @@ def test_multistart_with_existing_sample(params):
         multistart_options=options,
     )
 
-    calc_sample = _params_list_to_aray(res["multistart_info"]["exploration_sample"])
+    calc_sample = _params_list_to_aray(res.multistart_info["exploration_sample"])
     aaae(calc_sample, options["sample"])
 
 
@@ -91,7 +92,7 @@ def test_convergence_via_max_discoveries_works(params):
         multistart_options=options,
     )
 
-    assert len(res["multistart_info"]["local_optima"]) == 2
+    assert len(res.multistart_info["local_optima"]) == 2
 
 
 def test_steps_are_logged_as_skipped_if_convergence(params):
@@ -148,7 +149,7 @@ def test_with_non_transforming_constraints(params):
         multistart=True,
     )
 
-    aaae(res["solution_params"]["value"].to_numpy(), np.array([0, 1, 0, 0]))
+    aaae(res.params["value"].to_numpy(), np.array([0, 1, 0, 0]))
 
 
 def test_error_is_raised_with_transforming_constraints(params):
@@ -177,4 +178,64 @@ def test_multistart_with_numpy_params():
         multistart=True,
     )
 
-    res["solution_params"]
+    res.params
+
+
+def test_with_invalid_bounds():
+
+    with pytest.raises(ValueError):
+        minimize(
+            criterion=lambda x: x @ x,
+            params=np.arange(5),
+            algorithm="scipy_neldermead",
+            multistart=True,
+        )
+
+
+def test_with_scaling():
+    def _crit(params):
+        x = params - np.arange(len(params))
+        return x @ x
+
+    res = minimize(
+        criterion=_crit,
+        params=np.full(5, 10),
+        soft_lower_bounds=np.full(5, -1),
+        soft_upper_bounds=np.full(5, 11),
+        algorithm="scipy_lbfgsb",
+        multistart=True,
+    )
+
+    aaae(res.params, np.arange(5))
+
+
+def test_with_ackley():
+    def ackley(x):
+        out = (
+            -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2)))
+            - np.exp(np.mean(np.cos(2 * np.pi * x)))
+            + 20
+            + np.exp(1)
+        )
+        return out
+
+    dim = 5
+
+    kwargs = {
+        "criterion": ackley,
+        "params": np.full(dim, -10),
+        "lower_bounds": np.full(dim, -32),
+        "upper_bounds": np.full(dim, 32),
+        "algo_options": {"stopping.max_criterion_evaluations": 1000},
+    }
+
+    minimize(
+        **kwargs,
+        algorithm="scipy_lbfgsb",
+        multistart=True,
+        multistart_options={
+            "n_samples": 200,
+            "share_optimizations": 0.1,
+            "convergence_max_discoveries": 10,
+        },
+    )

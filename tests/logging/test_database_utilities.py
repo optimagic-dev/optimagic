@@ -1,5 +1,4 @@
 import pickle
-from datetime import datetime
 
 import numpy as np
 import pytest
@@ -20,7 +19,7 @@ from numpy.testing import assert_array_equal
 def iteration_data():
     data = {
         "params": np.ones(1),
-        "timestamp": datetime(year=2020, month=4, day=9, hour=12, minute=41, second=1),
+        "timestamp": 0.5,
         "value": 5.0,
     }
     return data

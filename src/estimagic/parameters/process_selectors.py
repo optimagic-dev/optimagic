@@ -1,3 +1,4 @@
+import warnings
 from collections import Counter
 
 import numpy as np
@@ -31,6 +32,9 @@ def process_selectors(constraints, params, tree_converter, param_names):
     if constraints in (None, []):
         return []
 
+    if isinstance(constraints, dict):
+        constraints = [constraints]
+
     registry = get_registry(extended=True)
     n_params = len(tree_converter.params_flatten(params))
     helper = tree_converter.params_unflatten(np.arange(n_params))
@@ -50,7 +54,9 @@ def process_selectors(constraints, params, tree_converter, param_names):
             registry=registry,
         )
         try:
-            selected = evaluator(helper)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+                selected = evaluator(helper)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -77,7 +83,13 @@ def process_selectors(constraints, params, tree_converter, param_names):
             new_constr["index"] = selected
         else:
             new_constr["indices"] = selected
-        flat_constraints.append(new_constr)
+
+        if selector_case == "one selector":
+            if len(new_constr["index"]) > 0:
+                flat_constraints.append(new_constr)
+        else:
+            if len(new_constr["indices"][0]) > 0:
+                flat_constraints.append(new_constr)
     return flat_constraints
 
 
@@ -91,11 +103,13 @@ def _get_selection_field(constraint, selector_case, params_case):
             "dataframe": {"locs", "queries", "selectors"},
             "numpy array": {"locs", "selectors"},
             "pytree": {"selectors"},
+            "series": {"locs", "selectors"},
         },
         "one selector": {
             "dataframe": {"loc", "query", "selector"},
             "numpy array": {"loc", "selector"},
             "pytree": {"selector"},
+            "series": {"loc", "selector"},
         },
     }
 
@@ -177,6 +191,8 @@ def _get_selection_evaluator(field, constraint, params_case, registry):
 def _get_params_case(params):
     if isinstance(params, pd.DataFrame) and "value" in params:
         params_case = "dataframe"
+    elif isinstance(params, pd.Series):
+        params_case = "series"
     elif isinstance(params, np.ndarray):
         params_case = "numpy array"
     else:

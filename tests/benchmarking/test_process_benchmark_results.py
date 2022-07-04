@@ -259,8 +259,7 @@ def test_make_history_monotone_minimize():
             ["prob2", "algo1", 4, 2.0],  # 1.1
         ],
     )
-    np.random.seed(40954)
-    shuffled = sorted_df.sample(frac=1)
+    shuffled = sorted_df.sample(frac=1, random_state=40954)
 
     res_shuffled = _make_history_monotone(
         df=shuffled, target_col="to_make_monotone", direction="minimize"

@@ -28,7 +28,7 @@ def cov_hessian(hess):
 
     """
     _hess, names = process_pandas_arguments(hess=hess)
-    info_matrix = -1 * _hess
+    info_matrix = -_hess
     cov = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
 
     if "params" in names:
@@ -52,7 +52,7 @@ def cov_jacobian(jac):
     """
     _jac, names = process_pandas_arguments(jac=jac)
 
-    info_matrix = np.dot((_jac.T), _jac)
+    info_matrix = _jac.T @ _jac
     cov = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
 
     if "params" in names:
@@ -81,9 +81,10 @@ def cov_robust(jac, hess):
     """
     _jac, _hess, names = process_pandas_arguments(jac=jac, hess=hess)
 
-    info_matrix = np.dot((_jac.T), _jac)
-    cov_hes = cov_hessian(_hess)
-    cov = np.dot(cov_hes, np.dot(info_matrix, cov_hes))
+    info_matrix_hess = -_hess
+    cov_hess = robust_inverse(info_matrix_hess, msg=INVALID_INFERENCE_MSG)
+
+    cov = cov_hess @ _jac.T @ _jac @ cov_hess
 
     if "params" in names:
         cov = pd.DataFrame(cov, columns=names["params"], index=names["params"])
@@ -225,7 +226,7 @@ def _clustering(jac, design_info):
 
 
 def _stratification(jac, design_info):
-    """Variance estimatio for each strata stratum.
+    """Variance estimation for each stratum.
 
     The function takes the sum of the jacobian observations for each cluster
     within strata. The result is the meat of the sandwich estimator.

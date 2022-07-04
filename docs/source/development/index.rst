@@ -8,3 +8,5 @@ Development
    how-to
    styleguide
    eeps
+   credits
+   changes

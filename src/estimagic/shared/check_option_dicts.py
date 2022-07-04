@@ -23,8 +23,6 @@ def check_optimization_options(options, usage, algorithm_mandatory=True):
         "criterion_kwargs",
         "derivative",
         "derivative_kwargs",
-        "criterion_and_derivative",
-        "criterion_and_derivative_kwargs",
     }
 
     invalid_criterion = criterion_options.intersection(options)

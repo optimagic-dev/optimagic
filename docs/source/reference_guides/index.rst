@@ -1,5 +1,5 @@
-API Reference
-=============
+API
+===
 
 
 .. currentmodule:: estimagic
@@ -22,6 +22,32 @@ Optimization
 
     .. autofunction:: slice_plot
 
+
+.. dropdown:: criterion_plot
+
+    .. autofunction:: criterion_plot
+
+
+.. dropdown:: params_plot
+
+    .. autofunction:: params_plot
+
+
+
+.. dropdown:: count_free_params
+
+    .. autofunction:: count_free_params
+
+
+.. dropdown:: check_constraints
+
+    .. autofunction:: check_constraints
+
+
+.. dropdown:: OptimizeResult
+
+    .. autoclass:: OptimizeResult
+        :members:
 
 
 .. _first_derivative:
@@ -60,6 +86,7 @@ Estimation
 
     .. autofunction:: estimate_msm
 
+
 .. dropdown:: get_moments_cov
 
     .. autofunction:: get_moments_cov
@@ -85,6 +112,18 @@ Estimation
     .. autofunction:: render_latex
 
 
+.. dropdown:: LikelihoodResult
+
+    .. autoclass:: LikelihoodResult
+        :members:
+
+
+.. dropdown:: MomentsResult
+
+    .. autoclass:: MomentsResult
+        :members:
+
+
 
 
 .. _bootstrap:
@@ -96,10 +135,10 @@ Bootstrap
 
     .. autofunction:: bootstrap
 
-.. dropdown:: bootstrap_from_outcomes
+.. dropdown::  BootstrapResult
 
-    .. autofunction:: bootstrap_from_outcomes
-
+    .. autoclass:: BootstrapResult
+        :members:
 
 
 
@@ -126,22 +165,16 @@ Benchmarks
 
 
 
+.. _logreading:
 
 
+Log reading
+-----------
 
 
+.. dropdown:: OptimizeLogReader
 
-
-
-
-
-
-
-
-
-
-
-
+    .. autoclass:: OptimizeLogReader
 
 
 

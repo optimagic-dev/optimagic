@@ -8,6 +8,7 @@ Check the module docstring of process_constraints for naming conventions.
 """
 import numpy as np
 import pandas as pd
+from estimagic.exceptions import InvalidConstraintError
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
@@ -208,7 +209,7 @@ def _consolidate_fixes_with_equality_constraints(
             assert (
                 len(valcounts) == 1
             ), "Equality constrained parameters cannot be fixed to different values."
-            fixed_value[eq["index"]] = valcounts.index[0]
+            fixed_value[eq["index"]] = valcounts[0]
 
     return fixed_value
 
@@ -288,7 +289,7 @@ def simplify_covariance_and_sdcorr_constraints(
 
         if uncorrelated:
             lower[diag_indices] = np.maximum(0, lower[diag_indices])
-        elif dim <= 2:
+        elif dim <= 2 and constr["type"] == "sdcorr":
             lower[diag_indices] = np.maximum(0, lower[diag_indices])
             lower[off_indices] = -1
             upper[off_indices] = 1
@@ -619,7 +620,7 @@ def _drop_redundant_linear_constraints(weights, rhs):
     new_rhs = pd.concat(
         [lb, ub, fix], axis=1, names=["lower_bound", "upper_bound", "value"]
     )
-    new_rhs = new_rhs.reindex(weights.index)
+    new_rhs = new_rhs.reindex(new_weights.index)
 
     return new_weights, new_rhs
 
@@ -644,10 +645,14 @@ def _check_consolidated_weights(weights, param_names):
     relevant_names = [param_names[i] for i in weights.columns]
 
     if n_constraints > n_params:
-        raise ValueError(msg_too_many + msg_general.format(relevant_names, weights))
+        raise InvalidConstraintError(
+            msg_too_many + msg_general.format(relevant_names, weights)
+        )
 
     if np.linalg.matrix_rank(weights) < n_constraints:
-        raise ValueError(msg_rank + msg_general.format(relevant_names, weights))
+        raise InvalidConstraintError(
+            msg_rank + msg_general.format(relevant_names, weights)
+        )
 
 
 def _get_kernel_transformation_matrices(weights):

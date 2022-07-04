@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_just_flatten
 
 
 def create_convergence_histories(
@@ -40,15 +42,16 @@ def create_convergence_histories(
             - parameter_distance_normalized
             - monotone_parameter_distance
             - monotone_parameter_distance_normalized
-
     """
     # get solution values for each problem
+    registry = get_registry(extended=True)
+    x_opt = {
+        name: tree_just_flatten(prob["solution"]["params"], registry=registry)
+        for name, prob in problems.items()
+    }
     f_opt = pd.Series(
         {name: prob["solution"]["value"] for name, prob in problems.items()}
     )
-    x_opt = {
-        name: prob["solution"]["params"]["value"] for name, prob in problems.items()
-    }
 
     # build df from results
     time_sr = _get_history_as_stacked_sr_from_results(results, "time_history")
@@ -136,6 +139,7 @@ def _get_history_of_the_parameter_distance(results, x_opt):
     x_dist_history = {}
     for (prob, algo), res in results.items():
         param_history = res["params_history"]
+
         x_dist_history[(prob, algo)] = pd.Series(
             np.linalg.norm(param_history - x_opt[prob], axis=1)
         )
@@ -157,7 +161,7 @@ def _make_history_monotone(df, target_col, direction="minimize"):
             monotonically decreasing, "maximize" means the history will be monotonically
             increasing.
 
-    Retruns:
+    Returns:
         pd.Series: target column where all values that are not weak improvements are
             replaced with the best value so far. Index is the same as that of df.
 

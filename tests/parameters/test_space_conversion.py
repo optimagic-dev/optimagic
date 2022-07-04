@@ -4,13 +4,14 @@ from estimagic import first_derivative
 from estimagic.parameters.space_conversion import _multiply_from_left
 from estimagic.parameters.space_conversion import _multiply_from_right
 from estimagic.parameters.space_conversion import get_space_converter
-from estimagic.parameters.tree_conversion import FlatParams
+from estimagic.parameters.space_conversion import InternalParams
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
 def _get_test_case_no_constraint():
     n_params = 10
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.arange(n_params),
         lower_bounds=np.full(n_params, -1),
         upper_bounds=np.full(n_params, 11),
@@ -22,7 +23,7 @@ def _get_test_case_no_constraint():
 
 
 def _get_test_case_fixed(with_value):
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.arange(5),
         lower_bounds=np.full(5, -np.inf),
         upper_bounds=np.full(5, np.inf),
@@ -33,7 +34,7 @@ def _get_test_case_fixed(with_value):
     else:
         constraints = [{"index": [0, 2, 4], "type": "fixed"}]
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([1, 3]),
         lower_bounds=np.full(2, -np.inf),
         upper_bounds=np.full(2, np.inf),
@@ -44,14 +45,14 @@ def _get_test_case_fixed(with_value):
 
 
 def _get_test_case_increasing(as_one):
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([0.1, 2.2, 2.3, 10.1, -1]),
         lower_bounds=np.full(5, -np.inf),
         upper_bounds=np.full(5, np.inf),
         names=list("abcde"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([0.1, -2.1, -0.1, -7.8, -1]),
         lower_bounds=np.full(5, -np.inf),
         upper_bounds=np.array([np.inf, 0, 0, 0, np.inf]),
@@ -70,14 +71,14 @@ def _get_test_case_increasing(as_one):
 
 
 def _get_test_case_decreasing(as_one):
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([0.1, 2.2, 2.3, 10.1, -1]),
         lower_bounds=np.full(5, -np.inf),
         upper_bounds=np.full(5, np.inf),
         names=list("abcde"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([0.1, -2.1, -0.1, -7.8, -1]),
         lower_bounds=np.full(5, -np.inf),
         upper_bounds=np.array([np.inf, 0, 0, 0, np.inf]),
@@ -96,14 +97,14 @@ def _get_test_case_decreasing(as_one):
 
 
 def _get_test_case_equality(as_one):
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([0, 1.5, 1.5, 0, 1.5, 1]),
         lower_bounds=np.array([-10, 1, 0.9, -np.inf, -np.inf, -10]),
         upper_bounds=np.full(6, np.inf),
         names=list("abcdef"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([0, 1.5, 0, 1]),
         lower_bounds=np.array([-10, 1, -np.inf, -10]),
         upper_bounds=np.full(4, np.inf),
@@ -122,14 +123,14 @@ def _get_test_case_equality(as_one):
 
 
 def _get_test_case_probability():
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([0.1, 0.2, 0.2, 0.5, 10]),
         lower_bounds=np.full(5, -np.inf),
         upper_bounds=np.full(5, np.inf),
         names=list("abcde"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([0.2, 0.4, 0.4, 10]),
         lower_bounds=np.array([0, 0, 0, -np.inf]),
         upper_bounds=np.full(4, np.inf),
@@ -142,14 +143,14 @@ def _get_test_case_probability():
 
 
 def _get_test_case_uncorrelated_covariance():
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([1, 0, 4, 0, 0, 9, 10]),
         lower_bounds=np.full(7, -np.inf),
         upper_bounds=np.full(7, np.inf),
         names=list("abcdefg"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([1, 4, 9, 10]),
         lower_bounds=np.array([0, 0, 0, -np.inf]),
         upper_bounds=np.full(4, np.inf),
@@ -165,14 +166,14 @@ def _get_test_case_uncorrelated_covariance():
 
 
 def _get_test_case_covariance():
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([1, -0.2, 1.2, -0.2, 0.1, 1.3, 0.1, -0.05, 0.2, 1, 10]),
         lower_bounds=np.full(11, -np.inf),
         upper_bounds=np.full(11, np.inf),
         names=list("abcdefghijk"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array(
             [
                 1,
@@ -201,14 +202,14 @@ def _get_test_case_covariance():
 
 
 def _get_test_case_normalized_covariance():
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([4, 0.1, 2, 0.2, 0.3, 3, 10]),
         lower_bounds=np.full(7, -np.inf),
         upper_bounds=np.full(7, np.inf),
         names=list("abcdefg"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([0.05, 1.4133294025, 0.1, 0.2087269956, 1.7165177078, 10]),
         lower_bounds=[-np.inf, 0, -np.inf, -np.inf, 0, -np.inf],
         upper_bounds=np.full(6, np.inf),
@@ -224,14 +225,14 @@ def _get_test_case_normalized_covariance():
 
 
 def _get_test_case_sdcorr():
-    fp = FlatParams(
+    fp = InternalParams(
         values=np.array([2, 1.5, 3, 0.2, 0.15, 0.33, 10]),
         lower_bounds=np.full(7, -np.inf),
         upper_bounds=np.full(7, np.inf),
         names=list("abcdefg"),
     )
 
-    internal = FlatParams(
+    internal = InternalParams(
         values=np.array([2, 0.3, 1.46969385, 0.45, 0.91855865, 2.82023935, 10]),
         lower_bounds=np.array([0, -np.inf, 0, -np.inf, -np.inf, 0, -np.inf]),
         upper_bounds=np.full(7, np.inf),
@@ -270,8 +271,8 @@ IDS = list(TEST_CASES)
 )
 def test_space_converter_with_params(constraints, params, expected_internal):
     converter, internal = get_space_converter(
-        flat_params=params,
-        flat_constraints=constraints,
+        internal_params=params,
+        internal_constraints=constraints,
     )
 
     aaae(internal.values, expected_internal.values)
@@ -295,8 +296,8 @@ def test_space_converter_with_params(constraints, params, expected_internal):
 
 @pytest.mark.parametrize("seed", range(5))
 def test_multiply_from_left_and_right(seed):
-    np.random.seed(seed)
-    mat_list = [np.random.uniform(size=(10, 10)) for i in range(5)]
+    rng = get_rng(seed)
+    mat_list = [rng.uniform(size=(10, 10)) for i in range(5)]
     a, b, c, d, e = mat_list
 
     expected = a @ b @ c @ d @ e

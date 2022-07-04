@@ -2,21 +2,19 @@ from functools import partial
 from typing import NamedTuple
 
 import numpy as np
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.parameters.tree_conversion import FlatParams
+from estimagic.parameters.space_conversion import InternalParams
 
 
 def get_scale_converter(
-    flat_params,
-    func,
+    internal_params,
     scaling,
     scaling_options,
 ):
     """Get a converter between scaled and unscaled parameters.
 
     Args:
-        flat_params (FlatParams): NamedTuple of flattened and possibly reparametrized
-            but not yet scaled parameter values and bounds.
+        internal_params (InternalParams): NamedTuple of internal and possibly
+            reparametrized but not yet scaled parameter values and bounds.
         func (callable): The criterion function. Possibly used to calculate a scaling
             factor.
         scaling (bool): Whether scaling should be done.
@@ -25,17 +23,27 @@ def get_scale_converter(
     Returns:
         ScaleConverter: NamedTuple with methods to convert between scaled and unscaled
             internal parameters and derivatives.
-        FlatParams: NamedTuple of 1d numpy array with flat, internal and scaled
-            parameters and bounds.
+        InternalParams: NamedTuple with entries:
+            - value (np.ndarray): Internal parameter values.
+            - lower_bounds (np.ndarray): Lower bounds on the internal params.
+            - upper_bounds (np.ndarray): Upper bounds on the internal params.
+            - soft_lower_bounds (np.ndarray): Soft lower bounds on the internal params.
+            - soft_upper_bounds (np.ndarray): Soft upper bounds on the internal params.
+            - name (list): List of names of the external parameters.
+            - free_mask (np.ndarray): Boolean mask representing which external parameter
+              is free.
 
     """
     # fast path
     if not scaling:
-        return _fast_path_scale_converter(), flat_params
+        return _fast_path_scale_converter(), internal_params
 
     scaling_options = {} if scaling_options is None else scaling_options
+    valid_keys = {"method", "clipping_value", "magnitude"}
+    scaling_options = {k: v for k, v in scaling_options.items() if k in valid_keys}
+
     factor, offset = calculate_scaling_factor_and_offset(
-        flat_params=flat_params, func=func, **scaling_options
+        internal_params=internal_params, **scaling_options
     )
 
     _params_to_internal = partial(
@@ -63,21 +71,21 @@ def get_scale_converter(
         derivative_from_internal=_derivative_from_internal,
     )
 
-    if flat_params.soft_lower_bounds is not None:
-        _soft_lower = converter.params_to_internal(flat_params.soft_lower_bounds)
+    if internal_params.soft_lower_bounds is not None:
+        _soft_lower = converter.params_to_internal(internal_params.soft_lower_bounds)
     else:
         _soft_lower = None
 
-    if flat_params.soft_upper_bounds is not None:
-        _soft_upper = converter.params_to_internal(flat_params.soft_upper_bounds)
+    if internal_params.soft_upper_bounds is not None:
+        _soft_upper = converter.params_to_internal(internal_params.soft_upper_bounds)
     else:
         _soft_upper = None
 
-    params = FlatParams(
-        values=converter.params_to_internal(flat_params.values),
-        lower_bounds=converter.params_to_internal(flat_params.lower_bounds),
-        upper_bounds=converter.params_to_internal(flat_params.upper_bounds),
-        names=flat_params.names,
+    params = InternalParams(
+        values=converter.params_to_internal(internal_params.values),
+        lower_bounds=converter.params_to_internal(internal_params.lower_bounds),
+        upper_bounds=converter.params_to_internal(internal_params.upper_bounds),
+        names=internal_params.names,
         soft_lower_bounds=_soft_lower,
         soft_upper_bounds=_soft_upper,
     )
@@ -103,16 +111,14 @@ def _fast_path_scale_converter():
 
 
 def calculate_scaling_factor_and_offset(
-    flat_params,
-    func,
+    internal_params,
     method="start_values",
     clipping_value=0.1,
     magnitude=1,
-    numdiff_options=None,
 ):
-    x = flat_params.values
-    lower_bounds = flat_params.lower_bounds
-    upper_bounds = flat_params.upper_bounds
+    x = internal_params.values
+    lower_bounds = internal_params.lower_bounds
+    upper_bounds = internal_params.upper_bounds
 
     if method == "start_values":
         raw_factor = np.clip(np.abs(x), clipping_value, np.inf)
@@ -120,21 +126,9 @@ def calculate_scaling_factor_and_offset(
     elif method == "bounds":
         raw_factor = upper_bounds - lower_bounds
         scaling_offset = lower_bounds
-    elif method == "gradient":
-        numdiff_options = {} if numdiff_options is None else numdiff_options
-        default_numdiff_options = {
-            "scaling_factor": 100,
-            "lower_bounds": lower_bounds,
-            "upper_bounds": upper_bounds,
-            "error_handling": "raise",
-        }
 
-        numdiff_options = {**default_numdiff_options, **numdiff_options}
-
-        gradient = first_derivative(func, x, **numdiff_options)["derivative"]
-
-        raw_factor = np.clip(np.abs(gradient), clipping_value, np.inf)
-        scaling_offset = None
+    else:
+        raise ValueError(f"Invalid scaling method: {method}")
 
     scaling_factor = raw_factor / magnitude
 

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.exceptions import InvalidKwargsError
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
@@ -21,8 +22,9 @@ from estimagic.optimization.process_multistart_sample import process_multistart_
 from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
+from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
-from estimagic.parameters.parameter_groups import get_params_groups
+from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from estimagic.process_user_function import process_func_of_params
 
 
@@ -51,7 +53,7 @@ def maximize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
-    collect_history=None,
+    collect_history=True,
     skip_checks=False,
 ):
     """Maximize criterion using algorithm subject to constraints.
@@ -81,8 +83,8 @@ def maximize(
             optimization is performed.
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+        constraints (list, dict): List with constraint dictionaries or single dict.
+            See :ref:`constraints`.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative
@@ -188,12 +190,13 @@ def maximize(
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
         collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default None,
-            which means that the history is collected as long as optimizers do not
-            parallelize over criterion evaluations.
+            should be collected and returned as part of the result. Default True.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
+
+    Returns:
+        OptimizeResult: The optmization result.
 
     """
     return _optimize(
@@ -251,7 +254,7 @@ def minimize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
-    collect_history=None,
+    collect_history=True,
     skip_checks=False,
 ):
     """Minimize criterion using algorithm subject to constraints.
@@ -281,8 +284,8 @@ def minimize(
             optimization is performed.
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+        constraints (list, dict): List with constraint dictionaries or single dict.
+            See :ref:`constraints`.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative
@@ -388,12 +391,13 @@ def minimize(
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
         collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default None,
-            which means that the history is collected as long as optimizers do not
-            parallelize over criterion evaluations.
+            should be collected and returned as part of the result. Default True.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
+
+    Returns:
+        OptimizeResult: The optmization result.
 
     """
     return _optimize(
@@ -518,6 +522,22 @@ def _optimize(
             raise ValueError(msg.format(algo_info.name))
 
     # ==================================================================================
+    # Split constraints into nonlinear and reparametrization parts
+    # ==================================================================================
+    if isinstance(constraints, dict):
+        constraints = [constraints]
+
+    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
+
+    if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
+        raise ValueError(
+            f"Algorithm {algo_info.name} does not support nonlinear constraints."
+        )
+
+    # the following constraints will be handled via reparametrization
+    constraints = [c for c in constraints if c["type"] != "nonlinear"]
+
+    # ==================================================================================
     # prepare logging
     # ==================================================================================
     if logging:
@@ -611,7 +631,6 @@ def _optimize(
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
-        func=criterion,
         params=params,
         constraints=constraints,
         lower_bounds=lower_bounds,
@@ -625,13 +644,12 @@ def _optimize(
         soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=multistart,
     )
+
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
     if logging:
-        problem_data["flat_params_names"] = (internal_params.names,)
-        problem_data["flat_params_groups"] = get_params_groups(internal_params)
-
+        problem_data["free_mask"] = internal_params.free_mask
         database = _create_and_initialize_database(logging, log_options, problem_data)
         db_kwargs = {
             "database": database,
@@ -667,6 +685,15 @@ def _optimize(
         direction=direction,
     )
 
+    # process nonlinear constraints:
+    internal_constraints = process_nonlinear_constraints(
+        nonlinear_constraints=nonlinear_constraints,
+        params=params,
+        converter=converter,
+        numdiff_options=numdiff_options,
+        skip_checks=skip_checks,
+    )
+
     x = internal_params.values
     # ==================================================================================
     # get the internal algorithm
@@ -677,6 +704,7 @@ def _optimize(
         valid_kwargs=algo_kwargs,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
+        nonlinear_constraints=internal_constraints,
         algo_options=algo_options,
         logging=logging,
         db_kwargs=db_kwargs,
@@ -752,10 +780,25 @@ def _optimize(
     # Process the result
     # ==================================================================================
 
+    _scalar_start_criterion = aggregate_func_output_to_value(
+        converter.func_to_internal(first_crit_eval),
+        algo_info.primary_criterion_entry,
+    )
+
+    fixed_result_kwargs = {
+        "start_criterion": _scalar_start_criterion,
+        "start_params": params,
+        "algorithm": algo_info.name,
+        "direction": direction,
+        "n_free": internal_params.free_mask.sum(),
+    }
+
     res = process_internal_optimizer_result(
         raw_res,
-        direction=direction,
-        params_from_internal=converter.params_from_internal,
+        converter=converter,
+        primary_key=algo_info.primary_criterion_entry,
+        fixed_kwargs=fixed_result_kwargs,
+        skip_checks=skip_checks,
     )
 
     return res
@@ -834,9 +877,8 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     ignored = [option for option in numdiff_options if option not in relevant]
 
     if ignored:
-        warnings.warn(
-            "The following numdiff options were ignored because they will be set "
-            f"internally during the optimization:\n\n{ignored}"
+        raise InvalidKwargsError(
+            f"The following numdiff_options are not allowed:\n\n{ignored}"
         )
 
     numdiff_options = {

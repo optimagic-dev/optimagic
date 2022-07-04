@@ -26,7 +26,6 @@ def sos_gradient(params):
 SCALING_OPTIONS = [
     {"method": "start_values"},
     {"method": "bounds"},
-    {"method": "gradient"},
 ]
 
 PARAMETRIZATION = list(itertools.product(ALGORITHMS, SCALING_OPTIONS))
@@ -52,4 +51,4 @@ def test_optimizations_with_scaling(algorithm, scaling_options):
     )
 
     expected_solution = np.array([0, 0, 0, 3, 4])
-    aaae(res["solution_params"]["value"].to_numpy(), expected_solution)
+    aaae(res.params["value"].to_numpy(), expected_solution)
