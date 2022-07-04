@@ -2,7 +2,6 @@ import warnings
 from functools import partial
 
 import numpy as np
-import pandas as pd
 from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
@@ -246,14 +245,8 @@ def _create_problem_inputs(
         scaling_factor=scaling_factor,
         rng=rng,
     )
-    _x = specification["start_x"]
 
-    if isinstance(_x, np.ndarray):
-        _params = pd.DataFrame(_x.reshape(-1, 1), columns=["value"])
-    else:
-        _params = pd.DataFrame(_x, columns=["value"])
-
-    inputs = {"criterion": _criterion, "params": _params}
+    inputs = {"criterion": _criterion, "params": _x}
     return inputs
 
 
@@ -266,11 +259,6 @@ def _create_problem_solution(specification, scaling_options):
     _params = _solution_x
     if scaling_options is not None:
         _params = _params * _get_scaling_factor(_params, scaling_options)
-
-    if isinstance(_solution_x, np.ndarray):
-        _params = pd.DataFrame(_solution_x.reshape(-1, 1), columns=["value"])
-    else:
-        _params = pd.DataFrame([_solution_x], columns=["value"])
 
     _value = specification["solution_criterion"]
 
