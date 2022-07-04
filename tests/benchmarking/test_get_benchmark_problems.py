@@ -8,12 +8,13 @@ TEST_CASES = []
 for name in [
     "more_wild",
     "cartis_roberts",
+    "example",
+    "estimagic",
     "scalar_functions",
     "scalar_functions_extra",
 ]:
-    for name in ["more_wild", "cartis_roberts", "example", "estimagic"]:
-        for additive, multiplicative, scaling in product([False, True], repeat=3):
-            TEST_CASES.append((name, additive, multiplicative, scaling))
+    for additive, multiplicative, scaling in product([False, True], repeat=3):
+        TEST_CASES.append((name, additive, multiplicative, scaling))
 
 
 @pytest.mark.parametrize(
