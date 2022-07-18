@@ -140,7 +140,7 @@ def _process_linear_weights(constraints):
     """Harmonize the weights of linear constraints.
 
     Args:
-        pc (list): Constraints where the selectors have already been processed.
+        constraints (list): Constraints where the selectors have already been processed.
 
     Returns:
         list: Constraints where all weights are Series.

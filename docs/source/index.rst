@@ -101,7 +101,7 @@ provides functionality to perform statistical inference on estimated parameters.
                             </p>
                         </div>
                     </div>
-                 </a>
+                </a>
             </div>
         </div>
     </div>
@@ -171,6 +171,4 @@ Numerical differentiation
   :hidden:
 
   development/index
-  changes
-  credits
   algorithms

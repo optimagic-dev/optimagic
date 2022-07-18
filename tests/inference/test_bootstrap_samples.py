@@ -5,6 +5,7 @@ from estimagic.inference.bootstrap_samples import _convert_cluster_ids_to_indice
 from estimagic.inference.bootstrap_samples import _get_bootstrap_samples_from_indices
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 from estimagic.inference.bootstrap_samples import get_bootstrap_samples
+from estimagic.utilities import get_rng
 from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
@@ -18,19 +19,20 @@ def data():
 
 
 def test_get_bootstrap_indices_randomization_works_without_clustering(data):
-    np.random.seed(1234)
-    res = get_bootstrap_indices(data, n_draws=2)
+    rng = get_rng(seed=12345)
+    res = get_bootstrap_indices(data, n_draws=2, rng=rng)
     assert set(res[0]) != set(res[1])
 
 
 def test_get_bootstrap_indices_radomization_works_with_clustering(data):
-    res = get_bootstrap_indices(data, cluster_by="hh", n_draws=2, seed=12345)
+    rng = get_rng(seed=12345)
+    res = get_bootstrap_indices(data, cluster_by="hh", n_draws=2, rng=rng)
     assert set(res[0]) != set(res[1])
 
 
 def test_clustering_leaves_households_intact(data):
-    np.random.seed(1234)
-    indices = get_bootstrap_indices(data, cluster_by="hh", n_draws=1)[0]
+    rng = get_rng(seed=12345)
+    indices = get_bootstrap_indices(data, cluster_by="hh", n_draws=1, rng=rng)[0]
     sampled = data.iloc[indices]
     sampled_households = sampled["hh"].unique()
     for household in sampled_households:
@@ -56,4 +58,5 @@ def test_get_bootstrap_samples_from_indices():
 
 
 def test_get_bootstrap_samples_runs(data):
-    get_bootstrap_samples(data, n_draws=2, seed=1234)
+    rng = get_rng(seed=12345)
+    get_bootstrap_samples(data, n_draws=2, rng=rng)

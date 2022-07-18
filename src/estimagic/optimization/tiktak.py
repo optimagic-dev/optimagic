@@ -17,6 +17,7 @@ from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
 from estimagic.parameters.conversion import aggregate_func_output_to_value
+from estimagic.utilities import get_rng
 from scipy.stats import qmc
 from scipy.stats import triang
 
@@ -292,8 +293,8 @@ def draw_exploration_sample(
         sample_unscaled = sampler.random(n=n_samples)
 
     elif sampling_method == "random":
-        np.random.seed(seed)
-        sample_unscaled = np.random.sample(size=(n_samples, len(lower)))
+        rng = get_rng(seed)
+        sample_unscaled = rng.uniform(size=(n_samples, len(lower)))
 
     if sampling_distribution == "uniform":
         sample_scaled = qmc.scale(sample_unscaled, lower, upper)
@@ -470,6 +471,11 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     if valid_new_y[best_index] <= best_y:
         best_x = valid_new_x[best_index]
         best_y = valid_new_y[best_index]
+        best_res = valid_results[best_index]
+    # handle the case that the global optimum was found in the exploration sample and
+    # due to floating point imprecisions the result of the optimization that started at
+    # the global optimum is slightly worse
+    elif best_res is None:
         best_res = valid_results[best_index]
 
     new_x_history = current_state["x_history"] + valid_new_x

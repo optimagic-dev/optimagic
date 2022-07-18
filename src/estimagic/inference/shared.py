@@ -1,28 +1,40 @@
+from typing import NamedTuple
+
 import numpy as np
 import pandas as pd
 import scipy
+from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 from pybaum import tree_unflatten
 
 
 def transform_covariance(
-    flat_params,
+    internal_params,
     internal_cov,
     converter,
+    rng,
     n_samples,
     bounds_handling,
 ):
     """Transform the internal covariance matrix to an external one, given constraints.
 
     Args:
-        flat_params (FlatParams): NamedTuple with internal parameter values and names,
-            lower_bounds and upper_bounds, and free_mask.
+        internal_params (InternalParams): NamedTuple with entries:
+            - value (np.ndarray): Internal parameter values.
+            - lower_bounds (np.ndarray): Lower bounds on the internal params.
+            - upper_bounds (np.ndarray): Upper bounds on the internal params.
+            - soft_lower_bounds (np.ndarray): Soft lower bounds on the internal params.
+            - soft_upper_bounds (np.ndarray): Soft upper bounds on the internal params.
+            - name (list): List of names of the external parameters.
+            - free_mask (np.ndarray): Boolean mask representing which external parameter
+              is free.
         internal_cov (np.ndarray or pandas.DataFrame) with a covariance matrix of the
             internal parameter vector. For background information about internal and
             external params see :ref:`implementation_of_constraints`.
         constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
+        rng (numpy.random.Generator): A random number generator.
         n_samples (int): Number of samples used to transform the covariance matrix of
             the internal parameter vector into the covariance matrix of the external
             parameters.
@@ -37,20 +49,16 @@ def transform_covariance(
             parameters. If parameters were fixed (explicitly or by other constraints),
             the index is a subset of params.index. The columns are the same as the
             index.
-
     """
-    if isinstance(internal_cov, pd.DataFrame):
-        internal_cov = internal_cov.to_numpy()
-
     if converter.has_transforming_constraints:
         _from_internal = converter.params_from_internal
 
-        is_free = flat_params.free_mask
-        lower_bounds = flat_params.lower_bounds
-        upper_bounds = flat_params.upper_bounds
+        is_free = internal_params.free_mask
+        lower_bounds = internal_params.lower_bounds
+        upper_bounds = internal_params.upper_bounds
 
-        sample = np.random.multivariate_normal(
-            mean=flat_params.values,
+        sample = rng.multivariate_normal(
+            mean=internal_params.values,
             cov=internal_cov,
             size=n_samples,
         )
@@ -64,7 +72,7 @@ def transform_covariance(
                 ).any():
                     raise ValueError()
 
-            transformed = _from_internal(internal=params_vec, return_type="flat")
+            transformed = _from_internal(x=params_vec, return_type="flat")
             transformed_free.append(transformed[is_free])
 
         free_cov = np.cov(
@@ -78,18 +86,51 @@ def transform_covariance(
     return free_cov
 
 
-def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level):
-    """Add standard errors, pvalues and confidence intervals to params.
+def calculate_summary_data_estimation(
+    estimation_result,
+    free_estimates,
+    ci_level,
+    method,
+    n_samples,
+    bounds_handling,
+    seed,
+):
+    se = estimation_result.se(
+        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed
+    )
+    lower, upper = estimation_result.ci(
+        method=method,
+        n_samples=n_samples,
+        ci_level=ci_level,
+        bounds_handling=bounds_handling,
+        seed=seed,
+    )
+    p_values = estimation_result.p_values(
+        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed
+    )
+    summary_data = {
+        "value": estimation_result.params,
+        "standard_error": se,
+        "ci_lower": lower,
+        "ci_upper": upper,
+        "p_value": p_values,
+        "free": free_estimates.free_mask,
+    }
+    return summary_data
 
-    Args
-        params (pytree): The input parameter pytree.
-        flat_estimates (FlatParams): NamedTuple with internal estimated parameter values
-            and names, lower_bounds and upper_bounds, and free_mask.
-        free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
-            of the free parameters. If parameters were fixed (explicitly or by other
-            constraints) the index is a subset of params.index. The columns are the same
-            as the index.
-        ci_level (float): Confidence level for the calculation of confidence intervals.
+
+def calculate_estimation_summary(
+    summary_data,
+    names,
+    free_names,
+):
+    """Create estimation summary using pre-calculated results.
+
+    Args:
+        summary_data (dict): Dictionary with entries ['params', 'p_value', 'ci_lower',
+        'ci_upper', 'standard_error'].
+        names (List[str]): List of parameter names, corresponding to result_object.
+        free_names (List[str]): List of parameter names for free parameters.
 
     Returns:
         pytree: A pytree with the same structure as params. Each leaf in the params
@@ -100,47 +141,33 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
             reproduced for convenience.
 
     """
-    if not isinstance(free_cov, pd.DataFrame):
-        free_index = np.array(flat_estimates.names)[flat_estimates.free_mask]
-        free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
-    ####################################################################################
-    # Construct summary data frame for flat estimates
-    ####################################################################################
+    # ==================================================================================
+    # Flatten summary and construct data frame for flat estimates
+    # ==================================================================================
 
-    df = pd.DataFrame(index=flat_estimates.names)
-    df["value"] = flat_estimates.values
-    df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
+    registry = get_registry(extended=True)
+    flat_data = {
+        key: tree_just_flatten(val, registry=registry)
+        for key, val in summary_data.items()
+    }
 
-    df["p_value"] = calculate_p_values(
-        df["value"].to_numpy(),
-        df["standard_error"].to_numpy(),
-    )
+    df = pd.DataFrame(flat_data, index=names)
 
-    lower, upper = calculate_ci(
-        df["value"].to_numpy(),
-        df["standard_error"].to_numpy(),
-        ci_level=ci_level,
-    )
-    df["ci_lower"] = lower
-    df["ci_upper"] = upper
-
-    df.loc[free_cov.index, "stars"] = pd.cut(
-        df.loc[free_cov.index, "p_value"],
+    df.loc[free_names, "stars"] = pd.cut(
+        df.loc[free_names, "p_value"],
         bins=[-1, 0.01, 0.05, 0.1, 2],
         labels=["***", "**", "*", ""],
     )
 
-    ####################################################################################
+    # ==================================================================================
     # Map summary data into params tree structure
-    ####################################################################################
-
-    registry = get_registry(extended=True)
+    # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(estimates, flat_estimates.names, registry=registry)
+    indices = tree_unflatten(summary_data["value"], names, registry=registry)
 
+    estimates_flat = tree_just_flatten(summary_data["value"])
     indices_flat = tree_just_flatten(indices)
-    estimates_flat = tree_just_flatten(estimates)
 
     # use index chunks in indices_flat to access the corresponding sub data frame of df,
     # and use the index information stored in estimates_flat to form the correct (multi)
@@ -152,20 +179,20 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
             loc = [index_leaf]
             index = [0]
         elif isinstance(params_leaf, pd.DataFrame) and "value" in params_leaf:
-            loc = index_leaf["value"].values.flatten()
+            loc = index_leaf["value"].to_numpy().flatten()
             index = params_leaf.index
         elif isinstance(params_leaf, pd.DataFrame):
-            loc = index_leaf.values.flatten()
+            loc = index_leaf.to_numpy().flatten()
             # use product of existing index and columns for regular pd.DataFrame
             index = pd.MultiIndex.from_tuples(
                 [
-                    (*row, col)
+                    (*row, col) if isinstance(row, tuple) else (row, col)
                     for row in params_leaf.index
                     for col in params_leaf.columns
                 ]
             )
         elif isinstance(params_leaf, pd.Series):
-            loc = index_leaf.values.flatten()
+            loc = index_leaf.to_numpy().flatten()
             index = params_leaf.index
         else:
             # array case (numpy or jax)
@@ -182,7 +209,7 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
 
         summary_flat.append(df_chunk)
 
-    summary = tree_unflatten(estimates, summary_flat)
+    summary = tree_unflatten(summary_data["value"], summary_flat)
     return summary
 
 
@@ -241,7 +268,7 @@ def _to_numpy(df_or_array, name):
     elif isinstance(df_or_array, np.ndarray):
         arr = df_or_array
     else:
-        raise ValueError(
+        raise TypeError(
             f"{name} must be a DataFrame or numpy array, not {type(df_or_array)}."
         )
     return arr
@@ -260,9 +287,7 @@ def _check_names_coincide(name_dict):
 
 def get_derivative_case(derivative):
     """Determine which kind of derivative should be used."""
-    if isinstance(derivative, (pd.DataFrame, np.ndarray)):
-        case = "pre-calculated"
-    elif callable(derivative):
+    if callable(derivative):
         case = "closed-form"
     elif derivative is False:
         case = "skip"
@@ -271,25 +296,66 @@ def get_derivative_case(derivative):
     return case
 
 
-def check_is_optimized_and_derivative_case(is_minimized, derivative_case):
-    if (not is_minimized) and derivative_case == "pre-calculated":
-        raise ValueError(
-            "Providing a pre-calculated derivative is only possible if the "
-            "optimization was done outside of the estimate_function, i.e. if "
-            "optimize_options=False."
-        )
-
-
-def calculate_ci(flat_values, flat_standard_errors, ci_level):
-
+def calculate_ci(free_values, free_standard_errors, ci_level):
     alpha = 1 - ci_level
     scale = scipy.stats.norm.ppf(1 - alpha / 2)
-    lower = flat_values - scale * flat_standard_errors
-    upper = flat_values + scale * flat_standard_errors
+    lower = free_values - scale * free_standard_errors
+    upper = free_values + scale * free_standard_errors
     return lower, upper
 
 
-def calculate_p_values(flat_values, flat_standard_error):
-    tvalues = flat_values / np.clip(flat_standard_error, 1e-300, np.inf)
+def calculate_p_values(free_values, free_standard_errors):
+    tvalues = free_values / np.clip(free_standard_errors, 1e-300, np.inf)
     pvalues = 2 * scipy.stats.norm.sf(np.abs(tvalues))
     return pvalues
+
+
+def calculate_free_estimates(estimates, internal_estimates):
+    mask = internal_estimates.free_mask
+    names = internal_estimates.names
+
+    registry = get_registry(extended=True)
+    external_flat = np.array(tree_just_flatten(estimates, registry=registry))
+
+    free_estimates = FreeParams(
+        values=external_flat[mask],
+        free_mask=mask,
+        all_names=names,
+        free_names=np.array(names)[mask].tolist(),
+    )
+    return free_estimates
+
+
+def transform_free_cov_to_cov(free_cov, free_params, params, return_type):
+    """Fill non-free values and project to params block-tree."""
+    mask = free_params.free_mask
+    cov = np.full((len(mask), len(mask)), np.nan)
+    cov[np.ix_(mask, mask)] = free_cov
+    if return_type == "dataframe":
+        names = free_params.all_names
+        cov = pd.DataFrame(cov, columns=names, index=names)
+    elif return_type == "pytree":
+        cov = matrix_to_block_tree(cov, params, params)
+    elif return_type != "array":
+        raise ValueError(
+            "return_type must be one of pytree, array, or dataframe, "
+            f"not {return_type}."
+        )
+    return cov
+
+
+def transform_free_values_to_params_tree(values, free_params, params):
+    """Fill non-free values and project to params tree structure."""
+    mask = free_params.free_mask
+    flat = np.full(len(mask), np.nan)
+    flat[np.ix_(mask)] = values
+    registry = get_registry(extended=True)
+    pytree = tree_unflatten(params, flat, registry=registry)
+    return pytree
+
+
+class FreeParams(NamedTuple):
+    values: np.ndarray  # free external parameter values
+    free_mask: np.ndarray  # boolean mask to filter free params from external params
+    free_names: list  # names of free external parameters
+    all_names: list  # names of all external parameters

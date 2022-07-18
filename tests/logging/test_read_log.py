@@ -6,6 +6,9 @@ from estimagic.logging.read_log import read_optimization_problem_table
 from estimagic.logging.read_log import read_start_params
 from estimagic.logging.read_log import read_steps_table
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_equal
+from pybaum import tree_just_flatten
 
 
 @pytest.fixture
@@ -54,6 +57,21 @@ def test_log_reader_read_history(example_db):
     assert res["runtime"][0] == 0
     assert res["criterion"][0] == 14
     assert res["params"][0] == {"a": 1, "b": 2, "c": 3}
+
+
+def test_log_reader_read_multistart_history(example_db):
+    reader = OptimizeLogReader(example_db)
+    history, local_history, exploration = reader.read_multistart_history(
+        direction="minimize"
+    )
+    assert local_history is None
+    assert exploration is None
+
+    registry = get_registry(extended=True)
+    assert tree_equal(
+        tree_just_flatten(history, registry=registry),
+        tree_just_flatten(reader.read_history(), registry=registry),
+    )
 
 
 def test_read_steps_table(example_db):

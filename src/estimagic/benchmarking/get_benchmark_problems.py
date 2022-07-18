@@ -5,6 +5,7 @@ import numpy as np
 from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
+from estimagic.utilities import get_rng
 
 
 def get_benchmark_problems(
@@ -14,6 +15,9 @@ def get_benchmark_problems(
     additive_noise_options=None,
     multiplicative_noise=False,
     multiplicative_noise_options=None,
+    scaling=False,
+    scaling_options=None,
+    seed=None,
 ):
     """Get a dictionary of test problems for a benchmark.
 
@@ -47,6 +51,15 @@ def get_benchmark_problems(
             implement multiplicative noise as `f_noisy = f * epsilon` but by
             `f_noisy` = f + (epsilon - 1) * f_clipped` where f_clipped is bounded
             away from zero from both sides by the clipping value.
+        scaling (bool): Whether the parameter space of the problem should be rescaled.
+        scaling_options (dict): Dict containing the keys "min_scale", and "max_scale".
+            If scaling is True, the parameters the optimizer sees are the standard
+            parameters multiplied by np.linspace(min_scale, max_scale, len(params)).
+            If min_scale and max_scale have very different orders of magnitude, the
+            problem becomes harder to solve for many optimizers.
+        seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
+            numpy.random.default_rng is used seeded with seed. If seed is already a
+            Generator instance then that instance is used.
 
     Returns:
         dict: Nested dictionary with benchmark problems of the structure:
@@ -56,6 +69,7 @@ def get_benchmark_problems(
             "value" and "info" might contain information about the test problem.
 
     """
+    rng = get_rng(seed)
     raw_problems = _get_raw_problems(name)
 
     if additive_noise:
@@ -70,17 +84,27 @@ def get_benchmark_problems(
     else:
         multiplicative_options = None
 
+    if scaling:
+        scaling_options = scaling_options if scaling_options is not None else {}
+        scaling_options = {**{"min_scale": 0.1, "max_scale": 10}, **scaling_options}
+    else:
+        scaling_options = None
+
     problems = {}
     for name, specification in raw_problems.items():
         inputs = _create_problem_inputs(
             specification,
             additive_options=additive_options,
             multiplicative_options=multiplicative_options,
+            scaling_options=scaling_options,
+            rng=rng,
         )
 
         problems[name] = {
             "inputs": inputs,
-            "solution": _create_problem_solution(specification),
+            "solution": _create_problem_solution(
+                specification, scaling_options=scaling_options
+            ),
             "info": specification.get("info", {}),
         }
 
@@ -98,44 +122,114 @@ def _get_raw_problems(name):
         raw_problems = CARTIS_ROBERTS_PROBLEMS
     elif name == "example":
         subset = {
-            "linear_full_rank_good_start",
             "rosenbrock_good_start",
             "helical_valley_good_start",
             "powell_singular_good_start",
             "freudenstein_roth_good_start",
             "bard_good_start",
             "box_3d",
-            "jennrich_sampson",
             "brown_dennis_good_start",
             "chebyquad_6",
             "bdqrtic_8",
             "mancino_5_good_start",
         }
         raw_problems = {k: v for k, v in MORE_WILD_PROBLEMS.items() if k in subset}
+    elif name == "estimagic":
+        subset_mw = {
+            "cube_8",
+            "chebyquad_6",
+            "bdqrtic_8",
+            "linear_full_rank_bad_start",
+            "chebyquad_7",
+            "osborne_two_bad_start",
+            "bdqrtic_10",
+            "bdqrtic_11",
+            "heart_eight_bad_start",
+            "mancino_5_bad_start",
+            "chebyquad_8",
+            "cube_6",
+            "cube_5",
+            "bdqrtic_12",
+            "chebyquad_10",
+            "chebyquad_9",
+            "chebyquad_11",
+            "mancino_8",
+            "mancino_10",
+            "mancino_12_bad_start",
+        }
+        subset_cr = {
+            "hatfldg",
+            "bratu_3d",
+            "cbratu_2d",
+            "chnrsbne",
+            "bratu_2d",
+            "vardimne",
+            "penalty_1",
+            "arglale",
+            "arglble",
+        }
+        subset_add_steps = {
+            "rosenbrock_good_start",
+            "cube_5",
+            "chebyquad_10",
+        }
+        raw_problems = {}
+        for k, v in MORE_WILD_PROBLEMS.items():
+            if k in subset_mw:
+                raw_problems[k] = v
+            if k in subset_add_steps:
+                problem = v.copy()
+                raw_func = problem["criterion"]
+
+                def step_func(x):
+                    return raw_func(x.round(3))
+
+                problem["criterion"] = step_func
+                raw_problems[f"{k}_with_steps"] = problem
+
+        for k, v in CARTIS_ROBERTS_PROBLEMS.items():
+            if k in subset_cr:
+                raw_problems[k] = v
+
     else:
         raise NotImplementedError()
     return raw_problems
 
 
-def _create_problem_inputs(specification, additive_options, multiplicative_options):
+def _create_problem_inputs(
+    specification, additive_options, multiplicative_options, scaling_options, rng
+):
+    _x = np.array(specification["start_x"])
+
+    if scaling_options is not None:
+        scaling_factor = _get_scaling_factor(_x, scaling_options)
+        _x = _x * scaling_factor
+    else:
+        scaling_factor = None
+
     _criterion = partial(
         _internal_criterion_template,
         criterion=specification["criterion"],
         additive_options=additive_options,
         multiplicative_options=multiplicative_options,
+        scaling_factor=scaling_factor,
+        rng=rng,
     )
-    _x = specification["start_x"]
 
     inputs = {"criterion": _criterion, "params": _x}
     return inputs
 
 
-def _create_problem_solution(specification):
+def _create_problem_solution(specification, scaling_options):
     _solution_x = specification.get("solution_x")
     if _solution_x is None:
-        _solution_x = specification["start_x"] * np.nan
-
+        _solution_x = np.array(specification["start_x"]) * np.nan
+    elif isinstance(_solution_x, list):
+        _solution_x = np.array(_solution_x)
     _params = _solution_x
+    if scaling_options is not None:
+        _params = _params * _get_scaling_factor(_params, scaling_options)
+
     _value = specification["solution_criterion"]
 
     solution = {
@@ -145,15 +239,23 @@ def _create_problem_solution(specification):
     return solution
 
 
+def _get_scaling_factor(x, options):
+    return np.linspace(options["min_scale"], options["max_scale"], len(x))
+
+
 def _internal_criterion_template(
-    params, criterion, additive_options, multiplicative_options
+    params, criterion, additive_options, multiplicative_options, scaling_factor, rng
 ):
+    if scaling_factor is not None:
+        params = params / scaling_factor
+
     critval = criterion(params)
 
     noise = _get_combined_noise(
         critval,
         additive_options=additive_options,
         multiplicative_options=multiplicative_options,
+        rng=rng,
     )
 
     noisy_critval = critval + noise
@@ -169,7 +271,7 @@ def _internal_criterion_template(
     return out
 
 
-def _get_combined_noise(fval, additive_options, multiplicative_options):
+def _get_combined_noise(fval, additive_options, multiplicative_options, rng):
     size = len(np.atleast_1d(fval))
     if multiplicative_options is not None:
         options = multiplicative_options.copy()
@@ -177,21 +279,23 @@ def _get_combined_noise(fval, additive_options, multiplicative_options):
         clipval = options.pop("clipping_value")
         scaled_std = std * _clip_away_from_zero(fval, clipval)
         multiplicative_noise = _sample_from_distribution(
-            **options, std=scaled_std, size=size
+            **options, std=scaled_std, size=size, rng=rng
         )
     else:
         multiplicative_noise = 0
 
     if additive_options is not None:
-        additive_noise = _sample_from_distribution(**additive_options, size=size)
+        additive_noise = _sample_from_distribution(
+            **additive_options, size=size, rng=rng
+        )
     else:
         additive_noise = 0
 
     return multiplicative_noise + additive_noise
 
 
-def _sample_from_distribution(distribution, mean, std, size, correlation=0):
-    sample = NOISE_DISTRIBUTIONS[distribution](size=size)
+def _sample_from_distribution(distribution, mean, std, size, rng, correlation=0):
+    sample = NOISE_DISTRIBUTIONS[distribution](size=size, rng=rng)
     dim = size if isinstance(size, int) else size[1]
     if correlation != 0 and dim > 1:
         chol = np.linalg.cholesky(np.diag(np.ones(dim) - correlation) + correlation)

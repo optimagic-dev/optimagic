@@ -24,6 +24,7 @@ from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from estimagic.process_user_function import process_func_of_params
 
 
@@ -83,7 +84,7 @@ def maximize(
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative
@@ -193,6 +194,9 @@ def maximize(
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
+
+    Returns:
+        OptimizeResult: The optmization result.
 
     """
     return _optimize(
@@ -281,7 +285,7 @@ def minimize(
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative
@@ -391,6 +395,9 @@ def minimize(
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
+
+    Returns:
+        OptimizeResult: The optmization result.
 
     """
     return _optimize(
@@ -515,6 +522,22 @@ def _optimize(
             raise ValueError(msg.format(algo_info.name))
 
     # ==================================================================================
+    # Split constraints into nonlinear and reparametrization parts
+    # ==================================================================================
+    if isinstance(constraints, dict):
+        constraints = [constraints]
+
+    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
+
+    if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
+        raise ValueError(
+            f"Algorithm {algo_info.name} does not support nonlinear constraints."
+        )
+
+    # the following constraints will be handled via reparametrization
+    constraints = [c for c in constraints if c["type"] != "nonlinear"]
+
+    # ==================================================================================
     # prepare logging
     # ==================================================================================
     if logging:
@@ -608,7 +631,6 @@ def _optimize(
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
-        func=criterion,
         params=params,
         constraints=constraints,
         lower_bounds=lower_bounds,
@@ -622,6 +644,7 @@ def _optimize(
         soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=multistart,
     )
+
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
@@ -662,6 +685,15 @@ def _optimize(
         direction=direction,
     )
 
+    # process nonlinear constraints:
+    internal_constraints = process_nonlinear_constraints(
+        nonlinear_constraints=nonlinear_constraints,
+        params=params,
+        converter=converter,
+        numdiff_options=numdiff_options,
+        skip_checks=skip_checks,
+    )
+
     x = internal_params.values
     # ==================================================================================
     # get the internal algorithm
@@ -672,6 +704,7 @@ def _optimize(
         valid_kwargs=algo_kwargs,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
+        nonlinear_constraints=internal_constraints,
         algo_options=algo_options,
         logging=logging,
         db_kwargs=db_kwargs,

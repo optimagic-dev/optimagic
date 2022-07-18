@@ -35,6 +35,10 @@ class InvalidConstraintError(EstimagicError):
     """Exception for invalid user provided constraints."""
 
 
+class InvalidBoundsError(EstimagicError):
+    """Exception for invalid user provided bounds."""
+
+
 class NotInstalledError(EstimagicError):
     """Exception when optional dependencies are needed but not installed."""
 

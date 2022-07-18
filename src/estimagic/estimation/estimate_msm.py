@@ -1,8 +1,12 @@
 """Do a method of simlated moments estimation."""
 import functools
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
+from dataclasses import field
+from functools import cached_property
 from typing import Any
+from typing import Dict
 from typing import Union
 
 import numpy as np
@@ -10,20 +14,24 @@ import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import InvalidFunctionError
-from estimagic.exceptions import NotAvailableError
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import calculate_ci
-from estimagic.inference.shared import calculate_inference_quantities
+from estimagic.inference.shared import calculate_estimation_summary
+from estimagic.inference.shared import calculate_free_estimates
 from estimagic.inference.shared import calculate_p_values
-from estimagic.inference.shared import check_is_optimized_and_derivative_case
+from estimagic.inference.shared import calculate_summary_data_estimation
+from estimagic.inference.shared import FreeParams
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
+from estimagic.inference.shared import transform_free_cov_to_cov
+from estimagic.inference.shared import transform_free_values_to_params_tree
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.conversion import Converter
 from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.space_conversion import InternalParams
 from estimagic.parameters.tree_registry import get_registry
 from estimagic.sensitivity.msm_sensitivity import calculate_actual_sensitivity_to_noise
 from estimagic.sensitivity.msm_sensitivity import (
@@ -39,6 +47,8 @@ from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from estimagic.utilities import get_rng
+from estimagic.utilities import to_pickle
 from pybaum import leaf_names
 from pybaum import tree_just_flatten
 
@@ -107,22 +117,26 @@ def estimate_msm(
             Note that "optimal" refers to the asymptotically optimal weighting matrix
             and is often not a good choice due to large finite sample bias.
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
             The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "fast_logging": A boolean that determines if "unsafe" settings are used
-            to speed up write processes to the database. This should only be used for
-            very short running criterion functions where the main purpose of the log
-            is a real-time dashboard and it would not be catastrophic to get a
-            corrupted database in case of a sudden system shutdown. If one evaluation
-            of the criterion function (and gradient if applicable) takes more than
-            100 ms, the logging overhead is negligible.
-            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
-            do if the tables we want to write to already exist. Default "extend".
-            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
-            do if the database we want to write to already exists. Default "extend".
+
+            - "fast_logging" (bool):
+                A boolean that determines if "unsafe" settings are used to speed up
+                write processes to the database. This should only be used for very short
+                running criterion functions where the main purpose of the log is a
+                real-time dashboard and it would not be catastrophic to get a corrupted
+                database in case of a sudden system shutdown. If one evaluation of the
+                criterion function (and gradient if applicable) takes more than 100 ms,
+                the logging overhead is negligible.
+            - "if_table_exists" (str):
+                One of "extend", "replace", "raise". What to do if the tables we want to
+                write to already exist. Default "extend".
+            - "if_database_exists" (str):
+                One of "extend", "replace", "raise". What to do if the database we want
+                to write to already exists. Default "extend".
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details. Note that by default we increase the
@@ -158,8 +172,6 @@ def estimate_msm(
         )
 
     jac_case = get_derivative_case(jacobian)
-
-    check_is_optimized_and_derivative_case(is_optimized, jac_case)
 
     check_numdiff_options(numdiff_options, "estimate_msm")
 
@@ -259,8 +271,7 @@ def estimate_msm(
     else:
         func_eval = {"contributions": sim_mom_eval}
 
-    converter, flat_estimates = get_converter(
-        func=helper,
+    converter, internal_estimates = get_converter(
         params=estimates,
         constraints=constraints,
         lower_bounds=lower_bounds,
@@ -289,9 +300,9 @@ def estimate_msm(
 
         int_jac = first_derivative(
             func=func,
-            params=flat_estimates.values,
-            lower_bounds=flat_estimates.lower_bounds,
-            upper_bounds=flat_estimates.upper_bounds,
+            params=internal_estimates.values,
+            lower_bounds=internal_estimates.lower_bounds,
+            upper_bounds=internal_estimates.upper_bounds,
             **numdiff_options,
         )["derivative"]
 
@@ -317,10 +328,11 @@ def estimate_msm(
     # Create MomentsResult
     # ==================================================================================
 
+    free_estimates = calculate_free_estimates(estimates, internal_estimates)
+
     res = MomentsResult(
-        params=estimates,
-        weights=weights,
-        _flat_params=flat_estimates,
+        _params=estimates,
+        _weights=weights,
         _converter=converter,
         _internal_weights=internal_weights,
         _internal_moments_cov=internal_moments_cov,
@@ -328,6 +340,8 @@ def estimate_msm(
         _jacobian=jacobian_eval,
         _no_jacobian_reason=_no_jac_reason,
         _empirical_moments=empirical_moments,
+        _internal_estimates=internal_estimates,
+        _free_estimates=free_estimates,
         _has_constraints=constraints not in [None, []],
     )
     return res
@@ -428,7 +442,6 @@ def _partial_kwargs(func, kwargs):
 
     In contrast to normal partial this works if kwargs in None. If func is not a
     callable it simply returns None.
-
     """
     if isinstance(func, Callable):
         if kwargs not in (None, {}):
@@ -443,9 +456,12 @@ def _partial_kwargs(func, kwargs):
 
 @dataclass
 class MomentsResult:
-    params: Any
-    weights: Any
-    _flat_params: Any
+    """Method of moments estimation results object."""
+
+    _params: Any
+    _internal_estimates: InternalParams
+    _free_estimates: FreeParams
+    _weights: Any
     _converter: Converter
     _internal_moments_cov: np.ndarray
     _internal_weights: np.ndarray
@@ -454,53 +470,70 @@ class MomentsResult:
     _has_constraints: bool
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
+    _cache: Dict = field(default_factory=dict)
+
+    def _get_free_cov(self, method, n_samples, bounds_handling, seed):
+        if method not in {"optimal", "robust"}:
+            msg = f"Invalid method {method}. method must be in {'optimal', 'robust'}"
+            raise ValueError(msg)
+        args = (method, n_samples, bounds_handling, seed)
+        is_cached = args in self._cache
+
+        if is_cached:
+            free_cov = self._cache[args]
+        else:
+            free_cov = _calculate_free_cov_msm(
+                internal_estimates=self._internal_estimates,
+                internal_jacobian=self._internal_jacobian,
+                internal_moments_cov=self._internal_moments_cov,
+                internal_weights=self._internal_weights,
+                converter=self._converter,
+                method=method,
+                n_samples=n_samples,
+                bounds_handling=bounds_handling,
+                seed=seed,
+            )
+            if seed is not None:
+                self._cache[args] = free_cov
+            elif self._converter.has_transforming_constraints:
+                msg = (
+                    "seed is set to None and constraints are transforming. This leads "
+                    "to randomness in the result. To avoid random behavior, choose a "
+                    "non-None seed."
+                )
+                warnings.warn(msg)
+
+        return free_cov
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def weights(self):
+        return self._weights
 
     @property
     def jacobian(self):
         return self._jacobian
 
-    @property
+    @cached_property
     def _se(self):
         return self.se()
 
-    @property
+    @cached_property
     def _cov(self):
         return self.cov()
 
-    @property
+    @cached_property
     def _summary(self):
         return self.summary()
 
-    @property
+    @cached_property
     def _ci(self):
         return self.ci()
 
-    def _get_free_cov(self, method, n_samples, bounds_handling, seed):
-
-        int_jac = self._internal_jacobian
-        weights = self._internal_weights
-        converter = self._converter
-        flat_params = self._flat_params
-        moments_cov = self._internal_moments_cov
-
-        if method == "optimal":
-            int_cov = cov_optimal(int_jac, weights)
-        else:
-            int_cov = cov_robust(int_jac, weights, moments_cov)
-
-        np.random.seed(seed)
-
-        free_cov = transform_covariance(
-            flat_params=flat_params,
-            internal_cov=int_cov,
-            converter=converter,
-            n_samples=n_samples,
-            bounds_handling=bounds_handling,
-        )
-
-        return free_cov
-
-    @property
+    @cached_property
     def _p_values(self):
         return self.p_values()
 
@@ -536,8 +569,7 @@ class MomentsResult:
 
         Returns:
             Any: A pytree with the same structure as params containing standard errors
-            for the parameter estimates.
-
+                for the parameter estimates.
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -546,12 +578,14 @@ class MomentsResult:
             seed=seed,
         )
 
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = np.sqrt(np.diagonal(free_cov))
+        free_se = np.sqrt(np.diagonal(free_cov))
 
-        out = self._converter.params_from_internal(helper)
-
-        return out
+        se = transform_free_values_to_params_tree(
+            values=free_se,
+            free_params=self._free_estimates,
+            params=self._params,
+        )
+        return se
 
     def cov(
         self,
@@ -591,7 +625,6 @@ class MomentsResult:
         Returns:
             Any: The covariance matrix of the estimated parameters as block-pytree or
                 numpy array.
-
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -599,20 +632,13 @@ class MomentsResult:
             bounds_handling=bounds_handling,
             seed=seed,
         )
-        if return_type == "array":
-            out = free_cov
-        elif return_type == "dataframe":
-            free_index = np.array(self._flat_params.names)[self._flat_params.free_mask]
-            out = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
-        elif return_type == "pytree":
-            if len(free_cov) != len(self._flat_params.values):
-                raise NotAvailableError(
-                    "Covariance matrices in block-pytree format are only available if "
-                    "there are no constraints that reduce the number of free "
-                    "parameters."
-                )
-            out = matrix_to_block_tree(free_cov, self.params, self.params)
-        return out
+        cov = transform_free_cov_to_cov(
+            free_cov=free_cov,
+            free_params=self._free_estimates,
+            params=self._params,
+            return_type=return_type,
+        )
+        return cov
 
     def summary(
         self,
@@ -648,20 +674,20 @@ class MomentsResult:
 
         Returns:
             Any: The estimation summary as pytree of DataFrames.
-
         """
-        free_cov = self._get_free_cov(
+        summary_data = calculate_summary_data_estimation(
+            self,
+            free_estimates=self._free_estimates,
             method=method,
+            ci_level=ci_level,
             n_samples=n_samples,
             bounds_handling=bounds_handling,
             seed=seed,
         )
-
-        summary = calculate_inference_quantities(
-            estimates=self.params,
-            flat_estimates=self._flat_params,
-            free_cov=free_cov,
-            ci_level=ci_level,
+        summary = calculate_estimation_summary(
+            summary_data=summary_data,
+            names=self._free_estimates.all_names,
+            free_names=self._free_estimates.free_names,
         )
         return summary
 
@@ -703,7 +729,6 @@ class MomentsResult:
                 confidence intervals.
             Any: Pytree with the same structure as params containing upper bounds of
                 confidence intervals.
-
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -712,19 +737,18 @@ class MomentsResult:
             seed=seed,
         )
 
-        free_values = self._flat_params.values[self._flat_params.free_mask]
-        free_se = np.sqrt(np.diagonal(free_cov))
+        free_lower, free_upper = calculate_ci(
+            free_values=self._free_estimates.values,
+            free_standard_errors=np.sqrt(np.diagonal(free_cov)),
+            ci_level=ci_level,
+        )
 
-        free_lower, free_upper = calculate_ci(free_values, free_se, ci_level)
-
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_lower
-        lower = self._converter.params_from_internal(helper)
-
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_upper
-        upper = self._converter.params_from_internal(helper)
-
+        lower, upper = (
+            transform_free_values_to_params_tree(
+                values, free_params=self._free_estimates, params=self._params
+            )
+            for values in (free_lower, free_upper)
+        )
         return lower, upper
 
     def p_values(
@@ -734,7 +758,7 @@ class MomentsResult:
         bounds_handling="clip",
         seed=None,
     ):
-        """Calculate confidence intervals.
+        """Calculate p-values.
 
         Args:
             method (str): One of "robust", "optimal". Despite the name, "optimal" is
@@ -757,11 +781,8 @@ class MomentsResult:
                 transforming constraints.
 
         Returns:
-            Any: Pytree with the same structure as params containing lower bounds of
-                confidence intervals.
-            Any: Pytree with the same structure as params containing upper bounds of
-                confidence intervals.
-
+            Any: Pytree with the same structure as params containing p-values.
+            Any: Pytree with the same structure as params containing p-values.
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -770,16 +791,15 @@ class MomentsResult:
             seed=seed,
         )
 
-        free_values = self._flat_params.values[self._flat_params.free_mask]
-        free_se = np.sqrt(np.diagonal(free_cov))
+        free_p_values = calculate_p_values(
+            free_values=self._free_estimates.values,
+            free_standard_errors=np.sqrt(np.diagonal(free_cov)),
+        )
 
-        free_p_values = calculate_p_values(free_values, free_se)
-
-        helper = np.full(len(self._flat_params.values), np.nan)
-        helper[self._flat_params.free_mask] = free_p_values
-        out = self._converter.params_from_internal(helper)
-
-        return out
+        p_values = transform_free_values_to_params_tree(
+            free_p_values, free_params=self._free_estimates, params=self._params
+        )
+        return p_values
 
     def sensitivity(
         self,
@@ -793,10 +813,10 @@ class MomentsResult:
 
         The sensitivity measures are based on the following papers:
 
-        Andrews, Gentzkow & Shapiro
-        (https://academic.oup.com/qje/article/132/4/1553/3861634)
+        Andrews, Gentzkow & Shapiro (2017, Quarterly Journal of Economics)
 
-        Honore, Jorgensen & de Paula (https://papers.srn.com/abstract=3518640)
+        Honore, Jorgensen & de Paula
+        (https://onlinelibrary.wiley.com/doi/full/10.1002/jae.2779)
 
         In the papers the different kinds of sensitivity measures are just called
         m1, e2, e3, e4, e5 and e6. We try to give them more informative names, but
@@ -804,21 +824,27 @@ class MomentsResult:
 
         Args:
             kind (str): The following kinds are supported:
-                - "bias": Origally m1. How strongly would the parameter estimates be
-                   biased if the kth moment was misspecified, i.e not zero in
-                   expectation?
-                - "noise_fundamental": Originally e2. How much precision would be lost
-                   if the kth moment was subject to a little additional noise if the
-                   optimal weighting matrix was used?
-                - "noise": Originally e3. How much precision would be lost if the kth
-                  moment was subjet to a little additional noise?
-                - "removal": Originally e4. How much precision would be lost if the kth
-                  moment was excluded from the estimation?
-                - "removal_fundamental": Originally e5. How much precision would be lost
-                  if the kth moment was excluded from the estimation if the
-                  asymptotically optimal weighting matrix was used.
-                - "weighting": Originally e6. How would the precision change if the
-                  weight of the kth moment is increased a little?
+
+                - "bias":
+                    Origally m1. How strongly would the parameter estimates be biased if
+                    the kth moment was misspecified, i.e not zero in expectation?
+                - "noise_fundamental":
+                    Originally e2. How much precision would be lost if the kth moment
+                    was subject to a little additional noise if the optimal weighting
+                    matrix was used?
+                - "noise":
+                    Originally e3. How much precision would be lost if the kth moment
+                    was subjet to a little additional noise?
+                - "removal":
+                    Originally e4. How much precision would be lost if the kth moment
+                    was excluded from the estimation?
+                - "removal_fundamental":
+                    Originally e5. How much precision would be lost if the kth moment
+                    was excluded from the estimation if the asymptotically optimal
+                    weighting matrix was used.
+                - "weighting":
+                    Originally e6. How would the precision change if the weight of the
+                    kth moment is increased a little?
             n_samples (int): Number of samples used to transform the covariance matrix
                 of the internal parameter vector into the covariance matrix of the
                 external parameters. For background information about internal and
@@ -840,7 +866,6 @@ class MomentsResult:
             Any: The sensitivity measure as a pytree, numpy array or DataFrame.
                 In 2d formats, the sensitivity measures have one row per estimated
                 parameter and one column per moment.
-
         """
         if self._has_constraints:
             raise NotImplementedError(
@@ -911,12 +936,12 @@ class MomentsResult:
         elif return_type == "pytree":
             out = matrix_to_block_tree(
                 raw,
-                outer_tree=self.params,
+                outer_tree=self._params,
                 inner_tree=self._empirical_moments,
             )
         elif return_type == "dataframe":
             registry = get_registry(extended=True)
-            row_names = self._flat_params.names
+            row_names = self._internal_estimates.names
             col_names = leaf_names(self._empirical_moments, registry=registry)
             out = pd.DataFrame(
                 data=raw,
@@ -930,3 +955,43 @@ class MomentsResult:
             )
             raise ValueError(msg)
         return out
+
+    def to_pickle(self, path):
+        """Save the MomentsResult object to pickle.
+
+        Args:
+            path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+        """
+        to_pickle(self, path=path)
+
+
+def _calculate_free_cov_msm(
+    internal_estimates,
+    internal_jacobian,
+    internal_moments_cov,
+    internal_weights,
+    converter,
+    method,
+    n_samples,
+    bounds_handling,
+    seed,
+):
+
+    if method == "optimal":
+        internal_cov = cov_optimal(internal_jacobian, internal_weights)
+    else:
+        internal_cov = cov_robust(
+            internal_jacobian, internal_weights, internal_moments_cov
+        )
+
+    rng = get_rng(seed)
+
+    free_cov = transform_covariance(
+        internal_params=internal_estimates,
+        internal_cov=internal_cov,
+        converter=converter,
+        n_samples=n_samples,
+        rng=rng,
+        bounds_handling=bounds_handling,
+    )
+    return free_cov

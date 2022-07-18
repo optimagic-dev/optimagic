@@ -7,6 +7,46 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.4.0
+-----
+
+- :gh:`366` Update CHANGES.rst (:ghuser:`segsell`)
+- :gh:`362` Polish documentation (:ghuser:`segsell`)
+
+0.3.4
+-----
+
+- :gh:`364` Use local random number generators (:ghuser:`timmens`)
+- :gh:`363` Fix pounders test cases (:ghuser:`segsell`)
+- :gh:`361` Update estimation code (:ghuser:`timmens`)
+- :gh:`360` Update results object documentation (:ghuser:`timmens`)
+
+
+0.3.3
+-----
+
+- :gh:`357` Adds jax support (:ghuser:`janosg`)
+- :gh:`359` Improves error handling with violated constaints (:ghuser:`timmens`)
+- :gh:`358` Improves cartis roberts set of test functions and improves the
+  default latex rendering of MultiIndex tables (:ghuser:`mpetrosian`)
+
+
+0.3.2
+-----
+
+- :gh:`355` Improves test coverage of contraints processing (:ghuser:`janosg`)
+- :gh:`354` Improves test coverage for bounds processing (:ghuser:`timmens`)
+- :gh:`353` Improves history plots (:ghuser:`timmens`)
+- :gh:`352` Improves scaling and benchmarking (:ghuser:`janosg`)
+- :gh:`351` Improves estimation summaries (:ghuser:`timmens`)
+- :gh:`350` Allow empty queries or selectors in constraints (:ghuser:`janosg`)
+
+0.3.1
+-----
+
+- :gh:`349` fixes multiple small bugs and adds test cases for all of them
+  (:ghuser:`mpetrosian`, :ghuser:`janosg` and :ghuser:`timmens`)
+
 0.3.0
 -----
 
@@ -27,7 +67,7 @@ Breaking changes
   ``estimagic.OptimizeLogReader``.
 - Convenience functions to create namedtuples are removed from ``estimagic.utilities``.
 
-
+- :gh:`346` Add option to use nonlinear constraints (:ghuser:`timmens`)
 - :gh:`345` Moves estimation_table to new latex functionality of pandas
   (:ghuser:`mpetrosian`)
 - :gh:`344` Adds pytree support to slice_plot (:ghuser:`janosg`)

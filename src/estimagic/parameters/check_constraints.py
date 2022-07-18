@@ -86,12 +86,16 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
                 explanation = "Equality condition of linear constraint violated"
                 raise InvalidParamsError(_msg(explanation))
         elif typ == "equality":
-            if len(set(subset.tolist())) != 1:
+            if len(set(subset.tolist())) > 1:
                 raise InvalidParamsError(_msg())
 
 
 def _get_message(constraint, param_names, explanation=""):
-    start = f"A constraint of type '{constraint['type']}' is not fulfilled in params."
+    start = (
+        f"A constraint of type '{constraint['type']}' is not fulfilled in params, "
+        "please make sure that it holds for the starting values. The problem arose "
+        "because:"
+    )
 
     if explanation:
         explanation = f" {explanation.rstrip('. ')}. "

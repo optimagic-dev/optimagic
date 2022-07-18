@@ -25,8 +25,6 @@ Heuristics to improve scaling
 =============================
 
 
-
-
 Divide by absolute value of start parameters
 --------------------------------------------
 
@@ -37,7 +35,7 @@ can be improved by simply dividing all parameter vectors by the start parameters
 
 **Advantages:**
 
-- very simple
+- straightforward
 - works with any type of constraints
 
 **Disadvantages:**
@@ -49,6 +47,9 @@ can be improved by simply dividing all parameter vectors by the start parameters
 
 .. code-block:: python
 
+    import estimagic as em
+
+
     def sphere(params):
         return (params["value"] ** 2).sum()
 
@@ -57,7 +58,7 @@ can be improved by simply dividing all parameter vectors by the start parameters
     start_params["lower_bound"] = 0
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-    minimize(
+    res = em.minimize(
         criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",
@@ -69,12 +70,12 @@ can be improved by simply dividing all parameter vectors by the start parameters
 Divide by bounds
 ----------------
 
-In many optimization problems one has additional information on bounds of the parameter
+In many optimization problems, one has additional information on bounds of the parameter
 space. Some of these bounds are hard (e.g. probabilities or variances are non negative),
 others are soft and derived from simple considerations (e.g. if a time discount factor
 were smaller than 0.7, we would not observe anyone to pursue a university degree in a
-structural model of educational choices or if an infection probability was higher than
-20% for distant contacts the covid pandemic would have been over after a month). For
+structural model of educational choices; or if an infection probability was higher than
+20% for distant contacts, the covid pandemic would have been over after a month). For
 parameters that strongly influence the criterion function, the bounds stemming from these
 considerations are typically tighter than for parameters that have a small effect on the
 criterion function.
@@ -86,9 +87,9 @@ become the same.
 
 **Advantages:**
 
-- very simple
+- straightforward
 - works well in many practical applications
-- scaling is independent of start value
+- scaling is independent of start values
 - No problems with division by zero
 
 **Disadvantages:**
@@ -108,7 +109,7 @@ become the same.
     start_params["lower_bound"] = 0
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-    minimize(
+    res = em.minimize(
         criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",
@@ -117,69 +118,15 @@ become the same.
     )
 
 
-Divide by gradient
-------------------
-
-Dividing all parameters by the gradient of the criterion function at the start values
-means that around the start values the problem is scaled optimally. However, for very
-nonlinear functions, it does not guarantee optimal scaling anywhere else.
-
-In practice, we do not take the exact gradient, but a numerical gradient calculated with
-a very large step size (100 times larger than the rule of thumb for optimal step sizes
-by default). This is more robust for noisy or wiggly functions.
-
-**Advantages:**
-
-- Optimal scaling near start values
-- Less arbitrary than other methods
-
-**Disadvantages:**
-
-- Computationally expensive
-- Not robust for very noisy or very wiggly functions
-- Depends on start values
-- Parameters with zero gradient need special treatment
-- Numerical derivatives are themselves sensitive to scaling and the rule of thumb for
-  step sizes basically uses the ``"start_values"`` approach to solve this problem.
-
-**How to specify this scaling:**
-
-.. code-block:: python
-
-    def sphere(params):
-        return (params["value"] ** 2).sum()
-
-
-    start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
-    start_params["lower_bound"] = 0
-    start_params["upper_bound"] = 2 * np.arange(5) + 1
-
-    minimize(
-        criterion=sphere,
-        params=start_params,
-        algorithm="scipy_lbfgsb",
-        scaling=True,
-        scaling_options={
-            "method": "gradient",
-            "clipping_value": 0.1,
-            "numdiff_options": {"n_cores": 2, "scaling_factor": 100},
-        },
-    )
-
-The ``numdiff_options`` argument of the scaling options allow to configure the
-calculation of the numerical gradient. See :ref:`first_derivative` for available
-options.
-
-
 Influencing the magnitude of parameters
 =======================================
 
 The above approaches align the scale of parameters relative to each other. However, the
-overall magnitude is set rather arbitrarily. For example when dividing by start values,
+overall magnitude is set rather arbitrarily. For example, when dividing by start values,
 the magnitude of the scaled parameters is around one. When dividing by bounds, it is
 somewhere between zero and one.
 
-For the performance of numerical optimizers only the relative scales are important.
+For the performance of numerical optimizers, only the relative scales are important.
 
 However, influencing the overall magnitude can be helpful to trick some optimizers
 into doing things they do not want to do. For example, when there is a minimal allowed
@@ -200,7 +147,7 @@ example, if you want to scale by bounds and increase the magnitude by a factor o
     start_params["lower_bound"] = 0
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-    minimize(
+    res = em.minimize(
         criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",

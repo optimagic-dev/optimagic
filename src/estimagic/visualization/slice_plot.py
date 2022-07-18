@@ -98,8 +98,7 @@ def slice_plot(
 
     func_eval = func(params)
 
-    converter, flat_params = get_converter(
-        func=func,
+    converter, internal_params = get_converter(
         params=params,
         constraints=None,
         lower_bounds=lower_bounds,
@@ -110,7 +109,7 @@ def slice_plot(
         scaling_options=None,
     )
 
-    n_params = len(flat_params.values)
+    n_params = len(internal_params.values)
 
     selected = np.arange(n_params, dtype=int)
     if selector is not None:
@@ -120,26 +119,26 @@ def slice_plot(
             tree_just_flatten(selector(helper), registry=registry), dtype=int
         )
 
-    if not np.isfinite(flat_params.lower_bounds[selected]).all():
+    if not np.isfinite(internal_params.lower_bounds[selected]).all():
         raise ValueError("All selected parameters must have finite lower bounds.")
 
-    if not np.isfinite(flat_params.upper_bounds[selected]).all():
+    if not np.isfinite(internal_params.upper_bounds[selected]).all():
         raise ValueError("All selected parameters must have finite upper bounds.")
 
     evaluation_points, metadata = [], []
     for pos in selected:
-        lb = flat_params.lower_bounds[pos]
-        ub = flat_params.upper_bounds[pos]
+        lb = internal_params.lower_bounds[pos]
+        ub = internal_params.upper_bounds[pos]
         grid = np.linspace(lb, ub, n_gridpoints)
-        name = flat_params.names[pos]
+        name = internal_params.names[pos]
         for param_value in grid:
-            if param_value != flat_params.values[pos]:
+            if param_value != internal_params.values[pos]:
                 meta = {
                     "name": name,
                     "Parameter Value": param_value,
                 }
 
-                x = flat_params.values.copy()
+                x = internal_params.values.copy()
                 x[pos] = param_value
                 point = converter.params_from_internal(x)
                 evaluation_points.append(point)
@@ -155,13 +154,16 @@ def slice_plot(
     )
 
     # add NaNs where an evaluation failed
-    func_values = [val if not isinstance(val, str) else np.nan for val in func_values]
+    func_values = [
+        converter.func_to_internal(val) if not isinstance(val, str) else np.nan
+        for val in func_values
+    ]
 
     func_values += [converter.func_to_internal(func_eval)] * len(selected)
     for pos in selected:
         meta = {
-            "name": flat_params.names[pos],
-            "Parameter Value": flat_params.values[pos],
+            "name": internal_params.names[pos],
+            "Parameter Value": internal_params.values[pos],
         }
         metadata.append(meta)
 
@@ -186,7 +188,7 @@ def slice_plot(
 
     plots_dict = {}
     for pos in selected:
-        par_name = flat_params.names[pos]
+        par_name = internal_params.names[pos]
         if param_names is not None and par_name in param_names:
             par_name = param_names[par_name]
 
@@ -199,7 +201,7 @@ def slice_plot(
         )
         subfig.add_trace(
             go.Scatter(
-                x=[flat_params.values[pos]],
+                x=[internal_params.values[pos]],
                 y=[converter.func_to_internal(func_eval)],
                 marker={"color": color},
             )

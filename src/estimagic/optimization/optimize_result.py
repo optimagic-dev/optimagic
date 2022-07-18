@@ -6,10 +6,38 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from estimagic.utilities import to_pickle
 
 
 @dataclass
 class OptimizeResult:
+    """Optimization result object.
+
+    **Attributes**
+
+    Attributes:
+        params (Any): The optimal parameters.
+        criterion (float): The optimal criterion value.
+        start_criterion (float): The criterion value at the start parameters.
+        start_params (Any): The start parameters.
+        algorithm (str): The algorithm used for the optimization.
+        direction (str): Maximize or minimize.
+        n_free (int): Number of free parameters.
+        message (Union[str, None] = None): Message returned by the underlying algorithm.
+        success (Union[bool, None] = None): Whether the optimization was successful.
+        n_criterion_evaluations (Union[int, None] = None): Number of criterion
+            evaluations.
+        n_derivative_evaluations (Union[int, None] = None): Number of
+            derivative evaluations.
+        n_iterations (Union[int, None] = None): Number of iterations until termination.
+        history (Union[Dict, None] = None): Optimization history.
+        convergence_report (Union[Dict, None] = None): The convergence report.
+        multistart_info (Union[Dict, None] = None): Multistart information.
+        algorithm_output (Dict = field(default_factory=dict)): Additional algorithm
+            specific information.
+
+    """
+
     params: Any
     criterion: float
     start_criterion: float
@@ -87,6 +115,15 @@ class OptimizeResult:
         msg = "\n\n".join(sections)
 
         return msg
+
+    def to_pickle(self, path):
+        """Save the OptimizeResult object to pickle.
+
+        Args:
+            path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
+        """
+        to_pickle(self, path=path)
 
 
 def _format_convergence_report(report, algorithm):
