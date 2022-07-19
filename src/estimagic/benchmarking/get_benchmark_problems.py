@@ -181,10 +181,7 @@ def _get_raw_problems(name):
                 problem = v.copy()
                 raw_func = problem["criterion"]
 
-                def step_func(x):
-                    return raw_func(x.round(3))
-
-                problem["criterion"] = step_func
+                problem["criterion"] = partial(_step_func, raw_func=raw_func)
                 raw_problems[f"{k}_with_steps"] = problem
 
         for k, v in CARTIS_ROBERTS_PROBLEMS.items():
@@ -194,6 +191,10 @@ def _get_raw_problems(name):
     else:
         raise NotImplementedError()
     return raw_problems
+
+
+def _step_func(x, raw_func):
+    return raw_func(x.round(3))
 
 
 def _create_problem_inputs(
