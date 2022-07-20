@@ -31,9 +31,13 @@ def adjust_radius(radius, rho, step, options):
     else:
         new_radius = radius * options.shrinking_factor
 
-    max_radius = np.min(
-        [options.max_radius, step_length * options.max_radius_to_step_ratio]
-    )
+    if np.isfinite(options.max_radius_to_step_ratio):
+        max_radius = np.min(
+            [options.max_radius, step_length * options.max_radius_to_step_ratio]
+        )
+    else:
+        max_radius = options.max_radius
+
     new_radius = np.clip(new_radius, options.min_radius, max_radius)
 
     return new_radius

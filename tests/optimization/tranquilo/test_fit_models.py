@@ -59,7 +59,12 @@ def test_fit_ols_against_truth(quadratic_case):
 
 @pytest.mark.parametrize("model", ["ols", "ridge"])
 def test_fit_ols_against_gradient(model, quadratic_case):
-    fit_ols = get_fitter(model, {"l2_penalty_square": 0})
+    if model == "ridge":
+        options = {"l2_penalty_square": 0}
+    else:
+        options = None
+
+    fit_ols = get_fitter(model, options)
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
 
     a = got.linear_terms.squeeze()
