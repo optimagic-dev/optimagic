@@ -21,23 +21,33 @@ def _tranquilo(
     # ==================================================================================
     # hardcoded stuff that needs to be made flexible
     # ==================================================================================
-    maxiter = 15
-    functype = "scalar"
+    maxiter = 100
 
     sampler = "naive"
     sampler_options = {}
-    target_sample_size = 10 * len(x) ** 2
+    target_sample_size = len(x) ** 2
 
     radius_options = RadiusOptions()
 
     fitter = "ols"
     fit_options = {}
 
-    model_info = ModelInfo()
+    if functype == "scalar":
+        model_info = ModelInfo()
+    else:
+        model_info = ModelInfo(has_squares=False, has_interactions=False)
+
     subsolver = "bntr"
     solver_options = {}
 
-    aggregator = "identity"
+    if functype == "scalar":
+        aggregator = "identity"
+    elif functype == "likelihood":
+        aggregator = "information_equality_linear"
+    elif functype == "least_squares":
+        aggregator = "least_squares_linear"
+    else:
+        raise ValueError(f"Invalid functype: {functype}")
 
     # ==================================================================================
 

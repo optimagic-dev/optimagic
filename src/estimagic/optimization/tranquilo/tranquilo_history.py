@@ -41,6 +41,9 @@ class History:
                 least square fvecs.
         """
         xs = np.atleast_2d(xs)
+        if len(xs) == 0:
+            return
+
         if self.functype == "scalar":
             fvecs = np.reshape(fvecs, (-1, 1))
         else:
