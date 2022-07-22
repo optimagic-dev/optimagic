@@ -1,6 +1,15 @@
 from typing import NamedTuple
 
 import numpy as np
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
+)
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 
 
 class Bounds(NamedTuple):
@@ -21,7 +30,13 @@ class StopOptions(NamedTuple):
 class ConvOptions(NamedTuple):
     """Criteria for successful convergence."""
 
-    pass
+    ftol_abs: float = CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
+    gtol_abs: float = CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
+    xtol_abs: float = CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
+    ftol_rel: float = CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
+    gtol_rel: float = CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
+    xtol_rel: float = CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
+    min_radius: float = CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE
 
 
 class RadiusOptions(NamedTuple):

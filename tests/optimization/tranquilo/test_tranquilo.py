@@ -16,5 +16,4 @@ def test_internal_tranquilo_with_sphere_at_defaults(functype):
         x=np.arange(5),
         functype=functype,
     )
-
     aaae(res["solution_x"], np.zeros(5), decimal=5)

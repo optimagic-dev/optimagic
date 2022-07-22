@@ -1,9 +1,13 @@
+from typing import NamedTuple
+
 import numpy as np
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import Bounds
+from estimagic.optimization.tranquilo.options import ConvOptions
 from estimagic.optimization.tranquilo.options import RadiusOptions
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
@@ -49,12 +53,13 @@ def _tranquilo(
     else:
         raise ValueError(f"Invalid functype: {functype}")
 
+    conv_options = ConvOptions()
+
     # ==================================================================================
 
     history = History(functype=functype)
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
     trustregion = TrustRegion(center=x, radius=radius_options.initial_radius)
-
     sample_points = get_sampler(sampler, bounds=bounds, user_options=sampler_options)
 
     aggregate_vector_model = get_aggregator(
@@ -77,11 +82,20 @@ def _tranquilo(
 
     first_eval = criterion(x)
     history.add_entries(x, first_eval)
-    accepted_x, accepted_fvec, accepted_fval = history.get_entries(0)
 
+    state = State(
+        index=0,
+        model=None,
+        rho=None,
+        radius=trustregion.radius,
+        x=history.get_xs(0),
+        fvec=history.get_fvecs(0),
+        fval=history.get_fvals(0),
+    )
+
+    states = [state]
     for _ in range(maxiter):
         # update some quantities after acceptance
-        fvec_center = accepted_fvec
 
         old_indices = history.get_indices_in_trustregion(trustregion)
         old_xs = history.get_xs(old_indices)
@@ -110,7 +124,7 @@ def _tranquilo(
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,
-            fvec_center=fvec_center,
+            fvec_center=state.fvec,
         )
 
         sub_sol = solve_subproblem(model=scalar_model, trustregion=trustregion)
@@ -118,9 +132,10 @@ def _tranquilo(
         candidate_x = sub_sol["x"]
 
         candidate_fvec = criterion(candidate_x)
+        candidate_index = history.get_n_fun()
         history.add_entries(candidate_x, candidate_fvec)
         candidate_fval = history.get_fvals(-1)
-        actual_improvement = -(candidate_fval - accepted_fval)
+        actual_improvement = -(candidate_fval - state.fval)
 
         rho = _calculate_rho(
             actual_improvement=actual_improvement,
@@ -131,23 +146,89 @@ def _tranquilo(
             new_radius = adjust_radius(
                 radius=trustregion.radius,
                 rho=rho,
-                step=candidate_x - accepted_x,
+                step=candidate_x - state.x,
                 options=radius_options,
             )
-            accepted_x = candidate_x
+
             trustregion = trustregion._replace(center=candidate_x, radius=new_radius)
 
+            state = State(
+                index=candidate_index,
+                model=scalar_model,
+                rho=rho,
+                radius=new_radius,
+                x=candidate_x,
+                fvec=history.get_fvecs(candidate_index),
+                fval=history.get_fvals(candidate_index),
+            )
+        else:
+            state = state._replace(
+                rho=rho,
+            )
+
+        states.append(state)
+
+        converged, msg = _is_converged(states=states, options=conv_options)
+        if converged:
+            break
+
     res = {
-        "solution_x": accepted_x,
+        "solution_x": state.x,
+        "solution_criterion": state.fval,
+        "states": states,
+        "history": history,
+        "message": msg,
     }
 
     return res
 
 
 def _calculate_rho(actual_improvement, expected_improvement):
-    if expected_improvement == 0:
-        rho = np.inf * np.sign(actual_improvement)
+    if expected_improvement == 0 and actual_improvement > 0:
+        rho = np.inf
+    elif expected_improvement == 0:
+        rho = -np.inf
     else:
         rho = actual_improvement / expected_improvement
 
     return rho
+
+
+class State(NamedTuple):
+    index: int
+    model: ScalarModel
+    rho: float
+    radius: float
+    x: np.ndarray
+    fvec: np.ndarray
+    fval: np.ndarray
+
+
+def _is_converged(states, options):
+    old, new = states[-2:]
+
+    f_change_abs = np.abs(old.fval - new.fval)
+    f_change_rel = f_change_abs / max(np.abs(old.fval), 0.1)
+    x_change_abs = np.linalg.norm(old.x - new.x)
+    x_change_rel = np.linalg.norm((old.x - new.x) / np.clip(np.abs(old.x), 0.1, np.inf))
+    g_norm_abs = np.linalg.norm(new.model.linear_terms)
+    g_norm_rel = g_norm_abs / max(g_norm_abs, 0.1)
+
+    converged = True
+    if g_norm_rel <= options.gtol_rel:
+        msg = "Relative gradient norm smaller than tolerance."
+    elif g_norm_abs <= options.gtol_abs:
+        msg = "Absolute gradient norm smaller than tolerance."
+    elif f_change_rel <= options.ftol_rel:
+        msg = "Relative criterion change smaller than tolerance."
+    elif f_change_abs <= options.ftol_abs:
+        msg = "Absolute criterion change smaller than tolerance."
+    elif x_change_rel <= options.xtol_rel:
+        msg = "Relative params change smaller than tolerance."
+    elif x_change_abs <= options.xtol_abs:
+        msg = "Absolute params change smaller than tolerance."
+    else:
+        converged = False
+        msg = None
+
+    return converged, msg
