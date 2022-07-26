@@ -1,6 +1,8 @@
+from functools import partial
 from typing import NamedTuple
 
 import numpy as np
+from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.fit_models import get_fitter
@@ -21,15 +23,18 @@ def _tranquilo(
     functype,
     lower_bounds=None,
     upper_bounds=None,
+    discard_existing_points=False,
+    disable_convergence=False,
+    n_points_factor=1.0,
+    stopping_max_iterations=200,
 ):
     # ==================================================================================
     # hardcoded stuff that needs to be made flexible
     # ==================================================================================
-    maxiter = 100
+    maxiter = stopping_max_iterations
 
     sampler = "naive"
     sampler_options = {}
-    target_sample_size = len(x) ** 2
 
     radius_options = RadiusOptions()
 
@@ -38,8 +43,12 @@ def _tranquilo(
 
     if functype == "scalar":
         model_info = ModelInfo()
+        target_sample_size = int(0.5 * len(x) * (len(x) + 1)) + len(x) + 1
     else:
         model_info = ModelInfo(has_squares=False, has_interactions=False)
+        target_sample_size = len(x) + 1
+
+    target_sample_size = int(n_points_factor * target_sample_size)
 
     subsolver = "bntr"
     solver_options = {}
@@ -93,13 +102,17 @@ def _tranquilo(
         fval=history.get_fvals(0),
     )
 
+    converged, msg = False, None
     states = [state]
     for _ in range(maxiter):
         # update some quantities after acceptance
 
-        old_indices = history.get_indices_in_trustregion(trustregion)
-        old_xs = history.get_xs(old_indices)
-        old_fvals = history.get_fvals(old_indices)
+        if not discard_existing_points:
+            old_indices = history.get_indices_in_trustregion(trustregion)
+            old_xs = history.get_xs(old_indices)
+            old_fvals = history.get_fvals(old_indices)
+        else:
+            old_xs, old_fvals = None, None
 
         new_xs, _ = sample_points(
             trustregion=trustregion,
@@ -107,13 +120,14 @@ def _tranquilo(
             existing_xs=old_xs,
             existing_fvals=old_fvals,
         )
-
         new_fvecs = [criterion(_x) for _x in new_xs]
-
         history.add_entries(new_xs, new_fvecs)
 
-        # these could be calculated more quickly without searching entire history!
-        model_indices = history.get_indices_in_trustregion(trustregion)
+        if not discard_existing_points:
+            model_indices = history.get_indices_in_trustregion(trustregion)
+        else:
+            _n_fun = history.get_n_fun()
+            model_indices = np.arange(_n_fun - len(new_xs) - 1, _n_fun)
 
         model_xs = history.get_xs(model_indices)
         model_fvecs = history.get_fvecs(model_indices)
@@ -142,16 +156,14 @@ def _tranquilo(
             expected_improvement=sub_sol["expected_improvement"],
         )
 
+        new_radius = adjust_radius(
+            radius=trustregion.radius,
+            rho=rho,
+            step=candidate_x - state.x,
+            options=radius_options,
+        )
         if actual_improvement > 0:
-            new_radius = adjust_radius(
-                radius=trustregion.radius,
-                rho=rho,
-                step=candidate_x - state.x,
-                options=radius_options,
-            )
-
             trustregion = trustregion._replace(center=candidate_x, radius=new_radius)
-
             state = State(
                 index=candidate_index,
                 model=scalar_model,
@@ -161,22 +173,26 @@ def _tranquilo(
                 fvec=history.get_fvecs(candidate_index),
                 fval=history.get_fvals(candidate_index),
             )
+
         else:
+            trustregion = trustregion._replace(radius=new_radius)
             state = state._replace(
+                model=scalar_model,
                 rho=rho,
+                radius=new_radius,
             )
 
         states.append(state)
 
-        converged, msg = _is_converged(states=states, options=conv_options)
-        if converged:
-            break
+        if actual_improvement > 0 and not disable_convergence:
+            converged, msg = _is_converged(states=states, options=conv_options)
+            if converged:
+                break
 
     res = {
         "solution_x": state.x,
         "solution_criterion": state.fval,
         "states": states,
-        "history": history,
         "message": msg,
     }
 
@@ -232,3 +248,22 @@ def _is_converged(states, options):
         msg = None
 
     return converged, msg
+
+
+tranquilo = mark_minimizer(
+    func=partial(_tranquilo, functype="scalar"),
+    name="tranquilo",
+    primary_criterion_entry="value",
+    needs_scaling=True,
+    is_available=True,
+    is_global=False,
+)
+
+tranquilo_ls = mark_minimizer(
+    func=partial(_tranquilo, functype="least_squares"),
+    primary_criterion_entry="root_contributions",
+    name="tranquilo_ls",
+    needs_scaling=True,
+    is_available=True,
+    is_global=False,
+)

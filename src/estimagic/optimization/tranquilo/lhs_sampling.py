@@ -11,9 +11,9 @@ def lhs_sampler(
     existing_xs=None,
     existing_fvals=None,  # noqa: U100
     centered=False,
-    criterion="maximin",
+    criterion="d-optimal",
     quadratic_target=False,
-    n_iter=1_000,
+    n_iter=200,
     seed=1234,
     return_crit_vals=False,
 ):
@@ -53,7 +53,7 @@ def lhs_sampler(
     np.random.seed(seed)
 
     if existing_xs is not None:
-        n_points = max(0, target_size - len(existing_xs))
+        n_points = max(1, target_size - len(existing_xs))
     else:
         n_points = target_size
 

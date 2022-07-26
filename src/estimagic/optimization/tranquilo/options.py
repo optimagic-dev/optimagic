@@ -42,7 +42,7 @@ class ConvOptions(NamedTuple):
 class RadiusOptions(NamedTuple):
     """Options for trust-region radius management"""
 
-    min_radius: float = 1e-6
+    min_radius: float = 1e-8
     max_radius: float = 1e6
     initial_radius: float = 0.1
     rho_decrease: float = 0.1

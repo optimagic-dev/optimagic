@@ -10,6 +10,7 @@ from estimagic.optimization import pounders
 from estimagic.optimization import pygmo_optimizers
 from estimagic.optimization import scipy_optimizers
 from estimagic.optimization import tao_optimizers
+from estimagic.optimization.tranquilo import tranquilo
 
 
 MODULES = [
@@ -23,6 +24,7 @@ MODULES = [
     bhhh,
     neldermead,
     pounders,
+    tranquilo,
 ]
 
 ALL_ALGORITHMS = {}

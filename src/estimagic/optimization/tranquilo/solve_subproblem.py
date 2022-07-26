@@ -209,6 +209,7 @@ def _get_centered_and_scaled_bounds(bounds, trustregion):
             lower_bounds = np.full(n_params, -1)
         else:
             lower_bounds = _center_and_scale(bounds["lower_bounds"], trustregion)
+            lower_bounds = np.nan_to_num(lower_bounds, nan=-1, neginf=-1)
         out["lower_bounds"] = lower_bounds
 
     if "upper_bounds" in bounds:
@@ -216,11 +217,12 @@ def _get_centered_and_scaled_bounds(bounds, trustregion):
             upper_bounds = np.ones(n_params)
         else:
             upper_bounds = _center_and_scale(bounds["upper_bounds"], trustregion)
+            upper_bounds = np.nan_to_num(upper_bounds, nan=1, posinf=1)
         out["upper_bounds"] = upper_bounds
     return out
 
 
-def _center_and_scale(vec, trustregion, default_value):
+def _center_and_scale(vec, trustregion):
     return (vec - trustregion.center) / trustregion.radius
 
 

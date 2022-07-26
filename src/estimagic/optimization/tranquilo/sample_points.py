@@ -162,16 +162,14 @@ def _reference_sampler(
     """
 
     if existing_xs is not None:
-        n_points = max(0, target_size - len(existing_xs))
+        n_points = max(1, target_size - len(existing_xs))
     else:
         n_points = target_size
 
     n_params = len(lower_bounds)
 
-    np.random.seed(seed)
-    points = np.random.uniform(
-        low=lower_bounds, high=upper_bounds, size=(n_points, n_params)
-    )
+    rng = np.random.default_rng(seed)
+    points = rng.uniform(low=lower_bounds, high=upper_bounds, size=(n_points, n_params))
 
     out = {"points": points, "message": "Everything is great!"}
     return out
