@@ -343,7 +343,7 @@ def find_affine_points(
         theta1 (float): Threshold for adding the current x candidate to the model.
         c (float): Threshold for acceptance of the norm of our current x candidate.
         model_indices (np.ndarray): Indices related to the candidates of x
-            that are currently in the main model. Shape (2 *n* + 1,).
+            that are currently in the main model. Shape (2 * n + 1,).
         n_modelpoints (int): Current number of model points.
 
     Returns:
@@ -441,7 +441,7 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     x_candidates_list = []
     criterion_candidates_list = []
 
-    model_improving_points, _ = qr_multiply(model_improving_points, np.eye(n))
+    model_improving_points, _ = np.linalg.qr(model_improving_points)
 
     for i in range(n_modelpoints, n):
         change_direction = np.dot(model_improving_points[:, i], main_model.linear_terms)
@@ -476,7 +476,6 @@ def get_interpolation_matrices_residual_model(
     c2,
     theta2,
     n_maxinterp,
-    n_modelpoints,
 ):
     """Obtain matrices that will be used for interpolating the residual model.
 
@@ -491,7 +490,6 @@ def get_interpolation_matrices_residual_model(
             Equal to 10 by default.
         theta2 (float): Threshold for adding the current x candidate to the model.
         n_maxinterp (int): Maximum number of interpolation points.
-        n_modelpoints (int): Current number of model points.
 
     Returns:
         Tuple:
@@ -512,8 +510,8 @@ def get_interpolation_matrices_residual_model(
 
     x_sample_monomial_basis = np.zeros((n_maxinterp, n + 1))
     x_sample_monomial_basis[:, 0] = 1
-    x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
-    x_sample_full_with_zeros[:n_maxinterp, : n + 1] = x_sample_monomial_basis
+    x_sample_pad = np.zeros((n_maxinterp, n_maxinterp))
+    x_sample_pad[:, : n + 1] = x_sample_monomial_basis
 
     monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
@@ -524,14 +522,14 @@ def get_interpolation_matrices_residual_model(
         )
         monomial_basis[i, :] = _get_monomial_basis(x_sample_monomial_basis[i, 1:])
 
-    # Now we add points until we have n_maxinterp starting with the most recent ones
+    # Now we add points starting with the most recent ones
     point = history.get_n_fun() - 1
     n_modelpoints = n + 1
 
     while (n_modelpoints < n_maxinterp) and (point >= 0):
         reject = False
 
-        # Reject any points already in the model
+        # Reject any point already in the model
         for i in range(n + 1):
             if point == model_indices[i]:
                 reject = True
@@ -555,19 +553,19 @@ def get_interpolation_matrices_residual_model(
             x_sample_monomial_basis[n_modelpoints, 1:]
         )
 
-        x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
-        x_sample_full_with_zeros[:n_maxinterp, : n + 1] = x_sample_monomial_basis
+        x_sample_pad = np.zeros((n_maxinterp, n_maxinterp))
+        x_sample_pad[:, : n + 1] = x_sample_monomial_basis
 
-        lower_triangular_temporary, _ = qr_multiply(
-            x_sample_full_with_zeros[: n_modelpoints + 1, :],
+        lower_triangular_temp, _ = qr_multiply(
+            x_sample_pad[: n_modelpoints + 1],
             monomial_basis.T[: int(n * (n + 1) / 2), : n_modelpoints + 1],
         )
-        beta = np.linalg.svd(lower_triangular_temporary.T[n + 1 :], compute_uv=False)
+        beta = np.linalg.svd(lower_triangular_temp.T[n + 1 :], compute_uv=False)
 
         if beta[min(n_modelpoints - n, int(n * (n + 1) / 2)) - 1] > theta2:
             # Accept point
             model_indices[n_modelpoints] = point
-            lower_triangular = lower_triangular_temporary
+            lower_triangular = lower_triangular_temp
 
             n_modelpoints += 1
 
@@ -575,10 +573,7 @@ def get_interpolation_matrices_residual_model(
 
     # Orthogonal basis for the null space of M, where M is the
     # sample of xs forming the monomial basis
-    basis_null_space, _ = qr_multiply(
-        x_sample_full_with_zeros[:n_modelpoints, :],
-        np.eye(n_maxinterp)[:, :n_modelpoints],
-    )
+    basis_null_space, _ = np.linalg.qr(x_sample_pad[:n_modelpoints, :])
     basis_null_space = basis_null_space[:, n + 1 : n_modelpoints]
 
     if n_modelpoints == (n + 1):
@@ -592,6 +587,89 @@ def get_interpolation_matrices_residual_model(
         lower_triangular,
         n_modelpoints,
     )
+
+
+def determine_number_of_points_in_residual_model(
+    history, x_accepted, model_indices, delta, c2, theta2, n_maxinterp
+):
+    """Determine number of points in the residual model.
+
+    Args:
+        history (class): Class storing history of xs, residuals, and critvals.
+        x_accepted (np.ndarray): Accepted solution vector of the subproblem.
+            Shape (n,).
+        model_indices (np.ndarray): Indices of the candidates of x that are
+            currently in the model. Shape (2 * n + 1,).
+        delta (float): Delta, current trust-region radius.
+        c2 (int): Threshold for acceptance of the norm of our current x candidate.
+            Equal to 10 by default.
+        theta2 (float): Threshold for adding the current x candidate to the model.
+        n_maxinterp (int): Maximum number of interpolation points.
+
+    Returns:
+        int: Current number of model points.
+    """
+    n = len(x_accepted)
+    center_info = {"x": x_accepted, "radius": delta}
+
+    x_sample_monomial_basis = np.zeros((n_maxinterp, n + 1))
+    x_sample_monomial_basis[:, 0] = 1
+    monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
+
+    for i in range(n + 1):
+        x_sample_monomial_basis[i, 1:] = history.get_centered_xs(
+            center_info, index=model_indices[i]
+        )
+        monomial_basis[i, :] = _get_monomial_basis(x_sample_monomial_basis[i, 1:])
+
+    point = history.get_n_fun() - 1
+    n_modelpoints = n + 1
+
+    # Now we add points to the model, starting with the most recent one
+    while (n_modelpoints < n_maxinterp) and (point >= 0):
+        reject = False
+
+        # Reject any point already in the model
+        for i in range(n + 1):
+            if point == model_indices[i]:
+                reject = True
+                break
+
+        if reject is False:
+            candidate_x = history.get_centered_xs(center_info, index=point)
+            candidate_norm = np.linalg.norm(candidate_x)
+
+            if candidate_norm > c2:
+                reject = True
+
+        if reject is True:
+            point -= 1
+            continue
+
+        x_sample_monomial_basis[n_modelpoints, 1:] = history.get_centered_xs(
+            center_info, index=point
+        )
+        monomial_basis[n_modelpoints, :] = _get_monomial_basis(
+            x_sample_monomial_basis[n_modelpoints, 1:]
+        )
+
+        x_sample_pad = np.zeros((n_maxinterp, n_maxinterp))
+        x_sample_pad[:, : n + 1] = x_sample_monomial_basis
+
+        lower_triangular_temp, _ = qr_multiply(
+            x_sample_pad[: n_modelpoints + 1],
+            monomial_basis.T[: int(n * (n + 1) / 2), : n_modelpoints + 1],
+        )
+        beta = np.linalg.svd(lower_triangular_temp.T[n + 1 :], compute_uv=False)
+
+        if beta[min(n_modelpoints - n, int(n * (n + 1) / 2)) - 1] > theta2:
+            # Accept point
+            model_indices[n_modelpoints] = point
+            n_modelpoints += 1
+
+        point -= 1
+
+    return n_modelpoints
 
 
 def interpolate_residual_model(
@@ -678,7 +756,7 @@ def get_coefficients_residual_model(
         n_modelpoints (int): Current number of model points.
 
     Returns:
-        dict: Coefficients for updating the ``linear_terms`` and "square_terms"
+        dict: Coefficients for updating the ``linear_terms`` and ``square_terms``
             of the residual model.
     """
     n = x_sample_monomial_basis.shape[1] - 1
@@ -723,12 +801,12 @@ def get_coefficients_residual_model(
                 params_hessian[k, i, j] = beta[num] / np.sqrt(2)
                 num += 1
 
-    coefficients_to_add = {
+    coefficients = {
         "linear_terms": params_gradient.T,
         "square_terms": params_hessian,
     }
 
-    return coefficients_to_add
+    return coefficients
 
 
 def update_trustregion_radius(
@@ -775,13 +853,12 @@ def get_last_model_indices_and_check_for_repeated_model(
     return last_model_indices, n_last_modelpoints, same_model_used
 
 
-def update_model_indices_residual_model(model_indices, accepted_index, n_modelpoints):
-    """Update model indices and number of points in the residual model."""
+def add_accepted_point_to_residual_model(model_indices, accepted_index, n_modelpoints):
+    """Add accepted point to the residual model."""
     model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
-    n_modelpoints += 1
     model_indices[0] = accepted_index
 
-    return model_indices, n_modelpoints
+    return model_indices
 
 
 def _get_monomial_basis(x):
@@ -794,7 +871,7 @@ def _get_monomial_basis(x):
         x (np.ndarray): Parameter vector of shape (n,).
 
     Returns:
-        np.ndarray: Monomial basis of x wof shape (n * (n + 1) / 2,).
+        np.ndarray: Monomial basis of x of shape (n * (n + 1) / 2,).
     """
     n = len(x)
     monomial_basis = np.zeros(int(n * (n + 1) / 2))

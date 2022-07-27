@@ -14,6 +14,9 @@ from estimagic.optimization.pounders_auxiliary import (
 )
 from estimagic.optimization.pounders_auxiliary import create_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import create_main_from_residual_model
+from estimagic.optimization.pounders_auxiliary import (
+    determine_number_of_points_in_residual_model,
+)
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
 from estimagic.optimization.pounders_auxiliary import (
@@ -282,6 +285,34 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
 
 
 @pytest.fixture
+def data_determine_number_of_points_in_residual_model():
+    test_data = read_yaml(
+        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
+    )
+
+    history = LeastSquaresHistory()
+    history_x = np.array(test_data["history_x"])
+    history.add_entries(history_x, np.zeros(history_x.shape))
+
+    n = 3
+    inputs_dict = {
+        "history": history,
+        "x_accepted": np.array(test_data["x_accepted"]),
+        "model_indices": np.array(test_data["model_indices"]),
+        "delta": test_data["delta"],
+        "c2": 10,
+        "theta2": 1e-4,
+        "n_maxinterp": 2 * n + 1,
+    }
+
+    expected_dict = {
+        "n_modelpoints_expected": test_data["n_modelpoints_expected"],
+    }
+
+    return inputs_dict, expected_dict
+
+
+@pytest.fixture
 def data_get_interpolation_matrices_residual_model():
     test_data = read_yaml(
         TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
@@ -300,7 +331,6 @@ def data_get_interpolation_matrices_residual_model():
         "c2": 10,
         "theta2": 1e-4,
         "n_maxinterp": 2 * n + 1,
-        "n_modelpoints": test_data["n_modelpoints"],
     }
 
     expected_dict = {
@@ -500,6 +530,15 @@ def test_add_points_until_main_model_fully_linear(
             history_out.get_xs(index=-index_added),
             expected["history_x_expected"][-index_added],
         )
+
+
+def test_determine_number_of_points_in_residual_model(
+    data_determine_number_of_points_in_residual_model,
+):
+    inputs, expected = data_determine_number_of_points_in_residual_model
+    n_modelpoints = determine_number_of_points_in_residual_model(**inputs)
+
+    assert np.allclose(n_modelpoints, expected["n_modelpoints_expected"])
 
 
 def test_get_interpolation_matrices_residual_model(
