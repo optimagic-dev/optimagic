@@ -33,15 +33,14 @@ def get_sample_filter(sample_filter="keep_all"):
     return out
 
 
-def _discard_all(xs, indices):
-    dim = xs.shape[1]
-    return np.zeros((0, dim)), np.zeros(0).astype(int)
+def _discard_all(xs, indices, state):
+    return state.x.reshape(1, -1), np.array([state.index])
 
 
-def _keep_all(xs, indices):
+def _keep_all(xs, indices, state):
     return xs, indices
 
 
-def _drop_collinear(xs):
+def _drop_collinear(xs, indices, state):
     """Make sure that the points that are kept are linearly independent."""
     raise NotImplementedError()

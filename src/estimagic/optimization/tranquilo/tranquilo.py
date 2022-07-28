@@ -111,7 +111,14 @@ def _tranquilo(
         old_indices = history.get_indices_in_trustregion(trustregion)
         old_xs = history.get_xs(old_indices)
 
-        filtered_xs, filtered_indices = filter_points(old_xs, old_indices)
+        filtered_xs, filtered_indices = filter_points(
+            xs=old_xs,
+            indices=old_indices,
+            state=state,
+        )
+
+        if state.index not in filtered_indices:
+            raise ValueError()
 
         new_xs = sample_points(
             trustregion=trustregion,

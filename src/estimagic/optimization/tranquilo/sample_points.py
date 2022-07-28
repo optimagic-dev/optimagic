@@ -125,6 +125,16 @@ def _naive_sampler(
     return points
 
 
+def _sphere_sampler(
+    trustregion,
+    target_size,
+    rng,
+    existing_xs=None,
+    bounds=None,
+):
+    pass
+
+
 def _get_effective_bounds(trustregion, bounds):
     lower_bounds = trustregion.center - trustregion.radius
     upper_bounds = trustregion.center + trustregion.radius
