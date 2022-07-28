@@ -11,9 +11,10 @@ def test_integration_of_get_sampler_and_refercen_sampler():
         bounds=namedtuple("Bounds", ["lower", "upper"])(-np.ones(3), np.ones(3)),
     )
 
-    calculated, _ = sampler(
+    calculated = sampler(
         trustregion=TrustRegion(center=0.5 * np.ones(3), radius=1),
         target_size=5,
+        rng=np.random.default_rng(1234),
     )
 
     assert calculated.shape == (5, 3)

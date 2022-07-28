@@ -3,7 +3,7 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic.optimization.tranquilo.lhs_sampling import lhs_sampler
+from estimagic.optimization.tranquilo.options import Bounds
 
 
 def get_sampler(sampler, bounds, user_options=None):
@@ -28,8 +28,7 @@ def get_sampler(sampler, bounds, user_options=None):
     user_options = {} if user_options is None else user_options
 
     built_in_samplers = {
-        "naive": _reference_sampler,
-        "lhs": lhs_sampler,
+        "naive": _naive_sampler,
     }
 
     if isinstance(sampler, str) and sampler in built_in_samplers:
@@ -47,11 +46,11 @@ def get_sampler(sampler, bounds, user_options=None):
     args = set(inspect.signature(_sampler).parameters)
 
     mandatory_args = {
-        "lower_bounds",
-        "upper_bounds",
+        "bounds",
+        "trustregion",
         "target_size",
         "existing_xs",
-        "existing_fvals",
+        "rng",
     }
 
     problematic = mandatory_args - args
@@ -75,61 +74,22 @@ def get_sampler(sampler, bounds, user_options=None):
         )
 
     out = partial(
-        _sample_points_template,
-        sampler=_sampler,
+        _sampler,
         bounds=bounds,
-        options=reduced,
+        **reduced,
     )
 
     return out
 
 
-def _sample_points_template(
+def _naive_sampler(
     trustregion,
     target_size,
+    rng,
     existing_xs=None,
-    existing_fvals=None,
-    # partialled
-    sampler=None,
     bounds=None,
-    options=None,
 ):
-
-    lower_bounds = trustregion.center - trustregion.radius
-    upper_bounds = trustregion.center + trustregion.radius
-
-    if bounds.lower is not None:
-        lower_bounds = np.clip(lower_bounds, bounds.lower, np.inf)
-
-    if bounds.upper is not None:
-        upper_bounds = np.clip(upper_bounds, -np.inf, bounds.upper)
-
-    res = sampler(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        target_size=target_size,
-        existing_xs=existing_xs,
-        existing_fvals=existing_fvals,
-        **options,
-    )
-
-    if isinstance(res, np.ndarray):
-        out = (res, {})
-    elif isinstance(res, dict):
-        out = (res["points"], res.pop("points"))
-
-    return out
-
-
-def _reference_sampler(
-    lower_bounds,
-    upper_bounds,
-    target_size,
-    existing_xs=None,
-    existing_fvals=None,  # noqa: U100
-    seed=1234,
-):
-    """Naive random generation of trustregion sampling.
+    """Naive random generation of trustregion points.
 
     This is just a reference implementation to illustrate the interface of trustregion
     samplers.
@@ -141,35 +101,46 @@ def _reference_sampler(
     outside of the sampler.
 
     Args:
-        lower_bounds (np.ndarray): 1d array with lower bounds for the sampled points.
-            These must be respected!
-        upper_bounds (pn.ndarray): 1d sample with upper bounds for the sampled points.
-            These must be respected!
+        trustregion (TrustRegion): NamedTuple with attributes center and radius.
         target_size (int): Target number of points in the combined sample of existing_xs
             and newly sampled points. The sampler does not have to guarantee that this
             number will actually be reached.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
-        existing_fvals (np.ndarray): 1d numpy array with same length as existing_xs
-            that contains the corresponding function evaluations.
-        seed (int): Seed for a random number generator.
-
-    Returns:
-        dict: A dictionary containing "points" (a numpy array where each row is a
-            newly sampled point) and potentially other information about the sampling.
+        rng (numpy.random.Generator): Random number generator.
+        bounds (Bounds or None): NamedTuple
 
     """
+    n_points = _get_effective_n_points(target_size, existing_xs)
+    n_params = len(trustregion.center)
+    region_bounds = _get_effective_bounds(trustregion, bounds)
 
+    points = rng.uniform(
+        low=region_bounds.lower,
+        high=region_bounds.upper,
+        size=(n_points, n_params),
+    )
+
+    return points
+
+
+def _get_effective_bounds(trustregion, bounds):
+    lower_bounds = trustregion.center - trustregion.radius
+    upper_bounds = trustregion.center + trustregion.radius
+
+    if bounds is not None and bounds.lower is not None:
+        lower_bounds = np.clip(lower_bounds, bounds.lower, np.inf)
+
+    if bounds is not None and bounds.upper is not None:
+        upper_bounds = np.clip(upper_bounds, -np.inf, bounds.upper)
+
+    return Bounds(lower=lower_bounds, upper=upper_bounds)
+
+
+def _get_effective_n_points(target_size, existing_xs):
     if existing_xs is not None:
-        n_points = max(1, target_size - len(existing_xs))
+        n_points = max(0, target_size - len(existing_xs))
     else:
         n_points = target_size
-
-    n_params = len(lower_bounds)
-
-    rng = np.random.default_rng(seed)
-    points = rng.uniform(low=lower_bounds, high=upper_bounds, size=(n_points, n_params))
-
-    out = {"points": points, "message": "Everything is great!"}
-    return out
+    return n_points

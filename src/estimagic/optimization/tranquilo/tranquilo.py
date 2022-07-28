@@ -5,6 +5,7 @@ import numpy as np
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
+from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
 from estimagic.optimization.tranquilo.models import ScalarModel
@@ -23,10 +24,10 @@ def _tranquilo(
     functype,
     lower_bounds=None,
     upper_bounds=None,
-    discard_existing_points=False,
     disable_convergence=False,
     n_points_factor=1.0,
     stopping_max_iterations=200,
+    sample_filter="keep_all",
 ):
     # ==================================================================================
     # hardcoded stuff that needs to be made flexible
@@ -34,6 +35,7 @@ def _tranquilo(
     maxiter = stopping_max_iterations
 
     sampler = "naive"
+    sampling_rng = np.random.default_rng(925408)
     sampler_options = {}
 
     radius_options = RadiusOptions()
@@ -70,6 +72,7 @@ def _tranquilo(
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
     trustregion = TrustRegion(center=x, radius=radius_options.initial_radius)
     sample_points = get_sampler(sampler, bounds=bounds, user_options=sampler_options)
+    filter_points = get_sample_filter(sample_filter)
 
     aggregate_vector_model = get_aggregator(
         aggregator=aggregator,
@@ -105,29 +108,23 @@ def _tranquilo(
     converged, msg = False, None
     states = [state]
     for _ in range(maxiter):
-        # update some quantities after acceptance
+        old_indices = history.get_indices_in_trustregion(trustregion)
+        old_xs = history.get_xs(old_indices)
 
-        if not discard_existing_points:
-            old_indices = history.get_indices_in_trustregion(trustregion)
-            old_xs = history.get_xs(old_indices)
-            old_fvals = history.get_fvals(old_indices)
-        else:
-            old_xs, old_fvals = None, None
+        filtered_xs, filtered_indices = filter_points(old_xs, old_indices)
 
-        new_xs, _ = sample_points(
+        new_xs = sample_points(
             trustregion=trustregion,
             target_size=target_sample_size,
-            existing_xs=old_xs,
-            existing_fvals=old_fvals,
+            existing_xs=filtered_xs,
+            rng=sampling_rng,
         )
+
         new_fvecs = [criterion(_x) for _x in new_xs]
+        new_indices = np.arange(history.get_n_fun(), history.get_n_fun() + len(new_xs))
         history.add_entries(new_xs, new_fvecs)
 
-        if not discard_existing_points:
-            model_indices = history.get_indices_in_trustregion(trustregion)
-        else:
-            _n_fun = history.get_n_fun()
-            model_indices = np.arange(_n_fun - len(new_xs) - 1, _n_fun)
+        model_indices = np.hstack([filtered_indices, new_indices])
 
         model_xs = history.get_xs(model_indices)
         model_fvecs = history.get_fvecs(model_indices)
