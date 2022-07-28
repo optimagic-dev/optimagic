@@ -373,23 +373,27 @@ def data_interpolate_residual_model(request):
     delta_old = test_data["delta_old"]
 
     center_info = {"x": x_accepted, "radius": delta_old}
-    interpolation_set = history.get_centered_xs(
+    centered_xs = history.get_centered_xs(
         center_info, index=model_indices[:n_modelpoints]
+    )
+
+    center_info = {"residuals": residual_model.intercepts}
+    centered_residuals = history.get_centered_residuals(
+        center_info, index=model_indices
     )
 
     n = 3
     inputs_dict = {
         "history": history,
         "residual_model": residual_model,
-        "interpolation_set": interpolation_set,
-        "model_indices": model_indices,
+        "centered_xs": centered_xs,
+        "centered_residuals": centered_residuals,
         "n_modelpoints": n_modelpoints,
         "n_maxinterp": 2 * n + 1,
     }
 
     expected_dict = {
-        "interpolation_set_expected": test_data["interpolation_set_expected"],
-        "residual_model_interpolated_expected": test_data["f_interpolated_expected"],
+        "f_interpolated_expected": test_data["f_interpolated_expected"],
     }
 
     return inputs_dict, expected_dict
@@ -404,7 +408,7 @@ def data_get_coefficients_residual_model():
         "monomial_basis": np.array(test_data["monomial_basis"]),
         "basis_null_space": np.array(test_data["basis_null_space"]),
         "lower_triangular": np.array(test_data["lower_triangular"]),
-        "residual_model_interpolated": np.array(test_data["f_interpolated"]),
+        "f_interpolated": np.array(test_data["f_interpolated"]),
         "n_modelpoints": test_data["n_modelpoints"],
     }
 
@@ -562,9 +566,9 @@ def test_get_interpolation_matrices_residual_model(
 
 def test_interpolate_residual_model(data_interpolate_residual_model):
     inputs, expected = data_interpolate_residual_model
-    residual_model_interpolated = interpolate_residual_model(**inputs)
+    f_interpolated = interpolate_residual_model(**inputs)
 
-    aaae(residual_model_interpolated, expected["residual_model_interpolated_expected"])
+    aaae(f_interpolated, expected["f_interpolated_expected"])
 
 
 def test_get_coefficients_residual_model(data_get_coefficients_residual_model):

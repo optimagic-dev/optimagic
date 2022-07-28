@@ -121,15 +121,9 @@ def create_main_from_residual_model(
     )
 
     if multiply_square_terms_with_residuals is True:
-        # Multiply 3d array *square_terms_residual_model* with
-        # 1d array *intercepts_residual_model* along axis 0 of the former.
-        dim_array = np.ones((1, residual_model.square_terms.ndim), int).ravel()
-        dim_array[0] = -1
-
-        intercepts_reshaped = residual_model.intercepts.reshape(dim_array)
-
-        square_terms_main_model = square_terms_main_model + np.sum(
-            intercepts_reshaped * residual_model.square_terms, axis=0
+        square_terms_main_model = (
+            square_terms_main_model
+            + residual_model.square_terms.T @ residual_model.intercepts
         )
 
     main_model = MainModel(
@@ -674,9 +668,9 @@ def determine_number_of_points_in_residual_model(
 
 def interpolate_residual_model(
     history,
-    interpolation_set,
+    centered_xs,
+    centered_residuals,
     residual_model,
-    model_indices,
     n_modelpoints,
     n_maxinterp,
 ):
@@ -694,39 +688,35 @@ def interpolate_residual_model(
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
-        x_sample (np.ndarray): Vector of centered x sample that makes up the
-            interpolation set. Shape (maxinterp, n).
+        centered_xs (np.ndarray): Centered x sample. Shape (maxinterp, n).
+        centered_residuals (np.ndarray): Centered residuals, i.e. intercepts
+            of the residual model. Shape (maxinterp, nobs).
         residual_model (NamedTuple): NamedTuple containing the parameters of
             residual model, i.e. ``intercepts``, ``linear_terms``, and ``square terms``.
-        model_indices (np.ndarray): Indices of the candidates of x that are
-            currently in the model. Shape (2 *n* + 1,).
         n_modelpoints (int): Current number of model points.
+        n_maxinterp (int): Maximum number of interpolation points.
 
     Returns:
         np.ndarray: Interpolated residual model. Array of shape
             (n_maxinterp, n_obs).
     """
     n_obs = history.get_residuals(index=-1).shape[0]
-    residual_model_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
+    f_interpolated = np.zeros((n_maxinterp, n_obs))
 
     for j in range(n_obs):
-        x_dot_square_terms = np.dot(
-            interpolation_set, residual_model.square_terms[j, :, :]
-        )
-
         for i in range(n_modelpoints):
-            center_info = {"residuals": residual_model.intercepts}
-            residuals = history.get_centered_residuals(
-                center_info, index=model_indices[i]
+            f_interpolated[i, j] = (
+                centered_residuals[i, j]
+                - residual_model.linear_terms[:, j] @ centered_xs[i, :]
+                - 0.5
+                * (
+                    centered_xs[i, :]
+                    @ residual_model.square_terms[j]
+                    @ centered_xs[i, :].T
+                )
             )
 
-            residual_model_interpolated[i, j] = (
-                residuals[j]
-                - np.dot(residual_model.linear_terms[:, j], interpolation_set[i, :])
-                - 0.5 * np.dot(x_dot_square_terms[i, :], interpolation_set[i, :])
-            )
-
-    return residual_model_interpolated
+    return f_interpolated
 
 
 def get_coefficients_residual_model(
@@ -734,7 +724,7 @@ def get_coefficients_residual_model(
     basis_null_space,
     monomial_basis,
     x_sample_monomial_basis,
-    residual_model_interpolated,
+    f_interpolated,
     n_modelpoints,
 ):
     """Computes the coefficients of the quadratic residual model.
@@ -760,7 +750,7 @@ def get_coefficients_residual_model(
             of the residual model.
     """
     n = x_sample_monomial_basis.shape[1] - 1
-    n_obs = residual_model_interpolated.shape[1]
+    n_obs = f_interpolated.shape[1]
 
     params_gradient = np.zeros((n_obs, n))
     params_hessian = np.zeros((n_obs, n, n))
@@ -776,7 +766,7 @@ def get_coefficients_residual_model(
         if n_modelpoints != (n + 1):
             lower_triangular_omega = np.dot(
                 basis_null_space[:n_modelpoints, :].T,
-                residual_model_interpolated[:n_modelpoints, k],
+                f_interpolated[:n_modelpoints, k],
             )
             omega = np.linalg.solve(
                 np.atleast_2d(lower_triangular_square),
@@ -785,7 +775,7 @@ def get_coefficients_residual_model(
 
             beta = np.dot(np.atleast_2d(lower_triangular), omega)
 
-        rhs = residual_model_interpolated[:n_modelpoints, k] - np.dot(
+        rhs = f_interpolated[:n_modelpoints, k] - np.dot(
             monomial_basis[:n_modelpoints, :], beta
         )
 

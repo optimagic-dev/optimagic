@@ -488,8 +488,13 @@ def internal_solve_pounders(
         )
 
         center_info = {"x": x_accepted, "radius": delta_old}
-        interpolation_set = history.get_centered_xs(
+        centered_xs = history.get_centered_xs(
             center_info, index=model_indices[:n_modelpoints]
+        )
+
+        center_info = {"residuals": residual_model.intercepts}
+        centered_residuals = history.get_centered_residuals(
+            center_info, index=model_indices
         )
 
         # ==============================================================================
@@ -509,12 +514,11 @@ def internal_solve_pounders(
             theta2=theta2,
             n_maxinterp=maxinterp,
         )
-
         residual_model_interpolated = interpolate_residual_model(
             history=history,
-            interpolation_set=interpolation_set,
+            centered_xs=centered_xs,
+            centered_residuals=centered_residuals,
             residual_model=residual_model,
-            model_indices=model_indices,
             n_modelpoints=n_modelpoints,
             n_maxinterp=maxinterp,
         )
@@ -523,7 +527,7 @@ def internal_solve_pounders(
             monomial_basis=monomial_basis,
             basis_null_space=basis_null_space,
             lower_triangular=lower_triangular,
-            residual_model_interpolated=residual_model_interpolated,
+            f_interpolated=residual_model_interpolated,
             n_modelpoints=n_modelpoints,
         )
 
