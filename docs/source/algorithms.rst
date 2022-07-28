@@ -1,14 +1,12 @@
 .. _list_of_algorithms:
 
-Optimizers
-==========
+# Optimizers
 
 Check out :ref:`algorithms` to see how to select an algorithm and specify
 ``algo_options`` when using ``maximize`` or ``minimize``.
 
 
-Optimizers from scipy
----------------------
+## Optimizers from scipy
 
 
 .. _scipy_algorithms:
@@ -547,7 +545,7 @@ you install estimagic.
 
 .. _own_algorithms:
 
-Own optimizers
+## Own optimizers
 --------------
 
 We implement a few algorithms from scratch. They are currently considered experimental.
@@ -720,8 +718,7 @@ We implement a few algorithms from scratch. They are currently considered experi
 
 .. _tao_algorithms:
 
-Optimizers from the Toolkit for Advanced Optimization (TAO)
------------------------------------------------------------
+## Optimizers from the Toolkit for Advanced Optimization (TAO)
 
 We wrap the pounders algorithm from the Toolkit of Advanced optimization. To use it
 you need to have `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
@@ -800,8 +797,7 @@ you need to have `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
 .. _nag_algorithms:
 
 
-Optimizers from the Numerical Algorithms Group (NAG)
-----------------------------------------------------
+## Optimizers from the Numerical Algorithms Group (NAG)
 
 We wrap two algorithms from the numerical algorithms group. To use them, you need to
 install each of them separately:
@@ -1068,8 +1064,7 @@ install each of them separately:
 
 .. _pygmo_algorithms:
 
-PYGMO2 Optimizers
-------------------
+## PYGMO2 Optimizers
 
 Please cite :cite:`Biscani2020` in addition to estimagic when using pygmo.
 estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_
@@ -1765,8 +1760,7 @@ optimizers.
 
 .. _ipopt_algorithm:
 
-The Interior Point Optimizer (ipopt)
-------------------------------------
+## The Interior Point Optimizer (ipopt)
 
 estimagic's support for the Interior Point Optimizer (:cite:`Waechter2005`,
 :cite:`Waechter2005a`, :cite:`Waechter2005b`, :cite:`Nocedal2009`) is built on
@@ -2969,8 +2963,7 @@ cyipopt``).
 
 .. _fides_algorithm:
 
-The Fides Optimizer
--------------------
+## The Fides Optimizer
 
 estimagic supports the `Fides Optimizer
 <https://fides-optimizer.readthedocs.io/en/latest>`_. To use Fides, you need to have
@@ -3079,8 +3072,7 @@ fides>=0.7.4``, make sure you have at least 0.7.1).
     False.
 
 
-The NLOPT Optimizers (nlopt)
------------------------------
+## The NLOPT Optimizers (nlopt)
 
 estimagic supports the following `NLOPT <https://nlopt.readthedocs.io/en/latest/>`_
 algorithms. Please add the `appropriate citations
