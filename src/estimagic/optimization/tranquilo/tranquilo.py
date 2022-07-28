@@ -34,7 +34,7 @@ def _tranquilo(
     # ==================================================================================
     maxiter = stopping_max_iterations
 
-    sampler = "naive"
+    sampler = "sphere"
     sampling_rng = np.random.default_rng(925408)
     sampler_options = {}
 

@@ -29,6 +29,7 @@ def get_sampler(sampler, bounds, user_options=None):
 
     built_in_samplers = {
         "naive": _naive_sampler,
+        "sphere": _sphere_sampler,
     }
 
     if isinstance(sampler, str) and sampler in built_in_samplers:
@@ -132,7 +133,22 @@ def _sphere_sampler(
     existing_xs=None,
     bounds=None,
 ):
-    pass
+    n_points = _get_effective_n_points(target_size, existing_xs)
+    n_params = len(trustregion.center)
+    raw = rng.normal(size=(n_points, n_params))
+    denom = np.linalg.norm(raw, axis=1).reshape(-1, 1)
+
+    points = trustregion.radius * raw / denom + trustregion.center
+
+    if bounds is not None and (bounds.lower is not None or bounds.upper is not None):
+        bounds = _get_effective_bounds(trustregion, bounds)
+        points = np.clip(
+            points,
+            a_min=bounds.lower,
+            a_max=bounds.upper,
+        )
+
+    return points
 
 
 def _get_effective_bounds(trustregion, bounds):
