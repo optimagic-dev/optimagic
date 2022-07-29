@@ -107,7 +107,7 @@ Your contribution should fulfill the criteria provided below.
         documentation and provides additional details about the implementation.
 
 - Headings.
-    Only the first letter of a title is capitalized. 
+    Only the first letter of a title is capitalized.
 
 - Format.
     The code formatting in .md files is ensured by blacken-docs.
