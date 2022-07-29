@@ -6,8 +6,7 @@ API
 
 .. _maximize_and_minimize:
 
-Optimization
--------------
+## Optimization
 
 .. dropdown:: maximize
 
@@ -52,8 +51,7 @@ Optimization
 
 .. _first_derivative:
 
-Derivatives
------------
+## Derivatives
 
 .. dropdown:: first_derivative
 
@@ -73,8 +71,7 @@ Derivatives
 
 .. _estimation:
 
-Estimation
------------
+## Estimation
 
 
 .. dropdown:: estimate_ml
@@ -128,8 +125,7 @@ Estimation
 
 .. _bootstrap:
 
-Bootstrap
----------
+## Bootstrap
 
 .. dropdown:: bootstrap
 
@@ -144,8 +140,7 @@ Bootstrap
 
 .. _benchmarking:
 
-Benchmarks
-----------
+## Benchmarks
 
 .. dropdown:: get_benchmark_problems
 
@@ -168,8 +163,7 @@ Benchmarks
 .. _logreading:
 
 
-Log reading
------------
+## Log reading
 
 
 .. dropdown:: OptimizeLogReader
@@ -179,8 +173,7 @@ Log reading
 
 
 
-Other:
-------
+## Other:
 
 .. toctree::
     :maxdepth: 1

@@ -1,8 +1,7 @@
 
 .. _batch_evaluators:
 
-Batch evaluators
------------------
+## Batch evaluators
 
 
 .. automodule:: estimagic.batch_evaluators
