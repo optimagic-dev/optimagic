@@ -625,7 +625,7 @@ We implement a few algorithms from scratch. They are currently considered experi
     Minimize a function using the POUNDERS algorithm.
 
     POUNDERs ({cite}`Benson2017`, {cite}`Wild2015`, [GitHub repository]
-    (https://github.com/erdc/petsc4py)`_)
+    (https://github.com/erdc/petsc4py))
 
     can be a useful tool for economists who estimate structural models using
     indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
@@ -720,7 +720,7 @@ We implement a few algorithms from scratch. They are currently considered experi
 ## Optimizers from the Toolkit for Advanced Optimization (TAO)
 
 We wrap the pounders algorithm from the Toolkit of Advanced optimization. To use it
-you need to have `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
+you need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
 
 .. dropdown::  tao_pounders
 
@@ -731,7 +731,7 @@ you need to have `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
     Minimize a function using the POUNDERs algorithm.
 
     POUNDERs ({cite}`Benson2017`, {cite}`Wild2015`, [GitHub repository]
-    (https://github.com/erdc/petsc4py)`_)
+    (https://github.com/erdc/petsc4py))
 
     can be a useful tool for economists who estimate structural models using
     indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
@@ -844,7 +844,7 @@ install each of them separately:
        possible.
 
     To read the detailed documentation of the algorithm [click here]
-    (https://numericalalgorithmsgroup.github.io/dfols/)`_.
+    (https://numericalalgorithmsgroup.github.io/dfols/).
 
     There are four possible convergence criteria:
 
@@ -869,8 +869,8 @@ install each of them separately:
 
     DF-OLS supports resetting the optimization and doing a fast start by
     starting with a smaller interpolation set and growing it dynamically.
-    For more information see `their detailed documentation
-    <https://numericalalgorithmsgroup.github.io/dfols/>`_ and {cite}`Cartis2018b`.
+    For more information see [their detailed documentation]
+    (https://numericalalgorithmsgroup.github.io/dfols/) and {cite}`Cartis2018b`.
 
     - **clip_criterion_if_overflowing** (bool): see {ref}`algo_options`.
       convergence.minimal_trustregion_radius_tolerance (float): see
@@ -968,8 +968,8 @@ install each of them separately:
     2. The criterion function is very expensive to evaluate and only finite differences
        are available to calculate its derivative.
 
-    The detailed documentation of the algorithm can be found `here
-    <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_.
+    The detailed documentation of the algorithm can be found [here]
+    (https://numericalalgorithmsgroup.github.io/pybobyqa/).
 
     There are four possible convergence criteria:
 
@@ -1066,7 +1066,7 @@ install each of them separately:
 ## PYGMO2 Optimizers
 
 Please cite {cite}`Biscani2020` in addition to estimagic when using pygmo.
-estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_
+estimagic supports the following [pygmo2](https://esa.github.io/pygmo2)
 optimizers.
 
 .. dropdown::  pygmo_gaco
@@ -1241,7 +1241,7 @@ optimizers.
     Minimize a scalar function using a simple genetic algorithm.
 
     A detailed description of the algorithm can be found [in the pagmo2 documentation]
-    (https://esa.github.io/pagmo2/docs/cpp/algorithms/sga.html)`_.
+    (https://esa.github.io/pagmo2/docs/cpp/algorithms/sga.html).
 
     See also {cite}`Oliveto2007`.
 
@@ -1596,8 +1596,8 @@ optimizers.
     adopting, instead, the natural gradient. xNES is one of the most performing variants
     in this class.
 
-    See {cite}`Glasmachers2010` and the `pagmo documentation on xNES
-    <https://esa.github.io/pagmo2/docs/cpp/algorithms/xnes.html#_CPPv4N5pagmo4xnesE>`_
+    See {cite}`Glasmachers2010` and the [pagmo documentation on xNES]
+    (https://esa.github.io/pagmo2/docs/cpp/algorithms/xnes.html#_CPPv4N5pagmo4xnesE)
     for details.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
@@ -1712,8 +1712,8 @@ optimizers.
 
     Minimize a scalar function using Self-adaptive Differential Evolution, pygmo flavor.
 
-    See `the PAGMO documentation for details
-    <https://esa.github.io/pagmo2/docs/cpp/algorithms/de1220.html>`_.
+    See [the PAGMO documentation for details]
+    (https://esa.github.io/pagmo2/docs/cpp/algorithms/de1220.html).
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
@@ -1763,11 +1763,11 @@ optimizers.
 
 estimagic's support for the Interior Point Optimizer ({cite}`Waechter2005`,
 {cite}`Waechter2005a`, {cite}`Waechter2005b`, {cite}`Nocedal2009`) is built on
-`cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
-for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
+[cyipopt](https://cyipopt.readthedocs.io/en/latest/index.html), a Python wrapper
+for the [Ipopt optimization package](https://coin-or.github.io/Ipopt/index.html).
 
-To use ipopt, you need to have `cyipopt installed
-<https://cyipopt.readthedocs.io/en/latest/index.html>`_ (``conda install
+To use ipopt, you need to have [cyipopt installed]
+(https://cyipopt.readthedocs.io/en/latest/index.html) (``conda install
 cyipopt``).
 
 
@@ -1781,9 +1781,9 @@ cyipopt``).
 
     This implementation of the Interior Point Optimizer ({cite}`Waechter2005`,
     {cite}`Waechter2005a`, {cite}`Waechter2005b`, {cite}`Nocedal2009`) relies on
-    `cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python
-    wrapper for the `Ipopt optimization package
-    <https://coin-or.github.io/Ipopt/index.html>`_.
+    [cyipopt](https://cyipopt.readthedocs.io/en/latest/index.html), a Python
+    wrapper for the [Ipopt optimization package]
+    (https://coin-or.github.io/Ipopt/index.html).
 
     There are two levels of termination criteria. If the usual "desired"
     tolerances (see tol, dual_inf_tol etc) are satisfied at an iteration, the
@@ -1793,8 +1793,8 @@ cyipopt``).
     convergence tolerance is met. This is useful in cases where the algorithm
     might not be able to achieve the "desired" level of accuracy.
 
-    The options are analogous to the ones in the `ipopt documentation
-    <https://coin-or.github.io/Ipopt/OPTIONS.html#>`_ with the exception of the
+    The options are analogous to the ones in the [ipopt documentation]
+    (https://coin-or.github.io/Ipopt/OPTIONS.html#) with the exception of the
     linear solver options which are here bundled into a dictionary. Any argument
     that takes "yes" and "no" in the ipopt documentation can also be passed as a
     `True` and `False`, respectively. and any option that accepts "none" in
@@ -2956,7 +2956,7 @@ cyipopt``).
     - **linear_solver_options** (dict or None): dictionary with the
       linear solver options, possibly including `linear_system_scaling`,
       `hsllib` and `pardisolib`. See the [ipopt documentation for details]
-      (https://coin-or.github.io/Ipopt/OPTIONS.html)`_. The linear solver
+      (https://coin-or.github.io/Ipopt/OPTIONS.html). The linear solver
       options are not automatically converted to float at the moment.]
 
 
@@ -2965,8 +2965,8 @@ cyipopt``).
 ## The Fides Optimizer
 
 estimagic supports the [Fides Optimizer]
-(https://fides-optimizer.readthedocs.io/en/latest)`_. To use Fides, you need to have
-[the fides package] (https://github.com/fides-dev/fides)`_ installed (``pip install
+(https://fides-optimizer.readthedocs.io/en/latest). To use Fides, you need to have
+[the fides package](https://github.com/fides-dev/fides) installed (``pip install
 fides>=0.7.4``, make sure you have at least 0.7.1).
 
 
@@ -2976,7 +2976,7 @@ fides>=0.7.4``, make sure you have at least 0.7.1).
 
       "fides"
 
-  [Fides] (https://fides-optimizer.readthedocs.io/en/latest)`_ implements an Interior
+  [Fides](https://fides-optimizer.readthedocs.io/en/latest) implements an Interior
   Trust Region Reflective for boundary costrained optimization problems based on the
   papers {cite}`Coleman1994` and {cite}`Coleman1996`. Accordingly, Fides is named after
   the Roman goddess of trust and reliability. In contrast to other optimizers, Fides
@@ -3073,9 +3073,9 @@ fides>=0.7.4``, make sure you have at least 0.7.1).
 
 ## The NLOPT Optimizers (nlopt)
 
-estimagic supports the following [NLOPT] (https://nlopt.readthedocs.io/en/latest/)`_
+estimagic supports the following [NLOPT] (https://nlopt.readthedocs.io/en/latest/)
 algorithms. Please add the [appropriate citations]
-(https://nlopt.readthedocs.io/en/latest/Citing_NLopt/)`_ in addition to estimagic when
+(https://nlopt.readthedocs.io/en/latest/Citing_NLopt/) in addition to estimagic when
 using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
 .. dropdown:: nlopt_bobyqa

@@ -1,6 +1,4 @@
-=========
-estimagic
-=========
+# estimagic *emphasis*
 
 estimagic is a Python package for nonlinear optimization with or without constraints.
 It is particularly suited to solve difficult nonlinear estimation problems. On top, it
@@ -106,21 +104,21 @@ provides functionality to perform statistical inference on estimated parameters.
         </div>
     </div>
 
-.. toctree::
-   :maxdepth: 1
+```{toctree}
+---
+maxdepth: 1
+---
    :hidden:
 
    getting_started/index
    how_to_guides/index
    explanations/index
    reference_guides/index
+```
 
+# Highlights
 
-Highlights
-==========
-
-Optimization
-------------
+## Optimization
 
 - estimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more.
   See :ref:`list_of_algorithms`
@@ -143,8 +141,7 @@ Optimization
     :scale: 80 %
     :align: center
 
-Estimation and Inference
-------------------------
+## Estimation and Inference
 
 - You can estimate a model using method of simulated moments (MSM), calculate standard
   errors and do sensitivity analysis with just one function call.
@@ -156,19 +153,21 @@ Estimation and Inference
 .. _MSM Tutorial: getting_started/estimation/first_msm_estimation_with_estimagic.ipynb
 
 
-Numerical differentiation
--------------------------
-- estimagic can calculate precise numerical derivatives using `Richardson extrapolations
-  <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
+## Numerical differentiation
+- estimagic can calculate precise numerical derivatives using [Richardson extrapolations]
+  (https://en.wikipedia.org/wiki/Richardson_extrapolation).
 - Function evaluations needed for numerical derivatives can be done in parallel
   with pre-implemented or user provided batch evaluators.
 
 
 **Useful links for search:** :ref:`genindex` | :ref:`modindex` | :ref:`search`
 
-.. toctree::
-  :maxdepth: 1
+```{toctree}
+---
+maxdepth: 1
+---
   :hidden:
 
   development/index
   algorithms
+```

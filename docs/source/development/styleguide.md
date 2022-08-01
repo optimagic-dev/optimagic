@@ -11,7 +11,7 @@ Your contribution should fulfill the criteria provided below.
     If you modify a mutable argument, make a copy at the beginning of the function.
 - Deep modules.
     This is a term coined by
-    [John Ousterhout] (https://www.youtube.com/watch?v=bmSAYlu0NcY)`_. A deep module
+    [John Ousterhout](https://www.youtube.com/watch?v=bmSAYlu0NcY). A deep module
     is a module that has just one public function. This function calls the private
     functions (i.e. functions that start with an underscore) defined further down
     in the module and reads almost like a table of contents to the whole module.
@@ -40,7 +40,7 @@ Your contribution should fulfill the criteria provided below.
     private functions without looking at other modules. Of course it is also not
     a solution to copy paste the function! If you would like to import a function
     that starts with an underscore, rename it.
-- All functions have a [Google style] (https://tinyurl.com/mxams9k)`_ docstring
+- All functions have a [Google style](https://tinyurl.com/mxams9k) docstring
     The docstring describes all arguments and outputs. For arrays, please document
     how many dimensions and what shape they have. Look around in the code to find
     examples if you are in doubt. Example:
@@ -74,17 +74,17 @@ Your contribution should fulfill the criteria provided below.
     We make this such a hard requirement because it's boring and we don't
     want to bother about it in code reviews. Not because we think that all
     PEP8 compliant code is automatically good.
-    Watch [this video] (https://www.youtube.com/watch?v=wf-BqAjZb8M)`_
+    Watch [this video](https://www.youtube.com/watch?v=wf-BqAjZb8M)
     if you haven't seen it yet.
 - Use ``pathlib`` for all file paths operations.
     You can find the pathlib documentation
-    [here] (https://docs.python.org/3/library/pathlib.html)`_
+    [here](https://docs.python.org/3/library/pathlib.html)
 - Object serialization.
     Pickling and unpickling of DataFrames should be done with ``pd.read_pickle``
     and ``pd.to_pickle``.
 - We prefer a functional style over object oriented programming.
     Unless you have very good reasons for writing a class, we prefer you don't do
-    it. You might want to watch [this] (https://www.youtube.com/watch?v=o9pEzgHorH0)`_
+    it. You might want to watch [this](https://www.youtube.com/watch?v=o9pEzgHorH0)
 - Don't use global variables unless absolutely necessary
     Exceptions are global variables from a config file that replace magic numbers.
     Never use mutable global variables!
@@ -92,11 +92,11 @@ Your contribution should fulfill the criteria provided below.
 ## Styleguide for the documentation
 
 - General.
-    The documentation is rendered with [Sphinx] <https://www.sphinx-doc.org/en/master/>`_
+    The documentation is rendered with [Sphinx](https://www.sphinx-doc.org/en/master/)
     and  written in **Markedly Structured Text.** How-to guides are usually Jupyter notebooks.
 
 - Purpose of documents.
-    Our documentation is inspired by the [system] (https://documentation.divio.com/)`_
+    Our documentation is inspired by the [system](https://documentation.divio.com/)
     developed by Daniele Procida.
 
       - How-to guides are problem-oriented and show how to achieved specific tasks.

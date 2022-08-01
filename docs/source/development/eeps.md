@@ -10,7 +10,7 @@ Simple extensions (like adding new optimizers) do not need to be discussed with 
 a formal process.
 
 If the author of an EEP feels that it is ready to be accepted they need to make a
-post in our [zulip workspace] (https://ose.zulipchat.com)`_ and a comment on the PR that
+post in our [zulip workspace](https://ose.zulipchat.com) and a comment on the PR that
 contains the following information:
 
 1. Summary of all contentious aspects of the EEP and how they have been resolved
@@ -31,3 +31,4 @@ maxdepth: 1
 ---
 
    eep-01-pytrees.md
+```

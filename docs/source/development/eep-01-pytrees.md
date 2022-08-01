@@ -3,7 +3,7 @@
 # EEP-01: Pytrees *emphasis*
 
 +------------+------------------------------------------------------------------+
-| Author     | `Janos Gabler <https://github.com/janosg>`_                      |
+| Author     | [Janos Gabler](https://github.com/janosg)                        |
 +------------+------------------------------------------------------------------+
 | Status     | Draft                                                            |
 +------------+------------------------------------------------------------------+
@@ -109,7 +109,7 @@ application).
 # Difference between pytrees in JAX and estimagic
 
 Most JAX functions [only work with Pytrees of arrays]
-(https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions)`_ and
+(https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions) and
 scalars, i.e. pytrees where container types are dicts, lists and tuples and all leaves
 are arrays or scalars. We will just call them pytrees of arrays because scalars are
 converted to arrays by JAX.
@@ -670,8 +670,8 @@ three types of moments have to be aligned, i.e. be stored in a tree of the same
 structure. We will raise an error if the trees do not have the same structure.
 
 This is a generalization of an interface that has already proven useful in
-[respy] (https://github.com/OpenSourceEconomics/respy)`_,
-[sid] (https://github.com/covid-19-impact-lab/sid)`_ and other applications. In the
+[respy](https://github.com/OpenSourceEconomics/respy),
+[sid](https://github.com/covid-19-impact-lab/sid) and other applications. In the
 future, the project specific implementations of flatten and unflatten functions
 could simply be deleted.
 

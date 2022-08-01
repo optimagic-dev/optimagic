@@ -6,14 +6,14 @@
 + .. figure:: ../_static/images/janos.jpg                       + .. figure:: ../_static/images/klara.jpg                       + .. figure:: ../_static/images/tobi.png                            +
 +     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
 +                                                               +                                                               +                                                                   +
-+     `Janoś Gabler <https://github.com/janosg>`_               +     `Klara Röhrl <https://github.com/roecla>`_                +     `Tobias Raabe <https://github.com/tobiasraabe>`_              +
++     [Janoś Gabler](https://github.com/janosg)                 +     [Klara Röhrl](https://github.com/roecla)                  +     [Tobias Raabe](https://github.com/tobiasraabe)                +
 +                                                               +                                                               +                                                                   +
 +     (BDFL)                                                    +     (Core Developer)                                          +     (Core Developer)                                              +
 +---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
 + .. figure:: ../_static/images/tim.jpeg                        + .. figure:: ../_static/images/sebi.jpg                        + .. figure:: ../_static/images/hmg.jpg                             +
 +     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
 +                                                               +                                                               +                                                                   +
-+     `Tim Mensinger <https://github.com/timmens>`_             +     `Sebastian Gsell <https://github.com/segsell>`_           +     `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_ +
++     [Tim Mensinger](https://github.com/timmens)               +     [Sebastian Gsell](https://github.com/segsell)             +     [Hans-Martin von Gaudecker](https://github.com/hmgaudecker)   +
 +                                                               +                                                               +                                                                   +
 +     (Core Developer)                                          +     (Core Developer)                                          +     (Core User, Facilitator)                                      +
 +---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
@@ -60,7 +60,7 @@ of the federal and state governments.
 
 ----------------------------------------------------------------------------------------
 
-We want to thank [Kenneth Judd](https://kenjudd.org/)`_ for great feedback regarding
+We want to thank [Kenneth Judd](https://kenjudd.org/) for great feedback regarding
 numerical optimization and differentiation.
 
 

@@ -221,7 +221,7 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
             constraints = []
 
         {math}`x* = (0, 0, 0)`
-
+        ```
     .. dropdown::   Fixed constraints
 
         ```python
@@ -230,7 +230,7 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
         {math}`x_{1} = 1
         \rightarrow x* = (1, 0, 0)`
-
+        ```
     .. dropdown::   Probability constraints
 
         ```python

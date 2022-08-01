@@ -4,17 +4,17 @@ Contributions are always welcome. Everything ranging from small extensions of th
 documentation to implementing new features is appreciated. Of course, the
 bigger the change the more it is necessary to reach out to us in advance for an
 discussion. You can post an issue or contact
-[janosg] (https://github.com/janosg)`_ via email.
+[janosg](https://github.com/janosg) via email.
 
 To get acquainted with the code base, you can also check out our [issue tracker]
-(https://github.com/OpenSourceEconomics/estimagic/issues)`_ for some immediate and clearly
+(https://github.com/OpenSourceEconomics/estimagic/issues) for some immediate and clearly
 defined tasks.
 
 
 1.  Assuming you have settled on contributing a small fix to the project, please
     read the {ref}`style_guide` on the next page before you continue.
 
-2.  Next, fork the [repository] (https://github.com/OpenSourceEconomics/estimagic/)`_.
+2.  Next, fork the [repository] (https://github.com/OpenSourceEconomics/estimagic/).
     This will create a
     copy of the repository where you have write access. Your fix will be implemented in
     your copy. After that, you will start a pull request (PR) which means a proposal to
