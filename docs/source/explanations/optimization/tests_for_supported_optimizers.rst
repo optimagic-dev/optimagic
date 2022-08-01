@@ -58,7 +58,7 @@ These criterion functions are specified in the ``examples`` directory. For an ov
 of all constraints supported in estimagic, please see
 `this how-to guide`_.
 
-.. _this how-to guide: ../../how_to_guides/optimization/how_to_specify_constraints.rst
+.. _this how-to guide: ../../how_to_guides/optimization/how_to_specify_constraints.md
 
 We write several test functions, each corresponding to the case of one constraint.
 Given the constraint, the test function considers all possible

@@ -26,7 +26,7 @@ reparametrizations. Details are explained `here`_. This means that you can use a
 the constraints with any optimizer that supports bounds. Some constraints (e.g. fixing
 parameters) can even be used with optimizers that do not support bounds.
 
-.. _here: ../../explanations/optimization/implementation_of_constraints.rst
+.. _here: ../../explanations/optimization/implementation_of_constraints.md
 
 
 # Example criterion function
