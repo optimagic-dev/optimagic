@@ -1438,6 +1438,8 @@ def _center_align_integers(sr):
             char = sr[i].split(num)[1]
             if int(float(num)) == float(num):
                 sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num)))+char}}}"
+        else:
+            sr[i] = f"\\multicolumn{{1}}{{c}}{{{sr[i]}}}"
     return sr
 
 
