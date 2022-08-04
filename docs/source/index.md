@@ -1,4 +1,4 @@
-# estimagic *emphasis*
+# estimagic %*emphasis*
 
 estimagic is a Python package for nonlinear optimization with or without constraints.
 It is particularly suited to solve difficult nonlinear estimation problems. On top, it

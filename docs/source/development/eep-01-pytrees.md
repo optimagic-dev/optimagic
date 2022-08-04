@@ -1,6 +1,6 @@
 .. _eeppytrees:
 
-# EEP-01: Pytrees *emphasis*
+# EEP-01: Pytrees %*emphasis*
 
 +------------+------------------------------------------------------------------+
 | Author     | [Janos Gabler](https://github.com/janosg)                        |

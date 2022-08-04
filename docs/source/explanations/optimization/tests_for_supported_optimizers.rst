@@ -1,4 +1,4 @@
-# How supported optimization algorithms are tested *emphasis*
+# How supported optimization algorithms are tested %*emphasis*
 
 estimagic provides a unified interface that supports a large number of optimization
 algorithms from different libraries. Additionally, it allows putting constraints on

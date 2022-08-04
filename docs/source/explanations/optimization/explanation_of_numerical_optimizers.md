@@ -1,7 +1,7 @@
 
 .. _explanation_of_numerical_optimizers:
 
-# Introduction to basic types of numerical optimization algorithms *emphasis*
+# Introduction to basic types of numerical optimization algorithms %*emphasis*
 
 There are hundreds of different numerical optimization algorithm. However, most of them
 build on a few basic principles. Knowing those principles helps to classify algorithms

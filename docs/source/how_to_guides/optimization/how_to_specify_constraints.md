@@ -1,7 +1,7 @@
 
 .. _constraints:
 
-# How to specify constraints *emphasis*
+# How to specify constraints %*emphasis*
 
 # Constraints vs bounds
 

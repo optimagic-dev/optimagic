@@ -54,7 +54,12 @@ extensions = [
 ]
 
 # MyST
-myst_enable_extensions = ["colon_fence", "deflist", "dollarmath"]
+myst_enable_extensions = [
+    "colon_fence", 
+    "deflist", 
+    "dollarmath",
+    #"html_admonition", 
+    ]
 
 copybutton_prompt_text = ">>> "
 copybutton_only_copy_prompt_lines = False

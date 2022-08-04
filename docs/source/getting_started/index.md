@@ -1,4 +1,4 @@
-# Getting Started *emphasis*
+# Getting Started %*emphasis*
 
 
 This section contains quickstart guides for new estimagic users. It can also serve

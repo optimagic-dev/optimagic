@@ -1,6 +1,6 @@
 .. _robust_likelihood_inference:
 
-# Robust Likelihood inference *emphasis*
+# Robust Likelihood inference %*emphasis*
 
 (to be written.)
 
