@@ -1,4 +1,4 @@
-# Development %*emphasis*
+# Development
 
 ```{toctree}
 ---

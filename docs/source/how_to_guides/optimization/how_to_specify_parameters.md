@@ -1,6 +1,6 @@
 .. _params:
 
-# How to specify ``params`` %*emphasis*
+# How to specify ``params``
 
 
 ``params`` is the first argument of any criterion function in estimagic. It collects

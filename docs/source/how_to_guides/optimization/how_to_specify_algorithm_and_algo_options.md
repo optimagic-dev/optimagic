@@ -1,6 +1,6 @@
 .. _algorithms:
 
-# How to specify algorithms and algorithm specific options %*emphasis*
+# How to specify algorithms and algorithm specific options
 
 # The *algorithm* argument
 

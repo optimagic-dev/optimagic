@@ -1,6 +1,6 @@
 .. _dashboard:
 
-# How to use the dashboard %*emphasis*
+# How to use the dashboard
 
 ## Overview
 

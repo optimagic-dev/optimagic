@@ -1,4 +1,4 @@
-# Explanations %*emphasis*
+# Explanations
 
 Explanations contain background information on important topics. They are not needed to
 get started, but very helpful for advanced users and developers of estimagic.

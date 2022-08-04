@@ -1,6 +1,6 @@
 .. _scaling:
 
-# How to scale optimization problems %*emphasis*
+# How to scale optimization problems
 
 
 Real world optimization problems often comprise parameters of vastly different orders of
