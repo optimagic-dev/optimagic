@@ -1,11 +1,9 @@
-# estimagic 
+# estimagic
 
 estimagic is a Python package for nonlinear optimization with or without constraints.
 It is particularly suited to solve difficult nonlinear estimation problems. On top, it
 provides functionality to perform statistical inference on estimated parameters.
 
-
-.. raw:: html
 
     <div class="container" id="index-container">
         <div class="row">
