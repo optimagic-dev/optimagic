@@ -1,18 +1,16 @@
 
-.. _constraints:
+(constraints)=
 
 # How to specify constraints
 
-# Constraints vs bounds
+## Constraints vs bounds
 
 Estimagic distinguishes between bounds and constraints. Bounds are lower and upper
 bounds for parameters. In the literature, they are sometimes called box constraints.
 Bounds are specified as ``lower_bounds`` and ``upper_bounds`` argument to ``maximize``
 and ``minimize``.
 
-Examples with bounds can be found in `this tutorial`_.
-
-.. _this tutorial: ../../getting_started/first_optimization_with_estimagic.ipynb
+Examples with bounds can be found in [this tutorial].
 
 To specify more general constraints on your parameters, you can use the argument
 ``constraints``. The variety of constraints you can impose ranges from rather simple ones
@@ -22,14 +20,12 @@ to more complex ones (like general linear constraints, or even nonlinear constra
 # Can you use constraints with all optimizers?
 
 With the exception of general nonlinear constraints, we implement constraints via
-reparametrizations. Details are explained `here`_. This means that you can use all of
+reparametrizations. Details are explained [here]. This means that you can use all of
 the constraints with any optimizer that supports bounds. Some constraints (e.g. fixing
 parameters) can even be used with optimizers that do not support bounds.
 
-.. _here: ../../explanations/optimization/implementation_of_constraints.md
 
-
-# Example criterion function
+## Example criterion function
 
 Let's look at a variation of the sphere function to illustrate what kinds of constraints
 you can impose and how you specify them in estimagic:
@@ -59,22 +55,20 @@ The unconstrained optimum of a six-dimensional version of this problem is:
 The unconstrained optimum is usually easy to see because all parameters enter the
 criterion function in a additively separable way.
 
-# Types of constraints
+## Types of constraints
 
 Below, we show a very simple example of each type of constraint implemented in estimagic.
 For each constraint, we will select a subset of the parameters on which the constraint
 is imposed via the "loc" key. Generalizations for selecting subsets of ``params`` that are not a
 flat numpy array are explained in the next section.
 
-
-.. tabbed:: fixed
-
-    The simplest (but very useful) constraint fixes parameters at their start values.
+```{eval-rst}
+The simplest (but very useful) constraint fixes parameters at their start values.
 
     Let's take the above example and fix the first and last parameter to 2.5 and
     -2.5, respectively.
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -82,7 +76,7 @@ flat numpy array are explained in the next section.
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 5], "type": "fixed"},
         ...    )
-    ```
+
     Looking at the optimization result, we get:
 
     >>> res.params.round(3)
@@ -90,15 +84,16 @@ flat numpy array are explained in the next section.
 
     Which is indeed the correct constrained optimum. Fixes are compatible with all
     optimizers.
+```
 
-
+````{eval-rst}
 .. tabbed:: increasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
     right. Let's impose the constraint that the second, third and fourth parameter
     increase (weakly):
 
-    ```python
+    .. code-block:: python
 
 
         >>> res = em.minimize(
@@ -107,7 +102,7 @@ flat numpy array are explained in the next section.
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [1, 2, 3], "type": "increasing"},
         ...    )
-    ```
+
 
     Imposing the constraint on positions ``"loc": [1, 2, 3]``` means that the parameter value
     at index position ``2`` has to be (weakly) greater than the value at position ``1``.
@@ -126,8 +121,9 @@ flat numpy array are explained in the next section.
 
     Which is indeed the correct constrained optimum. Increasing constraints are only
     compatible with optimizers that support bounds.
+````
 
-
+````{eval-rst}
 .. tabbed:: decreasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
@@ -136,7 +132,7 @@ flat numpy array are explained in the next section.
 
     So let's impose one in a different order:
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -144,7 +140,7 @@ flat numpy array are explained in the next section.
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [3, 0, 4], "type": "decreasing"},
         ...    )
-    ```
+
     Imposing the constraint on positions ``"loc": [3, 0, 4]``` means that the parameter value
     at index position ``0`` has to be (weakly) smaller than the value at position ``3``.
     Likewise, the parameter value at index position ``4`` has to be (weakly) smaller than the
@@ -160,13 +156,15 @@ flat numpy array are explained in the next section.
 
     Which is the correct optimum. Decreasing constraints are only compatible with
     optimizers that support bounds.
+````
 
+```{eval-rst}
 .. tabbed:: equality
 
     In our example, all optimal parameters are different. Let's constrain the first
     and last to be equal to each other:
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -174,7 +172,7 @@ flat numpy array are explained in the next section.
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 5], "type": "equality"},
         ...    )
-    ```
+
     This yields:
 
     >>> res.params.round(3)
@@ -182,14 +180,14 @@ flat numpy array are explained in the next section.
 
     Which is the correct solution. Equality constraints are compatible with all
     optimizers.
-
-
-.. tabbed:: pairwise_equality
+```
+```{eval-rst}
+... tabbed:: pairwise_equality
 
     Pairwise equality constraints are similar to equality constraints but impose that
     two or more groups of parameters are pairwise equal. Let's look at an example:
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -197,7 +195,7 @@ flat numpy array are explained in the next section.
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"locs": [[0, 1], [2, 3]], "type": "pairwise_equality"},
         ...    )
-    ```
+
 
 
     This constraint imposes that ``params[0] == params[2]`` and
@@ -205,14 +203,15 @@ flat numpy array are explained in the next section.
 
     >>> res.params.round(3)
     array([ 0.8,  0.6,  0.8,  0.6,  0.2, -0. ])
+```
 
-
+```{eval-rst}
 .. tabbed:: probability
 
     Let's impose the constraint that the first four parameters form valid
     probabilities, i.e. they should add up to one and be between zero and one.
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -220,16 +219,18 @@ flat numpy array are explained in the next section.
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 1, 2, 3], "type": "probability"},
         ...    )
-    ```
+
     This yields again the correct result:
 
-    ```python
+    .. code-block:: python
 
         >>> res.params.round(2) # doctest: +SKIP
         array([0.53, 0.33, 0.13, 0.  , 0.2 , 0.  ])
-    ```
 
 
+```
+
+```{eval-rst}
 .. tabbed:: covariance
 
     In many estimation problems, particularly when doing a maximum likelihood estimation,
@@ -241,7 +242,7 @@ flat numpy array are explained in the next section.
     Let's look at an example. We want to impose that the first three elements form the
     lower triangle of a valid covariance matrix.
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -249,7 +250,7 @@ flat numpy array are explained in the next section.
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 1, 2], "type": "covariance"},
         ...    )
-    ```
+
     This yields the same solution as an unconstrained estimation because the constraint
     is not binding:
 
@@ -259,15 +260,17 @@ flat numpy array are explained in the next section.
     We can now use one of estimagic's utility functions to actually build the covariance
     matrix out of the first three parameters:
 
-    ```python
+    .. code-block:: python
 
         >>> from estimagic.utilities import cov_params_to_matrix
         >>> cov_params_to_matrix(res.params[:3]).round(2) # doctest: +NORMALIZE_WHITESPACE
         array([[1.01, 0.78],
                [0.78, 0.61]])
-    ```
 
 
+```
+
+```{eval-rst}
 .. tabbed:: sdcorr
 
     ``sdcorr`` constraints are very similar to ``covariance`` constraints. The only
@@ -277,7 +280,7 @@ flat numpy array are explained in the next section.
     Let's look at an example. We want to impose that the first three elements form valid
     standard deviations and a correlation matrix.
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -286,7 +289,6 @@ flat numpy array are explained in the next section.
         ...    constraints={"loc": [0, 1, 2], "type": "sdcorr"},
         ...    )
 
-    ```
 
     This yields the same solution as an unconstrained estimation because the constraint
     is not binding:
@@ -297,7 +299,7 @@ flat numpy array are explained in the next section.
     We can now use one of estimagic's utility functions to actually build the standard
     deviations and the correlation matrix:
 
-    ```python
+    .. code-block:: python
 
         >>> from estimagic.utilities import sdcorr_params_to_sds_and_corr
         >>> sd, corr = sdcorr_params_to_sds_and_corr(res.params[:3])
@@ -306,9 +308,11 @@ flat numpy array are explained in the next section.
         >>> corr.round(2) # doctest: +NORMALIZE_WHITESPACE
         array([[1. , 0.6],
                [0.6, 1. ]])
-    ```
 
 
+```
+
+```{eval-rst}
 .. tabbed:: linear
 
     Linear constraints are the most difficult but also the most powerful constraints
@@ -323,7 +327,7 @@ flat numpy array are explained in the next section.
     Let's impose the constraint that the average of the first four parameters is at
     least 0.95.
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -336,7 +340,7 @@ flat numpy array are explained in the next section.
         ...    "weights": 0.25,
         ...    },
         ...    )
-    ```
+
     This yields:
 
     >>> res.params.round(2)
@@ -347,7 +351,9 @@ flat numpy array are explained in the next section.
     In the above example, ``lower_bound`` and ``weights`` are scalars. They may, however,
     also be arrays (or even pytrees) with bounds and weights for each selected
     parameter.
+```
 
+```{eval-rst}
 .. tabbed:: nonlinear
 
     .. warning::
@@ -367,7 +373,7 @@ flat numpy array are explained in the next section.
 
     Let's impose the constraint that the product of all but the last parameter is 1.
 
-    ```python
+    .. code-block:: python
 
         >>> res = em.minimize(
         ...    criterion=criterion,
@@ -380,7 +386,7 @@ flat numpy array are explained in the next section.
         ...    "value": 1.0,
         ...    },
         ...    )
-    ```
+
     This yields:
 
     >>> res.params.round(2)
@@ -388,8 +394,10 @@ flat numpy array are explained in the next section.
 
     Where the product of all but the last parameters is equal to 1.
 
+```
 
-# Imposing multiple constraints at once
+
+## Imposing multiple constraints at once
 
 The above examples all just impose one constraint at a time. To impose multiple
 constraints simultaneously, simple pass in a list of constraints. For example:
@@ -415,14 +423,14 @@ There are limits regarding the compatibility of overlapping constraints. You wil
 get a descriptive error message if your constraints are not compatible.
 
 
-# How to select the parameters?
+## How to select the parameters?
 
 All the above examples use a ``"loc"`` entry in the constraint dictionary to select
 the subset of ``params`` on which the constraint is imposed. This is just one out
 of several ways to do it. Which methods are available also depends on whether your
 parameters are a numpy array, DataFrame, or general pytree.
 
-
+```{eval-rst}
 +---------------+---------------+----------------+---------------+
 |               | loc           | query          | selector      |
 +---------------+---------------+----------------+---------------+
@@ -432,7 +440,8 @@ parameters are a numpy array, DataFrame, or general pytree.
 +---------------+---------------+----------------+---------------+
 | Pytree        | ❌            | ❌             | ✅            |
 +---------------+---------------+----------------+---------------+
-
+```
+```{eval-rst}
 Below we show how to use each of these selection methods in simple examples
 
 
@@ -463,7 +472,7 @@ Below we show how to use each of these selection methods in simple examples
     Now, let;s impose the constraint that the cutoffs (i.e. the last two parameters)
     are increasing.
 
-    ```python
+     .. code-block:: python
 
         res = em.minimize(
             criterion=some_criterion,
@@ -478,8 +487,9 @@ Below we show how to use each of these selection methods in simple examples
     Imposing constraints this way can be extremely powerful
     if you have a well designed MultiIndex, as you can easily select groups of parameters
     or single paramaters.
+```
 
-
+```{eval-rst}
 .. tabbed:: query
 
     Let's assume our ``params`` are a DataFrame with a two level index. The names of
@@ -504,7 +514,7 @@ Below we show how to use each of these selection methods in simple examples
     level is equal to ``"a"``. If we wanted to do that using ``loc``, we would have to
     type out three index tuples. So let's do that with a query instead:
 
-    ```python
+    .. code-block:: python
 
         res = em.minimize(
             criterion=some_criterion,
@@ -512,28 +522,28 @@ Below we show how to use each of these selection methods in simple examples
             algorithm="scipy_lbfgsb",
             constraints={"query": "category == 'betas' | name == 'a'", "type": "fixed"},
         )
-    ```
     The value corresponding to ``"query"`` can be anything you would pass to pandas'
     ``DataFrame.query`` method, too. So, if you know pandas, imposing constraints in estimagic
     via ``"query"`` should feel just the same.
+```
 
-
+```{eval-rst}
 .. tabbed:: selector
 
     Using ``selector`` to select the parameters is the most general way and works for
     all params. Let's assume we have defined parameters in a nested dictionary:
 
-    ```python
+    .. code-block:: python
 
         params = {"a": np.ones(2), "b": {"c": 3, "d": pd.Series([4, 5])}}
-    ```
+
     It is probably not a good idea to use a nested dictionary for so few parameters, but
     let's ignore that.
 
     Now assume we want to fix the parameters in the pandas Series at their start
     values. We can do so as follows:
 
-    ```python
+    .. code-block:: python
 
         res = em.minimize(
             criterion=some_criterion,
@@ -541,7 +551,7 @@ Below we show how to use each of these selection methods in simple examples
             algorithm="scipy_lbfgsb",
             constraints={"selector": lambda params: params["b"]["d"], "type": "fixed"},
         )
-    ```
+
     I.e. the value corresponding to ``selector`` is a python function that takes the
     full ``params`` and returns a subset. The selected subset does not have to be a
     numpy array, it can be an arbitrary pytree.
@@ -549,7 +559,7 @@ Below we show how to use each of these selection methods in simple examples
     Using lambda functions if often convenient, but we could have just as well defined
     the selector function using def.
 
-    ```python
+    .. code-block:: python
 
         def my_selector(params):
             return params["b"]["d"]
@@ -561,4 +571,7 @@ Below we show how to use each of these selection methods in simple examples
             algorithm="scipy_lbfgsb",
             constraints={"selector": my_selector, "type": "fixed"},
         )
-    ```
+```
+
+[here]: ../../explanations/optimization/implementation_of_constraints.rst
+[this tutorial]: ../../getting_started/first_optimization_with_estimagic.ipynb
