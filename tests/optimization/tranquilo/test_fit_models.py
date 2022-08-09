@@ -63,7 +63,7 @@ def test_fit_ols_against_truth(quadratic_case):
     aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
 
 
-def test_fit_pounders(quadratic_case):
+def test_fit_pounders_againts_truth(quadratic_case):
     model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
     fit_pounders = get_fitter("pounders", model_info=model_info)
     got = fit_pounders(quadratic_case["x"], quadratic_case["y"])

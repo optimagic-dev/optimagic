@@ -164,6 +164,7 @@ def fit_ols(x, y, model_info):
     """
     features = _build_feature_matrix(x, model_info)
     coef = _fit_ols(features, y)
+
     return coef
 
 
@@ -176,10 +177,10 @@ def _fit_ols(x, y):
 
     Returns:
         coef (np.ndarray): Array of shape (p, k) of coefficients.
-
     """
     coef, *_ = np.linalg.lstsq(x, y, rcond=None)
     coef = coef.T
+
     return coef
 
 
@@ -206,7 +207,6 @@ def fit_ridge(
 
     Returns:
         np.ndarray: The model coefficients.
-
     """
     features = _build_feature_matrix(x, model_info)
 
@@ -220,6 +220,7 @@ def fit_ridge(
     penalty[cutoffs[1] :] = l2_penalty_square
 
     coef = _fit_ridge(features, y, penalty)
+
     return coef
 
 
@@ -233,21 +234,23 @@ def _fit_ridge(x, y, penalty):
 
     Returns:
         np.ndarray: Array of shape (p, k) of coefficients.
-
     """
     a = x.T @ x
     b = x.T @ y
 
     coef, *_ = np.linalg.lstsq(a + np.diag(penalty), b, rcond=None)
     coef = coef.T
+
     return coef
 
 
 def fit_pounders(x, y, model_info):
     """Fit a linear model using the pounders fitting method.
 
-    See Wild (2008), "MNH: A Derivative-Free Optimization Algorithm Using
-        Minimal Norm Hessians", p. 3-5
+    The solution represents the quadratic whose Hessian matrix is of
+    minimum Frobenius norm.
+
+    For a mathematical exposition, see :cite:`Wild2008`, p. 3-5.
 
     Args:
         x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
@@ -270,18 +273,18 @@ def fit_pounders(x, y, model_info):
         features, n_params, n_samples, has_intercepts
     )
 
-    q_mat = _calculate_null_space(m_mat_pad, n_samples, n_params)
+    z_mat = _calculate_basis_null_space(m_mat_pad, n_samples, n_params)
     n_z_mat = _qr_multiply_feature_matrices(m_mat_pad, n_mat, n_samples, n_params)
 
     coef = _get_current_fit_pounders(
-        y, m_mat, n_mat, q_mat, n_z_mat, n_samples, n_params, has_intercepts
+        y, m_mat, n_mat, z_mat, n_z_mat, n_samples, n_params, has_intercepts
     )
 
     return coef
 
 
 def _get_current_fit_pounders(
-    y, m_mat, n_mat, q_mat, n_z_mat, n_samples, n_params, has_intercepts
+    y, m_mat, n_mat, z_mat, n_z_mat, n_samples, n_params, has_intercepts
 ):
     n_residuals = y.shape[1]
 
@@ -297,7 +300,7 @@ def _get_current_fit_pounders(
 
     for resid in range(n_residuals):
         if n_samples != (n_params + 1):
-            z_y_vec = q_mat.T @ y[:, resid]
+            z_y_vec = z_mat.T @ y[:, resid]
             omega = np.linalg.solve(
                 np.atleast_2d(n_z_mat.T @ n_z_mat),
                 np.atleast_1d(z_y_vec),
@@ -307,7 +310,7 @@ def _get_current_fit_pounders(
         rhs = y[:, resid] - n_mat @ beta
         alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
 
-        coef[resid] = np.concatenate((alpha[offset:], beta), None)
+        coef[resid] = np.concatenate((alpha[offset:], beta), axis=None)
 
     return coef
 
@@ -334,7 +337,7 @@ def _qr_multiply_feature_matrices(m_mat_pad, n_mat, n_samples, n_params):
     return n_z_mat[:, n_params + 1 : n_samples]
 
 
-def _calculate_null_space(m_mat_pad, n_samples, n_params):
+def _calculate_basis_null_space(m_mat_pad, n_samples, n_params):
     q_mat, _ = np.linalg.qr(m_mat_pad)
 
     return q_mat[:, n_params + 1 : n_samples]
@@ -349,6 +352,7 @@ def _build_feature_matrix(x, model_info):
         data = (np.ones(len(x)), x) if model_info.has_intercepts else (x,)
         data = (*data, x**2) if model_info.has_squares else data
         features = np.column_stack(data)
+
     return features
 
 
@@ -358,6 +362,7 @@ def _reshape_square_terms_to_hess(square_terms, n_params, n_residuals, has_squar
     hess = np.zeros((n_residuals, n_params, n_params), dtype=np.float64)
     hess[:, idx1, idx2] = square_terms
     hess = hess + np.triu(hess).transpose(0, 2, 1)
+
     return hess
 
 
