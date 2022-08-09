@@ -70,7 +70,7 @@ def test_min_radius_is_not_violated(options):
         options=options,
     )
 
-    expected = 1e-6
+    expected = 7.5e-7
 
     assert calculated == expected
 
