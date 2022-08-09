@@ -6,7 +6,6 @@ import numpy as np
 from estimagic.optimization.tranquilo.models import ModelInfo
 from estimagic.optimization.tranquilo.models import VectorModel
 from numba import njit
-from scipy.linalg import qr_multiply
 
 
 def get_fitter(fitter, user_options=None, model_info=None):
@@ -272,9 +271,10 @@ def fit_pounders(x, y, model_info):
     m_mat, m_mat_pad, n_mat = _build_feature_matrices_pounders(
         features, n_params, n_samples, has_intercepts
     )
-
     z_mat = _calculate_basis_null_space(m_mat_pad, n_samples, n_params)
-    n_z_mat = _qr_multiply_feature_matrices(m_mat_pad, n_mat, n_samples, n_params)
+    n_z_mat = _multiply_feature_matrix_with_basis_null_space(
+        n_mat, z_mat, n_samples, n_params
+    )
 
     coef = _get_current_fit_pounders(
         y, m_mat, n_mat, z_mat, n_z_mat, n_samples, n_params, has_intercepts
@@ -323,18 +323,16 @@ def _build_feature_matrices_pounders(features, n_params, n_samples, has_intercep
     return m_mat[: n_params + 1, : n_params + 1], m_mat_pad, n_mat
 
 
-def _qr_multiply_feature_matrices(m_mat_pad, n_mat, n_samples, n_params):
-    n_z_mat, _ = qr_multiply(
-        m_mat_pad[: n_samples + 1, :],
-        n_mat.T[:, : n_samples + 1],
-    )
+def _multiply_feature_matrix_with_basis_null_space(n_mat, z_mat, n_samples, n_params):
+    n_z_mat = n_mat.T @ z_mat
 
     # just-identified case
     if n_samples == (n_params + 1):
-        n_z_mat = np.zeros((n_samples, int(n_params * (n_params + 1) / 2)) + 1)
-        n_z_mat[:n_params, :n_params] = np.eye(n_params)
+        n_z_mat_pad = np.zeros((n_samples, (n_params * (n_params + 1) // 2)) + 1)
+        n_z_mat_pad[:n_params, :n_params] = np.eye(n_params)
+        n_z_mat = n_z_mat_pad[:, n_params + 1 : n_samples]
 
-    return n_z_mat[:, n_params + 1 : n_samples]
+    return n_z_mat
 
 
 def _calculate_basis_null_space(m_mat_pad, n_samples, n_params):
