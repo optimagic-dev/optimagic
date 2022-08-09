@@ -6,6 +6,7 @@ import numpy as np
 from estimagic.optimization.tranquilo.models import ModelInfo
 from estimagic.optimization.tranquilo.models import VectorModel
 from numba import njit
+from scipy.linalg import qr_multiply
 
 
 def get_fitter(fitter, user_options=None, model_info=None):
@@ -33,12 +34,11 @@ def get_fitter(fitter, user_options=None, model_info=None):
 
     Returns:
         callable: The partialled fit method that only depends on x and y.
-
     """
     user_options = user_options or {}
     model_info = model_info or ModelInfo()
 
-    built_in_fitters = {"ols": fit_ols, "ridge": fit_ridge}
+    built_in_fitters = {"ols": fit_ols, "ridge": fit_ridge, "pounders": fit_pounders}
 
     if isinstance(fitter, str) and fitter in built_in_fitters:
         _fitter = built_in_fitters[fitter]
@@ -89,6 +89,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
     out = partial(
         _fitter_template, fitter=_fitter, model_info=model_info, options=reduced
     )
+
     return out
 
 
@@ -115,7 +116,6 @@ def _fitter_template(
 
     Returns:
         VectorModel or ScalarModel: Results container.
-
     """
     n_params = x.shape[1]
     n_residuals = y.shape[1]
@@ -143,6 +143,7 @@ def _fitter_template(
         square_terms = None
 
     results = VectorModel(intercepts, linear_terms, square_terms)
+
     return results
 
 
@@ -160,7 +161,6 @@ def fit_ols(x, y, model_info):
 
     Returns:
         np.ndarray: The model coefficients.
-
     """
     features = _build_feature_matrix(x, model_info)
     coef = _fit_ols(features, y)
@@ -241,6 +241,103 @@ def _fit_ridge(x, y, penalty):
     coef, *_ = np.linalg.lstsq(a + np.diag(penalty), b, rcond=None)
     coef = coef.T
     return coef
+
+
+def fit_pounders(x, y, model_info):
+    """Fit a linear model using the pounders fitting method.
+
+    See Wild (2008), "MNH: A Derivative-Free Optimization Algorithm Using
+        Minimal Norm Hessians", p. 3-5
+
+    Args:
+        x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
+            rescaled such that the trust region becomes a hypercube from -1 to 1.
+        y (np.ndarray): Array of shape (n_samples, n_residuals) with function
+            evaluations that have been centered around the function value at the
+            trust region center.
+        model_info (ModelInfo): Information that describes the functional form of the
+            model.
+
+    Returns:
+        np.ndarray: The model coefficients.
+    """
+    n_samples, n_params = x.shape
+    has_intercepts = model_info.has_intercepts
+    has_squares = model_info.has_squares
+
+    features = _polynomial_features(x, has_intercepts, has_squares)
+    m_mat, m_mat_pad, n_mat = _build_feature_matrices_pounders(
+        features, n_params, n_samples, has_intercepts
+    )
+
+    q_mat = _calculate_null_space(m_mat_pad, n_samples, n_params)
+    n_z_mat = _qr_multiply_feature_matrices(m_mat_pad, n_mat, n_samples, n_params)
+
+    coef = _get_current_fit_pounders(
+        y, m_mat, n_mat, q_mat, n_z_mat, n_samples, n_params, has_intercepts
+    )
+
+    return coef
+
+
+def _get_current_fit_pounders(
+    y, m_mat, n_mat, q_mat, n_z_mat, n_samples, n_params, has_intercepts
+):
+    n_residuals = y.shape[1]
+
+    n_poly_features = n_params * (n_params + 1) // 2
+    offset = 0 if has_intercepts else 1
+
+    coef = np.empty((n_residuals, has_intercepts + n_params + n_poly_features))
+
+    # just-identified case
+    if n_samples == (n_params + 1):
+        omega = np.zeros(n_params)
+        beta = np.zeros(n_poly_features)
+
+    for resid in range(n_residuals):
+        if n_samples != (n_params + 1):
+            z_y_vec = q_mat.T @ y[:, resid]
+            omega = np.linalg.solve(
+                np.atleast_2d(n_z_mat.T @ n_z_mat),
+                np.atleast_1d(z_y_vec),
+            )
+            beta = np.atleast_2d(n_z_mat) @ omega
+
+        rhs = y[:, resid] - n_mat @ beta
+        alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
+
+        coef[resid] = np.concatenate((alpha[offset:], beta), None)
+
+    return coef
+
+
+def _build_feature_matrices_pounders(features, n_params, n_samples, has_intercepts):
+    m_mat, n_mat = np.split(features, (n_params + has_intercepts,), axis=1)
+    m_mat_pad = np.zeros((n_samples, n_samples))
+    m_mat_pad[:, : n_params + has_intercepts] = m_mat
+
+    return m_mat[: n_params + 1, : n_params + 1], m_mat_pad, n_mat
+
+
+def _qr_multiply_feature_matrices(m_mat_pad, n_mat, n_samples, n_params):
+    n_z_mat, _ = qr_multiply(
+        m_mat_pad[: n_samples + 1, :],
+        n_mat.T[:, : n_samples + 1],
+    )
+
+    # just-identified case
+    if n_samples == (n_params + 1):
+        n_z_mat = np.zeros((n_samples, int(n_params * (n_params + 1) / 2)) + 1)
+        n_z_mat[:n_params, :n_params] = np.eye(n_params)
+
+    return n_z_mat[:, n_params + 1 : n_samples]
+
+
+def _calculate_null_space(m_mat_pad, n_samples, n_params):
+    q_mat, _ = np.linalg.qr(m_mat_pad)
+
+    return q_mat[:, n_params + 1 : n_samples]
 
 
 def _build_feature_matrix(x, model_info):

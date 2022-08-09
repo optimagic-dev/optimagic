@@ -17,6 +17,7 @@ dependencies:
   - ipython_genutils
   - nbsphinx
   - pydata-sphinx-theme>=0.3.0
+  - numba
   - pybaum
 
   - pip:
