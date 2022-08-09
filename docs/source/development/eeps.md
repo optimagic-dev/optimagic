@@ -24,5 +24,5 @@ These EEPs are currently in place:
 ```{toctree}
 :maxdepth: 1
 
-eep-01-pytrees.rst
+eep-01-pytrees.md
 ```

@@ -459,4 +459,4 @@ Global minima: $x* = (1, 1, 1)$
 >     No solution available.
 > ```
 
-[this how-to guide]: ../../how_to_guides/optimization/how_to_specify_constraints.rst
+[this how-to guide]: ../../how_to_guides/optimization/how_to_specify_constraints.md
