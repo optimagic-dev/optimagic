@@ -1,52 +1,44 @@
 # estimagic
 
-% start-badges
+```{eval-rst}
+.. start-badges
 
-```{image} https://img.shields.io/pypi/v/estimagic?color=blue
-:alt: PyPI
-:target: https://pypi.org/project/estimagic
+.. image:: https://img.shields.io/pypi/v/estimagic?color=blue
+    :alt: PyPI
+    :target: https://pypi.org/project/estimagic
+
+.. image:: https://img.shields.io/pypi/pyversions/estimagic
+    :alt: PyPI - Python Version
+    :target: https://pypi.org/project/estimagic
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/estimagic.svg
+    :target: https://anaconda.org/conda-forge/estimagic
+
+.. image:: https://img.shields.io/conda/pn/conda-forge/estimagic.svg
+    :target: https://anaconda.org/conda-forge/estimagic
+
+.. image:: https://img.shields.io/pypi/l/estimagic
+    :alt: PyPI - License
+    :target: https://pypi.org/project/estimagic
+
+.. image:: https://readthedocs.org/projects/estimagic/badge/?version=latest
+    :target: https://estimagic.readthedocs.io/en/latest
+
+.. image:: https://img.shields.io/github/workflow/status/OpenSourceEconomics/estimagic/main/main
+   :target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain
+
+.. image:: https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/OpenSourceEconomics/estimagic
+
+.. image:: https://results.pre-commit.ci/badge/github/OpenSourceEconomics/estimagic/main.svg
+    :target: https://results.pre-commit.ci/latest/github/OpenSourceEconomics/estimagic/main
+    :alt: pre-commit.ci status
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+
+.. end-badges
 ```
-
-```{image} https://img.shields.io/pypi/pyversions/estimagic
-:alt: PyPI - Python Version
-:target: https://pypi.org/project/estimagic
-```
-
-```{image} https://img.shields.io/conda/vn/conda-forge/estimagic.svg
-:target: https://anaconda.org/conda-forge/estimagic
-```
-
-```{image} https://img.shields.io/conda/pn/conda-forge/estimagic.svg
-:target: https://anaconda.org/conda-forge/estimagic
-```
-
-```{image} https://img.shields.io/pypi/l/estimagic
-:alt: PyPI - License
-:target: https://pypi.org/project/estimagic
-```
-
-```{image} https://readthedocs.org/projects/estimagic/badge/?version=latest
-:target: https://estimagic.readthedocs.io/en/latest
-```
-
-```{image} https://img.shields.io/github/workflow/status/OpenSourceEconomics/estimagic/main/main
-:target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain
-```
-
-```{image} https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/main/graph/badge.svg
-:target: https://codecov.io/gh/OpenSourceEconomics/estimagic
-```
-
-```{image} https://results.pre-commit.ci/badge/github/OpenSourceEconomics/estimagic/main.svg
-:alt: pre-commit.ci status
-:target: https://results.pre-commit.ci/latest/github/OpenSourceEconomics/estimagic/main
-```
-
-```{image} https://img.shields.io/badge/code%20style-black-000000.svg
-:target: https://github.com/psf/black
-```
-
-% end-badges
 
 ## Introduction
 
