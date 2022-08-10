@@ -28,25 +28,33 @@ parameters) can even be used with optimizers that do not support bounds.
 Let's look at a variation of the sphere function to illustrate what kinds of constraints
 you can impose and how you specify them in estimagic:
 
-```python
->>> import numpy as np
->>> import estimagic as em
->>> def criterion(params):
-...     offset = np.linspace(1, 0, len(params))
-...     x = params - offset
-...     return x @ x
+````{eval-rst}
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import estimagic as em
+    >>> def criterion(params):
+    ...     offset = np.linspace(1, 0, len(params))
+    ...     x = params - offset
+    ...     return x @ x
+
 ```
 
 The unconstrained optimum of a six-dimensional version of this problem is:
 
-```python
->>> res = em.minimize(
-...    criterion=criterion,
-...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
-...    algorithm="scipy_lbfgsb",
-...    )
->>> res.params.round(3)
-array([1. , 0.8, 0.6, 0.4, 0.2, 0. ])
+```{eval-rst}
+
+.. code-block:: python
+
+    >>> res = em.minimize(
+    ...    criterion=criterion,
+    ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
+    ...    algorithm="scipy_lbfgsb",
+    ...    )
+    >>> res.params.round(3)
+    array([1. , 0.8, 0.6, 0.4, 0.2, 0. ])
+
 ```
 
 The unconstrained optimum is usually easy to see because all parameters enter the
@@ -405,25 +413,29 @@ flat numpy array are explained in the next section.
 The above examples all just impose one constraint at a time. To impose multiple
 constraints simultaneously, simple pass in a list of constraints. For example:
 
-```python
->>> res = em.minimize(
-...    criterion=criterion,
-...    params=np.ones(6),
-...    algorithm="scipy_lbfgsb",
-...    constraints=[
-...    {"loc": [0, 1], "type": "equality"},
-...    {"loc": [2, 3, 4], "type": "linear", "weights": 1, "value": 3},
-...    ],
-...    )
-```
+```{eval-rst}
 
-This yields:
+.. code-block:: python
 
->>> res.params.round(2)
-array(\[0.9, 0.9, 1.2, 1. , 0.8, 0. \])
+    >>> res = em.minimize(
+    ...    criterion=criterion,
+    ...    params=np.ones(6),
+    ...    algorithm="scipy_lbfgsb",
+    ...    constraints=[
+    ...    {"loc": [0, 1], "type": "equality"},
+    ...    {"loc": [2, 3, 4], "type": "linear", "weights": 1, "value": 3},
+    ...    ],
+    ...    )
+
+    This yields:
+
+    >>> res.params.round(2)
+    array([0.9, 0.9, 1.2, 1. , 0.8, 0. ])
 
 There are limits regarding the compatibility of overlapping constraints. You will
 get a descriptive error message if your constraints are not compatible.
+
+```
 
 ## How to select the parameters?
 
