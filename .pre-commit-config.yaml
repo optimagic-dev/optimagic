@@ -45,8 +45,6 @@ repos:
     hooks:
     -   id: blacken-docs
         additional_dependencies: [black==22.3.0]
-        types: [rst]
-        exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.rst
 -   repo: https://github.com/psf/black
     rev: 22.6.0
     hooks:
