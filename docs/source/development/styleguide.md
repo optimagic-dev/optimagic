@@ -103,6 +103,6 @@ Your contribution should fulfill the criteria provided below.
     > - The API Reference section contains auto-generated API reference
     >   documentation and provides additional details about the implementation.
 - Headings.
-  : Only the first letter of a title is capitalized. 
+  : Only the first letter of a title is capitalized.
 - Format.
   : The code formatting in .md files is ensured by blacken-docs.
