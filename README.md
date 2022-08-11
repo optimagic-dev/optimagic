@@ -30,9 +30,9 @@ provides functionality to perform statistical inference on estimated parameters.
 - The progress of the optimization is displayed in real time via an
   interactive dashboard.
 
-```{image} docs/source/_static/images/dashboard.gif
-:scale: 21 %
-```
+> ```{image} docs/source/_static/images/dashboard.gif
+> :scale: 80 %
+> ```
 
 ### Estimation and Inference
 
