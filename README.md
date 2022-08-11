@@ -1,5 +1,7 @@
 # estimagic
 
+[![image](https://img.shields.io/pypi/v/estimagic?color=blue)](https://pypi.org/project/estimagic)
+
 ```{eval-rst}
 .. start-badges
 
