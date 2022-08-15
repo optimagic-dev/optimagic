@@ -30,7 +30,7 @@ provides functionality to perform statistical inference on estimated parameters.
 - The progress of the optimization is displayed in real time via an
   interactive dashboard.
 
-<img src="docs/source/_static/images/dashboard.gif" width="29" height="38">
+<img src="docs/source/_static/images/dashboard.gif" width="290" height="380">
 
 ### Estimation and Inference
 
