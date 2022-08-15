@@ -85,7 +85,3 @@ repos:
     rev: "0.48"
     hooks:
     -   id: check-manifest
-
-
-
-
