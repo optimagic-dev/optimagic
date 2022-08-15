@@ -36,9 +36,9 @@ repos:
     -   id: python-no-eval
     -   id: python-no-log-warn
     -   id: python-use-type-annotations
-    -   id: rst-backticks
-    -   id: rst-directive-colons
-    -   id: rst-inline-touching-normal
+
+
+
     -   id: text-unicode-replacement-char
 -   repo: https://github.com/asottile/blacken-docs
     rev: v1.12.1
@@ -62,10 +62,10 @@ repos:
             flake8-docstrings, flake8-eradicate, flake8-print, flake8-rst-docstrings,
             flake8-todo, pep8-naming, pydocstyle,
         ]
--   repo: https://github.com/PyCQA/doc8
-    rev: 0.11.2
-    hooks:
-        -   id: doc8
+
+
+
+
 -   repo: meta
     hooks:
     -   id: check-hooks-apply
@@ -85,7 +85,7 @@ repos:
     rev: "0.48"
     hooks:
     -   id: check-manifest
--   repo: https://github.com/PyCQA/doc8
-    rev: 0.11.2
-    hooks:
-    -   id: doc8
+
+
+
+
