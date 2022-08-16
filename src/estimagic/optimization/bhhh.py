@@ -42,7 +42,11 @@ def bhhh_internal(
 
     Args:
         criterion_and_derivative (callable): The objective function to be minimized.
-        x (np.ndarray): Initial guess of the parameter vector (starting points).
+        x (np.ndarray): Initial guess of the parameter vector x (starting points).
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         convergence_absolute_gradient_tolerance (float): Stopping criterion for the
             gradient tolerance.
         stopping_max_iterations (int): Maximum number of iterations. If reached,
@@ -57,56 +61,52 @@ def bhhh_internal(
             solution vector or reaching stopping_max_iterations.
         - message (str): Message to the user. Currently it says: "Under development."
     """
-    criterion_accepted, gradient = criterion_and_derivative(x)
+    criterion_accepted, gradient_candidate = criterion_and_derivative(x)
     x_accepted = x
 
-    hessian_approx = np.dot(gradient.T, gradient)
-    gradient_sum = np.sum(gradient, axis=0)
-    direction = np.linalg.solve(hessian_approx, gradient_sum)
-    gtol = np.dot(gradient_sum, direction)
+    hessian_approx = gradient_candidate.T @ gradient_candidate
+    direction, gtol = _calculate_new_direction_vector(
+        gradient_candidate, hessian_approx
+    )
 
     initial_step_size = 1
     step_size = initial_step_size
 
-    n_iter = 1
-    while n_iter < stopping_max_iterations:
-        n_iter += 1
-
-        x_candidate = x_accepted + step_size * direction
-        x_candidate = _apply_bounds_to_x_candidate(
-            x_candidate, lower_bounds, upper_bounds
+    for _n_iter in range(stopping_max_iterations):
+        (
+            x_candidate,
+            criterion_candidate,
+            gradient_candidate,
+            hessian_approx,
+        ) = find_new_candidates(
+            x_accepted,
+            direction,
+            hessian_approx,
+            lower_bounds,
+            upper_bounds,
+            step_size,
+            initial_step_size,
+            criterion_and_derivative,
         )
-        criterion_candidate, gradient = criterion_and_derivative(x_candidate)
 
-        # If previous step was accepted
-        if step_size == initial_step_size:
-            hessian_approx = np.dot(gradient.T, gradient)
-        else:
-            criterion_candidate, gradient = criterion_and_derivative(x_candidate)
-
-        # Line search
         if np.sum(criterion_candidate) > np.sum(criterion_accepted):
-            step_size /= 2
+            x_accepted, criterion_accepted, step_size = determine_new_step_size(
+                x_accepted,
+                criterion_accepted,
+                x_candidate,
+                criterion_candidate,
+                step_size,
+                initial_step_size,
+            )
 
-            if step_size <= 0.01:
-                x_accepted = x_candidate
-                criterion_accepted = criterion_candidate
-
-                step_size = initial_step_size
-
-        # If decrease in likelihood, calculate new direction vector
         else:
-            # Accept step
             x_accepted = x_candidate
             criterion_accepted = criterion_candidate
 
-            gradient_sum = np.sum(gradient, axis=0)
-            direction = np.linalg.solve(hessian_approx, gradient_sum)
-            gtol = np.dot(gradient_sum, direction)
-
-            if gtol < 0:
-                hessian_approx = np.dot(gradient.T, gradient)
-                direction = np.linalg.solve(hessian_approx, gradient_sum)
+            direction, hessian_approx, gtol = determine_new_search_direction(
+                gradient_candidate,
+                hessian_approx,
+            )
 
             step_size = initial_step_size
 
@@ -116,11 +116,82 @@ def bhhh_internal(
     result_dict = {
         "solution_x": x_accepted,
         "solution_criterion": criterion_accepted,
-        "n_iterations": n_iter,
-        "message": "Under develpment",
+        "n_iterations": _n_iter,
+        "message": "Under development",
     }
 
     return result_dict
+
+
+def find_new_candidates(
+    x_accepted,
+    direction,
+    hessian_approx,
+    lower_bounds,
+    upper_bounds,
+    step_size,
+    initial_step_size,
+    criterion_and_derivative,
+):
+    """Find new candidates for x, criterion, gradient, and hessian."""
+    x_candidate = x_accepted + step_size * direction
+    x_candidate = _apply_bounds_to_x_candidate(x_candidate, lower_bounds, upper_bounds)
+
+    criterion_candidate, gradient_candidate = criterion_and_derivative(x_candidate)
+
+    if step_size == initial_step_size:
+        hessian_approx = gradient_candidate.T @ gradient_candidate
+    else:
+        criterion_candidate, gradient_candidate = criterion_and_derivative(x_candidate)
+
+    return x_candidate, criterion_candidate, gradient_candidate, hessian_approx
+
+
+def determine_new_step_size(
+    x_accepted,
+    criterion_accepted,
+    x_candidate,
+    criterion_candidate,
+    step_size,
+    initial_step_size,
+):
+    """Determine new step size and accept candidates."""
+    step_size /= 2
+
+    if step_size <= 0.01:
+        x_accepted = x_candidate
+        criterion_accepted = criterion_candidate
+
+        step_size = initial_step_size
+
+    return x_accepted, criterion_accepted, step_size
+
+
+def determine_new_search_direction(
+    gradient_candidate,
+    hessian_approx,
+):
+    """Determine new search direction and accept candidates."""
+    direction, gtol = _calculate_new_direction_vector(
+        gradient_candidate, hessian_approx
+    )
+
+    if gtol < 0:
+        hessian_approx = gradient_candidate.T @ gradient_candidate
+        direction, _ = _calculate_new_direction_vector(
+            gradient_candidate, hessian_approx
+        )
+
+    return direction, hessian_approx, gtol
+
+
+def _calculate_new_direction_vector(gradient_candidate, hessian_approx):
+    """Calculate new direction vector."""
+    gradient_sum = np.sum(gradient_candidate, axis=0)
+    direction = np.linalg.solve(hessian_approx, gradient_sum)
+    gtol = gradient_sum @ direction
+
+    return direction, gtol
 
 
 def _apply_bounds_to_x_candidate(x, lower_bounds, upper_bounds, bound_tol=0):
