@@ -33,6 +33,8 @@ def bhhh(
 def bhhh_internal(
     criterion_and_derivative,
     x,
+    lower_bounds,
+    upper_bounds,
     convergence_absolute_gradient_tolerance,
     stopping_max_iterations,
 ):
@@ -66,17 +68,19 @@ def bhhh_internal(
     initial_step_size = 1
     step_size = initial_step_size
 
-    niter = 1
-    while niter < stopping_max_iterations:
-        niter += 1
+    n_iter = 1
+    while n_iter < stopping_max_iterations:
+        n_iter += 1
 
         x_candidate = x_accepted + step_size * direction
+        x_candidate = _apply_bounds_to_x_candidate(
+            x_candidate, lower_bounds, upper_bounds
+        )
         criterion_candidate, gradient = criterion_and_derivative(x_candidate)
 
         # If previous step was accepted
         if step_size == initial_step_size:
             hessian_approx = np.dot(gradient.T, gradient)
-
         else:
             criterion_candidate, gradient = criterion_and_derivative(x_candidate)
 
@@ -85,11 +89,9 @@ def bhhh_internal(
             step_size /= 2
 
             if step_size <= 0.01:
-                # Accept step
                 x_accepted = x_candidate
                 criterion_accepted = criterion_candidate
 
-                # Reset step size
                 step_size = initial_step_size
 
         # If decrease in likelihood, calculate new direction vector
@@ -106,7 +108,6 @@ def bhhh_internal(
                 hessian_approx = np.dot(gradient.T, gradient)
                 direction = np.linalg.solve(hessian_approx, gradient_sum)
 
-            # Reset stepsize
             step_size = initial_step_size
 
         if gtol < convergence_absolute_gradient_tolerance:
@@ -115,8 +116,16 @@ def bhhh_internal(
     result_dict = {
         "solution_x": x_accepted,
         "solution_criterion": criterion_accepted,
-        "n_iterations": niter,
+        "n_iterations": n_iter,
         "message": "Under develpment",
     }
 
     return result_dict
+
+
+def _apply_bounds_to_x_candidate(x, lower_bounds, upper_bounds, bound_tol=0):
+    """Apply upper and lower bounds to the candidate vector."""
+    x = np.where(x <= lower_bounds + bound_tol, lower_bounds, x)
+    x = np.where(x >= upper_bounds - bound_tol, upper_bounds, x)
+
+    return x

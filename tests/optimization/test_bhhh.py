@@ -87,7 +87,6 @@ def criterion_and_derivative_probit(x):
 
     Returns:
         tuple: first entry is the criterion, second entry is the score
-
     """
     endog, exog = generate_test_data()
 
@@ -97,39 +96,86 @@ def criterion_and_derivative_probit(x):
     return -loglike(x), score(x)
 
 
-@pytest.fixture
-def result_statsmodels_logit():
-    endog, exog = generate_test_data()
-    result = sm.Logit(endog, exog).fit()
-
-    return result
+# =====================================================================================
+# Fixtures
+# =====================================================================================
 
 
 @pytest.fixture
-def result_statsmodels_probit():
+def result_logit_unbounded():
     endog, exog = generate_test_data()
-    result = sm.Probit(endog, exog).fit()
+    result_unbounded = sm.Logit(endog, exog).fit()
 
-    return result
+    return result_unbounded.params
+
+
+@pytest.fixture
+def result_probit_unbounded():
+    endog, exog = generate_test_data()
+    result_unbounded = sm.Probit(endog, exog).fit()
+
+    return result_unbounded.params
+
+
+@pytest.fixture
+def result_logit_bounded():
+    return np.array([-5.0, -3.93455447, 6.49171767])
+
+
+@pytest.fixture
+def result_probit_bounded():
+    return np.array([-5.0, -2.56431715, 4.18468707])
+
+
+# =====================================================================================
+# Tests
+# =====================================================================================
+TEST_CASES = [
+    (
+        criterion_and_derivative_logit,
+        np.array([-np.inf, -np.inf, -np.inf]),
+        np.array([np.inf, np.inf, np.inf]),
+        "result_logit_unbounded",
+    ),
+    (
+        criterion_and_derivative_probit,
+        np.array([-np.inf, -np.inf, -np.inf]),
+        np.array([np.inf, np.inf, np.inf]),
+        "result_probit_unbounded",
+    ),
+    (
+        criterion_and_derivative_logit,
+        np.array([-5, -10, -10]),
+        np.array([10, 10, 10]),
+        "result_logit_bounded",
+    ),
+    (
+        criterion_and_derivative_probit,
+        np.array([-5, -10, -10]),
+        np.array([10, 10, 10]),
+        "result_probit_bounded",
+    ),
+]
 
 
 @pytest.mark.parametrize(
-    "criterion_and_derivative, result_statsmodels",
-    [
-        (criterion_and_derivative_logit, "result_statsmodels_logit"),
-        (criterion_and_derivative_probit, "result_statsmodels_probit"),
-    ],
+    "criterion_and_derivative, lower_bounds, upper_bounds, result_statsmodels",
+    TEST_CASES,
 )
-def test_maximum_likelihood(criterion_and_derivative, result_statsmodels, request):
-    result_expected = request.getfixturevalue(result_statsmodels)
+def test_maximum_likelihood(
+    criterion_and_derivative, lower_bounds, upper_bounds, result_statsmodels, request
+):
+    params_expected = request.getfixturevalue(result_statsmodels)
 
-    x = np.zeros(3)
+    x0 = np.zeros(3)
 
     result_bhhh = bhhh_internal(
         criterion_and_derivative,
-        x=x,
+        x=x0,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
         convergence_absolute_gradient_tolerance=1e-8,
         stopping_max_iterations=200,
     )
 
-    aaae(result_bhhh["solution_x"], result_expected.params, decimal=4)
+    aaae(result_bhhh["solution_x"], params_expected, decimal=4)
