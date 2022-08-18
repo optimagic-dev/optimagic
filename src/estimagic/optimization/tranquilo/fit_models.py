@@ -264,6 +264,7 @@ def fit_pounders(x, y, model_info):
         np.ndarray: The model coefficients.
     """
     n_samples, n_params = x.shape
+    _is_just_identified = n_samples == (n_params + 1)
     has_intercepts = model_info.has_intercepts
     has_squares = model_info.has_squares
 
@@ -273,44 +274,56 @@ def fit_pounders(x, y, model_info):
     )
     z_mat = _calculate_basis_null_space(m_mat_pad, n_samples, n_params)
     n_z_mat = _multiply_feature_matrix_with_basis_null_space(
-        n_mat, z_mat, n_samples, n_params
+        n_mat, z_mat, n_samples, n_params, _is_just_identified
     )
 
     coef = _get_current_fit_pounders(
-        y, m_mat, n_mat, z_mat, n_z_mat, n_samples, n_params, has_intercepts
+        y,
+        m_mat,
+        n_mat,
+        z_mat,
+        n_z_mat,
+        n_params,
+        has_intercepts,
+        _is_just_identified,
     )
 
     return coef
 
 
 def _get_current_fit_pounders(
-    y, m_mat, n_mat, z_mat, n_z_mat, n_samples, n_params, has_intercepts
+    y,
+    m_mat,
+    n_mat,
+    z_mat,
+    n_z_mat,
+    n_params,
+    has_intercepts,
+    _is_just_identified,
 ):
     n_residuals = y.shape[1]
-
     n_poly_features = n_params * (n_params + 1) // 2
     offset = 0 if has_intercepts else 1
 
     coef = np.empty((n_residuals, has_intercepts + n_params + n_poly_features))
 
-    # just-identified case
-    if n_samples == (n_params + 1):
-        omega = np.zeros(n_params)
-        beta = np.zeros(n_poly_features)
+    if _is_just_identified:
+        coeffs_first_stage = np.zeros(n_params)
+        coeffs_square = np.zeros(n_poly_features)
 
     for resid in range(n_residuals):
-        if n_samples != (n_params + 1):
+        if not _is_just_identified:
             z_y_vec = z_mat.T @ y[:, resid]
-            omega = np.linalg.solve(
+            coeffs_first_stage = np.linalg.solve(
                 np.atleast_2d(n_z_mat.T @ n_z_mat),
                 np.atleast_1d(z_y_vec),
             )
-            beta = np.atleast_2d(n_z_mat) @ omega
+            coeffs_square = np.atleast_2d(n_z_mat) @ coeffs_first_stage
 
-        rhs = y[:, resid] - n_mat @ beta
-        alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
+        rhs = y[:, resid] - n_mat @ coeffs_square
+        coeffs_linear = np.linalg.solve(m_mat, rhs[: n_params + 1])
 
-        coef[resid] = np.concatenate((alpha[offset:], beta), axis=None)
+        coef[resid] = np.concatenate((coeffs_linear[offset:], coeffs_square), axis=None)
 
     return coef
 
@@ -323,11 +336,12 @@ def _build_feature_matrices_pounders(features, n_params, n_samples, has_intercep
     return m_mat[: n_params + 1, : n_params + 1], m_mat_pad, n_mat
 
 
-def _multiply_feature_matrix_with_basis_null_space(n_mat, z_mat, n_samples, n_params):
+def _multiply_feature_matrix_with_basis_null_space(
+    n_mat, z_mat, n_samples, n_params, _is_just_identified
+):
     n_z_mat = n_mat.T @ z_mat
 
-    # just-identified case
-    if n_samples == (n_params + 1):
+    if _is_just_identified:
         n_z_mat_pad = np.zeros((n_samples, (n_params * (n_params + 1) // 2)) + 1)
         n_z_mat_pad[:n_params, :n_params] = np.eye(n_params)
         n_z_mat = n_z_mat_pad[:, n_params + 1 : n_samples]
