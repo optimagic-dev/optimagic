@@ -50,8 +50,13 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_panels",
     "sphinx_copybutton",
+    "myst_parser",
 ]
 
+myst_enable_extensions = [
+    "colon_fence",
+    "dollarmath",
+]
 copybutton_prompt_text = ">>> "
 copybutton_only_copy_prompt_lines = False
 
@@ -99,7 +104,7 @@ html_static_path = ["_static"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = ".rst"
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"
