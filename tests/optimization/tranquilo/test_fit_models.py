@@ -4,6 +4,7 @@ from estimagic import first_derivative
 from estimagic import second_derivative
 from estimagic.optimization.tranquilo.fit_models import _polynomial_features
 from estimagic.optimization.tranquilo.fit_models import get_fitter
+from estimagic.optimization.tranquilo.models import ModelInfo
 from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
 
@@ -22,21 +23,25 @@ def quadratic_case():
     """Test scenario with true quadratic function.
 
     We return true function, and function evaluations and data on random points.
-
     """
+    n_params = 4
+    n_samples = 2_000
+
     # theoretical terms
-    linear_terms = 1 + np.arange(4)
-    square_terms = np.arange(16).reshape(4, 4)
+    linear_terms = 1 + np.arange(n_params)
+    square_terms = np.arange(n_params**2).reshape(n_params, n_params)
     square_terms = square_terms + square_terms.T
 
     def func(x):
         y = -10 + linear_terms @ x + 0.5 * x.T @ square_terms @ x
         return y
 
-    x0 = np.ones(4)
+    x0 = np.ones(n_params)
 
     # random data
-    x = np.array([x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(10_000)])
+    x = np.array(
+        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)]
+    )
     y = np.array([func(_x) for _x in list(x)]).reshape(-1, 1)
 
     out = {
@@ -53,6 +58,16 @@ def quadratic_case():
 def test_fit_ols_against_truth(quadratic_case):
     fit_ols = get_fitter("ols")
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
+
+    aaae(got.linear_terms.squeeze(), quadratic_case["linear_terms_expected"])
+    aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
+
+
+def test_fit_pounders_against_truth(quadratic_case):
+    model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
+    fit_pounders = get_fitter("pounders", model_info=model_info)
+    got = fit_pounders(quadratic_case["x"], quadratic_case["y"])
+
     aaae(got.linear_terms.squeeze(), quadratic_case["linear_terms_expected"])
     aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
 

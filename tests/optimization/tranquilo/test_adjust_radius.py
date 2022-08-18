@@ -64,13 +64,13 @@ def test_max_radius_is_not_violated(options):
 
 def test_min_radius_is_not_violated(options):
     calculated = adjust_radius(
-        radius=1.5e-6,
+        radius=1e-09,
         rho=0.05,
         step=np.ones(2),
         options=options,
     )
 
-    expected = 1e-6
+    expected = 1e-08
 
     assert calculated == expected
 
