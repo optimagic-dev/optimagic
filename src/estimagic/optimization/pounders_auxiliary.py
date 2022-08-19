@@ -496,13 +496,13 @@ def evaluate_residual_model(
     y_residuals = np.empty((n_modelpoints, n_residuals), dtype=np.float64)
 
     for j in range(n_residuals):
-        x_dot_square_terms = np.dot(centered_xs, residual_model.square_terms[j, :, :])
+        x_dot_square_terms = centered_xs @ residual_model.square_terms[j, :, :]
 
         for i in range(n_modelpoints):
             y_residuals[i, j] = (
                 centered_residuals[i, j]
-                - np.dot(residual_model.linear_terms[:, j], centered_xs[i, :])
-                - 0.5 * np.dot(x_dot_square_terms[i, :], centered_xs[i, :])
+                - residual_model.linear_terms[:, j] @ centered_xs[i, :]
+                - 0.5 * (x_dot_square_terms[i, :] @ centered_xs[i, :])
             )
 
     return y_residuals
@@ -605,13 +605,12 @@ def get_feature_matrices_residual_model(
 
         point -= 1
 
-    # Orthogonal basis for the null space of M, where M is the
-    # sample of xs forming the monomial basis
     z_mat, _ = qr_multiply(
         m_mat_pad[:n_modelpoints, :],
         np.eye(n_maxinterp)[:, :n_modelpoints],
     )
 
+    # Just-identified case
     if n_modelpoints == (n_params + 1):
         n_z_mat = np.zeros((n_maxinterp, n_poly_features))
         n_z_mat[:n_params, :n_params] = np.eye(n_params)
@@ -672,22 +671,19 @@ def fit_residual_model(
         coeffs_first_stage = np.zeros(n_params)
         beta = np.zeros(n_poly_terms)
     else:
-        n_z_mat_square = np.dot(n_z_mat.T, n_z_mat)
+        n_z_mat_square = n_z_mat.T @ n_z_mat
 
     for k in range(n_residuals):
         if not _is_just_identified:
-            z_y_vec = np.dot(
-                z_mat.T,
-                y_residuals[:, k],
-            )
+            z_y_vec = np.dot(z_mat.T, y_residuals[:, k])
             coeffs_first_stage = np.linalg.solve(
                 np.atleast_2d(n_z_mat_square),
                 np.atleast_1d(z_y_vec),
             )
 
-            beta = np.dot(np.atleast_2d(n_z_mat), coeffs_first_stage)
+            beta = np.atleast_2d(n_z_mat) @ coeffs_first_stage
 
-        rhs = y_residuals[:, k] - np.dot(n_mat, beta)
+        rhs = y_residuals[:, k] - n_mat @ beta
 
         alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
         coeffs_linear[k, :] = alpha[1 : (n_params + 1)]
