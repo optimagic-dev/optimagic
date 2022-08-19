@@ -18,6 +18,7 @@ dependencies:
   - nbsphinx
   - pydata-sphinx-theme>=0.3.0
   - pybaum
+  - myst-parser
 
   - pip:
       - ../
