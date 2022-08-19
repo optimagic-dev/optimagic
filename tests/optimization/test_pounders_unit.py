@@ -14,12 +14,12 @@ from estimagic.optimization.pounders_auxiliary import (
 )
 from estimagic.optimization.pounders_auxiliary import create_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import create_main_from_residual_model
+from estimagic.optimization.pounders_auxiliary import evaluate_residual_model
 from estimagic.optimization.pounders_auxiliary import find_affine_points
-from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
+from estimagic.optimization.pounders_auxiliary import fit_residual_model
 from estimagic.optimization.pounders_auxiliary import (
-    get_interpolation_matrices_residual_model,
+    get_feature_matrices_residual_model,
 )
-from estimagic.optimization.pounders_auxiliary import interpolate_residual_model
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
 )
@@ -228,9 +228,9 @@ def data_find_affine_points(request):
     }
 
     expected_dict = {
-        "model_improving_points_expected": test_data["model_improving_points_expected"],
-        "model_indices_expected": test_data["model_indices_expected"],
-        "n_modelpoints_expected": test_data["n_modelpoints_expected"],
+        "model_improving_points": test_data["model_improving_points_expected"],
+        "model_indices": test_data["model_indices_expected"],
+        "n_modelpoints": test_data["n_modelpoints_expected"],
     }
 
     return inputs_dict, expected_dict
@@ -274,8 +274,8 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
     }
 
     expected_dict = {
-        "model_indices_expected": test_data["model_indices_expected"],
-        "history_x_expected": test_data["history_x_expected"],
+        "model_indices": test_data["model_indices_expected"],
+        "history_x": test_data["history_x_expected"],
     }
 
     return inputs_dict, expected_dict
@@ -291,7 +291,10 @@ def data_get_interpolation_matrices_residual_model():
     history_x = np.array(test_data["history_x"])
     history.add_entries(history_x, np.zeros(history_x.shape))
 
-    n = 3
+    n_params = 3
+    n_maxinterp = 2 * n_params + 1
+    n_modelpoints = 7
+
     inputs_dict = {
         "history": history,
         "x_accepted": np.array(test_data["x_accepted"]),
@@ -299,25 +302,28 @@ def data_get_interpolation_matrices_residual_model():
         "delta": test_data["delta"],
         "c2": 10,
         "theta2": 1e-4,
-        "n_maxinterp": 2 * n + 1,
-        "n_modelpoints": test_data["n_modelpoints"],
+        "n_maxinterp": n_maxinterp,
     }
 
     expected_dict = {
-        "x_sample_monomial_basis_expected": test_data[
-            "x_sample_monomial_basis_expected"
+        "x_sample_monomial_basis": np.array(
+            test_data["x_sample_monomial_basis_expected"]
+        )[: n_params + 1, : n_params + 1],
+        "monomial_basis": np.array(test_data["monomial_basis_expected"])[
+            :n_modelpoints
         ],
-        "monomial_basis_expected": test_data["monomial_basis_expected"],
-        "basis_null_space_expected": test_data["basis_null_space_expected"],
-        "lower_triangular_expected": test_data["lower_triangular_expected"],
-        "n_modelpoints_expected": test_data["n_modelpoints_expected"],
+        "basis_null_space": test_data["basis_null_space_expected"],
+        "lower_triangular": np.array(test_data["lower_triangular_expected"])[
+            :, n_params + 1 : n_maxinterp
+        ],
+        "n_modelpoints": test_data["n_modelpoints_expected"],
     }
 
     return inputs_dict, expected_dict
 
 
 @pytest.fixture(params=["4", "7"])
-def data_interpolate_residual_model(request):
+def data_evaluate_residual_model(request):
     test_data = read_yaml(
         TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.yaml"
     )
@@ -343,38 +349,46 @@ def data_interpolate_residual_model(request):
     delta_old = test_data["delta_old"]
 
     center_info = {"x": x_accepted, "radius": delta_old}
-    interpolation_set = history.get_centered_xs(
+    centered_xs = history.get_centered_xs(
         center_info, index=model_indices[:n_modelpoints]
     )
 
-    n = 3
+    center_info = {"residuals": residual_model.intercepts}
+    centered_residuals = history.get_centered_residuals(
+        center_info, index=model_indices
+    )
+
     inputs_dict = {
-        "history": history,
+        "centered_xs": centered_xs,
+        "centered_residuals": centered_residuals,
         "residual_model": residual_model,
-        "interpolation_set": interpolation_set,
-        "model_indices": model_indices,
-        "n_modelpoints": n_modelpoints,
-        "n_maxinterp": 2 * n + 1,
     }
 
     expected_dict = {
-        "interpolation_set_expected": test_data["interpolation_set_expected"],
-        "residual_model_interpolated_expected": test_data["f_interpolated_expected"],
+        "y_residuals": test_data["f_interpolated_expected"],
     }
 
     return inputs_dict, expected_dict
 
 
 @pytest.fixture
-def data_get_coefficients_residual_model():
+def data_fit_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
 
+    n_params = 3
+    n_maxinterp = 2 * n_params + 1
+    n_modelpoints = 7
+
     inputs_dict = {
-        "x_sample_monomial_basis": np.array(test_data["x_sample_monomial_basis"]),
-        "monomial_basis": np.array(test_data["monomial_basis"]),
-        "basis_null_space": np.array(test_data["basis_null_space"]),
-        "lower_triangular": np.array(test_data["lower_triangular"]),
-        "residual_model_interpolated": np.array(test_data["f_interpolated"]),
+        "m_mat": np.array(test_data["x_sample_monomial_basis"])[
+            : n_params + 1, : n_params + 1
+        ],
+        "n_mat": np.array(test_data["monomial_basis"])[:n_modelpoints],
+        "z_mat": np.array(test_data["basis_null_space"]),
+        "n_z_mat": np.array(test_data["lower_triangular"])[
+            :, n_params + 1 : n_maxinterp
+        ],
+        "y_residuals": np.array(test_data["f_interpolated"]),
         "n_modelpoints": test_data["n_modelpoints"],
     }
 
@@ -420,7 +434,7 @@ def test_update_main_from_residual_model(data_update_main_from_residual_model):
     residual_model, main_model_expected = data_update_main_from_residual_model
 
     main_model_out = create_main_from_residual_model(
-        residual_model, multiply_square_terms_with_residuals=True
+        residual_model, multiply_square_terms_with_intercepts=True
     )
 
     aaae(
@@ -474,10 +488,10 @@ def test_find_affine_points(data_find_affine_points):
 
     aaae(
         model_improving_points_out,
-        expected["model_improving_points_expected"],
+        expected["model_improving_points"],
     )
-    aaae(model_indices_out, expected["model_indices_expected"])
-    assert np.allclose(n_modelpoints_out, expected["n_modelpoints_expected"])
+    aaae(model_indices_out, expected["model_indices"])
+    assert np.allclose(n_modelpoints_out, expected["n_modelpoints"])
     assert np.allclose(project_x_onto_null_out, True)
 
 
@@ -494,11 +508,11 @@ def test_add_points_until_main_model_fully_linear(
         **inputs, n_cores=1, batch_evaluator=joblib_batch_evaluator
     )
 
-    aaae(model_indices_out, expected["model_indices_expected"])
+    aaae(model_indices_out, expected["model_indices"])
     for index_added in range(n - inputs["n_modelpoints"], 0, -1):
         aaae(
             history_out.get_xs(index=-index_added),
-            expected["history_x_expected"][-index_added],
+            expected["history_x"][-index_added],
         )
 
 
@@ -512,26 +526,26 @@ def test_get_interpolation_matrices_residual_model(
         basis_null_space,
         lower_triangular,
         n_modelpoints,
-    ) = get_interpolation_matrices_residual_model(**inputs)
+    ) = get_feature_matrices_residual_model(**inputs)
 
-    aaae(x_sample_monomial_basis, expected["x_sample_monomial_basis_expected"])
-    aaae(monomial_basis, expected["monomial_basis_expected"])
-    aaae(basis_null_space, expected["basis_null_space_expected"])
-    aaae(lower_triangular, expected["lower_triangular_expected"])
-    assert np.allclose(n_modelpoints, expected["n_modelpoints_expected"])
-
-
-def test_interpolate_residual_model(data_interpolate_residual_model):
-    inputs, expected = data_interpolate_residual_model
-    residual_model_interpolated = interpolate_residual_model(**inputs)
-
-    aaae(residual_model_interpolated, expected["residual_model_interpolated_expected"])
+    aaae(x_sample_monomial_basis, expected["x_sample_monomial_basis"])
+    aaae(monomial_basis, expected["monomial_basis"])
+    aaae(basis_null_space, expected["basis_null_space"])
+    aaae(lower_triangular, expected["lower_triangular"])
+    assert np.allclose(n_modelpoints, expected["n_modelpoints"])
 
 
-def test_get_coefficients_residual_model(data_get_coefficients_residual_model):
-    inputs, expected_coefficients = data_get_coefficients_residual_model
+def test_evaluate_residual_model(data_evaluate_residual_model):
+    inputs, expected = data_evaluate_residual_model
+    y_residuals = evaluate_residual_model(**inputs)
 
-    coefficients_to_add = get_coefficients_residual_model(**inputs)
+    aaae(y_residuals, expected["y_residuals"])
+
+
+def test_fit_residual_model(data_fit_residual_model):
+    inputs, expected_coefficients = data_fit_residual_model
+
+    coefficients_to_add = fit_residual_model(**inputs)
 
     aaae(
         coefficients_to_add["linear_terms"],

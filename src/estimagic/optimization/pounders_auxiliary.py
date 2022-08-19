@@ -29,24 +29,25 @@ def create_initial_residual_model(history, accepted_index, delta):
     """Update linear and square terms of the initial residual model.
 
     Args:
-        history (class): Class storing history of xs, residuals, and critvals.
+        history (LeastSquaresHistory): Class storing history of xs, residuals, and
+            critvals.
         accepted_index (int): Index in history pointing to the currently
             accepted candidate vector.
         delta (float): Trust-region radius.
 
     Returns:
-        NamedTuple: NamedTuple containing the parameters of the residual model
-            with updated ``linear_terms`` and ``square_terms``.
+        ResidualModel: Residual model containing the initial parameters for
+             ``linear_terms`` and ``square_terms``.
     """
     center_info = {
         "x": history.get_best_x(),
         "residuals": history.get_best_residuals(),
         "radius": delta,
     }
-    n = len(center_info["x"])
-    n_obs = center_info["residuals"].shape[0]
+    n_params = len(center_info["x"])
+    n_residuals = center_info["residuals"].shape[0]
 
-    indices_not_min = [i for i in range(n + 1) if i != accepted_index]
+    indices_not_min = [i for i in range(n_params + 1) if i != accepted_index]
 
     x_candidate, residuals_candidate, _ = history.get_centered_entries(
         center_info=center_info,
@@ -54,7 +55,7 @@ def create_initial_residual_model(history, accepted_index, delta):
     )
 
     linear_terms = np.linalg.solve(x_candidate, residuals_candidate)
-    square_terms = np.zeros((n_obs, n, n))
+    square_terms = np.zeros((n_residuals, n_params, n_params))
 
     residual_model = ResidualModel(
         intercepts=history.get_best_residuals(),
@@ -69,16 +70,16 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
     """Update linear and square terms of the residual model.
 
     Args:
-        residual_model (NamedTuple): NamedTuple containing the parameters of
-            residual model, i.e. ``intercepts``, ``linear_terms``, and ``square terms``.
+        residual_model (ResidualModel): Residual model with the following parameters:
+            ``intercepts``, ``linear_terms``, and ``square terms``.
         coefficients_to_add (dict): Coefficients used for updating the
             parameters of the residual model.
         delta (float): Trust region radius of the current iteration.
         delta_old (float): Trust region radius of the previous iteration.
 
     Returns:
-        NamedTuple: NamedTuple containing the parameters of the residual model
-            with update ``linear_terms`` and ``square_terms``.
+        ResidualModel: Residual model containing the updated parameters
+            ``linear_terms`` and ``square_terms``.
     """
     linear_terms_new = (
         coefficients_to_add["linear_terms"]
@@ -98,38 +99,30 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
 
 
 def create_main_from_residual_model(
-    residual_model, multiply_square_terms_with_residuals=True
+    residual_model, multiply_square_terms_with_intercepts=True
 ):
     """Update linear and square terms of the main model via the residual model.
 
     Args:
-        residual_model (NamedTuple): NamedTuple containing the parameters of
-            residual model, i.e. "intercepts", ``linear_terms``, and "square terms".
+        residual_model (ResidualModel): Residual model with the following parameters:
+            ``intercepts``, ``linear_terms``, and ``square terms``.
         multiply_square_terms_with_residuals (bool): Indicator whether we
-            multiply the main model's "square terms" with residuals, i.e.
-            the intercepts of the residual model.
+            multiply the main model's ``square terms`` with the
+            intercepts of the residual model.
 
     Returns:
-        NamedTuple: NamedTuple containing the updated parameters of the
-            main model, i.e. ``linear_terms`` and ``square terms``.
+        MainModel: Main model containing the updated parameters
+            ``linear_terms`` and ``square terms``.
     """
-    linear_terms_main_model = np.dot(
-        residual_model.linear_terms, residual_model.intercepts
-    )
-    square_terms_main_model = np.dot(
-        residual_model.linear_terms, residual_model.linear_terms.T
+    linear_terms_main_model = residual_model.linear_terms @ residual_model.intercepts
+    square_terms_main_model = (
+        residual_model.linear_terms @ residual_model.linear_terms.T
     )
 
-    if multiply_square_terms_with_residuals is True:
-        # Multiply 3d array *square_terms_residual_model* with
-        # 1d array *intercepts_residual_model* along axis 0 of the former.
-        dim_array = np.ones((1, residual_model.square_terms.ndim), int).ravel()
-        dim_array[0] = -1
-
-        intercepts_reshaped = residual_model.intercepts.reshape(dim_array)
-
-        square_terms_main_model = square_terms_main_model + np.sum(
-            intercepts_reshaped * residual_model.square_terms, axis=0
+    if multiply_square_terms_with_intercepts is True:
+        square_terms_main_model = (
+            square_terms_main_model
+            + residual_model.square_terms.T @ residual_model.intercepts
         )
 
     main_model = MainModel(
@@ -143,17 +136,14 @@ def update_main_model_with_new_accepted_x(main_model, x_candidate):
     """Use accepted candidate to update the linear terms of the residual model.
 
     Args:
-         main_model (NamedTuple): NamedTuple containing the parameters of the
-            main model, i.e. ``linear_terms`` and ``square terms``.
-        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
+         main_model (MainModel): Main model with the following parameters:
+             ``linear_terms`` and ``square terms``.
+        x_candidate (np.ndarray): Vector of centered x candidates of shape (n_params,).
 
     Returns:
-        NamedTuple: NamedTuple containing the parameters of the main model
-            with updated ``linear_terms``.
+        MainModel: Main model containing the updated ``linear_terms``.
     """
-    linear_terms_new = main_model.linear_terms + np.dot(
-        main_model.square_terms, x_candidate
-    )
+    linear_terms_new = main_model.linear_terms + main_model.square_terms @ x_candidate
     main_model_updated = main_model._replace(linear_terms=linear_terms_new)
 
     return main_model_updated
@@ -163,27 +153,29 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
     """Use accepted candidate to update residual model.
 
     Args:
-        residual_model (NamedTuple): NamedTuple containing the parameters of
+        residual_model (ResidualModel): Residual model containing the parameters of
             the residual model, i.e. ``intercepts``, ``linear_terms``, and
             ``square terms``.
-        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
+        x_candidate (np.ndarray): Vector of centered x candidates of shape (n_params,).
 
     Returns:
-        NamedTuple: NamedTuple containing the parameters of the residual model
-            with updated ``intercepts`` and ``linear_terms``.
+        ResidualModel: Residual model containing the updated parameters
+            `intercepts`` and ``linear_terms``.
     """
     intercepts_new = (
         residual_model.intercepts
-        + np.dot(x_candidate, residual_model.linear_terms)
-        + 0.5 * np.dot(np.dot(x_candidate, residual_model.square_terms), x_candidate)
+        + x_candidate @ residual_model.linear_terms
+        + 0.5 * (x_candidate.T @ residual_model.square_terms @ x_candidate)
     )
+
     linear_terms_new = (
-        residual_model.linear_terms + np.dot(residual_model.square_terms, x_candidate).T
+        residual_model.linear_terms + (residual_model.square_terms @ x_candidate).T
     )
 
     residual_model_updated = residual_model._replace(
         intercepts=intercepts_new, linear_terms=linear_terms_new
     )
+
     return residual_model_updated
 
 
@@ -209,13 +201,14 @@ def solve_subproblem(
     """Solve the quadratic subproblem.
 
     Args:
-        x_accepted (np.ndarray): Currently accepted candidate vector of shape (n,).
+        x_accepted (np.ndarray): Currently accepted candidate vector of shape
+            (n_params,).
         delta (float): Current trust region radius.
-        main_model (NamedTuple): NamedTuple containing the parameters of the
-            main model, i.e. ``linear_terms`` and ``square terms``.
-        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+        main_model (MainModel): Main model with the following parameters:
+             ``linear_terms`` and ``square terms``.
+        lower_bounds (np.ndarray): 1d array of shape (n_params,) with lower bounds
             for the parameter vector x.
-        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+        upper_bounds (np.ndarray): 1d array of shape (n_params,) with upper bounds
             for the parameter vector x.
         delta (float) Current trust-region radius
         solver (str): Trust-region subsolver to use. Currently, two internal solvers
@@ -250,14 +243,13 @@ def solve_subproblem(
 
     Returns:
         (dict): Result dictionary containing the followng keys:
-            - "x" (np.ndarray): The solution vector of shape (n,)
+            - "x" (np.ndarray): The solution vector of shape (n_params,)
             - "criterion" (float): The value of the criterion functions associated
                 with the solution
             - "n_iterations" (int): Number of iterations performed before termination.
             - "success" (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
     """
-    # Initial guess
     x0 = np.zeros_like(x_accepted)
 
     # Normalize bounds. If none provided, use unit cube [-1, 1]
@@ -273,7 +265,7 @@ def solve_subproblem(
     else:
         upper_bounds = np.ones_like(x_accepted)
 
-    # Check if bounds valid
+    # Check if bounds are valid
     if np.max(lower_bounds - upper_bounds) > 1e-10:
         raise ValueError("Upper bounds < lower bounds in subproblem.")
     if np.max(lower_bounds - x0) > 1e-10:
@@ -330,11 +322,13 @@ def find_affine_points(
     """Find affine points.
 
     Args:
-        history (class): Class storing history of xs, residuals, and critvals.
+        history (LeastSquaresHistory): Class storing history of xs, residuals,
+            and critvals.
         x_accepted (np.ndarray): Accepted solution vector of the subproblem.
-            Shape (n,).
-        model_improving_points (np.ndarray): Array of shape (n, n) including
-            points to improve the main model, i.e. make the main model fully linear.
+            Shape (n_params,).
+        model_improving_points (np.ndarray): Array of shape (n_params, n_params)
+            including points to improve the main model, i.e. make the main model
+            fully linear, i.e. just-identified.
             If *project_x_onto_null* is False, it is an array filled with zeros.
         project_x_onto_null (int): Indicator whether to calculate the QR
             decomposition of *model_improving_points* and multiply it
@@ -343,22 +337,23 @@ def find_affine_points(
         theta1 (float): Threshold for adding the current x candidate to the model.
         c (float): Threshold for acceptance of the norm of our current x candidate.
         model_indices (np.ndarray): Indices related to the candidates of x
-            that are currently in the main model. Shape (2 *n* + 1,).
+            that are currently in the main model. Shape (2 * n_params + 1,).
         n_modelpoints (int): Current number of model points.
 
     Returns:
         Tuple:
-        - model_improving_points (np.ndarray):  Array of shape (n, n) including
-            points to improve the main model, i.e. make the main model fully linear.
+        - model_improving_points (np.ndarray):  Array of shape (n_params, n_params)
+            including points to improve the main model, i.e. make the main model
+            fully linear, i.e. just-identified.
         - model_indices (np.ndarray): Indices related to the candidates of x
-            that are currently in the main model. Shape (2 *n* + 1,).
+            that are currently in the main model. Shape (2 *n_params* + 1,).
         - n_modelpoints (int): Current number of model points.
         - project_x_onto_null (int): Indicator whether to calculate the QR
             decomposition of *model_improving_points* and multiply it
             with vector *x_projected*.
             Relevant for next call of *find_affine_points()*.
     """
-    n = len(x_accepted)
+    n_params = len(x_accepted)
 
     for i in range(history.get_n_fun() - 1, -1, -1):
         center_info = {"x": x_accepted, "radius": delta}
@@ -380,7 +375,7 @@ def find_affine_points(
                 project_x_onto_null = True
                 n_modelpoints += 1
 
-            if n_modelpoints == n:
+            if n_modelpoints == n_params:
                 break
 
     return model_improving_points, model_indices, n_modelpoints, project_x_onto_null
@@ -403,15 +398,16 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     """Add points until main model is fully linear.
 
     Args:
-        history (class): Class storing history of xs, residuals, and critvals.
-        main_model (NamedTuple): NamedTuple containing the parameters of the
-            main model, i.e. ``linear_terms`` and "square terms".
-        model_improving_points (np.ndarray): Array of shape (n, n) including
-            points to improve the main model.
+        history (LeastSquaresHistory): Class storing history of xs, residuals, and
+            critvals.
+        main_model (MainModel): Main model with the following parameters:
+             ``linear_terms`` and ``square terms``.
+        model_improving_points (np.ndarray): Array of shape (n_params, n_params)
+            including points to improve the main model.
         model_indices (np.ndarray): Indices of the candidates of x that are
-            currently in the main model. Shape (2 * n + 1,).
+            currently in the main model. Shape (2 * n_params + 1,).
         x_accepted (np.ndarray): Accepted solution vector of the subproblem.
-            Shape (n,).
+            Shape (n_params,).
         n_modelpoints (int): Current number of model points.
         delta (float): Delta, current trust-region radius.
         criterion (callable): Criterion function.
@@ -431,9 +427,9 @@ def add_geomtery_points_to_make_main_model_fully_linear(
         Tuple:
         - history (class): Class storing history of xs, residuals, and critvals.
         - model_indices (np.ndarray): Indices of the candidates of x that are
-            currently in the main model. Shape (2 * n + 1,).
+            currently in the main model. Shape (2 * n_params + 1,).
     """
-    n = len(x_accepted)
+    n_params = len(x_accepted)
 
     current_history = history.get_n_fun()
 
@@ -441,10 +437,10 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     x_candidates_list = []
     criterion_candidates_list = []
 
-    model_improving_points, _ = qr_multiply(model_improving_points, np.eye(n))
+    model_improving_points, _ = qr_multiply(model_improving_points, np.eye(n_params))
 
-    for i in range(n_modelpoints, n):
-        change_direction = np.dot(model_improving_points[:, i], main_model.linear_terms)
+    for i in range(n_modelpoints, n_params):
+        change_direction = model_improving_points[:, i] @ main_model.linear_terms
 
         if change_direction > 0:
             model_improving_points[:, i] *= -1
@@ -468,71 +464,111 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     return history, model_indices
 
 
-def get_interpolation_matrices_residual_model(
-    history,
-    x_accepted,
-    model_indices,
-    delta,
-    c2,
-    theta2,
-    n_maxinterp,
-    n_modelpoints,
+def evaluate_residual_model(
+    centered_xs,
+    centered_residuals,
+    residual_model,
 ):
-    """Obtain matrices that will be used for interpolating the residual model.
+    """Compute the difference between observed and predicted model evaluations.
+
+    We use a quadratic model of the form:
+
+        f(x) = a + x.T @ b + 0.5 x.T @ C @ x ,
+
+    where C is lower triangular. Note the connection of b and C to the gradient:
+    f'(x) = b + (C + C.T) @ x, and the Hessian: f''(x) = C + C.T.
 
     Args:
-        history (class): Class storing history of xs, residuals, and critvals.
+        residual_model (ResidualModel): The residual model. Has entries:
+            - ``intercept``: corresponds to 'a' in the above equation
+            - ``linear_terms``: corresponds to 'b' in the above equation
+            - ``square_terms``: corresponds to 'C' in the above equation
+        centered_xs (np.ndarray): Centered x sample. Shape (n_modelpoints, n_params).
+        centered_residuals (np.ndarray): Centered residuals, i.e. the observed model
+            evaluations. Shape (n_maxinterp, n_residuals).
+
+    Returns:
+        np.ndarray: Observed minus predicted model evaluations,
+            has shape (n_modelpoints, n_residuals).
+    """
+    n_residuals = centered_residuals.shape[1]
+    n_modelpoints = centered_xs.shape[0]
+    y_residuals = np.empty((n_modelpoints, n_residuals), dtype=np.float64)
+
+    for j in range(n_residuals):
+        x_dot_square_terms = centered_xs @ residual_model.square_terms[j, :, :]
+
+        for i in range(n_modelpoints):
+            y_residuals[i, j] = (
+                centered_residuals[i, j]
+                - residual_model.linear_terms[:, j] @ centered_xs[i, :]
+                - 0.5 * (x_dot_square_terms[i, :] @ centered_xs[i, :])
+            )
+
+    return y_residuals
+
+
+def get_feature_matrices_residual_model(
+    history, x_accepted, model_indices, delta, c2, theta2, n_maxinterp
+):
+    """Obtain the feature matrices for fitting the residual model.
+
+    Pounders uses underdetermined sample sets, with at most n_maxinterp
+    points in the model. Hence, the fitting method is interpolation,
+    where the solution represents the quadratic whose Hessian matrix is of
+    minimum Frobenius norm.
+
+    For a mathematical exposition see :cite:`Wild2008`, p. 3-5.
+
+    Args:
+        history (LeastSquaresHistory): Class storing history of xs, residuals, and
+            critvals.
         x_accepted (np.ndarray): Accepted solution vector of the subproblem.
-            Shape (n,).
+            Shape (n_params,).
         model_indices (np.ndarray): Indices of the candidates of x that are
-            currently in the model. Shape (2 * n + 1,).
+            currently in the model. Shape (2 * n_params + 1,).
         delta (float): Delta, current trust-region radius.
         c2 (int): Threshold for acceptance of the norm of our current x candidate.
             Equal to 10 by default.
         theta2 (float): Threshold for adding the current x candidate to the model.
-        n_maxinterp (int): Maximum number of interpolation points.
-        n_modelpoints (int): Current number of model points.
+        n_maxinterp (int): Maximum number of interpolation points. By default,
+            2 * n_params + 1 points.
 
     Returns:
         Tuple:
-        - x_sample_monomial_basis (np.ndarray): Sample of xs used for
-            building the monomial basis. When taken together, they
-            form a basis for the linear space of quadratics in n
-            variables.
-            Shape(n_maxinterp, n * (n + 1) / 2).
-        - monomial_basis (np.ndarray): Monomial basis for quadratic functions of x.
-            Shape(n_maxinterp, n * (n + 1) / 2).
-        - basis_null_space (np.ndarray): Basis for the null space of xs that
-            form the monomial basis. Shape(n_maxinterp, len(n + 1 : n_modelpoints)).
-        - lower_triangular (np.ndarray): Lower triangular matrix of xs that
-            form the monomial basis. Shape(n_maxinterp, n * (n + 1) / 2).
+        - m_mat (np.ndarray): Polynomial feature matrix of the linear terms.
+            Shape(n_params + 1, n_params + 1).
+        - n_mat (np.ndarray): Polynomial feature matrix of the square terms.
+            Shape(n_modelpoints, n_poly_features).
+        - z_mat (np.ndarray): Basis for the null space of m_mat.
+            Shape(n_modelpoints, n_modelpoints - n_params - 1).
+        - n_z_mat (np.ndarray): Lower triangular matrix of xs that form
+            the monomial basis. Shape(n_poly_features, n_modelpoints - n_params - 1).
         - n_modelpoints (int): Current number of model points.
     """
-    n = len(x_accepted)
+    n_params = len(x_accepted)
+    n_poly_features = n_params * (n_params + 1) // 2
 
-    x_sample_monomial_basis = np.zeros((n_maxinterp, n + 1))
-    x_sample_monomial_basis[:, 0] = 1
-    x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
-    x_sample_full_with_zeros[:n_maxinterp, : n + 1] = x_sample_monomial_basis
+    m_mat = np.zeros((n_maxinterp, n_params + 1))
+    m_mat[:, 0] = 1
+    m_mat_pad = np.zeros((n_maxinterp, n_maxinterp))
+    m_mat_pad[:n_maxinterp, : n_params + 1] = m_mat
 
-    monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
+    n_mat = np.zeros((n_maxinterp, n_poly_features))
 
     center_info = {"x": x_accepted, "radius": delta}
-    for i in range(n + 1):
-        x_sample_monomial_basis[i, 1:] = history.get_centered_xs(
-            center_info, index=model_indices[i]
-        )
-        monomial_basis[i, :] = _get_monomial_basis(x_sample_monomial_basis[i, 1:])
+    for i in range(n_params + 1):
+        m_mat[i, 1:] = history.get_centered_xs(center_info, index=model_indices[i])
+        n_mat[i, :] = _get_monomial_basis(m_mat[i, 1:])
 
-    # Now we add points until we have n_maxinterp starting with the most recent ones
     point = history.get_n_fun() - 1
-    n_modelpoints = n + 1
+    n_modelpoints = n_params + 1
 
     while (n_modelpoints < n_maxinterp) and (point >= 0):
         reject = False
 
         # Reject any points already in the model
-        for i in range(n + 1):
+        for i in range(n_params + 1):
             if point == model_indices[i]:
                 reject = True
                 break
@@ -548,187 +584,125 @@ def get_interpolation_matrices_residual_model(
             point -= 1
             continue
 
-        x_sample_monomial_basis[n_modelpoints, 1:] = history.get_centered_xs(
-            center_info, index=point
-        )
-        monomial_basis[n_modelpoints, :] = _get_monomial_basis(
-            x_sample_monomial_basis[n_modelpoints, 1:]
-        )
+        m_mat[n_modelpoints, 1:] = history.get_centered_xs(center_info, index=point)
+        n_mat[n_modelpoints, :] = _get_monomial_basis(m_mat[n_modelpoints, 1:])
 
-        x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
-        x_sample_full_with_zeros[:n_maxinterp, : n + 1] = x_sample_monomial_basis
+        m_mat_pad = np.zeros((n_maxinterp, n_maxinterp))
+        m_mat_pad[:n_maxinterp, : n_params + 1] = m_mat
 
-        lower_triangular_temporary, _ = qr_multiply(
-            x_sample_full_with_zeros[: n_modelpoints + 1, :],
-            monomial_basis.T[: int(n * (n + 1) / 2), : n_modelpoints + 1],
+        _n_z_mat, _ = qr_multiply(
+            m_mat_pad[: n_modelpoints + 1, :],
+            n_mat.T[:n_poly_features, : n_modelpoints + 1],
         )
-        beta = np.linalg.svd(lower_triangular_temporary.T[n + 1 :], compute_uv=False)
+        beta = np.linalg.svd(_n_z_mat.T[n_params + 1 :], compute_uv=False)
 
-        if beta[min(n_modelpoints - n, int(n * (n + 1) / 2)) - 1] > theta2:
+        if beta[min(n_modelpoints - n_params, n_poly_features) - 1] > theta2:
             # Accept point
             model_indices[n_modelpoints] = point
-            lower_triangular = lower_triangular_temporary
+            n_z_mat = _n_z_mat
 
             n_modelpoints += 1
 
         point -= 1
 
-    # Orthogonal basis for the null space of M, where M is the
-    # sample of xs forming the monomial basis
-    basis_null_space, _ = qr_multiply(
-        x_sample_full_with_zeros[:n_modelpoints, :],
+    z_mat, _ = qr_multiply(
+        m_mat_pad[:n_modelpoints, :],
         np.eye(n_maxinterp)[:, :n_modelpoints],
     )
-    basis_null_space = basis_null_space[:, n + 1 : n_modelpoints]
 
-    if n_modelpoints == (n + 1):
-        lower_triangular = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
-        lower_triangular[:n, :n] = np.eye(n)
+    # Just-identified case
+    if n_modelpoints == (n_params + 1):
+        n_z_mat = np.zeros((n_maxinterp, n_poly_features))
+        n_z_mat[:n_params, :n_params] = np.eye(n_params)
 
     return (
-        x_sample_monomial_basis,
-        monomial_basis,
-        basis_null_space,
-        lower_triangular,
+        m_mat[: n_params + 1, : n_params + 1],
+        n_mat[:n_modelpoints],
+        z_mat[:n_modelpoints, n_params + 1 : n_modelpoints],
+        n_z_mat[:, n_params + 1 : n_modelpoints],
         n_modelpoints,
     )
 
 
-def interpolate_residual_model(
-    history,
-    interpolation_set,
-    residual_model,
-    model_indices,
-    n_modelpoints,
-    n_maxinterp,
-):
-    """Interpolate the quadratic residual model.
-
-    The residual model:
-
-        Q(x) = c + g'x + 0.5 x G x'
-
-    satisfies the interpolation conditions Q(X[:,j]) = f(j)
-    for j= 1,..., m with a Hessian matrix of least Frobenius norm.
-
-    If the point x_k belongs to the interpolation set, one can show that
-    c = f (x_k).
-
-    Args:
-        history (class): Class storing history of xs, residuals, and critvals.
-        x_sample (np.ndarray): Vector of centered x sample that makes up the
-            interpolation set. Shape (maxinterp, n).
-        residual_model (NamedTuple): NamedTuple containing the parameters of
-            residual model, i.e. ``intercepts``, ``linear_terms``, and ``square terms``.
-        model_indices (np.ndarray): Indices of the candidates of x that are
-            currently in the model. Shape (2 *n* + 1,).
-        n_modelpoints (int): Current number of model points.
-
-    Returns:
-        np.ndarray: Interpolated residual model. Array of shape
-            (n_maxinterp, n_obs).
-    """
-    n_obs = history.get_residuals(index=-1).shape[0]
-    residual_model_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
-
-    for j in range(n_obs):
-        x_dot_square_terms = np.dot(
-            interpolation_set, residual_model.square_terms[j, :, :]
-        )
-
-        for i in range(n_modelpoints):
-            center_info = {"residuals": residual_model.intercepts}
-            residuals = history.get_centered_residuals(
-                center_info, index=model_indices[i]
-            )
-
-            residual_model_interpolated[i, j] = (
-                residuals[j]
-                - np.dot(residual_model.linear_terms[:, j], interpolation_set[i, :])
-                - 0.5 * np.dot(x_dot_square_terms[i, :], interpolation_set[i, :])
-            )
-
-    return residual_model_interpolated
-
-
-def get_coefficients_residual_model(
-    lower_triangular,
-    basis_null_space,
-    monomial_basis,
-    x_sample_monomial_basis,
-    residual_model_interpolated,
+def fit_residual_model(
+    m_mat,
+    n_mat,
+    z_mat,
+    n_z_mat,
+    y_residuals,
     n_modelpoints,
 ):
-    """Computes the coefficients of the quadratic residual model.
+    """Fit a linear model using the pounders fitting method.
+
+    Pounders uses underdetermined sample sets, with at most 2 * n_params + 1
+    points in the model. Hence, the fitting method is interpolation, where
+    the solution represents the quadratic whose Hessian matrix is of
+    minimum Frobenius norm.
+
+    For a mathematical exposition, see :cite:`Wild2008`, p. 3-5.
 
     Args:
-        x_sample_monomial_basis (np.ndarray): Sample of xs used for
-            building the monomial basis. When taken together, they
-            form a basis for the linear space of quadratics in n
-            variables.
-            Shape(n_maxinterp, n * (n + 1) / 2).
-        monomial_basis (np.ndarray): Monomial basis for quadratic functions of x.
-            Shape(n_maxinterp, n * (n + 1) / 2).
-        basis_null_space (np.ndarray): Basis for the null space of xs that
-            form the monomial basis. Shape(n_maxinterp, len(n + 1 : n_modelpoints)).
-        lower_triangular (np.ndarray): Lower triangular matrix of xs that
-            form the monomial basis. Shape(n_maxinterp, n * (n + 1) / 2).
-        f_interpolated (np.ndarray): Interpolated criterion function f.
-            Shape (n_maxinterp, n_obs).
+        m_mat (np.ndarray): Polynomial feature matrix of the linear terms.
+            Shape(n_params + 1, n_params + 1).
+        n_mat (np.ndarray): Polynomial feature matrix of the square terms.
+            Shape(n_modelpoints, n_poly_features).
+        z_mat (np.ndarray): Basis for the null space of m_mat.
+            Shape(n_modelpoints, n_modelpoints - n_params - 1).
+        n_z_mat (np.ndarray): Lower triangular matrix of xs that form
+            the monomial basis. Shape(n_poly_features, n_modelpoints - n_params - 1).
         n_modelpoints (int): Current number of model points.
+        y_residuals (np.ndarray): The dependent variable. Observed minus predicted
+            evaluations of the residual model. Shape (n_modelpoints, n_residuals).
+        n_maxinterp (int): Maximum number of interpolation points. By default,
+            2 * n_params + 1 points.
 
     Returns:
-        dict: Coefficients for updating the ``linear_terms`` and "square_terms"
-            of the residual model.
+        dict: The coefficients of the residual model.
     """
-    n = x_sample_monomial_basis.shape[1] - 1
-    n_obs = residual_model_interpolated.shape[1]
+    n_params = m_mat.shape[1] - 1
+    n_residuals = y_residuals.shape[1]
+    n_poly_terms = n_params * (n_params + 1) // 2
+    _is_just_identified = n_modelpoints == (n_params + 1)
 
-    params_gradient = np.zeros((n_obs, n))
-    params_hessian = np.zeros((n_obs, n, n))
-    lower_triangular = lower_triangular[:, n + 1 : n_modelpoints]
+    coeffs_linear = np.empty((n_residuals, n_params))
+    coeffs_square = np.empty((n_residuals, n_params, n_params))
 
-    if n_modelpoints == (n + 1):
-        omega = np.zeros(n)
-        beta = np.zeros(int(n * (n + 1) / 2))
+    if _is_just_identified:
+        coeffs_first_stage = np.zeros(n_params)
+        beta = np.zeros(n_poly_terms)
     else:
-        lower_triangular_square = np.dot(lower_triangular.T, lower_triangular)
+        n_z_mat_square = n_z_mat.T @ n_z_mat
 
-    for k in range(n_obs):
-        if n_modelpoints != (n + 1):
-            lower_triangular_omega = np.dot(
-                basis_null_space[:n_modelpoints, :].T,
-                residual_model_interpolated[:n_modelpoints, k],
-            )
-            omega = np.linalg.solve(
-                np.atleast_2d(lower_triangular_square),
-                np.atleast_1d(lower_triangular_omega),
+    for k in range(n_residuals):
+        if not _is_just_identified:
+            z_y_vec = np.dot(z_mat.T, y_residuals[:, k])
+            coeffs_first_stage = np.linalg.solve(
+                np.atleast_2d(n_z_mat_square),
+                np.atleast_1d(z_y_vec),
             )
 
-            beta = np.dot(np.atleast_2d(lower_triangular), omega)
+            beta = np.atleast_2d(n_z_mat) @ coeffs_first_stage
 
-        rhs = residual_model_interpolated[:n_modelpoints, k] - np.dot(
-            monomial_basis[:n_modelpoints, :], beta
-        )
+        rhs = y_residuals[:, k] - n_mat @ beta
 
-        alpha = np.linalg.solve(x_sample_monomial_basis[: n + 1, : n + 1], rhs[: n + 1])
-        params_gradient[k, :] = alpha[1 : (n + 1)]
+        alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
+        coeffs_linear[k, :] = alpha[1 : (n_params + 1)]
 
         num = 0
-        for i in range(n):
-            params_hessian[k, i, i] = beta[num]
+        for i in range(n_params):
+            coeffs_square[k, i, i] = beta[num]
             num += 1
-            for j in range(i + 1, n):
-                params_hessian[k, j, i] = beta[num] / np.sqrt(2)
-                params_hessian[k, i, j] = beta[num] / np.sqrt(2)
+            for j in range(i + 1, n_params):
+                coeffs_square[k, j, i] = beta[num] / np.sqrt(2)
+                coeffs_square[k, i, j] = beta[num] / np.sqrt(2)
                 num += 1
 
-    coefficients_to_add = {
-        "linear_terms": params_gradient.T,
-        "square_terms": params_hessian,
+    coef = {
+        "linear_terms": coeffs_linear.T,
+        "square_terms": coeffs_square,
     }
 
-    return coefficients_to_add
+    return coef
 
 
 def update_trustregion_radius(
@@ -775,36 +749,35 @@ def get_last_model_indices_and_check_for_repeated_model(
     return last_model_indices, n_last_modelpoints, same_model_used
 
 
-def update_model_indices_residual_model(model_indices, accepted_index, n_modelpoints):
-    """Update model indices and number of points in the residual model."""
+def add_accepted_point_to_residual_model(model_indices, accepted_index, n_modelpoints):
+    """Add accepted point to the residual model."""
     model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
-    n_modelpoints += 1
     model_indices[0] = accepted_index
 
-    return model_indices, n_modelpoints
+    return model_indices
 
 
 def _get_monomial_basis(x):
     """Get the monomial basis (basis for quadratic functions) of x.
 
-    Monomial basis = .5*[x(1)^2  sqrt(2)*x(1)*x(2) ... sqrt(2)*x(1)*x(n) ...
-        ... x(2)^2 sqrt(2)*x(2)*x(3) .. x(n)^2]
+    Monomial basis = .5*[x(1)^2  sqrt(2)*x(1)*x(2) ... sqrt(2)*x(1)*x(n_params) ...
+        ... x(2)^2 sqrt(2)*x(2)*x(3) .. x(n_params)^2]
 
     Args:
-        x (np.ndarray): Parameter vector of shape (n,).
+        x (np.ndarray): Parameter vector of shape (n_params,).
 
     Returns:
-        np.ndarray: Monomial basis of x wof shape (n * (n + 1) / 2,).
+        np.ndarray: Monomial basis of x of shape (n_params * (n_params + 1) / 2,).
     """
-    n = len(x)
-    monomial_basis = np.zeros(int(n * (n + 1) / 2))
+    n_params = len(x)
+    monomial_basis = np.zeros(int(n_params * (n_params + 1) / 2))
 
     j = 0
-    for i in range(n):
+    for i in range(n_params):
         monomial_basis[j] = 0.5 * x[i] ** 2
         j += 1
 
-        for k in range(i + 1, n):
+        for k in range(i + 1, n_params):
             monomial_basis[j] = x[i] * x[k] / np.sqrt(2)
             j += 1
 
