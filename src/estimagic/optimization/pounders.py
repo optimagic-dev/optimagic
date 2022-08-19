@@ -293,7 +293,7 @@ def internal_solve_pounders(
         history=history, accepted_index=accepted_index, delta=delta
     )
     main_model = create_main_from_residual_model(
-        residual_model=residual_model, multiply_square_terms_with_residuals=False
+        residual_model=residual_model, multiply_square_terms_with_intercepts=False
     )
 
     x_accepted = history.get_best_x()

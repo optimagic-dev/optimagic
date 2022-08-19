@@ -434,7 +434,7 @@ def test_update_main_from_residual_model(data_update_main_from_residual_model):
     residual_model, main_model_expected = data_update_main_from_residual_model
 
     main_model_out = create_main_from_residual_model(
-        residual_model, multiply_square_terms_with_residuals=True
+        residual_model, multiply_square_terms_with_intercepts=True
     )
 
     aaae(
