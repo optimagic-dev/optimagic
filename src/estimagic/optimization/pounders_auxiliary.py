@@ -664,8 +664,8 @@ def fit_residual_model(
     n_poly_terms = n_params * (n_params + 1) // 2
     _is_just_identified = n_modelpoints == (n_params + 1)
 
-    coeffs_linear = np.zeros((n_residuals, n_params))
-    coeffs_square = np.zeros((n_residuals, n_params, n_params))
+    coeffs_linear = np.empty((n_residuals, n_params))
+    coeffs_square = np.empty((n_residuals, n_params, n_params))
 
     if _is_just_identified:
         coeffs_first_stage = np.zeros(n_params)
