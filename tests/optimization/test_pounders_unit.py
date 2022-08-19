@@ -18,7 +18,7 @@ from estimagic.optimization.pounders_auxiliary import evaluate_residual_model
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import fit_residual_model
 from estimagic.optimization.pounders_auxiliary import (
-    get_interpolation_matrices_residual_model,
+    get_feature_matrices_residual_model,
 )
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
@@ -380,12 +380,12 @@ def data_fit_residual_model():
     n_modelpoints = 7
 
     inputs_dict = {
-        "x_sample_monomial_basis": np.array(test_data["x_sample_monomial_basis"])[
+        "m_mat": np.array(test_data["x_sample_monomial_basis"])[
             : n_params + 1, : n_params + 1
         ],
-        "monomial_basis": np.array(test_data["monomial_basis"])[:n_modelpoints],
-        "basis_null_space": np.array(test_data["basis_null_space"]),
-        "lower_triangular": np.array(test_data["lower_triangular"])[
+        "n_mat": np.array(test_data["monomial_basis"])[:n_modelpoints],
+        "z_mat": np.array(test_data["basis_null_space"]),
+        "n_z_mat": np.array(test_data["lower_triangular"])[
             :, n_params + 1 : n_maxinterp
         ],
         "y_residuals": np.array(test_data["f_interpolated"]),
@@ -526,7 +526,7 @@ def test_get_interpolation_matrices_residual_model(
         basis_null_space,
         lower_triangular,
         n_modelpoints,
-    ) = get_interpolation_matrices_residual_model(**inputs)
+    ) = get_feature_matrices_residual_model(**inputs)
 
     aaae(x_sample_monomial_basis, expected["x_sample_monomial_basis"])
     aaae(monomial_basis, expected["monomial_basis"])

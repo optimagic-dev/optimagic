@@ -508,13 +508,17 @@ def evaluate_residual_model(
     return y_residuals
 
 
-def get_interpolation_matrices_residual_model(
+def get_feature_matrices_residual_model(
     history, x_accepted, model_indices, delta, c2, theta2, n_maxinterp
 ):
-    """Obtain matrices that will be used for interpolating the residual model.
+    """Obtain the feature matrices for fitting the residual model.
 
-    For a mathematical exposition of the fitting method used in POUNDERS,
-    see :cite:`Wild2008`, p. 3-5.
+    Pounders uses underdetermined sample sets, with at most n_maxinterp
+    points in the model. Hence, the fitting method is interpolation,
+    where the solution represents the quadratic whose Hessian matrix is of
+    minimum Frobenius norm.
+
+    For a mathematical exposition see :cite:`Wild2008`, p. 3-5.
 
     Args:
         history (LeastSquaresHistory): Class storing history of xs, residuals, and
@@ -527,40 +531,36 @@ def get_interpolation_matrices_residual_model(
         c2 (int): Threshold for acceptance of the norm of our current x candidate.
             Equal to 10 by default.
         theta2 (float): Threshold for adding the current x candidate to the model.
-        n_maxinterp (int): Maximum number of interpolation points.
+        n_maxinterp (int): Maximum number of interpolation points. By default,
+            2 * n_params + 1 points.
 
     Returns:
         Tuple:
-        - x_sample_monomial_basis (np.ndarray): Sample of xs used for
-            building the monomial basis. When taken together, they
-            form a basis for the linear space of quadratics in n_params
-            variables. Shape(n_maxinterp, n_params* (n_params + 1) / 2).
-        - monomial_basis (np.ndarray): Monomial basis for quadratic functions of x.
-            Shape(n_maxinterp, n_params * (n_params + 1) / 2).
-        - basis_null_space (np.ndarray): Basis for the null space of xs that
-            form the monomial basis.
-            Shape(n_maxinterp, len(n_params + 1 : n_modelpoints)).
-        - lower_triangular (np.ndarray): Lower triangular matrix of xs that form
-            the monomial basis. Shape(n_maxinterp, n_params * (n_params + 1) / 2).
+        - m_mat (np.ndarray): Polynomial feature matrix of the linear terms.
+            Shape(n_params + 1, n_params + 1).
+        - n_mat (np.ndarray): Polynomial feature matrix of the square terms.
+            Shape(n_modelpoints, n_poly_features).
+        - z_mat (np.ndarray): Basis for the null space of m_mat.
+            Shape(n_modelpoints, n_modelpoints - n_params - 1).
+        - n_z_mat (np.ndarray): Lower triangular matrix of xs that form
+            the monomial basis. Shape(n_poly_features, n_modelpoints - n_params - 1).
         - n_modelpoints (int): Current number of model points.
     """
     n_params = len(x_accepted)
+    n_poly_features = n_params * (n_params + 1) // 2
 
-    x_sample_monomial_basis = np.zeros((n_maxinterp, n_params + 1))
-    x_sample_monomial_basis[:, 0] = 1
-    x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
-    x_sample_full_with_zeros[:n_maxinterp, : n_params + 1] = x_sample_monomial_basis
+    m_mat = np.zeros((n_maxinterp, n_params + 1))
+    m_mat[:, 0] = 1
+    m_mat_pad = np.zeros((n_maxinterp, n_maxinterp))
+    m_mat_pad[:n_maxinterp, : n_params + 1] = m_mat
 
-    monomial_basis = np.zeros((n_maxinterp, int(n_params * (n_params + 1) / 2)))
+    n_mat = np.zeros((n_maxinterp, n_poly_features))
 
     center_info = {"x": x_accepted, "radius": delta}
     for i in range(n_params + 1):
-        x_sample_monomial_basis[i, 1:] = history.get_centered_xs(
-            center_info, index=model_indices[i]
-        )
-        monomial_basis[i, :] = _get_monomial_basis(x_sample_monomial_basis[i, 1:])
+        m_mat[i, 1:] = history.get_centered_xs(center_info, index=model_indices[i])
+        n_mat[i, :] = _get_monomial_basis(m_mat[i, 1:])
 
-    # Now we add points until we have n_maxinterp starting with the most recent ones
     point = history.get_n_fun() - 1
     n_modelpoints = n_params + 1
 
@@ -584,31 +584,22 @@ def get_interpolation_matrices_residual_model(
             point -= 1
             continue
 
-        x_sample_monomial_basis[n_modelpoints, 1:] = history.get_centered_xs(
-            center_info, index=point
-        )
-        monomial_basis[n_modelpoints, :] = _get_monomial_basis(
-            x_sample_monomial_basis[n_modelpoints, 1:]
-        )
+        m_mat[n_modelpoints, 1:] = history.get_centered_xs(center_info, index=point)
+        n_mat[n_modelpoints, :] = _get_monomial_basis(m_mat[n_modelpoints, 1:])
 
-        x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
-        x_sample_full_with_zeros[:n_maxinterp, : n_params + 1] = x_sample_monomial_basis
+        m_mat_pad = np.zeros((n_maxinterp, n_maxinterp))
+        m_mat_pad[:n_maxinterp, : n_params + 1] = m_mat
 
-        lower_triangular_temporary, _ = qr_multiply(
-            x_sample_full_with_zeros[: n_modelpoints + 1, :],
-            monomial_basis.T[: int(n_params * (n_params + 1) / 2), : n_modelpoints + 1],
+        _n_z_mat, _ = qr_multiply(
+            m_mat_pad[: n_modelpoints + 1, :],
+            n_mat.T[:n_poly_features, : n_modelpoints + 1],
         )
-        beta = np.linalg.svd(
-            lower_triangular_temporary.T[n_params + 1 :], compute_uv=False
-        )
+        beta = np.linalg.svd(_n_z_mat.T[n_params + 1 :], compute_uv=False)
 
-        if (
-            beta[min(n_modelpoints - n_params, int(n_params * (n_params + 1) / 2)) - 1]
-            > theta2
-        ):
+        if beta[min(n_modelpoints - n_params, n_poly_features) - 1] > theta2:
             # Accept point
             model_indices[n_modelpoints] = point
-            lower_triangular = lower_triangular_temporary
+            n_z_mat = _n_z_mat
 
             n_modelpoints += 1
 
@@ -616,60 +607,60 @@ def get_interpolation_matrices_residual_model(
 
     # Orthogonal basis for the null space of M, where M is the
     # sample of xs forming the monomial basis
-    basis_null_space, _ = qr_multiply(
-        x_sample_full_with_zeros[:n_modelpoints, :],
+    z_mat, _ = qr_multiply(
+        m_mat_pad[:n_modelpoints, :],
         np.eye(n_maxinterp)[:, :n_modelpoints],
     )
-    basis_null_space = basis_null_space[:n_modelpoints, n_params + 1 : n_modelpoints]
 
     if n_modelpoints == (n_params + 1):
-        lower_triangular = np.zeros((n_maxinterp, int(n_params * (n_params + 1) / 2)))
-        lower_triangular[:n_params, :n_params] = np.eye(n_params)
+        n_z_mat = np.zeros((n_maxinterp, n_poly_features))
+        n_z_mat[:n_params, :n_params] = np.eye(n_params)
 
     return (
-        x_sample_monomial_basis[: n_params + 1, : n_params + 1],
-        monomial_basis[:n_modelpoints],
-        basis_null_space,
-        lower_triangular[:, n_params + 1 : n_modelpoints],
+        m_mat[: n_params + 1, : n_params + 1],
+        n_mat[:n_modelpoints],
+        z_mat[:n_modelpoints, n_params + 1 : n_modelpoints],
+        n_z_mat[:, n_params + 1 : n_modelpoints],
         n_modelpoints,
     )
 
 
 def fit_residual_model(
-    lower_triangular,
-    basis_null_space,
-    monomial_basis,
-    x_sample_monomial_basis,
+    m_mat,
+    n_mat,
+    z_mat,
+    n_z_mat,
     y_residuals,
     n_modelpoints,
 ):
     """Fit a linear model using the pounders fitting method.
 
-    The solution represents the quadratic whose Hessian matrix is of
+    Pounders uses underdetermined sample sets, with at most 2 * n_params + 1
+    points in the model. Hence, the fitting method is interpolation, where
+    the solution represents the quadratic whose Hessian matrix is of
     minimum Frobenius norm.
 
     For a mathematical exposition, see :cite:`Wild2008`, p. 3-5.
 
     Args:
-        x_sample_monomial_basis (np.ndarray): Sample of xs used for
-            building the monomial basis. When taken together, they
-            form a basis for the linear space of quadratics in n_params
-            variables. Shape(n_params + 1, n_params + 1).
-        monomial_basis (np.ndarray): Monomial basis for quadratic functions of x.
-            Shape(n_modelpoints, n_params * (n_params + 1) / 2).
-        basis_null_space (np.ndarray): Basis for the null space of xs that
-            form the monomial basis. Shape(n_maxinterp, n_modelpoints - n_params - 1).
-        lower_triangular (np.ndarray): Lower triangular matrix of xs that
-            form the monomial basis. Shape(n_maxinterp, n_modelpoints - n_params - 1).
+        m_mat (np.ndarray): Polynomial feature matrix of the linear terms.
+            Shape(n_params + 1, n_params + 1).
+        n_mat (np.ndarray): Polynomial feature matrix of the square terms.
+            Shape(n_modelpoints, n_poly_features).
+        z_mat (np.ndarray): Basis for the null space of m_mat.
+            Shape(n_modelpoints, n_modelpoints - n_params - 1).
+        n_z_mat (np.ndarray): Lower triangular matrix of xs that form
+            the monomial basis. Shape(n_poly_features, n_modelpoints - n_params - 1).
+        n_modelpoints (int): Current number of model points.
         y_residuals (np.ndarray): The dependent variable. Observed minus predicted
             evaluations of the residual model. Shape (n_modelpoints, n_residuals).
-        n_modelpoints (int): Current number of model points.
+        n_maxinterp (int): Maximum number of interpolation points. By default,
+            2 * n_params + 1 points.
 
     Returns:
-        dict: Coefficients for updating the ``linear_terms`` and ``square_terms``
-            of the residual model.
+        dict: The coefficients of the residual model.
     """
-    n_params = x_sample_monomial_basis.shape[1] - 1
+    n_params = m_mat.shape[1] - 1
     n_residuals = y_residuals.shape[1]
     n_poly_terms = n_params * (n_params + 1) // 2
     _is_just_identified = n_modelpoints == (n_params + 1)
@@ -678,27 +669,27 @@ def fit_residual_model(
     coeffs_square = np.zeros((n_residuals, n_params, n_params))
 
     if _is_just_identified:
-        omega = np.zeros(n_params)
+        coeffs_first_stage = np.zeros(n_params)
         beta = np.zeros(n_poly_terms)
     else:
-        lower_triangular_square = np.dot(lower_triangular.T, lower_triangular)
+        n_z_mat_square = np.dot(n_z_mat.T, n_z_mat)
 
     for k in range(n_residuals):
         if not _is_just_identified:
-            lower_triangular_omega = np.dot(
-                basis_null_space[:n_modelpoints, :].T,
+            z_y_vec = np.dot(
+                z_mat.T,
                 y_residuals[:, k],
             )
-            omega = np.linalg.solve(
-                np.atleast_2d(lower_triangular_square),
-                np.atleast_1d(lower_triangular_omega),
+            coeffs_first_stage = np.linalg.solve(
+                np.atleast_2d(n_z_mat_square),
+                np.atleast_1d(z_y_vec),
             )
 
-            beta = np.dot(np.atleast_2d(lower_triangular), omega)
+            beta = np.dot(np.atleast_2d(n_z_mat), coeffs_first_stage)
 
-        rhs = y_residuals[:, k] - np.dot(monomial_basis, beta)
+        rhs = y_residuals[:, k] - np.dot(n_mat, beta)
 
-        alpha = np.linalg.solve(x_sample_monomial_basis, rhs[: n_params + 1])
+        alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
         coeffs_linear[k, :] = alpha[1 : (n_params + 1)]
 
         num = 0
@@ -710,12 +701,12 @@ def fit_residual_model(
                 coeffs_square[k, i, j] = beta[num] / np.sqrt(2)
                 num += 1
 
-    coefficients_to_add = {
+    coef = {
         "linear_terms": coeffs_linear.T,
         "square_terms": coeffs_square,
     }
 
-    return coefficients_to_add
+    return coef
 
 
 def update_trustregion_radius(

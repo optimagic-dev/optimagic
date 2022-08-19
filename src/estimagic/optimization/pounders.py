@@ -18,7 +18,7 @@ from estimagic.optimization.pounders_auxiliary import evaluate_residual_model
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import fit_residual_model
 from estimagic.optimization.pounders_auxiliary import (
-    get_interpolation_matrices_residual_model,
+    get_feature_matrices_residual_model,
 )
 from estimagic.optimization.pounders_auxiliary import (
     get_last_model_indices_and_check_for_repeated_model,
@@ -480,7 +480,7 @@ def internal_solve_pounders(
             basis_null_space,
             lower_triangular,
             n_modelpoints,
-        ) = get_interpolation_matrices_residual_model(
+        ) = get_feature_matrices_residual_model(
             history=history,
             x_accepted=x_accepted,
             model_indices=model_indices,
@@ -507,10 +507,10 @@ def internal_solve_pounders(
         )
 
         coefficients_residual_model = fit_residual_model(
-            x_sample_monomial_basis=x_sample_monomial_basis,
-            monomial_basis=monomial_basis,
-            basis_null_space=basis_null_space,
-            lower_triangular=lower_triangular,
+            m_mat=x_sample_monomial_basis,
+            n_mat=monomial_basis,
+            z_mat=basis_null_space,
+            n_z_mat=lower_triangular,
             y_residuals=y_residuals,
             n_modelpoints=n_modelpoints,
         )
