@@ -14,18 +14,15 @@ from estimagic.optimization.pounders_auxiliary import (
 )
 from estimagic.optimization.pounders_auxiliary import create_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import create_main_from_residual_model
-from estimagic.optimization.pounders_auxiliary import (
-    determine_number_of_points_in_residual_model,
-)
+from estimagic.optimization.pounders_auxiliary import evaluate_residual_model
 from estimagic.optimization.pounders_auxiliary import find_affine_points
-from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
+from estimagic.optimization.pounders_auxiliary import fit_residual_model
 from estimagic.optimization.pounders_auxiliary import (
     get_interpolation_matrices_residual_model,
 )
 from estimagic.optimization.pounders_auxiliary import (
     get_last_model_indices_and_check_for_repeated_model,
 )
-from estimagic.optimization.pounders_auxiliary import interpolate_residual_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
@@ -343,7 +340,7 @@ def internal_solve_pounders(
             warnings.simplefilter("ignore", category=RuntimeWarning)
             rho = np.divide(predicted_reduction, actual_reduction)
 
-        if (rho >= eta1) or (rho > eta0 and valid is True):
+        if (rho >= eta1) or (rho > eta0 and valid):
             residual_model = residual_model._replace(
                 intercepts=history.get_residuals(index=accepted_index)
             )
@@ -363,7 +360,7 @@ def internal_solve_pounders(
 
         # The model is deemend "not valid" if it has less than n model points.
         # Otherwise, if the model has n points, it is considered "valid" or
-        # "fully linear".
+        # "fully linear" or "just identified".
         # Note: valid is True in the first iteration
         if not valid:
             (
@@ -477,7 +474,13 @@ def internal_solve_pounders(
             model_indices, accepted_index, n_modelpoints
         )
 
-        n_modelpoints = determine_number_of_points_in_residual_model(
+        (
+            x_sample_monomial_basis,
+            monomial_basis,
+            basis_null_space,
+            lower_triangular,
+            n_modelpoints,
+        ) = get_interpolation_matrices_residual_model(
             history=history,
             x_accepted=x_accepted,
             model_indices=model_indices,
@@ -497,37 +500,18 @@ def internal_solve_pounders(
             center_info, index=model_indices
         )
 
-        # ==============================================================================
-
-        (
-            x_sample_monomial_basis,
-            monomial_basis,
-            basis_null_space,
-            lower_triangular,
-            n_modelpoints,
-        ) = get_interpolation_matrices_residual_model(
-            history=history,
-            x_accepted=x_accepted,
-            model_indices=model_indices,
-            delta=delta,
-            c2=c2,
-            theta2=theta2,
-            n_maxinterp=maxinterp,
-        )
-        residual_model_interpolated = interpolate_residual_model(
-            history=history,
+        y_residuals = evaluate_residual_model(
             centered_xs=centered_xs,
             centered_residuals=centered_residuals,
             residual_model=residual_model,
-            n_modelpoints=n_modelpoints,
-            n_maxinterp=maxinterp,
         )
-        coefficients_residual_model = get_coefficients_residual_model(
+
+        coefficients_residual_model = fit_residual_model(
             x_sample_monomial_basis=x_sample_monomial_basis,
             monomial_basis=monomial_basis,
             basis_null_space=basis_null_space,
             lower_triangular=lower_triangular,
-            f_interpolated=residual_model_interpolated,
+            y_residuals=y_residuals,
             n_modelpoints=n_modelpoints,
         )
 
@@ -540,8 +524,6 @@ def internal_solve_pounders(
             delta=delta,
             delta_old=delta_old,
         )
-
-        # ==============================================================================
 
         main_model = create_main_from_residual_model(residual_model)
 
