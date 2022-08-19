@@ -45,7 +45,7 @@ def create_initial_residual_model(history, accepted_index, delta):
         "radius": delta,
     }
     n_params = len(center_info["x"])
-    n_obs = center_info["residuals"].shape[0]
+    n_residuals = center_info["residuals"].shape[0]
 
     indices_not_min = [i for i in range(n_params + 1) if i != accepted_index]
 
@@ -55,7 +55,7 @@ def create_initial_residual_model(history, accepted_index, delta):
     )
 
     linear_terms = np.linalg.solve(x_candidate, residuals_candidate)
-    square_terms = np.zeros((n_obs, n_params, n_params))
+    square_terms = np.zeros((n_residuals, n_params, n_params))
 
     residual_model = ResidualModel(
         intercepts=history.get_best_residuals(),
@@ -485,11 +485,11 @@ def evaluate_residual_model(
             - ``square_terms``: corresponds to 'C' in the above equation
         centered_xs (np.ndarray): Centered x sample. Shape (n_modelpoints, n_params).
         centered_residuals (np.ndarray): Centered residuals, i.e. the observed model
-            evaluations. Shape (n_maxinterp, n_obs).
+            evaluations. Shape (n_maxinterp, n_residuals).
 
     Returns:
         np.ndarray: Observed minus predicted model evaluations,
-            has shape (n_modelpoints, n_obs).
+            has shape (n_modelpoints, n_residuals).
     """
     n_residuals = centered_residuals.shape[1]
     n_modelpoints = centered_xs.shape[0]
