@@ -347,7 +347,7 @@ def render_latex(
     if show_footer:
         footer = footer.copy(deep=True)
         for _, r in footer.iterrows():
-            r = _center_align_integers(r)
+            r = _center_align_integers_and_non_numeric_strings(r)
         footer_styler = footer.style
         stats_str = footer_styler.to_latex(**default_options)
         if "\\midrule" in stats_str:
@@ -1092,6 +1092,7 @@ def _create_statistics_sr(
         show_dof = None
     for k in stats_options:
         stats_values[stats_options[k]] = model["info"].get(k, np.nan)
+
     raw_formatted = _apply_number_format(
         pd.DataFrame(pd.Series(stats_values)), number_format
     )
@@ -1125,7 +1126,7 @@ def _create_statistics_sr(
                 stats_values["Residual Std. Error"], int(model["info"]["df_resid"])
             )
     stat_sr = pd.Series(stats_values)
-    # the follwing is to make sure statistics dataframe has as many levels of
+    # the following is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
     stat_ind = np.empty((len(stat_sr), model["params"].index.nlevels - 1), dtype=str)
     stat_ind = np.concatenate(
@@ -1359,6 +1360,7 @@ def _apply_number_format(df, number_format):
         df_formatted (DataFrame): Formatted DataFrame.
     """
     processed_format = _process_number_format(number_format)
+    df = df.copy(deep=True)
     if isinstance(processed_format, (list, tuple)):
         df_formatted = df.copy(deep=True).astype("float")
         for formatter in processed_format[:-1]:
@@ -1372,6 +1374,13 @@ def _apply_number_format(df, number_format):
         )
     elif callable(processed_format):
         df_formatted = df.applymap(processed_format)
+
+    # Don't format true integers: set to original value
+    position_of_integers = df.applymap(lambda x: is_integer(x))
+    for c in df_formatted:
+        df_formatted.loc[position_of_integers[c], c] = df.loc[
+            position_of_integers[c], c
+        ]
     return df_formatted
 
 
@@ -1427,19 +1436,20 @@ def _get_digits_after_decimal(df):
     return max_trail
 
 
-def _center_align_integers(sr):
-    """Align integer numbers at the center of model column."""
+def _center_align_integers_and_non_numeric_strings(sr):
+    """Align integer numbers and strings at the center of model column."""
     for i in sr.index:
+
         res_numeric = re.findall(
             r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
         )
         if res_numeric:
             num = res_numeric[0]
-            char = sr[i].split(num)[1]
-            if int(float(num)) == float(num):
+            if is_integer(num):
+                char = sr[i].split(num)[1]
                 sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num)))+char}}}"
 
-        # Handle strings
+        # Center align if no number is in sr
         else:
             sr[i] = f"\\multicolumn{{1}}{{c}}{{{sr[i]}}}"
     return sr
@@ -1449,12 +1459,12 @@ def _unformat_integers(sr):
     """Remove trailing zeros from integer numbers."""
     for i in sr.index:
         res_numeric = re.findall(
-            "[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
+            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
         )
         if res_numeric:
             num = res_numeric[0]
             char = sr[i].split(num)[1]
-            if int(float(num)) == float(num):
+            if is_integer(num):
                 sr[i] = str(int(float(num))) + char
     return sr
 
@@ -1473,3 +1483,12 @@ def _get_updated_styler(
     for ax in [0, 1]:
         styler = styler.format_index(escape=escape_special_characters, axis=ax)
     return styler
+
+
+def is_integer(num):
+    """Check if number is an integer (including a float with only zeros as digits)"""
+    try:
+        out = int(float(num)) == float(num)
+    except ValueError:
+        out = False
+    return out
