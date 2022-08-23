@@ -7,25 +7,25 @@ from estimagic.config import DEFAULT_N_CORES
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
+    add_accepted_point_to_residual_model,
+)
+from estimagic.optimization.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
 )
 from estimagic.optimization.pounders_auxiliary import create_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import create_main_from_residual_model
+from estimagic.optimization.pounders_auxiliary import evaluate_residual_model
 from estimagic.optimization.pounders_auxiliary import find_affine_points
-from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
+from estimagic.optimization.pounders_auxiliary import fit_residual_model
 from estimagic.optimization.pounders_auxiliary import (
-    get_interpolation_matrices_residual_model,
+    get_feature_matrices_residual_model,
 )
 from estimagic.optimization.pounders_auxiliary import (
     get_last_model_indices_and_check_for_repeated_model,
 )
-from estimagic.optimization.pounders_auxiliary import interpolate_residual_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
-)
-from estimagic.optimization.pounders_auxiliary import (
-    update_model_indices_residual_model,
 )
 from estimagic.optimization.pounders_auxiliary import update_residual_model
 from estimagic.optimization.pounders_auxiliary import (
@@ -293,7 +293,7 @@ def internal_solve_pounders(
         history=history, accepted_index=accepted_index, delta=delta
     )
     main_model = create_main_from_residual_model(
-        residual_model=residual_model, multiply_square_terms_with_residuals=False
+        residual_model=residual_model, multiply_square_terms_with_intercepts=False
     )
 
     x_accepted = history.get_best_x()
@@ -340,7 +340,7 @@ def internal_solve_pounders(
             warnings.simplefilter("ignore", category=RuntimeWarning)
             rho = np.divide(predicted_reduction, actual_reduction)
 
-        if (rho >= eta1) or (rho > eta0 and valid is True):
+        if (rho >= eta1) or (rho > eta0 and valid):
             residual_model = residual_model._replace(
                 intercepts=history.get_residuals(index=accepted_index)
             )
@@ -360,7 +360,7 @@ def internal_solve_pounders(
 
         # The model is deemend "not valid" if it has less than n model points.
         # Otherwise, if the model has n points, it is considered "valid" or
-        # "fully linear".
+        # "fully linear" or "just identified".
         # Note: valid is True in the first iteration
         if not valid:
             (
@@ -470,7 +470,7 @@ def internal_solve_pounders(
                     n_cores=n_cores,
                 )
 
-        model_indices, n_modelpoints = update_model_indices_residual_model(
+        model_indices = add_accepted_point_to_residual_model(
             model_indices, accepted_index, n_modelpoints
         )
 
@@ -480,7 +480,7 @@ def internal_solve_pounders(
             basis_null_space,
             lower_triangular,
             n_modelpoints,
-        ) = get_interpolation_matrices_residual_model(
+        ) = get_feature_matrices_residual_model(
             history=history,
             x_accepted=x_accepted,
             model_indices=model_indices,
@@ -488,28 +488,30 @@ def internal_solve_pounders(
             c2=c2,
             theta2=theta2,
             n_maxinterp=maxinterp,
-            n_modelpoints=n_modelpoints,
         )
 
         center_info = {"x": x_accepted, "radius": delta_old}
-        interpolation_set = history.get_centered_xs(
+        centered_xs = history.get_centered_xs(
             center_info, index=model_indices[:n_modelpoints]
         )
 
-        residual_model_interpolated = interpolate_residual_model(
-            history=history,
-            interpolation_set=interpolation_set,
-            residual_model=residual_model,
-            model_indices=model_indices,
-            n_modelpoints=n_modelpoints,
-            n_maxinterp=maxinterp,
+        center_info = {"residuals": residual_model.intercepts}
+        centered_residuals = history.get_centered_residuals(
+            center_info, index=model_indices
         )
-        coefficients_residual_model = get_coefficients_residual_model(
-            x_sample_monomial_basis=x_sample_monomial_basis,
-            monomial_basis=monomial_basis,
-            basis_null_space=basis_null_space,
-            lower_triangular=lower_triangular,
-            residual_model_interpolated=residual_model_interpolated,
+
+        y_residuals = evaluate_residual_model(
+            centered_xs=centered_xs,
+            centered_residuals=centered_residuals,
+            residual_model=residual_model,
+        )
+
+        coefficients_residual_model = fit_residual_model(
+            m_mat=x_sample_monomial_basis,
+            n_mat=monomial_basis,
+            z_mat=basis_null_space,
+            n_z_mat=lower_triangular,
+            y_residuals=y_residuals,
             n_modelpoints=n_modelpoints,
         )
 
@@ -522,6 +524,7 @@ def internal_solve_pounders(
             delta=delta,
             delta_old=delta_old,
         )
+
         main_model = create_main_from_residual_model(residual_model)
 
         gradient_norm = np.linalg.norm(main_model.linear_terms)
