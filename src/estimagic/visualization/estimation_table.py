@@ -623,7 +623,7 @@ def _build_estimation_table_body(
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or callable that is used to apply string formatter(s) to floats in the
             table.
-        add_trailing_zeros (bool): If True, format floats such that they haave same
+        add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point.
 
     Returns:
@@ -773,7 +773,10 @@ def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_ze
     raw_formatted = [_apply_number_format(df[columns], number_format) for df in dfs]
     max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
     if add_trailing_zeros:
-        formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
+        formatted = [
+            _apply_number_format(df, max_trail, format_integers=True)
+            for df in raw_formatted
+        ]
     else:
         formatted = raw_formatted
     return formatted, max_trail
@@ -982,7 +985,7 @@ def _convert_frame_to_string_series(
 
         df (DataFrame): params DataFrame of the model
         significance_levels (list): see main docstring
-        number_format (int): see main docstring
+        number_format (int, str, iterable or callable): see main docstring
         show_inference (bool): see main docstring
         confidence_intervals (bool): see main docstring
         show_stars (bool): see main docstring
@@ -1077,7 +1080,12 @@ def _create_statistics_sr(
         stats_options (dict): see main docstring
         significance_levels (list): see main docstring
         show_stars (bool): see main docstring
-        number_format (int): see main focstring
+        number_format (int, str, iterable or callable): see main docstring
+        add_trailing_zeros (bool): If True, format floats such that they haave same
+            number of digits after the decimal point.
+        max_trail (int): If add_trailing_zeros is True, add corresponding number of
+            trailing zeros to floats in the stats DataFrame to have number of digits
+            after a decimal point equal to max_trail for each float.
 
     Returns:
         series: string series with summary statistics values and additional info
@@ -1348,13 +1356,14 @@ def _extract_info_from_sm(model):
     return info
 
 
-def _apply_number_format(df_raw, number_format):
+def _apply_number_format(df_raw, number_format, format_integers=False):
     """Apply string format to DataFrame cells.
 
     Args:
         df_raw (DataFrame): The DataFrame with float values to format.
-        number_format(str, list, tuple, callable or int): User defined number format
+        number_format (str, list, tuple, callable or int): User defined number format
             to apply to the DataFrame.
+        format_integers (bool): Apply number format also to integers
 
     Returns:
         df_formatted (DataFrame): Formatted DataFrame.
@@ -1376,11 +1385,12 @@ def _apply_number_format(df_raw, number_format):
         df_formatted = df_raw.applymap(processed_format)
 
     # Don't format integers: set to original value
-    position_of_integers = df_raw.applymap(lambda x: is_integer(x))
-    for c in df_formatted:
-        df_formatted.loc[position_of_integers[c], c] = df_raw.loc[
-            position_of_integers[c], c
-        ]
+    if not format_integers:
+        position_of_integers = df_raw.applymap(lambda x: is_integer(x))
+        for c in df_formatted:
+            df_formatted.loc[position_of_integers[c], c] = df_raw.loc[
+                position_of_integers[c], c
+            ]
     return df_formatted
 
 

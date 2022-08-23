@@ -226,7 +226,7 @@ def test_create_statistics_sr():
         add_trailing_zeros,
         max_trail=4,
     )
-    exp = pd.Series(["0.4500", "0.0002", "400.0000"])
+    exp = pd.Series(["0.4500", "0.0002", "400.0"])
     exp.index = pd.MultiIndex.from_arrays(
         np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
     )
@@ -286,7 +286,7 @@ def test_apply_number_format_tuple():
     number_format = ("{0:.2g}", "{0:.2f}", "{0:.2g}")
     raw = pd.DataFrame(data=[1234.2332, 0.0001])
     exp = pd.DataFrame(data=["1.2e+03", "0"])
-    res = _apply_number_format(df=raw, number_format=number_format)
+    res = _apply_number_format(df_raw=raw, number_format=number_format)
     afe(exp, res)
 
 
@@ -294,7 +294,7 @@ def test_apply_number_format_int():
     number_format = 3
     raw = pd.DataFrame(data=["1234.2332", "1.2e+03"])
     exp = pd.DataFrame(data=["1234.233", "1.2e+03"])
-    res = _apply_number_format(df=raw, number_format=number_format)
+    res = _apply_number_format(df_raw=raw, number_format=number_format)
     afe(exp, res)
 
 
@@ -306,7 +306,7 @@ def test_apply_number_format_callable():
 
     raw = pd.DataFrame(data=[1234.2332, 0.0001])
     exp = pd.DataFrame(data=["1.23e+03", "1.00e-04"])
-    res = _apply_number_format(df=raw, number_format=nsf)
+    res = _apply_number_format(df_raw=raw, number_format=nsf)
     afe(exp, res)
 
 
