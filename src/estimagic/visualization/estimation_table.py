@@ -1348,11 +1348,11 @@ def _extract_info_from_sm(model):
     return info
 
 
-def _apply_number_format(df, number_format):
+def _apply_number_format(df_raw, number_format):
     """Apply string format to DataFrame cells.
 
     Args:
-        df (DataFrame): The DataFrame with float values to format.
+        df_raw (DataFrame): The DataFrame with float values to format.
         number_format(str, list, tuple, callable or int): User defined number format
             to apply to the DataFrame.
 
@@ -1360,25 +1360,25 @@ def _apply_number_format(df, number_format):
         df_formatted (DataFrame): Formatted DataFrame.
     """
     processed_format = _process_number_format(number_format)
-    df = df.copy(deep=True)
+    df_raw = df_raw.copy(deep=True)
     if isinstance(processed_format, (list, tuple)):
-        df_formatted = df.copy(deep=True).astype("float")
+        df_formatted = df_raw.copy(deep=True).astype("float")
         for formatter in processed_format[:-1]:
             df_formatted = df_formatted.applymap(formatter.format).astype("float")
         df_formatted = df_formatted.astype("float").applymap(
             processed_format[-1].format
         )
     elif isinstance(processed_format, str):
-        df_formatted = df.astype("str").applymap(
+        df_formatted = df_raw.astype("str").applymap(
             partial(_format_non_scientific_numbers, format_string=processed_format)
         )
     elif callable(processed_format):
-        df_formatted = df.applymap(processed_format)
+        df_formatted = df_raw.applymap(processed_format)
 
-    # Don't format true integers: set to original value
-    position_of_integers = df.applymap(lambda x: is_integer(x))
+    # Don't format integers: set to original value
+    position_of_integers = df_raw.applymap(lambda x: is_integer(x))
     for c in df_formatted:
-        df_formatted.loc[position_of_integers[c], c] = df.loc[
+        df_formatted.loc[position_of_integers[c], c] = df_raw.loc[
             position_of_integers[c], c
         ]
     return df_formatted
@@ -1449,7 +1449,7 @@ def _center_align_integers_and_non_numeric_strings(sr):
                 char = sr[i].split(num)[1]
                 sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num)))+char}}}"
 
-        # Center align if no number is in sr
+        # Center align if no number is in the cell
         else:
             sr[i] = f"\\multicolumn{{1}}{{c}}{{{sr[i]}}}"
     return sr
