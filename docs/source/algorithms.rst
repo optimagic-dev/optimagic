@@ -559,14 +559,14 @@ We implement a few algorithms from scratch. They are currently considered experi
 
         "bhhh"
 
-    Minimize a likelihood function using the BHHH algorithm.
+    Minimize a likelihood function using the bounded BHHH algorithm.
 
     BHHH (:cite:`Berndt1974`) can - and should ONLY - be used for minimizing
     (or maximizing) a likelihood. It is similar to the Newton-Raphson
     algorithm, but replaces the Hessian matrix with the outer product of the
     gradient. This approximation is based on the information matrix equality
     (:cite:`Halbert1982`) and is thus only vaid when minimizing (or maximizing)
-    a likelihood.
+    a likelihood. Bounds, i.e. box constraints, are supported.
 
     The criterion function :func:`func` should return a dictionary with
     at least the entry ``{"contributions": array_or_pytree}`` where ``array_or_pytree``

@@ -13,7 +13,7 @@ from scipy.stats import norm
 def generate_test_data():
     rng = get_rng(seed=12)
 
-    num_observations = 5000
+    num_observations = 5_000
     x1 = rng.multivariate_normal([0, 0], [[1, 0.75], [0.75, 1]], num_observations)
     x2 = rng.multivariate_normal([1, 4], [[1, 0.75], [0.75, 1]], num_observations)
 
@@ -104,7 +104,7 @@ def criterion_and_derivative_probit(x):
 @pytest.fixture
 def result_logit_unbounded():
     endog, exog = generate_test_data()
-    result_unbounded = sm.Logit(endog, exog).fit()
+    result_unbounded = sm.Logit(endog, exog).fit(disp=True)
 
     return result_unbounded.params
 
@@ -112,24 +112,20 @@ def result_logit_unbounded():
 @pytest.fixture
 def result_probit_unbounded():
     endog, exog = generate_test_data()
-    result_unbounded = sm.Probit(endog, exog).fit()
+    result_unbounded = sm.Probit(endog, exog).fit(disp=True)
 
     return result_unbounded.params
 
 
 @pytest.fixture
 def result_logit_bounded():
-    return np.array([-5.0, -3.93455447, 6.49171767])
-
-
-@pytest.fixture
-def result_probit_bounded():
-    return np.array([-5.0, -2.56431715, 4.18468707])
+    return np.array([-1.866, -1.5223, 2.7153])
 
 
 # =====================================================================================
 # Tests
 # =====================================================================================
+
 TEST_CASES = [
     (
         criterion_and_derivative_logit,
@@ -145,15 +141,9 @@ TEST_CASES = [
     ),
     (
         criterion_and_derivative_logit,
-        np.array([-5, -10, -10]),
-        np.array([10, 10, 10]),
+        np.array([-5, -1_000, -1_000]),
+        np.array([1_000, 1_000, 1_000]),
         "result_logit_bounded",
-    ),
-    (
-        criterion_and_derivative_probit,
-        np.array([-5, -10, -10]),
-        np.array([10, 10, 10]),
-        "result_probit_bounded",
     ),
 ]
 
@@ -175,6 +165,7 @@ def test_maximum_likelihood(
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         convergence_absolute_gradient_tolerance=1e-8,
+        convergence_relative_gradient_tolerance=1e-8,
         stopping_max_iterations=200,
     )
 
