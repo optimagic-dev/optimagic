@@ -82,8 +82,8 @@ start_vec = [np.array([0.15, 0.008, 0.01])]
 cg_routine = ["cg", "steihaug_toint", "trsbox"]
 universal_tests = list(product(start_vec, cg_routine))
 specific_tests = [
-    (np.array([1e-3, 1e-3, 1e-3]), "cg"),
     (np.array([1e-6, 1e-6, 1e-6]), "cg"),
+    (np.array([1e-3, 1e-3, 1e-3]), "cg"),
 ]
 TEST_CASES = universal_tests + specific_tests
 
@@ -129,6 +129,7 @@ def test_bntr(
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
     aaae(result["solution_x"], x_expected, decimal=3)
+    # assert False
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])

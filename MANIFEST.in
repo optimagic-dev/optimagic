@@ -8,7 +8,7 @@
 
 include CITATION
 include LICENSE
-include CHANGES.rst
+include CHANGES.md
 
 recursive-include src *.css
 recursive-include src *.csv
