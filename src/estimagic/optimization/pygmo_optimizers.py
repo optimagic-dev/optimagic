@@ -1100,7 +1100,8 @@ def pygmo_de1220(
     ftol=1e-6,
     xtol=1e-6,
 ):
-    """Minimize a scalar function using Self-adaptive Differential Evolution, pygmo flavor.
+    """Minimize a scalar function using Self-adaptive Differential Evolution,
+        pygmo flavor.
 
     For details see :ref:`list_of_pygmo_algorithms`.
 
@@ -1284,10 +1285,12 @@ def _create_algorithm(method, algo_options, n_cores):
 
 def _create_population(problem, population_size, x, seed, discard_start_params):
     """Create a pygmo population object.
+
     Args:
         problem (pygmo.Problem)
         algo_options (dict)
         x (np.ndarray)
+
     Todo:
         - constrain random initial values to be in some bounds
     """
