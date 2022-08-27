@@ -1386,11 +1386,9 @@ def _apply_number_format(df_raw, number_format, format_integers=False):
 
     # Don't format integers: set to original value
     if not format_integers:
-        position_of_integers = df_raw.applymap(lambda x: is_integer(x))
-        for c in df_formatted:
-            df_formatted.loc[position_of_integers[c], c] = df_raw.loc[
-                position_of_integers[c], c
-            ]
+        df_formatted = df_formatted.mask(
+            df_raw.applymap(is_integer), df_raw.astype(int)
+        )
     return df_formatted
 
 
@@ -1456,8 +1454,8 @@ def _center_align_integers_and_non_numeric_strings(sr):
         if res_numeric:
             num = res_numeric[0]
             if is_integer(num):
-                char = sr[i].split(num)[1]
-                sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num)))+char}}}"
+                chars = sr[i].split(num)
+                sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num))).join(chars)}}}"
 
         # Center align if no number is in the cell
         else:
