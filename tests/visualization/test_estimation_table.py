@@ -226,7 +226,7 @@ def test_create_statistics_sr():
         add_trailing_zeros,
         max_trail=4,
     )
-    exp = pd.Series(["0.4500", "0.0002", "400.0"])
+    exp = pd.Series(["0.4500", "0.0002", "400"])
     exp.index = pd.MultiIndex.from_arrays(
         np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
     )
@@ -293,7 +293,7 @@ def test_apply_number_format_tuple():
 def test_apply_number_format_int():
     number_format = 3
     raw = pd.DataFrame(data=["1234.2332", "1.2e+03"])
-    exp = pd.DataFrame(data=["1234.233", "1.2e+03"])
+    exp = pd.DataFrame(data=["1234.233", "1200"])
     res = _apply_number_format(df_raw=raw, number_format=number_format)
     afe(exp, res)
 
