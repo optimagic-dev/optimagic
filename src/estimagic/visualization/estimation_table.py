@@ -1386,9 +1386,8 @@ def _apply_number_format(df_raw, number_format, format_integers=False):
 
     # Don't format integers: set to original value
     if not format_integers:
-        df_formatted = df_formatted.mask(
-            df_raw.applymap(is_integer), df_raw.astype(int)
-        )
+        integer_locs = df_raw.applymap(is_integer)
+        df_formatted = df_formatted.mask(integer_locs, df_raw[integer_locs].astype(str))
     return df_formatted
 
 
