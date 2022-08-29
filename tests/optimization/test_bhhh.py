@@ -272,29 +272,29 @@ TEST_CASES_UNBOUNDED = [
     (
         criterion_and_derivative_logit,
         np.zeros(3),
-        -np.ones(3) * np.inf,
-        np.ones(3) * np.inf,
+        np.full(3, -np.inf),
+        np.full(3, np.inf),
         "result_logit_unbounded",
     ),
     (
         criterion_and_derivative_probit,
         np.zeros(3),
-        -np.ones(3) * np.inf,
-        np.ones(3) * np.inf,
+        np.full(3, -np.inf),
+        np.full(3, np.inf),
         "result_probit_unbounded",
     ),
     (
         criterion_and_derivative_logit_ibm,
         np.zeros(9),
-        -np.ones(9) * np.inf,
-        np.ones(9) * np.inf,
+        np.full(9, -np.inf),
+        np.full(9, np.inf),
         "result_logit_ibm",
     ),
     (
         criterion_and_derivative_probit_ibm,
         np.zeros(9),
-        -np.ones(9) * np.inf,
-        np.ones(9) * np.inf,
+        np.full(9, -np.inf),
+        np.full(9, np.inf),
         "result_probit_ibm",
     ),
 ]
@@ -357,7 +357,7 @@ def test_maximum_likelihood_bounded(
     lower_bounds,
     upper_bounds,
     expected,
-    decimals,
+    digits,
     request,
 ):
     params_expected = request.getfixturevalue(expected)
@@ -371,4 +371,4 @@ def test_maximum_likelihood_bounded(
         stopping_max_iterations=200,
     )
 
-    aaae(result_bhhh["solution_x"], params_expected.params, decimal=decimals)
+    aaae(result_bhhh["solution_x"], params_expected.params, decimal=digits)

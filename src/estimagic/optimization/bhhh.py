@@ -188,45 +188,6 @@ def bhhh_unconstrained(
     return result_dict
 
 
-def estimate_epsilon_inactive_set(x, norm_gradient, lower_bounds, upper_bounds):
-    """Estimate the set of epsilon-inactive bound constraints up to a tolerance.
-
-    The set of epsilon-inactive indices underestimates (overestimates) the actual
-    set of inactive (active) indices.
-
-        x (np.ndarray): Current candidate vector.
-        norm_gradient (float): Norm of the projected gradient.
-        lower_bounds (np.ndarray): 1d array of shape (n_params,) with lower bounds
-            for the parameter vector x.
-        upper_bounds (np.ndarray): 1d array of shape (n_params,) with upper bounds
-            for the parameter vector x
-    """
-    epsilon = min(np.min(upper_bounds - lower_bounds) / 2, norm_gradient)
-
-    inactive_set = np.where(
-        (lower_bounds + epsilon < x) & (x < upper_bounds - epsilon)
-    )[0]
-
-    return inactive_set
-
-
-def determine_descent_direction(
-    gradient_candidate, gradient_reduced, hessian_reduced, inactive_set, n_params
-):
-    """Determine the new descent (search) direction."""
-    direction = np.linalg.solve(hessian_reduced, gradient_reduced)
-
-    direction_active = gradient_candidate.copy()
-    direction_active[inactive_set] = 0
-
-    direction_projected = np.zeros(n_params)
-    direction_projected[inactive_set] = direction
-
-    direction_all = direction_active + direction_projected
-
-    return direction_all
-
-
 def bhhh_box_constrained(
     criterion_and_derivative,
     x,
@@ -276,8 +237,12 @@ def bhhh_box_constrained(
     jacobian = criterion_and_derivative(x, task="derivative")
     gradient = np.sum(jacobian, axis=0)
 
-    norm_pg = np.linalg.norm(x - np.clip(x - gradient, lower_bounds, upper_bounds))
-    inactive_set = estimate_epsilon_inactive_set(x, norm_pg, lower_bounds, upper_bounds)
+    norm_proj_grad = np.linalg.norm(
+        x - np.clip(x - gradient, lower_bounds, upper_bounds)
+    )
+    inactive_set = estimate_epsilon_inactive_set(
+        x, norm_proj_grad, lower_bounds, upper_bounds
+    )
 
     for _n_iter in range(stopping_max_iterations):
         jacobian = criterion_and_derivative(x, task="derivative")
@@ -314,9 +279,11 @@ def bhhh_box_constrained(
         if crit < critic_limit:
             break
 
-        norm_pg = np.linalg.norm(x - np.clip(x - gradient, lower_bounds, upper_bounds))
+        norm_proj_grad = np.linalg.norm(
+            x - np.clip(x - gradient, lower_bounds, upper_bounds)
+        )
         inactive_set = estimate_epsilon_inactive_set(
-            x, norm_pg, lower_bounds, upper_bounds
+            x, norm_proj_grad, lower_bounds, upper_bounds
         )
 
     solution_criterion = criterion_and_derivative(x, task="criterion")
@@ -330,6 +297,45 @@ def bhhh_box_constrained(
     }
 
     return result_dict
+
+
+def estimate_epsilon_inactive_set(x, norm_gradient, lower_bounds, upper_bounds):
+    """Estimate the set of epsilon-inactive bound constraints up to a tolerance.
+
+    The set of epsilon-inactive indices underestimates (overestimates) the actual
+    set of inactive (active) indices.
+
+        x (np.ndarray): Current candidate vector.
+        norm_gradient (float): Norm of the projected gradient.
+        lower_bounds (np.ndarray): 1d array of shape (n_params,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n_params,) with upper bounds
+            for the parameter vector x
+    """
+    epsilon = min(np.min(upper_bounds - lower_bounds) / 2, norm_gradient)
+
+    inactive_set = np.where(
+        (lower_bounds + epsilon < x) & (x < upper_bounds - epsilon)
+    )[0]
+
+    return inactive_set
+
+
+def determine_descent_direction(
+    gradient_candidate, gradient_reduced, hessian_reduced, inactive_set, n_params
+):
+    """Determine the new descent (search) direction."""
+    direction = np.linalg.solve(hessian_reduced, gradient_reduced)
+
+    direction_active = gradient_candidate.copy()
+    direction_active[inactive_set] = 0
+
+    direction_projected = np.zeros(n_params)
+    direction_projected[inactive_set] = direction
+
+    direction_all = direction_active + direction_projected
+
+    return direction_all
 
 
 def find_optimal_step_len(
