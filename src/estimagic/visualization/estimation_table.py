@@ -718,8 +718,6 @@ def _build_estimation_table_footer(
         for mod in models
     ]
     stats = pd.concat(to_concat, axis=1)
-    for _, r in stats.iterrows():
-        r = _unformat_integers(r)
     return stats
 
 
@@ -770,7 +768,10 @@ def _get_cols_to_format(show_inference, confidence_intervals):
 def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_zeros):
     """Apply string formatter to specific columns of a list of DataFrames"""
 
-    raw_formatted = [_apply_number_format(df[columns], number_format) for df in dfs]
+    raw_formatted = [
+        _apply_number_format(df[columns], number_format, format_integers=False)
+        for df in dfs
+    ]
     max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
     if add_trailing_zeros:
         formatted = [
@@ -1102,10 +1103,12 @@ def _create_statistics_sr(
         stats_values[stats_options[k]] = model["info"].get(k, np.nan)
 
     raw_formatted = _apply_number_format(
-        pd.DataFrame(pd.Series(stats_values)), number_format
+        pd.DataFrame(pd.Series(stats_values)), number_format, format_integers=False
     )
     if add_trailing_zeros:
-        formatted = _apply_number_format(raw_formatted, max_trail)
+        formatted = _apply_number_format(
+            raw_formatted, max_trail, format_integers=False
+        )
     else:
         formatted = raw_formatted
     stats_values = formatted.to_dict()[0]
@@ -1356,7 +1359,7 @@ def _extract_info_from_sm(model):
     return info
 
 
-def _apply_number_format(df_raw, number_format, format_integers=False):
+def _apply_number_format(df_raw, number_format, format_integers):
     """Apply string format to DataFrame cells.
 
     Args:
@@ -1386,7 +1389,7 @@ def _apply_number_format(df_raw, number_format, format_integers=False):
 
     # Don't format integers: set to original value
     if not format_integers:
-        integer_locs = df_raw.applymap(is_integer)
+        integer_locs = df_raw.applymap(_is_integer)
         df_formatted[integer_locs] = (
             df_raw[integer_locs].astype(float).applymap("{:.0f}".format)
         )
@@ -1448,33 +1451,11 @@ def _get_digits_after_decimal(df):
 def _center_align_integers_and_non_numeric_strings(sr):
     """Align integer numbers and strings at the center of model column."""
     for i in sr.index:
-
-        res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
-        )
-        if res_numeric:
-            num = res_numeric[0]
-            if is_integer(num):
-                chars = sr[i].split(num)
-                sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num))).join(chars)}}}"
-
-        # Center align if no number is in the cell
-        else:
+        try:
+            if _is_integer(sr[i]):
+                sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(sr[i])))}}}"
+        except ValueError:
             sr[i] = f"\\multicolumn{{1}}{{c}}{{{sr[i]}}}"
-    return sr
-
-
-def _unformat_integers(sr):
-    """Remove trailing zeros from integer numbers."""
-    for i in sr.index:
-        res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
-        )
-        if res_numeric:
-            num = res_numeric[0]
-            char = sr[i].split(num)[1]
-            if is_integer(num):
-                sr[i] = str(int(float(num))) + char
     return sr
 
 
@@ -1494,7 +1475,7 @@ def _get_updated_styler(
     return styler
 
 
-def is_integer(num):
+def _is_integer(num):
     """Check if number is an integer (including a float with only zeros as digits)"""
     try:
         out = int(float(num)) == float(num)
