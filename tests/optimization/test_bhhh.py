@@ -30,7 +30,7 @@ def generate_test_data():
     return endog, exog
 
 
-def ibm_test_data():
+def load_ibm_data():
     df = pd.read_csv(TEST_FIXTURES_DIR / "telco_churn_clean.csv")
 
     exog = df.drop(columns="Churn").to_numpy()
@@ -127,7 +127,7 @@ def criterion_and_derivative_logit_ibm(x, task="criterion_and_derivative"):
             which is 2d numpy array.
             If task=="criterion_and_derivative" it returns both as a tuple.
     """
-    endog, exog = ibm_test_data()
+    endog, exog = load_ibm_data()
     result = ()
 
     if "criterion" in task:
@@ -191,7 +191,7 @@ def criterion_and_derivative_probit_ibm(x, task="criterion_and_derivative"):
             which is 2d numpy array.
             If task=="criterion_and_derivative" it returns both as a tuple.
     """
-    endog, exog = ibm_test_data()
+    endog, exog = load_ibm_data()
     result = ()
 
     if "criterion" in task:
@@ -213,102 +213,94 @@ def criterion_and_derivative_probit_ibm(x, task="criterion_and_derivative"):
 
 
 @pytest.fixture
-def result_logit_unbounded():
+def result_logit_unconstrained():
     endog, exog = generate_test_data()
-    result_unbounded = sm.Logit(endog, exog).fit(disp=True)
+    result = sm.Logit(endog, exog).fit(disp=True)
 
-    return result_unbounded
+    return result.params
 
 
 @pytest.fixture
-def result_probit_unbounded():
+def result_probit_unconstrained():
     endog, exog = generate_test_data()
-    result_unbounded = sm.Probit(endog, exog).fit(disp=True)
+    result = sm.Probit(endog, exog).fit(disp=True)
 
-    return result_unbounded
+    return result.params
 
 
 @pytest.fixture
-def result_logit_bounded():
+def result_logit_constrained():
     endog, exog = generate_test_data()
-    result_bounded = sm.Logit(endog, exog).fit(
-        method="lbfgs", bounds=((-5, np.inf), (-10, 10), (-10, 10)), disp=False
+    result = sm.Logit(endog, exog).fit(
+        method="lbfgs", bounds=((-5, 10), (-100, 100), (-100, 100)), disp=False
     )
 
-    return result_bounded
+    return result.params
 
 
 @pytest.fixture
-def result_probit_bounded():
+def result_probit_constrained():
     endog, exog = generate_test_data()
-    result_bounded = sm.Logit(endog, exog).fit(
-        method="lbfgs", bounds=((-5, np.inf), (-10, 10), (-10, 10)), disp=False
+    result = sm.Logit(endog, exog).fit(
+        method="lbfgs",
+        bounds=((-5, np.inf), (-np.inf, np.inf), (-np.inf, np.inf)),
+        disp=False,
     )
 
-    return result_bounded
+    return result.params
 
 
 @pytest.fixture
 def result_logit_ibm():
-    endog, exog = ibm_test_data()
-    result_unbounded = sm.Logit(endog, exog).fit(disp=False)
+    endog, exog = load_ibm_data()
+    result = sm.Logit(endog, exog).fit(disp=False)
 
-    return result_unbounded
+    return result.params
 
 
 @pytest.fixture
 def result_probit_ibm():
-    endog, exog = ibm_test_data()
-    result_unbounded = sm.Probit(endog, exog).fit(disp=False)
+    endog, exog = load_ibm_data()
+    result = sm.Probit(endog, exog).fit(disp=False)
 
-    return result_unbounded
+    return result.params
 
 
 # =====================================================================================
 # Tests
 # =====================================================================================
 
-TEST_CASES_UNBOUNDED = [
+TEST_CASES_UNCONSTRAINED = [
     (
         criterion_and_derivative_logit,
         np.zeros(3),
-        np.full(3, -np.inf),
-        np.full(3, np.inf),
-        "result_logit_unbounded",
+        "result_logit_unconstrained",
     ),
     (
         criterion_and_derivative_probit,
         np.zeros(3),
-        np.full(3, -np.inf),
-        np.full(3, np.inf),
-        "result_probit_unbounded",
+        "result_probit_unconstrained",
     ),
     (
         criterion_and_derivative_logit_ibm,
         np.zeros(9),
-        np.full(9, -np.inf),
-        np.full(9, np.inf),
         "result_logit_ibm",
     ),
     (
         criterion_and_derivative_probit_ibm,
         np.zeros(9),
-        np.full(9, -np.inf),
-        np.full(9, np.inf),
         "result_probit_ibm",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "criterion_and_derivative, x0, lower_bounds, upper_bounds, expected",
-    TEST_CASES_UNBOUNDED,
+    "criterion_and_derivative, x0, expected",
+    TEST_CASES_UNCONSTRAINED,
 )
 def test_maximum_likelihood(
     criterion_and_derivative,
     x0,
-    lower_bounds,
-    upper_bounds,
     expected,
     request,
 ):
@@ -317,23 +309,20 @@ def test_maximum_likelihood(
     result_bhhh = bhhh_unconstrained(
         criterion_and_derivative,
         x=x0,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
         convergence_absolute_gradient_tolerance=1e-8,
-        convergence_relative_gradient_tolerance=1e-8,
         stopping_max_iterations=200,
     )
 
-    aaae(result_bhhh["solution_x"], params_expected.params, decimal=4)
+    aaae(result_bhhh["solution_x"], params_expected, decimal=4)
 
 
-TEST_CASES_BOUNDED = [
+TEST_CASES_CONSTRAINED = [
     (
         criterion_and_derivative_logit,
         np.zeros(3),
         np.array([-5, -100, -100]),
-        np.array([100, 100, 100]),
-        "result_logit_bounded",
+        np.array([10, 100, 100]),
+        "result_logit_constrained",
         4,
     ),
     (
@@ -341,7 +330,7 @@ TEST_CASES_BOUNDED = [
         np.zeros(3),
         np.array([-5, -np.inf, -np.inf]),
         np.array([10, np.inf, np.inf]),
-        "result_probit_bounded",
+        "result_probit_constrained",
         0,
     ),
 ]
@@ -349,7 +338,7 @@ TEST_CASES_BOUNDED = [
 
 @pytest.mark.parametrize(
     "criterion_and_derivative, x0, lower_bounds, upper_bounds, expected, digits",
-    TEST_CASES_BOUNDED,
+    TEST_CASES_CONSTRAINED,
 )
 def test_maximum_likelihood_bounded(
     criterion_and_derivative,
@@ -367,8 +356,8 @@ def test_maximum_likelihood_bounded(
         x=x0,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        convergence_absolute_gradient_tolerance=1e-4,
+        convergence_relative_params_tolerance=1e-4,
         stopping_max_iterations=200,
     )
 
-    aaae(result_bhhh["solution_x"], params_expected.params, decimal=digits)
+    aaae(result_bhhh["solution_x"], params_expected, decimal=digits)
