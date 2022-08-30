@@ -27,6 +27,7 @@ def bhhh(
         result_dict = bhhh_unconstrained(
             criterion_and_derivative,
             x,
+            convergence_relative_params_tolerance,
             convergence_absolute_gradient_tolerance,
             stopping_max_iterations,
         )
@@ -37,6 +38,7 @@ def bhhh(
             lower_bounds,
             upper_bounds,
             convergence_relative_params_tolerance,
+            convergence_absolute_gradient_tolerance,
             stopping_max_iterations,
         )
 
@@ -46,6 +48,7 @@ def bhhh(
 def bhhh_unconstrained(
     criterion_and_derivative,
     x,
+    convergence_relative_params_tolerance,
     convergence_absolute_gradient_tolerance,
     stopping_max_iterations,
 ):
@@ -60,6 +63,8 @@ def bhhh_unconstrained(
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n_params,) with upper bounds
             for the parameter vector x
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this.
         convergence_absolute_gradient_tolerance (float): Stop if all elements of the
             gradient are smaller than this.
         stopping_max_iterations (int): If the maximum number of iterations is reached,
@@ -76,18 +81,22 @@ def bhhh_unconstrained(
             solution vector or reaching stopping_max_iterations.
         - message (str): Message to the user. Currently it says: "Under development."
     """
+    _zero_threshold = np.finfo(float).eps
+
     criterion_accepted, jacobian = criterion_and_derivative(x)
 
     gradient = np.sum(jacobian, axis=0)
     hessian_approx = jacobian.T @ jacobian
     direction = np.linalg.solve(hessian_approx, gradient)
 
+    norm_grad = gradient @ direction
+
     initial_step_size = 1
     step_size = initial_step_size
 
-    for _n_iter in range(stopping_max_iterations):
+    x_candidate = x + step_size * direction
 
-        x_candidate = x + step_size * direction
+    for _n_iter in range(stopping_max_iterations):
 
         criterion_candidate, jacobian = criterion_and_derivative(x_candidate)
 
@@ -117,13 +126,23 @@ def bhhh_unconstrained(
 
             step_size = initial_step_size
 
-        if norm_grad < convergence_absolute_gradient_tolerance:
+        x_candidate = x + step_size * direction
+
+        relative_params_difference = np.max(
+            np.abs(((x_candidate - x)) / (x + _zero_threshold)) / step_size
+        )
+
+        if relative_params_difference < convergence_relative_params_tolerance:
+            break
+        elif norm_grad < convergence_absolute_gradient_tolerance:
             break
 
     result_dict = {
         "solution_x": x,
         "solution_criterion": criterion_accepted,
         "solution_loglikelihood": np.sum(criterion_accepted),
+        "relative_params_difference": relative_params_difference,
+        "absolute_gradient_norm": norm_grad,
         "n_iterations": _n_iter,
         "message": "Under develpment",
     }
@@ -137,6 +156,7 @@ def bhhh_box_constrained(
     lower_bounds,
     upper_bounds,
     convergence_relative_params_tolerance,
+    convergence_absolute_gradient_tolerance,
     stopping_max_iterations,
 ):
     """Minimize a likelihood function using the box-constrained BHHH algorithm.
@@ -152,6 +172,8 @@ def bhhh_box_constrained(
             for the parameter vector x
         convergence_relative_params_tolerance (float): Stop when the relative movement
             between parameter vectors is smaller than this.
+        convergence_absolute_gradient_tolerance (float): Stop if all elements of the
+            projected gradient are smaller than this.
         stopping_max_iterations (int): If the maximum number of iterations is reached,
             the optimization stops, but we do not count this as convergence.
 
@@ -173,8 +195,11 @@ def bhhh_box_constrained(
     jacobian = criterion_and_derivative(x, task="derivative")
     gradient = np.sum(jacobian, axis=0)
 
+    norm_proj_grad = np.linalg.norm(
+        x - np.clip(x - gradient, lower_bounds, upper_bounds)
+    )
     inactive_set = estimate_epsilon_inactive_set(
-        x, gradient, lower_bounds, upper_bounds
+        x, norm_proj_grad, lower_bounds, upper_bounds
     )
 
     for _n_iter in range(stopping_max_iterations):
@@ -201,18 +226,22 @@ def bhhh_box_constrained(
         x_candidate = np.clip(
             x + step_len_optimal * direction_projected, lower_bounds, upper_bounds
         )
-
         relative_params_difference = np.max(
             np.abs(((x_candidate - x)) / (x + _zero_threshold)) / step_len_optimal
         )
-
         x = x_candidate
+
+        norm_proj_grad = np.linalg.norm(
+            x - np.clip(x - gradient, lower_bounds, upper_bounds)
+        )
 
         if relative_params_difference < convergence_relative_params_tolerance:
             break
+        elif norm_proj_grad < convergence_absolute_gradient_tolerance:
+            break
 
         inactive_set = estimate_epsilon_inactive_set(
-            x, gradient, lower_bounds, upper_bounds
+            x, norm_proj_grad, lower_bounds, upper_bounds
         )
 
     solution_criterion = criterion_and_derivative(x, task="criterion")
@@ -221,6 +250,8 @@ def bhhh_box_constrained(
         "solution_x": x,
         "solution_criterion": solution_criterion,
         "solution_loglikelihood": np.sum(solution_criterion),
+        "relative_params_difference": relative_params_difference,
+        "absolute_gradient_norm": norm_proj_grad,
         "n_iterations": _n_iter,
         "message": "Under develpment",
     }
@@ -228,23 +259,20 @@ def bhhh_box_constrained(
     return result_dict
 
 
-def estimate_epsilon_inactive_set(x, gradient, lower_bounds, upper_bounds):
-    """Estimate the set of epsilon-inactive bound constraints up to a tolerance.
+def estimate_epsilon_inactive_set(x, norm_grad, lower_bounds, upper_bounds):
+    """Estimate the set of epsilon-inactive bound constraints.
 
     The set of epsilon-inactive indices underestimates (overestimates) the actual
     set of inactive (active) indices.
 
         x (np.ndarray): Current parameter vector of shape (n_params,).
-        gradient (np.ndarray): Current gradient vector of shape (n_params,).
+        norm_grad (float): Norm of the projected gradient.
         lower_bounds (np.ndarray): 1d array of shape (n_params,) with lower bounds
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n_params,) with upper bounds
             for the parameter vector x
     """
-    norm_proj_grad = np.linalg.norm(
-        x - np.clip(x - gradient, lower_bounds, upper_bounds)
-    )
-    epsilon = min(np.min(upper_bounds - lower_bounds) / 2, norm_proj_grad)
+    epsilon = min(np.min(upper_bounds - lower_bounds) / 2, norm_grad)
 
     inactive_set = np.where(
         (lower_bounds + epsilon < x) & (x < upper_bounds - epsilon)

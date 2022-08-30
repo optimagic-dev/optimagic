@@ -306,14 +306,25 @@ def test_maximum_likelihood(
 ):
     params_expected = request.getfixturevalue(expected)
 
-    result_bhhh = bhhh_unconstrained(
+    result_unconstr = bhhh_unconstrained(
         criterion_and_derivative,
         x=x0,
+        convergence_relative_params_tolerance=1e-6,
+        convergence_absolute_gradient_tolerance=1e-8,
+        stopping_max_iterations=200,
+    )
+    result_constr = bhhh_box_constrained(
+        criterion_and_derivative,
+        x=x0,
+        lower_bounds=np.full(len(x0), -np.inf),
+        upper_bounds=np.full(len(x0), np.inf),
+        convergence_relative_params_tolerance=1e-6,
         convergence_absolute_gradient_tolerance=1e-8,
         stopping_max_iterations=200,
     )
 
-    aaae(result_bhhh["solution_x"], params_expected, decimal=4)
+    aaae(result_unconstr["solution_x"], params_expected, decimal=4)
+    aaae(result_constr["solution_x"], params_expected, decimal=4)
 
 
 TEST_CASES_CONSTRAINED = [
@@ -351,13 +362,14 @@ def test_maximum_likelihood_bounded(
 ):
     params_expected = request.getfixturevalue(expected)
 
-    result_bhhh = bhhh_box_constrained(
+    result = bhhh_box_constrained(
         criterion_and_derivative,
         x=x0,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         convergence_relative_params_tolerance=1e-4,
+        convergence_absolute_gradient_tolerance=1e-4,
         stopping_max_iterations=200,
     )
 
-    aaae(result_bhhh["solution_x"], params_expected, decimal=digits)
+    aaae(result["solution_x"], params_expected, decimal=digits)
