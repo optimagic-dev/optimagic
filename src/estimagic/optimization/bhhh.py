@@ -161,6 +161,10 @@ def bhhh_box_constrained(
 ):
     """Minimize a likelihood function using the box-constrained BHHH algorithm.
 
+    The (in)active constraints are identified via an epsilon-active-set method,
+    similar to the approach used by the Projected BFGS-Armijo algorithm
+    (see :cite:`Kelley1999`, p. 97).
+
     Args:
         criterion_and_derivative (callable): A function returning the tuple:
             - criterion (np.ndarray): Likelihood contributions of shape (n_obs,)
@@ -214,7 +218,7 @@ def bhhh_box_constrained(
             gradient, gradient_reduced, hessian_reduced, inactive_set, n_params
         )
 
-        step_len_optimal = find_optimal_step_len(
+        step_size = find_optimal_step_size(
             x,
             direction_projected,
             lower_bounds,
@@ -224,10 +228,10 @@ def bhhh_box_constrained(
         )
 
         x_candidate = np.clip(
-            x + step_len_optimal * direction_projected, lower_bounds, upper_bounds
+            x + step_size * direction_projected, lower_bounds, upper_bounds
         )
         relative_params_difference = np.max(
-            np.abs(((x_candidate - x)) / (x + _zero_threshold)) / step_len_optimal
+            np.abs(((x_candidate - x)) / (x + _zero_threshold)) / step_size
         )
         x = x_candidate
 
@@ -298,7 +302,7 @@ def determine_descent_direction(
     return direction_all
 
 
-def find_optimal_step_len(
+def find_optimal_step_size(
     x,
     direction_projected,
     lower_bounds,
@@ -307,24 +311,24 @@ def find_optimal_step_len(
     criterion_and_derivative,
 ):
     """Find optimal step length."""
-    step_len_trial = 2
-    step_len_optimal = 1
+    step_size_trial = 2
+    step_size_optimal = 1
 
     loglike_full_step = 1
     loglike_half_step = 0
 
-    while (loglike_full_step > loglike_half_step) & (step_len_trial >= min_step_size):
-        step_len_trial /= 2
+    while (loglike_full_step > loglike_half_step) & (step_size_trial >= min_step_size):
+        step_size_trial /= 2
 
         criterion_full_step = criterion_and_derivative(
             np.clip(
-                x + step_len_trial * direction_projected, lower_bounds, upper_bounds
+                x + step_size_trial * direction_projected, lower_bounds, upper_bounds
             ),
             task="criterion",
         )
         criterion_half_step = criterion_and_derivative(
             np.clip(
-                x + (step_len_trial / 2) * direction_projected,
+                x + (step_size_trial / 2) * direction_projected,
                 lower_bounds,
                 upper_bounds,
             ),
@@ -334,6 +338,6 @@ def find_optimal_step_len(
         loglike_full_step = np.sum(criterion_full_step)
         loglike_half_step = np.sum(criterion_half_step)
 
-        step_len_optimal = step_len_trial
+        step_size_optimal = step_size_trial
 
-    return step_len_optimal
+    return step_size_optimal
