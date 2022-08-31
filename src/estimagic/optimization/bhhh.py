@@ -96,6 +96,7 @@ def bhhh_unconstrained(
 
     x_candidate = x + step_size * direction
 
+    converged = False
     for _n_iter in range(stopping_max_iterations):
 
         criterion_candidate, jacobian = criterion_and_derivative(x_candidate)
@@ -133,14 +134,17 @@ def bhhh_unconstrained(
         )
 
         if relative_params_difference < convergence_relative_params_tolerance:
+            converged = True
             break
         elif norm_grad < convergence_absolute_gradient_tolerance:
+            converged = True
             break
 
     result_dict = {
         "solution_x": x,
         "solution_criterion": criterion_accepted,
         "solution_loglikelihood": np.sum(criterion_accepted),
+        "converged": converged,
         "relative_params_difference": relative_params_difference,
         "absolute_gradient_norm": norm_grad,
         "n_iterations": _n_iter,
@@ -206,6 +210,7 @@ def bhhh_box_constrained(
         x, norm_proj_grad, lower_bounds, upper_bounds
     )
 
+    converged = False
     for _n_iter in range(stopping_max_iterations):
         jacobian = criterion_and_derivative(x, task="derivative")
         gradient = np.sum(jacobian, axis=0)
@@ -240,8 +245,10 @@ def bhhh_box_constrained(
         )
 
         if relative_params_difference < convergence_relative_params_tolerance:
+            converged = True
             break
         elif norm_proj_grad < convergence_absolute_gradient_tolerance:
+            converged = True
             break
 
         inactive_set = estimate_epsilon_inactive_set(
@@ -254,6 +261,7 @@ def bhhh_box_constrained(
         "solution_x": x,
         "solution_criterion": solution_criterion,
         "solution_loglikelihood": np.sum(solution_criterion),
+        "converged": converged,
         "relative_params_difference": relative_params_difference,
         "absolute_gradient_norm": norm_proj_grad,
         "n_iterations": _n_iter,
