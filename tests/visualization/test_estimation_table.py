@@ -4,6 +4,9 @@ import pytest
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
 from estimagic.visualization.estimation_table import _apply_number_format
+from estimagic.visualization.estimation_table import (
+    _center_align_integers_and_non_numeric_strings,
+)
 from estimagic.visualization.estimation_table import _check_order_of_model_names
 from estimagic.visualization.estimation_table import _convert_frame_to_string_series
 from estimagic.visualization.estimation_table import _create_group_to_col_position
@@ -427,3 +430,26 @@ def test_check_order_of_model_names_raises_error():
     model_names = ["a", "b", "a"]
     with pytest.raises(ValueError):
         _check_order_of_model_names(model_names)
+
+
+def test_render_latex():
+    footer_str = """
+         ,target
+        R$^2$,0.40
+        Adj. R$^2$,0.40
+        Residual Std. Error,60.5
+        F Statistic,72.90$^{***}$
+        Observations,442
+        Controls,Yes
+
+    """
+    footer = _read_csv_string(footer_str).fillna("")
+    footer.set_index(" ", inplace=True)
+    footer.index.names = [None]
+    footer.index = pd.MultiIndex.from_arrays([footer.index])
+    exp = footer.copy(deep=True)
+    exp.loc["Controls"] = "\\multicolumn{1}{c}{Yes}"
+    exp.loc["Observations"] = "\\multicolumn{1}{c}{442}"
+    for i, r in footer.iterrows():
+        res = _center_align_integers_and_non_numeric_strings(r)
+        ase(exp.loc[i], res)

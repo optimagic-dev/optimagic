@@ -1450,12 +1450,14 @@ def _get_digits_after_decimal(df):
 
 def _center_align_integers_and_non_numeric_strings(sr):
     """Align integer numbers and strings at the center of model column."""
+    sr = deepcopy(sr)
     for i in sr.index:
-        try:
-            if _is_integer(sr[i]):
-                sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(sr[i])))}}}"
-        except ValueError:
-            sr[i] = f"\\multicolumn{{1}}{{c}}{{{sr[i]}}}"
+        if _is_integer(sr[i]):
+            sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(sr[i])))}}}"
+        else:
+            string_without_stars = sr[i].split("$", 1)[0]
+            if not string_without_stars.replace(".", "").isnumeric():
+                sr[i] = f"\\multicolumn{{1}}{{c}}{{{sr[i]}}}"
     return sr
 
 
