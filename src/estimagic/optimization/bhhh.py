@@ -206,7 +206,7 @@ def bhhh_box_constrained(
     norm_proj_grad = np.linalg.norm(
         x - np.clip(x - gradient, lower_bounds, upper_bounds)
     )
-    inactive_set = estimate_epsilon_inactive_set(
+    inactive_set = _estimate_epsilon_inactive_set(
         x, norm_proj_grad, lower_bounds, upper_bounds
     )
 
@@ -219,11 +219,11 @@ def bhhh_box_constrained(
         hessian_approx = jacobian.T @ jacobian
         hessian_reduced = hessian_approx[inactive_set[:, np.newaxis], inactive_set]
 
-        direction_projected = determine_descent_direction(
+        direction_projected = _determine_descent_direction(
             gradient, gradient_reduced, hessian_reduced, inactive_set, n_params
         )
 
-        step_size = find_optimal_step_size(
+        step_size = _find_optimal_step_size(
             x,
             direction_projected,
             lower_bounds,
@@ -251,7 +251,7 @@ def bhhh_box_constrained(
             converged = True
             break
 
-        inactive_set = estimate_epsilon_inactive_set(
+        inactive_set = _estimate_epsilon_inactive_set(
             x, norm_proj_grad, lower_bounds, upper_bounds
         )
 
@@ -271,7 +271,7 @@ def bhhh_box_constrained(
     return result_dict
 
 
-def estimate_epsilon_inactive_set(x, norm_grad, lower_bounds, upper_bounds):
+def _estimate_epsilon_inactive_set(x, norm_grad, lower_bounds, upper_bounds):
     """Estimate the set of epsilon-inactive bound constraints.
 
     The set of epsilon-inactive indices underestimates (overestimates) the actual
@@ -293,7 +293,7 @@ def estimate_epsilon_inactive_set(x, norm_grad, lower_bounds, upper_bounds):
     return inactive_set
 
 
-def determine_descent_direction(
+def _determine_descent_direction(
     gradient_candidate, gradient_reduced, hessian_reduced, inactive_set, n_params
 ):
     """Determine the new descent (search) direction."""
@@ -310,7 +310,7 @@ def determine_descent_direction(
     return direction_all
 
 
-def find_optimal_step_size(
+def _find_optimal_step_size(
     x,
     direction_projected,
     lower_bounds,

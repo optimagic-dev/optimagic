@@ -269,57 +269,46 @@ def result_probit_ibm():
 # =====================================================================================
 # Tests
 # =====================================================================================
-
 TEST_CASES_UNCONSTRAINED = [
-    (
-        criterion_and_derivative_logit,
-        np.zeros(3),
-        "result_logit_unconstrained",
-    ),
-    (
-        criterion_and_derivative_probit,
-        np.zeros(3),
-        "result_probit_unconstrained",
-    ),
-    (
-        criterion_and_derivative_logit_ibm,
-        np.zeros(9),
-        "result_logit_ibm",
-    ),
-    (
-        criterion_and_derivative_probit_ibm,
-        np.zeros(9),
-        "result_probit_ibm",
-    ),
+    (criterion_and_derivative_logit, 3, "result_logit_unconstrained", 1e-6, 0),
+    (criterion_and_derivative_logit, 3, "result_logit_unconstrained", 0, 1e-8),
+    (criterion_and_derivative_probit, 3, "result_probit_unconstrained", 1e-6, 0),
+    (criterion_and_derivative_probit, 3, "result_probit_unconstrained", 0, 1e-8),
+    (criterion_and_derivative_logit_ibm, 9, "result_logit_ibm", 1e-6, 0),
+    (criterion_and_derivative_logit_ibm, 9, "result_logit_ibm", 0, 1e-8),
+    (criterion_and_derivative_probit_ibm, 9, "result_probit_ibm", 1e-6, 0),
+    (criterion_and_derivative_probit_ibm, 9, "result_probit_ibm", 0, 1e-8),
 ]
 
 
 @pytest.mark.parametrize(
-    "criterion_and_derivative, x0, expected",
+    "criterion_and_derivative, n_params, expected, params_tol, gradient_tol",
     TEST_CASES_UNCONSTRAINED,
 )
-def test_maximum_likelihood(
+def test_maximum_likelihood_unconstrained(
     criterion_and_derivative,
-    x0,
+    n_params,
     expected,
+    params_tol,
+    gradient_tol,
     request,
 ):
     params_expected = request.getfixturevalue(expected)
 
     result_unconstr = bhhh_unconstrained(
         criterion_and_derivative,
-        x=x0,
-        convergence_relative_params_tolerance=1e-6,
-        convergence_absolute_gradient_tolerance=1e-8,
+        x=np.zeros(n_params),
+        convergence_relative_params_tolerance=params_tol,
+        convergence_absolute_gradient_tolerance=gradient_tol,
         stopping_max_iterations=200,
     )
     result_constr = bhhh_box_constrained(
         criterion_and_derivative,
-        x=x0,
-        lower_bounds=np.full(len(x0), -np.inf),
-        upper_bounds=np.full(len(x0), np.inf),
-        convergence_relative_params_tolerance=1e-6,
-        convergence_absolute_gradient_tolerance=1e-8,
+        x=np.zeros(n_params),
+        lower_bounds=np.full(n_params, -np.inf),
+        upper_bounds=np.full(n_params, np.inf),
+        convergence_relative_params_tolerance=params_tol,
+        convergence_absolute_gradient_tolerance=gradient_tol,
         stopping_max_iterations=200,
     )
 
@@ -351,7 +340,7 @@ TEST_CASES_CONSTRAINED = [
     "criterion_and_derivative, x0, lower_bounds, upper_bounds, expected, digits",
     TEST_CASES_CONSTRAINED,
 )
-def test_maximum_likelihood_bounded(
+def test_maximum_likelihood_constrained(
     criterion_and_derivative,
     x0,
     lower_bounds,
