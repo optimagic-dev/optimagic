@@ -47,7 +47,7 @@ repos:
         additional_dependencies: [black==22.3.0]
         exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.md
 -   repo: https://github.com/psf/black
-    rev: 22.6.0
+    rev: 22.8.0
     hooks:
       - id: black
         language_version: python3.9
