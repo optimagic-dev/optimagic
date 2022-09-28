@@ -43,7 +43,8 @@ dependencies:
   - nlopt
   - sphinx-panels
   - nb_black
-  - pybaum>=0.1.2
+  - pybaum >= 0.1.2
+  - numba
 
   - pip:
       - black
