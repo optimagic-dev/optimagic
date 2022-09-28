@@ -1,3 +1,4 @@
+import warnings
 from functools import partial
 from typing import NamedTuple
 
@@ -32,6 +33,10 @@ def _tranquilo(
     # ==================================================================================
     # hardcoded stuff that needs to be made flexible
     # ==================================================================================
+    warnings.warn(
+        "Tranquilo is extremely experimental. algo_options and results will change "
+        "frequently and without notice. Do not use."
+    )
     maxiter = stopping_max_iterations
 
     sampler = "sphere"

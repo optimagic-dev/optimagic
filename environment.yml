@@ -30,7 +30,6 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - scipy>=1.2.1
-  - scikit-learn
   - seaborn
   - plotly
   - sphinx
