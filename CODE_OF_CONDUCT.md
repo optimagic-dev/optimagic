@@ -56,7 +56,7 @@ Examples of representing our community include
 - using an official e-mail address
 - posting via an official social media account
 - acting as an appointed representative at an online or offline event
-- acting as an appointed representative during a business trip surrounding an event 
+- acting as an appointed representative during a business trip surrounding an event
 
 ## Enforcement
 
