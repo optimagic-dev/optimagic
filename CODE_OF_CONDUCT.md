@@ -1,4 +1,4 @@
-# Contributor Covenant Code of Conduct
+# Estimagic Code of Conduct
 
 ## Our Pledge
 
@@ -50,13 +50,13 @@ decisions when appropriate.
 
 ## Scope
 
-This Code of Conduct applies within all community spaces, and also applies when
-an individual is officially representing the community in public spaces.
-Examples of representing our community include
+This Code of Conduct applies within all community spaces, on all formal and
+informal, and also applies when an individual is officially representing the
+community in public spaces. Examples of representing our community include
 - using an official e-mail address
 - posting via an official social media account
-- acting as an appointed representative at an online or offline event
-- acting as an appointed representative during a business trip surrounding an event
+- acting as a representative at an online or offline event
+- acting as a representative during a business trip surrounding an event
 
 ## Enforcement
 
