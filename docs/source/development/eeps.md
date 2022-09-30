@@ -24,5 +24,6 @@ These EEPs are currently in place:
 ```{toctree}
 :maxdepth: 1
 
+eep-00-governance-model.md
 eep-01-pytrees.md
 ```
