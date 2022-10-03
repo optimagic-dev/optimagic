@@ -40,7 +40,7 @@ process detailed below.
 
 The governance model strives to be lightweight and based on [consensus](https://numpy.org/doc/stable/dev/governance/governance.html#consensus-based-decision-making-by-the-community) of all interested parties. Most work happens in GitHub issues and pull requests (regular
 decision process). Any interested party can voice their concerns or veto on proposed
-changes. If this happens, the estimagic enhancement proposal (EEP) process can
+changes. If this happens, the Estimagic Enhancement Proposal (EEP) process can
 be used to iterate over proposals until consesus is reached (controversial
 decision process). If necessary, members of the steering council can moderate heated
 debates and help to broker a consensus.
@@ -48,8 +48,8 @@ debates and help to broker a consensus.
 ### Regular decision process
 
 Most changes to estimagic are additions of new functionality or strict improvements
-of existing functionality. Such changes can be discussed in GitHub Issues and
-Discussions and implemented in pull requests. They do not require an Estimagic
+of existing functionality. Such changes can be discussed in GitHub issues and
+discussions and implemented in pull requests. They do not require an Estimagic
 Enhancement Proposal.
 
 Before starting to work on estimagic, contributors should read [how to contribute](how-to)
@@ -61,7 +61,7 @@ GitHub in the past to help people make a contribution to estimagic.
 Pull requests should be opened as soon as work is started. They should contain a good
 description of the planned work such that any interested party can participate in the
 discussion around the changes. If planned changes turn out to be controversial, their
-design should be discussed in an Estimagic Enhancement proposal before the actual
+design should be discussed in an Estimagic Enhancement Proposal before the actual
 work starts. When the work is finished, the author of a pull
 request can request a review. In most cases, previous discussions will show who is a
 suitable reviewer. If in doubt, tag [janosg](https://github.com/janosg). Pull requests
@@ -76,7 +76,7 @@ The code of conduct applies to all interactions related to code reviews.
 
 ### Estimagic Enhancement Proposals (EEPs) / Controversial decision process
 
-Large changes to estimagic can be proposed in estimagic enhancement proposals, short
+Large changes to estimagic can be proposed in Estimagic Enhancement Proposals, short
 EEPs. They serve the purpose of summarising discussions
 that may happen in chats, issues, pull requests, in person, or by any other means.
 Simple extensions (like adding new optimizers) do not need to be discussed with such
@@ -100,7 +100,7 @@ contains the following information:
 3. If there are no unresolved objections after seven days, the EEP will automatically
    be accepted and can be merged.
 
-Note that the Pull Requests that actually implement the proposed enhancements still
+Note that the pull requests that actually implement the proposed enhancements still
 require a standard review cycle.
 
 ### Steering Council
@@ -119,3 +119,6 @@ to work on the implementation of these projects.
 reviewed in a timely fashion.
 - Step in as moderators when discussions get heated, help to achieve consensus on
 controversial topics and enforce the code of conduct.
+
+Current memebers of the Estimagic Steering Council are:
+[Janoś Gabler](https://github.com/janosg>), [Annica Gehlen](https://github.com/amageh), [Hans-Martin von Gaudecker](https://github.com/hmgaudecker), [Tim Mensinger](https://github.com/timmens) and [Mariam Petrosyan](https://github.com/mpetrosian).
