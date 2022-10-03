@@ -121,4 +121,4 @@ reviewed in a timely fashion.
 controversial topics and enforce the code of conduct.
 
 Current memebers of the Estimagic Steering Council are:
-[Janoś Gabler](https://github.com/janosg>), [Annica Gehlen](https://github.com/amageh), [Hans-Martin von Gaudecker](https://github.com/hmgaudecker), [Tim Mensinger](https://github.com/timmens) and [Mariam Petrosyan](https://github.com/mpetrosian).
+[Janoś Gabler](https://github.com/janosg), [Annica Gehlen](https://github.com/amageh), [Hans-Martin von Gaudecker](https://github.com/hmgaudecker), [Tim Mensinger](https://github.com/timmens) and [Mariam Petrosyan](https://github.com/mpetrosian).
