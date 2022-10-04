@@ -9,6 +9,7 @@
 |            | `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_,   |
 |            | `Annica Gehlen <https://github.com/amageh>`_,                    |
 |            | `Sebastian Gsell <https://github.com/segsell>`_,                 |
+|            | `Tim Mensinger <https://github.com/timmens>_,                    |
 |            | `Mariam Petrosyan <https://github.com/mpetrosian>`_,             |
 |            | `Tobias Raabe <https://github.com/tobiasraabe>`_,                |
 |            | `Klara Röhrl <https://github.com/roecla>`_                       |
