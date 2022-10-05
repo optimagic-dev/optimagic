@@ -75,7 +75,7 @@ discussions — if the latter are necessary at all (see
 [the bottom section of this blog post](https://rgommers.github.io/2019/06/the-cost-of-an-open-source-contribution/)
 for an excellent discussion of the burden that review comments place on
 maintainers, which might not always be obvious).
-Video calls can help if a discussion gets stuck. 
+Video calls can help if a discussion gets stuck.
 The code of conduct applies to all interactions related to code reviews.
 
 ### Estimagic Enhancement Proposals (EEPs) / Controversial decision process
