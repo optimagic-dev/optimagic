@@ -125,13 +125,13 @@ reviewed in a timely fashion.
 - Step in as moderators when discussions get heated, help to achieve consensus on
 controversial topics and enforce the code of conduct.
 
-The steering council is elected by the estimagic community during a community meeting.
+The Steering Council is elected by the estimagic community during a community meeting.
 
-Candidates need to bo active community members and can be nominated by other community
+Candidates need to be active community members and can be nominated by other community
 members or themselves until the start of the election. Nominated candidates need to
 accept the nomination before the start of the election.
 
-If there are only five candidates, the steering council is elected by acclamation. Else,
+If there are only five candidates, the Steering Council is elected by acclamation. Else,
 every participant casts five votes. The 5 candidates with the most votes become elected.
 Candidates can vote for themselves. Ties are resolved by a second round of voting where
 each participant casts as many votes as there are positions left. Remaining ties are
