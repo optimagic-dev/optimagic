@@ -28,7 +28,7 @@ parameters) can even be used with optimizers that do not support bounds.
 Let's look at a variation of the sphere function to illustrate what kinds of constraints
 you can impose and how you specify them in estimagic:
 
-````{eval-rst}
+```{eval-rst}
 
 .. code-block:: python
 
@@ -94,7 +94,7 @@ flat numpy array are explained in the next section.
 
 ```
 
-````{eval-rst}
+```{eval-rst}
 .. tabbed:: increasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
@@ -130,9 +130,9 @@ flat numpy array are explained in the next section.
     Which is indeed the correct constrained optimum. Increasing constraints are only
     compatible with optimizers that support bounds.
 
-````
+```
 
-````{eval-rst}
+```{eval-rst}
 .. tabbed:: decreasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
@@ -165,7 +165,7 @@ flat numpy array are explained in the next section.
 
     Which is the correct optimum. Decreasing constraints are only compatible with
     optimizers that support bounds.
-````
+```
 
 ```{eval-rst}
 .. tabbed:: equality
