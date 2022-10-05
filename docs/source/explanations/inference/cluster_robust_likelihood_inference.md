@@ -1,4 +1,4 @@
-(robust-likelihood-inference)=
+(robust_likelihood_inference)=
 
 # Robust Likelihood inference
 

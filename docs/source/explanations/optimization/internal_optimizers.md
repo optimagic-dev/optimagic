@@ -1,4 +1,4 @@
-(internal-optimizer-interface)=
+(internal_optimizer_interface)=
 
 # Internal optimizers for estimagic
 

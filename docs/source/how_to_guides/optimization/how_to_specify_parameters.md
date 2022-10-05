@@ -81,7 +81,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     - You can bundle information on bounds and values in one place.
     - It is easy to compare two params vectors for equality.
 
-    Check out our `Ordered Logit Example`_,
+    Check out our `Ordered Logit Example <../../getting_started/estimation/first_likelihood_estimation_with_estimagic.ipynb>`_,
     so you see one small params DataFrame in action.
 
     If you are sure you won't have bounds on your parameter, you can also use a
@@ -90,7 +90,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     A drawback of DataFrames is that they are not JAX compatible. Another one is that
     they are a bit slower than numpy arrays.
 
-    .. _Ordered Logit Example: ../../getting_started/estimation/first_likelihood_estimation_with_estimagic.ipynb
+
 ```
 
 ```{eval-rst}

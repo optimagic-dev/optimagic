@@ -1,4 +1,4 @@
-(implementation-of-constraints)=
+(implementation_of_constraints)=
 
 # How constraints are implemented
 
