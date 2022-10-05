@@ -71,7 +71,8 @@ most cases, previous discussions will show who is a suitable reviewer. If in dou
 one approving review.
 
 Reviewers should be polite, welcoming and helpful to the author of the pull request who
-might have spent many hours working on the changes. Major points should be discussed
+might have spent many hours working on the changes. Authors of pull requests should keep
+in mind that reviewers' time is valuable. Major points should be discussed
 publicly on GitHub, but very critical feedback or small details can be moved to private
 discussions — if the latter are necessary at all (see [the bottom section of this blog
 post](https://rgommers.github.io/2019/06/the-cost-of-an-open-source-contribution/) for
