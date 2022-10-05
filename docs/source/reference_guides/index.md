@@ -65,7 +65,7 @@
 
 ```
 
-(first-derivative)=
+(first_derivative)=
 
 ## Derivatives
 

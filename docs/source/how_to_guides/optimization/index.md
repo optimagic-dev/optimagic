@@ -1,8 +1,9 @@
 # Optimization
 
+
 ```{toctree}
 :maxdepth: 1
-
+scipy_tutorial_2022
 how_to_specify_the_criterion_function
 how_to_specify_parameters
 how_to_specify_algorithm_and_algo_options

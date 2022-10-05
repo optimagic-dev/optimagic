@@ -1,41 +1,44 @@
 # Credits
 
-## Core Team
+## The estimagic Team
 
 ```{eval-rst}
-+---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
-+ .. figure:: ../_static/images/janos.jpg                       + .. figure:: ../_static/images/klara.jpg                       + .. figure:: ../_static/images/tobi.png                            +
-+     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
-+                                                               +                                                               +                                                                   +
-+     `Janoś Gabler <https://github.com/janosg>`_               +     `Klara Röhrl <https://github.com/roecla>`_                +     `Tobias Raabe <https://github.com/tobiasraabe>`_              +
-+                                                               +                                                               +                                                                   +
-+     (BDFL)                                                    +     (Core Developer)                                          +     (Core Developer)                                              +
-+---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
-+ .. figure:: ../_static/images/tim.jpeg                        + .. figure:: ../_static/images/sebi.jpg                        + .. figure:: ../_static/images/hmg.jpg                             +
-+     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
-+                                                               +                                                               +                                                                   +
-+     `Tim Mensinger <https://github.com/timmens>`_             +     `Sebastian Gsell <https://github.com/segsell>`_           +     `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_ +
-+                                                               +                                                               +                                                                   +
-+     (Core Developer)                                          +     (Core Developer)                                          +     (Core User, Facilitator)                                      +
-+---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
++---------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+
++ .. figure:: ../_static/images/janos.jpg                       + .. figure:: ../_static/images/mariam.jpg                          + .. figure:: ../_static/images/tim.jpeg                            + .. figure:: ../_static/images/klara.jpg                           +
++     :width: 120px                                             +     :width: 120px                                                 +     :width: 120px                                                 +     :width: 120px                                                 +
++                                                               +                                                                   +                                                                   +                                                                   +
++     `Janoś Gabler <https://github.com/janosg>`_               +     `Mariam Petrosyan <https://github.com/mpetrosian>`_           +     `Tim Mensinger <https://github.com/timmens>`_                 +     `Klara Röhrl <https://github.com/roecla>`_                    +
++---------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+
++ .. figure:: ../_static/images/tobi.png                        + .. figure:: ../_static/images/annica.jpeg                         + .. figure:: ../_static/images/sebi.jpg                            + .. figure:: ../_static/images/bahar.jpg                           +
++     :width: 120px                                             +     :width: 120px                                                 +     :width: 120px                                                 +     :width: 120px                                                 +
++                                                               +                                                                   +                                                                   +                                                                   +
++     `Tobias Raabe <https://github.com/tobiasraabe>`_          +     `Annica Gehlen <https://github.com/amageh>`_                  +     `Sebastian Gsell <https://github.com/segsell>`_               +     `Bahar Coskun <https://github.com/baharcos>`_                 +
++---------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+
++ .. figure:: ../_static/images/aida.jpg                        + .. figure:: ../_static/images/hmg.jpg                             + .. figure:: ../_static/images/ken.jpeg                            +                                                                   +
++     :width: 120px                                             +     :width: 120px                                                 +     :width: 120px                                                 +                                                                   +
++                                                               +                                                                   +                                                                   +                                                                   +
++     `Aida Takhmazova <https://github.com/aidatak97>`_         +     `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_ +     `Kenneth L. Judd <https://kenjudd.org/>`_                     +                                                                   +
++---------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+
 ```
 
-Janoś is the original developer and architect behind estimagic.
-All core developers have made major contributions to several areas of estimagic.
-Hans-Martin has supported the development of estimagic with feedback and discussions, by
-encouraging work on estimagic and securing funding.
+Janoś is the original developer and architect behind estimagic. All team members
+are active contributors in terms of commits, advice or community
+building. Aida and Bahar are supported by [TRA Modelling].
+Hans-Martin supports estimagic in many ways, including funding
+and great feedback from using and teaching estimagic.
+Ken supports estimagic with his expertise on all numerical topics,
+financed a research stay at Standford for Janoś, Sebi and Tim and organized a workshop
+on numerical optimization with estimagic at Hoover Institution.
 
 ## Contributors
 
-We are grateful for many (sometimes very large!) contributions from the community. In
+We are grateful for many contributions from the community. In
 particular, we want to thank:
 
-- Mariam Petrosyan
 - Moritz Mendel
 - Max Blesch
 - Christian Zimpelmann
 - Robin Musolff
-- Annica Gehlen
 - Sofia Badini
 - Sofya Akimova
 - Xuefei Han
@@ -51,16 +54,12 @@ Issues and submit a Pull Request.
 
 ## Acknowledgements
 
-Funded by the [TRA Modelling] (University of Bonn) as part of the Excellence Strategy
-of the federal and state governments.
+Estimagic is funded by the [TRA Modelling] (University of Bonn) as part of the Excellence
+Strategy of the federal and state governments.
 
 :::{figure} ../_static/images/tra_logo.png
 :width: 200px
 :::
 
-______________________________________________________________________
-
-We want to thank [Kenneth Judd](https://kenjudd.org/) for great feedback regarding
-numerical optimization and differentiation.
 
 [tra modelling]: https://www.uni-bonn.de/en/research-and-teaching/research-profile/transdisciplinary-research-areas/tra-1-modelling

@@ -1,4 +1,4 @@
-(batch-evaluators)=
+(batch_evaluators)=
 
 # Batch evaluators
 
