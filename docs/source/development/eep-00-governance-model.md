@@ -71,8 +71,11 @@ can be merged if there is at least one approving review.
 Reviewers should be polite, welcoming and helpful to the author of the pull request
 who might have spent many hours working on the changes. Major points should be discussed
 publicly on GitHub, but very critical feedback or small details can be moved to private
-discussions. Video calls can help if a discussion gets stuck. Keep in mind that many
-people get notified on every review comment (see [here](https://rgommers.github.io/2019/06/the-cost-of-an-open-source-contribution/) for an execellent discussion).
+discussions — if the latter are necessary at all (see
+[the bottom section of this blog post](https://rgommers.github.io/2019/06/the-cost-of-an-open-source-contribution/)
+for an excellent discussion of the burden that review comments place on
+maintainers, which might not always be obvious).
+Video calls can help if a discussion gets stuck. 
 The code of conduct applies to all interactions related to code reviews.
 
 ### Estimagic Enhancement Proposals (EEPs) / Controversial decision process
@@ -90,7 +93,7 @@ even though it might be a good idea to have rough prototypes for solutions to th
 challenging parts.
 
 If the author of an EEP feels that it is ready to be accepted they need to make a
-post in our [zulip workspace](https://ose.zulipchat.com) and a comment on the PR that
+post in the relevant [Zulip topic](https://ose.zulipchat.com/#narrow/stream/221432-estimagic/topic/EEPs) and a comment on the PR that
 contains the following information:
 
 1. Summary of all contentious aspects of the EEP and how they have been resolved
