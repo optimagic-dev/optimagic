@@ -1,5 +1,3 @@
 (changes)=
-# Changes
-```{eval-rst}
-.. include:: ../../../CHANGES.md
+```{include} ../../../CHANGES.md
 ```
