@@ -5,7 +5,8 @@
 
 ```{eval-rst}
 +------------+------------------------------------------------------------------+
-| Author     | `Janoś Gabler <https://github.com/janosg>`_,                     |
+| Author     | `Maximilian Blesch <https://github.com/MaxBlesch>`_,             |
+|            | `Janoś Gabler <https://github.com/janosg>`_,                     |
 |            | `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_,   |
 |            | `Annica Gehlen <https://github.com/amageh>`_,                    |
 |            | `Sebastian Gsell <https://github.com/segsell>`_,                 |
@@ -149,7 +150,8 @@ Current memebers of the estimagic Steering Council are:
 
 Community meetings can be held to elect a steering council, make changes to the
 governance model or code of conduct, or to make other decisions that affect the
-community as a whole.
+community as a whole. Moreover, they serve to keep the community updated about the
+development of estimagic and get feedback.
 
 Community meetings need to be announced via our public channels (e.g. the [zulip
 workspace](https://ose.zulipchat.com) or GitHub discussions) with sufficient time until

@@ -4,6 +4,20 @@ This is a record of all past estimagic releases and what went into them in rever
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
 
+
+## 0.4.1
+
+- {gh}`307` Adopts a code of condact and governance model
+- {gh}`384` Polish documentation ({ghuser}`janosg` and {ghuser}`mpetrosian`)
+- {gh}`374` Moves the documentation to MyST ({ghuser}`baharcos`)
+- {gh}`365` Adds copybuttos to documentation ({ghuser}`amageh`)
+- {gh}`371` Refactors the pounders algorithm ({ghuser}`segsell`)
+- {gh}`369` Fixes CI ({ghuser}`janosg`)
+- {gh}`367` Fixes the linux environment ({ghuser}`timmens`)
+- {gh}`294` Adds the very first experimental version of tranquilo ({ghuser}`janosg`,
+  {ghuser}`timmens`, {ghuser}`segsell`, {ghuser}`mpetrosian`)
+
+
 ## 0.4.0
 
 - {gh}`366` Update  ({ghuser}`segsell`)
