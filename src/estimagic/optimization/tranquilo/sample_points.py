@@ -40,7 +40,7 @@ def get_sampler(sampler, bounds, user_options=None):
         _sampler_name = getattr(sampler, "__name__", "your sampler")
     else:
         raise ValueError(
-            "Invalid sampler: {sampler}. Must be one of {list(built_in_samplers)} "
+            f"Invalid sampler: {sampler}. Must be one of {list(built_in_samplers)} "
             "or a callable."
         )
 
@@ -149,6 +149,16 @@ def _sphere_sampler(
         )
 
     return points
+
+
+def _optimal_sphere_sampler(
+    trustregion,
+    target_size,
+    rng,
+    existing_xs=None,
+    bounds=None,
+):
+    pass
 
 
 def _get_effective_bounds(trustregion, bounds):
