@@ -28,25 +28,32 @@ def _tranquilo(
     disable_convergence=False,
     n_points_factor=1.0,
     stopping_max_iterations=200,
+    random_seed=925408,
     sample_filter="keep_all",
+    sampler="sphere",
+    fitter="ols",
+    subsolver="bntr",
+    sampler_options=None,
+    radius_options=None,
+    fit_options=None,
+    solver_options=None,
+    conv_options=None,
 ):
-    # ==================================================================================
-    # hardcoded stuff that needs to be made flexible
-    # ==================================================================================
+
     warnings.warn(
         "Tranquilo is extremely experimental. algo_options and results will change "
         "frequently and without notice. Do not use."
     )
-    maxiter = stopping_max_iterations
 
-    sampler = "sphere"
-    sampling_rng = np.random.default_rng(925408)
-    sampler_options = {}
+    sampling_rng = np.random.default_rng(random_seed)
 
-    radius_options = RadiusOptions()
+    if sampler_options is None:
+        sampler_options = {}
+    if radius_options is None:
+        radius_options = RadiusOptions()
 
-    fitter = "ols"
-    fit_options = {}
+    if fit_options is None:
+        fit_options = {}
 
     if functype == "scalar":
         model_info = ModelInfo()
@@ -57,8 +64,8 @@ def _tranquilo(
 
     target_sample_size = int(n_points_factor * target_sample_size)
 
-    subsolver = "bntr"
-    solver_options = {}
+    if solver_options is None:
+        solver_options = {}
 
     if functype == "scalar":
         aggregator = "identity"
@@ -69,7 +76,8 @@ def _tranquilo(
     else:
         raise ValueError(f"Invalid functype: {functype}")
 
-    conv_options = ConvOptions()
+    if conv_options is None:
+        conv_options = ConvOptions()
 
     # ==================================================================================
 
@@ -112,7 +120,7 @@ def _tranquilo(
 
     converged, msg = False, None
     states = [state]
-    for _ in range(maxiter):
+    for _ in range(stopping_max_iterations):
         old_indices = history.get_indices_in_trustregion(trustregion)
         old_xs = history.get_xs(old_indices)
 
