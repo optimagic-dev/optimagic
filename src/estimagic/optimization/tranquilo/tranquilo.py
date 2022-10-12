@@ -29,6 +29,9 @@ def _tranquilo(
     n_points_factor=1.0,
     stopping_max_iterations=200,
     sample_filter="keep_all",
+    fitter="ols",
+    surrogate_model="quadratic",
+    sample_size="quadratic",
 ):
     # ==================================================================================
     # hardcoded stuff that needs to be made flexible
@@ -45,13 +48,21 @@ def _tranquilo(
 
     radius_options = RadiusOptions()
 
-    fitter = "ols"
     fit_options = {}
 
-    if functype == "scalar":
-        model_info = ModelInfo()
+    if sample_size == "pounders":
+        target_sample_size = 2 * len(x) + 1
+    elif sample_size == "linear":
+        target_sample_size = len(x) + 1
+    elif sample_size == "quadratic":
         target_sample_size = int(0.5 * len(x) * (len(x) + 1)) + len(x) + 1
+
+    if surrogate_model == "linear":
+        model_info = ModelInfo(has_squares=False, has_interactions=False)
     else:
+        model_info = ModelInfo()
+
+    if functype != "scalar":
         model_info = ModelInfo(has_squares=False, has_interactions=False)
         target_sample_size = len(x) + 1
 
@@ -61,7 +72,7 @@ def _tranquilo(
     solver_options = {}
 
     if functype == "scalar":
-        aggregator = "identity"
+        aggregator = "identity_linear" if surrogate_model == "linear" else "identity"
     elif functype == "likelihood":
         aggregator = "information_equality_linear"
     elif functype == "least_squares":

@@ -264,6 +264,7 @@ def fit_pounders(x, y, model_info):
         np.ndarray: The model coefficients.
     """
     n_samples, n_params = x.shape
+    n_poly_features = n_params * (n_params + 1) // 2
     _is_just_identified = n_samples == (n_params + 1)
     has_intercepts = model_info.has_intercepts
     has_squares = model_info.has_squares
@@ -274,7 +275,7 @@ def fit_pounders(x, y, model_info):
     )
     z_mat = _calculate_basis_null_space(m_mat_pad, n_samples, n_params)
     n_z_mat = _multiply_feature_matrix_with_basis_null_space(
-        n_mat, z_mat, n_samples, n_params, _is_just_identified
+        n_mat, z_mat, n_samples, n_params, n_poly_features, _is_just_identified
     )
 
     coef = _get_current_fit_pounders(
@@ -284,6 +285,7 @@ def fit_pounders(x, y, model_info):
         z_mat,
         n_z_mat,
         n_params,
+        n_poly_features,
         has_intercepts,
         _is_just_identified,
     )
@@ -298,11 +300,11 @@ def _get_current_fit_pounders(
     z_mat,
     n_z_mat,
     n_params,
+    n_poly_features,
     has_intercepts,
     _is_just_identified,
 ):
     n_residuals = y.shape[1]
-    n_poly_features = n_params * (n_params + 1) // 2
     offset = 0 if has_intercepts else 1
 
     coef = np.empty((n_residuals, has_intercepts + n_params + n_poly_features))
@@ -337,12 +339,12 @@ def _build_feature_matrices_pounders(features, n_params, n_samples, has_intercep
 
 
 def _multiply_feature_matrix_with_basis_null_space(
-    n_mat, z_mat, n_samples, n_params, _is_just_identified
+    n_mat, z_mat, n_samples, n_params, n_poly_features, _is_just_identified
 ):
     n_z_mat = n_mat.T @ z_mat
 
     if _is_just_identified:
-        n_z_mat_pad = np.zeros((n_samples, (n_params * (n_params + 1) // 2)) + 1)
+        n_z_mat_pad = np.zeros((n_samples, n_poly_features))
         n_z_mat_pad[:n_params, :n_params] = np.eye(n_params)
         n_z_mat = n_z_mat_pad[:, n_params + 1 : n_samples]
 

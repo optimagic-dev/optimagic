@@ -6,10 +6,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 
 def test_internal_tranquilo_scalar_sphere_defaults():
-    res = tranquilo(
-        criterion=lambda x: x @ x,
-        x=np.arange(5),
-    )
+    res = tranquilo(criterion=lambda x: x @ x, x=np.arange(5))
     aaae(res["solution_x"], np.zeros(5), decimal=5)
 
 

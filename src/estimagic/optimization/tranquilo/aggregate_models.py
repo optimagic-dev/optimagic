@@ -1,3 +1,4 @@
+import warnings
 from functools import partial
 
 import numpy as np
@@ -25,6 +26,7 @@ def get_aggregator(aggregator, functype, model_info):
     """
     built_in_aggregators = {
         "identity": aggregator_identity,
+        "identity_linear": aggregator_identity_linear,
         "sum": aggregator_sum,
         "information_equality_linear": aggregator_information_equality_linear,
         "least_squares_linear": aggregator_least_squares_linear,
@@ -46,7 +48,7 @@ def get_aggregator(aggregator, functype, model_info):
 
     # determine if aggregator is compatible with functype and model_info
     aggregator_compatible_with_functype = {
-        "scalar": ("identity", "sum"),
+        "scalar": ("identity", "identity_linear", "sum"),
         "least_squares": ("least_squares_linear",),
         "likelihood": (
             "sum",
@@ -58,6 +60,7 @@ def get_aggregator(aggregator, functype, model_info):
         # keys are names of aggregators and values are functions of model_info that
         # return False in case of incompatibility
         "identity": _is_second_order_model,
+        "identity_linear": lambda model_info: not _is_second_order_model(model_info),
         "sum": _is_second_order_model,
         "information_equality_linear": lambda model_info: not _is_second_order_model(
             model_info
@@ -74,7 +77,7 @@ def get_aggregator(aggregator, functype, model_info):
                 f"{functype}. It would not produce a quadratic main model."
             )
         if functype == "scalar" and not _is_second_order_model(model_info):
-            raise ValueError(
+            warnings.warn(
                 f"ModelInfo {model_info} is not compatible with functype scalar. "
                 "It would not produce a quadratic main model."
             )
@@ -140,6 +143,25 @@ def aggregator_identity(vector_model, fvec_center, model_info):
     intercept = float(fvec_center)
     linear_terms = np.squeeze(vector_model.linear_terms)
     square_terms = np.squeeze(vector_model.square_terms)
+    return intercept, linear_terms, square_terms
+
+
+def aggregator_identity_linear(vector_model, fvec_center, model_info):
+    """Aggregate quadratic VectorModel using identity function on a linear model.
+
+    This aggregation is useful if the underlying maximization problem is a scalar
+    problem. We get a second-order main model from the first-order vector model by
+    filling the second-order terms with zeros.
+
+    Assumptions
+    -----------
+    1. functype: scalar
+    2. ModelInfo: has no squares and no interactions
+
+    """
+    intercept = float(fvec_center)
+    linear_terms = np.squeeze(vector_model.linear_terms)
+    square_terms = np.zeros((len(linear_terms), len(linear_terms)))
     return intercept, linear_terms, square_terms
 
 
