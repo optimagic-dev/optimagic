@@ -1,13 +1,15 @@
 from collections import namedtuple
 
 import numpy as np
+import pytest
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
-def test_integration_of_get_sampler_and_refercen_sampler():
+@pytest.mark.parametrize("sampler", ["naive", "sphere", "optimal_sphere"])
+def test_integration_of_get_sampler_and_refercen_sampler(sampler):
     sampler = get_sampler(
-        sampler="naive",
+        sampler=sampler,
         bounds=namedtuple("Bounds", ["lower", "upper"])(-np.ones(3), np.ones(3)),
     )
 

@@ -2,8 +2,11 @@ import inspect
 import warnings
 from functools import partial
 
+import estimagic as em
 import numpy as np
+import scipy as sp
 from estimagic.optimization.tranquilo.options import Bounds
+from scipy.spatial.distance import pdist
 
 
 def get_sampler(sampler, bounds, user_options=None):
@@ -30,6 +33,7 @@ def get_sampler(sampler, bounds, user_options=None):
     built_in_samplers = {
         "naive": _naive_sampler,
         "sphere": _sphere_sampler,
+        "optimal_sphere": _optimal_sphere_sampler,
     }
 
     if isinstance(sampler, str) and sampler in built_in_samplers:
@@ -151,14 +155,60 @@ def _sphere_sampler(
     return points
 
 
+# ======================================================================================
+# Optimal sphere sampler
+# ======================================================================================
+
+
 def _optimal_sphere_sampler(
     trustregion,
     target_size,
     rng,
     existing_xs=None,
     bounds=None,
+    algorithm="scipy_lbfgsb",
 ):
-    pass
+    n_points = _get_effective_n_points(target_size, existing_xs)
+    n_params = len(trustregion.center)
+
+    x0 = _sphere_sampler(trustregion, target_size=n_points, rng=rng, bounds=bounds)
+
+    res = em.minimize(
+        criterion=_optimal_sphere_criterion,
+        params=x0,
+        algorithm=algorithm,
+        criterion_kwargs={
+            "existing_xs": existing_xs,
+            "n_points": n_points,
+            "n_params": n_params,
+        },
+        lower_bounds=-np.ones_like(x0),
+        upper_bounds=np.ones_like(x0),
+    )
+
+    points = _x_from_internal(res.params, n_points, n_params)
+    return points
+
+
+def _optimal_sphere_criterion(x, existing_xs, n_points, n_params):
+    x = _x_from_internal(x, n_points, n_params)
+    if existing_xs is not None:
+        sample = np.row_stack([x, existing_xs])
+    else:
+        sample = x
+    return sp.special.logsumexp(-pdist(sample) ** 2)
+
+
+def _x_from_internal(x, n_points, n_params):
+    x = x.reshape(n_points, n_params)
+    denom = np.linalg.norm(x, axis=1).reshape(-1, 1)
+    x = x / denom
+    return x
+
+
+# ======================================================================================
+# Helper functions
+# ======================================================================================
 
 
 def _get_effective_bounds(trustregion, bounds):
