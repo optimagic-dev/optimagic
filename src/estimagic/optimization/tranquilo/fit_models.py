@@ -264,10 +264,14 @@ def fit_pounders(x, y, model_info):
         np.ndarray: The model coefficients.
     """
     n_samples, n_params = x.shape
-    n_poly_features = n_params * (n_params + 1) // 2
     _is_just_identified = n_samples == (n_params + 1)
     has_intercepts = model_info.has_intercepts
     has_squares = model_info.has_squares
+
+    if has_squares:
+        n_poly_features = n_params * (n_params + 1) // 2
+    else:
+        n_poly_features = n_params * (n_params - 1) // 2
 
     features = _polynomial_features(x, has_intercepts, has_squares)
     m_mat, m_mat_pad, n_mat = _build_feature_matrices_pounders(

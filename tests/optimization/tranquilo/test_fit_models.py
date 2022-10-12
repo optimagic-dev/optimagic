@@ -55,6 +55,42 @@ def quadratic_case():
     return out
 
 
+@pytest.fixture
+def just_identified_case():
+    """Test scenario with true quadratic function and n + 1 points.
+
+    We return true function, and function evaluations and data on random points.
+    """
+    n_params = 4
+    n_samples = n_params + 1
+
+    # theoretical terms
+    linear_terms = 1 + np.arange(n_params)
+    square_terms = np.zeros((n_params, n_params))
+
+    def func(x):
+        y = -10 + linear_terms @ x + 0.5 * x.T @ square_terms @ x
+        return y
+
+    x0 = np.ones(n_params)
+
+    # random data
+    x = np.array(
+        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)]
+    )
+    y = np.array([func(_x) for _x in list(x)]).reshape(-1, 1)
+
+    out = {
+        "func": func,
+        "x0": x0,
+        "x": x,
+        "y": y,
+        "linear_terms_expected": linear_terms,
+        "square_terms_expected": square_terms,
+    }
+    return out
+
+
 def test_fit_ols_against_truth(quadratic_case):
     fit_ols = get_fitter("ols")
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
@@ -63,13 +99,16 @@ def test_fit_ols_against_truth(quadratic_case):
     aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
 
 
-def test_fit_pounders_against_truth(quadratic_case):
+@pytest.mark.parametrize("scenario", ["just_identified_case", "quadratic_case"])
+def test_fit_pounders_against_truth(scenario, request):
+    test_case = request.getfixturevalue(scenario)
+
     model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
     fit_pounders = get_fitter("pounders", model_info=model_info)
-    got = fit_pounders(quadratic_case["x"], quadratic_case["y"])
+    got = fit_pounders(test_case["x"], test_case["y"])
 
-    aaae(got.linear_terms.squeeze(), quadratic_case["linear_terms_expected"])
-    aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
+    aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
+    aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
 
 
 @pytest.mark.parametrize("model", ["ols", "ridge"])
