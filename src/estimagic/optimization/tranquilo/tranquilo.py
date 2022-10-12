@@ -29,8 +29,8 @@ def _tranquilo(
     n_points_factor=1.0,
     stopping_max_iterations=200,
     random_seed=925408,
-    sample_filter="keep_all",
     sampler="sphere",
+    sample_filter="keep_all",
     fitter="ols",
     subsolver="bntr",
     sampler_options=None,
@@ -39,7 +39,47 @@ def _tranquilo(
     solver_options=None,
     conv_options=None,
 ):
+    """Find the local minimum to a noisy optimization problem.
+    Args:
+        criterion (callable): Function that return values of the objective function.
+        x (np.ndarray): Initial guess for the parameter vector.
+        functype (str): String indicating whether the criterion is a scalar, a
+            likelihood function or a least-square type of function.
+        lower_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
+        disable_convergence (bool): If True, check for convergence criterion and stop
+            the iterations.
+        n_points_factor (int):
+        stopping_max_iterations (int): Maximum number of iterations to run.
+        random_seed (int): The seed used in random number generation.
+        sample_filter (str): The method used to filter points in the current trust
+            region.
+        sampler (str): The sampling function used to sample points from current
+            trust redion.
+        fitter (str): The method used to fit the surrogate model.
+        subsolver (str): The algorithm-function used for solving the nested surrogate
+            model.
+        sampler_options (dct or NoneType): Additional keyword arguments passed to the
+            sampler function.
+        radius_options (NemdTuple or NoneType): Options for trust-region radius
+            management.
+        fit_options (dct or NoneType): Additional keyword arguments passed to the
+            fitter.
+        solver_options (dct or NoneType): Additional keyword arguments passed to the
+            sub-solver.
+        conv_options (NamedTuple or NoneType): Criteria for successful convergence.
 
+    Returns:
+        res (dct): Results dictionary with the following items:
+            - solution_x (np.ndarray): Solution vector of shape (n,).
+            - solution_criterion (np.ndarray): Values of the criterion function at the
+                solution vector. Shape (n_obs,).
+            - states (list): The history of optimization as a list of the State objects.
+            - message (str or NoneType): Message stating which convergence criterion,
+                if any has been reached at the end of optimization
+    """
     warnings.warn(
         "Tranquilo is extremely experimental. algo_options and results will change "
         "frequently and without notice. Do not use."

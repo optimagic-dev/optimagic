@@ -179,8 +179,7 @@ def internal_solve_pounders(
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
     Args:
-        criterion_and_derivative (callable): Function that returns criterion
-            and derivative as a tuple.
+        criterion (callable): Function that returns criterion.
         x0 (np.ndarray): Initial guess for the parameter vector (starting points).
         lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
             for the parameter vector x.
