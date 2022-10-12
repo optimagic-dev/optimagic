@@ -9,6 +9,7 @@
 include CITATION
 include LICENSE
 include CHANGES.md
+include CODE_OF_CONDUCT.md
 
 recursive-include src *.css
 recursive-include src *.csv
