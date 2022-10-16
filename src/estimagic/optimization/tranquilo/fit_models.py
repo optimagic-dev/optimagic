@@ -34,8 +34,10 @@ def get_fitter(fitter, user_options=None, model_info=None):
     Returns:
         callable: The partialled fit method that only depends on x and y.
     """
-    user_options = user_options or {}
-    model_info = model_info or ModelInfo()
+    if user_options is None:
+        user_options = {}
+    if model_info is None:
+        model_info = ModelInfo()
 
     built_in_fitters = {"ols": fit_ols, "ridge": fit_ridge, "pounders": fit_pounders}
 
@@ -342,7 +344,7 @@ def _multiply_feature_matrix_with_basis_null_space(
     n_z_mat = n_mat.T @ z_mat
 
     if _is_just_identified:
-        n_z_mat_pad = np.zeros((n_samples, (n_params * (n_params + 1) // 2)) + 1)
+        n_z_mat_pad = np.zeros((n_samples, (n_params * (n_params + 1) // 2)))
         n_z_mat_pad[:n_params, :n_params] = np.eye(n_params)
         n_z_mat = n_z_mat_pad[:, n_params + 1 : n_samples]
 
