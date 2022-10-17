@@ -28,27 +28,74 @@ def _tranquilo(
     disable_convergence=False,
     n_points_factor=1.0,
     stopping_max_iterations=200,
+    random_seed=925408,
+    sampler="sphere",
     sample_filter="keep_all",
     fitter="ols",
     surrogate_model="quadratic",
     sample_size="quadratic",
+    subsolver="bntr",
+    sampler_options=None,
+    radius_options=None,
+    fit_options=None,
+    solver_options=None,
+    conv_options=None,
 ):
-    # ==================================================================================
-    # hardcoded stuff that needs to be made flexible
-    # ==================================================================================
+    """Find the local minimum to a noisy optimization problem.
+    Args:
+        criterion (callable): Function that return values of the objective function.
+        x (np.ndarray): Initial guess for the parameter vector.
+        functype (str): String indicating whether the criterion is a scalar, a
+            likelihood function or a least-square type of function.
+        lower_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
+        disable_convergence (bool): If True, check for convergence criterion and stop
+            the iterations.
+        n_points_factor (int):
+        stopping_max_iterations (int): Maximum number of iterations to run.
+        random_seed (int): The seed used in random number generation.
+        sample_filter (str): The method used to filter points in the current trust
+            region.
+        sampler (str): The sampling function used to sample points from current
+            trust redion.
+        fitter (str): The method used to fit the surrogate model.
+        subsolver (str): The algorithm-function used for solving the nested surrogate
+            model.
+        sampler_options (dct or NoneType): Additional keyword arguments passed to the
+            sampler function.
+        radius_options (NemdTuple or NoneType): Options for trust-region radius
+            management.
+        fit_options (dct or NoneType): Additional keyword arguments passed to the
+            fitter.
+        solver_options (dct or NoneType): Additional keyword arguments passed to the
+            sub-solver.
+        conv_options (NamedTuple or NoneType): Criteria for successful convergence.
+
+    Returns:
+        res (dct): Results dictionary with the following items:
+            - solution_x (np.ndarray): Solution vector of shape (n,).
+            - solution_criterion (np.ndarray): Values of the criterion function at the
+                solution vector. Shape (n_obs,).
+            - states (list): The history of optimization as a list of the State objects.
+            - message (str or NoneType): Message stating which convergence criterion,
+                if any has been reached at the end of optimization
+    """
     warnings.warn(
         "Tranquilo is extremely experimental. algo_options and results will change "
         "frequently and without notice. Do not use."
     )
-    maxiter = stopping_max_iterations
 
-    sampler = "sphere"
-    sampling_rng = np.random.default_rng(925408)
-    sampler_options = {}
+    sampling_rng = np.random.default_rng(random_seed)
 
-    radius_options = RadiusOptions()
+    if sampler_options is None:
+        sampler_options = {}
+    if radius_options is None:
+        radius_options = RadiusOptions()
+    if fit_options is None:
+        fit_options = {}
 
-    fit_options = {}
 
     if sample_size == "pounders":
         target_sample_size = 2 * len(x) + 1
@@ -68,8 +115,8 @@ def _tranquilo(
 
     target_sample_size = int(n_points_factor * target_sample_size)
 
-    subsolver = "bntr"
-    solver_options = {}
+    if solver_options is None:
+        solver_options = {}
 
     if functype == "scalar":
         aggregator = "identity_linear" if surrogate_model == "linear" else "identity"
@@ -80,7 +127,8 @@ def _tranquilo(
     else:
         raise ValueError(f"Invalid functype: {functype}")
 
-    conv_options = ConvOptions()
+    if conv_options is None:
+        conv_options = ConvOptions()
 
     # ==================================================================================
 
@@ -123,7 +171,7 @@ def _tranquilo(
 
     converged, msg = False, None
     states = [state]
-    for _ in range(maxiter):
+    for _ in range(stopping_max_iterations):
         old_indices = history.get_indices_in_trustregion(trustregion)
         old_xs = history.get_xs(old_indices)
 
