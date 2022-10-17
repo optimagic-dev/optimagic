@@ -96,7 +96,6 @@ def _tranquilo(
     if fit_options is None:
         fit_options = {}
 
-
     if sample_size == "pounders":
         target_sample_size = 2 * len(x) + 1
     elif sample_size == "linear":
