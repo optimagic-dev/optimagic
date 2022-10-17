@@ -1,0 +1,99 @@
+import numpy as np
+import pytest
+from estimagic.optimization.tranquilo.filter_points import _drop_collinear_pounders
+from estimagic.optimization.tranquilo.options import TrustRegion
+from estimagic.optimization.tranquilo.tranquilo import State
+from estimagic.optimization.tranquilo.tranquilo_history import History
+from numpy.testing import assert_array_almost_equal as aaae
+
+
+@pytest.fixture()
+def example():
+    x_accepted = np.array([0.16004745, 0.00572722, 0.01158929])
+    radius = 0.0125
+
+    xs = np.array(
+        [
+            [0.15, 0.008, 0.01],
+            [0.25, 0.008, 0.01],
+            [0.15, 0.108, 0.01],
+            [0.15, 0.008, 0.11],
+            [0.15961778, -0.07539625, 0.08766385],
+            [0.2, 0.00851182, -0.00302887],
+            [0.15049526, -0.04199751, 0.00993654],
+            [0.13739276, 0.00793654, -0.03838443],
+            [0.15046527, 0.00796766, 0.01269269],
+            [0.14986784, 0.00809919, 0.00927703],
+            [0.12530518, 0.00613383, 0.01349762],
+            [0.14987566, 0.0081864, 0.00937541],
+            [0.15076496, 0.00570962, 0.01295807],
+            [0.15074537, 0.00526659, 0.01240602],
+            [0.15069081, 0.00552219, 0.0121367],
+            [0.15067245, 0.00559504, 0.01191949],
+            [0.15141789, 0.0056498, 0.01210095],
+            [0.16317245, 0.00558118, 0.01208116],
+            [0.15692245, 0.00559149, 0.01197266],
+            [0.15379745, 0.00562833, 0.01182871],
+            [0.16004745, 0.00572722, 0.01158929],
+        ]
+    )
+    indices = np.arange(len(xs))
+
+    state = State(
+        index=20,
+        model=None,
+        rho=None,
+        radius=radius,
+        x=x_accepted,
+        fvec=0,
+        fval=0,
+    )
+
+    expected_indices = np.array([20, 19, 18, 17, 16, 15, 13, 12, 8, 5, 4, 3, 2, 1, 0])
+    expected_xs = np.array(
+        [
+            [0.16004745, 0.00572722, 0.01158929],
+            [0.15379745, 0.00562833, 0.01182871],
+            [0.15692245, 0.00559149, 0.01197266],
+            [0.16317245, 0.00558118, 0.01208116],
+            [0.15141789, 0.0056498, 0.01210095],
+            [0.15067245, 0.00559504, 0.01191949],
+            [0.15074537, 0.00526659, 0.01240602],
+            [0.15076496, 0.00570962, 0.01295807],
+            [0.15046527, 0.00796766, 0.01269269],
+            [0.2, 0.00851182, -0.00302887],
+            [0.15961778, -0.07539625, 0.08766385],
+            [0.15, 0.008, 0.11],
+            [0.15, 0.108, 0.01],
+            [0.25, 0.008, 0.01],
+            [0.15, 0.008, 0.01],
+        ]
+    )
+
+    return xs, indices, state, expected_xs, expected_indices
+
+
+def test_in_trust_region(example):
+    functype = "scalar"
+    history = History(functype=functype)
+
+    xs, *_ = example
+    x_accepted = np.array([0.16004745, 0.00572722, 0.01158929])
+    radius = 0.0125
+
+    trustregion = TrustRegion(center=x_accepted, radius=radius)
+    history.add_entries(xs, np.zeros(xs.shape[0]))
+
+    indices_in_tr = history.get_indices_in_trustregion(trustregion)
+
+    expected_indices = np.array([0, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+    np.allclose(indices_in_tr, expected_indices)
+
+
+def test_drop_collinear_pounders(example):
+    old_xs, old_indices, state, expected_xs, expected_indices = example
+
+    filtered_xs, filtered_indices = _drop_collinear_pounders(old_xs, old_indices, state)
+
+    np.allclose(filtered_indices, expected_indices)
+    aaae(filtered_xs, expected_xs)
