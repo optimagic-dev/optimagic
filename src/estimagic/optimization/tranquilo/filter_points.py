@@ -73,27 +73,27 @@ def _drop_collinear_pounders(xs, indices, state):
 
     radius = state.radius
     center = state.x
-    center_index = indices[state.index]
+    index_center = indices[state.index]
     centered_xs = (xs - center) / radius
 
     (
         feature_mat_linear,
         feature_mat_square,
-        _idx_list,
+        index_list_additional,
         index,
     ) = _get_polynomial_feature_matrices(
-        centered_xs, indices, center_index, n_params, n_samples, n_poly_terms
+        centered_xs, indices, index_center, n_params, n_samples, n_poly_terms
     )
 
     filtered_indices = np.ones(n_samples, dtype=np.int64) * -999
-    filtered_indices[0] = indices[center_index]
-    filtered_indices[1 : n_params + 1] = indices[_idx_list]
+    filtered_indices[0] = indices[index_center]
+    filtered_indices[1 : n_params + 1] = indices[index_list_additional]
 
     counter = n_params + 1
 
     while (counter < n_samples) and (index >= 0):
 
-        if index == indices[center_index]:
+        if index == indices[index_center]:
             index -= 1
             continue
 
@@ -123,26 +123,27 @@ def _drop_collinear_pounders(xs, indices, state):
 
 
 def _get_polynomial_feature_matrices(
-    centered_xs, indices, center_index, n_params, n_samples, n_poly_terms
+    centered_xs, indices, index_center, n_params, n_samples, n_poly_terms
 ):
-    m_mat = np.zeros((n_samples, n_params + 1))
-    n_mat = np.zeros((n_samples, n_poly_terms))
+    linear_features = np.zeros((n_samples, n_params + 1))
+    square_features = np.zeros((n_samples, n_poly_terms))
 
-    m_mat[0, 1:] = centered_xs[indices[0]]
-    n_mat[0, :] = _get_monomial_basis(m_mat[0, 1:]).flatten()
+    linear_features[0, 1:] = centered_xs[indices[0]]
+    square_features[0, :] = _get_monomial_basis(linear_features[0, 1:]).flatten()
 
-    idx_list = [center_index]
-    _is_center_in_head = center_index < n_params
-    _idx_list = [i for i in range(n_params + _is_center_in_head) if i != center_index]
-    idx_list = [center_index] + _idx_list
+    _is_center_in_head = index_center < n_params
+    idx_list_n = [i for i in range(n_params + _is_center_in_head) if i != index_center]
+    idx_list_n_plus_1 = [index_center] + idx_list_n
 
-    m_mat[:, 0] = 1
-    m_mat[: n_params + 1, 1:] = centered_xs[indices[idx_list]]
-    n_mat[: n_params + 1, :] = _get_monomial_basis(m_mat[: n_params + 1, 1:])
+    linear_features[:, 0] = 1
+    linear_features[: n_params + 1, 1:] = centered_xs[indices[idx_list_n_plus_1]]
+    square_features[: n_params + 1, :] = _get_monomial_basis(
+        linear_features[: n_params + 1, 1:]
+    )
 
-    index = n_samples - _is_center_in_head - len(_idx_list) - 1
+    idx = n_samples - _is_center_in_head - len(idx_list_n) - 1
 
-    return m_mat, n_mat, _idx_list, index
+    return linear_features, square_features, idx_list_n, idx
 
 
 @njit
@@ -159,12 +160,7 @@ def _get_monomial_basis(x):
         np.ndarray: Monomial basis of x of shape (n_params * (n_params + 1) / 2,).
     """
     n_samples, n_params = np.atleast_2d(x).shape
-    has_squares = True
-
-    if has_squares:
-        n_poly_terms = n_params * (n_params + 1) // 2
-    else:
-        n_poly_terms = n_params * (n_params - 1) // 2
+    n_poly_terms = n_params * (n_params + 1) // 2
 
     poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
     xt = x.T
@@ -174,7 +170,6 @@ def _get_monomial_basis(x):
         poly_terms[idx] = 0.5 * xt[i] ** 2
         idx += 1
 
-        # start i + 1 because has squares?
         for j in range(i + 1, n_params):
             poly_terms[idx] = xt[i] * xt[j] / np.sqrt(2)
             idx += 1
