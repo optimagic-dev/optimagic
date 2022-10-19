@@ -86,7 +86,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
         trustregion_radius = default_radius
     else:
         hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
-            model.square_terms, active_bounds_info.inactive
+            model, active_bounds_info
         )
 
         (
@@ -138,7 +138,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
                 gradient_unprojected, active_bounds_info
             )
             hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
-                model.square_terms, active_bounds_info.inactive
+                model, active_bounds_info
             )
 
             converged, convergence_reason = check_for_convergence(
@@ -519,13 +519,12 @@ def get_information_on_active_bounds(
 
 
 @njit
-def find_hessian_submatrix_where_bounds_inactive(initial_hessian, inactive_bounds):
+def find_hessian_submatrix_where_bounds_inactive(model, active_bounds_info):
     """Find the submatrix of the initial hessian where bounds are inactive."""
-
-    hessian_inactive = np.zeros((len(inactive_bounds), len(inactive_bounds)))
-    for ii, i in enumerate(inactive_bounds):
-        for jj, j in enumerate(inactive_bounds):
-            hessian_inactive[ii, jj] = initial_hessian[i, j]
+    inactive_bounds = active_bounds_info.inactive
+    initial_hessian = model.square_terms
+    hessian_inactive = initial_hessian[:, inactive_bounds]
+    hessian_inactive = hessian_inactive[inactive_bounds, :]
     return hessian_inactive
 
 
