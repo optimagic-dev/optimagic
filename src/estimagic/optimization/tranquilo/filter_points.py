@@ -20,10 +20,10 @@ def get_sample_filter(sample_filter="keep_all"):
 
     """
     built_in_filters = {
-        "discard_all": _discard_all,
-        "keep_all": _keep_all,
-        "drop_collinear": _drop_collinear,
-        "drop_pounders": _drop_collinear_pounders,
+        "discard_all": discard_all,
+        "keep_all": keep_all,
+        "drop_collinear": drop_collinear,
+        "drop_pounders": drop_collinear_pounders,
     }
 
     if isinstance(sample_filter, str) and sample_filter in built_in_filters:
@@ -36,35 +36,21 @@ def get_sample_filter(sample_filter="keep_all"):
     return out
 
 
-def _discard_all(xs, indices, state):
+def discard_all(xs, indices, state):
     return state.x.reshape(1, -1), np.array([state.index])
 
 
-def _keep_all(xs, indices, state):
+def keep_all(xs, indices, state):
     return xs, indices
 
 
-def _drop_collinear(xs, indices, state):
+def drop_collinear(xs, indices, state):
     """Make sure that the points that are kept are linearly independent."""
     raise NotImplementedError()
 
 
-def _drop_collinear_pounders(xs, indices, state):
-    """Drop collinear points using pounders filtering.
-
-
-    Args:
-        xs (np.ndarray): Old xs to filter
-        indices (np.ndarray): Old indices from history to filter
-        state (class): Class containing current best/accepted x: state.x
-
-
-    Returns:
-        tuple:
-        - (np.ndarray): Filtered xs.
-        - (np.ndarray): Filtered indices.
-
-    """
+def drop_collinear_pounders(xs, indices, state):
+    """Drop collinear points using pounders filtering."""
     theta2 = 1e-4
     n_samples, n_params = xs.shape
     n_poly_terms = n_params * (n_params + 1) // 2
@@ -77,8 +63,8 @@ def _drop_collinear_pounders(xs, indices, state):
     centered_xs = (xs - center) / radius
 
     (
-        feature_mat_linear,
-        feature_mat_square,
+        linear_features,
+        square_features,
         index_list_additional,
         index,
     ) = _get_polynomial_feature_matrices(
@@ -97,17 +83,15 @@ def _drop_collinear_pounders(xs, indices, state):
             index -= 1
             continue
 
-        feature_mat_linear[counter, 1:] = centered_xs[index]
-        feature_mat_square[counter, :] = _get_monomial_basis(
-            feature_mat_linear[counter, 1:]
-        )
+        linear_features[counter, 1:] = centered_xs[index]
+        square_features[counter, :] = _square_features(linear_features[counter, 1:])
 
-        m_mat_pad = np.zeros((n_samples, n_samples))
-        m_mat_pad[:n_samples, : n_params + 1] = feature_mat_linear
+        linear_features_pad = np.zeros((n_samples, n_samples))
+        linear_features_pad[:n_samples, : n_params + 1] = linear_features
 
         n_z_mat, _ = qr_multiply(
-            m_mat_pad[: counter + 1, :],
-            feature_mat_square.T[:n_poly_terms, : counter + 1],
+            linear_features_pad[: counter + 1, :],
+            square_features.T[:n_poly_terms, : counter + 1],
         )
         beta = np.linalg.svd(n_z_mat.T[n_params + 1 :], compute_uv=False)
 
@@ -129,7 +113,7 @@ def _get_polynomial_feature_matrices(
     square_features = np.zeros((n_samples, n_poly_terms))
 
     linear_features[0, 1:] = centered_xs[indices[0]]
-    square_features[0, :] = _get_monomial_basis(linear_features[0, 1:]).flatten()
+    square_features[0, :] = _square_features(linear_features[0, 1:]).flatten()
 
     _is_center_in_head = index_center < n_params
     idx_list_n = [i for i in range(n_params + _is_center_in_head) if i != index_center]
@@ -137,7 +121,7 @@ def _get_polynomial_feature_matrices(
 
     linear_features[:, 0] = 1
     linear_features[: n_params + 1, 1:] = centered_xs[indices[idx_list_n_plus_1]]
-    square_features[: n_params + 1, :] = _get_monomial_basis(
+    square_features[: n_params + 1, :] = _square_features(
         linear_features[: n_params + 1, 1:]
     )
 
@@ -147,18 +131,7 @@ def _get_polynomial_feature_matrices(
 
 
 @njit
-def _get_monomial_basis(x):
-    """Get the monomial basis (basis for quadratic functions) of x.
-
-    Monomial basis = .5*[x(1)^2  sqrt(2)*x(1)*x(2) ... sqrt(2)*x(1)*x(n_params) ...
-        ... x(2)^2 sqrt(2)*x(2)*x(3) .. x(n_params)^2]
-
-    Args:
-        x (np.ndarray): Parameter vector of shape (n_params,).
-
-    Returns:
-        np.ndarray: Monomial basis of x of shape (n_params * (n_params + 1) / 2,).
-    """
+def _square_features(x):
     n_samples, n_params = np.atleast_2d(x).shape
     n_poly_terms = n_params * (n_params + 1) // 2
 
@@ -175,31 +148,3 @@ def _get_monomial_basis(x):
             idx += 1
 
     return poly_terms.T
-
-
-@njit
-def _polynomial_features(x, has_intercepts, has_squares):
-    n_samples, n_params = x.shape
-
-    if has_squares:
-        n_poly_terms = n_params * (n_params + 1) // 2
-    else:
-        n_poly_terms = n_params * (n_params - 1) // 2
-
-    poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
-    xt = x.T
-
-    idx = 0
-    for i in range(n_params):
-        j_start = i if has_squares else i + 1
-        for j in range(j_start, n_params):
-            poly_terms[idx] = xt[i] * xt[j]
-            idx += 1
-
-    if has_intercepts:
-        intercept = np.ones((1, n_samples), x.dtype)
-        out = np.concatenate((intercept, xt, poly_terms), axis=0)
-    else:
-        out = np.concatenate((xt, poly_terms), axis=0)
-
-    return out.T

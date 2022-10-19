@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.filter_points import _drop_collinear_pounders
+from estimagic.optimization.tranquilo.filter_points import drop_collinear_pounders
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.tranquilo import State
 from estimagic.optimization.tranquilo.tranquilo_history import History
@@ -133,7 +133,7 @@ def test_drop_collinear_pounders(test_case, request):
         test_case
     )
 
-    filtered_xs, filtered_indices = _drop_collinear_pounders(old_xs, old_indices, state)
+    filtered_xs, filtered_indices = drop_collinear_pounders(old_xs, old_indices, state)
 
     assert_equal(filtered_indices, expected_indices)
     aaae(filtered_xs, expected_xs)

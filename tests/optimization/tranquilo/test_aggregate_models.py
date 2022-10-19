@@ -1,5 +1,7 @@
 import numpy as np
+import pytest
 from estimagic.optimization.tranquilo.aggregate_models import aggregator_identity
+from estimagic.optimization.tranquilo.aggregate_models import aggregator_identity_linear
 from estimagic.optimization.tranquilo.aggregate_models import (
     aggregator_information_equality_linear,
 )
@@ -12,7 +14,14 @@ from estimagic.optimization.tranquilo.models import VectorModel
 from numpy.testing import assert_array_equal
 
 
-def test_aggregator_identity():
+@pytest.mark.parametrize(
+    "aggregator, expected_square_terms",
+    [
+        (aggregator_identity, np.arange(9).reshape(3, 3)),
+        (aggregator_identity_linear, np.zeros(9).reshape(3, 3)),
+    ],
+)
+def test_aggregator_identity(aggregator, expected_square_terms):
     model_info = None
     fvec_center = np.array([2.0])
 
@@ -22,11 +31,11 @@ def test_aggregator_identity():
         square_terms=np.arange(9).reshape(1, 3, 3),
     )
 
-    got = tuple(aggregator_identity(vector_model, fvec_center, model_info))
+    got = tuple(aggregator(vector_model, fvec_center, model_info))
 
     assert got[0] == 2.0
     assert_array_equal(got[1], np.arange(3))
-    assert_array_equal(got[2], np.arange(9).reshape(3, 3))
+    assert_array_equal(got[2], expected_square_terms)
 
 
 def test_aggregator_sum():
