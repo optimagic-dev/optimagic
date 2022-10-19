@@ -20,6 +20,9 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
 from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     project_gradient_onto_feasible_set as grad_feas_orig,
 )
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
+    take_preliminary_gradient_descent_step_and_check_for_solution as pgd_orig,
+)
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     _evaluate_model_criterion as eval_criterion_fast,
 )
@@ -37,6 +40,9 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     project_gradient_onto_feasible_set as grad_feas_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    take_preliminary_gradient_descent_step_and_check_for_solution as pgd_fast,
 )
 from numpy.testing import assert_array_equal as aae
 
@@ -104,3 +110,51 @@ def test_applyt_bounds_candidate_x():
     lb = -np.ones(5)
     ub = np.ones(5)
     aae(apply_bounds_orig(x, lb, ub), apply_bounds_fast(x, lb, ub))
+
+
+def test_prelim_grad_descent():
+    class Model(NamedTuple):
+        linear_terms: np.ndarray = np.array(
+            [
+                -5.71290e02,
+                -3.11506e03,
+                -8.18100e02,
+                2.47760e02,
+                -1.26540e02,
+            ]
+        )
+        square_terms: np.ndarray = np.array(
+            [
+                [-619.23, -1229.2, 321.9, 106.98, -45.45],
+                [-1229.2, -668.95, -250.05, 165.77, -47.47],
+                [321.9, -250.05, -1456.88, -144.75, 900.99],
+                [106.98, 165.77, -144.75, 686.35, -3.51],
+                [-45.45, -47.47, 900.99, -3.51, -782.91],
+            ]
+        )
+
+    x_candidate = np.zeros(5)
+    lower_bounds = -np.ones(len(x_candidate))
+    upper_bounds = np.ones(len(x_candidate))
+    kwargs = {
+        "x_candidate": x_candidate,
+        "model": Model(),
+        "lower_bounds": lower_bounds,
+        "upper_bounds": upper_bounds,
+        "maxiter_gradient_descent": 5,
+        "gtol_abs": 1e-08,
+        "gtol_rel": 1e-08,
+        "gtol_scaled": 0,
+    }
+    res_speedup = pgd_fast(**kwargs)
+    res_orig = pgd_orig(**kwargs)
+    for i in range(5):
+        aae(np.array(res_speedup[i]), np.array(res_orig[i]))
+    bounds_info_orig = res_orig[5]
+    bounds_info_fast = res_orig[5]
+    for bounds in ["lower", "upper", "fixed", "active", "inactive"]:
+        aae(
+            np.array(getattr(bounds_info_orig, bounds)),
+            np.array(getattr(bounds_info_fast, bounds)),
+        )
+    assert res_orig[6] == res_speedup[6]
