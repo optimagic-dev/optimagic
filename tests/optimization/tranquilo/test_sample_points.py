@@ -8,7 +8,7 @@ from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
 @pytest.mark.parametrize(
-    "sampler", ["naive", "box", "optimal_box", "sphere", "optimal_sphere"]
+    "sampler", ["naive", "cube", "sphere", "optimal_cube", "optimal_sphere"]
 )
 def test_integration_of_get_sampler_and_refercen_sampler(sampler):
     sampler = get_sampler(
@@ -27,10 +27,11 @@ def test_integration_of_get_sampler_and_refercen_sampler(sampler):
     assert (calculated >= -1).all()
 
 
-def test_bounds():
+@pytest.mark.parametrize("sampler", ["optimal_cube", "optimal_sphere"])
+def test_optimal_samplers_validate_bounds(sampler):
     bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.25]))
     trustregion = TrustRegion(center=np.zeros(2), radius=1)
-    sampler = get_sampler("optimal_sphere", bounds)
+    sampler = get_sampler(sampler, bounds)
     rng = np.random.default_rng()
     sample = sampler(trustregion, target_size=8, rng=rng)
 
