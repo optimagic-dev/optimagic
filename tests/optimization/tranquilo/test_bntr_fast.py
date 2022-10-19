@@ -42,7 +42,7 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     project_gradient_onto_feasible_set as grad_feas_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    take_preliminary_gradient_descent_step_and_check_for_solution as pgd_fast,
+    take_preliminary_gradient_descent_step_and_check_for_solution_fast as pgd_fast,
 )
 from numpy.testing import assert_array_equal as aae
 

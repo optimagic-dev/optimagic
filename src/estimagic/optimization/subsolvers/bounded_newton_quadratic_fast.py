@@ -24,7 +24,7 @@ class ActiveBounds(NamedTuple):
 
 
 @njit
-def take_preliminary_gradient_descent_step_and_check_for_solution(
+def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
     x_candidate,
     model,
     lower_bounds,
