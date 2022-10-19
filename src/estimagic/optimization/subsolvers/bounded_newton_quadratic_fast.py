@@ -1,5 +1,4 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
-from functools import reduce
 from typing import NamedTuple
 from typing import Union
 
@@ -11,6 +10,7 @@ from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
     minimize_trust_stcg,
 )
 from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from numba import njit
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
@@ -23,6 +23,7 @@ class ActiveBounds(NamedTuple):
     inactive: Union[np.ndarray, None] = None
 
 
+@njit
 def take_preliminary_gradient_descent_step_and_check_for_solution(
     x_candidate,
     model,
@@ -34,21 +35,20 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
     gtol_scaled,
 ):
     """Take a preliminary gradient descent step and check if we found a solution."""
-    options_update_radius = {
-        "mu1": 0.35,
-        "mu2": 0.50,
-        "gamma1": 0.0625,
-        "gamma2": 0.5,
-        "gamma3": 2.0,
-        "gamma4": 5.0,
-        "theta": 0.25,
-        "min_radius": 1e-10,
-        "max_radius": 1e10,
-        "default_radius": 100,
-    }
+
+    default_radius = 100
+    min_radius = 1e-10
+    max_radius = 1e10
+    theta = 0.25
+    mu1 = 0.35
+    mu2 = 0.50
+    gamma1 = 0.0625
+    gamma2 = 0.5
+    gamma3 = 2.0
+    gamma4 = 5.0
 
     converged = False
-    convergence_reason = "Continue iterating."
+    convergence_reason = 0
 
     criterion_candidate = _evaluate_model_criterion(
         x_candidate, model.linear_terms, model.square_terms
@@ -65,16 +65,15 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
     gradient_projected = project_gradient_onto_feasible_set(
         gradient_unprojected, active_bounds_info
     )
-
     converged, convergence_reason = check_for_convergence(
-        x_candidate,
-        criterion_candidate,
-        gradient_unprojected,
-        model,
-        lower_bounds,
-        upper_bounds,
-        converged,
-        convergence_reason,
+        x_candidate=x_candidate,
+        f_candidate=criterion_candidate,
+        gradient_candidate=gradient_unprojected,
+        model=model,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        converged=converged,
+        reason=convergence_reason,
         niter=None,
         maxiter=None,
         gtol_abs=gtol_abs,
@@ -84,7 +83,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
 
     if converged:
         hessian_inactive = model.square_terms
-        trustregion_radius = options_update_radius["default_radius"]
+        trustregion_radius = default_radius
     else:
         hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
             model, active_bounds_info
@@ -97,16 +96,23 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             trustregion_radius,
             radius_lower_bound,
         ) = perform_gradient_descent_step(
-            x_candidate,
-            criterion_candidate,
-            gradient_projected,
-            hessian_inactive,
-            model,
-            lower_bounds,
-            upper_bounds,
-            active_bounds_info,
-            maxiter_gradient_descent,
-            options_update_radius,
+            x_candidate=x_candidate,
+            f_candidate_initial=criterion_candidate,
+            gradient_projected=gradient_projected,
+            hessian_inactive=hessian_inactive,
+            model=model,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+            active_bounds_info=active_bounds_info,
+            maxiter_steepest_descent=maxiter_gradient_descent,
+            default_radius=default_radius,
+            theta=theta,
+            mu1=mu1,
+            mu2=mu2,
+            gamma1=gamma1,
+            gamma2=gamma2,
+            gamma3=gamma3,
+            gamma4=gamma4,
         )
 
         if f_min_gradient_descent < criterion_candidate:
@@ -136,14 +142,14 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             )
 
             converged, convergence_reason = check_for_convergence(
-                x_candidate,
-                criterion_candidate,
-                gradient_projected,
-                model,
-                lower_bounds,
-                upper_bounds,
-                converged,
-                convergence_reason,
+                x_candidate=x_candidate,
+                f_candidate=criterion_candidate,
+                gradient_candidate=gradient_projected,
+                model=model,
+                lower_bounds=lower_bounds,
+                upper_bounds=upper_bounds,
+                converged=converged,
+                reason=convergence_reason,
                 niter=None,
                 maxiter=None,
                 gtol_abs=gtol_abs,
@@ -152,10 +158,10 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             )
 
         if not converged:
-            trustregion_radius = np.clip(
+            trustregion_radius = clip_scalar_numba(
                 max(trustregion_radius, radius_lower_bound),
-                options_update_radius["min_radius"],
-                options_update_radius["max_radius"],
+                min_radius,
+                max_radius,
             )
 
     return (
@@ -192,7 +198,7 @@ def compute_conjugate_gradient_step(
         step_inactive = apply_bounds_to_x_candidate(
             x_candidate, lower_bounds, upper_bounds
         )
-        step_norm = np.linalg.norm(step_inactive)
+        step_norm = norm_numba(step_inactive)
 
         conjugate_gradient_step = _apply_bounds_to_conjugate_gradient_step(
             step_inactive,
@@ -211,14 +217,14 @@ def compute_conjugate_gradient_step(
                 gtol_abs=gtol_abs_conjugate_gradient,
                 gtol_rel=gtol_rel_conjugate_gradient,
             )
-            step_norm = np.linalg.norm(step_inactive)
+            step_norm = norm_numba(step_inactive)
         elif conjugate_gradient_method == "steihaug_toint":
             step_inactive = minimize_trust_stcg(
                 gradient_inactive,
                 hessian_inactive,
                 trustregion_radius,
             )
-            step_norm = np.linalg.norm(step_inactive)
+            step_norm = norm_numba(step_inactive)
         elif conjugate_gradient_method == "trsbox":
             step_inactive = minimize_trust_trsbox(
                 gradient_inactive,
@@ -227,7 +233,7 @@ def compute_conjugate_gradient_step(
                 lower_bounds=lower_bounds[active_bounds_info.inactive],
                 upper_bounds=upper_bounds[active_bounds_info.inactive],
             )
-            step_norm = np.linalg.norm(step_inactive)
+            step_norm = norm_numba(step_inactive)
         else:
             raise ValueError(
                 "Invalid method: {conjugate_gradient_method}. "
@@ -259,14 +265,14 @@ def compute_conjugate_gradient_step(
                         gtol_abs=gtol_abs_conjugate_gradient,
                         gtol_rel=gtol_rel_conjugate_gradient,
                     )
-                    step_norm = np.linalg.norm(step_inactive)
+                    step_norm = norm_numba(step_inactive)
                 elif conjugate_gradient_method == "steihaug_toint":
                     step_inactive = minimize_trust_stcg(
                         gradient_inactive,
                         hessian_inactive,
                         trustregion_radius,
                     )
-                    step_norm = np.linalg.norm(step_inactive)
+                    step_norm = norm_numba(step_inactive)
                 elif conjugate_gradient_method == "trsbox":
                     step_inactive = minimize_trust_trsbox(
                         gradient_inactive,
@@ -275,7 +281,7 @@ def compute_conjugate_gradient_step(
                         lower_bounds=lower_bounds[active_bounds_info.inactive],
                         upper_bounds=upper_bounds[active_bounds_info.inactive],
                     )
-                    step_norm = np.linalg.norm(step_inactive)
+                    step_norm = norm_numba(step_inactive)
 
                 if step_norm == 0:
                     raise ValueError("Initial direction is zero.")
@@ -325,6 +331,7 @@ def compute_predicted_reduction_from_conjugate_gradient_step(
     return -predicted_reduction
 
 
+@njit
 def perform_gradient_descent_step(
     x_candidate,
     f_candidate_initial,
@@ -335,13 +342,20 @@ def perform_gradient_descent_step(
     upper_bounds,
     active_bounds_info,
     maxiter_steepest_descent,
-    options_update_radius,
+    default_radius,
+    theta,
+    mu1,
+    mu2,
+    gamma1,
+    gamma2,
+    gamma3,
+    gamma4,
 ):
     """Perform gradient descent step and update trust-region radius."""
     f_min = f_candidate_initial
-    gradient_norm = np.linalg.norm(gradient_projected)
+    gradient_norm = norm_numba(gradient_projected)
 
-    trustregion_radius = options_update_radius["default_radius"]
+    trustregion_radius = default_radius
     radius_lower_bound = 0
     step_size_accepted = 0
 
@@ -382,7 +396,13 @@ def perform_gradient_descent_step(
             predicted_reduction,
             actual_reduction,
             gradient_norm,
-            options_update_radius,
+            theta,
+            mu1,
+            mu2,
+            gamma1,
+            gamma2,
+            gamma3,
+            gamma4,
         )
 
     return (
@@ -450,6 +470,7 @@ def update_trustregion_radius_conjugate_gradient(
     return trustregion_radius, accept_step
 
 
+@njit
 def get_information_on_active_bounds(
     x,
     gradient_unprojected,
@@ -457,12 +478,35 @@ def get_information_on_active_bounds(
     upper_bounds,
 ):
     """Return the index set of active bounds."""
-    active_lower = np.where((x <= lower_bounds) & (gradient_unprojected > 0))[0]
-    active_upper = np.where((x >= upper_bounds) & (gradient_unprojected < 0))[0]
-    active_fixed = np.where((lower_bounds == upper_bounds))[0]
-    active_all = reduce(np.union1d, (active_fixed, active_lower, active_upper))
-    inactive = np.setdiff1d(np.arange(len(x)), active_all)
-
+    active_all = []
+    active_upper = []
+    active_lower = []
+    active_fixed = []
+    inactive = []
+    for i in range(len(x)):
+        if (x[i] <= lower_bounds[i]) & (gradient_unprojected[i] > 0):
+            if i not in active_all:
+                active_all.append(i)
+            if i not in active_lower:
+                active_lower.append(i)
+        elif (x[i] >= upper_bounds[i]) & (gradient_unprojected[i] < 0):
+            if i not in active_all:
+                active_all.append(i)
+            if i not in active_upper:
+                active_upper.append(i)
+        elif lower_bounds[i] == upper_bounds[i]:
+            if i not in active_fixed:
+                active_fixed.append(i)
+            if i not in active_all:
+                active_all.append(i)
+        else:
+            if i not in inactive:
+                inactive.append(i)
+    active_all = np.array(active_all)
+    active_lower = np.array(active_lower)
+    active_upper = np.array(active_upper)
+    inactive = np.array(inactive)
+    active_fixed = np.array(active_fixed)
     active_bounds_info = ActiveBounds(
         lower=active_lower,
         upper=active_upper,
@@ -474,15 +518,17 @@ def get_information_on_active_bounds(
     return active_bounds_info
 
 
+@njit
 def find_hessian_submatrix_where_bounds_inactive(model, active_bounds_info):
     """Find the submatrix of the initial hessian where bounds are inactive."""
-    hessian_inactive = model.square_terms[
-        active_bounds_info.inactive[:, np.newaxis], active_bounds_info.inactive
-    ]
-
+    inactive_bounds = active_bounds_info.inactive
+    initial_hessian = model.square_terms
+    hessian_inactive = initial_hessian[:, inactive_bounds]
+    hessian_inactive = hessian_inactive[inactive_bounds, :]
     return hessian_inactive
 
 
+@njit
 def check_for_convergence(
     x_candidate,
     f_candidate,
@@ -493,7 +539,6 @@ def check_for_convergence(
     converged,
     reason,
     niter,
-    *,
     maxiter,
     gtol_abs,
     gtol_rel,
@@ -503,53 +548,48 @@ def check_for_convergence(
     direction_fischer_burmeister = _get_fischer_burmeister_direction_vector(
         x_candidate, gradient_candidate, lower_bounds, upper_bounds
     )
-    gradient_norm = np.linalg.norm(direction_fischer_burmeister)
-    gradient_norm_initial = np.linalg.norm(model.linear_terms)
+    gradient_norm = norm_numba(direction_fischer_burmeister)
+    gradient_norm_initial = norm_numba(model.linear_terms)
 
     if gradient_norm < gtol_abs:
         converged = True
-        reason = "Norm of the gradient is less than absolute_gradient_tolerance."
+        reason = 1
     elif f_candidate != 0 and abs(gradient_norm / f_candidate) < gtol_rel:
         converged = True
-        reason = (
-            "Norm of the gradient relative to the criterion value is less than "
-            "relative_gradient_tolerance."
-        )
+        reason = 2
     elif (
         gradient_norm_initial != 0
         and gradient_norm / gradient_norm_initial < gtol_scaled
     ):
         converged = True
-        reason = (
-            "Norm of the gradient divided by norm of the gradient at the "
-            "initial parameters is less than scaled_gradient_tolerance."
-        )
+        reason = 3
     elif gradient_norm_initial != 0 and gradient_norm == 0 and gtol_scaled == 0:
         converged = True
-        reason = (
-            "Norm of the gradient divided by norm of the gradient at the "
-            "initial parameters is less than scaled_gradient_tolerance."
-        )
+        reason = 4
     elif f_candidate <= -np.inf:
         converged = True
-        reason = "Criterion value is negative infinity."
+        reason = 5
     elif niter is not None and niter == maxiter:
-        reason = "Maximum number of iterations reached."
+        reason = 6
 
     return converged, reason
 
 
+@njit
 def apply_bounds_to_x_candidate(x, lower_bounds, upper_bounds, bound_tol=0):
     """Apply upper and lower bounds to the candidate vector."""
-    x = np.where(x <= lower_bounds + bound_tol, lower_bounds, x)
-    x = np.where(x >= upper_bounds - bound_tol, upper_bounds, x)
-
+    for i in range(len(x)):
+        if x[i] <= lower_bounds[i] + bound_tol:
+            x[i] = lower_bounds[i]
+        elif x[i] >= upper_bounds[i] - bound_tol:
+            x[i] = upper_bounds[i]
     return x
 
 
+@njit
 def project_gradient_onto_feasible_set(gradient_unprojected, active_bounds_info):
     """Project gradient onto feasible set, where search directions unconstrained."""
-    gradient_projected = np.zeros_like(gradient_unprojected)
+    gradient_projected = np.zeros(len(gradient_unprojected))
     gradient_projected[active_bounds_info.inactive] = gradient_unprojected[
         active_bounds_info.inactive
     ]
@@ -586,37 +626,44 @@ def _apply_bounds_to_conjugate_gradient_step(
     return cg_step
 
 
+@njit
 def _update_trustregion_radius_and_gradient_descent(
     trustregion_radius,
     radius_lower_bound,
     predicted_reduction,
     actual_reduction,
     gradient_norm,
-    options,
+    theta,
+    mu1,
+    mu2,
+    gamma1,
+    gamma2,
+    gamma3,
+    gamma4,
 ):
     """Update the trust-region radius and its upper bound."""
-    if abs(actual_reduction) <= EPSILON and abs(predicted_reduction) <= EPSILON:
+    if np.abs(actual_reduction) <= EPSILON and np.abs(predicted_reduction) <= EPSILON:
         kappa = 1
     else:
         kappa = actual_reduction / predicted_reduction
 
     tau_1 = (
-        options["theta"]
+        theta
         * gradient_norm
         * trustregion_radius
         / (
-            options["theta"] * gradient_norm * trustregion_radius
-            + (1 - options["theta"]) * predicted_reduction
+            theta * gradient_norm * trustregion_radius
+            + (1 - theta) * predicted_reduction
             - actual_reduction
         )
     )
     tau_2 = (
-        options["theta"]
+        theta
         * gradient_norm
         * trustregion_radius
         / (
-            options["theta"] * gradient_norm * trustregion_radius
-            - (1 + options["theta"]) * predicted_reduction
+            theta * gradient_norm * trustregion_radius
+            - (1 + theta) * predicted_reduction
             + actual_reduction
         )
     )
@@ -624,46 +671,42 @@ def _update_trustregion_radius_and_gradient_descent(
     tau_min = min(tau_1, tau_2)
     tau_max = max(tau_1, tau_2)
 
-    if abs(kappa - 1) <= options["mu1"]:
+    if np.abs(kappa - 1) <= mu1:
         # Great agreement
         radius_lower_bound = max(radius_lower_bound, trustregion_radius)
 
         if tau_max < 1:
-            tau = options["gamma3"]
-        elif tau_max > options["gamma4"]:
-            tau = options["gamma4"]
+            tau = gamma3
+        elif tau_max > gamma4:
+            tau = gamma4
         else:
             tau = tau_max
 
-    elif abs(kappa - 1) <= options["mu2"]:
+    elif np.abs(kappa - 1) <= mu2:
         # Good agreement
         radius_lower_bound = max(radius_lower_bound, trustregion_radius)
 
-        if tau_max < options["gamma2"]:
-            tau = options["gamma2"]
-        elif tau_max > options["gamma3"]:
-            tau = options["gamma3"]
+        if tau_max < gamma2:
+            tau = gamma2
+        elif tau_max > gamma3:
+            tau = gamma3
         else:
             tau = tau_max
 
     else:
         # Not good agreement
         if tau_min > 1:
-            tau = options["gamma2"]
-        elif tau_max < options["gamma1"]:
-            tau = options["gamma1"]
-        elif (tau_min < options["gamma1"]) and (tau_max >= 1):
-            tau = options["gamma1"]
+            tau = gamma2
+        elif tau_max < gamma1:
+            tau = gamma1
+        elif (tau_min < gamma1) and (tau_max >= 1):
+            tau = gamma1
         elif (
-            (tau_1 >= options["gamma1"])
-            and (tau_1 < 1.0)
-            and ((tau_2 < options["gamma1"]) or (tau_2 >= 1.0))
+            (tau_1 >= gamma1) and (tau_1 < 1.0) and ((tau_2 < gamma1) or (tau_2 >= 1.0))
         ):
             tau = tau_1
         elif (
-            (tau_2 >= options["gamma1"])
-            and (tau_2 < 1.0)
-            and ((tau_1 < options["gamma1"]) or (tau_2 >= 1.0))
+            (tau_2 >= gamma1) and (tau_2 < 1.0) and ((tau_1 < gamma1) or (tau_2 >= 1.0))
         ):
             tau = tau_2
         else:
@@ -674,20 +717,23 @@ def _update_trustregion_radius_and_gradient_descent(
     return trustregion_radius, radius_lower_bound
 
 
+@njit
 def _get_fischer_burmeister_direction_vector(x, gradient, lower_bounds, upper_bounds):
     """Compute the constrained direction vector via the Fischer-Burmeister function."""
-    fischer_vec = np.vectorize(_get_fischer_burmeister_scalar)
 
-    fischer_burmeister = reduce(
-        fischer_vec, (upper_bounds - x, -gradient, x - lower_bounds)
-    )
-    direction = np.where(
-        lower_bounds == upper_bounds, lower_bounds - x, fischer_burmeister
-    )
+    direction = []
+    for x_, g_, l_, u_ in zip(x, gradient, lower_bounds, upper_bounds):
+        fischer_scalar = _get_fischer_burmeister_scalar(u_ - x_, -g_)
+        fischer_scalar = _get_fischer_burmeister_scalar(fischer_scalar, x_ - l_)
 
-    return direction
+        if l_ == u_:
+            direction.append(l_ - x_)
+        else:
+            direction.append(fischer_scalar)
+    return np.array(direction)
 
 
+@njit
 def _get_fischer_burmeister_scalar(a, b):
     """Get the value of the Fischer-Burmeister function for two scalar inputs.
 
@@ -709,6 +755,7 @@ def _get_fischer_burmeister_scalar(a, b):
     return fischer_burmeister
 
 
+@njit
 def _evaluate_model_criterion(
     x,
     gradient,
@@ -729,6 +776,7 @@ def _evaluate_model_criterion(
     return gradient.T @ x + 0.5 * x.T @ hessian @ x
 
 
+@njit
 def _evaluate_model_gradient(x, model):
     """Evaluate the derivative of the main model.
 
@@ -742,3 +790,35 @@ def _evaluate_model_gradient(x, model):
         np.ndarray: Derivative of the main model of shape (n,).
     """
     return model.linear_terms + model.square_terms @ x
+
+
+@njit
+def clip_array_numba(x, a, b):
+    """Numba-compatible clipping function for arrays."""
+    for i in range(len(x)):
+        if x[i] <= a[i]:
+            x[i] = a[i]
+        elif x[i] >= b[i]:
+            x[i] = b[i]
+    return x
+
+
+@njit
+def clip_scalar_numba(x, a, b):
+    """Numba-compatible clipping function for scalars."""
+    clipped = max(x, a)
+    clipped = min(clipped, b)
+    return clipped
+
+
+@njit
+def norm_numba(x):
+    """Calculate Ecuildean norm of vector."""
+    x = x.reshape(
+        x.size,
+    )
+    sum_squares = 0
+    for i in range(len(x)):
+        sum_squares += x[i] ** 2
+    norm = np.sqrt(sum_squares)
+    return norm
