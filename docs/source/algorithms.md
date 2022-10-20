@@ -1,4 +1,4 @@
-(list-of-algorithms)=
+(list_of_algorithms)=
 
 # Optimizers
 
