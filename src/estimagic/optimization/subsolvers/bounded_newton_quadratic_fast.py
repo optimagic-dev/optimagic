@@ -54,7 +54,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
         x_candidate, model.linear_terms, model.square_terms
     )
 
-    active_bounds_info = get_information_on_active_bounds(
+    active_bounds_info = get_information_on_active_bounds_fast(
         x_candidate,
         model.linear_terms,
         lower_bounds,
@@ -85,8 +85,8 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
         hessian_inactive = model.square_terms
         trustregion_radius = default_radius
     else:
-        hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
-            model, active_bounds_info
+        hessian_inactive = find_hessian_submatrix_where_bounds_inactive_fast(
+            model.square_terms, active_bounds_info.inactive
         )
 
         (
@@ -122,12 +122,12 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
                 x_candidate_gradient_descent
                 - step_size_gradient_descent * gradient_projected
             )
-            x_candidate = apply_bounds_to_x_candidate(
+            x_candidate = apply_bounds_to_x_candidate_fast(
                 x_unbounded, lower_bounds, upper_bounds
             )
 
             gradient_unprojected = _evaluate_model_gradient(x_candidate, model)
-            active_bounds_info = get_information_on_active_bounds(
+            active_bounds_info = get_information_on_active_bounds_fast(
                 x_candidate,
                 gradient_unprojected,
                 lower_bounds,
@@ -137,8 +137,8 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
             gradient_projected = project_gradient_onto_feasible_set(
                 gradient_unprojected, active_bounds_info
             )
-            hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
-                model, active_bounds_info
+            hessian_inactive = find_hessian_submatrix_where_bounds_inactive_fast(
+                model.square_terms, active_bounds_info.inactive
             )
 
             converged, convergence_reason = check_for_convergence(
@@ -176,7 +176,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
     )
 
 
-def compute_conjugate_gradient_step(
+def compute_conjugate_gradient_step_fast(
     x_candidate,
     gradient_inactive,
     hessian_inactive,
@@ -195,7 +195,7 @@ def compute_conjugate_gradient_step(
 
     if active_bounds_info.inactive.size == 0:
         # Save some computation and return an adjusted zero step
-        step_inactive = apply_bounds_to_x_candidate(
+        step_inactive = apply_bounds_to_x_candidate_fast(
             x_candidate, lower_bounds, upper_bounds
         )
         step_norm = norm_numba(step_inactive)
@@ -365,7 +365,7 @@ def perform_gradient_descent_step(
         step_size_candidate = trustregion_radius / gradient_norm
         x_candidate = x_old - step_size_candidate * gradient_projected
 
-        x_candidate = apply_bounds_to_x_candidate(
+        x_candidate = apply_bounds_to_x_candidate_fast(
             x_candidate, lower_bounds, upper_bounds
         )
         f_candidate = _evaluate_model_criterion(
@@ -471,7 +471,7 @@ def update_trustregion_radius_conjugate_gradient(
 
 
 @njit
-def get_information_on_active_bounds(
+def get_information_on_active_bounds_fast(
     x,
     gradient_unprojected,
     lower_bounds,
@@ -519,12 +519,15 @@ def get_information_on_active_bounds(
 
 
 @njit
-def find_hessian_submatrix_where_bounds_inactive(model, active_bounds_info):
+def find_hessian_submatrix_where_bounds_inactive_fast(initial_hessian, inactive_bounds):
     """Find the submatrix of the initial hessian where bounds are inactive."""
-    inactive_bounds = active_bounds_info.inactive
-    initial_hessian = model.square_terms
-    hessian_inactive = initial_hessian[:, inactive_bounds]
-    hessian_inactive = hessian_inactive[inactive_bounds, :]
+    hessian_inactive = []
+    for row in inactive_bounds:
+        for col in inactive_bounds:
+            hessian_inactive.append(initial_hessian[row, col])
+    hessian_inactive = np.array(hessian_inactive).reshape(
+        len(inactive_bounds), len(inactive_bounds)
+    )
     return hessian_inactive
 
 
@@ -576,7 +579,7 @@ def check_for_convergence(
 
 
 @njit
-def apply_bounds_to_x_candidate(x, lower_bounds, upper_bounds, bound_tol=0):
+def apply_bounds_to_x_candidate_fast(x, lower_bounds, upper_bounds, bound_tol=0):
     """Apply upper and lower bounds to the candidate vector."""
     for i in range(len(x)):
         if x[i] <= lower_bounds[i] + bound_tol:
@@ -597,6 +600,7 @@ def project_gradient_onto_feasible_set(gradient_unprojected, active_bounds_info)
     return gradient_projected
 
 
+@njit
 def _apply_bounds_to_conjugate_gradient_step(
     step_inactive,
     x_candidate,
@@ -605,7 +609,7 @@ def _apply_bounds_to_conjugate_gradient_step(
     active_bounds_info,
 ):
     """Apply lower and upper bounds to the Conjugate Gradient step."""
-    cg_step = np.zeros_like(x_candidate)
+    cg_step = np.zeros(len(x_candidate))
     cg_step[active_bounds_info.inactive] = step_inactive
 
     if active_bounds_info.lower.size > 0:

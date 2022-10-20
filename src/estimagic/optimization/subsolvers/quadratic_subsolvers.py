@@ -25,6 +25,18 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     update_trustregion_radius_conjugate_gradient,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    apply_bounds_to_x_candidate_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    compute_conjugate_gradient_step_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    find_hessian_submatrix_where_bounds_inactive_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    get_information_on_active_bounds_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     take_preliminary_gradient_descent_step_and_check_for_solution_fast,
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
@@ -381,14 +393,14 @@ def minimize_bntr_quadratic_fast(
 
         while not accept_step and not converged:
             gradient_bounds_inactive = gradient_unprojected[active_bounds_info.inactive]
-            hessian_bounds_inactive = find_hessian_submatrix_where_bounds_inactive(
-                model, active_bounds_info
+            hessian_bounds_inactive = find_hessian_submatrix_where_bounds_inactive_fast(
+                model.square_terms, active_bounds_info.inactive
             )
             (
                 conjugate_gradient_step,
                 conjugate_gradient_step_inactive_bounds,
                 cg_step_norm,
-            ) = compute_conjugate_gradient_step(
+            ) = compute_conjugate_gradient_step_fast(
                 x_candidate,
                 gradient_bounds_inactive,
                 hessian_bounds_inactive,
@@ -403,7 +415,7 @@ def minimize_bntr_quadratic_fast(
             )
 
             x_unbounded = x_candidate + conjugate_gradient_step
-            x_candidate = apply_bounds_to_x_candidate(
+            x_candidate = apply_bounds_to_x_candidate_fast(
                 x_unbounded, lower_bounds, upper_bounds
             )
 
@@ -439,7 +451,7 @@ def minimize_bntr_quadratic_fast(
             if accept_step:
                 gradient_unprojected = evaluate_model_gradient(x_candidate, model)
 
-                active_bounds_info = get_information_on_active_bounds(
+                active_bounds_info = get_information_on_active_bounds_fast(
                     x_candidate,
                     gradient_unprojected,
                     lower_bounds,

@@ -30,13 +30,13 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     _get_fischer_burmeister_direction_vector as fb_vector_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    apply_bounds_to_x_candidate as apply_bounds_fast,
+    apply_bounds_to_x_candidate_fast as apply_bounds_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    find_hessian_submatrix_where_bounds_inactive as find_hessian_inact_fast,
+    find_hessian_submatrix_where_bounds_inactive_fast as find_hessian_inact_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    get_information_on_active_bounds as get_info_bounds_fast,
+    get_information_on_active_bounds_fast as get_info_bounds_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     project_gradient_onto_feasible_set as grad_feas_fast,
@@ -93,7 +93,7 @@ def test_find_hessian_inactive_bounds():
     )
     aae(
         find_hessian_inact_orig(Model(), bounds_info),
-        find_hessian_inact_fast(Model(), bounds_info),
+        find_hessian_inact_fast(Model().square_terms, bounds_info.inactive),
     )
 
 
