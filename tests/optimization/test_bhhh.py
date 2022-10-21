@@ -89,7 +89,7 @@ def criterion_and_derivative_logit(x, task="criterion_and_derivative"):
             If task="criterion_and_derivative", compute both.
 
     Returns:
-        (np.ndarray or tuple): If task=="criterion" it returns the output of
+        np.ndarray or tuple: If task=="criterion" it returns the output of
             criterion, which is a 1d numpy array.
             If task=="derivative" it returns the first derivative of criterion,
             which is 2d numpy array.
@@ -121,7 +121,7 @@ def criterion_and_derivative_logit_ibm(x, task="criterion_and_derivative"):
             If task="criterion_and_derivative", compute both.
 
     Returns:
-        (np.ndarray or tuple): If task=="criterion" it returns the output of
+        np.ndarray or tuple: If task=="criterion" it returns the output of
             criterion, which is a 1d numpy array.
             If task=="derivative" it returns the first derivative of criterion,
             which is 2d numpy array.
@@ -153,7 +153,7 @@ def criterion_and_derivative_probit(x, task="criterion_and_derivative"):
             If task="criterion_and_derivative", compute both.
 
     Returns:
-        (np.ndarray or tuple): If task=="criterion" it returns the output of
+        np.ndarray or tuple: If task=="criterion" it returns the output of
             criterion, which is a 1d numpy array.
             If task=="derivative" it returns the first derivative of criterion,
             which is 2d numpy array.
@@ -185,7 +185,7 @@ def criterion_and_derivative_probit_ibm(x, task="criterion_and_derivative"):
             If task="criterion_and_derivative", compute both.
 
     Returns:
-        (np.ndarray or tuple): If task=="criterion" it returns the output of
+        np.ndarray or tuple: If task=="criterion" it returns the output of
             criterion, which is a 1d numpy array.
             If task=="derivative" it returns the first derivative of criterion,
             which is 2d numpy array.
@@ -229,28 +229,6 @@ def result_probit_unconstrained():
 
 
 @pytest.fixture
-def result_logit_constrained():
-    endog, exog = generate_test_data()
-    result = sm.Logit(endog, exog).fit(
-        method="lbfgs", bounds=((-5, 10), (-100, 100), (-100, 100)), disp=False
-    )
-
-    return result.params
-
-
-@pytest.fixture
-def result_probit_constrained():
-    endog, exog = generate_test_data()
-    result = sm.Logit(endog, exog).fit(
-        method="lbfgs",
-        bounds=((-5, np.inf), (-np.inf, np.inf), (-np.inf, np.inf)),
-        disp=False,
-    )
-
-    return result.params
-
-
-@pytest.fixture
 def result_logit_ibm():
     endog, exog = load_ibm_data()
     result = sm.Logit(endog, exog).fit(disp=False)
@@ -262,6 +240,16 @@ def result_logit_ibm():
 def result_probit_ibm():
     endog, exog = load_ibm_data()
     result = sm.Probit(endog, exog).fit(disp=False)
+
+    return result.params
+
+
+@pytest.fixture
+def result_logit_constrained():
+    endog, exog = generate_test_data()
+    result = sm.Logit(endog, exog).fit(
+        method="lbfgs", bounds=((-5, 10), (-100, 100), (-100, 100)), disp=False
+    )
 
     return result.params
 

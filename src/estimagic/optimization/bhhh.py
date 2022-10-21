@@ -75,7 +75,7 @@ def bhhh_unconstrained(
             the optimization stops, but we do not count this as convergence.
 
     Returns:
-        (dict) Result dictionary containing:
+        dict: Result dictionary containing:
 
         - solution_x (np.ndarray): Solution vector of shape (n_params,).
         - solution_criterion (np.ndarray): Likelihood contributions at the solution.
@@ -195,7 +195,7 @@ def bhhh_box_constrained(
             the optimization stops, but we do not count this as convergence.
 
     Returns:
-        (dict) Result dictionary containing:
+        dict: Result dictionary containing:
 
         - solution_x (np.ndarray): Solution vector of shape (n_params,).
         - solution_criterion (np.ndarray): Likelihood contributions at the solution.
@@ -286,12 +286,17 @@ def _estimate_epsilon_inactive_set(x, norm_grad, lower_bounds, upper_bounds):
     The set of epsilon-inactive indices underestimates (overestimates) the actual
     set of inactive (active) indices.
 
+    Args:
         x (np.ndarray): Current parameter vector of shape (n_params,).
         norm_grad (float): Norm of the projected gradient.
         lower_bounds (np.ndarray): 1d array of shape (n_params,) with lower bounds
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n_params,) with upper bounds
-            for the parameter vector x
+            for the parameter vector x/
+
+    Returns:
+        np.ndarray: 1d array of shape (n_inactive_constraints,) containing the set
+            of inactive constraints.
     """
     epsilon = min(np.min(upper_bounds - lower_bounds) / 2, norm_grad)
 

@@ -11,23 +11,6 @@ from estimagic.optimization.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-def load_history(start_vec, solver_sub):
-    start_vec_str = np.array2string(
-        start_vec, precision=3, separator=",", suppress_small=False
-    )
-
-    history_x = np.genfromtxt(
-        TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
-        delimiter=",",
-    )
-    history_criterion = np.genfromtxt(
-        TEST_FIXTURES_DIR / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
-        delimiter=",",
-    )
-
-    return history_x, history_criterion
-
-
 @pytest.fixture
 def criterion():
     data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
