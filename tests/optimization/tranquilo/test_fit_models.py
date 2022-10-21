@@ -111,6 +111,21 @@ def test_fit_pounders_against_truth(scenario, request):
     aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
 
 
+@pytest.mark.parametrize("scenario", ["just_identified_case", "quadratic_case"])
+def test_fit_original_pounders_against_truth(scenario, request):
+    test_case = request.getfixturevalue(scenario)
+
+    model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
+    fit_pounders = get_fitter("pounders_original", model_info=model_info)
+    got = fit_pounders(test_case["x"], test_case["y"])
+
+    aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
+    aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
+
+
+# =====================================================================================
+
+
 @pytest.mark.parametrize("model", ["ols", "ridge"])
 def test_fit_ols_against_gradient(model, quadratic_case):
     if model == "ridge":
