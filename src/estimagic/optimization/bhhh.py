@@ -54,6 +54,10 @@ def bhhh_unconstrained(
 ):
     """Minimize a likelihood function using the unconstrained BHHH algorithm.
 
+    This implementation is based on the Matlab code by Fedor Iskhakov, which can
+    be found on his `Github page <https://github.com/fediskhakov/MPECvsNFXP/blob/
+    8212346a0426f54977823bd754947f528ed749ba/nfxp_Rust87/nfxp.m#L315>`.
+
     Args:
         criterion_and_derivative (callable): A function returning the tuple:
             - criterion (np.ndarray): Likelihood contributions of shape (n_obs,)
@@ -168,6 +172,11 @@ def bhhh_box_constrained(
     The (in)active constraints are identified via an epsilon-active-set method,
     similar to the approach used by the Projected BFGS-Armijo algorithm
     (see :cite:`Kelley1999`, p. 97).
+
+    The unconstrained version of this algorithm is based on the Matlab implementation
+    by Adam E. Theising. See `Assignment 4 <https://adamtheising.github.io/aae637>`
+    on Maximum Likelihood Estimation on the course page of Applied Econometrics II.
+
 
     Args:
         criterion_and_derivative (callable): A function returning the tuple:

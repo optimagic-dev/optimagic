@@ -323,21 +323,12 @@ TEST_CASES_CONSTRAINED = [
         np.array([-5, -100, -100]),
         np.array([10, 100, 100]),
         "result_logit_constrained",
-        4,
-    ),
-    (
-        criterion_and_derivative_probit,
-        np.zeros(3),
-        np.array([-5, -np.inf, -np.inf]),
-        np.array([10, np.inf, np.inf]),
-        "result_probit_constrained",
-        0,
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "criterion_and_derivative, x0, lower_bounds, upper_bounds, expected, digits",
+    "criterion_and_derivative, x0, lower_bounds, upper_bounds, expected",
     TEST_CASES_CONSTRAINED,
 )
 def test_maximum_likelihood_constrained(
@@ -346,7 +337,6 @@ def test_maximum_likelihood_constrained(
     lower_bounds,
     upper_bounds,
     expected,
-    digits,
     request,
 ):
     params_expected = request.getfixturevalue(expected)
@@ -361,4 +351,4 @@ def test_maximum_likelihood_constrained(
         stopping_max_iterations=200,
     )
 
-    aaae(result["solution_x"], params_expected, decimal=digits)
+    aaae(result["solution_x"], params_expected, decimal=4)
