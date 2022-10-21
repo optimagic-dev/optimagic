@@ -5,8 +5,8 @@ from functools import partial
 import estimagic as em
 import numpy as np
 from estimagic.optimization.tranquilo.options import Bounds
-from numba import njit
 from scipy.spatial.distance import pdist
+from scipy.special import logsumexp
 
 
 def get_sampler(sampler, bounds, user_options=None):
@@ -139,6 +139,7 @@ def _hull_sampler(
     ord,  # noqa: A002
     existing_xs=None,
     bounds=None,
+    smoothness=False,
 ):
     """Random generation of trustregion points on the hull of general sphere / cube.
 
@@ -154,6 +155,9 @@ def _hull_sampler(
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
         bounds (Bounds or None): NamedTuple.
+        smoothness (False or float): Either False, in which case exact bound clipping is
+            performed; or positive float, in which case the value is used inside a
+            smooth clipping function. Smaller values result in larger smoothness.
 
     """
     n_points = _get_effective_n_points(target_size, existing_xs)
@@ -162,7 +166,7 @@ def _hull_sampler(
 
     points = rng.normal(size=(n_points, n_params))
     points = _internal_to_external(
-        points, bounds=bounds, trustregion=trustregion, ord=ord
+        points, bounds=bounds, trustregion=trustregion, ord=ord, smoothness=smoothness
     )
 
     return points
@@ -177,6 +181,7 @@ def _optimal_hull_sampler(
     bounds=None,
     algorithm="scipy_lbfgsb",
     multistart=False,
+    stopping_max_iterations=3,
 ):
     """Optimal generation of points on a hull.
 
@@ -194,6 +199,7 @@ def _optimal_hull_sampler(
         bounds (Bounds or None): NamedTuple.
         algorithm (str): Optimization algorithm.
         multistart (bool): Whether to use multistart in the optimization.
+        stopping_max_iterations (int): Maximum iterations of the internal optimizer.
 
     Returns:
         np.ndarray: Generated points. Has shape (target_size, len(trustregion.center)).
@@ -202,52 +208,48 @@ def _optimal_hull_sampler(
     n_points = _get_effective_n_points(target_size, existing_xs)
     bounds = _get_effective_bounds(trustregion, bounds)
 
-    # start params
-    x0 = _hull_sampler(
-        trustregion, target_size=n_points, rng=rng, ord=ord, bounds=bounds
-    )
-    x0 = (x0 - trustregion.center) / trustregion.radius
+    if n_points > 0:
 
-    res = em.maximize(
-        criterion=_pairwise_distance_crit,
-        params=x0,
-        algorithm=algorithm,
-        criterion_kwargs={
-            "existing_xs": existing_xs,
-            "trustregion": trustregion,
-            "bounds": bounds,
-            "ord": ord,
-        },
-        lower_bounds=-np.ones_like(x0),
-        upper_bounds=np.ones_like(x0),
-        multistart=multistart,
-    )
+        # start params
+        x0 = _hull_sampler(
+            trustregion,
+            target_size=n_points,
+            rng=rng,
+            ord=ord,
+            bounds=bounds,
+            smoothness=1,
+        )
+        x0 = (x0 - trustregion.center) / trustregion.radius
 
-    points = _internal_to_external(res.params, bounds, trustregion, ord=ord)
-    return points
+        res = em.maximize(
+            criterion=_pairwise_distance_crit,
+            params=x0,
+            algorithm=algorithm,
+            criterion_kwargs={
+                "existing_xs": existing_xs,
+                "trustregion": trustregion,
+                "bounds": bounds,
+                "ord": ord,
+            },
+            lower_bounds=-np.ones_like(x0),
+            upper_bounds=np.ones_like(x0),
+            multistart=multistart,
+            algo_options={"stopping_max_iterations": stopping_max_iterations},
+        )
 
+        points = _internal_to_external(
+            res.params, bounds, trustregion, ord=ord, smoothness=1_000
+        )
+    else:
+        points = np.array([])
 
-# ======================================================================================
-# Criterion functions
-# ======================================================================================
-
-
-def _internal_to_external(x, bounds, trustregion, ord):  # noqa: A002
-    points = _project_onto_unit_hull(x, ord=ord)
-    points = trustregion.radius * points + trustregion.center
-    points = _clip_on_bounds(points, bounds)
     return points
 
 
 def _pairwise_distance_crit(x, existing_xs, trustregion, bounds, ord):  # noqa: A002
-    x = _internal_to_external(x, bounds, trustregion, ord=ord)
-
-    if existing_xs is not None:
-        sample = np.row_stack([x, existing_xs])
-    else:
-        sample = x
-
-    dist = (pdist(sample) ** 2).min()
+    x = _internal_to_external(x, bounds, trustregion, ord=ord, smoothness=1)
+    sample = _add_existing_points(x, existing_xs)
+    dist = -logsumexp(-(pdist(sample) ** 2))
     return dist
 
 
@@ -256,15 +258,40 @@ def _pairwise_distance_crit(x, existing_xs, trustregion, bounds, ord):  # noqa: 
 # ======================================================================================
 
 
+def _internal_to_external(x, bounds, trustregion, ord, smoothness):  # noqa: A002
+    points = _project_onto_unit_hull(x, ord=ord)
+    points = trustregion.radius * points + trustregion.center
+    if smoothness:
+        points = _smooth_clipping_on_bounds(points, bounds, smoothness)
+    else:
+        points = _clip_on_bounds(points, bounds)
+    return points
+
+
 def _clip_on_bounds(sample, bounds):
     new_sample = np.clip(sample, a_min=bounds.lower, a_max=bounds.upper)
     return new_sample
+
+
+def _smooth_clipping_on_bounds(sample, bounds, smoothness):
+    lower, upper = (np.full_like(sample, bound) for bound in bounds)
+    sample = -logsumexp(-smoothness * np.stack((sample, upper)), axis=0) / smoothness
+    sample = logsumexp(smoothness * np.stack((sample, lower)), axis=0) / smoothness
+    return sample
 
 
 def _project_onto_unit_hull(x, ord):  # noqa: A002
     norm = np.linalg.norm(x, axis=1, ord=ord).reshape(-1, 1)
     projected = x / norm
     return projected
+
+
+def _add_existing_points(x, existing_xs):
+    if existing_xs is not None:
+        points = np.row_stack([x, existing_xs])
+    else:
+        points = x
+    return points
 
 
 def _get_effective_bounds(trustregion, bounds):
@@ -286,47 +313,3 @@ def _get_effective_n_points(target_size, existing_xs):
     else:
         n_points = target_size
     return n_points
-
-
-# ======================================================================================
-# Numba implementation of logsumexp and its derivative
-# ======================================================================================
-
-
-@njit
-def logsumexp_and_softmax(x):
-    _exp = np.exp(x)
-    _sum_exp = np.sum(_exp)
-    _logsumexp = np.log(_sum_exp)
-    _softmax = _exp / _sum_exp
-    return _logsumexp, _softmax
-
-
-@njit
-def logsumexp_and_derivative(x):
-
-    n_points, dim = x.shape
-    dim_out = n_points * (n_points - 1) // 2
-
-    dists = np.zeros(dim_out)
-    dists_jac = np.zeros((dim_out, n_points, dim))  # jac of pairwise-distances
-    counter = 0
-
-    for i in range(n_points):
-        for j in range(i + 1, n_points):
-
-            _dist = 0.0
-            for k in range(dim):
-                _diff = x[i, k] - x[j, k]
-                _dist += _diff**2
-                dists_jac[counter, i, k] = 2 * _diff
-                dists_jac[counter, j, k] = -2 * _diff
-
-            dists[counter] = _dist
-            counter += 1
-
-    func_val, smax = logsumexp_and_softmax(-dists)
-    jac_reshaped = dists_jac.reshape(dim_out, -1).T
-    der = -(jac_reshaped @ smax).reshape((n_points, dim))
-
-    return func_val, der
