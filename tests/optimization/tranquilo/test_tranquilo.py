@@ -17,18 +17,25 @@ _sample_filter = ["keep_all"]
 _fitter = ["ols"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
+_sample_size = ["quadratic"]
 test_cases_ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders"]
+_fitter = ["pounders_original", "pounders"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders", "quadratic"]
+_sample_size = ["quadratic"]
 test_cases_pounders = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
+_sample_filter = ["drop_pounders"]
+_fitter = ["ols"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["linear", "pounders", "quadratic"]
+test_cases_pounders_filtering = list(
+    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
+)
 
-
-TEST_CASES = test_cases_ols + test_cases_pounders
+TEST_CASES = test_cases_ols + test_cases_pounders + test_cases_pounders_filtering
 
 
 @pytest.mark.parametrize(
@@ -45,7 +52,7 @@ def test_internal_tranquilo_scalar_sphere_defaults(
         surrogate_model=surrogate_model,
         sample_size=sample_size,
     )
-    aaae(res["solution_x"], np.zeros(5), decimal=3)
+    aaae(res["solution_x"], np.zeros(5), decimal=5)
 
 
 def test_external_tranquilo_scalar_sphere_defaults():
@@ -69,15 +76,22 @@ _sample_size = ["linear", "pounders", "quadratic"]
 test_cases_ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders"]
+_fitter = ["pounders_original", "pounders"]
 _surrogate_model = ["linear", "quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 test_cases_pounders = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
+_sample_filter = ["drop_pounders"]
+_fitter = ["ols"]
+_surrogate_model = ["linear", "quadratic"]
+_sample_size = ["linear", "pounders", "quadratic"]
+test_cases_pounders_filtering = list(
+    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
+)
 
-TEST_CASES = test_cases_ols + test_cases_pounders
+TEST_CASES = test_cases_ols + test_cases_pounders + test_cases_pounders_filtering
 
 
 @pytest.mark.parametrize(

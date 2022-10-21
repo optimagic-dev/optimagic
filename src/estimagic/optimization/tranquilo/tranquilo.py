@@ -32,55 +32,66 @@ def _tranquilo(
     sampler="sphere",
     sample_filter="keep_all",
     fitter="ols",
-    surrogate_model="quadratic",
-    sample_size="quadratic",
     subsolver="bntr",
-    sampler_options=None,
+    sample_size="quadratic",
+    surrogate_model="quadratic",
     radius_options=None,
+    sampler_options=None,
     fit_options=None,
     solver_options=None,
     conv_options=None,
 ):
     """Find the local minimum to a noisy optimization problem.
+
     Args:
         criterion (callable): Function that return values of the objective function.
         x (np.ndarray): Initial guess for the parameter vector.
         functype (str): String indicating whether the criterion is a scalar, a
-            likelihood function or a least-square type of function.
+            likelihood function or a least-square type of function. Valid arguments
+            are:
+            - "scalar"
+            - "likelihood"
+            - "least_squares"
         lower_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with lower bounds
             for the parameter vector x.
         upper_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
         disable_convergence (bool): If True, check for convergence criterion and stop
             the iterations.
-        n_points_factor (int):
+        n_points_factor (int): Factor by which the target sample size is in-/decreased.
         stopping_max_iterations (int): Maximum number of iterations to run.
         random_seed (int): The seed used in random number generation.
         sample_filter (str): The method used to filter points in the current trust
             region.
-        sampler (str): The sampling function used to sample points from current
-            trust redion.
+        sampler (str): The sampling method used to sample points from the current
+            trust region.
         fitter (str): The method used to fit the surrogate model.
-        subsolver (str): The algorithm-function used for solving the nested surrogate
-            model.
-        sampler_options (dct or NoneType): Additional keyword arguments passed to the
-            sampler function.
+        subsolver (str): The algorithm used for solving the nested surrogate model.
+        sample_size (str): Target sample size. One of:
+            - "linear": n + 1
+            - "pounders": 2 * n + 1
+            - "quadratic: 0.5 * n * (n + 1) + n + 1
+        surrogate_model (str): Type of surrogate model to fit. Both a "linear" and
+            "quadratic" surrogate model are supported.
         radius_options (NemdTuple or NoneType): Options for trust-region radius
             management.
-        fit_options (dct or NoneType): Additional keyword arguments passed to the
-            fitter.
-        solver_options (dct or NoneType): Additional keyword arguments passed to the
-            sub-solver.
+        sampler_options (dict or NoneType): Additional keyword arguments passed to the
+            sampler function.
+        fit_options (dict or NoneType): Additional keyword arguments passed to the
+            fitter function.
+        solver_options (dict or NoneType): Additional keyword arguments passed to the
+            sub-solver function.
         conv_options (NamedTuple or NoneType): Criteria for successful convergence.
 
     Returns:
-        res (dct): Results dictionary with the following items:
+        (dict): Results dictionary with the following items:
             - solution_x (np.ndarray): Solution vector of shape (n,).
             - solution_criterion (np.ndarray): Values of the criterion function at the
                 solution vector. Shape (n_obs,).
             - states (list): The history of optimization as a list of the State objects.
             - message (str or NoneType): Message stating which convergence criterion,
                 if any has been reached at the end of optimization
+
     """
     warnings.warn(
         "Tranquilo is extremely experimental. algo_options and results will change "
@@ -89,19 +100,21 @@ def _tranquilo(
 
     sampling_rng = np.random.default_rng(random_seed)
 
-    if sampler_options is None:
-        sampler_options = {}
     if radius_options is None:
         radius_options = RadiusOptions()
+    if sampler_options is None:
+        sampler_options = {}
     if fit_options is None:
         fit_options = {}
+    if solver_options is None:
+        solver_options = {}
 
     if sample_size == "pounders":
         target_sample_size = 2 * len(x) + 1
     elif sample_size == "linear":
         target_sample_size = len(x) + 1
     elif sample_size == "quadratic":
-        target_sample_size = int(0.5 * len(x) * (len(x) + 1)) + len(x) + 1
+        target_sample_size = len(x) * (len(x) + 1) // 2 + len(x) + 1
 
     if surrogate_model == "linear":
         model_info = ModelInfo(has_squares=False, has_interactions=False)
@@ -113,9 +126,6 @@ def _tranquilo(
         target_sample_size = len(x) + 1
 
     target_sample_size = int(n_points_factor * target_sample_size)
-
-    if solver_options is None:
-        solver_options = {}
 
     if functype == "scalar":
         aggregator = "identity_linear" if surrogate_model == "linear" else "identity"
@@ -229,6 +239,7 @@ def _tranquilo(
             step=candidate_x - state.x,
             options=radius_options,
         )
+
         if actual_improvement > 0:
             trustregion = trustregion._replace(center=candidate_x, radius=new_radius)
             state = State(
@@ -251,7 +262,7 @@ def _tranquilo(
 
         states.append(state)
 
-        if actual_improvement > 0 and not disable_convergence:
+        if actual_improvement >= 0 and not disable_convergence:
             converged, msg = _is_converged(states=states, options=conv_options)
             if converged:
                 break
