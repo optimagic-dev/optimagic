@@ -6,10 +6,20 @@ from estimagic import second_derivative
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.tranquilo.fit_models import _get_current_fit_pounders
 from estimagic.optimization.tranquilo.fit_models import (
+    _get_current_fit_pounders_original,
+)
+from estimagic.optimization.tranquilo.fit_models import _get_feature_matrices_pounders
+from estimagic.optimization.tranquilo.fit_models import (
+    _get_feature_matrices_pounders_original,
+)
+from estimagic.optimization.tranquilo.fit_models import (
     _interactions_and_square_features,
 )
 from estimagic.optimization.tranquilo.fit_models import _polynomial_features
 from estimagic.optimization.tranquilo.fit_models import _reshape_square_terms_to_hess
+from estimagic.optimization.tranquilo.fit_models import (
+    _transform_interactions_and_square_terms_back,
+)
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
 from numpy.testing import assert_array_almost_equal
@@ -25,9 +35,6 @@ def aaae(x, y, case=None):
     assert_array_almost_equal(x, y, decimal=tolerance[case])
 
 
-# ======================================================================================
-# Pounders test data
-# ======================================================================================
 def read_yaml(path):
     with open(rf"{path}") as file:
         data = yaml.full_load(file)
@@ -35,66 +42,24 @@ def read_yaml(path):
     return data
 
 
-def _transform_hess(hess):
+def _transform_square_terms_to_pounders(square_terms, n_params, n_residuals):
 
-    n_residuals, n_params, _ = hess.shape
-
-    for resid in range(n_residuals):
+    for k in range(n_residuals):
+        num = 0
         for i in range(n_params):
-            hess[resid, i, i] *= 0.5
+            square_terms[k, i, i] *= 0.5
+            num += 1
             for j in range(i + 1, n_params):
-                hess[resid, i, j] /= np.sqrt(2)
-                hess[resid, j, i] /= np.sqrt(2)
+                square_terms[k, j, i] /= np.sqrt(2)
+                square_terms[k, i, j] /= np.sqrt(2)
+                num += 1
 
-    return hess
-
-
-@pytest.fixture
-def data_fit_residual_model():
-    test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
-
-    n_params = 3
-    n_samples = 2 * n_params + 1
-    n_poly_features = n_params * (n_params + 1) // 2
-    _is_just_identified = False
-
-    inputs_dict = {
-        "y": np.array(test_data["f_interpolated"]),
-        "m_mat": np.array(test_data["x_sample_monomial_basis"])[
-            : n_params + 1, : n_params + 1
-        ],
-        "n_mat": np.array(test_data["monomial_basis"])[:n_samples],
-        "z_mat": np.array(test_data["basis_null_space"]),
-        "n_z_mat": np.array(test_data["lower_triangular"])[:, n_params + 1 : n_samples],
-        "n_params": n_params,
-        "n_poly_features": n_poly_features,
-        "has_intercepts": False,
-        "_is_just_identified": _is_just_identified,
-    }
-
-    expected = {
-        "linear_terms": np.array(test_data["linear_terms_expected"]),
-        "square_terms": np.array(test_data["square_terms_expected"]),
-    }
-
-    return inputs_dict, expected
+    return square_terms
 
 
-def test_fit_residual_model(data_fit_residual_model):
-    inputs, expected = data_fit_residual_model
-    n_params = inputs["n_params"]
-    n_residuals = 214
-
-    coef = _get_current_fit_pounders(**inputs)
-    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
-
-    square_terms = _reshape_square_terms_to_hess(
-        _square_terms, n_params, n_residuals, True
-    )
-    square_terms = _transform_hess(square_terms)
-
-    assert_array_almost_equal(square_terms, expected["square_terms"])
-    assert_array_almost_equal(linear_terms, expected["linear_terms"])
+# ======================================================================================
+# Fixtures
+# ======================================================================================
 
 
 @pytest.fixture
@@ -170,6 +135,81 @@ def just_identified_case():
     return out
 
 
+@pytest.fixture
+def data_fit_pounders():
+    """Test data from Tao Pounders."""
+    test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
+
+    n_params = 3
+    n_samples = 2 * n_params + 1
+    n_poly_features = n_params * (n_params + 1) // 2
+    _is_just_identified = False
+
+    inputs_dict = {
+        "y": np.array(test_data["f_interpolated"]),
+        "m_mat": np.array(test_data["x_sample_monomial_basis"])[
+            : n_params + 1, : n_params + 1
+        ],
+        "n_mat": np.array(test_data["monomial_basis"])[:n_samples],
+        "z_mat": np.array(test_data["basis_null_space"]),
+        "n_z_mat": np.array(test_data["lower_triangular"])[:, n_params + 1 : n_samples],
+        "n_params": n_params,
+        "n_poly_features": n_poly_features,
+        "has_intercepts": False,
+        "_is_just_identified": _is_just_identified,
+    }
+
+    expected = {
+        "linear_terms": np.array(test_data["linear_terms_expected"]),
+        "square_terms": np.array(test_data["square_terms_expected"]),
+    }
+
+    return inputs_dict, expected
+
+
+@pytest.fixture
+def data_get_feature_matrices_pounders():
+    test_data = read_yaml(
+        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
+    )
+
+    n_params = 3
+    n_samples = 2 * n_params + 1
+    n_poly_features = n_params * (n_params + 1) // 2
+    center = np.array(test_data["x_accepted"])
+    radius = test_data["delta"]
+
+    model_indices = np.array([13, 12, 11, 10, 9, 8, 6])
+    history_x = np.array(test_data["history_x"])
+    x = (history_x[model_indices] - center) / radius
+
+    inputs_dict = {
+        "x": x,
+        "model_indices": np.array(test_data["model_indices"]),
+        "n_params": n_params,
+        "n_samples": n_samples,
+        "n_poly_features": n_poly_features,
+    }
+
+    expected = {
+        "m_mat": np.array(test_data["x_sample_monomial_basis_expected"])[
+            : n_params + 1, : n_params + 1
+        ],
+        "n_mat": np.array(test_data["monomial_basis_expected"]),
+        "z_mat": np.array(test_data["basis_null_space_expected"]),
+        "n_z_mat": np.array(test_data["lower_triangular_expected"])[
+            :, n_params + 1 : n_samples
+        ],
+    }
+
+    return inputs_dict, expected
+
+
+# ======================================================================================
+# Tests
+# ======================================================================================
+
+
 def test_fit_ols_against_truth(quadratic_case):
     fit_ols = get_fitter("ols")
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
@@ -232,9 +272,6 @@ def test_pounders_experimental_no_intercepts(scenario, request):
     assert got.intercepts is None
     aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
     aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
-
-
-# =====================================================================================
 
 
 @pytest.mark.parametrize("model", ["ols", "ridge"])
@@ -313,3 +350,93 @@ def test_square_features_pounders(has_squares):
     )
 
     assert_array_equal(polynomial_features, expected[(has_intercepts, has_squares)])
+
+
+def test_polynomial_feature_matrices_pounders_original(
+    data_get_feature_matrices_pounders,
+):
+    inputs, expected = data_get_feature_matrices_pounders
+
+    x = inputs["x"]
+    model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
+
+    m_mat, n_mat, z_mat, n_z_mat = _get_feature_matrices_pounders_original(
+        x, model_info
+    )
+
+    assert_array_almost_equal(m_mat, expected["m_mat"])
+    assert_array_almost_equal(n_mat, expected["n_mat"])
+    assert_array_almost_equal(z_mat, expected["z_mat"])
+    assert_array_almost_equal(n_z_mat, expected["n_z_mat"])
+
+
+def test_polynomial_feature_matrices_pounders(
+    data_get_feature_matrices_pounders,
+):
+    inputs, expected = data_get_feature_matrices_pounders
+
+    x = inputs["x"]
+    model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
+
+    m_mat, _n_mat, z_mat, _n_z_mat = _get_feature_matrices_pounders(x, model_info)
+
+    assert_array_almost_equal(m_mat, expected["m_mat"])
+    assert_array_almost_equal(z_mat, expected["z_mat"])
+
+
+def test_get_current_fit_pounders_original(data_fit_pounders):
+    inputs, expected = data_fit_pounders
+    n_params = inputs["n_params"]
+    n_residuals = 214
+    has_squares = True
+
+    coef = _get_current_fit_pounders_original(**inputs, has_squares=has_squares)
+    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
+
+    square_terms = _reshape_square_terms_to_hess(
+        _square_terms, n_params, n_residuals, has_squares
+    )
+
+    assert_array_almost_equal(linear_terms, expected["linear_terms"])
+    assert_array_almost_equal(square_terms, expected["square_terms"])
+
+
+def test_get_current_fit_pounders_transform_after_reshaping(data_fit_pounders):
+    inputs, expected = data_fit_pounders
+    n_params = inputs["n_params"]
+    has_squares = True
+    n_residuals = 214
+
+    coef = _get_current_fit_pounders(**inputs)
+    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
+
+    _square_terms = _reshape_square_terms_to_hess(
+        _square_terms, n_params, n_residuals, has_squares
+    )
+    square_terms = _transform_square_terms_to_pounders(
+        _square_terms, n_params, n_residuals
+    )
+
+    assert_array_almost_equal(linear_terms, expected["linear_terms"])
+    assert_array_almost_equal(square_terms, expected["square_terms"])
+
+
+@pytest.mark.xfail
+def test_get_current_fit_pounders_transform_before_reshaping(data_fit_pounders):
+    inputs, expected = data_fit_pounders
+    n_params = inputs["n_params"]
+    has_squares = True
+    n_residuals = 214
+
+    coef = _get_current_fit_pounders(**inputs)
+    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
+
+    square_terms = _transform_interactions_and_square_terms_back(
+        _square_terms, n_params, has_squares
+    )
+    square_terms = _reshape_square_terms_to_hess(
+        square_terms, n_params, n_residuals, has_squares
+    )
+
+    assert_array_almost_equal(linear_terms, expected["linear_terms"])
+    assert_array_almost_equal(square_terms, expected["square_terms"])

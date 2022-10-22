@@ -36,10 +36,7 @@ pounders_discard_all = list(
 )
 
 _sample_filter = ["keep_all"]
-_fitter = [
-    "pounders",
-    "_pounders_experimental",
-]
+_fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 pounders_keep_all = list(
@@ -47,7 +44,7 @@ pounders_keep_all = list(
 )
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["ols", "pounders", "_pounders_experimental"]
+_fitter = ["ols", "pounders", "_pounders_experimental", "_pounders_original"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 pounders_filtering = list(
@@ -81,15 +78,10 @@ def test_internal_tranquilo_scalar_sphere_defaults(
 # ======================================================================================
 
 _sample_filter = ["discard_all"]
-_fitter = [
-    "pounders",
-    "_pounders_experimental",
-]
+_fitter = ["ols"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders"]
-pounders_discard_all = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
+_sample_size = ["linear"]
+ols_discard_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["keep_all"]
 _fitter = ["ols"]
@@ -98,13 +90,14 @@ _sample_size = ["linear"]
 ols_keep_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["ols"]
+_fitter = ["pounders", "_pounders_experimental"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["linear"]
-ols_discard_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
+_sample_size = ["pounders"]
+pounders_discard_all = list(
+    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
+)
 
-
-TEST_CASES_IMPRECISE = ols_keep_all + ols_discard_all + pounders_discard_all
+TEST_CASES_IMPRECISE = ols_discard_all + ols_keep_all + pounders_discard_all
 
 
 @pytest.mark.parametrize(
@@ -129,17 +122,22 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 # ======================================================================================
 
 _sample_filter = ["discard_all"]
-_fitter = [
-    "pounders",
-    "_pounders_experimental",
-]
+_fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear"]
 pounders_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
-TEST_CASES_PROBLEMATIC = pounders_discard_all
+_sample_filter = ["discard_all"]
+_fitter = ["_pounders_original"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["pounders"]
+pounders_original = list(
+    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
+)
+
+TEST_CASES_PROBLEMATIC = pounders_discard_all + pounders_original
 
 
 @pytest.mark.xfail
@@ -179,7 +177,6 @@ def test_external_tranquilo_scalar_sphere_defaults():
 # Least-squares Tranquilo
 # ======================================================================================
 
-
 _sample_filter = ["keep_all", "discard_all"]
 _fitter = ["ols"]
 _surrogate_model = ["linear", "quadratic"]
@@ -187,7 +184,7 @@ _sample_size = ["linear", "pounders", "quadratic"]
 ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders", "_pounders_experimental"]
+_fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
 _surrogate_model = ["linear", "quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 pounders_discard_all = list(
@@ -195,7 +192,7 @@ pounders_discard_all = list(
 )
 
 _sample_filter = ["keep_all"]
-_fitter = ["pounders"]
+_fitter = ["pounders", "_pounders_original"]
 _surrogate_model = ["linear"]
 _sample_size = ["linear", "pounders", "quadratic"]
 pounders_keep_all = list(
@@ -203,7 +200,7 @@ pounders_keep_all = list(
 )
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["ols", "pounders", "_pounders_experimental"]
+_fitter = ["ols", "pounders", "_pounders_experimental", "_pounders_original"]
 _surrogate_model = ["linear", "quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 pounders_filtering = list(
