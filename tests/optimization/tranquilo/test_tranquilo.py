@@ -44,15 +44,28 @@ pounders_keep_all = list(
 )
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["ols", "pounders", "_pounders_experimental", "_pounders_original"]
+_fitter = ["ols", "pounders", "_pounders_experimental"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
+_sample_filter = ["drop_pounders"]
+_fitter = ["_pounders_original"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["pounders", "quadratic"]
+pounders_original = list(
+    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
+)
+
 TEST_CASES = (
-    ols + ols_keep_all + pounders_discard_all + pounders_keep_all + pounders_filtering
+    ols
+    + ols_keep_all
+    + pounders_discard_all
+    + pounders_keep_all
+    + pounders_filtering
+    + pounders_original
 )
 
 
@@ -77,12 +90,6 @@ def test_internal_tranquilo_scalar_sphere_defaults(
 # Imprecise defaults
 # ======================================================================================
 
-_sample_filter = ["discard_all"]
-_fitter = ["ols"]
-_surrogate_model = ["quadratic"]
-_sample_size = ["linear"]
-ols_discard_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
-
 _sample_filter = ["keep_all"]
 _fitter = ["ols"]
 _surrogate_model = ["quadratic"]
@@ -97,7 +104,7 @@ pounders_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
-TEST_CASES_IMPRECISE = ols_discard_all + ols_keep_all + pounders_discard_all
+TEST_CASES_IMPRECISE = ols_keep_all + pounders_discard_all
 
 
 @pytest.mark.parametrize(
@@ -122,6 +129,12 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 # ======================================================================================
 
 _sample_filter = ["discard_all"]
+_fitter = ["ols"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["linear"]
+ols_discard_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
+
+_sample_filter = ["discard_all"]
 _fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear"]
@@ -133,11 +146,25 @@ _sample_filter = ["discard_all"]
 _fitter = ["_pounders_original"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["pounders"]
-pounders_original = list(
+pounders_original_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
-TEST_CASES_PROBLEMATIC = pounders_discard_all + pounders_original
+_sample_filter = ["drop_pounders"]
+_fitter = ["_pounders_original"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["linear"]
+pounders_original_pounders_filtering = list(
+    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
+)
+
+
+TEST_CASES_PROBLEMATIC = (
+    ols_discard_all
+    + pounders_discard_all
+    + pounders_original_discard_all
+    + pounders_original_pounders_filtering
+)
 
 
 @pytest.mark.xfail
