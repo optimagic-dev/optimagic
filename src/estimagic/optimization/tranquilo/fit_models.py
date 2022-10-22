@@ -43,8 +43,8 @@ def get_fitter(fitter, user_options=None, model_info=None):
     built_in_fitters = {
         "ols": fit_ols,
         "ridge": fit_ridge,
-        "pounders": fit_pounders_experimental,
-        "pounders_original": fit_pounders,
+        "pounders": fit_pounders,
+        "_pounders_experimental": fit_pounders_experimental,
         "flexible": fit_flexible,
     }
 
@@ -414,7 +414,7 @@ def _get_feature_matrices_pounders_experimental(x, model_info):
     n_samples, n_params = x.shape
     _is_just_identified = n_samples == (n_params + 1)
     has_squares = model_info.has_squares
-    has_intercepts = model_info.has_intercepts
+    has_intercepts = True
 
     if has_squares:
         n_poly_features = n_params * (n_params + 1) // 2
@@ -465,7 +465,7 @@ def _get_feature_matrices_pounders(x, model_info):
 
     for i in range(n_samples):
         m_mat[i, 1:] = x[i]
-        n_mat[i, :] = _square_features(m_mat[i, 1:], has_squares)
+        n_mat[i, :] = _interactions_and_square_features(m_mat[i, 1:], has_squares)
 
     m_mat_pad = np.zeros((n_samples, n_samples))
     m_mat_pad[:, : n_params + 1] = m_mat
@@ -518,7 +518,6 @@ def _reshape_square_terms_to_hess(square_terms, n_params, n_residuals, has_squar
 @njit
 def _polynomial_features(x, has_intercepts, has_squares):
     n_samples, n_params = x.shape
-    has_intercepts = True
 
     if has_squares:
         n_poly_terms = n_params * (n_params + 1) // 2
@@ -545,7 +544,7 @@ def _polynomial_features(x, has_intercepts, has_squares):
 
 
 @njit
-def _square_features(x, has_squares):
+def _interactions_and_square_features(x, has_squares):
     x = np.atleast_2d(x)
     n_samples, n_params = x.shape
 

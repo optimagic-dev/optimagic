@@ -2,6 +2,9 @@ import numpy as np
 import pytest
 from estimagic import first_derivative
 from estimagic import second_derivative
+from estimagic.optimization.tranquilo.fit_models import (
+    _interactions_and_square_features,
+)
 from estimagic.optimization.tranquilo.fit_models import _polynomial_features
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
@@ -112,11 +115,11 @@ def test_fit_pounders_against_truth(scenario, request):
 
 
 @pytest.mark.parametrize("scenario", ["just_identified_case", "quadratic_case"])
-def test_fit_original_pounders_against_truth(scenario, request):
+def test_fit_pounders_experimental_against_truth(scenario, request):
     test_case = request.getfixturevalue(scenario)
 
     model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
-    fit_pounders = get_fitter("pounders_original", model_info=model_info)
+    fit_pounders = get_fitter("_pounders_experimental", model_info=model_info)
     got = fit_pounders(test_case["x"], test_case["y"])
 
     aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
@@ -131,9 +134,10 @@ def test_pounders_no_intercepts(scenario, request):
     model_info = ModelInfo(
         has_intercepts=False, has_squares=True, has_interactions=True
     )
-    fit_pounders = get_fitter("pounders_original", model_info=model_info)
+    fit_pounders = get_fitter("pounders", model_info=model_info)
     got = fit_pounders(test_case["x"], test_case["y"])
 
+    assert got.intercepts is None
     aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
     aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
 
@@ -146,9 +150,10 @@ def test_pounders_experimental_no_intercepts(scenario, request):
     model_info = ModelInfo(
         has_intercepts=False, has_squares=True, has_interactions=True
     )
-    fit_pounders = get_fitter("pounders", model_info=model_info)
+    fit_pounders = get_fitter("_pounders_experimental", model_info=model_info)
     got = fit_pounders(test_case["x"], test_case["y"])
 
+    assert got.intercepts is None
     aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
     aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
 
@@ -208,3 +213,27 @@ def test_polynomial_features(has_intercepts, has_squares):
     )
 
     assert_array_equal(got, expected[(has_intercepts, has_squares)])
+
+
+@pytest.mark.parametrize("has_squares", [False, True])
+def test_square_features_pounders(has_squares):
+    has_intercepts = False
+
+    x = np.array([[0, 1, 2], [3, 4, 5]])
+
+    expected = {
+        # (has_intercepts, has_squares): expected value,
+        (False, True): np.array(
+            [[0, 1, 2, 0, 0, 0, 1, 2, 4], [3, 4, 5, 9, 12, 15, 16, 20, 25]]
+        ),
+        (False, False): np.array([[0, 1, 2, 0, 0, 2], [3, 4, 5, 12, 15, 20]]),
+    }
+
+    got_interactions_and_square_features = _interactions_and_square_features(
+        x, has_squares=has_squares
+    )
+    polynomial_features = np.concatenate(
+        (x, got_interactions_and_square_features), axis=1
+    )
+
+    assert_array_equal(polynomial_features, expected[(has_intercepts, has_squares)])

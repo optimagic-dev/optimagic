@@ -21,7 +21,10 @@ _sample_size = ["quadratic"]
 test_cases_ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders_original", "pounders"]
+_fitter = [
+    "pounders",
+    "_pounders_experimental",
+]
 _surrogate_model = ["quadratic"]
 _sample_size = ["quadratic"]
 test_cases_pounders = list(
@@ -76,7 +79,7 @@ _sample_size = ["linear", "pounders", "quadratic"]
 test_cases_ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders_original", "pounders"]
+_fitter = ["pounders", "_pounders_experimental"]
 _surrogate_model = ["linear", "quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 test_cases_pounders = list(
