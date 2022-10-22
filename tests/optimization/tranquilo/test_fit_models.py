@@ -1,11 +1,15 @@
 import numpy as np
 import pytest
+import yaml
 from estimagic import first_derivative
 from estimagic import second_derivative
+from estimagic.config import TEST_FIXTURES_DIR
+from estimagic.optimization.tranquilo.fit_models import _get_current_fit_pounders
 from estimagic.optimization.tranquilo.fit_models import (
     _interactions_and_square_features,
 )
 from estimagic.optimization.tranquilo.fit_models import _polynomial_features
+from estimagic.optimization.tranquilo.fit_models import _reshape_square_terms_to_hess
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
 from numpy.testing import assert_array_almost_equal
@@ -19,6 +23,78 @@ def aaae(x, y, case=None):
         "gradient": 3,
     }
     assert_array_almost_equal(x, y, decimal=tolerance[case])
+
+
+# ======================================================================================
+# Pounders test data
+# ======================================================================================
+def read_yaml(path):
+    with open(rf"{path}") as file:
+        data = yaml.full_load(file)
+
+    return data
+
+
+def _transform_hess(hess):
+
+    n_residuals, n_params, _ = hess.shape
+
+    for resid in range(n_residuals):
+        for i in range(n_params):
+            hess[resid, i, i] *= 0.5
+            for j in range(i + 1, n_params):
+                hess[resid, i, j] /= np.sqrt(2)
+                hess[resid, j, i] /= np.sqrt(2)
+
+    return hess
+
+
+@pytest.fixture
+def data_fit_residual_model():
+    test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
+
+    n_params = 3
+    n_samples = 2 * n_params + 1
+    n_poly_features = n_params * (n_params + 1) // 2
+    _is_just_identified = False
+
+    inputs_dict = {
+        "y": np.array(test_data["f_interpolated"]),
+        "m_mat": np.array(test_data["x_sample_monomial_basis"])[
+            : n_params + 1, : n_params + 1
+        ],
+        "n_mat": np.array(test_data["monomial_basis"])[:n_samples],
+        "z_mat": np.array(test_data["basis_null_space"]),
+        "n_z_mat": np.array(test_data["lower_triangular"])[:, n_params + 1 : n_samples],
+        "n_params": n_params,
+        "n_poly_features": n_poly_features,
+        "has_intercepts": False,
+        "_is_just_identified": _is_just_identified,
+    }
+
+    expected = {
+        "linear_terms": np.array(test_data["linear_terms_expected"]),
+        "square_terms": np.array(test_data["square_terms_expected"]),
+    }
+
+    return inputs_dict, expected
+
+
+def test_fit_residual_model(data_fit_residual_model):
+    inputs, expected = data_fit_residual_model
+    n_params = inputs["n_params"]
+    n_residuals = 214
+
+    coef = _get_current_fit_pounders(**inputs)
+    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
+
+    square_terms = _reshape_square_terms_to_hess(
+        _square_terms, n_params, n_residuals, True
+    )
+    square_terms = _transform_hess(square_terms)
+
+    assert_array_almost_equal(square_terms, expected["square_terms"])
+    assert_array_almost_equal(linear_terms, expected["linear_terms"])
 
 
 @pytest.fixture

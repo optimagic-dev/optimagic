@@ -21,7 +21,7 @@ ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 _sample_filter = ["keep_all"]
 _fitter = ["ols"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["linear", "pounders"]
+_sample_size = ["pounders"]
 ols_keep_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
@@ -91,6 +91,12 @@ pounders_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
+_sample_filter = ["keep_all"]
+_fitter = ["ols"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["linear"]
+ols_keep_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
+
 _sample_filter = ["discard_all"]
 _fitter = ["ols"]
 _surrogate_model = ["quadratic"]
@@ -98,7 +104,7 @@ _sample_size = ["linear"]
 ols_discard_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 
-TEST_CASES_IMPRECISE = ols_discard_all + pounders_discard_all
+TEST_CASES_IMPRECISE = ols_keep_all + ols_discard_all + pounders_discard_all
 
 
 @pytest.mark.parametrize(

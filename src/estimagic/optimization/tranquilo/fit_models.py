@@ -255,7 +255,7 @@ def _fit_ridge(x, y, penalty):
 def fit_flexible(x, y, model_info):
     """Fit a linear model using a flexible fitting method.
 
-    For
+    For:
     - n + 1 points: Fit ols with linear feature matrix.
     - n + 2 <= n + 0.5 * n * (n + 1) points, i.e. until one less than a
         just identified quadratic model: Fit pounders.
@@ -289,7 +289,7 @@ def fit_flexible(x, y, model_info):
 
 
 def fit_pounders_experimental(x, y, model_info):
-    """Fit a linear model using the pounders fitting method.
+    """Fit a linear model using the experimental pounders fitting method.
 
     The solution represents the quadratic whose Hessian matrix is of
     minimum Frobenius norm.
