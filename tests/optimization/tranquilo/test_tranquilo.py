@@ -44,12 +44,26 @@ pounders_keep_all = list(
 )
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["ols", "pounders", "_pounders_experimental"]
+_fitter = ["ols"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["pounders", "quadratic"]
+ols_pounders_filtering = list(
+    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
+)
+
+_sample_filter = ["drop_pounders"]
+_fitter = ["_pounders_experimental"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "pounders", "quadratic"]
 pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
+
+_sample_filter = ["drop_pounders"]
+_fitter = ["pounders"]
+_surrogate_model = ["quadratic"]
+_sample_size = ["pounders", "quadratic"]
+pounders = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["drop_pounders"]
 _fitter = ["_pounders_original"]
@@ -64,7 +78,9 @@ TEST_CASES = (
     + ols_keep_all
     + pounders_discard_all
     + pounders_keep_all
+    + ols_pounders_filtering
     + pounders_filtering
+    + pounders
     + pounders_original
 )
 
@@ -128,7 +144,7 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 # Problematic defaults
 # ======================================================================================
 
-_sample_filter = ["discard_all"]
+_sample_filter = ["discard_all", "drop_pounders"]
 _fitter = ["ols"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear"]
@@ -151,10 +167,10 @@ pounders_original_discard_all = list(
 )
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["_pounders_original"]
+_fitter = ["_pounders_original", "pounders"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear"]
-pounders_original_pounders_filtering = list(
+pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
@@ -163,7 +179,7 @@ TEST_CASES_PROBLEMATIC = (
     ols_discard_all
     + pounders_discard_all
     + pounders_original_discard_all
-    + pounders_original_pounders_filtering
+    + pounders_filtering
 )
 
 
