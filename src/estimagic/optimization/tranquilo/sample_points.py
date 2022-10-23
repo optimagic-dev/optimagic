@@ -270,7 +270,9 @@ def _pairwise_distance_on_hull(x, existing_xs, ord):  # noqa: A002
 
     if existing_xs is not None:
         sample = np.row_stack([x, existing_xs])
-        slc = slice(0, -len(existing_xs) * (len(existing_xs) - 1) / 2)
+        n_existing_pairs = len(existing_xs) * (len(existing_xs) - 1) // 2
+        slc = slice(0, -max(1, n_existing_pairs))  # if len(existing_xs) == 1 the no. of
+        # pairs is zero, hence the max operation
     else:
         sample = x
         slc = slice(None)

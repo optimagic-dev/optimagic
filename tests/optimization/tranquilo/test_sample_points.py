@@ -64,6 +64,22 @@ def test_enough_existing_points(sampler):
     assert calculated.size == 0
 
 
+@pytest.mark.parametrize("sampler", ["optimal_cube", "optimal_sphere"])
+def test_optimization_ignores_existing_points(sampler):
+    sampler = get_sampler(
+        sampler=sampler,
+        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
+    )
+    calculated = sampler(
+        trustregion=TrustRegion(center=np.zeros(3), radius=1),
+        target_size=5,
+        existing_xs=np.ones((2, 3)),  # same point implies min distance of zero always
+        rng=np.random.default_rng(1234),
+    )
+
+    assert pdist(calculated).min() > 0
+
+
 @pytest.mark.parametrize("sampler", ["sphere", "cube"])
 def test_optimality(sampler):
     # test that optimal versions of hull samplers produce better criterion value
