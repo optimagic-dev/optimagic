@@ -184,8 +184,9 @@ def _optimal_hull_sampler(
 
     Points are sampled optimally on a hull (of a sphere for ord=2 and of a cube for
     ord=np.inf), where the criterion that is maximized is the (smooth) minimum distance
-    of all pairs of points. These points are then mapped into the feasible region, which
-    is defined by the intersection of the trustregion and the bounds.
+    of all pairs of points, except for pairs of existing points. These points are then
+    mapped into the feasible region, which is defined by the intersection of the
+    trustregion and the bounds.
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
@@ -271,8 +272,7 @@ def _pairwise_distance_on_hull(x, existing_xs, ord):  # noqa: A002
     if existing_xs is not None:
         sample = np.row_stack([x, existing_xs])
         n_existing_pairs = len(existing_xs) * (len(existing_xs) - 1) // 2
-        slc = slice(0, -max(1, n_existing_pairs))  # if len(existing_xs) == 1 the no. of
-        # pairs is zero, hence the max operation
+        slc = slice(0, -n_existing_pairs) if n_existing_pairs else slice(None)
     else:
         sample = x
         slc = slice(None)
