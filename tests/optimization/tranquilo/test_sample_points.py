@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import TrustRegion
-from estimagic.optimization.tranquilo.sample_points import _add_existing_points
 from estimagic.optimization.tranquilo.sample_points import _pairwise_distance_on_hull
 from estimagic.optimization.tranquilo.sample_points import _project_onto_unit_hull
 from estimagic.optimization.tranquilo.sample_points import get_sampler
@@ -115,13 +114,3 @@ def test_project_onto_unit_hull(ord):  # noqa: A002
 
     norm = np.linalg.norm(new, axis=1, ord=ord)
     aaae(1, norm)
-
-
-def test_add_existing_points():
-
-    x = np.ones((2, 2))
-    points = _add_existing_points(x, None)
-    aaae(points, x)
-
-    points = _add_existing_points(x, x)
-    aaae(points, np.row_stack([x, x]))

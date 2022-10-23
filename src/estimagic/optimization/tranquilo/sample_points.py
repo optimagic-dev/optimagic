@@ -267,8 +267,18 @@ def _pairwise_distance_on_hull(x, existing_xs, ord):  # noqa: A002
 
     """
     x = _project_onto_unit_hull(x, ord=ord)
-    sample = _add_existing_points(x, existing_xs=existing_xs)
+
+    if existing_xs is not None:
+        sample = np.row_stack([x, existing_xs])
+        slc = slice(0, -len(existing_xs) * (len(existing_xs) - 1) / 2)
+    else:
+        sample = x
+        slc = slice(None)
+
     dist = pdist(sample) ** 2  # pairwise squared distances
+    dist = dist[slc]  # drop distances between existing points as they should not
+    # influence the optimization
+
     crit_value = -logsumexp(-dist)  # smooth minimum
     return crit_value
 
@@ -304,14 +314,6 @@ def _project_onto_unit_hull(x, ord):  # noqa: A002
     norm = np.linalg.norm(x, axis=1, ord=ord).reshape(-1, 1)
     projected = x / norm
     return projected
-
-
-def _add_existing_points(x, existing_xs):
-    if existing_xs is not None:
-        points = np.row_stack([x, existing_xs])
-    else:
-        points = x
-    return points
 
 
 def _get_effective_bounds(trustregion, bounds):
