@@ -1,32 +1,24 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
-from typing import NamedTuple
-from typing import Union
-
 import numpy as np
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
-    minimize_trust_cg,
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+    minimize_trust_cg_fast,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
-    minimize_trust_stcg,
+from estimagic.optimization.subsolvers._steihaug_toint_quadratic_fast import (
+    minimize_trust_stcg_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    minimize_trust_trsbox_fast,
+)
 from numba import njit
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
 
-class ActiveBounds(NamedTuple):
-    lower: Union[np.ndarray, None] = None
-    upper: Union[np.ndarray, None] = None
-    fixed: Union[np.ndarray, None] = None
-    active: Union[np.ndarray, None] = None
-    inactive: Union[np.ndarray, None] = None
-
-
 @njit
 def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
     x_candidate,
-    model,
+    model_gradient,
+    model_hessian,
     lower_bounds,
     upper_bounds,
     maxiter_gradient_descent,
@@ -51,25 +43,33 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
     convergence_reason = 0
 
     criterion_candidate = _evaluate_model_criterion(
-        x_candidate, model.linear_terms, model.square_terms
+        x_candidate, model_gradient, model_hessian
     )
 
-    active_bounds_info = get_information_on_active_bounds_fast(
+    (
+        active_lower_bounds,
+        active_upper_bounds,
+        active_fixed_bounds,
+        active_all_bounds,
+        inactive_bounds,
+    ) = get_information_on_active_bounds_fast(
         x_candidate,
-        model.linear_terms,
+        model_gradient,
         lower_bounds,
         upper_bounds,
     )
 
-    gradient_unprojected = _evaluate_model_gradient(x_candidate, model)
-    gradient_projected = project_gradient_onto_feasible_set(
-        gradient_unprojected, active_bounds_info
+    gradient_unprojected = _evaluate_model_gradient(
+        x_candidate, model_gradient, model_hessian
     )
-    converged, convergence_reason = check_for_convergence(
+    gradient_projected = project_gradient_onto_feasible_set(
+        gradient_unprojected, inactive_bounds
+    )
+    converged, convergence_reason = check_for_convergence_fast(
         x_candidate=x_candidate,
         f_candidate=criterion_candidate,
         gradient_candidate=gradient_unprojected,
-        model=model,
+        model_gradient=model_gradient,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         converged=converged,
@@ -82,11 +82,11 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
     )
 
     if converged:
-        hessian_inactive = model.square_terms
+        hessian_inactive = model_hessian
         trustregion_radius = default_radius
     else:
         hessian_inactive = find_hessian_submatrix_where_bounds_inactive_fast(
-            model.square_terms, active_bounds_info.inactive
+            model_hessian, inactive_bounds
         )
 
         (
@@ -95,15 +95,16 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
             step_size_gradient_descent,
             trustregion_radius,
             radius_lower_bound,
-        ) = perform_gradient_descent_step(
+        ) = perform_gradient_descent_step_fast(
             x_candidate=x_candidate,
             f_candidate_initial=criterion_candidate,
             gradient_projected=gradient_projected,
             hessian_inactive=hessian_inactive,
-            model=model,
+            model_gradient=model_gradient,
+            model_hessian=model_hessian,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
-            active_bounds_info=active_bounds_info,
+            inactive_bounds=inactive_bounds,
             maxiter_steepest_descent=maxiter_gradient_descent,
             default_radius=default_radius,
             theta=theta,
@@ -126,8 +127,16 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
                 x_unbounded, lower_bounds, upper_bounds
             )
 
-            gradient_unprojected = _evaluate_model_gradient(x_candidate, model)
-            active_bounds_info = get_information_on_active_bounds_fast(
+            gradient_unprojected = _evaluate_model_gradient(
+                x_candidate, model_gradient, model_hessian
+            )
+            (
+                active_lower_bounds,
+                active_upper_bounds,
+                active_fixed_bounds,
+                active_all_bounds,
+                inactive_bounds,
+            ) = get_information_on_active_bounds_fast(
                 x_candidate,
                 gradient_unprojected,
                 lower_bounds,
@@ -135,17 +144,17 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
             )
 
             gradient_projected = project_gradient_onto_feasible_set(
-                gradient_unprojected, active_bounds_info
+                gradient_unprojected, inactive_bounds
             )
             hessian_inactive = find_hessian_submatrix_where_bounds_inactive_fast(
-                model.square_terms, active_bounds_info.inactive
+                model_hessian, inactive_bounds
             )
 
-            converged, convergence_reason = check_for_convergence(
+            converged, convergence_reason = check_for_convergence_fast(
                 x_candidate=x_candidate,
                 f_candidate=criterion_candidate,
                 gradient_candidate=gradient_projected,
-                model=model,
+                model_gradient=model_gradient,
                 lower_bounds=lower_bounds,
                 upper_bounds=upper_bounds,
                 converged=converged,
@@ -170,30 +179,39 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
         gradient_unprojected,
         hessian_inactive,
         trustregion_radius,
-        active_bounds_info,
+        active_lower_bounds,
+        active_upper_bounds,
+        active_fixed_bounds,
+        active_all_bounds,
+        inactive_bounds,
         converged,
         convergence_reason,
     )
 
 
+@njit
 def compute_conjugate_gradient_step_fast(
     x_candidate,
     gradient_inactive,
     hessian_inactive,
     lower_bounds,
     upper_bounds,
-    active_bounds_info,
+    inactive_bounds,
+    active_lower_bounds,
+    active_upper_bounds,
+    active_fixed_bounds,
     trustregion_radius,
-    *,
     conjugate_gradient_method,
     gtol_abs_conjugate_gradient,
     gtol_rel_conjugate_gradient,
-    options_update_radius,
+    default_radius,
+    min_radius,
+    max_radius,
 ):
     """Compute the bounded Conjugate Gradient trust-region step."""
-    conjugate_gradient_step = np.zeros_like(x_candidate)
+    conjugate_gradient_step = np.zeros(len(x_candidate))
 
-    if active_bounds_info.inactive.size == 0:
+    if inactive_bounds.size == 0:
         # Save some computation and return an adjusted zero step
         step_inactive = apply_bounds_to_x_candidate_fast(
             x_candidate, lower_bounds, upper_bounds
@@ -205,12 +223,15 @@ def compute_conjugate_gradient_step_fast(
             x_candidate,
             lower_bounds,
             upper_bounds,
-            active_bounds_info,
+            inactive_bounds,
+            active_lower_bounds,
+            active_upper_bounds,
+            active_fixed_bounds,
         )
 
     else:
         if conjugate_gradient_method == "cg":
-            step_inactive = minimize_trust_cg(
+            step_inactive = minimize_trust_cg_fast(
                 gradient_inactive,
                 hessian_inactive,
                 trustregion_radius,
@@ -219,19 +240,19 @@ def compute_conjugate_gradient_step_fast(
             )
             step_norm = norm_numba(step_inactive)
         elif conjugate_gradient_method == "steihaug_toint":
-            step_inactive = minimize_trust_stcg(
+            step_inactive = minimize_trust_stcg_fast(
                 gradient_inactive,
                 hessian_inactive,
                 trustregion_radius,
             )
             step_norm = norm_numba(step_inactive)
         elif conjugate_gradient_method == "trsbox":
-            step_inactive = minimize_trust_trsbox(
+            step_inactive = minimize_trust_trsbox_fast(
                 gradient_inactive,
                 hessian_inactive,
                 trustregion_radius,
-                lower_bounds=lower_bounds[active_bounds_info.inactive],
-                upper_bounds=upper_bounds[active_bounds_info.inactive],
+                lower_bounds=lower_bounds[inactive_bounds],
+                upper_bounds=upper_bounds[inactive_bounds],
             )
             step_norm = norm_numba(step_inactive)
         else:
@@ -243,22 +264,22 @@ def compute_conjugate_gradient_step_fast(
         if trustregion_radius == 0:
             if step_norm > 0:
                 # Accept
-                trustregion_radius = np.clip(
-                    step_norm,
-                    options_update_radius["min_radius"],
-                    options_update_radius["max_radius"],
-                )
+                if step_norm <= min_radius:
+                    step_norm = min_radius
+                elif step_norm > max_radius:
+                    step_norm = max_radius
 
             else:
                 # Re-solve
-                trustregion_radius = np.clip(
-                    options_update_radius["default_radius"],
-                    options_update_radius["min_radius"],
-                    options_update_radius["max_radius"],
-                )
+                if default_radius <= min_radius:
+                    trustregion_radius = min_radius
+                elif default_radius >= max_radius:
+                    trustregion_radius = max_radius
+                else:
+                    trustregion_radius = default_radius
 
                 if conjugate_gradient_method == "cg":
-                    step_inactive = minimize_trust_cg(
+                    step_inactive = minimize_trust_cg_fast(
                         gradient_inactive,
                         hessian_inactive,
                         trustregion_radius,
@@ -267,21 +288,21 @@ def compute_conjugate_gradient_step_fast(
                     )
                     step_norm = norm_numba(step_inactive)
                 elif conjugate_gradient_method == "steihaug_toint":
-                    step_inactive = minimize_trust_stcg(
+                    step_inactive = minimize_trust_stcg_fast(
                         gradient_inactive,
                         hessian_inactive,
                         trustregion_radius,
                     )
                     step_norm = norm_numba(step_inactive)
                 elif conjugate_gradient_method == "trsbox":
-                    step_inactive = minimize_trust_trsbox(
+                    step_inactive = minimize_trust_trsbox_fast(
                         gradient_inactive,
                         hessian_inactive,
                         trustregion_radius,
-                        lower_bounds=lower_bounds[active_bounds_info.inactive],
-                        upper_bounds=upper_bounds[active_bounds_info.inactive],
+                        lower_bounds=lower_bounds[inactive_bounds],
+                        upper_bounds=upper_bounds[inactive_bounds],
                     )
-                    step_norm = norm_numba(step_inactive)
+                step_norm = norm_numba(step_inactive)
 
                 if step_norm == 0:
                     raise ValueError("Initial direction is zero.")
@@ -291,7 +312,10 @@ def compute_conjugate_gradient_step_fast(
             x_candidate,
             lower_bounds,
             upper_bounds,
-            active_bounds_info,
+            inactive_bounds,
+            active_lower_bounds,
+            active_upper_bounds,
+            active_fixed_bounds,
         )
 
     return (
@@ -301,20 +325,22 @@ def compute_conjugate_gradient_step_fast(
     )
 
 
-def compute_predicted_reduction_from_conjugate_gradient_step(
+@njit
+def compute_predicted_reduction_from_conjugate_gradient_step_fast(
     conjugate_gradient_step,
     conjugate_gradient_step_inactive,
     gradient_unprojected,
     gradient_inactive,
     hessian_inactive,
-    active_bounds_info,
+    inactive_bounds,
+    active_bounds,
 ):
     """Compute predicted reduction induced by the Conjugate Gradient step."""
-    if active_bounds_info.active.size > 0:
+    if active_bounds.size > 0:
         # Projection changed the step, so we have to recompute the step
         # and the predicted reduction. Leave the rust radius unchanged.
-        cg_step_recomp = conjugate_gradient_step[active_bounds_info.inactive]
-        gradient_inactive_recomp = gradient_unprojected[active_bounds_info.inactive]
+        cg_step_recomp = conjugate_gradient_step[inactive_bounds]
+        gradient_inactive_recomp = gradient_unprojected[inactive_bounds]
 
         predicted_reduction = _evaluate_model_criterion(
             cg_step_recomp, gradient_inactive_recomp, hessian_inactive
@@ -332,15 +358,16 @@ def compute_predicted_reduction_from_conjugate_gradient_step(
 
 
 @njit
-def perform_gradient_descent_step(
+def perform_gradient_descent_step_fast(
     x_candidate,
     f_candidate_initial,
     gradient_projected,
     hessian_inactive,
-    model,
+    model_gradient,
+    model_hessian,
     lower_bounds,
     upper_bounds,
-    active_bounds_info,
+    inactive_bounds,
     maxiter_steepest_descent,
     default_radius,
     theta,
@@ -369,7 +396,7 @@ def perform_gradient_descent_step(
             x_candidate, lower_bounds, upper_bounds
         )
         f_candidate = _evaluate_model_criterion(
-            x_candidate, model.linear_terms, model.square_terms
+            x_candidate, model_gradient, model_hessian
         )
 
         x_diff = x_candidate - x_old
@@ -378,7 +405,7 @@ def perform_gradient_descent_step(
             f_min = f_candidate
             step_size_accepted = step_size_candidate
 
-        x_inactive = x_diff[active_bounds_info.inactive]
+        x_inactive = x_diff[inactive_bounds]
         square_terms = x_inactive.T @ hessian_inactive @ x_inactive
 
         predicted_reduction = trustregion_radius * (
@@ -414,24 +441,35 @@ def perform_gradient_descent_step(
     )
 
 
-def update_trustregion_radius_conjugate_gradient(
+@njit
+def update_trustregion_radius_conjugate_gradient_fast(
     f_candidate,
     predicted_reduction,
     actual_reduction,
     x_norm_cg,
     trustregion_radius,
-    options,
+    min_radius,
+    max_radius,
+    alpha1,
+    alpha2,
+    alpha3,
+    alpha4,
+    alpha5,
+    eta1,
+    eta2,
+    eta3,
+    eta4,
 ):
     """Update the trust-region radius based on predicted and actual reduction."""
     accept_step = False
 
     if predicted_reduction < 0 or ~np.isfinite(predicted_reduction):
         # Reject and start over
-        trustregion_radius = options["alpha1"] * min(trustregion_radius, x_norm_cg)
+        trustregion_radius = alpha1 * min(trustregion_radius, x_norm_cg)
 
     else:
         if ~np.isfinite(actual_reduction):
-            trustregion_radius = options["alpha1"] * min(trustregion_radius, x_norm_cg)
+            trustregion_radius = alpha1 * min(trustregion_radius, x_norm_cg)
         else:
             if abs(actual_reduction) <= max(1, abs(f_candidate) * EPSILON) and abs(
                 predicted_reduction
@@ -440,33 +478,30 @@ def update_trustregion_radius_conjugate_gradient(
             else:
                 kappa = actual_reduction / predicted_reduction
 
-            if kappa < options["eta1"]:
+            if kappa < eta1:
                 # Reject the step
-                trustregion_radius = options["alpha1"] * min(
-                    trustregion_radius, x_norm_cg
-                )
+                trustregion_radius = alpha1 * min(trustregion_radius, x_norm_cg)
             else:
                 accept_step = True
 
                 # Update the trust-region radius only if the computed step is at the
                 # trust-radius boundary
                 if x_norm_cg == trustregion_radius:
-                    if kappa < options["eta2"]:
+                    if kappa < eta2:
                         # Marginal bad step
-                        trustregion_radius = options["alpha2"] * trustregion_radius
-                    elif kappa < options["eta3"]:
+                        trustregion_radius = alpha2 * trustregion_radius
+                    elif kappa < eta3:
                         # Reasonable step
-                        trustregion_radius = options["alpha3"] * trustregion_radius
-                    elif kappa < options["eta4"]:
-                        trustregion_radius = options["alpha4"] * trustregion_radius
+                        trustregion_radius = alpha3 * trustregion_radius
+                    elif kappa < eta4:
+                        trustregion_radius = alpha4 * trustregion_radius
                     else:
                         # Very good step
-                        trustregion_radius = options["alpha5"] * trustregion_radius
-
-    trustregion_radius = np.clip(
-        trustregion_radius, options["min_radius"], options["max_radius"]
-    )
-
+                        trustregion_radius = alpha5 * trustregion_radius
+    if trustregion_radius <= min_radius:
+        trustregion_radius = min_radius
+    elif trustregion_radius >= max_radius:
+        trustregion_radius = max_radius
     return trustregion_radius, accept_step
 
 
@@ -507,15 +542,8 @@ def get_information_on_active_bounds_fast(
     active_upper = np.array(active_upper)
     inactive = np.array(inactive)
     active_fixed = np.array(active_fixed)
-    active_bounds_info = ActiveBounds(
-        lower=active_lower,
-        upper=active_upper,
-        fixed=active_fixed,
-        active=active_all,
-        inactive=inactive,
-    )
 
-    return active_bounds_info
+    return active_lower, active_upper, active_fixed, active_all, inactive
 
 
 @njit
@@ -532,11 +560,11 @@ def find_hessian_submatrix_where_bounds_inactive_fast(initial_hessian, inactive_
 
 
 @njit
-def check_for_convergence(
+def check_for_convergence_fast(
     x_candidate,
     f_candidate,
     gradient_candidate,
-    model,
+    model_gradient,
     lower_bounds,
     upper_bounds,
     converged,
@@ -552,7 +580,7 @@ def check_for_convergence(
         x_candidate, gradient_candidate, lower_bounds, upper_bounds
     )
     gradient_norm = norm_numba(direction_fischer_burmeister)
-    gradient_norm_initial = norm_numba(model.linear_terms)
+    gradient_norm_initial = norm_numba(model_gradient)
 
     if gradient_norm < gtol_abs:
         converged = True
@@ -590,12 +618,10 @@ def apply_bounds_to_x_candidate_fast(x, lower_bounds, upper_bounds, bound_tol=0)
 
 
 @njit
-def project_gradient_onto_feasible_set(gradient_unprojected, active_bounds_info):
+def project_gradient_onto_feasible_set(gradient_unprojected, inactive_bounds):
     """Project gradient onto feasible set, where search directions unconstrained."""
     gradient_projected = np.zeros(len(gradient_unprojected))
-    gradient_projected[active_bounds_info.inactive] = gradient_unprojected[
-        active_bounds_info.inactive
-    ]
+    gradient_projected[inactive_bounds] = gradient_unprojected[inactive_bounds]
 
     return gradient_projected
 
@@ -606,26 +632,29 @@ def _apply_bounds_to_conjugate_gradient_step(
     x_candidate,
     lower_bounds,
     upper_bounds,
-    active_bounds_info,
+    inactive_bounds,
+    active_lower_bounds,
+    active_upper_bounds,
+    active_fixed_bounds,
 ):
     """Apply lower and upper bounds to the Conjugate Gradient step."""
     cg_step = np.zeros(len(x_candidate))
-    cg_step[active_bounds_info.inactive] = step_inactive
+    cg_step[inactive_bounds] = step_inactive
 
-    if active_bounds_info.lower.size > 0:
-        x_active_lower = x_candidate[active_bounds_info.lower]
-        lower_bound_active = lower_bounds[active_bounds_info.lower]
+    if active_lower_bounds.size > 0:
+        x_active_lower = x_candidate[active_lower_bounds]
+        lower_bound_active = lower_bounds[active_lower_bounds]
 
-        cg_step[active_bounds_info.lower] = lower_bound_active - x_active_lower
+        cg_step[active_lower_bounds] = lower_bound_active - x_active_lower
 
-    if active_bounds_info.upper.size > 0:
-        x_active_upper = x_candidate[active_bounds_info.upper]
-        upper_bound_active = upper_bounds[active_bounds_info.upper]
+    if active_upper_bounds.size > 0:
+        x_active_upper = x_candidate[active_upper_bounds]
+        upper_bound_active = upper_bounds[active_upper_bounds]
 
-        cg_step[active_bounds_info.upper] = upper_bound_active - x_active_upper
+        cg_step[active_upper_bounds] = upper_bound_active - x_active_upper
 
-    if active_bounds_info.fixed.size > 0:
-        cg_step[active_bounds_info.fixed] = 0
+    if active_fixed_bounds.size > 0:
+        cg_step[active_fixed_bounds] = 0
 
     return cg_step
 
@@ -781,7 +810,7 @@ def _evaluate_model_criterion(
 
 
 @njit
-def _evaluate_model_gradient(x, model):
+def _evaluate_model_gradient(x, linear_terms, square_terms):
     """Evaluate the derivative of the main model.
 
     Args:
@@ -793,7 +822,7 @@ def _evaluate_model_gradient(x, model):
     Returns:
         np.ndarray: Derivative of the main model of shape (n,).
     """
-    return model.linear_terms + model.square_terms @ x
+    return linear_terms + square_terms @ x
 
 
 @njit

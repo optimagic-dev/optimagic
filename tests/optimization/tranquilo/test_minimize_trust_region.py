@@ -1,0 +1,174 @@
+import numpy as np
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+    _get_distance_to_trustregion_boundary as gdtb,
+)
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+    _update_vectors_for_next_iteration as uvnr,
+)
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+    minimize_trust_cg,
+)
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+    _get_distance_to_trustregion_boundary as gdtb_fast,
+)
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+    _update_vectors_for_next_iteration as uvnr_fast,
+)
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+    minimize_trust_cg_fast,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic import (
+    _take_constrained_step_up_to_boundary as step_constrained_orig,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic import (
+    _take_unconstrained_step_up_to_boundary as step_unconstrained_orig,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic import (
+    _update_candidate_vectors_and_reduction as update_candidate_orig,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic import (
+    _update_candidate_vectors_and_reduction_alt_step as update_candidate_alt_orig,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    _take_constrained_step_up_to_boundary as step_constrained_fast,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    _take_unconstrained_step_up_to_boundary as step_unconstrained_fast,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    _update_candidate_vectors_and_reduction as update_candidate_fast,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    _update_candidate_vectors_and_reduction_alt_step as update_candidate_alt_fast,
+)
+from numpy.testing import assert_array_equal as aae
+
+
+def test_minimize_trust_cg():
+    grad = np.arange(5).astype(float)
+    hessian = np.arange(25).reshape(5, 5).astype(float)
+    radius = 2
+    gtol_abs = 1e-8
+    gtol_rel = 1e-6
+    aae(
+        minimize_trust_cg(grad, hessian, radius),
+        minimize_trust_cg_fast(grad, hessian, radius, gtol_abs, gtol_rel),
+    )
+
+
+def test_get_distance_to_trustregion_boundary():
+    x = np.arange(5).astype(float)
+    direction = np.arange(5).astype(float)
+    radius = 2
+    assert gdtb(x, direction, radius) == gdtb_fast(x, direction, radius)
+
+
+def test_update_vectors():
+    x = np.arange(5).astype(float)
+    residual = np.ones(5) * 0.5
+    direction = np.ones(5)
+    hessian = np.arange(25).reshape(5, 5)
+    alpha = 0.5
+    res_orig = uvnr(x, residual, direction, hessian, alpha)
+    res_fast = uvnr_fast(x, residual, direction, hessian, alpha)
+    for i in range(len(res_orig)):
+        aae(res_orig[i], res_fast[i])
+
+
+def test_take_unconstrained_step_towards_boundary():
+    raw_distance = 0.5
+    gradient_sumsq = 5.0
+    gradient_projected_sumsq = 2.5
+    g_x = 0.3 * np.ones(1)
+    g_hess_g = -0.3 * np.ones(1)
+    for i in range(2):
+        assert (
+            step_unconstrained_orig(
+                raw_distance, gradient_sumsq, gradient_projected_sumsq, g_x, g_hess_g
+            )[i]
+            == step_unconstrained_fast(
+                raw_distance, gradient_sumsq, gradient_projected_sumsq, g_x, g_hess_g
+            )[i]
+        )
+
+
+def test_take_constrained_step_towards_boundary():
+    x_candidate = np.zeros(5)
+    gradient_projected = np.ones(5)
+    step_len = np.array([2.5])
+    lower_bounds = np.array([-1.0] * 3 + [0.01] * 2)
+    upper_bounds = np.ones(5)
+    for i in range(2):
+        assert (
+            step_constrained_orig(
+                x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
+            )[i]
+            == step_constrained_fast(
+                x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
+            )[i]
+        )
+
+
+def test_update_candidate_vector_and_reduction_alt_step():
+    x = np.zeros(5)
+    search_direction = 0.5 * np.ones(5)
+    x_bounded = np.array([0] * 2 + [1] * 3)
+    g = np.ones(5)
+    cosine = 0.5
+    sine = 0.5
+    hessian_s = np.ones(5)
+    hes_red = np.ones(5)
+    res_orig = update_candidate_alt_orig(
+        x, search_direction, x_bounded, g, cosine, sine, hessian_s, hes_red
+    )
+
+    res_fast = update_candidate_alt_fast(
+        x, search_direction, x_bounded, g, cosine, sine, hessian_s, hes_red
+    )
+    for i in range(len(res_orig)):
+        aae(res_orig[i], res_fast[i])
+
+
+def test_update_candidate_vector_and_reduction():
+    x_candidate = np.zeros(5)
+    x_bounded = np.array([0] * 3 + [-0.01] * 2)
+    gradient_candidate = np.ones(5)
+    gradient_projected = 0.5 * np.ones(5)
+    step_len = 0.05
+    total_reduction = 0
+    curve_min = -0.5
+    index_bound_active = np.array([3, 4])
+    gradient_projected_sumsq = 25
+    gradient_sumsq = 25
+    g_hess_g = 100
+    hess_g = np.arange(5).astype(float)
+    res_fast = update_candidate_fast(
+        x_candidate,
+        x_bounded,
+        gradient_candidate,
+        gradient_projected,
+        step_len,
+        total_reduction,
+        curve_min,
+        index_bound_active,
+        gradient_projected_sumsq,
+        gradient_sumsq,
+        g_hess_g,
+        hess_g,
+    )
+    res_orig = update_candidate_orig(
+        x_candidate,
+        x_bounded,
+        gradient_candidate,
+        gradient_projected,
+        step_len,
+        total_reduction,
+        curve_min,
+        index_bound_active,
+        gradient_projected_sumsq,
+        gradient_sumsq,
+        g_hess_g,
+        hess_g,
+    )
+    for i in range(len(res_orig)):
+        aae(res_orig[i], res_fast[i])

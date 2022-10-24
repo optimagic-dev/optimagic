@@ -25,10 +25,22 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     update_trustregion_radius_conjugate_gradient,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _evaluate_model_criterion,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _evaluate_model_gradient,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     apply_bounds_to_x_candidate_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    check_for_convergence_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     compute_conjugate_gradient_step_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    compute_predicted_reduction_from_conjugate_gradient_step_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     find_hessian_submatrix_where_bounds_inactive_fast,
@@ -38,6 +50,9 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     take_preliminary_gradient_descent_step_and_check_for_solution_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    update_trustregion_radius_conjugate_gradient_fast,
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     add_lambda_and_factorize_hessian,
@@ -55,6 +70,7 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic import HessianInfo
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     update_lambdas_when_factorization_unsuccessful,
 )
+from numba import njit
 
 # ======================================================================================
 # Subsolver BNTR
@@ -346,140 +362,23 @@ def minimize_bntr_quadratic_fast(
             - ``success`` (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
     """
-    options_update_radius = {
-        "eta1": 1.0e-4,
-        "eta2": 0.25,
-        "eta3": 0.50,
-        "eta4": 0.90,
-        "alpha1": 0.25,
-        "alpha2": 0.50,
-        "alpha3": 1.00,
-        "alpha4": 2.00,
-        "alpha5": 4.00,
-        "min_radius": 1e-10,
-        "max_radius": 1e10,
-        "default_radius": 100,
-    }
 
-    x_candidate = np.zeros_like(model.linear_terms)
-
-    (
-        x_candidate,
-        f_candidate,
-        gradient_unprojected,
-        hessian_bounds_inactive,
-        trustregion_radius,
-        active_bounds_info,
-        converged,
-        convergence_reason,
-    ) = take_preliminary_gradient_descent_step_and_check_for_solution_fast(
-        x_candidate,
-        model,
-        lower_bounds,
-        upper_bounds,
-        maxiter_gradient_descent,
-        gtol_abs,
-        gtol_rel,
-        gtol_scaled,
+    model_gradient = model.linear_terms
+    model_hessian = model.square_terms
+    x_candidate, f_candidate, niter, converged, convergence_reason = _minimize_bntr(
+        model_gradient=model_gradient,
+        model_hessian=model_hessian,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        conjugate_gradient_method=conjugate_gradient_method,
+        maxiter=maxiter,
+        maxiter_gradient_descent=maxiter_gradient_descent,
+        gtol_abs=gtol_abs,
+        gtol_rel=gtol_rel,
+        gtol_scaled=gtol_scaled,
+        gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
+        gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
     )
-
-    for niter in range(maxiter + 1):
-        if converged is True:
-            break
-
-        x_old = x_candidate
-        f_old = f_candidate
-        accept_step = False
-
-        while not accept_step and not converged:
-            gradient_bounds_inactive = gradient_unprojected[active_bounds_info.inactive]
-            hessian_bounds_inactive = find_hessian_submatrix_where_bounds_inactive_fast(
-                model.square_terms, active_bounds_info.inactive
-            )
-            (
-                conjugate_gradient_step,
-                conjugate_gradient_step_inactive_bounds,
-                cg_step_norm,
-            ) = compute_conjugate_gradient_step_fast(
-                x_candidate,
-                gradient_bounds_inactive,
-                hessian_bounds_inactive,
-                lower_bounds,
-                upper_bounds,
-                active_bounds_info,
-                trustregion_radius,
-                conjugate_gradient_method=conjugate_gradient_method,
-                gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
-                gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
-                options_update_radius=options_update_radius,
-            )
-
-            x_unbounded = x_candidate + conjugate_gradient_step
-            x_candidate = apply_bounds_to_x_candidate_fast(
-                x_unbounded, lower_bounds, upper_bounds
-            )
-
-            predicted_reduction = (
-                compute_predicted_reduction_from_conjugate_gradient_step(
-                    conjugate_gradient_step,
-                    conjugate_gradient_step_inactive_bounds,
-                    gradient_unprojected,
-                    gradient_bounds_inactive,
-                    hessian_bounds_inactive,
-                    active_bounds_info,
-                )
-            )
-
-            f_candidate = evaluate_model_criterion(
-                x_candidate, model.linear_terms, model.square_terms
-            )
-            actual_reduction = f_old - f_candidate
-
-            trustregion_radius_old = trustregion_radius
-            (
-                trustregion_radius,
-                accept_step,
-            ) = update_trustregion_radius_conjugate_gradient(
-                f_candidate,
-                predicted_reduction,
-                actual_reduction,
-                cg_step_norm,
-                trustregion_radius,
-                options_update_radius,
-            )
-
-            if accept_step:
-                gradient_unprojected = evaluate_model_gradient(x_candidate, model)
-
-                active_bounds_info = get_information_on_active_bounds_fast(
-                    x_candidate,
-                    gradient_unprojected,
-                    lower_bounds,
-                    upper_bounds,
-                )
-            else:
-                x_candidate = x_old
-                f_candidate = f_old
-
-                if trustregion_radius == trustregion_radius_old:
-                    converged = True
-                    break
-
-            converged, convergence_reason = check_for_convergence(
-                x_candidate,
-                f_candidate,
-                gradient_unprojected,
-                model,
-                lower_bounds,
-                upper_bounds,
-                converged,
-                convergence_reason,
-                niter,
-                maxiter=maxiter,
-                gtol_abs=gtol_abs,
-                gtol_rel=gtol_rel,
-                gtol_scaled=gtol_scaled,
-            )
 
     result = {
         "x": x_candidate,
@@ -654,3 +553,169 @@ def evaluate_model_gradient(x, model):
         np.ndarray: Derivative of the main model of shape (n,).
     """
     return model.linear_terms + model.square_terms @ x
+
+
+@njit
+def _minimize_bntr(
+    model_gradient,
+    model_hessian,
+    lower_bounds,
+    upper_bounds,
+    conjugate_gradient_method,
+    maxiter,
+    maxiter_gradient_descent,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
+    gtol_abs_conjugate_gradient,
+    gtol_rel_conjugate_gradient,
+):
+    x_candidate = np.zeros(len(model_gradient))
+
+    (
+        x_candidate,
+        f_candidate,
+        gradient_unprojected,
+        hessian_bounds_inactive,
+        trustregion_radius,
+        active_lower_bounds,
+        active_upper_bounds,
+        active_fixed_bounds,
+        active_all_bounds,
+        inactive_bounds,
+        converged,
+        convergence_reason,
+    ) = take_preliminary_gradient_descent_step_and_check_for_solution_fast(
+        x_candidate,
+        model_gradient,
+        model_hessian,
+        lower_bounds,
+        upper_bounds,
+        maxiter_gradient_descent,
+        gtol_abs,
+        gtol_rel,
+        gtol_scaled,
+    )
+
+    for niter in range(maxiter + 1):
+        if converged is True:
+            break
+
+        x_old = x_candidate
+        f_old = f_candidate
+        accept_step = False
+
+        while not accept_step and not converged:
+            gradient_bounds_inactive = gradient_unprojected[inactive_bounds]
+            hessian_bounds_inactive = find_hessian_submatrix_where_bounds_inactive_fast(
+                model_hessian, inactive_bounds
+            )
+            (
+                conjugate_gradient_step,
+                conjugate_gradient_step_inactive_bounds,
+                cg_step_norm,
+            ) = compute_conjugate_gradient_step_fast(
+                x_candidate,
+                gradient_bounds_inactive,
+                hessian_bounds_inactive,
+                lower_bounds,
+                upper_bounds,
+                inactive_bounds=inactive_bounds,
+                active_lower_bounds=active_lower_bounds,
+                active_upper_bounds=active_upper_bounds,
+                active_fixed_bounds=active_fixed_bounds,
+                trustregion_radius=trustregion_radius,
+                conjugate_gradient_method=conjugate_gradient_method,
+                gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
+                gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
+                default_radius=100,
+                min_radius=1e-10,
+                max_radius=1e10,
+            )
+
+            x_unbounded = x_candidate + conjugate_gradient_step
+            x_candidate = apply_bounds_to_x_candidate_fast(
+                x_unbounded, lower_bounds, upper_bounds
+            )
+
+            predicted_reduction = (
+                compute_predicted_reduction_from_conjugate_gradient_step_fast(
+                    conjugate_gradient_step,
+                    conjugate_gradient_step_inactive_bounds,
+                    gradient_unprojected,
+                    gradient_bounds_inactive,
+                    hessian_bounds_inactive,
+                    inactive_bounds,
+                    active_all_bounds,
+                )
+            )
+
+            f_candidate = _evaluate_model_criterion(
+                x_candidate, model_gradient, model_hessian
+            )
+            actual_reduction = f_old - f_candidate
+
+            trustregion_radius_old = trustregion_radius
+            (
+                trustregion_radius,
+                accept_step,
+            ) = update_trustregion_radius_conjugate_gradient_fast(
+                f_candidate,
+                predicted_reduction,
+                actual_reduction,
+                cg_step_norm,
+                trustregion_radius,
+                min_radius=1e-10,
+                max_radius=1e10,
+                eta1=1.0e-4,
+                eta2=0.25,
+                eta3=0.50,
+                eta4=0.90,
+                alpha1=0.25,
+                alpha2=0.50,
+                alpha3=1.00,
+                alpha4=2.00,
+                alpha5=4.00,
+            )
+
+            if accept_step:
+                gradient_unprojected = _evaluate_model_gradient(
+                    x_candidate, model_gradient, model_hessian
+                )
+
+                (
+                    active_lower_bounds,
+                    active_upper_bounds,
+                    active_fixed_bounds,
+                    active_all_bounds,
+                    inactive_bounds,
+                ) = get_information_on_active_bounds_fast(
+                    x_candidate,
+                    gradient_unprojected,
+                    lower_bounds,
+                    upper_bounds,
+                )
+            else:
+                x_candidate = x_old
+                f_candidate = f_old
+
+                if trustregion_radius == trustregion_radius_old:
+                    converged = True
+                    break
+
+            converged, convergence_reason = check_for_convergence_fast(
+                x_candidate,
+                f_candidate,
+                gradient_unprojected,
+                model_gradient,
+                lower_bounds,
+                upper_bounds,
+                converged,
+                convergence_reason,
+                niter,
+                maxiter=maxiter,
+                gtol_abs=gtol_abs,
+                gtol_rel=gtol_rel,
+                gtol_scaled=gtol_scaled,
+            )
+    return x_candidate, f_candidate, niter, converged, convergence_reason

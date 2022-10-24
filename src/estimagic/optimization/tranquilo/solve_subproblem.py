@@ -81,7 +81,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     default_options = {
         "maxiter": 20,
         "maxiter_gradient_descent": 5,
-        "conjugate_gradient_method": "trsbox",
+        "conjugate_gradient_method": "cg",
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,
