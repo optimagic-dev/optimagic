@@ -30,6 +30,12 @@ from estimagic.optimization.subsolvers._trsbox_quadratic import (
     _update_candidate_vectors_and_reduction_alt_step as update_candidate_alt_orig,
 )
 from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    _perform_alternative_trustregion_step as perform_step_alt_fast,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    _perform_alternative_trustregion_step as perform_step_alt_orig,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
     _take_constrained_step_up_to_boundary as step_constrained_fast,
 )
 from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
@@ -172,3 +178,67 @@ def test_update_candidate_vector_and_reduction():
     )
     for i in range(len(res_orig)):
         aae(res_orig[i], res_fast[i])
+
+
+def test_perform_alternative_tr_step():
+    x_candidate = np.zeros(5)
+    x_bounded = np.array([0.1] * 2 + [0] * 3)
+    gradient_candidate = np.ones(5).astype(float)
+    model_hessian = np.arange(25).reshape(5, 5).astype(float)
+    lower_bounds = np.array([0.1] * 2 + [-1] * 3)
+    upper_bounds = np.ones(5)
+    n_fixed_variables = 1
+    total_reduction = 1.5
+    res_orig = perform_step_alt_orig(
+        x_candidate,
+        x_bounded,
+        gradient_candidate,
+        model_hessian,
+        lower_bounds,
+        upper_bounds,
+        n_fixed_variables,
+        total_reduction,
+    )
+    res_fast = perform_step_alt_fast(
+        x_candidate,
+        x_bounded,
+        gradient_candidate,
+        model_hessian,
+        lower_bounds,
+        upper_bounds,
+        n_fixed_variables,
+        total_reduction,
+    )
+    aae(res_orig, res_fast)
+
+
+def test_perform_alternative_tr_step_without_active_bounds():
+    x_candidate = np.zeros(5)
+    x_bounded = np.zeros(5)
+    gradient_candidate = np.ones(5).astype(float)
+    model_hessian = np.arange(25).reshape(5, 5).astype(float)
+    lower_bounds = -10 * np.ones(5)
+    upper_bounds = 10 * np.ones(5)
+    n_fixed_variables = 1
+    total_reduction = 1.5
+    res_orig = perform_step_alt_orig(
+        x_candidate,
+        x_bounded,
+        gradient_candidate,
+        model_hessian,
+        lower_bounds,
+        upper_bounds,
+        n_fixed_variables,
+        total_reduction,
+    )
+    res_fast = perform_step_alt_fast(
+        x_candidate,
+        x_bounded,
+        gradient_candidate,
+        model_hessian,
+        lower_bounds,
+        upper_bounds,
+        n_fixed_variables,
+        total_reduction,
+    )
+    aae(res_orig, res_fast)

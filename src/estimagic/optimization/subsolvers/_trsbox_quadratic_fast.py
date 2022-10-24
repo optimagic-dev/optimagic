@@ -329,7 +329,7 @@ def _perform_alternative_trustregion_step(
 
             total_reduction = total_reduction + current_reduction
             if (
-                index_active_bound is not None
+                index_active_bound.size > 0
                 and index_angle_greatest_reduction == n_angles - 1
             ):
                 n_fixed_variables += 1
@@ -384,7 +384,6 @@ def _take_unconstrained_step_up_to_boundary(
     """Take unconstrained step, ignoring bounds, up to boundary."""
     temp = np.sqrt(gradient_projected_sumsq * raw_distance + g_x**2)
     gradient_sumsq = np.array([gradient_sumsq])
-    step_len = np.zeros(1)
     if g_x >= 0:
         distance_to_boundary = raw_distance / (temp + g_x)
     else:
@@ -484,8 +483,6 @@ def _calc_upper_bound_on_tangent(
     """Calculate upper bound on tangent of half the angle to the boundary."""
     bound_on_tangent = 1
     free_variable_reached_bound = False
-    index_active_bound = None
-    active_bound = None
 
     for i in range(len(x_candidate)):
         if x_bounded[i] == 0:
@@ -511,16 +508,16 @@ def _calc_upper_bound_on_tangent(
                 ssq_lower = np.sqrt(ssq_lower) - search_direction[i]
                 if bound_on_tangent * ssq_lower > lower_bound_centered:
                     bound_on_tangent = lower_bound_centered / ssq_lower
-                    index_active_bound = i
-                    active_bound = -1
+                    index_active_bound = np.array([i])
+                    active_bound = np.array([-1])
 
             ssq_upper = ssq - upper_bounds[i] ** 2
             if ssq_upper > 0.0:
                 ssq_upper = np.sqrt(ssq_upper) + search_direction[i]
                 if bound_on_tangent * ssq_upper > upper_bound_centered:
                     bound_on_tangent = upper_bound_centered / ssq_upper
-                    index_active_bound = i
-                    active_bound = 1
+                    index_active_bound = np.array([i])
+                    active_bound = np.array([1])
 
     return (
         x_bounded,
