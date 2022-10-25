@@ -389,3 +389,16 @@ def test_minimize_stcg_fast():
         model_gradient, model_hessian, trustregion_radius
     )
     aae(res_orig.round(10), res_fast.round(10))
+
+
+def test_minimize_cg():
+    model_gradient = np.arange(10).astype(float)
+    model_hessian = np.arange(100).reshape(10, 10).astype(float)
+    trustregion_radius = 10.0
+    gtol_abs = 1e-8
+    gtol_rel = 1e-6
+    res_orig = minimize_trust_cg(model_gradient, model_hessian, trustregion_radius)
+    res_fast = minimize_trust_cg_fast(
+        model_gradient, model_hessian, trustregion_radius, gtol_abs, gtol_rel
+    )
+    aae(res_orig, res_fast)
