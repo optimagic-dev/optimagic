@@ -17,6 +17,12 @@ from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import
 from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
     minimize_trust_cg_fast,
 )
+from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
+    minimize_trust_stcg,
+)
+from estimagic.optimization.subsolvers._steihaug_toint_quadratic_fast import (
+    minimize_trust_stcg_fast,
+)
 from estimagic.optimization.subsolvers._trsbox_quadratic import (
     _calc_upper_bound_on_tangent as upper_bound_tangent_orig,
 )
@@ -32,6 +38,7 @@ from estimagic.optimization.subsolvers._trsbox_quadratic import (
 from estimagic.optimization.subsolvers._trsbox_quadratic import (
     _update_candidate_vectors_and_reduction_alt_step as update_candidate_alt_orig,
 )
+from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
 from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
     _calc_upper_bound_on_tangent as upper_bound_tangent_fast,
 )
@@ -52,6 +59,9 @@ from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
     _update_candidate_vectors_and_reduction_alt_step as update_candidate_alt_fast,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+    minimize_trust_trsbox_fast,
 )
 from numpy.testing import assert_array_equal as aae
 
@@ -349,3 +359,33 @@ def test_calc_upper_bound_on_tangent_without_active_bounds():
             aae(res_orig[i], res_fast[i])
         else:
             assert res_fast[i].size == 0
+
+
+def test_minimize_trs_box_quadratic():
+    model_gradient = np.arange(10).astype(float)
+    model_hessian = np.arange(100).reshape(10, 10).astype(float)
+    trustregion_radius = 10.0
+    lower_bounds = -np.ones(10)
+    upper_bounds = np.ones(10)
+    res_fast = minimize_trust_trsbox_fast(
+        model_gradient, model_hessian, trustregion_radius, lower_bounds, upper_bounds
+    )
+    res_orig = minimize_trust_trsbox(
+        model_gradient,
+        model_hessian,
+        trustregion_radius,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
+    aae(res_fast, res_orig)
+
+
+def test_minimize_stcg_fast():
+    model_gradient = np.arange(10).astype(float)
+    model_hessian = np.arange(100).reshape(10, 10).astype(float)
+    trustregion_radius = 10.0
+    res_orig = minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius)
+    res_fast = minimize_trust_stcg_fast(
+        model_gradient, model_hessian, trustregion_radius
+    )
+    aae(res_orig.round(10), res_fast.round(10))
