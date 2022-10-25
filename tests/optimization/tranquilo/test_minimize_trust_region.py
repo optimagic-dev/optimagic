@@ -63,6 +63,7 @@ from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
 from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
     minimize_trust_trsbox_fast,
 )
+from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 
 
@@ -388,7 +389,7 @@ def test_minimize_stcg_fast():
     res_fast = minimize_trust_stcg_fast(
         model_gradient, model_hessian, trustregion_radius
     )
-    aae(res_orig.round(10), res_fast.round(10))
+    aaae(res_orig, res_fast)
 
 
 def test_minimize_cg():
@@ -401,4 +402,4 @@ def test_minimize_cg():
     res_fast = minimize_trust_cg_fast(
         model_gradient, model_hessian, trustregion_radius, gtol_abs, gtol_rel
     )
-    aae(res_orig, res_fast)
+    aaae(res_orig, res_fast)
