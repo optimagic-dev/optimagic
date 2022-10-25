@@ -8,6 +8,9 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
 from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     _get_fischer_burmeister_direction_vector as fb_vector_orig,
 )
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
+    _update_trustregion_radius_and_gradient_descent,
+)
 from estimagic.optimization.subsolvers.bounded_newton_quadratic import ActiveBounds
 from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     apply_bounds_to_x_candidate as apply_bounds_orig,
@@ -44,6 +47,9 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     _get_fischer_burmeister_direction_vector as fb_vector_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _update_trustregion_radius_and_gradient_descent as _update_trr_and_gd_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     apply_bounds_to_x_candidate_fast as apply_bounds_fast,
@@ -342,7 +348,7 @@ def test_update_tr_radius_cg():
         actual_reduction=actual_reduction,
         x_norm_cg=x_norm_cg,
         trustregion_radius=tr_radius,
-        **options_update_radius
+        **options_update_radius,
     )
     res_orig = update_trustregion_radius_conjugate_gradient(
         f_candidate=f_candidate,
@@ -390,7 +396,7 @@ def test_gradient_descent_step():
         upper_bounds=upper_bounds,
         inactive_bounds=inactive_bounds,
         maxiter_steepest_descent=maxiter,
-        **options_update_radius
+        **options_update_radius,
     )
     res_orig = perform_gradient_descent_step(
         x_candidate=x_candidate,
@@ -407,3 +413,45 @@ def test_gradient_descent_step():
     aae(res_orig[0], res_fast[0])
     for i in range(1, len(res_orig)):
         assert res_orig[i] == res_fast[i]
+
+
+def test_update_trustregion_radius_and_gradient_descent():
+    options_update_radius = {
+        "mu1": 0.35,
+        "mu2": 0.50,
+        "gamma1": 0.0625,
+        "gamma2": 0.5,
+        "gamma3": 2.0,
+        "gamma4": 5.0,
+        "theta": 0.25,
+        "min_radius": 1e-10,
+        "max_radius": 1e10,
+        "default_radius": 100,
+    }
+
+    trustregion_radius = 100.00
+    radius_lower_bound = 90.00
+    predicted_reduction = 0.9
+    actual_reduction = 1.1
+    gradient_norm = 10.0
+    res_orig = _update_trustregion_radius_and_gradient_descent(
+        trustregion_radius,
+        radius_lower_bound,
+        predicted_reduction,
+        actual_reduction,
+        gradient_norm,
+        options_update_radius,
+    )
+    options_update_radius.pop("min_radius")
+    options_update_radius.pop("max_radius")
+    options_update_radius.pop("default_radius")
+    res_fast = _update_trr_and_gd_fast(
+        trustregion_radius,
+        radius_lower_bound,
+        predicted_reduction,
+        actual_reduction,
+        gradient_norm,
+        **options_update_radius,
+    )
+    assert res_orig[0] == res_fast[0]
+    assert res_fast[1] == res_orig[1]
