@@ -245,11 +245,11 @@ def test_compute_conjugate_gradient_setp():
         upper=np.array([8, 9]),
         fixed=np.array([]).astype(int),
     )
-    tr_radius = 10
-    cg_method = "cg"
+    tr_radius = 10.0
+    cg_method = "trsbox"
     gtol_abs = 1e-8
     gtol_rel = 1e-8
-    default_radius = 100
+    default_radius = 100.00
     min_radius = 1e-10
     max_radius = 1e10
 

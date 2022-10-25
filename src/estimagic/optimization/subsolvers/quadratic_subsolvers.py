@@ -628,7 +628,7 @@ def _minimize_bntr(
                 conjugate_gradient_method=conjugate_gradient_method,
                 gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
                 gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
-                default_radius=100,
+                default_radius=100.00,
                 min_radius=1e-10,
                 max_radius=1e10,
             )

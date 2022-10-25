@@ -95,8 +95,8 @@ def minimize_trust_trsbox_fast(
             gradient_sumsq <= 1.0e-6 * gradient_sumsq_initial
             and gradient_sumsq <= 1.0e-18
         ) or (
-            gradient_sumsq * delta_sq <= 1.0e-6 * total_reduction**2
-            and gradient_sumsq * delta_sq <= 1.0e-18
+            gradient_sumsq * np.array([delta_sq]) <= 1.0e-6 * total_reduction**2
+            and gradient_sumsq * np.array([delta_sq]) <= 1.0e-18
         ):
 
             need_alt_trust_step = False
@@ -106,13 +106,13 @@ def minimize_trust_trsbox_fast(
         g_x = gradient_projected[x_bounded == 0] @ x_candidate[x_bounded == 0]
         g_hess_g = gradient_projected[x_bounded == 0] @ hess_g[x_bounded == 0]
         raw_distance = (
-            delta_sq - x_candidate[x_bounded == 0] @ x_candidate[x_bounded == 0]
+            np.array([delta_sq])
+            - x_candidate[x_bounded == 0] @ x_candidate[x_bounded == 0]
         )
 
         if raw_distance <= 0:
             need_alt_trust_step = True
             break
-
         step_len, distance_to_boundary = _take_unconstrained_step_up_to_boundary(
             raw_distance, gradient_sumsq, gradient_projected_sumsq, g_x, g_hess_g
         )
@@ -124,8 +124,7 @@ def minimize_trust_trsbox_fast(
         step_len, index_bound_active = _take_constrained_step_up_to_boundary(
             x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
         )
-
-        current_reduction = np.zeros(1)
+        current_reduction = 0.0
         if step_len > 0:
             n_iter += 1
             (
@@ -158,7 +157,7 @@ def minimize_trust_trsbox_fast(
             else:
                 x_bounded[index_bound_active] = -1
 
-            delta_sq = delta_sq - x_candidate[index_bound_active] ** 2
+            delta_sq = (delta_sq - x_candidate[index_bound_active] ** 2)[0]
             if delta_sq <= 0:
                 need_alt_trust_step = True
                 break
@@ -383,16 +382,15 @@ def _take_unconstrained_step_up_to_boundary(
 ):
     """Take unconstrained step, ignoring bounds, up to boundary."""
     temp = np.sqrt(gradient_projected_sumsq * raw_distance + g_x**2)
-    gradient_sumsq = np.array([gradient_sumsq])
     if g_x >= 0:
         distance_to_boundary = raw_distance / (temp + g_x)
     else:
         distance_to_boundary = (temp - g_x) / gradient_projected_sumsq
     if g_hess_g <= 0:
-        step_len = distance_to_boundary
+        step_len = distance_to_boundary[0]
     else:
         if distance_to_boundary <= gradient_sumsq / g_hess_g:
-            step_len = distance_to_boundary
+            step_len = distance_to_boundary[0]
         else:
             step_len = gradient_sumsq / g_hess_g
 
@@ -417,7 +415,7 @@ def _update_candidate_vectors_and_reduction(
     """Update candidate vectors and the associated criterion reduction."""
     current_min = g_hess_g / gradient_projected_sumsq
 
-    if index_bound_active is None and current_min > 0:
+    if index_bound_active.size == 0 and current_min > 0:
         if curve_min != -1.0:
             curve_min = min(curve_min, current_min)
         else:
@@ -463,7 +461,6 @@ def _take_constrained_step_up_to_boundary(
                 step_len_constr = (
                     lower_bounds[i] - x_candidate[i]
                 ) / gradient_projected[i]
-            step_len_constr = np.array([step_len_constr])
             if step_len_constr < step_len:
                 step_len = step_len_constr
                 index_bound_active = np.array([i])
