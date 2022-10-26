@@ -482,6 +482,7 @@ def test_minimize_bntr():
     res_fast = _minimize_bntr(
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )
+    # using aaae to get tests run on windows machines.
     aaae(res_orig["x"], res_fast[0])
-    aaae(res_orig["criterion"]), aaae(res_fast[1])
+    aaae(res_orig["criterion"], res_fast[1])
     assert res_orig["success"] == res_fast[3]
