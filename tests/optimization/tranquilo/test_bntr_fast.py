@@ -483,5 +483,5 @@ def test_minimize_bntr():
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )
     aaae(res_orig["x"], res_fast[0])
-    assert res_orig["criterion"].round(10) == res_fast[1].round(10)
+    assert np.round(res_orig["criterion"], 10) == np.round(res_fast[1], 10)
     assert res_orig["success"] == res_fast[3]
