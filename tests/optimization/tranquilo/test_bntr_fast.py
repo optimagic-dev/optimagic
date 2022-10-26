@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_orig,
 )
@@ -78,7 +80,12 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     update_trustregion_radius_conjugate_gradient_fast,
 )
+from estimagic.optimization.subsolvers.quadratic_subsolvers import _minimize_bntr
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_bntr_quadratic,
+)
 from estimagic.optimization.tranquilo.models import ScalarModel
+from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 
 
@@ -455,3 +462,26 @@ def test_update_trustregion_radius_and_gradient_descent():
     )
     assert res_orig[0] == res_fast[0]
     assert res_fast[1] == res_orig[1]
+
+
+def test_minimize_bntr():
+    model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
+    lower_bounds = -np.ones(len(model.linear_terms))
+    upper_bounds = np.ones(len(model.linear_terms))
+    options = {
+        "maxiter": 20,
+        "maxiter_gradient_descent": 5,
+        "conjugate_gradient_method": "cg",
+        "gtol_abs": 1e-08,
+        "gtol_rel": 1e-08,
+        "gtol_scaled": 0.0,
+        "gtol_abs_conjugate_gradient": 1e-08,
+        "gtol_rel_conjugate_gradient": 1e-06,
+    }
+    res_orig = minimize_bntr_quadratic(model, lower_bounds, upper_bounds, **options)
+    res_fast = _minimize_bntr(
+        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
+    )
+    aaae(res_orig["x"], res_fast[0])
+    assert res_orig["criterion"] == res_fast[1]
+    assert res_orig["success"] == res_fast[3]
