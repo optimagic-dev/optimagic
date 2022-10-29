@@ -87,7 +87,7 @@ jobs:
 
       - name: Install core dependencies.
         shell: bash -l {0}
-        run: conda install -c conda-forge tox-conda
+        run: conda install -c conda-forge tox-conda==0.10.0 tox==3.26.0
 
       - name: Build docs
         shell: bash -l {0}
