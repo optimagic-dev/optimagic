@@ -22,4 +22,4 @@ dependencies:
   - myst-parser
 
   - pip:
-      - ../../
+      - ../
