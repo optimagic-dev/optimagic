@@ -57,3 +57,4 @@ dependencies:
       - gif
       - gif[matplotlib]
       - kaleido
+      - simoptlib
