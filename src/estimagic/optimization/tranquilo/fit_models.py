@@ -43,8 +43,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
     built_in_fitters = {
         "ols": fit_ols,
         "ridge": fit_ridge,
-        "pounders": fit_pounders,
-        "_pounders_experimental": fit_pounders_experimental,
+        "powell": _fit_minimal_frobenius_norm_of_hessian,
         "flexible": fit_flexible,
     }
 
@@ -280,7 +279,7 @@ def fit_flexible(x, y, model_info):
         model_info = model_info._replace(has_squares=False, has_interactions=False)
         coef = fit_ols(x, y, model_info)
     elif n_samples <= 0.5 * n_params * (n_params + 1) + n_params:
-        coef = fit_pounders(x, y, model_info)
+        coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_info)
     else:
         model_info = model_info._replace(has_squares=True, has_interactions=True)
         coef = fit_ols(x, y, model_info)
@@ -288,11 +287,12 @@ def fit_flexible(x, y, model_info):
     return coef
 
 
-def fit_pounders(x, y, model_info):
-    """Fit a linear model using the pounders fitting method.
+def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
+    """Fit a quadraitc model using the powell fitting method.
 
     The solution represents the quadratic whose Hessian matrix is of
-    minimum Frobenius norm.
+    minimum Frobenius norm. This has been popularized by Powell and is used in
+    many optimizers, e.g. bobyqa and pounders.
 
     For a mathematical exposition, see :cite:`Wild2008`, p. 3-5.
 
@@ -318,39 +318,14 @@ def fit_pounders(x, y, model_info):
     else:
         n_poly_features = n_params * (n_params - 1) // 2
 
-    m_mat, n_mat, z_mat, n_z_mat = _get_feature_matrices_pounders(x, model_info)
-
-    coef = _get_current_fit_pounders(
-        y,
+    (
         m_mat,
         n_mat,
         z_mat,
         n_z_mat,
-        n_params=n_params,
-        n_poly_features=n_poly_features,
-        has_intercepts=has_intercepts,
-        _is_just_identified=_is_just_identified,
-    )
+    ) = _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info)
 
-    return coef
-
-
-def fit_pounders_experimental(x, y, model_info):
-    n_samples, n_params = x.shape
-    _is_just_identified = n_samples == (n_params + 1)
-    has_intercepts = model_info.has_intercepts
-    has_squares = model_info.has_squares
-
-    if has_squares:
-        n_poly_features = n_params * (n_params + 1) // 2
-    else:
-        n_poly_features = n_params * (n_params - 1) // 2
-
-    m_mat, n_mat, z_mat, n_z_mat = _get_feature_matrices_pounders_experimental(
-        x, model_info
-    )
-
-    coef = _get_current_fit_pounders_experimental(
+    coef = _get_current_fit_minimal_frobenius_norm_of_hessian(
         y,
         m_mat,
         n_mat,
@@ -365,7 +340,7 @@ def fit_pounders_experimental(x, y, model_info):
     return coef
 
 
-def _get_current_fit_pounders(
+def _get_current_fit_minimal_frobenius_norm_of_hessian(
     y,
     m_mat,
     n_mat,
@@ -410,52 +385,7 @@ def _get_current_fit_pounders(
     return np.atleast_2d(coef)
 
 
-def _get_current_fit_pounders_experimental(
-    y,
-    m_mat,
-    n_mat,
-    z_mat,
-    n_z_mat,
-    n_params,
-    n_poly_features,
-    has_intercepts,
-    _is_just_identified,
-):
-    n_residuals = y.shape[1]
-    offset = 0 if has_intercepts else 1
-
-    coeffs_linear = np.empty((n_residuals, has_intercepts + n_params))
-    coeffs_square = np.empty((n_residuals, n_poly_features))
-
-    if _is_just_identified:
-        coeffs_first_stage = np.zeros(n_params)
-        coeffs_second_stage = np.zeros(n_poly_features)
-    else:
-        n_z_mat_square = n_z_mat.T @ n_z_mat
-
-    for k in range(n_residuals):
-        if not _is_just_identified:
-            z_y_vec = np.dot(z_mat.T, y[:, k])
-            coeffs_first_stage = np.linalg.solve(
-                np.atleast_2d(n_z_mat_square),
-                np.atleast_1d(z_y_vec),
-            )
-
-            coeffs_second_stage = np.atleast_2d(n_z_mat) @ coeffs_first_stage
-
-        rhs = y[:, k] - n_mat @ coeffs_second_stage
-
-        alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
-        coeffs_linear[k, :] = alpha[offset : (n_params + 1)]
-
-        coeffs_square[k] = coeffs_second_stage
-
-    coef = np.concatenate((coeffs_linear, coeffs_square), axis=1)
-
-    return np.atleast_2d(coef)
-
-
-def _get_feature_matrices_pounders_experimental(x, model_info):
+def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
     n_samples, n_params = x.shape
     _is_just_identified = n_samples == (n_params + 1)
     has_squares = model_info.has_squares
@@ -468,49 +398,6 @@ def _get_feature_matrices_pounders_experimental(x, model_info):
 
     features = _polynomial_features(x, has_intercepts, has_squares)
     m_mat, n_mat = np.split(features, (n_params + 1,), axis=1)
-
-    m_mat_pad = np.zeros((n_samples, n_samples))
-    m_mat_pad[:, : n_params + 1] = m_mat
-
-    n_z_mat, _ = qr_multiply(
-        m_mat_pad,
-        n_mat.T,
-    )
-
-    z_mat, _ = qr_multiply(
-        m_mat_pad,
-        np.eye(n_samples),
-    )
-
-    if _is_just_identified:
-        n_z_mat = np.zeros((n_samples, n_poly_features))
-        n_z_mat[:n_params, :n_params] = np.eye(n_params)
-
-    return (
-        m_mat[: n_params + 1, : n_params + 1],
-        n_mat,
-        z_mat[:, n_params + 1 : n_samples],
-        n_z_mat[:, n_params + 1 : n_samples],
-    )
-
-
-def _get_feature_matrices_pounders(x, model_info):
-    n_samples, n_params = x.shape
-    _is_just_identified = n_samples == (n_params + 1)
-    has_squares = model_info.has_squares
-
-    if has_squares:
-        n_poly_features = n_params * (n_params + 1) // 2
-    else:
-        n_poly_features = n_params * (n_params - 1) // 2
-
-    m_mat = np.zeros((n_samples, n_params + 1))
-    m_mat[:, 0] = 1
-    n_mat = np.zeros((n_samples, n_poly_features))
-
-    for i in range(n_samples):
-        m_mat[i, 1:] = x[i]
-        n_mat[i, :] = _interactions_and_square_features(m_mat[i, 1:], has_squares)
 
     m_mat_pad = np.zeros((n_samples, n_samples))
     m_mat_pad[:, : n_params + 1] = m_mat
@@ -586,26 +473,3 @@ def _polynomial_features(x, has_intercepts, has_squares):
         out = np.concatenate((xt, poly_terms), axis=0)
 
     return out.T
-
-
-@njit
-def _interactions_and_square_features(x, has_squares):
-    x = np.atleast_2d(x)
-    n_samples, n_params = x.shape
-
-    if has_squares:
-        n_poly_terms = n_params * (n_params + 1) // 2
-    else:
-        n_poly_terms = n_params * (n_params - 1) // 2
-
-    poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
-    xt = x.T
-
-    idx = 0
-    for i in range(n_params):
-        j_start = i if has_squares else i + 1
-        for j in range(j_start, n_params):
-            poly_terms[idx] = xt[i] * xt[j]
-            idx += 1
-
-    return poly_terms.T

@@ -4,13 +4,7 @@ import yaml
 from estimagic import first_derivative
 from estimagic import second_derivative
 from estimagic.config import TEST_FIXTURES_DIR
-from estimagic.optimization.tranquilo.fit_models import _get_current_fit_pounders
-from estimagic.optimization.tranquilo.fit_models import _get_feature_matrices_pounders
-from estimagic.optimization.tranquilo.fit_models import (
-    _interactions_and_square_features,
-)
 from estimagic.optimization.tranquilo.fit_models import _polynomial_features
-from estimagic.optimization.tranquilo.fit_models import _reshape_square_terms_to_hess
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
 from numpy.testing import assert_array_almost_equal
@@ -31,21 +25,6 @@ def read_yaml(path):
         data = yaml.full_load(file)
 
     return data
-
-
-def _transform_square_terms_to_pounders(square_terms, n_params, n_residuals):
-
-    for k in range(n_residuals):
-        num = 0
-        for i in range(n_params):
-            square_terms[k, i, i] *= 0.5
-            num += 1
-            for j in range(i + 1, n_params):
-                square_terms[k, j, i] /= np.sqrt(2)
-                square_terms[k, i, j] /= np.sqrt(2)
-                num += 1
-
-    return square_terms
 
 
 # ======================================================================================
@@ -210,11 +189,11 @@ def test_fit_ols_against_truth(quadratic_case):
 
 
 @pytest.mark.parametrize("scenario", ["just_identified_case", "quadratic_case"])
-def test_fit_pounders_against_truth(scenario, request):
+def test_fit_powell_against_truth(scenario, request):
     test_case = request.getfixturevalue(scenario)
 
     model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
-    fit_pounders = get_fitter("pounders", model_info=model_info)
+    fit_pounders = get_fitter("powell", model_info=model_info)
     got = fit_pounders(test_case["x"], test_case["y"])
 
     aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
@@ -222,42 +201,14 @@ def test_fit_pounders_against_truth(scenario, request):
 
 
 @pytest.mark.parametrize("scenario", ["just_identified_case", "quadratic_case"])
-def test_fit_pounders_experimental_against_truth(scenario, request):
-    test_case = request.getfixturevalue(scenario)
-
-    model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
-    fit_pounders = get_fitter("_pounders_experimental", model_info=model_info)
-    got = fit_pounders(test_case["x"], test_case["y"])
-
-    aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
-    aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
-
-
-@pytest.mark.parametrize("scenario", ["just_identified_case", "quadratic_case"])
-def test_pounders_no_intercepts(scenario, request):
+def test_powell_no_intercepts(scenario, request):
 
     test_case = request.getfixturevalue(scenario)
 
     model_info = ModelInfo(
         has_intercepts=False, has_squares=True, has_interactions=True
     )
-    fit_pounders = get_fitter("pounders", model_info=model_info)
-    got = fit_pounders(test_case["x"], test_case["y"])
-
-    assert got.intercepts is None
-    aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
-    aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
-
-
-@pytest.mark.parametrize("scenario", ["just_identified_case", "quadratic_case"])
-def test_pounders_experimental_no_intercepts(scenario, request):
-
-    test_case = request.getfixturevalue(scenario)
-
-    model_info = ModelInfo(
-        has_intercepts=False, has_squares=True, has_interactions=True
-    )
-    fit_pounders = get_fitter("_pounders_experimental", model_info=model_info)
+    fit_pounders = get_fitter("powell", model_info=model_info)
     got = fit_pounders(test_case["x"], test_case["y"])
 
     assert got.intercepts is None
@@ -317,61 +268,3 @@ def test_polynomial_features(has_intercepts, has_squares):
     )
 
     assert_array_equal(got, expected[(has_intercepts, has_squares)])
-
-
-@pytest.mark.parametrize("has_squares", [False, True])
-def test_square_features_pounders(has_squares):
-    has_intercepts = False
-
-    x = np.array([[0, 1, 2], [3, 4, 5]])
-
-    expected = {
-        # (has_intercepts, has_squares): expected value,
-        (False, True): np.array(
-            [[0, 1, 2, 0, 0, 0, 1, 2, 4], [3, 4, 5, 9, 12, 15, 16, 20, 25]]
-        ),
-        (False, False): np.array([[0, 1, 2, 0, 0, 2], [3, 4, 5, 12, 15, 20]]),
-    }
-
-    got_interactions_and_square_features = _interactions_and_square_features(
-        x, has_squares=has_squares
-    )
-    polynomial_features = np.concatenate(
-        (x, got_interactions_and_square_features), axis=1
-    )
-
-    assert_array_equal(polynomial_features, expected[(has_intercepts, has_squares)])
-
-
-def test_polynomial_feature_matrices_pounders(
-    data_get_feature_matrices_pounders,
-):
-    inputs, expected = data_get_feature_matrices_pounders
-
-    x = inputs["x"]
-    model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
-
-    m_mat, _n_mat, z_mat, _n_z_mat = _get_feature_matrices_pounders(x, model_info)
-
-    assert_array_almost_equal(m_mat, expected["m_mat"])
-    assert_array_almost_equal(z_mat, expected["z_mat"])
-
-
-def test_get_current_fit_pounders_transform_after_reshaping(data_fit_pounders):
-    inputs, expected = data_fit_pounders
-    n_params = inputs["n_params"]
-    has_squares = True
-    n_residuals = 214
-
-    coef = _get_current_fit_pounders(**inputs)
-    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
-
-    _square_terms = _reshape_square_terms_to_hess(
-        _square_terms, n_params, n_residuals, has_squares
-    )
-    square_terms = _transform_square_terms_to_pounders(
-        _square_terms, n_params, n_residuals
-    )
-
-    assert_array_almost_equal(linear_terms, expected["linear_terms"])
-    assert_array_almost_equal(square_terms, expected["square_terms"])

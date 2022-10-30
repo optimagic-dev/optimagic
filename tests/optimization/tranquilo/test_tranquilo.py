@@ -25,10 +25,7 @@ _sample_size = ["powell"]
 ols_keep_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = [
-    "pounders",
-    "_pounders_experimental",
-]
+_fitter = ["powell"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["quadratic"]
 pounders_discard_all = list(
@@ -36,7 +33,7 @@ pounders_discard_all = list(
 )
 
 _sample_filter = ["keep_all"]
-_fitter = ["pounders", "_pounders_experimental"]
+_fitter = ["powell"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "powell", "quadratic"]
 pounders_keep_all = list(
@@ -52,18 +49,12 @@ ols_pounders_filtering = list(
 )
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["_pounders_experimental"]
+_fitter = ["powell"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "powell", "quadratic"]
 pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
-
-_sample_filter = ["drop_pounders"]
-_fitter = ["pounders"]
-_surrogate_model = ["quadratic"]
-_sample_size = ["powell", "quadratic"]
-pounders = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 
 TEST_CASES = (
@@ -73,7 +64,6 @@ TEST_CASES = (
     + pounders_keep_all
     + ols_pounders_filtering
     + pounders_filtering
-    + pounders
 )
 
 
@@ -95,7 +85,7 @@ def test_internal_tranquilo_scalar_sphere_defaults(
 
 
 # ======================================================================================
-# Imprecise defaults
+# Imprecise options for scalar tranquilo
 # ======================================================================================
 
 _sample_filter = ["keep_all"]
@@ -105,7 +95,7 @@ _sample_size = ["linear"]
 ols_keep_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders", "_pounders_experimental"]
+_fitter = ["powell"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["powell"]
 pounders_discard_all = list(
@@ -133,55 +123,6 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 
 
 # ======================================================================================
-# Problematic defaults
-# ======================================================================================
-
-_sample_filter = ["discard_all", "drop_pounders"]
-_fitter = ["ols"]
-_surrogate_model = ["quadratic"]
-_sample_size = ["linear"]
-ols_discard_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
-
-_sample_filter = ["discard_all"]
-_fitter = ["pounders", "_pounders_experimental"]
-_surrogate_model = ["quadratic"]
-_sample_size = ["linear"]
-pounders_discard_all = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
-
-
-_sample_filter = ["drop_pounders"]
-_fitter = ["pounders"]
-_surrogate_model = ["quadratic"]
-_sample_size = ["linear"]
-pounders_filtering = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
-
-
-TEST_CASES_PROBLEMATIC = ols_discard_all + pounders_discard_all + pounders_filtering
-
-
-@pytest.mark.xfail
-@pytest.mark.parametrize(
-    "sample_filter, fitter, surrogate_model, sample_size", TEST_CASES_PROBLEMATIC
-)
-def test_internal_tranquilo_scalar_sphere_problematic_defaults(
-    sample_filter, fitter, surrogate_model, sample_size
-):
-    res = tranquilo(
-        criterion=lambda x: x @ x,
-        x=np.arange(5),
-        sample_filter=sample_filter,
-        fitter=fitter,
-        surrogate_model=surrogate_model,
-        sample_size=sample_size,
-    )
-    aaae(res["solution_x"], np.zeros(5), decimal=5)
-
-
-# ======================================================================================
 # External
 # ======================================================================================
 
@@ -203,73 +144,25 @@ def test_external_tranquilo_scalar_sphere_defaults():
 _sample_filter = ["keep_all", "discard_all"]
 _fitter = ["ols"]
 _surrogate_model = ["linear"]
-_sample_size = ["linear", "powell", "quadratic"]
+_sample_size = ["linear"]
 ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
-_sample_filter = ["discard_all"]
-_fitter = ["pounders", "_pounders_experimental"]
-_surrogate_model = ["linear"]
-_sample_size = ["linear", "powell", "quadratic"]
-pounders_discard_all = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
-
-_sample_filter = ["keep_all"]
-_fitter = ["pounders"]
-_surrogate_model = ["linear"]
-_sample_size = ["linear", "powell", "quadratic"]
-pounders_keep_all = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["ols", "pounders", "_pounders_experimental"]
+_fitter = ["ols"]
 _surrogate_model = ["linear"]
-_sample_size = ["linear", "powell", "quadratic"]
+_sample_size = ["linear"]
 pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
-TEST_CASES = ols + pounders_discard_all + pounders_keep_all + pounders_filtering
+TEST_CASES = ols + pounders_filtering
 
 
 @pytest.mark.parametrize(
     "sample_filter, fitter, surrogate_model, sample_size", TEST_CASES
 )
 def test_internal_tranquilo_ls_sphere_defaults(
-    sample_filter, fitter, surrogate_model, sample_size
-):
-    res = tranquilo_ls(
-        criterion=lambda x: x,
-        x=np.arange(5),
-        sample_filter=sample_filter,
-        fitter=fitter,
-        surrogate_model=surrogate_model,
-        sample_size=sample_size,
-    )
-    aaae(res["solution_x"], np.zeros(5), decimal=5)
-
-
-# ======================================================================================
-# Problematic defaults
-# ======================================================================================
-
-_sample_filter = ["keep_all"]
-_fitter = ["_pounders_experimental"]
-_surrogate_model = ["linear"]
-_sample_size = ["linear", "powell", "quadratic"]
-pounders_keep_all = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
-
-TEST_CASES_PROBLEMATIC = pounders_keep_all
-
-
-@pytest.mark.xfail
-@pytest.mark.parametrize(
-    "sample_filter, fitter, surrogate_model, sample_size", TEST_CASES_PROBLEMATIC
-)
-def test_internal_tranquilo_ls_sphere_problematic_defaults(
     sample_filter, fitter, surrogate_model, sample_size
 ):
     res = tranquilo_ls(
