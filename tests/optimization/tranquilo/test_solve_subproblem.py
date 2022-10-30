@@ -29,7 +29,9 @@ def test_without_bounds(solver_name):
         ]
     )
 
-    model = ScalarModel(linear_terms=linear_terms, square_terms=quadratic_terms)
+    model = ScalarModel(
+        intercept=0, linear_terms=linear_terms, square_terms=quadratic_terms
+    )
 
     trustregion = namedtuple("Trustregion", ["center", "radius"])(
         center=np.zeros(3),
