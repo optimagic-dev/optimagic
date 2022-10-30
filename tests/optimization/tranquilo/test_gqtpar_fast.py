@@ -12,6 +12,9 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic import (
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     _compute_smallest_step_len_for_candidate_vector as _smallest_step_len_orig,
 )
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
+    _compute_terms_to_make_leading_submatrix_singular as _make_matrix_singular_orig,
+)
 from estimagic.optimization.subsolvers.gqtpar_quadratic import _get_new_lambda_candidate
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     _solve_scalar_quadratic_equation as _solve_quadratic_orig,
@@ -33,6 +36,9 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     get_initial_guess_for_lambdas,
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic import HessianInfo
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
+    update_lambdas_when_factorization_unsuccessful,
+)
 from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
     _compute_gershgorin_bounds as _compute_gershgorin_bounds_fast,
 )
@@ -41,6 +47,9 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
     _compute_smallest_step_len_for_candidate_vector as _smallest_step_len_fast,
+)
+from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
+    _compute_terms_to_make_leading_submatrix_singular as _make_matrix_sinbular_fast,
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
     _get_new_lambda_candidate as _get_new_lambda_candidate_fast,
@@ -65,6 +74,9 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
     get_initial_guess_for_lambdas_fast,
+)
+from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
+    update_lambdas_when_factorization_unsuccessful_fast,
 )
 from estimagic.optimization.tranquilo.models import ScalarModel
 from numpy.testing import assert_array_almost_equal as aaae
@@ -410,3 +422,72 @@ def test_check_for_interior_convergence():
     assert res[2] == expected[1].lower_bound
     assert res[3] == expected[1].upper_bound
     assert res[4] == expected[2]
+
+
+def test_compute_terms_to_make_leading_submatrix_singular():
+    hessian_upper_triangular = np.array(
+        [
+            [1.2136, 1.1899, 1.2924, 0.8767],
+            [0.0, 0.4093, -0.1559, -0.2344],
+            [0.0, 0.0, 0.5363, -0.3077],
+            [0.0, 0.0, 0.0, -0.9182],
+        ]
+    )
+    hessian_plus_lambda = np.array(
+        [
+            [1.67291, 1.44412, 1.56851, 1.06402],
+            [1.44412, 1.7834, 1.47403, 0.94728],
+            [1.56851, 1.47403, 2.18223, 1.00464],
+            [1.06402, 0.94728, 1.00464, 0.2],
+        ]
+    )
+    hessian_info = HessianInfo(
+        upper_triangular=hessian_upper_triangular,
+        hessian_plus_lambda=hessian_plus_lambda,
+    )
+    res = _make_matrix_sinbular_fast(hessian_upper_triangular, hessian_plus_lambda, 4)
+    expected = _make_matrix_singular_orig(hessian_info, 4)
+    aaae(res[0], expected[0])
+    aaae(res[1], expected[1])
+
+
+def test_update_lambdas_when_factorization_unsuccessful():
+    hessian_upper_triangular = np.array(
+        [
+            [1.2136, 1.1899, 1.2924, 0.8767],
+            [0.0, 0.4093, -0.1559, -0.2344],
+            [0.0, 0.0, 0.5363, -0.3077],
+            [0.0, 0.0, 0.0, -0.9182],
+        ]
+    )
+    hessian_plus_lambda = np.array(
+        [
+            [1.67291, 1.44412, 1.56851, 1.06402],
+            [1.44412, 1.7834, 1.47403, 0.94728],
+            [1.56851, 1.47403, 2.18223, 1.00464],
+            [1.06402, 0.94728, 1.00464, 0.2],
+        ]
+    )
+    lambda_candidate = 0.2
+    lambda_lower_bound = 0.01
+    lambda_upper_bound = 0.99
+    hessian_info = HessianInfo(
+        upper_triangular=hessian_upper_triangular,
+        hessian_plus_lambda=hessian_plus_lambda,
+    )
+    lambdas = DampingFactors(
+        candidate=lambda_candidate,
+        lower_bound=lambda_lower_bound,
+        upper_bound=lambda_upper_bound,
+    )
+    res = update_lambdas_when_factorization_unsuccessful_fast(
+        hessian_upper_triangular,
+        hessian_plus_lambda,
+        lambda_candidate,
+        lambda_lower_bound,
+        lambda_upper_bound,
+        4,
+    )
+    expected = update_lambdas_when_factorization_unsuccessful(hessian_info, lambdas, 4)
+    aaae(res[0], expected.candidate)
+    aaae(res[1], expected.lower_bound)

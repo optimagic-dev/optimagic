@@ -7,7 +7,6 @@ from estimagic.optimization.subsolvers._numba_potrf import (
     compute_cholesky_factorization,
 )
 from numba import njit
-from scipy.linalg import solve_triangular
 
 
 class HessianInfo(NamedTuple):
@@ -221,29 +220,30 @@ def check_for_interior_convergence_and_update_fast(
     )
 
 
-def update_lambdas_when_factorization_unsuccessful(
-    hessian_info, lambdas, factorization_info
+@njit
+def update_lambdas_when_factorization_unsuccessful_fast(
+    hessian_upper_triangular,
+    hessian_plus_lambda,
+    lambda_candidate,
+    lambda_lower_bound,
+    lambda_upper_bound,
+    factorization_info,
 ):
     """Update lambdas in the case that factorization of hessian not successful."""
     delta, v = _compute_terms_to_make_leading_submatrix_singular(
-        hessian_info,
-        factorization_info,
+        hessian_upper_triangular=hessian_upper_triangular,
+        hessian_plus_lambda=hessian_plus_lambda,
+        k=factorization_info,
     )
     v_norm = np.linalg.norm(v)
 
-    lambda_lower_bound = max(
-        lambdas.lower_bound, lambdas.candidate + delta / v_norm**2
+    lambda_new_lower_bound = max(
+        lambda_lower_bound, lambda_candidate + delta / v_norm**2
     )
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound, upper_bound=lambdas.upper_bound
+        lower_bound=lambda_new_lower_bound, upper_bound=lambda_upper_bound
     )
-
-    lambdas_new = lambdas._replace(
-        candidate=lambda_new_candidate,
-        lower_bound=lambda_lower_bound,
-    )
-
-    return lambdas_new
+    return lambda_new_candidate, lambda_new_lower_bound
 
 
 @njit
@@ -442,7 +442,10 @@ def _solve_scalar_quadratic_equation(z, d):
     return ta, tb
 
 
-def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
+@njit
+def _compute_terms_to_make_leading_submatrix_singular(
+    hessian_upper_triangular, hessian_plus_lambda, k
+):
     """Compute terms that make the leading submatrix of the hessian singular.
 
     The "hessian" here refers to the matrix
@@ -454,7 +457,7 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
     hessian matrix.
 
     Args:
-        hessian (np.ndarray): Symmetric k by k hessian matrix, which is not
+        hessian_plust_lambda(np.ndarray): Symmetric k by k hessian matrix, which is not
             positive definite.
         upper_triangular (np.ndarray) Upper triangular matrix resulting of an
             incomplete Cholesky decomposition of the hessian matrix.
@@ -468,12 +471,10 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
         - v (np.ndarray): A vector such that ``v.T B v = 0``. Where B is the
             hessian after ``delta`` is added to its element (k, k).
     """
-    hessian_plus_lambda = hessian_info.hessian_plus_lambda
-    upper_triangular = hessian_info.upper_triangular
     n = len(hessian_plus_lambda)
 
     delta = (
-        np.sum(upper_triangular[: k - 1, k - 1] ** 2)
+        np.sum(hessian_upper_triangular[: k - 1, k - 1] ** 2)
         - hessian_plus_lambda[k - 1, k - 1]
     )
 
@@ -481,8 +482,9 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
     v[k - 1] = 1
 
     if k != 1:
-        v[: k - 1] = solve_triangular(
-            upper_triangular[: k - 1, : k - 1], -upper_triangular[: k - 1, k - 1]
+        v[: k - 1] = np.linalg.solve(
+            hessian_upper_triangular[: k - 1, : k - 1],
+            -hessian_upper_triangular[: k - 1, k - 1],
         )
 
     return delta, v
