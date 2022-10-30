@@ -5,21 +5,12 @@ from estimagic import first_derivative
 from estimagic import second_derivative
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.tranquilo.fit_models import _get_current_fit_pounders
-from estimagic.optimization.tranquilo.fit_models import (
-    _get_current_fit_pounders_original,
-)
 from estimagic.optimization.tranquilo.fit_models import _get_feature_matrices_pounders
-from estimagic.optimization.tranquilo.fit_models import (
-    _get_feature_matrices_pounders_original,
-)
 from estimagic.optimization.tranquilo.fit_models import (
     _interactions_and_square_features,
 )
 from estimagic.optimization.tranquilo.fit_models import _polynomial_features
 from estimagic.optimization.tranquilo.fit_models import _reshape_square_terms_to_hess
-from estimagic.optimization.tranquilo.fit_models import (
-    _transform_interactions_and_square_terms_back,
-)
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
 from numpy.testing import assert_array_almost_equal
@@ -352,24 +343,6 @@ def test_square_features_pounders(has_squares):
     assert_array_equal(polynomial_features, expected[(has_intercepts, has_squares)])
 
 
-def test_polynomial_feature_matrices_pounders_original(
-    data_get_feature_matrices_pounders,
-):
-    inputs, expected = data_get_feature_matrices_pounders
-
-    x = inputs["x"]
-    model_info = ModelInfo(has_intercepts=True, has_squares=True, has_interactions=True)
-
-    m_mat, n_mat, z_mat, n_z_mat = _get_feature_matrices_pounders_original(
-        x, model_info
-    )
-
-    assert_array_almost_equal(m_mat, expected["m_mat"])
-    assert_array_almost_equal(n_mat, expected["n_mat"])
-    assert_array_almost_equal(z_mat, expected["z_mat"])
-    assert_array_almost_equal(n_z_mat, expected["n_z_mat"])
-
-
 def test_polynomial_feature_matrices_pounders(
     data_get_feature_matrices_pounders,
 ):
@@ -382,23 +355,6 @@ def test_polynomial_feature_matrices_pounders(
 
     assert_array_almost_equal(m_mat, expected["m_mat"])
     assert_array_almost_equal(z_mat, expected["z_mat"])
-
-
-def test_get_current_fit_pounders_original(data_fit_pounders):
-    inputs, expected = data_fit_pounders
-    n_params = inputs["n_params"]
-    n_residuals = 214
-    has_squares = True
-
-    coef = _get_current_fit_pounders_original(**inputs, has_squares=has_squares)
-    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
-
-    square_terms = _reshape_square_terms_to_hess(
-        _square_terms, n_params, n_residuals, has_squares
-    )
-
-    assert_array_almost_equal(linear_terms, expected["linear_terms"])
-    assert_array_almost_equal(square_terms, expected["square_terms"])
 
 
 def test_get_current_fit_pounders_transform_after_reshaping(data_fit_pounders):
@@ -415,27 +371,6 @@ def test_get_current_fit_pounders_transform_after_reshaping(data_fit_pounders):
     )
     square_terms = _transform_square_terms_to_pounders(
         _square_terms, n_params, n_residuals
-    )
-
-    assert_array_almost_equal(linear_terms, expected["linear_terms"])
-    assert_array_almost_equal(square_terms, expected["square_terms"])
-
-
-@pytest.mark.xfail
-def test_get_current_fit_pounders_transform_before_reshaping(data_fit_pounders):
-    inputs, expected = data_fit_pounders
-    n_params = inputs["n_params"]
-    has_squares = True
-    n_residuals = 214
-
-    coef = _get_current_fit_pounders(**inputs)
-    linear_terms, _square_terms = np.split(coef, (n_params,), axis=1)
-
-    square_terms = _transform_interactions_and_square_terms_back(
-        _square_terms, n_params, has_squares
-    )
-    square_terms = _reshape_square_terms_to_hess(
-        square_terms, n_params, n_residuals, has_squares
     )
 
     assert_array_almost_equal(linear_terms, expected["linear_terms"])

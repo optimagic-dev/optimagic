@@ -33,13 +33,14 @@ def _tranquilo(
     sample_filter="keep_all",
     fitter="ols",
     subsolver="bntr",
-    sample_size="quadratic",
+    sample_size=None,
     surrogate_model=None,
     radius_options=None,
     sampler_options=None,
     fit_options=None,
     solver_options=None,
     conv_options=None,
+    silence_experimental_warning=False,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -68,7 +69,7 @@ def _tranquilo(
         subsolver (str): The algorithm used for solving the nested surrogate model.
         sample_size (str): Target sample size. One of:
             - "linear": n + 1
-            - "pounders": 2 * n + 1
+            - "powell": 2 * n + 1
             - "quadratic: 0.5 * n * (n + 1) + n + 1
         surrogate_model (str): Type of surrogate model to fit. Both a "linear" and
             "quadratic" surrogate model are supported.
@@ -95,10 +96,11 @@ def _tranquilo(
     # ==================================================================================
     # experimental warning
     # ==================================================================================
-    warnings.warn(
-        "Tranquilo is extremely experimental. algo_options and results will change "
-        "frequently and without notice. Do not use."
-    )
+    if not silence_experimental_warning:
+        warnings.warn(
+            "Tranquilo is extremely experimental. algo_options and results will change "
+            "frequently and without notice. Do not use."
+        )
 
     # ==================================================================================
     # set default values for optional arguments

@@ -36,7 +36,7 @@ pounders_discard_all = list(
 )
 
 _sample_filter = ["keep_all"]
-_fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
+_fitter = ["pounders", "_pounders_experimental"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear", "powell", "quadratic"]
 pounders_keep_all = list(
@@ -65,13 +65,6 @@ _surrogate_model = ["quadratic"]
 _sample_size = ["powell", "quadratic"]
 pounders = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
-_sample_filter = ["drop_pounders"]
-_fitter = ["_pounders_original"]
-_surrogate_model = ["quadratic"]
-_sample_size = ["powell", "quadratic"]
-pounders_original = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
 
 TEST_CASES = (
     ols
@@ -81,7 +74,6 @@ TEST_CASES = (
     + ols_pounders_filtering
     + pounders_filtering
     + pounders
-    + pounders_original
 )
 
 
@@ -151,23 +143,16 @@ _sample_size = ["linear"]
 ols_discard_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
+_fitter = ["pounders", "_pounders_experimental"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear"]
 pounders_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
-_sample_filter = ["discard_all"]
-_fitter = ["_pounders_original"]
-_surrogate_model = ["quadratic"]
-_sample_size = ["powell"]
-pounders_original_discard_all = list(
-    product(_sample_filter, _fitter, _surrogate_model, _sample_size)
-)
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["_pounders_original", "pounders"]
+_fitter = ["pounders"]
 _surrogate_model = ["quadratic"]
 _sample_size = ["linear"]
 pounders_filtering = list(
@@ -175,12 +160,7 @@ pounders_filtering = list(
 )
 
 
-TEST_CASES_PROBLEMATIC = (
-    ols_discard_all
-    + pounders_discard_all
-    + pounders_original_discard_all
-    + pounders_filtering
-)
+TEST_CASES_PROBLEMATIC = ols_discard_all + pounders_discard_all + pounders_filtering
 
 
 @pytest.mark.xfail
@@ -227,7 +207,7 @@ _sample_size = ["linear", "powell", "quadratic"]
 ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
-_fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
+_fitter = ["pounders", "_pounders_experimental"]
 _surrogate_model = ["linear"]
 _sample_size = ["linear", "powell", "quadratic"]
 pounders_discard_all = list(
@@ -235,7 +215,7 @@ pounders_discard_all = list(
 )
 
 _sample_filter = ["keep_all"]
-_fitter = ["pounders", "_pounders_original"]
+_fitter = ["pounders"]
 _surrogate_model = ["linear"]
 _sample_size = ["linear", "powell", "quadratic"]
 pounders_keep_all = list(
@@ -243,7 +223,7 @@ pounders_keep_all = list(
 )
 
 _sample_filter = ["drop_pounders"]
-_fitter = ["ols", "pounders", "_pounders_experimental", "_pounders_original"]
+_fitter = ["ols", "pounders", "_pounders_experimental"]
 _surrogate_model = ["linear"]
 _sample_size = ["linear", "powell", "quadratic"]
 pounders_filtering = list(
