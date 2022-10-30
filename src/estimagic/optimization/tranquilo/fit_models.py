@@ -296,6 +296,11 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
 
     For a mathematical exposition, see :cite:`Wild2008`, p. 3-5.
 
+    This method should only be called if the number of samples is larger than what
+    is needed to identify the parameters of a linear model but smaller than what
+    is needed to identify the parameters of a quadratic model. Most of the time,
+    the sample size is 2n + 1.
+
     Args:
         x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
             rescaled such that the trust region becomes a hypercube from -1 to 1.
@@ -318,7 +323,6 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
     if n_samples >= _n_too_many:
         raise ValueError("Too may points for minimum frobenius fitting")
 
-    _is_just_identified = n_samples == (n_params + 1)
     has_squares = model_info.has_squares
 
     if has_squares:
@@ -334,14 +338,13 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
     ) = _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info)
 
     coef = _get_current_fit_minimal_frobenius_norm_of_hessian(
-        y,
-        m_mat,
-        n_mat,
-        z_mat,
-        n_z_mat,
-        n_params,
-        n_poly_features,
-        _is_just_identified,
+        y=y,
+        m_mat=m_mat,
+        n_mat=n_mat,
+        z_mat=z_mat,
+        n_z_mat=n_z_mat,
+        n_params=n_params,
+        n_poly_features=n_poly_features,
     )
 
     return coef
@@ -355,7 +358,6 @@ def _get_current_fit_minimal_frobenius_norm_of_hessian(
     n_z_mat,
     n_params,
     n_poly_features,
-    _is_just_identified,
 ):
     n_residuals = y.shape[1]
     offset = 0
@@ -363,21 +365,16 @@ def _get_current_fit_minimal_frobenius_norm_of_hessian(
     coeffs_linear = np.empty((n_residuals, 1 + n_params))
     coeffs_square = np.empty((n_residuals, n_poly_features))
 
-    if _is_just_identified:
-        coeffs_first_stage = np.zeros(n_params)
-        coeffs_second_stage = np.zeros(n_poly_features)
-    else:
-        n_z_mat_square = n_z_mat.T @ n_z_mat
+    n_z_mat_square = n_z_mat.T @ n_z_mat
 
     for k in range(n_residuals):
-        if not _is_just_identified:
-            z_y_vec = np.dot(z_mat.T, y[:, k])
-            coeffs_first_stage = np.linalg.solve(
-                np.atleast_2d(n_z_mat_square),
-                np.atleast_1d(z_y_vec),
-            )
+        z_y_vec = np.dot(z_mat.T, y[:, k])
+        coeffs_first_stage = np.linalg.solve(
+            np.atleast_2d(n_z_mat_square),
+            np.atleast_1d(z_y_vec),
+        )
 
-            coeffs_second_stage = np.atleast_2d(n_z_mat) @ coeffs_first_stage
+        coeffs_second_stage = np.atleast_2d(n_z_mat) @ coeffs_first_stage
 
         rhs = y[:, k] - n_mat @ coeffs_second_stage
 
@@ -393,13 +390,7 @@ def _get_current_fit_minimal_frobenius_norm_of_hessian(
 
 def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
     n_samples, n_params = x.shape
-    _is_just_identified = n_samples == (n_params + 1)
     has_squares = model_info.has_squares
-
-    if has_squares:
-        n_poly_features = n_params * (n_params + 1) // 2
-    else:
-        n_poly_features = n_params * (n_params - 1) // 2
 
     features = _polynomial_features(x, has_squares)
     m_mat, n_mat = np.split(features, (n_params + 1,), axis=1)
@@ -416,10 +407,6 @@ def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
         m_mat_pad,
         np.eye(n_samples),
     )
-
-    if _is_just_identified:
-        n_z_mat = np.zeros((n_samples, n_poly_features))
-        n_z_mat[:n_params, :n_params] = np.eye(n_params)
 
     return (
         m_mat[: n_params + 1, : n_params + 1],
