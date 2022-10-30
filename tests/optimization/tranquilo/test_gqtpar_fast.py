@@ -293,4 +293,73 @@ def test_find_new_candidate_and_update_parameters():
     assert res[3] == expected[1].already_factorized
     aaae(res[4], expected[2].candidate)
     aaae(res[5], expected[2].lower_bound)
+    if expected[2].upper_bound is not None:
+        assert res[6] == expected[2].upper_bound
+    else:
+        assert res[6] == np.inf
+    assert res[7] == expected[3]
+
+
+def test_find_new_candidate_and_update_parameters_with_smaller_gardient():
+    model_hessian = np.array(
+        [
+            [1.473, 1.444, 1.569, 1.064],
+            [1.444, 1.583, 1.474, 0.947],
+            [1.569, 1.474, 1.982, 1.005],
+            [1.064, 0.947, 1.005, 1.192],
+        ]
+    )
+    model_gradient = np.ones(4) / 100
+    hessian_upper_triangular = np.array(
+        [
+            [1.214, 1.19, 1.292, 0.877],
+            [0.0, 0.409, -0.156, -0.234],
+            [0.0, 0.0, 0.536, -0.308],
+            [0.0, 0.0, 0.0, 0.523],
+        ]
+    )
+    lambda_candidate = 0.87
+    hessian_plus_lambda = model_hessian + lambda_candidate * np.eye(4)
+    lambda_lower_bound = 0.1
+    k_easy = 0.1
+    k_hard = 0.2
+    converged = False
+    hessian_already_factorized = False
+    hessian_info = HessianInfo(
+        already_factorized=hessian_already_factorized,
+        upper_triangular=hessian_upper_triangular,
+        hessian_plus_lambda=hessian_plus_lambda,
+    )
+    model = ScalarModel(square_terms=model_hessian, linear_terms=model_gradient)
+    lambdas = DampingFactors(
+        candidate=lambda_candidate,
+        lower_bound=lambda_lower_bound,
+    )
+    stopping_criteria = {"k_hard": k_hard, "k_easy": k_easy}
+    res = find_new_candidate_and_update_parameters_fast(
+        model_gradient,
+        model_hessian,
+        hessian_upper_triangular,
+        hessian_plus_lambda,
+        hessian_already_factorized,
+        lambda_candidate,
+        lambda_lower_bound,
+        np.inf,
+        k_easy,
+        k_hard,
+        converged,
+    )
+    expected = find_new_candidate_and_update_parameters(
+        model, hessian_info, lambdas, stopping_criteria, converged
+    )
+    aaae(res[0], expected[0])
+    aaae(res[1], expected[1].hessian_plus_lambda)
+    aaae(res[2], expected[1].upper_triangular)
+    assert res[3] == expected[1].already_factorized
+    aaae(res[4], expected[2].candidate)
+    aaae(res[5], expected[2].lower_bound)
+    if expected[2].upper_bound is not None:
+        assert res[6] == expected[2].upper_bound
+    else:
+        assert res[6] == np.inf
     assert res[7] == expected[3]
