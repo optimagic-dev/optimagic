@@ -156,7 +156,7 @@ def minimize_bntr_quadratic(
         "alpha5": 4.00,
         "min_radius": 1e-10,
         "max_radius": 1e10,
-        "default_radius": 100,
+        "default_radius": 100.00,
     }
 
     x_candidate = np.zeros_like(model.linear_terms)

@@ -3,10 +3,11 @@ from typing import NamedTuple
 from typing import Union
 
 import numpy as np
-from scipy.linalg import cho_solve
+from estimagic.optimization.subsolvers._numba_potrf import (
+    compute_cholesky_factorization,
+)
+from numba import njit
 from scipy.linalg import solve_triangular
-from scipy.linalg.lapack import dpotrf as compute_cholesky_factorization
-from scipy.optimize._trustregion_exact import estimate_smallest_singular_value
 
 
 class HessianInfo(NamedTuple):
@@ -21,8 +22,10 @@ class DampingFactors(NamedTuple):
     upper_bound: Union[float, None] = None
 
 
-def get_initial_guess_for_lambdas(
-    main_model,
+@njit
+def get_initial_guess_for_lambdas_fast(
+    model_gradient,
+    model_hessian,
 ):
     """Return good initial guesses for lambda, its lower and upper bound.
 
@@ -46,19 +49,18 @@ def get_initial_guess_for_lambdas(
             - "upper_bound"
             - "lower_bound"
     """
-    gradient_norm = np.linalg.norm(main_model.linear_terms)
-    model_hessian = main_model.square_terms
+    gradient_norm = np.linalg.norm(model_gradient)
 
     hessian_infinity_norm = np.linalg.norm(model_hessian, np.Inf)
-    hessian_frobenius_norm = np.linalg.norm(model_hessian, "fro")
+    hessian_frobenius_norm = np.linalg.norm(model_hessian)
 
     hessian_gershgorin_lower, hessian_gershgorin_upper = _compute_gershgorin_bounds(
-        main_model
+        model_hessian
     )
 
     lambda_lower_bound = max(
         0,
-        -min(model_hessian.diagonal()),
+        -min(np.diag(model_hessian)),
         gradient_norm
         - min(hessian_gershgorin_upper, hessian_frobenius_norm, hessian_infinity_norm),
     )
@@ -75,114 +77,109 @@ def get_initial_guess_for_lambdas(
             lower_bound=lambda_lower_bound, upper_bound=lambda_upper_bound
         )
 
-    lambdas = DampingFactors(
-        candidate=lambda_candidate,
-        lower_bound=lambda_lower_bound,
-        upper_bound=lambda_upper_bound,
-    )
-
-    return lambdas
+    return lambda_candidate, lambda_lower_bound, lambda_upper_bound
 
 
-def add_lambda_and_factorize_hessian(main_model, hessian_info, lambdas):
+@njit
+def add_lambda_and_factorize_hessian_fast(model_hessian, lambda_candidate):
     """Add lambda to hessian and factorize it into its upper triangular matrix.
 
     Args:
-        main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
-        hessian_info (NamedTuple): Named tuple containing transformations
-            of the hessian, i.e. square_terms, from the main model. The keys are:
-
-            - ``hessian_plus_lambda`` (np.ndarray): The square terms of the main model
-                plus the identity matrix times lambda. 2d array of shape (n, n).
-            - ``upper_triangular`` (np.ndarray): Factorization of the hessian from the
+        model_hessian (np.ndarray): The array with square terms of the main surrogate
+        model.
+        lambda_candidate (float): Initial guess for the damping factor lambda.
+    Returns:
+        hessian_plus_lambda (np.ndarray): The square terms of the main model
+                plus the identity matrix times lambda
+        hessian_upper_triangular (np.ndarray): Factorization of the hessian from the
                 main model into its upper triangular matrix. The diagonal is filled
                 and the lower lower triangular contains zeros.
-                2d array of shape (n, n).
-            - ``info_already_factorized`` (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-
-    Returns:
-        Tuple:
-        - hessian_info (dict): Named tuple containing the updated transformations
-            of the hessian, i.e. square_terms, from the main model. See above.
-        - factorization_info (int): Non-negative integer k indicating whether the
-            factorization of the hessian into its upper triangular matrix has been
-            successful.
-            If k = 0, the factorization has been successful.
-            A value k > 0 means that the leading k by k submatrix constitues the
-            first non-positive definite leading submatrix of the hessian.
+        factorization_info (int): Integer flag indicating whether hessian factorization
+            is successfull (0) and, if not, order of the first non positive definite
+            diagonal block.
     """
-    n = main_model.square_terms.shape[0]
+    n = model_hessian.shape[0]
 
-    hessian_plus_lambda = main_model.square_terms + lambdas.candidate * np.eye(n)
+    hessian_plus_lambda = model_hessian + lambda_candidate * np.eye(n)
     hessian_upper_triangular, factorization_info = compute_cholesky_factorization(
         hessian_plus_lambda,
-        lower=False,
-        overwrite_a=False,
-        clean=True,
     )
-
-    hessian_info_new = hessian_info._replace(
-        hessian_plus_lambda=hessian_plus_lambda,
-        upper_triangular=hessian_upper_triangular,
-    )
-
-    return hessian_info_new, factorization_info
+    return hessian_plus_lambda, hessian_upper_triangular, factorization_info
 
 
-def find_new_candidate_and_update_parameters(
-    main_model,
-    hessian_info,
-    lambdas,
-    stopping_criteria,
+@njit
+def find_new_candidate_and_update_parameters_fast(
+    model_gradient,
+    model_hessian,
+    hessian_upper_triangular,
+    hessian_plus_lambda,
+    hessian_already_factorized,
+    lambda_candidate,
+    lambda_lower_bound,
+    lambda_upper_bound,
+    stopping_k_easy,
+    stopping_k_hard,
     converged,
 ):
     """Find new candidate vector and update transformed hessian and lambdas."""
-    x_candidate = cho_solve(
-        (hessian_info.upper_triangular, False), -main_model.linear_terms
+    x_candidate = np.linalg.solve(
+        hessian_upper_triangular,
+        np.linalg.solve(hessian_upper_triangular.T, -model_gradient),
     )
+
     x_norm = np.linalg.norm(x_candidate)
 
-    if x_norm <= 1 and lambdas.candidate == 0:
+    if x_norm <= 1 and lambda_candidate == 0:
         converged = True
 
-    w = solve_triangular(hessian_info.upper_triangular, x_candidate, trans="T")
+    w = np.linalg.solve(hessian_upper_triangular.T, x_candidate)
     w_norm = np.linalg.norm(w)
 
-    newton_step = _compute_newton_step(lambdas, x_norm, w_norm)
+    newton_step = _compute_newton_step(lambda_candidate, x_norm, w_norm)
 
     if x_norm < 1:
         (
             x_candidate,
-            hessian_info,
-            lambdas_new,
+            hessian_plus_lambda,
+            hessian_already_factorized,
+            lambda_new_candidate,
+            lambda_new_lower_bound,
+            lambda_new_upper_bound,
             converged,
-        ) = _update_candidate_and_parameters_when_candidate_within_trustregion(
-            x_candidate,
-            main_model,
-            hessian_info,
-            lambdas,
-            newton_step,
-            stopping_criteria,
-            converged,
+        ) = _update_candidate_and_parameters_when_candidate_within_trustregion_fast(
+            x_candidate=x_candidate,
+            model_hessian=model_hessian,
+            hessian_upper_triangular=hessian_upper_triangular,
+            hessian_plus_lambda=hessian_plus_lambda,
+            hessian_already_factorized=hessian_already_factorized,
+            lambda_candidate=lambda_candidate,
+            lambda_lower_bound=lambda_lower_bound,
+            newton_step=newton_step,
+            stopping_criterion=stopping_k_hard,
+            converged=converged,
         )
 
     else:
-        lambdas_new, converged = _update_lambdas_when_candidate_outside_trustregion(
-            lambdas,
+        (
+            lambda_new_candidate,
+            lambda_new_lower_bound,
+            converged,
+        ) = _update_lambdas_when_candidate_outside_trustregion(
+            lambda_candidate,
             newton_step,
             x_norm,
-            stopping_criteria,
+            stopping_k_easy,
             converged,
         )
-
+        lambda_new_upper_bound = lambda_upper_bound
     return (
         x_candidate,
-        hessian_info,
-        lambdas_new,
+        hessian_plus_lambda,
+        hessian_upper_triangular,
+        hessian_already_factorized,
+        lambda_new_candidate,
+        lambda_new_lower_bound,
+        lambda_new_upper_bound,
         converged,
     )
 
@@ -261,12 +258,13 @@ def evaluate_model_criterion(x, main_model):
     return main_model.linear_terms.T @ x + 0.5 * x.T @ main_model.square_terms @ x
 
 
+@njit
 def _get_new_lambda_candidate(lower_bound, upper_bound):
     """Update current lambda so that it lies within its bounds.
 
     Args:
-        lower_boud (float): lower bound of the current candidate dumping factor.
-        upper_bound(float): upper bound of the current candidate dumping factor.
+        lambdas_new (NamedTuple): Named tuple containing the current candidate
+            value for the damping factor lambda, its lower bound and upper bound.
 
     Returns:
         float: New candidate for the damping factor lambda.
@@ -279,7 +277,8 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
     return lambda_new_candidate
 
 
-def _compute_gershgorin_bounds(main_model):
+@njit
+def _compute_gershgorin_bounds(model_hessian):
     """Compute upper and lower Gregoshgorin bounds for a square matrix.
 
     The Gregoshgorin bounds are the upper and lower bounds for the
@@ -287,17 +286,12 @@ def _compute_gershgorin_bounds(main_model):
     the main model). See :cite:`Conn2000`.
 
     Args:
-        main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
+        model_hessian (np.ndarray): square terms of the model.
 
     Returns:
-        Tuple:
-        - lower_bound (float): Lower Gregoshgorin bound.
-        - upper_bound (float): Upper Gregoshgorin bound.
+        - lower_gershgorin (float): Lower Gregoshgorin bound.
+        - upper_gershgorin (float): Upper Gregoshgorin bound.
     """
-    model_hessian = main_model.square_terms
 
     hessian_diag = np.diag(model_hessian)
     hessian_diag_abs = np.abs(hessian_diag)
@@ -309,12 +303,13 @@ def _compute_gershgorin_bounds(main_model):
     return lower_gershgorin, upper_gershgorin
 
 
-def _compute_newton_step(lambdas, p_norm, w_norm):
+@njit
+def _compute_newton_step(lambda_candidate, p_norm, w_norm):
     """Compute the Newton step.
 
     Args:
-        lambdas (NamedTuple): Named tuple containing the current candidate
-            value for the damping factor lambda, its lower bound and upper bound.
+        lambda_candidate (np.ndarray): The current candidate value for the damping
+            factor lambda.
         p_norm (float): Frobenius (i.e. L2-norm) of the candidate vector.
         w_norm (float): Frobenius (i.e. L2-norm) of vector w, which is the solution
             to the following triangular system: U.T w = p.
@@ -323,79 +318,80 @@ def _compute_newton_step(lambdas, p_norm, w_norm):
         float: Newton step computed according to formula (4.44) p.87
             from Nocedal and Wright (2006).
     """
-    return lambdas.candidate + (p_norm / w_norm) ** 2 * (p_norm - 1)
+    return lambda_candidate + (p_norm / w_norm) ** 2 * (p_norm - 1)
 
 
-def _update_candidate_and_parameters_when_candidate_within_trustregion(
+@njit
+def _update_candidate_and_parameters_when_candidate_within_trustregion_fast(
     x_candidate,
-    main_model,
-    hessian_info,
-    lambdas,
+    model_hessian,
+    hessian_upper_triangular,
+    hessian_plus_lambda,
+    hessian_already_factorized,
+    lambda_candidate,
+    lambda_lower_bound,
     newton_step,
-    stopping_criteria,
+    stopping_criterion,
     converged,
 ):
     """Update candidate vector, hessian, and lambdas when x outside trust-region."""
     n = len(x_candidate)
 
-    s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
+    s_min, z_min = estimate_smallest_singular_value(hessian_upper_triangular)
     step_len = _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min)
 
-    quadratic_term = x_candidate.T @ hessian_info.hessian_plus_lambda @ x_candidate
+    quadratic_term = x_candidate.T @ hessian_plus_lambda @ x_candidate
 
-    relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambdas.candidate)
-    if relative_error <= stopping_criteria["k_hard"]:
+    relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambda_candidate)
+    if relative_error <= stopping_criterion:
         x_candidate = x_candidate + step_len * z_min
         converged = True
 
-    lambda_new_lower_bound = max(lambdas.lower_bound, lambdas.candidate - s_min**2)
+    lambda_new_lower_bound = max(lambda_lower_bound, lambda_candidate - s_min**2)
 
-    hessian_plus_lambda = main_model.square_terms + newton_step * np.eye(n)
+    hessian_plus_lambda = model_hessian + newton_step * np.eye(n)
     _, factorization_unsuccessful = compute_cholesky_factorization(
         hessian_plus_lambda,
-        lower=False,
-        overwrite_a=False,
-        clean=True,
     )
 
     if factorization_unsuccessful == 0:
         hessian_already_factorized = True
         lambda_new_candidate = newton_step
     else:
-        hessian_already_factorized = hessian_info.already_factorized
+        hessian_already_factorized = hessian_already_factorized
         lambda_new_lower_bound = max(lambda_new_lower_bound, newton_step)
         lambda_new_candidate = _get_new_lambda_candidate(
-            lower_bound=lambda_new_lower_bound, upper_bound=lambdas.candidate
+            lower_bound=lambda_new_lower_bound, upper_bound=lambda_candidate
         )
+    lambda_upper_bound = lambda_candidate
 
-    hessian_info_new = hessian_info._replace(
-        hessian_plus_lambda=hessian_plus_lambda,
-        already_factorized=hessian_already_factorized,
+    return (
+        x_candidate,
+        hessian_plus_lambda,
+        hessian_already_factorized,
+        lambda_new_candidate,
+        lambda_new_lower_bound,
+        lambda_upper_bound,
+        converged,
     )
 
-    lambdas_new = lambdas._replace(
-        candidate=lambda_new_candidate,
-        lower_bound=lambda_new_lower_bound,
-        upper_bound=lambdas.candidate,
-    )
 
-    return x_candidate, hessian_info_new, lambdas_new, converged
-
-
+@njit
 def _update_lambdas_when_candidate_outside_trustregion(
-    lambdas, newton_step, p_norm, stopping_criteria, converged
+    lambda_candidate, newton_step, p_norm, stopping_criterion, converged
 ):
     """Update lambas in the case that candidate vector lies outside trust-region."""
     relative_error = abs(p_norm - 1)
 
-    if relative_error <= stopping_criteria["k_easy"]:
+    if relative_error <= stopping_criterion:
         converged = True
 
-    lambdas_new = lambdas._replace(candidate=newton_step, lower_bound=lambdas.candidate)
+    lambda_new_candidate = newton_step
+    lambda_new_lower_bound = lambda_candidate
+    return lambda_new_candidate, lambda_new_lower_bound, converged
 
-    return lambdas_new, converged
 
-
+@njit
 def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
     """Compute the smallest step length for the candidate vector.
 
@@ -411,11 +407,20 @@ def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
         float: Step length with the smallest magnitude.
     """
     ta, tb = _solve_scalar_quadratic_equation(x_candidate, z_min)
-    step_len = min([ta, tb], key=abs)
+    if np.abs(ta) > np.abs(tb):
+        step_len = tb
+    elif np.abs(ta) == np.abs(tb):
+        if ta >= tb:
+            step_len = tb
+        else:
+            step_len = ta
+    else:
+        step_len = ta
 
     return step_len
 
 
+@njit
 def _solve_scalar_quadratic_equation(z, d):
     """Return the sorted values that solve the scalar quadratic equation.
 
@@ -445,13 +450,8 @@ def _solve_scalar_quadratic_equation(z, d):
     a = d.T @ d
     b = 2 * z.T @ d
     c = z.T @ z - 1
-    sqrt_discriminant = np.sqrt(b * b - 4 * a * c)
-
-    aux = b + np.copysign(sqrt_discriminant, b)
-    ta = -aux / (2 * a)
-    tb = -2 * c / aux
-
-    return sorted([ta, tb])
+    ta, tb = np.sort(np.roots(np.array([a, b, c])))
+    return ta, tb
 
 
 def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
@@ -498,3 +498,78 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
         )
 
     return delta, v
+
+
+@njit
+def estimate_smallest_singular_value(u):
+    """Given upper triangular matrix ``U`` estimate the smallest singular
+    value and the correspondent right singular vector in O(n**2) operations.
+    Parameters
+    ----------
+    U : ndarray
+        Square upper triangular matrix.
+    Returns
+    -------
+    s_min : float
+        Estimated smallest singular value of the provided matrix.
+    z_min : ndarray
+        Estimatied right singular vector.
+    Notes
+    -----
+    The procedure is based on [1] and is done in two steps. First, it finds
+    a vector ``e`` with components selected from {+1, -1} such that the
+    solution ``w`` from the system ``U.T w = e`` is as large as possible.
+    Next it estimate ``U v = w``. The smallest singular value is close
+    to ``norm(w)/norm(v)`` and the right singular vector is close
+    to ``v/norm(v)``.
+    The estimation will be better more ill-conditioned is the matrix.
+    References
+    ----------
+    .. [1] Cline, A. K., Moler, C. B., Stewart, G. W., Wilkinson, J. H.
+           An estimate for the condition number of a matrix.  1979.
+           SIAM Journal on Numerical Analysis, 16(2), 368-375.
+    """
+
+    u = np.atleast_2d(u)
+    m, n = u.shape
+
+    if m != n:
+        raise ValueError("A square triangular matrix should be provided.")
+
+    # A vector `e` with components selected from {+1, -1}
+    # is selected so that the solution `w` to the system
+    # `U.T w = e` is as large as possible. Implementation
+    # based on algorithm 3.5.1, p. 142, from reference [2]
+    # adapted for lower triangular matrix.
+
+    p = np.zeros(n)
+    w = np.empty(n)
+
+    # Implemented according to:  Golub, G. H., Van Loan, C. F. (2013).
+    # "Matrix computations". Forth Edition. JHU press. pp. 140-142.
+    for k in range(n):
+        wp = (1 - p[k]) / u.T[k, k]
+        wm = (-1 - p[k]) / u.T[k, k]
+        pp = p[k + 1 :] + u.T[k + 1 :, k] * wp
+        pm = p[k + 1 :] + u.T[k + 1 :, k] * wm
+
+        if abs(wp) + np.linalg.norm(pp, 1) >= abs(wm) + np.linalg.norm(pm, 1):
+            w[k] = wp
+            p[k + 1 :] = pp
+        else:
+            w[k] = wm
+            p[k + 1 :] = pm
+
+    # The system `U v = w` is solved using backward substitution.
+    v = np.linalg.solve(u, w)
+
+    v_norm = np.linalg.norm(v)
+    w_norm = np.linalg.norm(w)
+
+    # Smallest singular value
+    s_min = w_norm / v_norm
+
+    # Associated vector
+    z_min = v / v_norm
+
+    return s_min, z_min

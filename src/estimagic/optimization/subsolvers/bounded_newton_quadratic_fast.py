@@ -28,7 +28,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
 ):
     """Take a preliminary gradient descent step and check if we found a solution."""
 
-    default_radius = 100
+    default_radius = 100.0
     min_radius = 1e-10
     max_radius = 1e10
     theta = 0.25
@@ -216,7 +216,7 @@ def compute_conjugate_gradient_step_fast(
         step_inactive = apply_bounds_to_x_candidate_fast(
             x_candidate, lower_bounds, upper_bounds
         )
-        step_norm = norm_numba(step_inactive)
+        step_norm = np.linalg.norm(step_inactive)
 
         conjugate_gradient_step = _apply_bounds_to_conjugate_gradient_step(
             step_inactive,
@@ -238,14 +238,14 @@ def compute_conjugate_gradient_step_fast(
                 gtol_abs=gtol_abs_conjugate_gradient,
                 gtol_rel=gtol_rel_conjugate_gradient,
             )
-            step_norm = norm_numba(step_inactive)
+            step_norm = np.linalg.norm(step_inactive)
         elif conjugate_gradient_method == "steihaug_toint":
             step_inactive = minimize_trust_stcg_fast(
                 gradient_inactive,
                 hessian_inactive,
                 trustregion_radius,
             )
-            step_norm = norm_numba(step_inactive)
+            step_norm = np.linalg.norm(step_inactive)
         elif conjugate_gradient_method == "trsbox":
             step_inactive = minimize_trust_trsbox_fast(
                 gradient_inactive,
@@ -254,7 +254,7 @@ def compute_conjugate_gradient_step_fast(
                 lower_bounds=lower_bounds[inactive_bounds],
                 upper_bounds=upper_bounds[inactive_bounds],
             )
-            step_norm = norm_numba(step_inactive)
+            step_norm = np.linalg.norm(step_inactive)
         else:
             raise ValueError(
                 "Invalid method: {conjugate_gradient_method}. "
@@ -286,14 +286,14 @@ def compute_conjugate_gradient_step_fast(
                         gtol_abs=gtol_abs_conjugate_gradient,
                         gtol_rel=gtol_rel_conjugate_gradient,
                     )
-                    step_norm = norm_numba(step_inactive)
+                    step_norm = np.linalg.norm(step_inactive)
                 elif conjugate_gradient_method == "steihaug_toint":
                     step_inactive = minimize_trust_stcg_fast(
                         gradient_inactive,
                         hessian_inactive,
                         trustregion_radius,
                     )
-                    step_norm = norm_numba(step_inactive)
+                    step_norm = np.linalg.norm(step_inactive)
                 elif conjugate_gradient_method == "trsbox":
                     step_inactive = minimize_trust_trsbox_fast(
                         gradient_inactive,
@@ -302,7 +302,7 @@ def compute_conjugate_gradient_step_fast(
                         lower_bounds=lower_bounds[inactive_bounds],
                         upper_bounds=upper_bounds[inactive_bounds],
                     )
-                step_norm = norm_numba(step_inactive)
+                step_norm = np.linalg.norm(step_inactive)
 
                 if step_norm == 0:
                     raise ValueError("Initial direction is zero.")
@@ -380,7 +380,7 @@ def perform_gradient_descent_step_fast(
 ):
     """Perform gradient descent step and update trust-region radius."""
     f_min = f_candidate_initial
-    gradient_norm = norm_numba(gradient_projected)
+    gradient_norm = np.linalg.norm(gradient_projected)
 
     trustregion_radius = default_radius
     radius_lower_bound = 0
@@ -579,8 +579,8 @@ def check_for_convergence_fast(
     direction_fischer_burmeister = _get_fischer_burmeister_direction_vector(
         x_candidate, gradient_candidate, lower_bounds, upper_bounds
     )
-    gradient_norm = norm_numba(direction_fischer_burmeister)
-    gradient_norm_initial = norm_numba(model_gradient)
+    gradient_norm = np.linalg.norm(direction_fischer_burmeister)
+    gradient_norm_initial = np.linalg.norm(model_gradient)
 
     if gradient_norm < gtol_abs:
         converged = True
@@ -842,16 +842,3 @@ def clip_scalar_numba(x, a, b):
     clipped = max(x, a)
     clipped = min(clipped, b)
     return clipped
-
-
-@njit
-def norm_numba(x):
-    """Calculate Ecuildean norm of vector."""
-    x = x.reshape(
-        x.size,
-    )
-    sum_squares = 0
-    for i in range(len(x)):
-        sum_squares += x[i] ** 2
-    norm = np.sqrt(sum_squares)
-    return norm

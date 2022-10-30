@@ -37,7 +37,7 @@ def minimize_trust_cg_fast(
     residual = model_gradient
     direction = -model_gradient
 
-    gradient_norm = norm_numba(residual)
+    gradient_norm = np.linalg.norm(residual)
     stop_tol = max(gtol_abs, gtol_rel * gradient_norm)
 
     for _ in range(max_iter):
@@ -60,7 +60,7 @@ def minimize_trust_cg_fast(
         x_candidate, residual, direction = _update_vectors_for_next_iteration(
             x_candidate, residual, direction, model_hessian, step_size
         )
-        gradient_norm = norm_numba(residual)
+        gradient_norm = np.linalg.norm(residual)
 
     return x_candidate
 
@@ -133,16 +133,3 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
     sigma = sigma / dd
 
     return sigma
-
-
-@njit
-def norm_numba(x):
-    """Calculate Ecuildean norm of vector."""
-    x = x.reshape(
-        x.size,
-    )
-    sum_squares = 0
-    for i in range(len(x)):
-        sum_squares += x[i] ** 2
-    norm = np.sqrt(sum_squares)
-    return norm
