@@ -6,29 +6,10 @@ from estimagic.optimization.tranquilo.sample_points import _pairwise_distance_on
 from estimagic.optimization.tranquilo.sample_points import _project_onto_unit_hull
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from numpy.testing import assert_array_almost_equal as aaae
-from numpy.testing import assert_raises
 from scipy.spatial.distance import pdist
 
 
 SAMPLERS = ["naive", "cube", "sphere", "optimal_cube", "optimal_sphere"]
-
-
-@pytest.mark.parametrize("sampler", SAMPLERS)
-def test_integration_of_get_sampler_and_reference_sampler(sampler):
-    sampler = get_sampler(
-        sampler=sampler,
-        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
-    )
-
-    calculated = sampler(
-        trustregion=TrustRegion(center=0.5 * np.ones(3), radius=1),
-        target_size=5,
-        rng=np.random.default_rng(1234),
-    )
-
-    assert calculated.shape == (5, 3)
-    assert (calculated <= 1).all()
-    assert (calculated >= -1).all()
 
 
 @pytest.mark.parametrize("sampler", SAMPLERS)
@@ -50,6 +31,7 @@ def test_bounds_are_satisfied(sampler):
 
 @pytest.mark.parametrize("sampler", SAMPLERS)
 def test_enough_existing_points(sampler):
+    # test that if enough existing points exist an empty array is returned
     sampler = get_sampler(
         sampler=sampler,
         bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
@@ -66,6 +48,7 @@ def test_enough_existing_points(sampler):
 
 @pytest.mark.parametrize("sampler", ["optimal_cube", "optimal_sphere"])
 def test_optimization_ignores_existing_points(sampler):
+    # test that existing points behave as constants in the optimal sampling
     sampler = get_sampler(
         sampler=sampler,
         bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
@@ -105,13 +88,13 @@ def test_optimality(sampler):
 
 
 @pytest.mark.parametrize("ord", [2, np.inf])
-def test_pairwise_distance_on_hull_extreme_values(ord):  # noqa: A002
+def test_pairwise_distance_on_hull(ord):  # noqa: A002
 
-    # equal points
+    # equal points imply zero distance
     value = _pairwise_distance_on_hull(x=np.ones((2, 2)), existing_xs=None, ord=ord)
     assert value == 0
 
-    # non-equal points
+    # non-equal points imply positive distance
     value = _pairwise_distance_on_hull(
         x=np.arange(4).reshape(2, 2), existing_xs=None, ord=ord
     )
@@ -126,7 +109,8 @@ def test_project_onto_unit_hull(ord):  # noqa: A002
     new = _project_onto_unit_hull(old, ord)
 
     norm = np.linalg.norm(old, axis=1, ord=ord)
-    assert_raises(AssertionError, aaae, 1, norm)
+    with pytest.raises(AssertionError):
+        aaae(1, norm)
 
     norm = np.linalg.norm(new, axis=1, ord=ord)
     aaae(1, norm)
