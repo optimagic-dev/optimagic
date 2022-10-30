@@ -41,6 +41,7 @@ def _tranquilo(
     solver_options=None,
     conv_options=None,
     silence_experimental_warning=False,
+    aggregator=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -127,14 +128,15 @@ def _tranquilo(
         x=x,
     )
 
-    if functype == "scalar":
-        aggregator = "identity"
-    elif functype == "likelihood":
-        aggregator = "information_equality_linear"
-    elif functype == "least_squares":
-        aggregator = "least_squares_linear"
-    else:
-        raise ValueError(f"Invalid functype: {functype}")
+    if aggregator is None:
+        if functype == "scalar":
+            aggregator = "identity"
+        elif functype == "likelihood":
+            aggregator = "information_equality_linear"
+        elif functype == "least_squares":
+            aggregator = "least_squares_linear"
+        else:
+            raise ValueError(f"Invalid functype: {functype}")
 
     if conv_options is None:
         conv_options = ConvOptions()

@@ -46,7 +46,7 @@ def get_aggregator(aggregator, functype, model_info):
 
     # determine if aggregator is compatible with functype and model_info
     aggregator_compatible_with_functype = {
-        "scalar": ("identity", "identity_linear", "sum"),
+        "scalar": ("identity", "identity_old", "sum"),
         "least_squares": ("least_squares_linear",),
         "likelihood": (
             "sum",
@@ -57,8 +57,7 @@ def get_aggregator(aggregator, functype, model_info):
     aggregator_compatible_with_model_info = {
         # keys are names of aggregators and values are functions of model_info that
         # return False in case of incompatibility
-        "identity": _is_second_order_model,
-        "identity_linear": lambda model_info: not _is_second_order_model(model_info),
+        "identity": lambda x: True,
         "sum": _is_second_order_model,
         "information_equality_linear": lambda model_info: not _is_second_order_model(
             model_info
@@ -134,7 +133,7 @@ def aggregator_identity(vector_model, fvec_center, model_info):
     2. ModelInfo: has squares or interactions
 
     """
-    intercept = float(fvec_center)
+    intercept = float(vector_model.intercepts)
     linear_terms = np.squeeze(vector_model.linear_terms)
     if model_info.has_squares or model_info.has_interactions:
         square_terms = np.squeeze(vector_model.square_terms)
