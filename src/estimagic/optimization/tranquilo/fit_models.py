@@ -43,8 +43,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
     built_in_fitters = {
         "ols": fit_ols,
         "ridge": fit_ridge,
-        "powell": _fit_minimal_frobenius_norm_of_hessian,
-        "flexible": fit_flexible,
+        "powell": fit_powell,
     }
 
     if isinstance(fitter, str) and fitter in built_in_fitters:
@@ -251,8 +250,8 @@ def _fit_ridge(x, y, penalty):
     return coef
 
 
-def fit_flexible(x, y, model_info):
-    """Fit a linear model using a flexible fitting method.
+def fit_powell(x, y, model_info):
+    """Fit a model, switching between penalized and unpenalized fitting.
 
     For:
     - n + 1 points: Fit ols with linear feature matrix.
@@ -275,14 +274,29 @@ def fit_flexible(x, y, model_info):
     """
     n_samples, n_params = x.shape
 
-    if n_samples <= n_params + 1:
+    if model_info.has_intercepts:
+        _switch_to_linear = n_samples <= n_params + 1
+    else:
+        _switch_to_linear = n_samples <= n_params
+
+    _n_just_identified = n_params
+    if model_info.has_intercepts:
+        _n_just_identified += 1
+    if model_info.has_squares:
+        _n_just_identified += n_params
+    if model_info.has_interactions:
+        _n_just_identified += int(0.5 * n_params * (n_params - 1))
+
+    if _switch_to_linear:
         model_info = model_info._replace(has_squares=False, has_interactions=False)
         coef = fit_ols(x, y, model_info)
-    elif n_samples <= 0.5 * n_params * (n_params + 1) + n_params:
-        coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_info)
-    else:
-        model_info = model_info._replace(has_squares=True, has_interactions=True)
+        n_resid, n_present = coef.shape
+        padding = np.zeros((n_resid, _n_just_identified - n_present))
+        coef = np.hstack([coef, padding])
+    elif n_samples >= _n_just_identified:
         coef = fit_ols(x, y, model_info)
+    else:
+        coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_info)
 
     return coef
 
@@ -309,6 +323,19 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
         np.ndarray: The model coefficients.
     """
     n_samples, n_params = x.shape
+
+    _n_too_few = n_params
+    _n_too_many = n_params + n_params * (n_params + 1) // 2
+
+    if model_info.has_intercepts:
+        _n_too_few += 1
+        _n_too_many += 1
+
+    if n_samples <= _n_too_few:
+        raise ValueError("Too few points for minimum frobenius fitting.")
+    if n_samples >= _n_too_many:
+        raise ValueError("Too may points for minimum frobenius fitting")
+
     _is_just_identified = n_samples == (n_params + 1)
     has_intercepts = model_info.has_intercepts
     has_squares = model_info.has_squares
