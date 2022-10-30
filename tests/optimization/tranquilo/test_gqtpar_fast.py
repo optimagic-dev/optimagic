@@ -22,6 +22,9 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic import (
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     add_lambda_and_factorize_hessian,
 )
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
+    check_for_interior_convergence_and_update,
+)
 from estimagic.optimization.subsolvers.gqtpar_quadratic import DampingFactors
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     find_new_candidate_and_update_parameters,
@@ -50,6 +53,9 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
     add_lambda_and_factorize_hessian_fast,
+)
+from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
+    check_for_interior_convergence_and_update_fast,
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic_fast import (
     estimate_smallest_singular_value,
@@ -363,3 +369,44 @@ def test_find_new_candidate_and_update_parameters_with_smaller_gardient():
     else:
         assert res[6] == np.inf
     assert res[7] == expected[3]
+
+
+def test_check_for_interior_convergence():
+    x_candidate = np.zeros(4)
+    hessian_upper_triangular = np.array(
+        [
+            [1.214, 1.19, 1.292, 0.877],
+            [0.0, 0.409, -0.156, -0.234],
+            [0.0, 0.0, 0.536, -0.308],
+            [0.0, 0.0, 0.0, 0.523],
+        ]
+    )
+    lambda_candidate = 0.2
+    lambda_lower_bound = 0.0
+    lambda_upper_bound = 1.5
+    stopping_criterion = 0.1
+    converged = False
+    lambdas = DampingFactors(
+        candidate=lambda_candidate,
+        lower_bound=lambda_lower_bound,
+        upper_bound=lambda_upper_bound,
+    )
+    hessian_info = HessianInfo(upper_triangular=hessian_upper_triangular)
+    stopping_criteria = {"k_hard": 0.2}
+    res = check_for_interior_convergence_and_update_fast(
+        x_candidate,
+        hessian_upper_triangular,
+        lambda_candidate,
+        lambda_lower_bound,
+        lambda_upper_bound,
+        stopping_criterion,
+        converged,
+    )
+    expected = check_for_interior_convergence_and_update(
+        x_candidate, hessian_info, lambdas, stopping_criteria, converged
+    )
+    aaae(res[0], expected[0])
+    assert res[1] == expected[1].candidate
+    assert res[2] == expected[1].lower_bound
+    assert res[3] == expected[1].upper_bound
+    assert res[4] == expected[2]

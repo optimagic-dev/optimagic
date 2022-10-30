@@ -184,37 +184,41 @@ def find_new_candidate_and_update_parameters_fast(
     )
 
 
-def check_for_interior_convergence_and_update(
+@njit
+def check_for_interior_convergence_and_update_fast(
     x_candidate,
-    hessian_info,
-    lambdas,
-    stopping_criteria,
+    hessian_upper_triangular,
+    lambda_candidate,
+    lambda_lower_bound,
+    lambda_upper_bound,
+    stopping_criterion,
     converged,
 ):
     """Check for interior convergence, update candidate vector and lambdas."""
-    if lambdas.candidate == 0:
-        x_candidate = np.zeros_like(x_candidate)
+    if lambda_candidate == 0:
+        x_candidate = np.zeros(len(x_candidate))
         converged = True
 
-    s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
+    s_min, z_min = estimate_smallest_singular_value(hessian_upper_triangular)
     step_len = 2
 
-    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas.current:
+    if step_len**2 * s_min**2 <= stopping_criterion * lambda_candidate:
         x_candidate = step_len * z_min
         converged = True
 
-    lambda_lower_bound = max(lambdas.lower_bound, lambdas.upper_bound - s_min**2)
+    lambda_new_lower_bound = max(lambda_lower_bound, lambda_upper_bound - s_min**2)
+    lambda_new_upper_bound = lambda_candidate
+
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound, upper_bound=lambdas.candidate
+        lower_bound=lambda_new_lower_bound, upper_bound=lambda_new_upper_bound
     )
-
-    lambdas_new = lambdas._replace(
-        candidate=lambda_new_candidate,
-        lower_bound=lambda_lower_bound,
-        upper_bound=lambdas.candidate,
+    return (
+        x_candidate,
+        lambda_new_candidate,
+        lambda_new_lower_bound,
+        lambda_new_upper_bound,
+        converged,
     )
-
-    return x_candidate, lambdas_new, converged
 
 
 def update_lambdas_when_factorization_unsuccessful(
@@ -240,22 +244,6 @@ def update_lambdas_when_factorization_unsuccessful(
     )
 
     return lambdas_new
-
-
-def evaluate_model_criterion(x, main_model):
-    """Evaluate the criterion function value of the main model.
-
-    Args:
-        x (np.ndarray): Parameter vector of shape (n,).
-        main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
-
-    Returns:
-        float: Criterion value of the main model.
-    """
-    return main_model.linear_terms.T @ x + 0.5 * x.T @ main_model.square_terms @ x
 
 
 @njit

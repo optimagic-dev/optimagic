@@ -202,7 +202,7 @@ def check_for_interior_convergence_and_update(
     s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
     step_len = 2
 
-    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas.current:
+    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas.candidate:
         x_candidate = step_len * z_min
         converged = True
 
