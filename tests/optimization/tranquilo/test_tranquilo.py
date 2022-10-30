@@ -21,7 +21,7 @@ ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 _sample_filter = ["keep_all"]
 _fitter = ["ols"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders"]
+_sample_size = ["powell"]
 ols_keep_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
@@ -38,7 +38,7 @@ pounders_discard_all = list(
 _sample_filter = ["keep_all"]
 _fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["linear", "pounders", "quadratic"]
+_sample_size = ["linear", "powell", "quadratic"]
 pounders_keep_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -46,7 +46,7 @@ pounders_keep_all = list(
 _sample_filter = ["drop_pounders"]
 _fitter = ["ols"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders", "quadratic"]
+_sample_size = ["powell", "quadratic"]
 ols_pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -54,7 +54,7 @@ ols_pounders_filtering = list(
 _sample_filter = ["drop_pounders"]
 _fitter = ["_pounders_experimental"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["linear", "pounders", "quadratic"]
+_sample_size = ["linear", "powell", "quadratic"]
 pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -62,13 +62,13 @@ pounders_filtering = list(
 _sample_filter = ["drop_pounders"]
 _fitter = ["pounders"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders", "quadratic"]
+_sample_size = ["powell", "quadratic"]
 pounders = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["drop_pounders"]
 _fitter = ["_pounders_original"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders", "quadratic"]
+_sample_size = ["powell", "quadratic"]
 pounders_original = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -115,7 +115,7 @@ ols_keep_all = list(product(_sample_filter, _fitter, _surrogate_model, _sample_s
 _sample_filter = ["discard_all"]
 _fitter = ["pounders", "_pounders_experimental"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders"]
+_sample_size = ["powell"]
 pounders_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -161,7 +161,7 @@ pounders_discard_all = list(
 _sample_filter = ["discard_all"]
 _fitter = ["_pounders_original"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["pounders"]
+_sample_size = ["powell"]
 pounders_original_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -222,14 +222,14 @@ def test_external_tranquilo_scalar_sphere_defaults():
 
 _sample_filter = ["keep_all", "discard_all"]
 _fitter = ["ols"]
-_surrogate_model = ["linear", "quadratic"]
-_sample_size = ["linear", "pounders", "quadratic"]
+_surrogate_model = ["linear"]
+_sample_size = ["linear", "powell", "quadratic"]
 ols = list(product(_sample_filter, _fitter, _surrogate_model, _sample_size))
 
 _sample_filter = ["discard_all"]
 _fitter = ["pounders", "_pounders_experimental", "_pounders_original"]
-_surrogate_model = ["linear", "quadratic"]
-_sample_size = ["linear", "pounders", "quadratic"]
+_surrogate_model = ["linear"]
+_sample_size = ["linear", "powell", "quadratic"]
 pounders_discard_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -237,15 +237,15 @@ pounders_discard_all = list(
 _sample_filter = ["keep_all"]
 _fitter = ["pounders", "_pounders_original"]
 _surrogate_model = ["linear"]
-_sample_size = ["linear", "pounders", "quadratic"]
+_sample_size = ["linear", "powell", "quadratic"]
 pounders_keep_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
 
 _sample_filter = ["drop_pounders"]
 _fitter = ["ols", "pounders", "_pounders_experimental", "_pounders_original"]
-_surrogate_model = ["linear", "quadratic"]
-_sample_size = ["linear", "pounders", "quadratic"]
+_surrogate_model = ["linear"]
+_sample_size = ["linear", "powell", "quadratic"]
 pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -277,7 +277,7 @@ def test_internal_tranquilo_ls_sphere_defaults(
 _sample_filter = ["keep_all"]
 _fitter = ["_pounders_experimental"]
 _surrogate_model = ["linear"]
-_sample_size = ["linear", "pounders", "quadratic"]
+_sample_size = ["linear", "powell", "quadratic"]
 pounders_keep_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
