@@ -348,17 +348,11 @@ def _process_surrogate_model(surrogate_model, functype):
         out = surrogate_model
     elif isinstance(surrogate_model, str):
         if surrogate_model == "linear":
-            out = ModelInfo(
-                has_intercepts=True, has_squares=False, has_interactions=False
-            )
+            out = ModelInfo(has_squares=False, has_interactions=False)
         elif surrogate_model == "quadratic":
-            out = ModelInfo(
-                has_intercepts=True, has_squares=True, has_interactions=True
-            )
+            out = ModelInfo(has_squares=True, has_interactions=True)
         elif surrogate_model == "diagonal":
-            out = ModelInfo(
-                has_intercepts=True, has_squares=True, has_interactions=False
-            )
+            out = ModelInfo(has_squares=True, has_interactions=False)
         else:
             raise ValueError(f"Invalid surrogate model: {surrogate_model}")
 

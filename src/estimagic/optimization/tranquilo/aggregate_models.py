@@ -63,8 +63,9 @@ def get_aggregator(aggregator, functype, model_info):
         "information_equality_linear": lambda model_info: not _is_second_order_model(
             model_info
         ),
-        "least_squares_linear": lambda model_info: model_info.has_intercepts
-        and not _is_second_order_model(model_info),
+        "least_squares_linear": lambda model_info: not _is_second_order_model(
+            model_info
+        ),
     }
 
     if _using_built_in_aggregator:
@@ -156,11 +157,7 @@ def aggregator_sum(vector_model, fvec_center, model_info):
     2. ModelInfo: has squares or interactions
 
     """
-    if model_info.has_intercepts:
-        vm_intercepts = vector_model.intercepts
-    else:
-        vm_intercepts = fvec_center
-
+    vm_intercepts = vector_model.intercepts
     intercept = vm_intercepts.sum(axis=0)
     linear_terms = vector_model.linear_terms.sum(axis=0)
     square_terms = vector_model.square_terms.sum(axis=0)
@@ -209,10 +206,7 @@ def aggregator_information_equality_linear(vector_model, fvec_center, model_info
 
     """
     vm_linear_terms = vector_model.linear_terms
-    if model_info.has_intercepts:
-        vm_intercepts = vector_model.intercepts
-    else:
-        vm_intercepts = fvec_center
+    vm_intercepts = vector_model.intercepts
 
     fisher_information = vm_linear_terms.T @ vm_linear_terms
 

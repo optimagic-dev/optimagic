@@ -24,9 +24,6 @@ def get_fitter(fitter, user_options=None, model_info=None):
 
         model_info (ModelInfo): Information that describes the functional form of
             the model. Has entries:
-            - has_intercepts (bool): Whether to calculate the intercept for this model.
-            If set to False, no intercept will be used in calculations (i.e. data is
-            expected to be centered).
             - has_squares (bool): Whether to use quadratic terms as features in the
             regression.
             - has_interactions (bool): Whether to use interaction terms as features
@@ -129,14 +126,8 @@ def _fitter_template(
     coef = fitter(x, y, model_info, **options)
 
     # results processing
-    if model_info.has_intercepts:
-        intercepts, linear_terms, square_terms = np.split(
-            coef, (1, n_params + 1), axis=1
-        )
-        intercepts = intercepts.flatten()
-    else:
-        intercepts = None
-        linear_terms, square_terms = np.split(coef, (n_params,), axis=1)
+    intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)
+    intercepts = intercepts.flatten()
 
     # construct final square terms
     if model_info.has_interactions:
@@ -218,7 +209,7 @@ def fit_ridge(
 
     # create penalty array
     n_params = x.shape[1]
-    cutoffs = (1, n_params + 1) if model_info.has_intercepts else (0, n_params)
+    cutoffs = (1, n_params + 1)
 
     penalty = np.zeros(features.shape[1])
     penalty[: cutoffs[0]] = 0
@@ -274,14 +265,9 @@ def fit_powell(x, y, model_info):
     """
     n_samples, n_params = x.shape
 
-    if model_info.has_intercepts:
-        _switch_to_linear = n_samples <= n_params + 1
-    else:
-        _switch_to_linear = n_samples <= n_params
+    _switch_to_linear = n_samples <= n_params + 1
 
-    _n_just_identified = n_params
-    if model_info.has_intercepts:
-        _n_just_identified += 1
+    _n_just_identified = n_params + 1
     if model_info.has_squares:
         _n_just_identified += n_params
     if model_info.has_interactions:
@@ -324,12 +310,8 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
     """
     n_samples, n_params = x.shape
 
-    _n_too_few = n_params
-    _n_too_many = n_params + n_params * (n_params + 1) // 2
-
-    if model_info.has_intercepts:
-        _n_too_few += 1
-        _n_too_many += 1
+    _n_too_few = n_params + 1
+    _n_too_many = n_params + n_params * (n_params + 1) // 2 + 1
 
     if n_samples <= _n_too_few:
         raise ValueError("Too few points for minimum frobenius fitting.")
@@ -337,7 +319,7 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
         raise ValueError("Too may points for minimum frobenius fitting")
 
     _is_just_identified = n_samples == (n_params + 1)
-    has_intercepts = model_info.has_intercepts
+    has_intercepts = True
     has_squares = model_info.has_squares
 
     if has_squares:
@@ -453,11 +435,9 @@ def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
 
 def _build_feature_matrix(x, model_info):
     if model_info.has_interactions:
-        features = _polynomial_features(
-            x, model_info.has_intercepts, model_info.has_squares
-        )
+        features = _polynomial_features(x, True, model_info.has_squares)
     else:
-        data = (np.ones(len(x)), x) if model_info.has_intercepts else (x,)
+        data = (np.ones(len(x)), x)
         data = (*data, x**2) if model_info.has_squares else data
         features = np.column_stack(data)
 
@@ -493,10 +473,7 @@ def _polynomial_features(x, has_intercepts, has_squares):
             poly_terms[idx] = xt[i] * xt[j]
             idx += 1
 
-    if has_intercepts:
-        intercept = np.ones((1, n_samples), x.dtype)
-        out = np.concatenate((intercept, xt, poly_terms), axis=0)
-    else:
-        out = np.concatenate((xt, poly_terms), axis=0)
+    intercept = np.ones((1, n_samples), x.dtype)
+    out = np.concatenate((intercept, xt, poly_terms), axis=0)
 
     return out.T

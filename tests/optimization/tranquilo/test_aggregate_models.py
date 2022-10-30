@@ -22,16 +22,14 @@ from numpy.testing import assert_array_equal
 )
 def test_aggregator_identity(model, expected_square_terms):
     if model == "linear":
-        model_info = ModelInfo(
-            has_intercepts=True, has_squares=False, has_interactions=False
-        )
+        model_info = ModelInfo(has_squares=False, has_interactions=False)
     else:
         model_info = ModelInfo()
 
     fvec_center = np.array([2.0])
 
     vector_model = VectorModel(
-        intercepts=None,
+        intercepts=fvec_center,
         linear_terms=np.arange(3).reshape(1, 3),
         square_terms=np.arange(9).reshape(1, 3, 3),
     )
@@ -44,11 +42,11 @@ def test_aggregator_identity(model, expected_square_terms):
 
 
 def test_aggregator_sum():
-    model_info = ModelInfo(has_intercepts=False)
+    model_info = ModelInfo()
     fvec_center = np.array([1.0, 2.0])
 
     vector_model = VectorModel(
-        intercepts=None,
+        intercepts=fvec_center,
         linear_terms=np.arange(6).reshape(2, 3),
         square_terms=np.arange(18).reshape(2, 3, 3),
     )
@@ -75,11 +73,11 @@ def test_aggregator_least_squares_linear():
 
 
 def test_aggregator_information_equality_linear():
-    model_info = ModelInfo(has_intercepts=False)
+    model_info = ModelInfo()
     fvec_center = np.array([1.0, 2.0])
 
     vector_model = VectorModel(
-        intercepts=None,
+        intercepts=fvec_center,
         linear_terms=np.arange(6).reshape(2, 3),
         square_terms=np.arange(18).reshape(2, 3, 3),  # should not be used by aggregator
     )
