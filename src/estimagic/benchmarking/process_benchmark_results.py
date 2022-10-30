@@ -167,7 +167,7 @@ def _make_history_monotone(df, target_col, direction="minimize"):
 
     """
     sorted_df = df.sort_values(["problem", "algorithm", "n_evaluations"])
-    grouped = sorted_df.groupby(["problem", "algorithm"])[target_col]
+    grouped = sorted_df.groupby(["problem", "algorithm"], group_keys=False)[target_col]
 
     if direction == "minimize":
         out = grouped.apply(np.minimum.accumulate)
