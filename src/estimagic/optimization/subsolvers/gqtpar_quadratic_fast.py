@@ -1,24 +1,9 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
-from typing import NamedTuple
-from typing import Union
-
 import numpy as np
 from estimagic.optimization.subsolvers._numba_potrf import (
     compute_cholesky_factorization,
 )
 from numba import njit
-
-
-class HessianInfo(NamedTuple):
-    hessian_plus_lambda: Union[np.ndarray, None] = None  # shape (n_params, n_params)
-    upper_triangular: Union[np.ndarray, None] = None  # shape (n_params, n_params)
-    already_factorized: bool = False
-
-
-class DampingFactors(NamedTuple):
-    candidate: Union[float, None] = None
-    lower_bound: Union[float, None] = None
-    upper_bound: Union[float, None] = None
 
 
 @njit
