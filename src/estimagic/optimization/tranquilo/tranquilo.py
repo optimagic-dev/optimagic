@@ -1,3 +1,4 @@
+import numbers
 import warnings
 from functools import partial
 from typing import NamedTuple
@@ -26,86 +27,105 @@ def _tranquilo(
     lower_bounds=None,
     upper_bounds=None,
     disable_convergence=False,
-    n_points_factor=1.0,
     stopping_max_iterations=200,
     random_seed=925408,
     sampler="sphere",
     sample_filter="keep_all",
     fitter="ols",
     subsolver="bntr",
-    sampler_options=None,
+    sample_size=None,
+    surrogate_model=None,
     radius_options=None,
+    sampler_options=None,
     fit_options=None,
     solver_options=None,
     conv_options=None,
+    silence_experimental_warning=False,
 ):
     """Find the local minimum to a noisy optimization problem.
+
     Args:
         criterion (callable): Function that return values of the objective function.
         x (np.ndarray): Initial guess for the parameter vector.
         functype (str): String indicating whether the criterion is a scalar, a
-            likelihood function or a least-square type of function.
+            likelihood function or a least-square type of function. Valid arguments
+            are:
+            - "scalar"
+            - "likelihood"
+            - "least_squares"
         lower_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with lower bounds
             for the parameter vector x.
         upper_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
         disable_convergence (bool): If True, check for convergence criterion and stop
             the iterations.
-        n_points_factor (int):
         stopping_max_iterations (int): Maximum number of iterations to run.
         random_seed (int): The seed used in random number generation.
         sample_filter (str): The method used to filter points in the current trust
             region.
-        sampler (str): The sampling function used to sample points from current
-            trust redion.
+        sampler (str): The sampling method used to sample points from the current
+            trust region.
         fitter (str): The method used to fit the surrogate model.
-        subsolver (str): The algorithm-function used for solving the nested surrogate
-            model.
-        sampler_options (dct or NoneType): Additional keyword arguments passed to the
-            sampler function.
+        subsolver (str): The algorithm used for solving the nested surrogate model.
+        sample_size (str): Target sample size. One of:
+            - "linear": n + 1
+            - "powell": 2 * n + 1
+            - "quadratic: 0.5 * n * (n + 1) + n + 1
+        surrogate_model (str): Type of surrogate model to fit. Both a "linear" and
+            "quadratic" surrogate model are supported.
         radius_options (NemdTuple or NoneType): Options for trust-region radius
             management.
-        fit_options (dct or NoneType): Additional keyword arguments passed to the
-            fitter.
-        solver_options (dct or NoneType): Additional keyword arguments passed to the
-            sub-solver.
+        sampler_options (dict or NoneType): Additional keyword arguments passed to the
+            sampler function.
+        fit_options (dict or NoneType): Additional keyword arguments passed to the
+            fitter function.
+        solver_options (dict or NoneType): Additional keyword arguments passed to the
+            sub-solver function.
         conv_options (NamedTuple or NoneType): Criteria for successful convergence.
 
     Returns:
-        res (dct): Results dictionary with the following items:
+        (dict): Results dictionary with the following items:
             - solution_x (np.ndarray): Solution vector of shape (n,).
             - solution_criterion (np.ndarray): Values of the criterion function at the
                 solution vector. Shape (n_obs,).
             - states (list): The history of optimization as a list of the State objects.
             - message (str or NoneType): Message stating which convergence criterion,
                 if any has been reached at the end of optimization
-    """
-    warnings.warn(
-        "Tranquilo is extremely experimental. algo_options and results will change "
-        "frequently and without notice. Do not use."
-    )
 
+    """
+    # ==================================================================================
+    # experimental warning
+    # ==================================================================================
+    if not silence_experimental_warning:
+        warnings.warn(
+            "Tranquilo is extremely experimental. algo_options and results will change "
+            "frequently and without notice. Do not use."
+        )
+
+    # ==================================================================================
+    # set default values for optional arguments
+    # ==================================================================================
     sampling_rng = np.random.default_rng(random_seed)
 
-    if sampler_options is None:
-        sampler_options = {}
     if radius_options is None:
         radius_options = RadiusOptions()
-
+    if sampler_options is None:
+        sampler_options = {}
     if fit_options is None:
         fit_options = {}
-
-    if functype == "scalar":
-        model_info = ModelInfo()
-        target_sample_size = int(0.5 * len(x) * (len(x) + 1)) + len(x) + 1
-    else:
-        model_info = ModelInfo(has_squares=False, has_interactions=False)
-        target_sample_size = len(x) + 1
-
-    target_sample_size = int(n_points_factor * target_sample_size)
-
     if solver_options is None:
         solver_options = {}
+
+    model_info = _process_surrogate_model(
+        surrogate_model=surrogate_model,
+        functype=functype,
+    )
+
+    target_sample_size = _process_sample_size(
+        user_sample_size=sample_size,
+        model_info=model_info,
+        x=x,
+    )
 
     if functype == "scalar":
         aggregator = "identity"
@@ -119,6 +139,8 @@ def _tranquilo(
     if conv_options is None:
         conv_options = ConvOptions()
 
+    # ==================================================================================
+    # initialize compoments for the solver
     # ==================================================================================
 
     history = History(functype=functype)
@@ -157,9 +179,12 @@ def _tranquilo(
         fvec=history.get_fvecs(0),
         fval=history.get_fvals(0),
     )
-
-    converged, msg = False, None
     states = [state]
+
+    # ==================================================================================
+    # main optimization loop
+    # ==================================================================================
+    converged, msg = False, None
     for _ in range(stopping_max_iterations):
         old_indices = history.get_indices_in_trustregion(trustregion)
         old_xs = history.get_xs(old_indices)
@@ -219,6 +244,7 @@ def _tranquilo(
             step=candidate_x - state.x,
             options=radius_options,
         )
+
         if actual_improvement > 0:
             trustregion = trustregion._replace(center=candidate_x, radius=new_radius)
             state = State(
@@ -241,11 +267,14 @@ def _tranquilo(
 
         states.append(state)
 
-        if actual_improvement > 0 and not disable_convergence:
+        if actual_improvement >= 0 and not disable_convergence:
             converged, msg = _is_converged(states=states, options=conv_options)
             if converged:
                 break
 
+    # ==================================================================================
+    # results processing
+    # ==================================================================================
     res = {
         "solution_x": state.x,
         "solution_criterion": state.fval,
@@ -305,6 +334,56 @@ def _is_converged(states, options):
         msg = None
 
     return converged, msg
+
+
+def _process_surrogate_model(surrogate_model, functype):
+
+    if surrogate_model is None:
+        if functype == "scalar":
+            surrogate_model = "quadratic"
+        else:
+            surrogate_model = "linear"
+
+    if isinstance(surrogate_model, ModelInfo):
+        out = surrogate_model
+    elif isinstance(surrogate_model, str):
+        if surrogate_model == "linear":
+            out = ModelInfo(has_squares=False, has_interactions=False)
+        elif surrogate_model == "quadratic":
+            out = ModelInfo(has_squares=True, has_interactions=True)
+        elif surrogate_model == "diagonal":
+            out = ModelInfo(has_squares=True, has_interactions=False)
+        else:
+            raise ValueError(f"Invalid surrogate model: {surrogate_model}")
+
+    else:
+        raise ValueError(f"Invalid surrogate model: {surrogate_model}")
+    return out
+
+
+def _process_sample_size(user_sample_size, model_info, x):
+    if user_sample_size is None:
+        if model_info.has_squares or model_info.has_interactions:
+            out = 2 * len(x) + 1
+        else:
+            out = len(x) + 1
+
+    elif isinstance(user_sample_size, str):
+        user_sample_size = user_sample_size.replace(" ", "")
+        if user_sample_size in ["linear", "n+1"]:
+            out = len(x) + 1
+        elif user_sample_size in ["powell", "2n+1", "2*n+1"]:
+            out = 2 * len(x) + 1
+        elif user_sample_size == "quadratic":
+            out = len(x) * (len(x) + 1) // 2 + len(x) + 1
+        else:
+            raise ValueError(f"Invalid sample size: {user_sample_size}")
+
+    elif isinstance(user_sample_size, numbers.Number):
+        out = int(user_sample_size)
+    else:
+        raise ValueError(f"invalid sample size: {user_sample_size}")
+    return out
 
 
 tranquilo = mark_minimizer(

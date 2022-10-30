@@ -46,7 +46,7 @@ def get_aggregator(aggregator, functype, model_info):
 
     # determine if aggregator is compatible with functype and model_info
     aggregator_compatible_with_functype = {
-        "scalar": ("identity", "sum"),
+        "scalar": ("identity", "identity_old", "sum"),
         "least_squares": ("least_squares_linear",),
         "likelihood": (
             "sum",
@@ -57,13 +57,14 @@ def get_aggregator(aggregator, functype, model_info):
     aggregator_compatible_with_model_info = {
         # keys are names of aggregators and values are functions of model_info that
         # return False in case of incompatibility
-        "identity": _is_second_order_model,
+        "identity": lambda x: True,
         "sum": _is_second_order_model,
         "information_equality_linear": lambda model_info: not _is_second_order_model(
             model_info
         ),
-        "least_squares_linear": lambda model_info: model_info.has_intercepts
-        and not _is_second_order_model(model_info),
+        "least_squares_linear": lambda model_info: not _is_second_order_model(
+            model_info
+        ),
     }
 
     if _using_built_in_aggregator:
@@ -72,11 +73,6 @@ def get_aggregator(aggregator, functype, model_info):
             raise ValueError(
                 f"Aggregator {_aggregator_name} is not compatible with functype "
                 f"{functype}. It would not produce a quadratic main model."
-            )
-        if functype == "scalar" and not _is_second_order_model(model_info):
-            raise ValueError(
-                f"ModelInfo {model_info} is not compatible with functype scalar. "
-                "It would not produce a quadratic main model."
             )
         if not aggregator_compatible_with_model_info[_aggregator_name](model_info):
             raise ValueError(
@@ -137,9 +133,12 @@ def aggregator_identity(vector_model, fvec_center, model_info):
     2. ModelInfo: has squares or interactions
 
     """
-    intercept = float(fvec_center)
+    intercept = float(vector_model.intercepts)
     linear_terms = np.squeeze(vector_model.linear_terms)
-    square_terms = np.squeeze(vector_model.square_terms)
+    if model_info.has_squares or model_info.has_interactions:
+        square_terms = np.squeeze(vector_model.square_terms)
+    else:
+        square_terms = np.zeros((len(linear_terms), len(linear_terms)))
     return intercept, linear_terms, square_terms
 
 
@@ -157,11 +156,7 @@ def aggregator_sum(vector_model, fvec_center, model_info):
     2. ModelInfo: has squares or interactions
 
     """
-    if model_info.has_intercepts:
-        vm_intercepts = vector_model.intercepts
-    else:
-        vm_intercepts = fvec_center
-
+    vm_intercepts = vector_model.intercepts
     intercept = vm_intercepts.sum(axis=0)
     linear_terms = vector_model.linear_terms.sum(axis=0)
     square_terms = vector_model.square_terms.sum(axis=0)
@@ -210,10 +205,7 @@ def aggregator_information_equality_linear(vector_model, fvec_center, model_info
 
     """
     vm_linear_terms = vector_model.linear_terms
-    if model_info.has_intercepts:
-        vm_intercepts = vector_model.intercepts
-    else:
-        vm_intercepts = fvec_center
+    vm_intercepts = vector_model.intercepts
 
     fisher_information = vm_linear_terms.T @ vm_linear_terms
 
