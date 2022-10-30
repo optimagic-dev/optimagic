@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 
 import numpy as np
@@ -26,7 +25,6 @@ def get_aggregator(aggregator, functype, model_info):
     """
     built_in_aggregators = {
         "identity": aggregator_identity,
-        "identity_linear": aggregator_identity_linear,
         "sum": aggregator_sum,
         "information_equality_linear": aggregator_information_equality_linear,
         "least_squares_linear": aggregator_least_squares_linear,
@@ -75,11 +73,6 @@ def get_aggregator(aggregator, functype, model_info):
             raise ValueError(
                 f"Aggregator {_aggregator_name} is not compatible with functype "
                 f"{functype}. It would not produce a quadratic main model."
-            )
-        if functype == "scalar" and not _is_second_order_model(model_info):
-            warnings.warn(
-                f"ModelInfo {model_info} is not compatible with functype scalar. "
-                "It would not produce a quadratic main model."
             )
         if not aggregator_compatible_with_model_info[_aggregator_name](model_info):
             raise ValueError(
@@ -142,26 +135,10 @@ def aggregator_identity(vector_model, fvec_center, model_info):
     """
     intercept = float(fvec_center)
     linear_terms = np.squeeze(vector_model.linear_terms)
-    square_terms = np.squeeze(vector_model.square_terms)
-    return intercept, linear_terms, square_terms
-
-
-def aggregator_identity_linear(vector_model, fvec_center, model_info):
-    """Aggregate quadratic VectorModel using identity function on a linear model.
-
-    This aggregation is useful if the underlying maximization problem is a scalar
-    problem. We get a second-order main model from the first-order vector model by
-    filling the second-order terms with zeros.
-
-    Assumptions
-    -----------
-    1. functype: scalar
-    2. ModelInfo: has no squares and no interactions
-
-    """
-    intercept = float(fvec_center)
-    linear_terms = np.squeeze(vector_model.linear_terms)
-    square_terms = np.zeros((len(linear_terms), len(linear_terms)))
+    if model_info.has_squares or model_info.has_interactions:
+        square_terms = np.squeeze(vector_model.square_terms)
+    else:
+        square_terms = np.zeros((len(linear_terms), len(linear_terms)))
     return intercept, linear_terms, square_terms
 
 

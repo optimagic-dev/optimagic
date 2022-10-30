@@ -126,7 +126,7 @@ def _tranquilo(
     )
 
     if functype == "scalar":
-        aggregator = "identity_linear" if surrogate_model == "linear" else "identity"
+        aggregator = "identity"
     elif functype == "likelihood":
         aggregator = "information_equality_linear"
     elif functype == "least_squares":
