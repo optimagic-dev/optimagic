@@ -5,21 +5,20 @@ import numpy as np
 
 
 class VectorModel(NamedTuple):
-    intercepts: Union[np.ndarray, None] = None  # shape (n_residuals,)
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_residuals, n_params)
+    intercepts: np.ndarray  # shape (n_residuals,)
+    linear_terms: np.ndarray  # shape (n_residuals, n_params)
     square_terms: Union[
         np.ndarray, None
     ] = None  # shape (n_residuals, n_params, n_params)
 
 
 class ScalarModel(NamedTuple):
-    intercept: Union[float, None] = None
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_params,)
+    intercept: float
+    linear_terms: np.ndarray  # shape (n_params,)
     square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 
 class ModelInfo(NamedTuple):
-    has_intercepts: bool = True
     has_squares: bool = True
     has_interactions: bool = True
 
@@ -48,10 +47,9 @@ def evaluate_model(scalar_model, centered_x):
     """
     x = centered_x
 
-    y = x @ scalar_model.linear_terms
+    y = x @ scalar_model.linear_terms + scalar_model.intercept
+
     if scalar_model.square_terms is not None:
         y += x.T @ scalar_model.square_terms @ x / 2
-    if scalar_model.intercept is not None:
-        y += scalar_model.intercept
 
     return y
