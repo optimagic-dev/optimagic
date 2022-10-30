@@ -319,7 +319,6 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
         raise ValueError("Too may points for minimum frobenius fitting")
 
     _is_just_identified = n_samples == (n_params + 1)
-    has_intercepts = True
     has_squares = model_info.has_squares
 
     if has_squares:
@@ -342,7 +341,6 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
         n_z_mat,
         n_params,
         n_poly_features,
-        has_intercepts,
         _is_just_identified,
     )
 
@@ -357,13 +355,12 @@ def _get_current_fit_minimal_frobenius_norm_of_hessian(
     n_z_mat,
     n_params,
     n_poly_features,
-    has_intercepts,
     _is_just_identified,
 ):
     n_residuals = y.shape[1]
-    offset = 0 if has_intercepts else 1
+    offset = 0
 
-    coeffs_linear = np.empty((n_residuals, has_intercepts + n_params))
+    coeffs_linear = np.empty((n_residuals, 1 + n_params))
     coeffs_square = np.empty((n_residuals, n_poly_features))
 
     if _is_just_identified:
@@ -398,14 +395,13 @@ def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
     n_samples, n_params = x.shape
     _is_just_identified = n_samples == (n_params + 1)
     has_squares = model_info.has_squares
-    has_intercepts = True
 
     if has_squares:
         n_poly_features = n_params * (n_params + 1) // 2
     else:
         n_poly_features = n_params * (n_params - 1) // 2
 
-    features = _polynomial_features(x, has_intercepts, has_squares)
+    features = _polynomial_features(x, has_squares)
     m_mat, n_mat = np.split(features, (n_params + 1,), axis=1)
 
     m_mat_pad = np.zeros((n_samples, n_samples))
@@ -435,7 +431,7 @@ def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
 
 def _build_feature_matrix(x, model_info):
     if model_info.has_interactions:
-        features = _polynomial_features(x, True, model_info.has_squares)
+        features = _polynomial_features(x, model_info.has_squares)
     else:
         data = (np.ones(len(x)), x)
         data = (*data, x**2) if model_info.has_squares else data
@@ -455,7 +451,7 @@ def _reshape_square_terms_to_hess(square_terms, n_params, n_residuals, has_squar
 
 
 @njit
-def _polynomial_features(x, has_intercepts, has_squares):
+def _polynomial_features(x, has_squares):
     n_samples, n_params = x.shape
 
     if has_squares:

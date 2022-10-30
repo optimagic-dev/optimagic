@@ -125,7 +125,6 @@ def data_fit_pounders():
         "n_z_mat": np.array(test_data["lower_triangular"])[:, n_params + 1 : n_samples],
         "n_params": n_params,
         "n_poly_features": n_poly_features,
-        "has_intercepts": False,
         "_is_just_identified": _is_just_identified,
     }
 
@@ -230,25 +229,19 @@ def test_fit_ols_against_hessian(model, options, quadratic_case):
     aaae(hessian["derivative"], hess, case="hessian")
 
 
-@pytest.mark.parametrize("has_intercepts, has_squares", [(True, False), (True, False)])
-def test_polynomial_features(has_intercepts, has_squares):
+@pytest.mark.parametrize("has_squares", [True, False])
+def test_polynomial_features(has_squares):
 
     x = np.array([[0, 1, 2], [3, 4, 5]])
 
     expected = {
-        # (has_intercepts, has_squares): expected value,
-        (True, True): np.array(
+        # has_squares: expected value,
+        True: np.array(
             [[1, 0, 1, 2, 0, 0, 0, 1, 2, 4], [1, 3, 4, 5, 9, 12, 15, 16, 20, 25]]
         ),
-        (True, False): np.array([[1, 0, 1, 2, 0, 0, 2], [1, 3, 4, 5, 12, 15, 20]]),
-        (False, True): np.array(
-            [[0, 1, 2, 0, 0, 0, 1, 2, 4], [3, 4, 5, 9, 12, 15, 16, 20, 25]]
-        ),
-        (False, False): np.array([[0, 1, 2, 0, 0, 2], [3, 4, 5, 12, 15, 20]]),
+        False: np.array([[1, 0, 1, 2, 0, 0, 2], [1, 3, 4, 5, 12, 15, 20]]),
     }
 
-    got = _polynomial_features(
-        x, has_intercepts=has_intercepts, has_squares=has_squares
-    )
+    got = _polynomial_features(x, has_squares=has_squares)
 
-    assert_array_equal(got, expected[(has_intercepts, has_squares)])
+    assert_array_equal(got, expected[has_squares])
