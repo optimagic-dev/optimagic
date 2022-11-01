@@ -46,7 +46,7 @@ def get_aggregator(aggregator, functype, model_info):
 
     # determine if aggregator is compatible with functype and model_info
     aggregator_compatible_with_functype = {
-        "scalar": ("identity", "identity_old", "sum"),
+        "scalar": ("identity", "sum"),
         "least_squares": ("least_squares_linear",),
         "likelihood": (
             "sum",

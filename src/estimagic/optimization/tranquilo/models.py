@@ -53,3 +53,45 @@ def evaluate_model(scalar_model, centered_x):
         y += x.T @ scalar_model.square_terms @ x / 2
 
     return y
+
+
+def n_free_params(dim, info_or_name):
+    """Number of free parameters in a model specified by name or model_info."""
+    out = dim + 1
+    if isinstance(info_or_name, ModelInfo):
+        info = info_or_name
+        if info.has_squares:
+            out += dim
+        if info.has_interactions:
+            out += n_interactions(dim)
+    elif isinstance(info_or_name, str):
+        name = info_or_name
+        if name == "quadratic":
+            out += n_second_order_terms(dim)
+        elif name == "diagonal":
+            out += dim
+    else:
+        raise ValueError()
+
+    return out
+
+
+def n_second_order_terms(dim):
+    """Number of free second order terms in a quadratic model."""
+    return int(dim * (dim + 1) * 0.5)
+
+
+def n_interactions(dim):
+    """Number of free interaction terms in a quadratic model."""
+    return int(dim * (dim - 1) * 0.5)
+
+
+def is_second_order_model(model_or_info):
+    """Check if a model has any second order terms."""
+    if isinstance(model_or_info, ModelInfo):
+        out = model_or_info.has_interactions or model_or_info.has_squares
+    elif model_or_info.square_terms is not None:
+        out = True
+    else:
+        raise TypeError()
+    return out
