@@ -20,8 +20,8 @@ def get_sampler(sampler, bounds, user_options=None):
             (and arbitrary additional information). See ``reference_sampler`` for
             details.
         bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``
-        user_options (dict): Additional keyworder arguments for the sampler. Options
-            that are not used by the sampler are ignored with a warning.
+        user_options (dict): Additional keyword arguments for the sampler. Options that
+            are not used by the sampler are ignored with a warning.
 
     Returns:
         callable: Function that depends on trustregion, target_size, existing_xs and
