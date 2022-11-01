@@ -35,7 +35,7 @@ pounders_discard_all = list(
 _sample_filter = ["keep_all"]
 _fitter = ["powell"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["linear", "powell", "quadratic"]
+_sample_size = ["powell", "quadratic"]
 pounders_keep_all = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
@@ -51,7 +51,7 @@ ols_pounders_filtering = list(
 _sample_filter = ["drop_pounders"]
 _fitter = ["powell"]
 _surrogate_model = ["quadratic"]
-_sample_size = ["linear", "powell", "quadratic"]
+_sample_size = ["powell", "quadratic"]
 pounders_filtering = list(
     product(_sample_filter, _fitter, _surrogate_model, _sample_size)
 )
