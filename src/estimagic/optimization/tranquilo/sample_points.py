@@ -20,8 +20,8 @@ def get_sampler(sampler, bounds, user_options=None):
             (and arbitrary additional information). See ``reference_sampler`` for
             details.
         bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``
-        user_options (dict): Additional keyword arguments for the sampler. Options that
-            are not used by the sampler are ignored with a warning.
+        user_options (dict): Additional keyworder arguments for the sampler. Options
+            that are not used by the sampler are ignored with a warning.
 
     Returns:
         callable: Function that depends on trustregion, target_size, existing_xs and
@@ -32,10 +32,10 @@ def get_sampler(sampler, bounds, user_options=None):
 
     built_in_samplers = {
         "naive": _naive_sampler,
-        "cube": partial(_hull_sampler, ord=np.inf),
-        "sphere": partial(_hull_sampler, ord=2),
-        "optimal_cube": partial(_optimal_hull_sampler, ord=np.inf),
-        "optimal_sphere": partial(_optimal_hull_sampler, ord=2),
+        "cube": partial(_hull_sampler, order=np.inf),
+        "sphere": partial(_hull_sampler, order=2),
+        "optimal_cube": partial(_optimal_hull_sampler, order=np.inf),
+        "optimal_sphere": partial(_optimal_hull_sampler, order=2),
     }
 
     if isinstance(sampler, str) and sampler in built_in_samplers:
@@ -136,15 +136,16 @@ def _hull_sampler(
     trustregion,
     target_size,
     rng,
-    ord,  # noqa: A002
+    order,
+    distribution="normal",
     existing_xs=None,
     bounds=None,
 ):
     """Random generation of trustregion points on the hull of general sphere / cube.
 
-    Points are sampled randomly on a hull (of a sphere for ord=2 and of a cube for
-    ord=np.inf). These points are then mapped into the feasible region, which is defined
-    by the intersection of the trustregion and the bounds.
+    Points are sampled randomly on a hull (of a sphere for order=2 and of a cube for
+    order=np.inf). These points are then mapped into the feasible region, which is
+    defined by the intersection of the trustregion and the bounds.
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
@@ -152,8 +153,10 @@ def _hull_sampler(
             and newly sampled points. The sampler does not have to guarantee that this
             number will actually be reached.
         rng (numpy.random.Generator): Random number generator.
-        ord (int): Type of norm to use when scaling the sampled points. For 2 it will
+        order (int): Type of norm to use when scaling the sampled points. For 2 it will
             result in sphere sampling, for np.inf in cube sampling.
+        distribution (str): Distribution to use for initial sample before points are
+            projected onto unit hull. Must be in {'normal', 'uniform'}.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
@@ -164,8 +167,8 @@ def _hull_sampler(
     n_params = len(trustregion.center)
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
-    points = rng.normal(size=(n_points, n_params))
-    points = _project_onto_unit_hull(points, ord=ord)
+    points = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
+    points = _project_onto_unit_hull(points, order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
     return points
 
@@ -174,7 +177,9 @@ def _optimal_hull_sampler(
     trustregion,
     target_size,
     rng,
-    ord,  # noqa: A002
+    order,
+    distribution="normal",
+    lse_scale=1,
     existing_xs=None,
     bounds=None,
     algorithm="scipy_lbfgsb",
@@ -182,11 +187,11 @@ def _optimal_hull_sampler(
 ):
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
-    Points are sampled optimally on a hull (of a sphere for ord=2 and of a cube for
-    ord=np.inf), where the criterion that is maximized is the (smooth) minimum distance
-    of all pairs of points, except for pairs of existing points. These points are then
-    mapped into the feasible region, which is defined by the intersection of the
-    trustregion and the bounds.
+    Points are sampled optimally on a hull (of a sphere for order=2 and of a cube for
+    order=np.inf), where the criterion that is maximized is the (smooth) minimum
+    distance of all pairs of points, except for pairs of existing points. These points
+    are then mapped into the feasible region, which is defined by the intersection of
+    the trustregion and the bounds.
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
@@ -194,8 +199,12 @@ def _optimal_hull_sampler(
             and newly sampled points. The sampler does not have to guarantee that this
             number will actually be reached.
         rng (numpy.random.Generator): Random number generator.
-        ord (int): Type of norm to use when scaling the sampled points. For 2 it will
+        order (int): Type of norm to use when scaling the sampled points. For 2 it will
             result in sphere sampling, for np.inf in cube sampling.
+        distribution (str): Distribution to use for initial sample before points are
+            projected onto unit hull. Must be in {'normal', 'uniform'}.
+        lse_scale (float): Positive logsumexp scaling factor. As lse_scale tends to
+            infinity the logsumexp function approaches the maximum. Default is 1.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
@@ -203,7 +212,7 @@ def _optimal_hull_sampler(
         algorithm (str): Optimization algorithm.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm. Default
-            sets ``stopping_max_iterations=3``.
+            sets ``stopping_max_iterations=n_params``.
 
     Returns:
         np.ndarray: Generated points. Has shape (target_size, len(trustregion.center)).
@@ -215,8 +224,9 @@ def _optimal_hull_sampler(
     if n_points == 0:
         return np.array([])
 
-    if algo_options is None:
-        algo_options = {"stopping_max_iterations": 3}
+    algo_options = {} if algo_options is None else algo_options
+    if "stopping_max_iterations" not in algo_options:
+        algo_options["stopping_max_iterations"] = n_params
 
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
@@ -225,20 +235,26 @@ def _optimal_hull_sampler(
         existing_xs = (existing_xs - trustregion.center) / trustregion.radius
 
     # start params
-    x0 = rng.normal(size=(n_points, n_params))
-    x0 = _project_onto_unit_hull(x0, ord=ord)
+    x0 = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
+    x0 = _project_onto_unit_hull(x0, order=order)
+    x0 = x0.flatten()  # flatten so that em.maximize uses fast path
 
     res = em.maximize(
         criterion=_pairwise_distance_on_hull,
         params=x0,
         algorithm=algorithm,
-        criterion_kwargs={"existing_xs": existing_xs, "ord": ord},
+        criterion_kwargs={
+            "existing_xs": existing_xs,
+            "order": order,
+            "lse_scale": lse_scale,
+            "n_params": n_params,
+        },
         lower_bounds=-np.ones_like(x0),
         upper_bounds=np.ones_like(x0),
         algo_options=algo_options,
     )
 
-    points = _project_onto_unit_hull(res.params, ord=ord)
+    points = _project_onto_unit_hull(res.params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
     return points
 
@@ -248,7 +264,7 @@ def _optimal_hull_sampler(
 # ======================================================================================
 
 
-def _pairwise_distance_on_hull(x, existing_xs, ord):  # noqa: A002
+def _pairwise_distance_on_hull(x, existing_xs, order, lse_scale, n_params):
     """Pairwise distance of new and existing points.
 
     Instead of optimizing the distance of points in the feasible trustregion, this
@@ -256,18 +272,22 @@ def _pairwise_distance_on_hull(x, existing_xs, ord):  # noqa: A002
     in the unit space. These can then be mapped into the feasible trustregion.
 
     Args:
-        x (np.ndarray): 2d array of internal points. Each value is in [-1, 1].
+        x (np.ndarray): Flattened 1d array of internal points. Each value is in [-1, 1].
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies -1 <= existing_xs <= 1.
-        ord (int): Type of norm to use when scaling the sampled points. For 2 we project
-            onto the hull of a sphere, for np.inf onto the hull of a cube.
+        order (int): Type of norm to use when scaling the sampled points. For 2 we
+            project onto the hull of a sphere, for np.inf onto the hull of a cube.
+        lse_scale (float): Positive logsumexp scaling factor. As lse_scale tends to
+            infinity the logsumexp function approaches the maximum. Default is 1.
+        n_params (int): Dimensionality of the problem.
 
     Returns:
         float: The criterion value.
 
     """
-    x = _project_onto_unit_hull(x, ord=ord)
+    x = x.reshape(-1, n_params)
+    x = _project_onto_unit_hull(x, order=order)
 
     if existing_xs is not None:
         sample = np.row_stack([x, existing_xs])
@@ -281,8 +301,32 @@ def _pairwise_distance_on_hull(x, existing_xs, ord):  # noqa: A002
     dist = dist[slc]  # drop distances between existing points as they should not
     # influence the optimization
 
-    crit_value = -logsumexp(-dist)  # smooth minimum
+    crit_value = -logsumexp(-lse_scale * dist)  # smooth minimum
     return crit_value
+
+
+def _draw_from_distribution(distribution, rng, size):
+    """Draw points from distribution.
+
+    Args:
+        distribution (str): Distribution to use for initial sample before points are
+            projected onto unit hull. Must be in {'normal', 'uniform'}.
+        rng (np.random.Generator): Random number generator.
+        size (Union[int, tuple[int]]): Output shape.
+
+    Returns:
+        np.ndarray: Randomly drawn points.
+
+    """
+    if distribution == "normal":
+        draw = rng.normal(size=size)
+    elif distribution == "uniform":
+        draw = rng.uniform(-1, 1, size=size)
+    else:
+        raise ValueError(
+            f"distribution is {distribution}, but needs to be in ('normal', 'uniform')."
+        )
+    return draw
 
 
 def _map_into_feasible_trustregion(points, bounds):
@@ -301,19 +345,19 @@ def _map_into_feasible_trustregion(points, bounds):
     return points
 
 
-def _project_onto_unit_hull(x, ord):  # noqa: A002
+def _project_onto_unit_hull(x, order):
     """Project points from the unit space onto the hull of a geometric figure.
 
     Args:
         x (np.ndarray): 2d array of points to be projects. Each value is in [-1, 1].
-        ord (int): Type of norm to use when scaling the sampled points. For 2 we project
-            onto the hull of a sphere, for np.inf onto the hull of a cube.
+        order (int): Type of norm to use when scaling the sampled points. For 2 we
+            project onto the hull of a sphere, for np.inf onto the hull of a cube.
 
     Returns:
         np.ndarray: The projected points.
 
     """
-    norm = np.linalg.norm(x, axis=1, ord=ord).reshape(-1, 1)
+    norm = np.linalg.norm(x, axis=1, ord=order).reshape(-1, 1)
     projected = x / norm
     return projected
 

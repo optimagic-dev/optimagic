@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import TrustRegion
+from estimagic.optimization.tranquilo.sample_points import _draw_from_distribution
 from estimagic.optimization.tranquilo.sample_points import _pairwise_distance_on_hull
 from estimagic.optimization.tranquilo.sample_points import _project_onto_unit_hull
 from estimagic.optimization.tranquilo.sample_points import get_sampler
@@ -87,30 +88,41 @@ def test_optimality(sampler):
     assert distances[1] > distances[0]
 
 
-@pytest.mark.parametrize("ord", [2, np.inf])
-def test_pairwise_distance_on_hull(ord):  # noqa: A002
+@pytest.mark.parametrize("order", [2, np.inf])
+def test_pairwise_distance_on_hull(order):
 
     # equal points imply zero distance
-    value = _pairwise_distance_on_hull(x=np.ones((2, 2)), existing_xs=None, ord=ord)
+    value = _pairwise_distance_on_hull(
+        x=np.ones(4), existing_xs=None, lse_scale=1, order=order, n_params=2
+    )
     assert value == 0
 
     # non-equal points imply positive distance
     value = _pairwise_distance_on_hull(
-        x=np.arange(4).reshape(2, 2), existing_xs=None, ord=ord
+        x=np.arange(4), existing_xs=None, lse_scale=1, order=order, n_params=2
     )
     assert value > 0
 
 
-@pytest.mark.parametrize("ord", [2, np.inf])
-def test_project_onto_unit_hull(ord):  # noqa: A002
+@pytest.mark.parametrize("order", [2, np.inf])
+def test_project_onto_unit_hull(order):
 
     rng = np.random.default_rng(1234)
     old = rng.uniform(-1, 1, size=10).reshape(5, 2)
-    new = _project_onto_unit_hull(old, ord)
+    new = _project_onto_unit_hull(old, order)
 
-    norm = np.linalg.norm(old, axis=1, ord=ord)
+    norm = np.linalg.norm(old, axis=1, ord=order)
     with pytest.raises(AssertionError):
         aaae(1, norm)
 
-    norm = np.linalg.norm(new, axis=1, ord=ord)
+    norm = np.linalg.norm(new, axis=1, ord=order)
     aaae(1, norm)
+
+
+@pytest.mark.parametrize("distribution", ["normal", "uniform"])
+def test_draw_from_distribution(distribution):
+    rng = np.random.default_rng()
+    draw = _draw_from_distribution(distribution, rng=rng, size=(3, 2))
+    if distribution == "uniform":
+        assert (-1 <= draw).all() and (draw <= 1).all()
+    assert draw.shape == (3, 2)
