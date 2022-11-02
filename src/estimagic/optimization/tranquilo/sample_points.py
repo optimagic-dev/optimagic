@@ -21,7 +21,9 @@ def get_sampler(sampler, bounds, user_options=None):
             details.
         bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``
         user_options (dict): Additional keyword arguments for the sampler. Options that
-            are not used by the sampler are ignored with a warning.
+            are not used by the sampler are ignored with a warning. If sampler is
+            'hull_sampler' or 'optimal_hull_sampler' the user options must contain the
+            argument 'order', which is a positive integer.
 
     Returns:
         callable: Function that depends on trustregion, target_size, existing_xs and
@@ -51,6 +53,15 @@ def get_sampler(sampler, bounds, user_options=None):
             f"Invalid sampler: {sampler}. Must be one of {list(built_in_samplers)} "
             "or a callable."
         )
+
+    if "hull_sampler" in _sampler_name and "order" not in user_options:
+        msg = (
+            "The hull_sampler and optimal_hull_sampler require the argument 'order' to "
+            "be prespecfied in the user_options dictionary. Order is a positive "
+            "integer. For order = 2 the hull_sampler equals the sphere_sampler, and "
+            "for order = np.inf it equals the cube_sampler."
+        )
+        raise ValueError(msg)
 
     args = set(inspect.signature(_sampler).parameters)
 
