@@ -244,7 +244,30 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
     gtol_rel,
     gtol_scaled,
 ):
-    """Take a preliminary gradient descent step and check if we found a solution."""
+    """Take a preliminary gradient descent step and check if we found a solution.
+
+    Args:
+        model_gradient (np.ndarray): 1d array of shape (n,) with linear terms of the
+            main model.
+        model_hessian (np.ndarray): 2d array of shape (n,n) with square terms of
+            the main model
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
+        maxiter_gradient_descent (int): Maximum number of iterations in performing
+            gradient descent step
+        gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+        gtol_rel (float): Convergence tolerance for the relative gradient norm.
+        gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
+
+    Returns:
+        x_candidate (np.ndarray): Candidate for solution vector of shape (n,).
+        criterion_candidate (float): Candidate value for solution criterion.
+        gradient_unprojected (np.ndarray):
+
+
+    """
 
     default_radius = 100.0
     min_radius = 1e-10
