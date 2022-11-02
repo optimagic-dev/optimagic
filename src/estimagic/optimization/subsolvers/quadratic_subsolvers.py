@@ -588,8 +588,9 @@ def minimize_gqtpar_quadratic_fast(model, *, k_easy=0.1, k_hard=0.2, maxiter=200
     # See Golub, G. H., Van Loan, C. F. (2013), "Matrix computations", p.165.
     model_gradient = model.linear_terms
     model_hessian = model.square_terms
+    eps = np.finfo(float).eps
     x_candidate, f_min, _niter, converged = _minimize_gqtpar(
-        model_gradient, model_hessian, k_easy, k_hard, maxiter
+        model_gradient, model_hessian, k_easy, k_hard, maxiter, eps
     )
 
     result = {
@@ -806,11 +807,9 @@ def _minimize_bntr(
     return x_candidate, f_candidate, niter, converged, convergence_reason
 
 
-def _minimize_gqtpar(model_gradient, model_hessian, k_easy, k_hard, maxiter):
+def _minimize_gqtpar(model_gradient, model_hessian, k_easy, k_hard, maxiter, eps):
     zero_threshold = (
-        model_hessian.shape[0]
-        * np.finfo(float).eps
-        * np.linalg.norm(model_hessian, np.Inf)
+        model_hessian.shape[0] * eps * np.linalg.norm(model_hessian, np.Inf)
     )
     gradient_norm = np.linalg.norm(model_gradient)
     (
@@ -875,7 +874,10 @@ def _minimize_gqtpar(model_gradient, model_hessian, k_easy, k_hard, maxiter):
             )
 
         else:
-            lambda_candidate = update_lambdas_when_factorization_unsuccessful_fast(
+            (
+                lambda_candidate,
+                lambda_lower_bound,
+            ) = update_lambdas_when_factorization_unsuccessful_fast(
                 hessian_upper_triangular,
                 hessian_plus_lambda,
                 lambda_candidate,
