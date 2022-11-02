@@ -307,6 +307,9 @@ def minimize_bntr_quadratic_fast(
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
 
+    This function serves as a wrapper around the faster, numba-implementation of the
+    original BNTR algorithm.
+
     The BNTR (Bounded Newton Trust Rregion) algorithm uses an active-set approach
     to solve the symmetric system of equations:
 
@@ -361,7 +364,13 @@ def minimize_bntr_quadratic_fast(
 
     model_gradient = model.linear_terms
     model_hessian = model.square_terms
-    x_candidate, f_candidate, niter, converged, convergence_reason = _minimize_bntr(
+    (
+        x_candidate,
+        f_candidate,
+        niter,
+        converged,
+        convergence_reason,
+    ) = _minimize_bntr_fast(
         model_gradient=model_gradient,
         model_hessian=model_hessian,
         lower_bounds=lower_bounds,
@@ -533,7 +542,8 @@ def evaluate_model_criterion(
     Returns:
         float: Criterion value of the main model.
     """
-    return gradient.T @ x + 0.5 * x.T @ hessian @ x
+    out = gradient.T @ x + 0.5 * x.T @ hessian @ x
+    return out
 
 
 @njit
@@ -542,19 +552,21 @@ def evaluate_model_gradient(x, gradient, hessian):
 
     Args:
         x (np.ndarray): Candidate vector of shape (n,).
-        main_model (NamedTuple): NamedTuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``", a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
+        gradient (np.ndarray): Gradient of shape (n,) for which the main model
+            shall be evaluated.
+        hessian (np.ndarray): Hessian of shape (n, n) for which the main model
+            shall be evaulated.
+
 
     Returns:
         np.ndarray: Derivative of the main model of shape (n,).
     """
-    return gradient + hessian @ x
+    out = gradient + hessian @ x
+    return out
 
 
 @njit
-def _minimize_bntr(
+def _minimize_bntr_fast(
     model_gradient,
     model_hessian,
     lower_bounds,
@@ -568,6 +580,61 @@ def _minimize_bntr(
     gtol_abs_conjugate_gradient,
     gtol_rel_conjugate_gradient,
 ):
+    """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
+
+    Thi is the faster,  numba implmementation of the original BNTR algorithm that
+    gets wrapped in minimize_bntr_fast
+
+    The BNTR (Bounded Newton Trust Rregion) algorithm uses an active-set approach
+    to solve the symmetric system of equations:
+
+        hessian @ x = - gradient
+
+    only for the inactive parameters of x that lie within the bounds. The active-set
+    estimation employed here is based on Bertsekas (:cite:`Bertsekas1982`).
+
+    In the main loop, BNTR globalizes the Newton step using a trust-region method
+    based on the predicted versus actual reduction in the criterion function.
+    The trust-region radius is increased only if the accepted step is at the
+    trust-region boundary.
+
+
+    Args:
+        model_gradient (np.ndarray): 1d array of shape (n,) of the linear terms of
+            surrogate model.
+        model_hessian (np.ndarray): 2d array of shape (n,n) of the square terms of
+            the surrogate model.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
+        conjugate_gradient_method (str): Method for computing the conjugate gradient
+            step. Available conjugate gradient methods are:
+                - "cg"
+                - "steihaug_toint"
+                - "trsbox" (default)
+        maxiter (int): Maximum number of iterations. If reached, terminate.
+        maxiter_gradient_descent (int): Maximum number of steepest descent iterations
+            to perform when the trust-region subsolver BNTR is used.
+        gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+        gtol_rel (float): Convergence tolerance for the relative gradient norm.
+        gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
+        gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+        gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+
+    Returns:
+        x (np.ndarray): Solution vector of the subproblem of shape (n,)
+        criterion (float): Minimum function value associated with the
+            solution.
+        n_iterations (int): Number of iterations the algorithm ran before
+            termination.
+        success (bool): Boolean indicating whether a solution has been found
+            before reaching maxiter.
+    """
 
     (
         x_candidate,

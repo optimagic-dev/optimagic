@@ -80,7 +80,7 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     update_trustregion_radius_conjugate_gradient_fast,
 )
-from estimagic.optimization.subsolvers.quadratic_subsolvers import _minimize_bntr
+from estimagic.optimization.subsolvers.quadratic_subsolvers import _minimize_bntr_fast
 from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     evaluate_model_criterion,
 )
@@ -488,13 +488,37 @@ def test_minimize_bntr():
         "gtol_rel_conjugate_gradient": 1e-06,
     }
     res_orig = minimize_bntr_quadratic(model, lower_bounds, upper_bounds, **options)
-    res_fast = _minimize_bntr(
+    res_fast = _minimize_bntr_fast(
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )
     # using aaae to get tests run on windows machines.
     aaae(res_orig["x"], res_fast[0])
     aaae(res_orig["criterion"], res_fast[1])
     assert res_orig["success"] == res_fast[3]
+
+
+def test_minimize_bntr_break_loop_early():
+    model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
+    lower_bounds = -np.ones(len(model.linear_terms))
+    upper_bounds = np.ones(len(model.linear_terms))
+    options = {
+        "maxiter": 20,
+        "maxiter_gradient_descent": 5,
+        "conjugate_gradient_method": "cg",
+        "gtol_abs": 10,
+        "gtol_rel": 10,
+        "gtol_scaled": 10,
+        "gtol_abs_conjugate_gradient": 10,
+        "gtol_rel_conjugate_gradient": 10,
+    }
+    res_fast = _minimize_bntr_fast(
+        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
+    )
+    # using aaae to get tests run on windows machines.
+    aaae(np.zeros(len(model.linear_terms)), res_fast[0])
+    aaae(0, res_fast[1])
+    assert res_fast[3]
+    assert res_fast[2] == 0
 
 
 def test_evaluate_model_gradient():
