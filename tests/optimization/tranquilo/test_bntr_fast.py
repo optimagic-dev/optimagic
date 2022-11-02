@@ -131,7 +131,7 @@ def test_project_gradient_on_feasible_set():
 def test_find_hessian_inactive_bounds():
     hessian = np.arange(25).reshape(5, 5).astype(float)
 
-    model = ScalarModel(square_terms=hessian)
+    model = ScalarModel(square_terms=hessian, intercept=0, linear_terms=np.zeros(5))
 
     bounds_info = ActiveBounds(
         inactive=np.array([2, 3, 4]),
@@ -176,7 +176,9 @@ def test_prelim_grad_descent():
             [-45.45, -47.47, 900.99, -3.51, -782.91],
         ]
     )
-    model = ScalarModel(linear_terms=model_gradient, square_terms=model_hessian)
+    model = ScalarModel(
+        linear_terms=model_gradient, square_terms=model_hessian, intercept=0
+    )
     x_candidate = np.zeros(5)
     lower_bounds = -np.ones(len(x_candidate))
     upper_bounds = np.ones(len(x_candidate))
@@ -390,7 +392,9 @@ def test_gradient_descent_step():
         "theta": 0.25,
         "default_radius": 100,
     }
-    model = ScalarModel(linear_terms=model_gradient, square_terms=model_hessian)
+    model = ScalarModel(
+        linear_terms=model_gradient, square_terms=model_hessian, intercept=0
+    )
     bounds_info = ActiveBounds(inactive=inactive_bounds)
     res_fast = perform_gradient_descent_step_fast(
         x_candidate=x_candidate,
