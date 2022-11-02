@@ -14,8 +14,8 @@ def get_sampler(sampler, bounds, user_options=None):
 
     Args:
         sampler (str or callable): Name of a sampling method or sampling function.
-            The arguments of sampling functions need to be: ``lower_bounds``,
-            ``upper_bounds``, ``target_size``, ``existing_xs``, ``existing_fvals``.
+            The arguments of sampling functions need to be: ``trustregion``,
+            ``target_size``, ``rng``, ``existing_xs`` and ``bounds``.
             Sampling functions need to return a dictionary with the entry "points"
             (and arbitrary additional information). See ``reference_sampler`` for
             details.
@@ -32,6 +32,8 @@ def get_sampler(sampler, bounds, user_options=None):
 
     built_in_samplers = {
         "naive": _naive_sampler,
+        "hull_sampler": _hull_sampler,
+        "optimal_hull_sampler": _optimal_hull_sampler,
         "cube": partial(_hull_sampler, order=np.inf),
         "sphere": partial(_hull_sampler, order=2),
         "optimal_cube": partial(_optimal_hull_sampler, order=np.inf),
@@ -137,7 +139,7 @@ def _hull_sampler(
     target_size,
     rng,
     order,
-    distribution="normal",
+    distribution=None,
     existing_xs=None,
     bounds=None,
 ):
@@ -167,6 +169,8 @@ def _hull_sampler(
     n_params = len(trustregion.center)
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
+    if distribution is None:
+        distribution = "normal" if order <= 3 else "uniform"
     points = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
     points = _project_onto_unit_hull(points, order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
@@ -178,8 +182,8 @@ def _optimal_hull_sampler(
     target_size,
     rng,
     order,
-    distribution="normal",
-    lse_scale=1,
+    distribution=None,
+    hardness=1,
     existing_xs=None,
     bounds=None,
     algorithm="scipy_lbfgsb",
@@ -188,10 +192,12 @@ def _optimal_hull_sampler(
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
     Points are sampled optimally on a hull (of a sphere for order=2 and of a cube for
-    order=np.inf), where the criterion that is maximized is the (smooth) minimum
-    distance of all pairs of points, except for pairs of existing points. These points
-    are then mapped into the feasible region, which is defined by the intersection of
-    the trustregion and the bounds.
+    order=np.inf), where the criterion that is maximized is the minimum distance of all
+    pairs of points, except for pairs of existing points. These points are then mapped
+    into the feasible region, which is defined by the intersection of the trustregion
+    and the bounds. Instead of using a hard minimum we return the soft minimum, whose
+    accuracy we govern by the hardness factor. For more information on the soft-minimum,
+    seek: https://tinyurl.com/mrythbk4.
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
@@ -203,8 +209,9 @@ def _optimal_hull_sampler(
             result in sphere sampling, for np.inf in cube sampling.
         distribution (str): Distribution to use for initial sample before points are
             projected onto unit hull. Must be in {'normal', 'uniform'}.
-        lse_scale (float): Positive logsumexp scaling factor. As lse_scale tends to
-            infinity the logsumexp function approaches the maximum. Default is 1.
+        hardness (float): Positive scaling factor. As hardness tends to infinity the
+            soft minimum (logsumexp) approaches the hard minimum. Default is 1. A
+            detailed explanation is given in the docstring.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
@@ -235,18 +242,20 @@ def _optimal_hull_sampler(
         existing_xs = (existing_xs - trustregion.center) / trustregion.radius
 
     # start params
+    if distribution is None:
+        distribution = "normal" if order <= 3 else "uniform"
     x0 = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
     x0 = _project_onto_unit_hull(x0, order=order)
     x0 = x0.flatten()  # flatten so that em.maximize uses fast path
 
     res = em.maximize(
-        criterion=_pairwise_distance_on_hull,
+        criterion=_minimal_pairwise_distance_on_hull,
         params=x0,
         algorithm=algorithm,
         criterion_kwargs={
             "existing_xs": existing_xs,
             "order": order,
-            "lse_scale": lse_scale,
+            "hardness": hardness,
             "n_params": n_params,
         },
         lower_bounds=-np.ones_like(x0),
@@ -264,12 +273,15 @@ def _optimal_hull_sampler(
 # ======================================================================================
 
 
-def _pairwise_distance_on_hull(x, existing_xs, order, lse_scale, n_params):
-    """Pairwise distance of new and existing points.
+def _minimal_pairwise_distance_on_hull(x, existing_xs, order, hardness, n_params):
+    """Compute minimal pairwise distance of new and existing points.
 
     Instead of optimizing the distance of points in the feasible trustregion, this
     criterion function leads to the maximization of the minimum distance of the points
-    in the unit space. These can then be mapped into the feasible trustregion.
+    in the unit space. These can then be mapped into the feasible trustregion. We do not
+    consider the distances between existing points. Instead of using a hard minimum we
+    return the soft minimum, whose accuracy we govern by the hardness factor. For more
+    information on the soft-minimum, seek: https://tinyurl.com/mrythbk4.
 
     Args:
         x (np.ndarray): Flattened 1d array of internal points. Each value is in [-1, 1].
@@ -278,8 +290,9 @@ def _pairwise_distance_on_hull(x, existing_xs, order, lse_scale, n_params):
             satisfies -1 <= existing_xs <= 1.
         order (int): Type of norm to use when scaling the sampled points. For 2 we
             project onto the hull of a sphere, for np.inf onto the hull of a cube.
-        lse_scale (float): Positive logsumexp scaling factor. As lse_scale tends to
-            infinity the logsumexp function approaches the maximum. Default is 1.
+        hardness (float): Positive scaling factor. As hardness tends to infinity the
+            soft minimum (logsumexp) approaches the hard minimum. Default is 1. A
+            detailed explanation is given in the docstring.
         n_params (int): Dimensionality of the problem.
 
     Returns:
@@ -301,7 +314,7 @@ def _pairwise_distance_on_hull(x, existing_xs, order, lse_scale, n_params):
     dist = dist[slc]  # drop distances between existing points as they should not
     # influence the optimization
 
-    crit_value = -logsumexp(-lse_scale * dist)  # smooth minimum
+    crit_value = -logsumexp(-hardness * dist)  # soft minimum
     return crit_value
 
 

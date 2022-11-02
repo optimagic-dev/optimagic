@@ -3,7 +3,9 @@ import pytest
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import _draw_from_distribution
-from estimagic.optimization.tranquilo.sample_points import _pairwise_distance_on_hull
+from estimagic.optimization.tranquilo.sample_points import (
+    _minimal_pairwise_distance_on_hull,
+)
 from estimagic.optimization.tranquilo.sample_points import _project_onto_unit_hull
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from numpy.testing import assert_array_almost_equal as aaae
@@ -22,10 +24,24 @@ def test_bounds_are_satisfied(sampler):
         target_size=5,
         rng=np.random.default_rng(1234),
     )
-
     lower = np.full_like(sample, bounds.lower)
     upper = np.full_like(sample, bounds.upper)
+    assert np.all(lower <= sample)
+    assert np.all(sample <= upper)
 
+
+@pytest.mark.parametrize("order", [3, 10, 100])
+def test_bounds_are_satisfied_general_hull_sampler(order):
+    bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
+    sampler = get_sampler("hull_sampler", bounds)
+    sample = sampler(
+        trustregion=TrustRegion(center=np.zeros(2), radius=1),
+        target_size=5,
+        rng=np.random.default_rng(1234),
+        order=order,
+    )
+    lower = np.full_like(sample, bounds.lower)
+    upper = np.full_like(sample, bounds.upper)
     assert np.all(lower <= sample)
     assert np.all(sample <= upper)
 
@@ -92,14 +108,14 @@ def test_optimality(sampler):
 def test_pairwise_distance_on_hull(order):
 
     # equal points imply zero distance
-    value = _pairwise_distance_on_hull(
-        x=np.ones(4), existing_xs=None, lse_scale=1, order=order, n_params=2
+    value = _minimal_pairwise_distance_on_hull(
+        x=np.ones(4), existing_xs=None, hardness=1, order=order, n_params=2
     )
     assert value == 0
 
     # non-equal points imply positive distance
-    value = _pairwise_distance_on_hull(
-        x=np.arange(4), existing_xs=None, lse_scale=1, order=order, n_params=2
+    value = _minimal_pairwise_distance_on_hull(
+        x=np.arange(4), existing_xs=None, hardness=1, order=order, n_params=2
     )
     assert value > 0
 
