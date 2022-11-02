@@ -24,6 +24,9 @@ from estimagic.optimization.subsolvers._steihaug_toint_quadratic_fast import (
     minimize_trust_stcg_fast,
 )
 from estimagic.optimization.subsolvers._trsbox_quadratic import (
+    _apply_bounds_to_candidate_vector,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic import (
     _calc_upper_bound_on_tangent as upper_bound_tangent_orig,
 )
 from estimagic.optimization.subsolvers._trsbox_quadratic import (
@@ -403,3 +406,15 @@ def test_minimize_cg():
         model_gradient, model_hessian, trustregion_radius, gtol_abs, gtol_rel
     )
     aaae(res_orig, res_fast)
+
+
+def test_apply_bounds_to_candidate_vector():
+    x_bounded = np.array([-1, 1, 0, 0, 0])
+    x_candidate = np.zeros(5)
+    lower_bounds = np.array([-1, -1, 0.01, -1, -1])
+    upper_bounds = np.array([1, 1, 1, -0.01, 1])
+    res = _apply_bounds_to_candidate_vector(
+        x_candidate, x_bounded, lower_bounds, upper_bounds
+    )
+    expected = np.array([-1, 1, 0.01, -0.01, 0])
+    aae(res, expected)
