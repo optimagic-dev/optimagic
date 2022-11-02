@@ -4,6 +4,8 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.models import n_interactions
+from estimagic.optimization.tranquilo.models import n_second_order_terms
 from estimagic.optimization.tranquilo.models import VectorModel
 from numba import njit
 from scipy.linalg import qr_multiply
@@ -442,9 +444,9 @@ def _polynomial_features(x, has_squares):
     n_samples, n_params = x.shape
 
     if has_squares:
-        n_poly_terms = n_params * (n_params + 1) // 2
+        n_poly_terms = n_second_order_terms(n_params)
     else:
-        n_poly_terms = n_params * (n_params - 1) // 2
+        n_poly_terms = n_interactions(n_params)
 
     poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
     xt = x.T

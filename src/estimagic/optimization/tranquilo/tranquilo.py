@@ -348,10 +348,10 @@ def _process_surrogate_model(surrogate_model, functype):
     elif isinstance(surrogate_model, str):
         if surrogate_model == "linear":
             out = ModelInfo(has_squares=False, has_interactions=False)
-        elif surrogate_model == "quadratic":
-            out = ModelInfo(has_squares=True, has_interactions=True)
         elif surrogate_model == "diagonal":
             out = ModelInfo(has_squares=True, has_interactions=False)
+        elif surrogate_model == "quadratic":
+            out = ModelInfo(has_squares=True, has_interactions=True)
         else:
             raise ValueError(f"Invalid surrogate model: {surrogate_model}")
 
