@@ -2,6 +2,7 @@ from typing import NamedTuple
 from typing import Union
 
 import numpy as np
+from numba import njit
 
 
 class VectorModel(NamedTuple):
@@ -64,7 +65,11 @@ def n_free_params(dim, info_or_name):
             out += dim
         if info.has_interactions:
             out += n_interactions(dim)
-    elif isinstance(info_or_name, str):
+    elif isinstance(info_or_name, str) and info_or_name in (
+        "linear",
+        "quadratic",
+        "diagonal",
+    ):
         name = info_or_name
         if name == "quadratic":
             out += n_second_order_terms(dim)
@@ -72,26 +77,29 @@ def n_free_params(dim, info_or_name):
             out += dim
     else:
         raise ValueError()
-
     return out
 
 
+@njit
 def n_second_order_terms(dim):
     """Number of free second order terms in a quadratic model."""
-    return int(dim * (dim + 1) * 0.5)
+    return dim * (dim + 1) // 2
 
 
+@njit
 def n_interactions(dim):
     """Number of free interaction terms in a quadratic model."""
-    return int(dim * (dim - 1) * 0.5)
+    return dim * (dim - 1) // 2
 
 
 def is_second_order_model(model_or_info):
     """Check if a model has any second order terms."""
     if isinstance(model_or_info, ModelInfo):
-        out = model_or_info.has_interactions or model_or_info.has_squares
-    elif model_or_info.square_terms is not None:
-        out = True
+        model_info = model_or_info
+        out = model_info.has_interactions or model_info.has_squares
+    elif isinstance(model_or_info, (ScalarModel, VectorModel)):
+        model = model_or_info
+        out = model.square_terms is not None
     else:
         raise TypeError()
     return out

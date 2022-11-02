@@ -10,6 +10,7 @@ from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.models import n_free_params
 from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import ConvOptions
@@ -292,7 +293,6 @@ def _calculate_rho(actual_improvement, expected_improvement):
         rho = -np.inf
     else:
         rho = actual_improvement / expected_improvement
-
     return rho
 
 
@@ -371,11 +371,11 @@ def _process_sample_size(user_sample_size, model_info, x):
     elif isinstance(user_sample_size, str):
         user_sample_size = user_sample_size.replace(" ", "")
         if user_sample_size in ["linear", "n+1"]:
-            out = len(x) + 1
+            out = n_free_params(dim=len(x), info_or_name="linear")
         elif user_sample_size in ["powell", "2n+1", "2*n+1"]:
             out = 2 * len(x) + 1
         elif user_sample_size == "quadratic":
-            out = len(x) * (len(x) + 1) // 2 + len(x) + 1
+            out = n_free_params(dim=len(x), info_or_name="quadratic")
         else:
             raise ValueError(f"Invalid sample size: {user_sample_size}")
 

@@ -1,4 +1,5 @@
 import numpy as np
+from estimagic.optimization.tranquilo.models import n_second_order_terms
 from numba import njit
 from scipy.linalg import qr_multiply
 
@@ -62,7 +63,7 @@ def drop_collinear_pounders(xs, indices, state):
 def _drop_collinear_pounders(xs, indices, state):
     theta2 = 1e-4
     n_samples, n_params = xs.shape
-    n_poly_terms = n_params * (n_params + 1) // 2
+    n_poly_terms = n_second_order_terms(n_params)
 
     indices_reverse = indices[::-1]
     indexer_reverse = np.arange(n_samples)[::-1]
@@ -147,7 +148,7 @@ def _get_polynomial_feature_matrices(
 @njit
 def _square_features(x):
     n_samples, n_params = np.atleast_2d(x).shape
-    n_poly_terms = n_params * (n_params + 1) // 2
+    n_poly_terms = n_second_order_terms(n_params)
 
     poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
     xt = x.T
