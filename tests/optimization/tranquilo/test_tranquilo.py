@@ -3,9 +3,17 @@ import itertools
 import numpy as np
 import pytest
 from estimagic.optimization.optimize import minimize
+from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.tranquilo import _process_sample_size
+from estimagic.optimization.tranquilo.tranquilo import _process_surrogate_model
 from estimagic.optimization.tranquilo.tranquilo import tranquilo
 from estimagic.optimization.tranquilo.tranquilo import tranquilo_ls
 from numpy.testing import assert_array_almost_equal as aaae
+
+
+# ======================================================================================
+# Test tranquilo end-to-end
+# ======================================================================================
 
 
 def _product(sample_filter, fitter, surrogate_model, sample_size):
@@ -186,3 +194,108 @@ def test_external_tranquilo_ls_sphere_defaults():
     )
 
     aaae(res.params, np.zeros(5), decimal=5)
+
+
+# ======================================================================================
+# Test input processing functions
+# ======================================================================================
+
+
+def test_process_surrogate_model_none_scalar():
+    got = _process_surrogate_model(None, functype="scalar")
+    assert got.has_interactions is True
+    assert got.has_squares is True
+
+
+@pytest.mark.parametrize("functype", ["least_squares", "likelihood"])
+def test_process_surrogate_model_none_not_scalar(functype):
+    got = _process_surrogate_model(None, functype=functype)
+    assert got.has_interactions is False
+    assert got.has_squares is False
+
+
+@pytest.mark.parametrize("has_interactions", [True, False])
+@pytest.mark.parametrize("has_squares", [True, False])
+def test_process_surrogate_model_info(has_interactions, has_squares):
+    model_info = ModelInfo(has_squares=has_squares, has_interactions=has_interactions)
+    got = _process_surrogate_model(model_info, functype="whatever")
+    assert got == model_info
+
+
+def test_process_surrogate_model_str_linear():
+    got = _process_surrogate_model("linear", functype="scalar")
+    assert got.has_interactions is False
+    assert got.has_squares is False
+
+
+def test_process_surrogate_model_str_diagonal():
+    got = _process_surrogate_model("diagonal", functype="least_squares")
+    assert got.has_interactions is False
+    assert got.has_squares is True
+
+
+def test_process_surrogate_model_str_quadratic():
+    got = _process_surrogate_model("quadratic", functype="likelihood")
+    assert got.has_interactions is True
+    assert got.has_squares is True
+
+
+def test_process_surrogate_model_str_invalid():
+    with pytest.raises(ValueError):
+        _process_surrogate_model("whatever", None)
+
+
+@pytest.mark.parametrize("functype", ["scalar", "least_squares"])
+def test_process_surrogate_model_invalid(functype):
+    surrogate_model = np.linalg.lstsq
+    with pytest.raises(ValueError):
+        _process_surrogate_model(surrogate_model, functype=functype)
+
+
+@pytest.mark.parametrize("has_interactions", [True, False])
+@pytest.mark.parametrize("has_squares", [True, False])
+def test_process_sample_size_none_linear(has_interactions, has_squares):
+    model_info = ModelInfo(has_interactions=has_interactions, has_squares=has_squares)
+    x = np.ones((3, 2))
+    got = _process_sample_size(None, model_info=model_info, x=x)
+    if has_interactions or has_squares:
+        assert got == 7
+    else:
+        assert got == 4
+
+
+STR_TEST_CASES = [  # assume len(x) = 3
+    # (user_sample_size, expected)  # noqa: E800
+    ("linear", 3 + 1),
+    ("n+1", 3 + 1),
+    ("n + 1", 3 + 1),
+    ("powell", 2 * 3 + 1),
+    ("2n+1", 2 * 3 + 1),
+    ("2 n + 1", 2 * 3 + 1),
+    ("2*n + 1", 2 * 3 + 1),
+    ("quadratic", 6 + 3 + 1),
+]
+
+
+@pytest.mark.parametrize("user_sample_size, expected", STR_TEST_CASES)
+def test_process_sample_size_str(user_sample_size, expected):
+    x = np.ones((3, 2))
+    got = _process_sample_size(user_sample_size, None, x=x)
+    assert got == expected
+
+
+def test_process_sample_size_str_invalid():
+    with pytest.raises(ValueError):
+        _process_sample_size("n**2", None, None)
+
+
+@pytest.mark.parametrize("user_sample_size", [1, 10, -100, 10.5])
+def test_process_sample_size_number(user_sample_size):
+    got = _process_sample_size(user_sample_size, None, None)
+    assert got == int(user_sample_size)
+
+
+def test_process_sample_size_invalid():
+    x = np.ones((3, 2))
+    with pytest.raises(ValueError):
+        _process_sample_size(np.zeros_like(x), None, x)
