@@ -33,12 +33,11 @@ def test_bounds_are_satisfied(sampler):
 @pytest.mark.parametrize("order", [3, 10, 100])
 def test_bounds_are_satisfied_general_hull_sampler(order):
     bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
-    sampler = get_sampler("hull_sampler", bounds)
+    sampler = get_sampler("hull_sampler", bounds, user_options={"order": order})
     sample = sampler(
         trustregion=TrustRegion(center=np.zeros(2), radius=1),
         target_size=5,
         rng=np.random.default_rng(1234),
-        order=order,
     )
     lower = np.full_like(sample, bounds.lower)
     upper = np.full_like(sample, bounds.upper)
