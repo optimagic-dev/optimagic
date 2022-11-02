@@ -568,7 +568,6 @@ def _minimize_bntr(
     gtol_abs_conjugate_gradient,
     gtol_rel_conjugate_gradient,
 ):
-    x_candidate = np.zeros(len(model_gradient))
 
     (
         x_candidate,
@@ -584,7 +583,6 @@ def _minimize_bntr(
         converged,
         convergence_reason,
     ) = take_preliminary_gradient_descent_step_and_check_for_solution_fast(
-        x_candidate,
         model_gradient,
         model_hessian,
         lower_bounds,

@@ -16,7 +16,6 @@ EPSILON = np.finfo(float).eps ** (2 / 3)
 
 @njit
 def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
-    x_candidate,
     model_gradient,
     model_hessian,
     lower_bounds,
@@ -41,6 +40,8 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
 
     converged = False
     convergence_reason = 0
+
+    x_candidate = np.zeros(len(model_gradient))
 
     criterion_candidate = _evaluate_model_criterion(
         x_candidate, model_gradient, model_hessian

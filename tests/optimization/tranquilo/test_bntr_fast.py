@@ -199,7 +199,6 @@ def test_prelim_grad_descent():
         "gtol_scaled": 0,
     }
     kwargs_fast = {
-        "x_candidate": x_candidate,
         "model_gradient": model_gradient,
         "model_hessian": model_hessian,
         "lower_bounds": lower_bounds,
