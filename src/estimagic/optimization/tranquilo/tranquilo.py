@@ -221,7 +221,6 @@ def _tranquilo(
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,
-            fvec_center=state.fvec,
         )
 
         sub_sol = solve_subproblem(model=scalar_model, trustregion=trustregion)
