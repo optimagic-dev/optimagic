@@ -80,12 +80,8 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     update_trustregion_radius_conjugate_gradient_fast,
 )
-from estimagic.optimization.subsolvers.quadratic_subsolvers import _minimize_bntr_fast
 from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    evaluate_model_criterion,
-)
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    evaluate_model_gradient,
+    minimize_bntr_fast_jitted,
 )
 from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_bntr_quadratic,
@@ -488,7 +484,7 @@ def test_minimize_bntr():
         "gtol_rel_conjugate_gradient": 1e-06,
     }
     res_orig = minimize_bntr_quadratic(model, lower_bounds, upper_bounds, **options)
-    res_fast = _minimize_bntr_fast(
+    res_fast = minimize_bntr_fast_jitted(
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )
     # using aaae to get tests run on windows machines.
@@ -511,7 +507,7 @@ def test_minimize_bntr_break_loop_early():
         "gtol_abs_conjugate_gradient": 10,
         "gtol_rel_conjugate_gradient": 10,
     }
-    res_fast = _minimize_bntr_fast(
+    res_fast = minimize_bntr_fast_jitted(
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )
     # using aaae to get tests run on windows machines.
@@ -519,21 +515,3 @@ def test_minimize_bntr_break_loop_early():
     aaae(0, res_fast[1])
     assert res_fast[3]
     assert res_fast[2] == 0
-
-
-def test_evaluate_model_gradient():
-    x = np.zeros(5)
-    gradient = np.ones(5)
-    hessian = np.arange(25).reshape(5, 5).astype(float)
-    res = evaluate_model_gradient(x, gradient, hessian)
-    expected = np.ones(5)
-    aae(expected, res)
-
-
-def test_evaluate_model_criterion():
-    x = np.zeros(5)
-    gradient = np.ones(5)
-    hessian = np.arange(25).reshape(5, 5).astype(float)
-    res = evaluate_model_criterion(x, gradient, hessian)
-    expected = 0
-    aae(expected, res)
