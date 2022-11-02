@@ -176,7 +176,7 @@ def minimize_bntr_quadratic(
     )
 
     for niter in range(maxiter + 1):
-        if converged is True:
+        if converged:
             break
 
         x_old = x_candidate
@@ -461,7 +461,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
 
     for _niter in range(maxiter):
 
-        if hessian_info.already_factorized is True:
+        if hessian_info.already_factorized:
             hessian_info = hessian_info._replace(already_factorized=False)
         else:
             hessian_info, factorization_info = add_lambda_and_factorize_hessian(
@@ -498,7 +498,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
                 factorization_info,
             )
 
-        if converged is True:
+        if converged:
             break
 
     f_min = evaluate_model_criterion(
@@ -596,7 +596,7 @@ def _minimize_bntr(
     )
 
     for niter in range(maxiter + 1):
-        if converged is True:
+        if converged:
             break
 
         x_old = x_candidate

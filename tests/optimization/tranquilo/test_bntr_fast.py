@@ -82,6 +82,12 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
 )
 from estimagic.optimization.subsolvers.quadratic_subsolvers import _minimize_bntr
 from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    evaluate_model_criterion,
+)
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    evaluate_model_gradient,
+)
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_bntr_quadratic,
 )
 from estimagic.optimization.tranquilo.models import ScalarModel
@@ -490,3 +496,21 @@ def test_minimize_bntr():
     aaae(res_orig["x"], res_fast[0])
     aaae(res_orig["criterion"], res_fast[1])
     assert res_orig["success"] == res_fast[3]
+
+
+def test_evaluate_model_gradient():
+    x = np.zeros(5)
+    gradient = np.ones(5)
+    hessian = np.arange(25).reshape(5, 5).astype(float)
+    res = evaluate_model_gradient(x, gradient, hessian)
+    expected = np.ones(5)
+    aae(expected, res)
+
+
+def test_evaluate_model_criterion():
+    x = np.zeros(5)
+    gradient = np.ones(5)
+    hessian = np.arange(25).reshape(5, 5).astype(float)
+    res = evaluate_model_criterion(x, gradient, hessian)
+    expected = 0
+    aae(expected, res)
