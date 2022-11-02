@@ -303,7 +303,7 @@ def test_compute_conjugate_gradient_setp():
     )
     aae(res_orig[0], res_fast[0])
     aae(res_orig[1], res_fast[1])
-    assert res_orig[2] == res_fast[2]
+    aaae(res_orig[2], res_fast[2])
 
 
 def test_compute_predicet_reduction_from_conjugate_gradient_step():
