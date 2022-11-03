@@ -165,7 +165,7 @@ def _scaled_square_features(x):
     n_samples, n_params = np.atleast_2d(x).shape
     n_poly_terms = n_second_order_terms(n_params)
 
-    poly_terms = np.empty((n_poly_terms, n_samples), float)
+    poly_terms = np.empty((n_poly_terms, n_samples), np.float64)
     xt = x.T
 
     idx = 0
