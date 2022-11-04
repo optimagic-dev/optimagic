@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from estimagic.optimization.tranquilo.filter_points import _scaled_square_features
 from estimagic.optimization.tranquilo.filter_points import drop_collinear_pounders
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.tranquilo import State
@@ -208,3 +209,10 @@ def test_drop_collinear_pounders(test_case, request):
 
     assert_equal(filtered_indices, expected_indices)
     aaae(filtered_xs, expected_xs)
+
+
+def test_scaled_square_features():
+    x = np.arange(4).reshape(2, 2)
+    got = _scaled_square_features(x)
+    expected = np.array([[0, 0, 1 / 2], [2, 6 / np.sqrt(2), 9 / 2]])
+    assert_equal(got, expected)
