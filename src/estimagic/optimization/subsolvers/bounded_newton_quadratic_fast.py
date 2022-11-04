@@ -451,7 +451,39 @@ def compute_conjugate_gradient_step_fast(
     min_radius,
     max_radius,
 ):
-    """Compute the bounded Conjugate Gradient trust-region step."""
+    """Compute the bounded Conjugate Gradient trust-region step.
+    Args:
+        x_candidate (np.ndarray): Candidate solution vector of parameters of len n.
+        gradient_inactive (np.ndarray): Model gradient where parameter bounds are
+            inactive. The length depends on the number of inactive bounds.
+        hessian_inactive (np.ndarray): Model hessian where parameter bounds are
+            inactive. The shape depends on the number of inactive bounds.
+        lower_bounds (np.ndarray): 1d array of parameter lower bounds, of length n.
+        upper_bounds (np.ndarray): 1d array of parameter upper bounds, of length n.
+        inactive_bounds (np.ndarray): 1d array of indices where parameter bounds are
+            inactive.
+        active_lower_bounds (np.ndarray): 1d array of indices where lower bounds of
+            parameters are inactive.
+        active_upper_bounds (np.ndarray): 1d array of indices where upper bounds of
+            parameters are inactive.
+        trustregion_radius (float): Radius of the trust region.
+        conjugate_gradient_method (str): The method used in the trust region
+            minimization problem.
+        gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
+            gradient norm.
+        gtol_rel_conjugate_gradient (float): Convergence tolerance for the realtive
+            gradient norm.
+        default_radius (float): Default trust-region radius.
+        min_radius (float): Lower bound on the trust-region radius.
+        max_radius (float): Upper bound on the trust-region radius.
+
+    Returns:
+        conjugate_gradient_step (np.ndarray): Conjugate gradient step,of lenght n, with
+            bounds applied to it.
+        step_inactive (np.ndarray): Conjugate gradient step,of length n, without bounds
+            applied to it
+        step_norm (float): Norm of the conjugate gradient step.
+    """
     conjugate_gradient_step = np.zeros(len(x_candidate))
 
     if inactive_bounds.size == 0:
@@ -578,7 +610,25 @@ def compute_predicted_reduction_from_conjugate_gradient_step_fast(
     inactive_bounds,
     active_bounds,
 ):
-    """Compute predicted reduction induced by the Conjugate Gradient step."""
+    """Compute predicted reduction induced by the Conjugate Gradient step.
+    Args:
+        conjugate_gradient_step (np.ndarray): Conjugate gradient step,of lenght n, with
+            bounds applied to it.
+        conjugate_gradient_step_inactive (np.ndarray): Conjugate gradient step,of
+            length n, without bounds applied to it.
+        gradient_unprojected (np.ndarray): Model gradient of len n.
+        gradient_inactive (np.ndarray): Model gradient on indices where parameter
+            bounds are inactive.
+        hessian_inactive (np.ndarray): Model hessian on indices where parameter bounds
+            are inactive.
+        inactive_bounds (np.ndarray): 1d array of indices where parameter bounds
+            are inactive.
+        active_bounds (np.ndarray): 1d array of indices where parameter bounds
+            are active.
+    Returns:
+        predicted_reduction (float): Predicted reduction in criterion function.
+
+    """
     if active_bounds.size > 0:
         # Projection changed the step, so we have to recompute the step
         # and the predicted reduction. Leave the rust radius unchanged.
@@ -596,8 +646,9 @@ def compute_predicted_reduction_from_conjugate_gradient_step_fast(
             gradient_inactive,
             hessian_inactive,
         )
+    predicted_reduction = -predicted_reduction
 
-    return -predicted_reduction
+    return predicted_reduction
 
 
 @njit
