@@ -447,7 +447,7 @@ def _polynomial_features(x, has_squares):
     else:
         n_poly_terms = n_interactions(n_params)
 
-    poly_terms = np.empty((n_poly_terms, n_samples), float)
+    poly_terms = np.empty((n_poly_terms, n_samples), np.float64)
     xt = x.T
 
     idx = 0
