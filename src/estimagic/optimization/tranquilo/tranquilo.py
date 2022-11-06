@@ -10,9 +10,11 @@ from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.models import n_free_params
 from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import ConvOptions
+from estimagic.optimization.tranquilo.options import RadiusFactors
 from estimagic.optimization.tranquilo.options import RadiusOptions
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
@@ -31,11 +33,12 @@ def _tranquilo(
     random_seed=925408,
     sampler="sphere",
     sample_filter="keep_all",
-    fitter="ols",
+    fitter=None,
     subsolver="bntr",
     sample_size=None,
     surrogate_model=None,
     radius_options=None,
+    radius_factors=None,
     sampler_options=None,
     fit_options=None,
     solver_options=None,
@@ -109,6 +112,8 @@ def _tranquilo(
 
     if radius_options is None:
         radius_options = RadiusOptions()
+    if radius_factors is None:
+        radius_factors = RadiusFactors()
     if sampler_options is None:
         sampler_options = {}
     if fit_options is None:
@@ -126,6 +131,12 @@ def _tranquilo(
         model_info=model_info,
         x=x,
     )
+
+    if fitter is None:
+        if functype == "scalar":
+            fitter = "powell"
+        else:
+            fitter = "ols"
 
     if functype == "scalar":
         aggregator = "identity"
@@ -146,7 +157,13 @@ def _tranquilo(
     history = History(functype=functype)
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
     trustregion = TrustRegion(center=x, radius=radius_options.initial_radius)
-    sample_points = get_sampler(sampler, bounds=bounds, user_options=sampler_options)
+    sample_points = get_sampler(
+        sampler,
+        bounds=bounds,
+        model_info=model_info,
+        radius_factors=radius_factors,
+        user_options=sampler_options,
+    )
     filter_points = get_sample_filter(sample_filter)
 
     aggregate_vector_model = get_aggregator(
@@ -178,6 +195,7 @@ def _tranquilo(
         x=history.get_xs(0),
         fvec=history.get_fvecs(0),
         fval=history.get_fvals(0),
+        model_indices=np.array([0]),
     )
     states = [state]
 
@@ -220,7 +238,6 @@ def _tranquilo(
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,
-            fvec_center=state.fvec,
         )
 
         sub_sol = solve_subproblem(model=scalar_model, trustregion=trustregion)
@@ -255,6 +272,7 @@ def _tranquilo(
                 x=candidate_x,
                 fvec=history.get_fvecs(candidate_index),
                 fval=history.get_fvals(candidate_index),
+                model_indices=model_indices,
             )
 
         else:
@@ -263,6 +281,7 @@ def _tranquilo(
                 model=scalar_model,
                 rho=rho,
                 radius=new_radius,
+                model_indices=model_indices,
             )
 
         states.append(state)
@@ -292,7 +311,6 @@ def _calculate_rho(actual_improvement, expected_improvement):
         rho = -np.inf
     else:
         rho = actual_improvement / expected_improvement
-
     return rho
 
 
@@ -304,6 +322,7 @@ class State(NamedTuple):
     x: np.ndarray
     fvec: np.ndarray
     fval: np.ndarray
+    model_indices: np.ndarray
 
 
 def _is_converged(states, options):
@@ -349,10 +368,10 @@ def _process_surrogate_model(surrogate_model, functype):
     elif isinstance(surrogate_model, str):
         if surrogate_model == "linear":
             out = ModelInfo(has_squares=False, has_interactions=False)
-        elif surrogate_model == "quadratic":
-            out = ModelInfo(has_squares=True, has_interactions=True)
         elif surrogate_model == "diagonal":
             out = ModelInfo(has_squares=True, has_interactions=False)
+        elif surrogate_model == "quadratic":
+            out = ModelInfo(has_squares=True, has_interactions=True)
         else:
             raise ValueError(f"Invalid surrogate model: {surrogate_model}")
 
@@ -371,11 +390,11 @@ def _process_sample_size(user_sample_size, model_info, x):
     elif isinstance(user_sample_size, str):
         user_sample_size = user_sample_size.replace(" ", "")
         if user_sample_size in ["linear", "n+1"]:
-            out = len(x) + 1
+            out = n_free_params(dim=len(x), info_or_name="linear")
         elif user_sample_size in ["powell", "2n+1", "2*n+1"]:
             out = 2 * len(x) + 1
         elif user_sample_size == "quadratic":
-            out = len(x) * (len(x) + 1) // 2 + len(x) + 1
+            out = n_free_params(dim=len(x), info_or_name="quadratic")
         else:
             raise ValueError(f"Invalid sample size: {user_sample_size}")
 
