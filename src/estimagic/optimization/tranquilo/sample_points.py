@@ -9,7 +9,9 @@ from scipy.spatial.distance import pdist
 from scipy.special import logsumexp
 
 
-def get_sampler(sampler, bounds, user_options=None):
+def get_sampler(
+    sampler, bounds, model_info=None, radius_factors=None, user_options=None
+):
     """Get sampling function partialled options.
 
     Args:
@@ -27,7 +29,7 @@ def get_sampler(sampler, bounds, user_options=None):
 
     Returns:
         callable: Function that depends on trustregion, target_size, existing_xs and
-            existing_fvals and returns a new sample.
+            existing_fvals, model_info and  and returns a new sample.
 
     """
     user_options = {} if user_options is None else user_options
@@ -73,6 +75,13 @@ def get_sampler(sampler, bounds, user_options=None):
         "rng",
     }
 
+    optional_kwargs = {
+        "model_info": model_info,
+        "radius_factors": radius_factors,
+    }
+
+    optional_kwargs = {k: v for k, v in optional_kwargs.items() if k in args}
+
     problematic = mandatory_args - args
     if problematic:
         raise ValueError(
@@ -96,6 +105,7 @@ def get_sampler(sampler, bounds, user_options=None):
     out = partial(
         _sampler,
         bounds=bounds,
+        **optional_kwargs,
         **reduced,
     )
 
@@ -192,6 +202,8 @@ def _optimal_hull_sampler(
     trustregion,
     target_size,
     rng,
+    model_info,
+    radius_factors,
     order,
     distribution=None,
     hardness=1,
@@ -239,18 +251,29 @@ def _optimal_hull_sampler(
     n_points = _get_effective_n_points(target_size, existing_xs=existing_xs)
     n_params = len(trustregion.center)
 
-    if n_points == 0:
+    if n_points <= 0:
         return np.array([])
 
     algo_options = {} if algo_options is None else algo_options
     if "stopping_max_iterations" not in algo_options:
-        algo_options["stopping_max_iterations"] = n_params
+        algo_options["stopping_max_iterations"] = 2 * n_params
 
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
     if existing_xs is not None:
         # map existing points into unit space for easier optimization
-        existing_xs = (existing_xs - trustregion.center) / trustregion.radius
+        existing_xs_unit = _map_from_feasible_trustregion(existing_xs, effective_bounds)
+
+        dist_to_center = np.linalg.norm(existing_xs_unit, axis=1)
+        not_centric = dist_to_center >= radius_factors.centric
+
+        if not_centric.any():
+            existing_xs_unit = existing_xs_unit[not_centric]
+        else:
+            existing_xs_unit = None
+
+    else:
+        existing_xs_unit = None
 
     # start params
     if distribution is None:
@@ -259,22 +282,29 @@ def _optimal_hull_sampler(
     x0 = _project_onto_unit_hull(x0, order=order)
     x0 = x0.flatten()  # flatten so that em.maximize uses fast path
 
-    res = em.maximize(
-        criterion=_minimal_pairwise_distance_on_hull,
-        params=x0,
-        algorithm=algorithm,
-        criterion_kwargs={
-            "existing_xs": existing_xs,
-            "order": order,
-            "hardness": hardness,
-            "n_params": n_params,
-        },
-        lower_bounds=-np.ones_like(x0),
-        upper_bounds=np.ones_like(x0),
-        algo_options=algo_options,
-    )
+    # This would raise an error because there are zero pairs to calculate the
+    # pairwise distance
+    if existing_xs_unit is None and n_points == 1:
+        opt_params = x0
+    else:
+        res = em.maximize(
+            criterion=_minimal_pairwise_distance_on_hull,
+            params=x0,
+            algorithm=algorithm,
+            criterion_kwargs={
+                "existing_xs": existing_xs_unit,
+                "order": order,
+                "hardness": hardness,
+                "n_params": n_params,
+            },
+            lower_bounds=-np.ones_like(x0),
+            upper_bounds=np.ones_like(x0),
+            algo_options=algo_options,
+        )
 
-    points = _project_onto_unit_hull(res.params.reshape(-1, n_params), order=order)
+        opt_params = res.params
+
+    points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
     return points
 
@@ -321,11 +351,13 @@ def _minimal_pairwise_distance_on_hull(x, existing_xs, order, hardness, n_params
         sample = x
         slc = slice(None)
 
-    dist = pdist(sample) ** 2  # pairwise squared distances
-    dist = dist[slc]  # drop distances between existing points as they should not
-    # influence the optimization
+    dist = pdist(sample) ** 2
 
-    crit_value = -logsumexp(-hardness * dist)  # soft minimum
+    # drop distances between existing points. They could introduce flat spots.
+    dist = dist[slc]
+
+    # soft minimum
+    crit_value = -logsumexp(-hardness * dist)
     return crit_value
 
 
@@ -362,11 +394,27 @@ def _map_into_feasible_trustregion(points, bounds):
             lower and upper define the rectangle that is the feasible trustregion.
 
     Returns:
-        np.ndarray: Mapped points.
+        np.ndarray: Points in trustregion.
 
     """
-    points = (bounds.upper - bounds.lower) * (points + 1) / 2 + bounds.lower
-    return points
+    out = (bounds.upper - bounds.lower) * (points + 1) / 2 + bounds.lower
+    return out
+
+
+def _map_from_feasible_trustregion(points, bounds):
+    """Map points from a feasible trustregion definde by boudns into unit space.
+
+    Args:
+        points (np.ndarray): 2d array of points to be mapped. Each value is in [-1, 1].
+        bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``, where
+            lower and upper define the rectangle that is the feasible trustregion.
+
+    Returns:
+        np.ndarray: Points in unit space.
+
+    """
+    out = 2 * (points - bounds.lower) / (bounds.upper - bounds.lower) - 1
+    return out
 
 
 def _project_onto_unit_hull(x, order):
