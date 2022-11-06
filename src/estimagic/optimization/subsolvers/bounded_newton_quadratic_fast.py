@@ -831,11 +831,11 @@ def get_information_on_active_bounds_fast(
         else:
             if i not in inactive:
                 inactive.append(i)
-    active_all = np.array(active_all)
-    active_lower = np.array(active_lower)
-    active_upper = np.array(active_upper)
-    inactive = np.array(inactive)
-    active_fixed = np.array(active_fixed)
+    active_all = np.array(active_all, dtype="int64")
+    active_lower = np.array(active_lower, dtype="int64")
+    active_upper = np.array(active_upper, dtype="int64")
+    inactive = np.array(inactive, dtype="int64")
+    active_fixed = np.array(active_fixed, dtype="int64")
 
     return active_lower, active_upper, active_fixed, active_all, inactive
 
