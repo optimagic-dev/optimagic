@@ -66,8 +66,8 @@ def minimize_trust_stcg_fast(model_gradient, model_hessian, trustregion_radius):
 
     kappa = p @ z
 
-    dp = 0
-    norm_d = 0
+    dp = 0.0
+    norm_d = 0.0
     norm_p = p @ p
 
     if kappa <= 0:

@@ -63,7 +63,7 @@ def minimize_trust_trsbox_fast(
     total_reduction = np.zeros(1)
     delta_sq = trustregion_radius**2
     curve_min = -1.0
-    beta = 0
+    beta = 0.0
 
     need_alt_trust_step = False
     max_iter = 100 * n**2
@@ -177,7 +177,7 @@ def minimize_trust_trsbox_fast(
         continue
 
     if need_alt_trust_step:
-        curve_min = 0
+        curve_min = 0.0
         x_candidate = _perform_alternative_trustregion_step(
             x_candidate=x_candidate,
             x_bounded=x_bounded,
@@ -540,9 +540,9 @@ def _calc_greatest_criterion_reduction(
     previous_reduction = None
     next_reduction = None
 
-    max_reduction = 0
+    max_reduction = 0.0
     index_angle_greatest_reduction = -1
-    old_reduction = 0
+    old_reduction = 0.0
     n_angles = int(17 * bound_on_tangent + 3.1)
 
     for i in range(n_angles):
