@@ -1,12 +1,13 @@
 """Implementation of the quadratic trustregion solver TRSBOX."""
 import numpy as np
+from numba import njit
 
 
-def minimize_trust_trsbox(
+@njit
+def minimize_trust_trsbox_fast(
     model_gradient,
     model_hessian,
     trustregion_radius,
-    *,
     lower_bounds,
     upper_bounds,
 ):
@@ -59,7 +60,7 @@ def minimize_trust_trsbox(
     gradient_projected = np.zeros(n)
     gradient_candidate = model_gradient
 
-    total_reduction = 0
+    total_reduction = np.zeros(1)
     delta_sq = trustregion_radius**2
     curve_min = -1.0
     beta = 0
@@ -90,9 +91,14 @@ def minimize_trust_trsbox(
         if n_iter == 0:
             gradient_sumsq_initial = gradient_sumsq
 
-        if gradient_sumsq <= min(
-            1.0e-6 * gradient_sumsq_initial, 1.0e-18
-        ) or gradient_sumsq * delta_sq <= min(1.0e-6 * total_reduction**2, 1.0e-18):
+        if (
+            gradient_sumsq <= 1.0e-6 * gradient_sumsq_initial
+            and gradient_sumsq <= 1.0e-18
+        ) or (
+            gradient_sumsq * np.array([delta_sq]) <= 1.0e-6 * total_reduction**2
+            and gradient_sumsq * np.array([delta_sq]) <= 1.0e-18
+        ):
+
             need_alt_trust_step = False
             break
 
@@ -100,13 +106,13 @@ def minimize_trust_trsbox(
         g_x = gradient_projected[x_bounded == 0] @ x_candidate[x_bounded == 0]
         g_hess_g = gradient_projected[x_bounded == 0] @ hess_g[x_bounded == 0]
         raw_distance = (
-            delta_sq - x_candidate[x_bounded == 0] @ x_candidate[x_bounded == 0]
+            np.array([delta_sq])
+            - x_candidate[x_bounded == 0] @ x_candidate[x_bounded == 0]
         )
 
         if raw_distance <= 0:
             need_alt_trust_step = True
             break
-
         step_len, distance_to_boundary = _take_unconstrained_step_up_to_boundary(
             raw_distance, gradient_sumsq, gradient_projected_sumsq, g_x, g_hess_g
         )
@@ -118,8 +124,7 @@ def minimize_trust_trsbox(
         step_len, index_bound_active = _take_constrained_step_up_to_boundary(
             x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
         )
-
-        current_reduction = 0
+        current_reduction = 0.0
         if step_len > 0:
             n_iter += 1
             (
@@ -145,7 +150,7 @@ def minimize_trust_trsbox(
                 hess_g,
             )
 
-        if index_bound_active is not None:
+        if index_bound_active != -1:
             n_fixed_variables += 1
             if gradient_projected[index_bound_active] >= 0:
                 x_bounded[index_bound_active] = 1
@@ -191,6 +196,7 @@ def minimize_trust_trsbox(
     return x_candidate
 
 
+@njit
 def _perform_alternative_trustregion_step(
     x_candidate,
     x_bounded,
@@ -322,7 +328,7 @@ def _perform_alternative_trustregion_step(
 
             total_reduction = total_reduction + current_reduction
             if (
-                index_active_bound is not None
+                index_active_bound.size > 0
                 and index_angle_greatest_reduction == n_angles - 1
             ):
                 n_fixed_variables += 1
@@ -348,6 +354,7 @@ def _perform_alternative_trustregion_step(
     return x_candidate
 
 
+@njit
 def _apply_bounds_to_candidate_vector(
     x_candidate,
     x_bounded,
@@ -355,32 +362,42 @@ def _apply_bounds_to_candidate_vector(
     upper_bounds,
 ):
     """Force candidate vector to lie within bounds."""
-    x_candidate_new = np.clip(lower_bounds, x_candidate, upper_bounds)
+    x_candidate_new = np.zeros(len(x_candidate))
+    for i in range(len(x_candidate)):
+        if x_candidate[i] <= lower_bounds[i]:
+            x_candidate_new[i] = lower_bounds[i]
+        elif x_candidate[i] >= upper_bounds[i]:
+            x_candidate_new[i] = upper_bounds[i]
+        else:
+            x_candidate_new[i] = x_candidate[i]
     x_candidate_new[x_bounded == -1] = lower_bounds[x_bounded == -1]
     x_candidate_new[x_bounded == 1] = upper_bounds[x_bounded == 1]
 
     return x_candidate_new
 
 
+@njit
 def _take_unconstrained_step_up_to_boundary(
     raw_distance, gradient_sumsq, gradient_projected_sumsq, g_x, g_hess_g
 ):
     """Take unconstrained step, ignoring bounds, up to boundary."""
     temp = np.sqrt(gradient_projected_sumsq * raw_distance + g_x**2)
-
     if g_x >= 0:
         distance_to_boundary = raw_distance / (temp + g_x)
     else:
         distance_to_boundary = (temp - g_x) / gradient_projected_sumsq
-
     if g_hess_g <= 0:
-        step_len = distance_to_boundary
+        step_len = distance_to_boundary[0]
     else:
-        step_len = min(distance_to_boundary, gradient_sumsq / g_hess_g)
+        if distance_to_boundary <= gradient_sumsq / g_hess_g:
+            step_len = distance_to_boundary[0]
+        else:
+            step_len = gradient_sumsq / g_hess_g
 
     return step_len, distance_to_boundary
 
 
+@njit
 def _update_candidate_vectors_and_reduction(
     x_candidate,
     x_bounded,
@@ -398,7 +415,7 @@ def _update_candidate_vectors_and_reduction(
     """Update candidate vectors and the associated criterion reduction."""
     current_min = g_hess_g / gradient_projected_sumsq
 
-    if index_bound_active is None and current_min > 0:
+    if index_bound_active == -1 and current_min > 0:
         if curve_min != -1.0:
             curve_min = min(curve_min, current_min)
         else:
@@ -429,12 +446,12 @@ def _update_candidate_vectors_and_reduction(
     )
 
 
+@njit
 def _take_constrained_step_up_to_boundary(
     x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
 ):
     """Reduce step length, where boundary is hit, to preserve simple bounds."""
-    index_bound_active = None
-
+    index_bound_active = -1
     for i in range(len(x_candidate)):
         if gradient_projected[i] != 0:
             if gradient_projected[i] > 0:
@@ -445,7 +462,6 @@ def _take_constrained_step_up_to_boundary(
                 step_len_constr = (
                     lower_bounds[i] - x_candidate[i]
                 ) / gradient_projected[i]
-
             if step_len_constr < step_len:
                 step_len = step_len_constr
                 index_bound_active = i
@@ -453,6 +469,7 @@ def _take_constrained_step_up_to_boundary(
     return step_len, index_bound_active
 
 
+@njit
 def _calc_upper_bound_on_tangent(
     x_candidate,
     search_direction,
@@ -464,8 +481,6 @@ def _calc_upper_bound_on_tangent(
     """Calculate upper bound on tangent of half the angle to the boundary."""
     bound_on_tangent = 1
     free_variable_reached_bound = False
-    index_active_bound = None
-    active_bound = None
 
     for i in range(len(x_candidate)):
         if x_bounded[i] == 0:
@@ -491,16 +506,16 @@ def _calc_upper_bound_on_tangent(
                 ssq_lower = np.sqrt(ssq_lower) - search_direction[i]
                 if bound_on_tangent * ssq_lower > lower_bound_centered:
                     bound_on_tangent = lower_bound_centered / ssq_lower
-                    index_active_bound = i
-                    active_bound = -1
+                    index_active_bound = np.array([i])
+                    active_bound = np.array([-1])
 
             ssq_upper = ssq - upper_bounds[i] ** 2
             if ssq_upper > 0.0:
                 ssq_upper = np.sqrt(ssq_upper) + search_direction[i]
                 if bound_on_tangent * ssq_upper > upper_bound_centered:
                     bound_on_tangent = upper_bound_centered / ssq_upper
-                    index_active_bound = i
-                    active_bound = 1
+                    index_active_bound = np.array([i])
+                    active_bound = np.array([1])
 
     return (
         x_bounded,
@@ -512,6 +527,7 @@ def _calc_upper_bound_on_tangent(
     )
 
 
+@njit
 def _calc_greatest_criterion_reduction(
     bound_on_tangent, s_hess_s, x_hess_s, x_hess_x, x_grad, s_norm
 ):
@@ -555,6 +571,7 @@ def _calc_greatest_criterion_reduction(
     )
 
 
+@njit
 def _update_candidate_vectors_and_reduction_alt_step(
     x_candidate,
     search_direction,
@@ -570,34 +587,35 @@ def _update_candidate_vectors_and_reduction_alt_step(
     If the angle of the alternative iteration is restricted by a bound on a
     free variable, that variable is fixed at the bound.
     """
-    gradient_candidate_new = (
-        gradient_candidate + (cosine - 1.0) * hessian_reduced + sine * hess_s
-    )
-    x_candidate_new = np.copy(x_candidate)
-    x_candidate_new[x_bounded == 0] = (
-        cosine * x_candidate[x_bounded == 0] + sine * search_direction[x_bounded == 0]
-    )
-    x_grad = x_candidate_new[x_bounded == 0] @ gradient_candidate_new[x_bounded == 0]
+    gradient_candidate += (cosine - 1.0) * hessian_reduced + sine * hess_s
+    x_candidate_new = np.zeros(len(x_candidate))
+    for i in range(len(x_candidate)):
+        if x_bounded[i] == 0:
+            x_candidate_new[i] = cosine * x_candidate[i] + sine * search_direction[i]
+        else:
+            x_candidate_new[i] = x_candidate[i]
+    x_grad = x_candidate_new[x_bounded == 0] @ gradient_candidate[x_bounded == 0]
     gradient_reduced = (
-        gradient_candidate_new[x_bounded == 0] @ gradient_candidate_new[x_bounded == 0]
+        gradient_candidate[x_bounded == 0] @ gradient_candidate[x_bounded == 0]
     )
     hessian_reduced = cosine * hessian_reduced + sine * hess_s
 
     return (
         x_candidate_new,
-        gradient_candidate_new,
+        gradient_candidate,
         x_grad,
         gradient_reduced,
         hessian_reduced,
     )
 
 
+@njit
 def _compute_new_search_direction_and_norm(
     x_candidate, x_bounded, x_reduced, gradient_candidate, x_grad, raw_reduction
 ):
     """Compute the new search direction and its norm."""
     raw_reduction = np.sqrt(raw_reduction)
-    search_direction = np.zeros_like(x_candidate)
+    search_direction = np.zeros(len(x_candidate))
 
     search_direction[x_bounded == 0] = (
         x_grad * x_candidate[x_bounded == 0]
@@ -608,6 +626,7 @@ def _compute_new_search_direction_and_norm(
     return search_direction, s_norm
 
 
+@njit
 def _calc_new_reduction(tangent, sine, s_hess_s, x_hess_x, x_hess_s, x_grad, s_norm):
     """Calculate the new reduction in the criterion function."""
     raw_reduction = s_hess_s + tangent * (tangent * x_hess_x - 2.0 * x_hess_s)
@@ -616,6 +635,7 @@ def _calc_new_reduction(tangent, sine, s_hess_s, x_hess_x, x_hess_s, x_grad, s_n
     return current_reduction
 
 
+@njit
 def _update_tangent(
     index_angle_greatest_reduction,
     bound_on_tangent,
