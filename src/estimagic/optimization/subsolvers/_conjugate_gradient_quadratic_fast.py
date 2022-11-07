@@ -1,6 +1,4 @@
 """Implementation of the Conjugate Gradient algorithm."""
-import math
-
 import numpy as np
 from numba import njit
 
@@ -80,14 +78,13 @@ def _update_vectors_for_next_iteration(
         direction (np.ndarray): Direction vector of shape (n,).
 
     Returns:
-        (tuple) Tuple containing:
-            - x_candidate (np.ndarray): Updated candidate vector of shape (n,).
-            - residual (np.ndarray): Updated array of residuals of shape (n,).
-            - direction (np.darray): Updated direction vector of shape (n,).
+            x_candidate (np.ndarray): Updated candidate vector of shape (n,).
+            residual_new (np.ndarray): Updated array of residuals of shape (n,).
+            direction (np.darray): Updated direction vector of shape (n,).
     """
     residual_new = np.zeros(len(residual))
-    nom = 0
-    denom = 0
+    nom = 0.0
+    denom = 0.0
     for i in range(len(x_candidate)):
         x_candidate[i] = x_candidate[i] + alpha * direction[i]
         temp = 0
@@ -129,7 +126,7 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
         cc += candidate[i] ** 2
         dd += direction[i] ** 2
         cd += candidate[i] * direction[i]
-    sigma = -cd + math.sqrt(cd * cd + dd * (radius**2 - cc))
+    sigma = -cd + np.sqrt(cd * cd + dd * (radius**2 - cc))
     sigma = sigma / dd
 
     return sigma

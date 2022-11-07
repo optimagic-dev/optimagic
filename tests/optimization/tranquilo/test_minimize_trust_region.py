@@ -187,7 +187,7 @@ def test_update_candidate_vector_and_reduction():
     step_len = 0.05
     total_reduction = 0
     curve_min = -0.5
-    index_bound_active = np.array([3, 4])
+    index_bound_active = 3
     gradient_projected_sumsq = 25
     gradient_sumsq = 25
     g_hess_g = 100

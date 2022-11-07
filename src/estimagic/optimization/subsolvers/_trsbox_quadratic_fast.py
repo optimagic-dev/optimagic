@@ -150,14 +150,14 @@ def minimize_trust_trsbox_fast(
                 hess_g,
             )
 
-        if index_bound_active.size > 0:
+        if index_bound_active != -1:
             n_fixed_variables += 1
             if gradient_projected[index_bound_active] >= 0:
                 x_bounded[index_bound_active] = 1
             else:
                 x_bounded[index_bound_active] = -1
 
-            delta_sq = (delta_sq - x_candidate[index_bound_active] ** 2)[0]
+            delta_sq = delta_sq - x_candidate[index_bound_active] ** 2
             if delta_sq <= 0:
                 need_alt_trust_step = True
                 break
@@ -415,7 +415,7 @@ def _update_candidate_vectors_and_reduction(
     """Update candidate vectors and the associated criterion reduction."""
     current_min = g_hess_g / gradient_projected_sumsq
 
-    if index_bound_active.size == 0 and current_min > 0:
+    if index_bound_active == -1 and current_min > 0:
         if curve_min != -1.0:
             curve_min = min(curve_min, current_min)
         else:
@@ -451,6 +451,7 @@ def _take_constrained_step_up_to_boundary(
     x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
 ):
     """Reduce step length, where boundary is hit, to preserve simple bounds."""
+    index_bound_active = -1
     for i in range(len(x_candidate)):
         if gradient_projected[i] != 0:
             if gradient_projected[i] > 0:
@@ -463,7 +464,7 @@ def _take_constrained_step_up_to_boundary(
                 ) / gradient_projected[i]
             if step_len_constr < step_len:
                 step_len = step_len_constr
-                index_bound_active = np.array([i])
+                index_bound_active = i
 
     return step_len, index_bound_active
 

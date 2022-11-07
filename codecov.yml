@@ -22,4 +22,4 @@ ignore:
   - "src/estimagic/optimization/subsolvers/bounded_newton_quadratic_fast.py"
   - "src/estimagic/optimization/subsolvers/_trsbox_quadratic_fast.py"
   - "src/estimagic/optimization/subsolvers/_conjugate_gradient_quadratic_fast.py"
-  - "src/estimagic/optimization/subsolvers/_steinhaug_toint_quadratic_fast.py"
+  - "src/estimagic/optimization/subsolvers/_steihaug_toint_quadratic_fast.py"
