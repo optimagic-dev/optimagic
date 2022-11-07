@@ -102,6 +102,7 @@ def test_eval_criterion():
 
 def test_get_info_on_active_bounds():
     x_candidate = np.array([-1.5, -1.5, 0, 1.5, 1.5])
+    indices = np.arange(len(x_candidate))
     linear_terms = np.array([1, 1, 0, -1, -1])
     lower_bounds = -np.ones(5)
     upper_bounds = np.ones(5)
@@ -112,14 +113,13 @@ def test_get_info_on_active_bounds():
         active_lower,
         active_upper,
         active_fixed,
-        active_all,
         inactive,
     ) = get_info_bounds_fast(x_candidate, linear_terms, lower_bounds, upper_bounds)
-    aae(info_orig.lower, active_lower)
-    aae(info_orig.upper, active_upper)
-    aae(info_orig.fixed, active_fixed)
-    aae(info_orig.active, active_all)
-    aae(info_orig.inactive, inactive)
+    aae(info_orig.lower, indices[active_lower])
+    aae(info_orig.upper, indices[active_upper])
+    aae(info_orig.fixed, indices[active_fixed])
+    aae(info_orig.active, indices[~inactive])
+    aae(info_orig.inactive, indices[inactive])
 
 
 def test_project_gradient_on_feasible_set():
@@ -127,24 +127,26 @@ def test_project_gradient_on_feasible_set():
     bounds_info = ActiveBounds(
         inactive=np.array([0, 1, 2]),
     )
-    aae(grad_feas_orig(grad, bounds_info), grad_feas_fast(grad, bounds_info.inactive))
+    inactive = np.array([True, True, True, False, False])
+    aae(grad_feas_orig(grad, bounds_info), grad_feas_fast(grad, inactive))
 
 
 def test_find_hessian_inactive_bounds():
     hessian = np.arange(25).reshape(5, 5).astype(float)
-
+    inactive = np.array([False, False, True, True, True])
     model = ScalarModel(square_terms=hessian, intercept=0, linear_terms=np.zeros(5))
 
     bounds_info = ActiveBounds(
-        inactive=np.array([2, 3, 4]),
+        inactive=np.arange(5)[inactive],
     )
+
     aae(
         find_hessian_inact_orig(model, bounds_info),
-        find_hessian_inact_fast(hessian, bounds_info.inactive),
+        find_hessian_inact_fast(hessian, inactive),
     )
 
 
-def test_fb_vector():
+def test_fischer_burmeister_direction_vector():
     x = np.array([-1.5, -1.5, 0, 1.5, 1.5])
     grad = np.ones(5)
     lb = -np.ones(5)
@@ -152,14 +154,14 @@ def test_fb_vector():
     aae(fb_vector_orig(x, grad, lb, ub), fb_vector_fast(x, grad, lb, ub))
 
 
-def test_applyt_bounds_candidate_x():
+def test_apply_bounds_candidate_x():
     x = np.array([-1.5, -1.5, 0, 1.5, 1.5])
     lb = -np.ones(5)
     ub = np.ones(5)
     aae(apply_bounds_orig(x, lb, ub), apply_bounds_fast(x, lb, ub))
 
 
-def test_prelim_grad_descent():
+def test_take_preliminary_gradient_descent_and_check_for_convergence():
     model_gradient = np.array(
         [
             -5.71290e02,
@@ -204,33 +206,35 @@ def test_prelim_grad_descent():
         "gtol_rel": 1e-08,
         "gtol_scaled": 0,
     }
-    res_speedup = pgd_fast(**kwargs_fast)
+    res_fast = pgd_fast(**kwargs_fast)
     res_orig = pgd_orig(**kwargs)
     for i in range(5):
-        aae(np.array(res_speedup[i]), np.array(res_orig[i]))
+        aae(np.array(res_fast[i]), np.array(res_orig[i]))
     bounds_info_orig = res_orig[5]
-    for i, bounds in enumerate(["lower", "upper", "fixed", "active", "inactive"]):
+    indices = np.arange(5)
+    for i, bounds in enumerate(["lower", "upper", "fixed", "inactive"]):
         aae(
             np.array(getattr(bounds_info_orig, bounds)),
-            res_speedup[5 + i],
+            indices[res_fast[5 + i]],
         )
-    assert res_orig[6] == res_speedup[10]
+    assert res_orig[6] == res_fast[10]
 
 
-def test_apply_bounds_to_cg_step():
+def test_apply_bounds_to_conjugate_gradient_step():
     step_inactive = np.ones(7)
     x_candidate = np.zeros(10)
     lower_bounds = -np.ones(10)
     upper_bounds = np.array([1] * 7 + [-0.01] * 3)
-    inactive_bounds = np.arange(7)
-    active_lower_bounds = np.array([]).astype(int)
-    active_upper_bounds = np.array([7, 8, 9]).astype(int)
-    active_fixed_bounds = np.array([]).astype(int)
+    indices = np.arange(len(x_candidate))
+    inactive_bounds = np.array([True] * 7 + [False] * 3)
+    active_lower_bounds = np.array([False] * 10)
+    active_upper_bounds = np.array([False] * 7 + [True] * 3)
+    active_fixed_bounds = np.array([False] * 10)
     bounds_info = ActiveBounds(
-        lower=active_lower_bounds,
-        upper=active_upper_bounds,
-        fixed=active_fixed_bounds,
-        inactive=inactive_bounds,
+        lower=indices[active_lower_bounds],
+        upper=indices[active_upper_bounds],
+        fixed=indices[active_fixed_bounds],
+        inactive=indices[inactive_bounds],
     )
     res_fast = bounds_cg_fast(
         step_inactive,
@@ -255,11 +259,16 @@ def test_compute_conjugate_gradient_setp():
     hessian_inactive = np.arange(36).reshape(6, 6).astype(float)
     lower_bounds = np.array([-1] * 6 + [0.5] * 2 + [-1] * 2)
     upper_bounds = np.ones(10)
+    indices = np.arange(len(x_candidate))
+    inactive = np.array([True] * 6 + [False] * 4)
+    active_lower = np.array([False] * 5 + [True, True] + [False] * 3)
+    active_upper = np.array([False] * 8 + [True] * 2)
+    active_fixed = np.array([False] * 10)
     bounds_info = ActiveBounds(
-        inactive=np.arange(6),
-        lower=np.array([6, 7]),
-        upper=np.array([8, 9]),
-        fixed=np.array([]).astype(int),
+        inactive=indices[inactive],
+        lower=indices[active_lower],
+        upper=indices[active_upper],
+        fixed=indices[active_fixed],
     )
     tr_radius = 10.0
     cg_method = "trsbox"
@@ -275,10 +284,10 @@ def test_compute_conjugate_gradient_setp():
         hessian_inactive,
         lower_bounds,
         upper_bounds,
-        bounds_info.inactive,
-        bounds_info.lower,
-        bounds_info.upper,
-        bounds_info.fixed,
+        inactive,
+        active_lower,
+        active_upper,
+        active_fixed,
         tr_radius,
         cg_method,
         gtol_abs,
@@ -315,8 +324,8 @@ def test_compute_predicet_reduction_from_conjugate_gradient_step():
     grad = np.arange(10).astype(float)
     grad_inactive = np.arange(3).astype(float)
     hessian_inactive = np.arange(9).reshape(3, 3).astype(float)
-    inactive_bounds = np.array([1, 2, 3])
-    active_bounds = np.array([0, 4, 5, 6, 7, 8, 9])
+    indices = np.arange(10)
+    inactive_bounds = np.array([False] + [True] * 3 + [False] * 6)
     res_fast = compute_predicted_reduction_from_conjugate_gradient_step_fast(
         cg_step,
         cg_step_inactive,
@@ -324,16 +333,17 @@ def test_compute_predicet_reduction_from_conjugate_gradient_step():
         grad_inactive,
         hessian_inactive,
         inactive_bounds,
-        active_bounds,
     )
-    bounds_info = ActiveBounds(inactive=inactive_bounds, active=active_bounds)
+    bounds_info = ActiveBounds(
+        inactive=indices[inactive_bounds], active=indices[~inactive_bounds]
+    )
     res_orig = compute_predicted_reduction_from_conjugate_gradient_step(
         cg_step, cg_step_inactive, grad, grad_inactive, hessian_inactive, bounds_info
     )
     aae(res_orig, res_fast)
 
 
-def test_update_tr_radius_cg():
+def test_update_trustregion_radius_conjugate_gradient():
     f_candidate = -1234.56
     predicted_reduction = 200
     actual_reduction = 150
@@ -372,7 +382,7 @@ def test_update_tr_radius_cg():
     assert res_orig[1] == res_fast[1]
 
 
-def test_gradient_descent_step():
+def test_perform_gradient_descent_step():
     x_candidate = np.zeros(10)
     f_candidate_initial = 1234.56
     gradient_projected = np.arange(10).astype(float)
@@ -381,7 +391,9 @@ def test_gradient_descent_step():
     model_hessian = np.arange(100).reshape(10, 10).astype(float)
     lower_bounds = -np.ones(10)
     upper_bounds = np.array([1] * 8 + [-0.01] * 2)
-    inactive_bounds = np.arange(8)
+    indices = np.arange(10)
+    inactive_bounds = np.array([True] * 8 + [False] * 2)
+
     maxiter = 3
     options_update_radius = {
         "mu1": 0.35,
@@ -396,7 +408,7 @@ def test_gradient_descent_step():
     model = ScalarModel(
         linear_terms=model_gradient, square_terms=model_hessian, intercept=0
     )
-    bounds_info = ActiveBounds(inactive=inactive_bounds)
+    bounds_info = ActiveBounds(inactive=indices[inactive_bounds])
     res_fast = perform_gradient_descent_step_fast(
         x_candidate=x_candidate,
         f_candidate_initial=f_candidate_initial,

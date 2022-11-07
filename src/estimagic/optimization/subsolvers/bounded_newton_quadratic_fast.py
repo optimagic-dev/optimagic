@@ -94,7 +94,6 @@ def minimize_bntr_fast_jitted(
         active_lower_bounds,
         active_upper_bounds,
         active_fixed_bounds,
-        active_all_bounds,
         inactive_bounds,
         converged,
         convergence_reason,
@@ -158,7 +157,6 @@ def minimize_bntr_fast_jitted(
                     gradient_bounds_inactive,
                     hessian_bounds_inactive,
                     inactive_bounds,
-                    active_all_bounds,
                 )
             )
 
@@ -199,7 +197,6 @@ def minimize_bntr_fast_jitted(
                     active_lower_bounds,
                     active_upper_bounds,
                     active_fixed_bounds,
-                    active_all_bounds,
                     inactive_bounds,
                 ) = get_information_on_active_bounds_fast(
                     x_candidate,
@@ -293,7 +290,6 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
         active_lower_bounds,
         active_upper_bounds,
         active_fixed_bounds,
-        active_all_bounds,
         inactive_bounds,
     ) = get_information_on_active_bounds_fast(
         x_candidate,
@@ -377,7 +373,6 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
                 active_lower_bounds,
                 active_upper_bounds,
                 active_fixed_bounds,
-                active_all_bounds,
                 inactive_bounds,
             ) = get_information_on_active_bounds_fast(
                 x_candidate,
@@ -425,7 +420,6 @@ def take_preliminary_gradient_descent_step_and_check_for_solution_fast(
         active_lower_bounds,
         active_upper_bounds,
         active_fixed_bounds,
-        active_all_bounds,
         inactive_bounds,
         converged,
         convergence_reason,
@@ -486,7 +480,7 @@ def compute_conjugate_gradient_step_fast(
     """
     conjugate_gradient_step = np.zeros(len(x_candidate))
 
-    if inactive_bounds.size == 0:
+    if not inactive_bounds.any():
         # Save some computation and return an adjusted zero step
         step_inactive = apply_bounds_to_x_candidate_fast(
             x_candidate, lower_bounds, upper_bounds
@@ -608,7 +602,6 @@ def compute_predicted_reduction_from_conjugate_gradient_step_fast(
     gradient_inactive,
     hessian_inactive,
     inactive_bounds,
-    active_bounds,
 ):
     """Compute predicted reduction induced by the Conjugate Gradient step.
     Args:
@@ -623,13 +616,12 @@ def compute_predicted_reduction_from_conjugate_gradient_step_fast(
             are inactive.
         inactive_bounds (np.ndarray): 1d array of indices where parameter bounds
             are inactive.
-        active_bounds (np.ndarray): 1d array of indices where parameter bounds
-            are active.
     Returns:
         predicted_reduction (float): Predicted reduction in criterion function.
 
     """
-    if active_bounds.size > 0:
+    active_bounds = ~inactive_bounds
+    if active_bounds.any():
         # Projection changed the step, so we have to recompute the step
         # and the predicted reduction. Leave the rust radius unchanged.
         cg_step_recomp = conjugate_gradient_step[inactive_bounds]
@@ -806,50 +798,28 @@ def get_information_on_active_bounds_fast(
     lower_bounds,
     upper_bounds,
 ):
-    """Return the index set of active bounds."""
-    active_all = []
-    active_upper = []
-    active_lower = []
-    active_fixed = []
-    inactive = []
+    """Return boolean arrays indicating whether bounds at indices are active or not."""
+    active_upper = np.array([False] * len(x))
+    active_lower = np.array([False] * len(x))
+    active_fixed = np.array([False] * len(x))
+    inactive = np.array([True] * len(x))
     for i in range(len(x)):
         if (x[i] <= lower_bounds[i]) & (gradient_unprojected[i] > 0):
-            if i not in active_all:
-                active_all.append(i)
-            if i not in active_lower:
-                active_lower.append(i)
+            active_lower[i] = True
+            inactive[i] = False
         elif (x[i] >= upper_bounds[i]) & (gradient_unprojected[i] < 0):
-            if i not in active_all:
-                active_all.append(i)
-            if i not in active_upper:
-                active_upper.append(i)
+            active_upper[i] = True
+            inactive[i] = False
         elif lower_bounds[i] == upper_bounds[i]:
-            if i not in active_fixed:
-                active_fixed.append(i)
-            if i not in active_all:
-                active_all.append(i)
-        else:
-            if i not in inactive:
-                inactive.append(i)
-    active_all = np.array(active_all, dtype="int64")
-    active_lower = np.array(active_lower, dtype="int64")
-    active_upper = np.array(active_upper, dtype="int64")
-    inactive = np.array(inactive, dtype="int64")
-    active_fixed = np.array(active_fixed, dtype="int64")
-
-    return active_lower, active_upper, active_fixed, active_all, inactive
+            active_fixed[i] = True
+            inactive[i] = False
+    return active_lower, active_upper, active_fixed, inactive
 
 
 @njit
 def find_hessian_submatrix_where_bounds_inactive_fast(initial_hessian, inactive_bounds):
     """Find the submatrix of the initial hessian where bounds are inactive."""
-    hessian_inactive = []
-    for row in inactive_bounds:
-        for col in inactive_bounds:
-            hessian_inactive.append(initial_hessian[row, col])
-    hessian_inactive = np.array(hessian_inactive).reshape(
-        len(inactive_bounds), len(inactive_bounds)
-    )
+    hessian_inactive = initial_hessian[:, inactive_bounds][inactive_bounds, :]
     return hessian_inactive
 
 
@@ -935,19 +905,19 @@ def _apply_bounds_to_conjugate_gradient_step(
     cg_step = np.zeros(len(x_candidate))
     cg_step[inactive_bounds] = step_inactive
 
-    if active_lower_bounds.size > 0:
+    if active_lower_bounds.any():
         x_active_lower = x_candidate[active_lower_bounds]
         lower_bound_active = lower_bounds[active_lower_bounds]
 
         cg_step[active_lower_bounds] = lower_bound_active - x_active_lower
 
-    if active_upper_bounds.size > 0:
+    if active_upper_bounds.any():
         x_active_upper = x_candidate[active_upper_bounds]
         upper_bound_active = upper_bounds[active_upper_bounds]
 
         cg_step[active_upper_bounds] = upper_bound_active - x_active_upper
 
-    if active_fixed_bounds.size > 0:
+    if active_fixed_bounds.any():
         cg_step[active_fixed_bounds] = 0
 
     return cg_step
