@@ -799,10 +799,10 @@ def get_information_on_active_bounds_fast(
     upper_bounds,
 ):
     """Return boolean arrays indicating whether bounds at indices are active or not."""
-    active_upper = np.array([False] * len(x))
-    active_lower = np.array([False] * len(x))
-    active_fixed = np.array([False] * len(x))
-    inactive = np.array([True] * len(x))
+    active_upper = np.zeros(len(x)).astype("bool")
+    active_lower = np.zeros(len(x)).astype("bool")
+    active_fixed = np.zeros(len(x)).astype("bool")
+    inactive = np.ones(len(x)).astype("bool")
     for i in range(len(x)):
         if (x[i] <= lower_bounds[i]) & (gradient_unprojected[i] > 0):
             active_lower[i] = True
@@ -1018,16 +1018,16 @@ def _update_trustregion_radius_and_gradient_descent(
 def _get_fischer_burmeister_direction_vector(x, gradient, lower_bounds, upper_bounds):
     """Compute the constrained direction vector via the Fischer-Burmeister function."""
 
-    direction = []
-    for x_, g_, l_, u_ in zip(x, gradient, lower_bounds, upper_bounds):
+    direction = np.zeros(len(x))
+    for i, (x_, g_, l_, u_) in enumerate(zip(x, gradient, lower_bounds, upper_bounds)):
         fischer_scalar = _get_fischer_burmeister_scalar(u_ - x_, -g_)
         fischer_scalar = _get_fischer_burmeister_scalar(fischer_scalar, x_ - l_)
 
         if l_ == u_:
-            direction.append(l_ - x_)
+            direction[i] = l_ - x_
         else:
-            direction.append(fischer_scalar)
-    return np.array(direction)
+            direction[i] = fischer_scalar
+    return direction
 
 
 @njit
