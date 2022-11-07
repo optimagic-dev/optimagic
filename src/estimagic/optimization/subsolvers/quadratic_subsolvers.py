@@ -445,7 +445,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     lambdas = get_initial_guess_for_lambdas(model)
 
     converged = False
-
+    x_candidate = np.zeros(len(model.linear_terms))
     for _niter in range(maxiter):
 
         if hessian_info.already_factorized:
