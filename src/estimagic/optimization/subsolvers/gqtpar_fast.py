@@ -21,7 +21,7 @@ class DampingFactors(NamedTuple):
     upper_bound: Union[float, None] = None
 
 
-def get_initial_guess_for_lambdas(
+def get_initial_guess_for_lambdas_fast(
     main_model,
 ):
     """Return good initial guesses for lambda, its lower and upper bound.
@@ -84,7 +84,7 @@ def get_initial_guess_for_lambdas(
     return lambdas
 
 
-def add_lambda_and_factorize_hessian(main_model, hessian_info, lambdas):
+def add_lambda_and_factorize_hessian_fast(main_model, hessian_info, lambdas):
     """Add lambda to hessian and factorize it into its upper triangular matrix.
 
     Args:
@@ -133,7 +133,7 @@ def add_lambda_and_factorize_hessian(main_model, hessian_info, lambdas):
     return hessian_info_new, factorization_info
 
 
-def find_new_candidate_and_update_parameters(
+def find_new_candidate_and_update_parameters_fast(
     main_model,
     hessian_info,
     lambdas,
@@ -187,7 +187,7 @@ def find_new_candidate_and_update_parameters(
     )
 
 
-def check_for_interior_convergence_and_update(
+def check_for_interior_convergence_and_update_fast(
     x_candidate,
     hessian_info,
     lambdas,
@@ -220,7 +220,7 @@ def check_for_interior_convergence_and_update(
     return x_candidate, lambdas_new, converged
 
 
-def update_lambdas_when_factorization_unsuccessful(
+def update_lambdas_when_factorization_unsuccessful_fast(
     hessian_info, lambdas, factorization_info
 ):
     """Update lambdas in the case that factorization of hessian not successful."""
