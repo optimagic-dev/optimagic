@@ -156,7 +156,6 @@ def _tranquilo(
 
     history = History(functype=functype)
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
-    trustregion = TrustRegion(center=x, radius=radius_options.initial_radius)
     sample_points = get_sampler(
         sampler,
         bounds=bounds,
@@ -188,15 +187,17 @@ def _tranquilo(
     history.add_entries(x, first_eval)
 
     state = State(
-        index=0,
-        model=None,
-        rho=None,
-        radius=trustregion.radius,
-        x=history.get_xs(0),
-        fvec=history.get_fvecs(0),
-        fval=history.get_fvals(0),
+        safety=False,
+        trustregion=TrustRegion(center=x, radius=radius_options.initial_radius),
         model_indices=np.array([0]),
+        model=None,
+        index=0,
+        x=history.get_xs(0),
+        fval=history.get_fvals(0),
+        rho=np.nan,
+        accepted=True,
     )
+
     states = [state]
 
     # ==================================================================================
@@ -204,7 +205,10 @@ def _tranquilo(
     # ==================================================================================
     converged, msg = False, None
     for _ in range(stopping_max_iterations):
-        old_indices = history.get_indices_in_trustregion(trustregion)
+        # ==============================================================================
+        # sampling
+        # ==============================================================================
+        old_indices = history.get_indices_in_trustregion(state.trustregion)
         old_xs = history.get_xs(old_indices)
 
         filtered_xs, filtered_indices = filter_points(
@@ -213,16 +217,16 @@ def _tranquilo(
             state=state,
         )
 
-        if state.index not in filtered_indices:
-            raise ValueError()
-
         new_xs = sample_points(
-            trustregion=trustregion,
+            trustregion=state.trustregion,
             target_size=target_sample_size,
             existing_xs=filtered_xs,
             rng=sampling_rng,
         )
 
+        # ==============================================================================
+        # criterion evaluations
+        # ==============================================================================
         new_fvecs = [criterion(_x) for _x in new_xs]
         new_indices = np.arange(history.get_n_fun(), history.get_n_fun() + len(new_xs))
         history.add_entries(new_xs, new_fvecs)
@@ -232,7 +236,11 @@ def _tranquilo(
         model_xs = history.get_xs(model_indices)
         model_fvecs = history.get_fvecs(model_indices)
 
-        centered_xs = (model_xs - trustregion.center) / trustregion.radius
+        # ==============================================================================
+        # build surrogate and optimize it
+        # ==============================================================================
+
+        centered_xs = (model_xs - state.trustregion.center) / state.trustregion.radius
 
         vector_model = fit_model(centered_xs, model_fvecs)
 
@@ -240,10 +248,13 @@ def _tranquilo(
             vector_model=vector_model,
         )
 
-        sub_sol = solve_subproblem(model=scalar_model, trustregion=trustregion)
+        sub_sol = solve_subproblem(model=scalar_model, trustregion=state.trustregion)
+
+        # ==============================================================================
+        # acceptance decision
+        # ==============================================================================
 
         candidate_x = sub_sol["x"]
-
         candidate_fvec = criterion(candidate_x)
         candidate_index = history.get_n_fun()
         history.add_entries(candidate_x, candidate_fvec)
@@ -255,36 +266,49 @@ def _tranquilo(
             expected_improvement=sub_sol["expected_improvement"],
         )
 
-        new_radius = adjust_radius(
-            radius=trustregion.radius,
+        is_accepted = actual_improvement > 0
+
+        # ==============================================================================
+        # update state with information on this iteration
+        # ==============================================================================
+
+        state = state._replace(
+            model_indices=model_indices,
+            model=scalar_model,
             rho=rho,
-            step=candidate_x - state.x,
-            options=radius_options,
+            accepted=is_accepted,
         )
 
-        if actual_improvement > 0:
-            trustregion = trustregion._replace(center=candidate_x, radius=new_radius)
-            state = State(
-                index=candidate_index,
-                model=scalar_model,
-                rho=rho,
-                radius=new_radius,
-                x=candidate_x,
-                fvec=history.get_fvecs(candidate_index),
-                fval=history.get_fvals(candidate_index),
-                model_indices=model_indices,
-            )
-
-        else:
-            trustregion = trustregion._replace(radius=new_radius)
+        if is_accepted:
             state = state._replace(
-                model=scalar_model,
-                rho=rho,
-                radius=new_radius,
-                model_indices=model_indices,
+                index=candidate_index, x=candidate_x, fval=candidate_fval
             )
 
         states.append(state)
+
+        # ==============================================================================
+        # update state for beginning of next iteration
+        # ==============================================================================
+
+        new_radius = adjust_radius(
+            radius=state.trustregion.radius,
+            rho=rho,
+            step=candidate_x - state.trustregion.center,
+            options=radius_options,
+        )
+
+        if is_accepted:
+            new_trustregion = state.trustregion._replace(
+                center=candidate_x, radius=new_radius
+            )
+        else:
+            new_trustregion = state.trustregion._replace(radius=new_radius)
+
+        state = state._replace(trustregion=new_trustregion)
+
+        # ==============================================================================
+        # convergence check
+        # ==============================================================================
 
         if actual_improvement >= 0 and not disable_convergence:
             converged, msg = _is_converged(states=states, options=conv_options)
@@ -315,14 +339,24 @@ def _calculate_rho(actual_improvement, expected_improvement):
 
 
 class State(NamedTuple):
-    index: int
-    model: ScalarModel
-    rho: float
-    radius: float
-    x: np.ndarray
-    fvec: np.ndarray
-    fval: np.ndarray
+    # Whether this is a safety iteration
+    safety: bool
+
+    # the trustregion at the beginning of the iteration
+    trustregion: TrustRegion
+
+    # Information about the model used to make the acceptance decision in the iteration
     model_indices: np.ndarray
+    model: ScalarModel
+
+    # accepted parameters and function values at the end of the iteration
+    index: int
+    x: np.ndarray
+    fval: np.ndarray  # this is an estimate for noisy functions
+
+    # success Information
+    rho: float
+    accepted: bool
 
 
 def _is_converged(states, options):

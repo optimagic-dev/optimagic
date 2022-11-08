@@ -68,8 +68,8 @@ def _drop_collinear_pounders(xs, indices, state):
     indices_reverse = indices[::-1]
     indexer_reverse = np.arange(n_samples)[::-1]
 
-    radius = state.radius
-    center = state.x
+    radius = state.trustregion.radius
+    center = state.trustregion.center
     index_center = int(np.where(indices_reverse == state.index)[0])
     centered_xs = (xs - center) / radius
 

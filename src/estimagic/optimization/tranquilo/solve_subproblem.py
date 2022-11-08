@@ -100,13 +100,13 @@ def get_subsolver(solver, user_options=None, bounds=None):
 
     valid_bounds = {"lower_bounds", "upper_bounds"}.intersection(args)
 
-    bounds_dict = {}
-    if bounds is None:
-        bounds_dict["lower_bounds"] = None
-        bounds_dict["upper_bounds"] = None
-    else:
-        bounds_dict["lower_bounds"] = getattr(bounds, "lower", None)
-        bounds_dict["upper_bounds"] = getattr(bounds, "upper", None)
+    bounds_dict = {"lower_bounds": None, "upper_bounds": None}
+    if bounds is not None:
+        for type_ in ["lower", "upper"]:
+            if hasattr(bounds, type_):
+                candidate = getattr(bounds, type_)
+                if candidate is not None and np.isfinite(candidate).any():
+                    bounds_dict[f"{type_}_bounds"] = candidate
 
     for name, value in bounds_dict.items():
         if name not in valid_bounds and value is not None:

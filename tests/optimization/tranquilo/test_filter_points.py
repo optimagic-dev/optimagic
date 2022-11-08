@@ -41,15 +41,18 @@ def basic_case():
     )
     indices = np.arange(len(xs))
 
+    trustregion = TrustRegion(radius=radius, center=x_accepted)
+
     state = State(
-        index=20,
-        model=None,
-        rho=None,
-        radius=radius,
-        x=x_accepted,
-        fvec=0,
-        fval=0,
+        safety=False,
+        trustregion=trustregion,
         model_indices=None,
+        model=None,
+        index=20,
+        x=x_accepted,
+        fval=0,
+        rho=None,
+        accepted=True,
     )
 
     expected_indices = np.array([20, 19, 18, 17, 16, 15, 13, 12, 8, 5, 4, 3, 2, 1, 0])
