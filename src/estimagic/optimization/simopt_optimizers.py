@@ -2,6 +2,9 @@
 import numpy as np
 from estimagic.config import IS_SIMOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
+from estimagic.optimization.algo_options import (
+    STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+)
 
 try:
     from simopt.base import Model
@@ -16,6 +19,7 @@ except ImportError:
     primary_criterion_entry="value",
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
+    is_global=True,
 )
 def simopt_adam(
     criterion,
@@ -24,7 +28,7 @@ def simopt_adam(
     lower_bounds,
     upper_bounds,
     *,
-    budget=None,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 ):
     out = _minimize_simopt(
         name="ADAM",
@@ -33,7 +37,7 @@ def simopt_adam(
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        budget=budget,
+        budget=stopping_max_iterations,
     )
     return out
 
@@ -43,6 +47,7 @@ def simopt_adam(
     primary_criterion_entry="value",
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
+    is_global=True,
 )
 def simopt_aloe(
     criterion,
@@ -51,7 +56,7 @@ def simopt_aloe(
     lower_bounds,
     upper_bounds,
     *,
-    budget=None,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 ):
     out = _minimize_simopt(
         name="ALOE",
@@ -60,7 +65,7 @@ def simopt_aloe(
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        budget=budget,
+        budget=stopping_max_iterations,
     )
     return out
 
@@ -70,6 +75,7 @@ def simopt_aloe(
     primary_criterion_entry="value",
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
+    is_global=True,
 )
 def simopt_astrodf(
     criterion,
@@ -78,7 +84,7 @@ def simopt_astrodf(
     lower_bounds,
     upper_bounds,
     *,
-    budget=None,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 ):
     out = _minimize_simopt(
         name="ASTRODF",
@@ -87,7 +93,7 @@ def simopt_astrodf(
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        budget=budget,
+        budget=stopping_max_iterations,
     )
     return out
 
@@ -97,6 +103,7 @@ def simopt_astrodf(
     primary_criterion_entry="value",
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
+    is_global=True,
 )
 def simopt_neldmd(
     criterion,
@@ -105,7 +112,7 @@ def simopt_neldmd(
     lower_bounds,
     upper_bounds,
     *,
-    budget=None,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 ):
     out = _minimize_simopt(
         name="NELDMD",
@@ -114,7 +121,7 @@ def simopt_neldmd(
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        budget=budget,
+        budget=stopping_max_iterations,
     )
     return out
 
@@ -124,6 +131,7 @@ def simopt_neldmd(
     primary_criterion_entry="value",
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
+    is_global=True,
 )
 def simopt_spsa(
     criterion,
@@ -132,7 +140,7 @@ def simopt_spsa(
     lower_bounds,
     upper_bounds,
     *,
-    budget=None,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 ):
     out = _minimize_simopt(
         name="SPSA",
@@ -141,7 +149,7 @@ def simopt_spsa(
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        budget=budget,
+        budget=stopping_max_iterations,
     )
     return out
 
@@ -151,6 +159,7 @@ def simopt_spsa(
     primary_criterion_entry="value",
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
+    is_global=True,
 )
 def simopt_strong(
     criterion,
@@ -199,13 +208,12 @@ def _minimize_simopt(
         budget=budget,
     )
     solver = ProblemSolver(solver_name=name, problem=problem)
+    # overwrite method of simopt ProblemSolver class that pickles interim results
     solver.record_experiment_results = _do_nothing.__get__(solver, ProblemSolver)
     solver.run(n_macroreps=1)
 
-    solution_x = np.array(solver.all_recommended_xs[0][-1])
-
     processed = {
-        "solution_x": solution_x,
+        "solution_x": np.array(solver.all_recommended_xs[0][-1]),
         "solution_criterion": 0,
     }
     return processed
