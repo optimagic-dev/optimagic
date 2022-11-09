@@ -13,7 +13,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 from scipy.spatial.distance import pdist
 
 
-SAMPLERS = ["naive", "ball", "cube", "sphere", "optimal_cube", "optimal_sphere"]
+SAMPLERS = ["box", "ball", "cube", "sphere", "optimal_cube", "optimal_sphere"]
 
 
 @pytest.mark.parametrize("sampler", SAMPLERS)
