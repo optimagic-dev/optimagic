@@ -1,28 +1,28 @@
 """Collection of solvers for a quadratic trust-region subproblem."""
 import numpy as np
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    apply_bounds_to_x_candidate,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _apply_bounds_to_x_candidate,
 )
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    check_for_convergence,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _check_for_convergence,
 )
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    compute_conjugate_gradient_step,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _compute_conjugate_gradient_step,
 )
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    compute_predicted_reduction_from_conjugate_gradient_step,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _compute_predicted_reduction_from_conjugate_gradient_step,
 )
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    find_hessian_submatrix_where_bounds_inactive,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _find_hessian_submatrix_where_bounds_inactive,
 )
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    get_information_on_active_bounds,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _get_information_on_active_bounds,
 )
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    take_preliminary_gradient_descent_step_and_check_for_solution,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _take_preliminary_gradient_descent_step_and_check_for_solution,
 )
-from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
-    update_trustregion_radius_conjugate_gradient,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    _update_trustregion_radius_conjugate_gradient,
 )
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     add_lambda_and_factorize_hessian,
@@ -139,7 +139,7 @@ def minimize_bntr_quadratic(
         active_bounds_info,
         converged,
         convergence_reason,
-    ) = take_preliminary_gradient_descent_step_and_check_for_solution(
+    ) = _take_preliminary_gradient_descent_step_and_check_for_solution(
         x_candidate,
         model,
         lower_bounds,
@@ -160,14 +160,14 @@ def minimize_bntr_quadratic(
 
         while not accept_step and not converged:
             gradient_bounds_inactive = gradient_unprojected[active_bounds_info.inactive]
-            hessian_bounds_inactive = find_hessian_submatrix_where_bounds_inactive(
+            hessian_bounds_inactive = _find_hessian_submatrix_where_bounds_inactive(
                 model, active_bounds_info
             )
             (
                 conjugate_gradient_step,
                 conjugate_gradient_step_inactive_bounds,
                 cg_step_norm,
-            ) = compute_conjugate_gradient_step(
+            ) = _compute_conjugate_gradient_step(
                 x_candidate,
                 gradient_bounds_inactive,
                 hessian_bounds_inactive,
@@ -182,12 +182,12 @@ def minimize_bntr_quadratic(
             )
 
             x_unbounded = x_candidate + conjugate_gradient_step
-            x_candidate = apply_bounds_to_x_candidate(
+            x_candidate = _apply_bounds_to_x_candidate(
                 x_unbounded, lower_bounds, upper_bounds
             )
 
             predicted_reduction = (
-                compute_predicted_reduction_from_conjugate_gradient_step(
+                _compute_predicted_reduction_from_conjugate_gradient_step(
                     conjugate_gradient_step,
                     conjugate_gradient_step_inactive_bounds,
                     gradient_unprojected,
@@ -206,7 +206,7 @@ def minimize_bntr_quadratic(
             (
                 trustregion_radius,
                 accept_step,
-            ) = update_trustregion_radius_conjugate_gradient(
+            ) = _update_trustregion_radius_conjugate_gradient(
                 f_candidate,
                 predicted_reduction,
                 actual_reduction,
@@ -220,7 +220,7 @@ def minimize_bntr_quadratic(
                     x_candidate, model.linear_terms, model.square_terms
                 )
 
-                active_bounds_info = get_information_on_active_bounds(
+                active_bounds_info = _get_information_on_active_bounds(
                     x_candidate,
                     gradient_unprojected,
                     lower_bounds,
@@ -234,7 +234,7 @@ def minimize_bntr_quadratic(
                     converged = True
                     break
 
-            converged, convergence_reason = check_for_convergence(
+            converged, convergence_reason = _check_for_convergence(
                 x_candidate,
                 f_candidate,
                 gradient_unprojected,

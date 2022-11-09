@@ -3,11 +3,11 @@ import warnings
 from functools import partial
 
 import numpy as np
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    minimize_bntr,
+)
 from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
     minimize_bntr_fast,
-)
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_bntr_quadratic,
 )
 from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_gqtpar_quadratic,
@@ -60,7 +60,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     user_options = {} if user_options is None else user_options
 
     built_in_solvers = {
-        "bntr": minimize_bntr_quadratic,
+        "bntr": minimize_bntr,
         "bntr_fast": minimize_bntr_fast,
         "gqtpar": minimize_gqtpar_quadratic,
         "thorough": solve_thorough,
