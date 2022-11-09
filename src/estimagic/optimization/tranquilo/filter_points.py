@@ -23,6 +23,7 @@ def get_sample_filter(sample_filter="keep_all"):
     built_in_filters = {
         "discard_all": discard_all,
         "keep_all": keep_all,
+        "keep_sphere": keep_sphere,
         "drop_collinear": drop_collinear,
         "drop_pounders": drop_collinear_pounders,
     }
@@ -43,6 +44,12 @@ def discard_all(xs, indices, state):
 
 def keep_all(xs, indices, state):
     return xs, indices
+
+
+def keep_sphere(xs, indices, state):
+    dists = np.linalg.norm(xs - state.trustregion.center, axis=1)
+    keep = dists <= state.trustregion.radius
+    return xs[keep], indices[keep]
 
 
 def drop_collinear(xs, indices, state):
