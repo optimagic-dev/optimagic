@@ -36,7 +36,7 @@ def get_sampler(
     user_options = {} if user_options is None else user_options
 
     built_in_samplers = {
-        "naive": _naive_sampler,
+        "box": _box_sampler,
         "ball": _ball_sampler,
         "hull_sampler": _hull_sampler,
         "optimal_hull_sampler": _optimal_hull_sampler,
@@ -114,7 +114,7 @@ def get_sampler(
     return out
 
 
-def _naive_sampler(
+def _box_sampler(
     trustregion,
     target_size,
     rng,
