@@ -44,7 +44,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
         "theta": 0.25,
         "min_radius": 1e-10,
         "max_radius": 1e10,
-        "default_radius": 100,
+        "default_radius": 100.0,
     }
 
     converged = False

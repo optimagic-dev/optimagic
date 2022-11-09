@@ -7,6 +7,9 @@ from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_bntr_quadratic,
 )
 from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_bntr_quadratic_fast,
+)
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_gqtpar_quadratic,
 )
 from estimagic.optimization.tranquilo.models import evaluate_model
@@ -58,6 +61,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
 
     built_in_solvers = {
         "bntr": minimize_bntr_quadratic,
+        "bntr_fast": minimize_bntr_quadratic_fast,
         "gqtpar": minimize_gqtpar_quadratic,
         "thorough": solve_thorough,
     }
@@ -77,7 +81,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     default_options = {
         "maxiter": 20,
         "maxiter_gradient_descent": 5,
-        "conjugate_gradient_method": "trsbox",
+        "conjugate_gradient_method": "cg",
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,

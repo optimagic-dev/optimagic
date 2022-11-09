@@ -6,7 +6,7 @@ from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from numpy.testing import assert_array_almost_equal as aaae
 
-solvers = ["bntr", "gqtpar"]
+solvers = ["bntr", "bntr_fast", "gqtpar"]
 
 
 @pytest.mark.parametrize("solver_name", solvers, ids=solvers)
