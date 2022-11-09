@@ -21,7 +21,7 @@ class History:
         self.functype = functype
 
         if functype == "scalar":
-            self.aggregate = lambda x: x
+            self.aggregate = lambda x: x.flatten()
         elif functype == "likelihood":
             self.aggregate = lambda x: x.sum(axis=-1)
         elif functype == "least_squares":
@@ -51,6 +51,7 @@ class History:
             fvecs = np.reshape(fvecs, (-1, 1))
         else:
             fvecs = np.atleast_2d(fvecs)
+
         fvals = np.atleast_1d(self.aggregate(fvecs))
 
         if n_new_points != len(fvecs):
