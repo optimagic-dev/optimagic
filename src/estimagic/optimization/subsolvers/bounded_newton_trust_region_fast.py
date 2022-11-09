@@ -14,7 +14,7 @@ from numba import njit
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
 
-def minimize_bntr_quadratic_fast(
+def minimize_bntr_fast(
     model,
     lower_bounds,
     upper_bounds,
