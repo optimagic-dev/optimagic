@@ -1,10 +1,12 @@
-"""Implement simopt optimizers."""
+"""Implement `simopt` optimizers."""
 import numpy as np
 from estimagic.config import IS_SIMOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
 
 try:
-    import simopt as so  # noqa: F401
+    from simopt.base import Model
+    from simopt.base import Problem
+    from simopt.experiment_base import ProblemSolver
 except ImportError:
     pass
 
@@ -15,7 +17,7 @@ except ImportError:
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
 )
-def simopt_astrodf(
+def simopt_adam(
     criterion,
     derivative,
     x,
@@ -42,7 +44,7 @@ def simopt_astrodf(
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
 )
-def simopt_astrodf(
+def simopt_aloe(
     criterion,
     derivative,
     x,
@@ -96,18 +98,24 @@ def simopt_astrodf(
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
 )
-def simopt_neldmd():
-    problem = MinimzerClass(
+def simopt_neldmd(
+    criterion,
+    derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    budget=None,
+):
+    out = _minimize_simopt(
+        name="NELDMD",
         criterion=criterion,
-        gradient=derivative,
+        derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         budget=budget,
     )
-    solver = so.experiment_base.ProblemSolver(solver_name="ASTRODF", problem=problem)
-    solver.run(n_macroreps=1)
-    out = solver.all_recommended_xs[0][-1]
     return out
 
 
@@ -117,18 +125,24 @@ def simopt_neldmd():
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
 )
-def simopt_spsa():
-    problem = MinimzerClass(
+def simopt_spsa(
+    criterion,
+    derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    budget=None,
+):
+    out = _minimize_simopt(
+        name="SPSA",
         criterion=criterion,
-        gradient=derivative,
+        derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         budget=budget,
     )
-    solver = so.experiment_base.ProblemSolver(solver_name="ASTRODF", problem=problem)
-    solver.run(n_macroreps=1)
-    out = solver.all_recommended_xs[0][-1]
     return out
 
 
@@ -138,18 +152,24 @@ def simopt_spsa():
     needs_scaling=True,
     is_available=IS_SIMOPT_INSTALLED,
 )
-def simopt_strong():
-    problem = MinimzerClass(
+def simopt_strong(
+    criterion,
+    derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    budget=None,
+):
+    out = _minimize_simopt(
+        name="STRONG",
         criterion=criterion,
-        gradient=derivative,
+        derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         budget=budget,
     )
-    solver = so.experiment_base.ProblemSolver(solver_name="ASTRODF", problem=problem)
-    solver.run(n_macroreps=1)
-    out = solver.all_recommended_xs[0][-1]
     return out
 
 
@@ -178,10 +198,21 @@ def _minimize_simopt(
         upper_bounds=upper_bounds,
         budget=budget,
     )
-    solver = so.experiment_base.ProblemSolver(solver_name=name, problem=problem)
+    solver = ProblemSolver(solver_name=name, problem=problem)
+    solver.record_experiment_results = _do_nothing.__get__(solver, ProblemSolver)
     solver.run(n_macroreps=1)
-    out = solver.all_recommended_xs[0][-1]
-    return out
+
+    solution_x = np.array(solver.all_recommended_xs[0][-1])
+
+    processed = {
+        "solution_x": solution_x,
+        "solution_criterion": 0,
+    }
+    return processed
+
+
+def _do_nothing(self):
+    pass
 
 
 # ======================================================================================
@@ -189,7 +220,7 @@ def _minimize_simopt(
 # ======================================================================================
 
 
-class CriterionClass(so.base.Model):
+class CriterionClass(Model):
     def __init__(self, criterion, gradient, x, fixed_factors=None):
         fixed_factors = {} if fixed_factors is None else fixed_factors
         self.n_rngs = 0
@@ -206,7 +237,7 @@ class CriterionClass(so.base.Model):
         return responses, gradients
 
 
-class MinimzerClass(so.base.Problem):
+class MinimzerClass(Problem):
     def __init__(
         self,
         criterion,
@@ -215,14 +246,13 @@ class MinimzerClass(so.base.Problem):
         lower_bounds,
         upper_bounds,
         budget,
-        name="Minimizer",
         fixed_factors=None,
         model_fixed_factors=None,
     ):
         fixed_factors = {} if fixed_factors is None else fixed_factors
         model_fixed_factors = {} if model_fixed_factors is None else model_fixed_factors
-        self.name = name
-        self.dim = 2
+        self.name = "MinimizerClass"
+        self.dim = len(x)
         self.n_objectives = 1
         self.n_stochastic_constraints = 0
         self.minmax = (-1,)
