@@ -294,9 +294,7 @@ def minimize_bntr_fast_jitted(
             )
 
             if accept_step:
-                gradient_unprojected = _evaluate_model_gradient(
-                    x_candidate, model_gradient, model_hessian
-                )
+                gradient_unprojected = model_gradient + model_hessian @ x_candidate
 
                 (
                     active_lower_bounds,
@@ -403,9 +401,7 @@ def _take_preliminary_gradient_descent_step_and_check_for_solution(
         upper_bounds,
     )
 
-    gradient_unprojected = _evaluate_model_gradient(
-        x_candidate, model_gradient, model_hessian
-    )
+    gradient_unprojected = model_gradient + model_hessian @ x_candidate
     gradient_projected = _project_gradient_onto_feasible_set(
         gradient_unprojected, inactive_bounds
     )
@@ -471,9 +467,7 @@ def _take_preliminary_gradient_descent_step_and_check_for_solution(
                 x_unbounded, lower_bounds, upper_bounds
             )
 
-            gradient_unprojected = _evaluate_model_gradient(
-                x_candidate, model_gradient, model_hessian
-            )
+            gradient_unprojected = model_gradient + model_hessian @ x_candidate
             (
                 active_lower_bounds,
                 active_upper_bounds,
@@ -1162,19 +1156,3 @@ def _evaluate_model_criterion(
         float: Criterion value of the main model.
     """
     return gradient.T @ x + 0.5 * x.T @ hessian @ x
-
-
-@njit
-def _evaluate_model_gradient(x, linear_terms, square_terms):
-    """Evaluate the derivative of the main model.
-
-    Args:
-       main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
-
-    Returns:
-        np.ndarray: Derivative of the main model of shape (n,).
-    """
-    return linear_terms + square_terms @ x

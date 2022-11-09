@@ -134,8 +134,10 @@ def minimize_gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
         if converged:
             break
 
-    f_min = _evaluate_model_criterion(x_candidate, model)
-
+    f_min = (
+        model.linear_terms.T @ x_candidate
+        + 0.5 * x_candidate.T @ model.square_terms @ x_candidate
+    )
     result = {
         "x": x_candidate,
         "criterion": f_min,
@@ -368,22 +370,6 @@ def _update_lambdas_when_factorization_unsuccessful(
     )
 
     return lambdas_new
-
-
-def _evaluate_model_criterion(x, main_model):
-    """Evaluate the criterion function value of the main model.
-
-    Args:
-        x (np.ndarray): Parameter vector of shape (n,).
-        main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
-
-    Returns:
-        float: Criterion value of the main model.
-    """
-    return main_model.linear_terms.T @ x + 0.5 * x.T @ main_model.square_terms @ x
 
 
 def _get_new_lambda_candidate(lower_bound, upper_bound):
