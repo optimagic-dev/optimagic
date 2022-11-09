@@ -45,42 +45,42 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _apply_bounds_to_x_candidate as apply_bounds_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _compute_conjugate_gradient_step as cg_step_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _compute_predicted_reduction_from_conjugate_gradient_step as reduction_cg_step_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     _evaluate_model_criterion as eval_criterion_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _find_hessian_submatrix_where_bounds_inactive as find_hessian_inact_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     _get_fischer_burmeister_direction_vector as fb_vector_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _get_information_on_active_bounds as get_info_bounds_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _perform_gradient_descent_step as gradient_descent_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _project_gradient_onto_feasible_set as grad_feas_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    _take_preliminary_gradient_descent_step_and_check_for_solution as pgd_fast,
+)
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
     _update_trustregion_radius_and_gradient_descent as _update_trr_and_gd_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    apply_bounds_to_x_candidate_fast as apply_bounds_fast,
+    _update_trustregion_radius_conjugate_gradient as upddate_radius_cg_fast,
 )
 from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    compute_conjugate_gradient_step_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    compute_predicted_reduction_from_conjugate_gradient_step_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    find_hessian_submatrix_where_bounds_inactive_fast as find_hessian_inact_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    get_information_on_active_bounds_fast as get_info_bounds_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    perform_gradient_descent_step_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    project_gradient_onto_feasible_set as grad_feas_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    take_preliminary_gradient_descent_step_and_check_for_solution_fast as pgd_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
-    update_trustregion_radius_conjugate_gradient_fast,
-)
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_bntr_fast_jitted,
 )
 from estimagic.optimization.subsolvers.quadratic_subsolvers import (
@@ -278,7 +278,7 @@ def test_compute_conjugate_gradient_setp():
     min_radius = 1e-10
     max_radius = 1e10
 
-    res_fast = compute_conjugate_gradient_step_fast(
+    res_fast = cg_step_fast(
         x_candidate,
         gradient_inactive,
         hessian_inactive,
@@ -326,7 +326,7 @@ def test_compute_predicet_reduction_from_conjugate_gradient_step():
     hessian_inactive = np.arange(9).reshape(3, 3).astype(float)
     indices = np.arange(10)
     inactive_bounds = np.array([False] + [True] * 3 + [False] * 6)
-    res_fast = compute_predicted_reduction_from_conjugate_gradient_step_fast(
+    res_fast = reduction_cg_step_fast(
         cg_step,
         cg_step_inactive,
         grad,
@@ -362,7 +362,7 @@ def test_update_trustregion_radius_conjugate_gradient():
         "min_radius": 1e-10,
         "max_radius": 1e10,
     }
-    res_fast = update_trustregion_radius_conjugate_gradient_fast(
+    res_fast = upddate_radius_cg_fast(
         f_candidate=f_candidate,
         predicted_reduction=predicted_reduction,
         actual_reduction=actual_reduction,
@@ -409,7 +409,7 @@ def test_perform_gradient_descent_step():
         linear_terms=model_gradient, square_terms=model_hessian, intercept=0
     )
     bounds_info = ActiveBounds(inactive=indices[inactive_bounds])
-    res_fast = perform_gradient_descent_step_fast(
+    res_fast = gradient_descent_fast(
         x_candidate=x_candidate,
         f_candidate_initial=f_candidate_initial,
         gradient_projected=gradient_projected,

@@ -21,6 +21,129 @@ class DampingFactors(NamedTuple):
     upper_bound: Union[float, None] = None
 
 
+def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
+    """Solve the quadratic trust-region subproblem via nearly exact iterative method.
+
+    This subproblem solver is mainly based on Conn et al. (2000) "Trust region methods"
+    (:cite:`Conn2000`), pp. 169-200.
+
+    But ideas from Nocedal and Wright (2006) "Numerical optimization"
+    (:cite:`Nocedal2006`), pp. 83-91, who implement a similar algorithm,
+    were also used.
+
+    The original algorithm was developed by More and Sorensen (1983) (:cite:`More1983`)
+    and is known as "GQTPAR".
+
+    The vector x* is a global solution to the quadratic subproblem:
+
+        min_x f + g @ x + 0.5 * x.T @ H @ x,
+
+        if and only if ||x|| <= trustregion_radius
+        and if there is a scalar lambda >= 0, such that:
+
+    1) (H + lambda * I(n)) x* = -g
+    2) lambda (trustregion_radius - ||x*||) = 0
+    3) H + lambda * I is positive definite
+
+    where g denotes the gradient and H the hessian of the quadratic model,
+    respectively.
+
+    k_easy and k_hard are stopping criteria for the iterative subproblem solver.
+    See pp. 194-197 in :cite:`Conn2000` for a more detailed description.
+
+    Args:
+        main_model (NamedTuple): NamedTuple containing the parameters of the
+            main model, i.e.:
+            - ``linear_terms``, a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
+        trustregion_radius (float): Trustregion radius, often referred to as delta.
+        k_easy (float): topping criterion for the "easy" case.
+        k_hard (float): Stopping criterion for the "hard" case.
+        maxiter (int): Maximum number of iterations to perform. If reached,
+            terminate.
+
+    Returns:
+        (dict): Result dictionary containing the following keys:
+            - ``x`` (np.ndarray): Solution vector of the subproblem of shape (n,)
+            - ``criterion`` (float): Minimum function value associated with the
+                solution.
+    """
+    hessian_info = HessianInfo()
+
+    # Small floating point number signaling that for vectors smaller
+    # than that backward substituition is not reliable.
+    # See Golub, G. H., Van Loan, C. F. (2013), "Matrix computations", p.165.
+    zero_threshold = (
+        model.square_terms.shape[0]
+        * np.finfo(float).eps
+        * np.linalg.norm(model.square_terms, np.Inf)
+    )
+    stopping_criteria = {
+        "k_easy": k_easy,
+        "k_hard": k_hard,
+    }
+
+    gradient_norm = np.linalg.norm(model.linear_terms)
+    lambdas = get_initial_guess_for_lambdas(model)
+
+    converged = False
+
+    for _niter in range(maxiter):
+
+        if hessian_info.already_factorized:
+            hessian_info = hessian_info._replace(already_factorized=False)
+        else:
+            hessian_info, factorization_info = add_lambda_and_factorize_hessian(
+                model, hessian_info, lambdas
+            )
+
+        if factorization_info == 0 and gradient_norm > zero_threshold:
+            (
+                x_candidate,
+                hessian_info,
+                lambdas,
+                converged,
+            ) = find_new_candidate_and_update_parameters(
+                model,
+                hessian_info,
+                lambdas,
+                stopping_criteria,
+                converged,
+            )
+
+        elif factorization_info == 0 and gradient_norm <= zero_threshold:
+            x_candidate, lambdas, converged = check_for_interior_convergence_and_update(
+                x_candidate,
+                hessian_info,
+                lambdas,
+                stopping_criteria,
+                converged,
+            )
+
+        else:
+            lambdas = update_lambdas_when_factorization_unsuccessful(
+                hessian_info,
+                lambdas,
+                factorization_info,
+            )
+
+        if converged:
+            break
+
+    f_min = evaluate_model_criterion(
+        x_candidate, model.linear_terms, model.square_terms
+    )
+
+    result = {
+        "x": x_candidate,
+        "criterion": f_min,
+        "n_iterations": _niter,
+        "success": converged,
+    }
+
+    return result
+
+
 def get_initial_guess_for_lambdas(
     main_model,
 ):
