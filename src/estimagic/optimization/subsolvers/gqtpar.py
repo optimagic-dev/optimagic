@@ -21,7 +21,7 @@ class DampingFactors(NamedTuple):
     upper_bound: Union[float, None] = None
 
 
-def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
+def minimize_gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     """Solve the quadratic trust-region subproblem via nearly exact iterative method.
 
     This subproblem solver is mainly based on Conn et al. (2000) "Trust region methods"
@@ -84,7 +84,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     }
 
     gradient_norm = np.linalg.norm(model.linear_terms)
-    lambdas = get_initial_guess_for_lambdas(model)
+    lambdas = _get_initial_guess_for_lambdas(model)
 
     converged = False
 
@@ -103,7 +103,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
                 hessian_info,
                 lambdas,
                 converged,
-            ) = find_new_candidate_and_update_parameters(
+            ) = _find_new_candidate_and_update_parameters(
                 model,
                 hessian_info,
                 lambdas,
@@ -112,7 +112,11 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
             )
 
         elif factorization_info == 0 and gradient_norm <= zero_threshold:
-            x_candidate, lambdas, converged = check_for_interior_convergence_and_update(
+            (
+                x_candidate,
+                lambdas,
+                converged,
+            ) = _check_for_interior_convergence_and_update(
                 x_candidate,
                 hessian_info,
                 lambdas,
@@ -121,7 +125,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
             )
 
         else:
-            lambdas = update_lambdas_when_factorization_unsuccessful(
+            lambdas = _update_lambdas_when_factorization_unsuccessful(
                 hessian_info,
                 lambdas,
                 factorization_info,
@@ -130,9 +134,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
         if converged:
             break
 
-    f_min = evaluate_model_criterion(
-        x_candidate, model.linear_terms, model.square_terms
-    )
+    f_min = _evaluate_model_criterion(x_candidate, model)
 
     result = {
         "x": x_candidate,
@@ -144,7 +146,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     return result
 
 
-def get_initial_guess_for_lambdas(
+def _get_initial_guess_for_lambdas(
     main_model,
 ):
     """Return good initial guesses for lambda, its lower and upper bound.
@@ -256,7 +258,7 @@ def add_lambda_and_factorize_hessian(main_model, hessian_info, lambdas):
     return hessian_info_new, factorization_info
 
 
-def find_new_candidate_and_update_parameters(
+def _find_new_candidate_and_update_parameters(
     main_model,
     hessian_info,
     lambdas,
@@ -310,7 +312,7 @@ def find_new_candidate_and_update_parameters(
     )
 
 
-def check_for_interior_convergence_and_update(
+def _check_for_interior_convergence_and_update(
     x_candidate,
     hessian_info,
     lambdas,
@@ -343,7 +345,7 @@ def check_for_interior_convergence_and_update(
     return x_candidate, lambdas_new, converged
 
 
-def update_lambdas_when_factorization_unsuccessful(
+def _update_lambdas_when_factorization_unsuccessful(
     hessian_info, lambdas, factorization_info
 ):
     """Update lambdas in the case that factorization of hessian not successful."""
@@ -368,7 +370,7 @@ def update_lambdas_when_factorization_unsuccessful(
     return lambdas_new
 
 
-def evaluate_model_criterion(x, main_model):
+def _evaluate_model_criterion(x, main_model):
     """Evaluate the criterion function value of the main model.
 
     Args:

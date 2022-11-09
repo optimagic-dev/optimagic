@@ -41,6 +41,9 @@ from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
     _update_trustregion_radius_conjugate_gradient as update_radius_cg_orig,
 )
 from estimagic.optimization.subsolvers.bounded_newton_trust_region import ActiveBounds
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    minimize_bntr,
+)
 from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_fast,
 )
@@ -82,9 +85,6 @@ from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
 )
 from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
     minimize_bntr_fast_jitted,
-)
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_bntr_quadratic,
 )
 from estimagic.optimization.tranquilo.models import ScalarModel
 from numpy.testing import assert_array_almost_equal as aaae
@@ -495,7 +495,7 @@ def test_minimize_bntr():
         "gtol_abs_conjugate_gradient": 1e-08,
         "gtol_rel_conjugate_gradient": 1e-06,
     }
-    res_orig = minimize_bntr_quadratic(model, lower_bounds, upper_bounds, **options)
+    res_orig = minimize_bntr(model, lower_bounds, upper_bounds, **options)
     res_fast = minimize_bntr_fast_jitted(
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )

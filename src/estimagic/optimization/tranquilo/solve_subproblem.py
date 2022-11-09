@@ -9,8 +9,8 @@ from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
 from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
     minimize_bntr_fast,
 )
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_gqtpar_quadratic,
+from estimagic.optimization.subsolvers.gqtpar import (
+    minimize_gqtpar,
 )
 from estimagic.optimization.tranquilo.models import evaluate_model
 from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
@@ -62,7 +62,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     built_in_solvers = {
         "bntr": minimize_bntr,
         "bntr_fast": minimize_bntr_fast,
-        "gqtpar": minimize_gqtpar_quadratic,
+        "gqtpar": minimize_gqtpar,
         "thorough": solve_thorough,
     }
 

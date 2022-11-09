@@ -3,11 +3,11 @@ from typing import NamedTuple
 from typing import Union
 
 import numpy as np
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_bntr_quadratic,
+from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+    minimize_bntr,
 )
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_gqtpar_quadratic,
+from estimagic.optimization.subsolvers.gqtpar import (
+    minimize_gqtpar,
 )
 from scipy.linalg import qr_multiply
 
@@ -284,11 +284,9 @@ def solve_subproblem(
             "gtol_abs_conjugate_gradient": gtol_abs_conjugate_gradient,
             "gtol_rel_conjugate_gradient": gtol_rel_conjugate_gradient,
         }
-        result = minimize_bntr_quadratic(
-            main_model, lower_bounds, upper_bounds, **options
-        )
+        result = minimize_bntr(main_model, lower_bounds, upper_bounds, **options)
     elif solver == "gqtpar":
-        result = minimize_gqtpar_quadratic(
+        result = minimize_gqtpar(
             main_model,
             k_easy=k_easy,
             k_hard=k_hard,
