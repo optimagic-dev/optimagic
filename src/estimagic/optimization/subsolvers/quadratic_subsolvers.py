@@ -24,6 +24,9 @@ from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
 from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     update_trustregion_radius_conjugate_gradient,
 )
+from estimagic.optimization.subsolvers.bounded_newton_quadratic_fast import (
+    minimize_bntr_fast_jitted,
+)
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     add_lambda_and_factorize_hessian,
 )
@@ -125,7 +128,7 @@ def minimize_bntr_quadratic(
         "alpha5": 4.00,
         "min_radius": 1e-10,
         "max_radius": 1e10,
-        "default_radius": 100,
+        "default_radius": 100.00,
     }
 
     x_candidate = np.zeros_like(model.linear_terms)
@@ -151,7 +154,7 @@ def minimize_bntr_quadratic(
     )
 
     for niter in range(maxiter + 1):
-        if converged is True:
+        if converged:
             break
 
         x_old = x_candidate
@@ -216,7 +219,9 @@ def minimize_bntr_quadratic(
             )
 
             if accept_step:
-                gradient_unprojected = evaluate_model_gradient(x_candidate, model)
+                gradient_unprojected = evaluate_model_gradient(
+                    x_candidate, model.linear_terms, model.square_terms
+                )
 
                 active_bounds_info = get_information_on_active_bounds(
                     x_candidate,
@@ -247,6 +252,116 @@ def minimize_bntr_quadratic(
                 gtol_rel=gtol_rel,
                 gtol_scaled=gtol_scaled,
             )
+
+    result = {
+        "x": x_candidate,
+        "criterion": f_candidate,
+        "n_iterations": niter,
+        "success": converged,
+        "message": convergence_reason,
+    }
+
+    return result
+
+
+# ======================================================================================
+# Subsolver Fast BNTR
+# ======================================================================================
+
+
+def minimize_bntr_quadratic_fast(
+    model,
+    lower_bounds,
+    upper_bounds,
+    *,
+    conjugate_gradient_method,
+    maxiter,
+    maxiter_gradient_descent,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
+    gtol_abs_conjugate_gradient,
+    gtol_rel_conjugate_gradient,
+):
+    """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
+
+    This function serves as a wrapper around the faster, numba-implementation of the
+    original BNTR algorithm.
+
+    The BNTR (Bounded Newton Trust Rregion) algorithm uses an active-set approach
+    to solve the symmetric system of equations:
+
+        hessian @ x = - gradient
+
+    only for the inactive parameters of x that lie within the bounds. The active-set
+    estimation employed here is based on Bertsekas (:cite:`Bertsekas1982`).
+
+    In the main loop, BNTR globalizes the Newton step using a trust-region method
+    based on the predicted versus actual reduction in the criterion function.
+    The trust-region radius is increased only if the accepted step is at the
+    trust-region boundary.
+
+
+    Args:
+        model (NamedTuple): NamedTuple containing the parameters of the
+            main model, i.e.:
+            - ``linear_terms`` (np.ndarray): 1d array of shape (n,)
+            - ``square_terms`` (np.ndarray): 2d array of shape (n,n).
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
+        conjugate_gradient_method (str): Method for computing the conjugate gradient
+            step. Available conjugate gradient methods are:
+                - "cg"
+                - "steihaug_toint"
+                - "trsbox" (default)
+        maxiter (int): Maximum number of iterations. If reached, terminate.
+        maxiter_gradient_descent (int): Maximum number of steepest descent iterations
+            to perform when the trust-region subsolver BNTR is used.
+        gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+        gtol_rel (float): Convergence tolerance for the relative gradient norm.
+        gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
+        gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+        gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+
+    Returns:
+        (dict): Result dictionary containing the following keys:
+            - ``x`` (np.ndarray): Solution vector of the subproblem of shape (n,)
+            - ``criterion`` (float): Minimum function value associated with the
+                solution.
+            - ``n_iterations`` (int): Number of iterations the algorithm ran before
+                termination.
+            - ``success`` (bool): Boolean indicating whether a solution has been found
+                before reaching maxiter.
+    """
+
+    model_gradient = model.linear_terms
+    model_hessian = model.square_terms
+    (
+        x_candidate,
+        f_candidate,
+        niter,
+        converged,
+        convergence_reason,
+    ) = minimize_bntr_fast_jitted(
+        model_gradient=model_gradient,
+        model_hessian=model_hessian,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        conjugate_gradient_method=conjugate_gradient_method,
+        maxiter=maxiter,
+        maxiter_gradient_descent=maxiter_gradient_descent,
+        gtol_abs=gtol_abs,
+        gtol_rel=gtol_rel,
+        gtol_scaled=gtol_scaled,
+        gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
+        gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
+    )
 
     result = {
         "x": x_candidate,
@@ -333,7 +448,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
 
     for _niter in range(maxiter):
 
-        if hessian_info.already_factorized is True:
+        if hessian_info.already_factorized:
             hessian_info = hessian_info._replace(already_factorized=False)
         else:
             hessian_info, factorization_info = add_lambda_and_factorize_hessian(
@@ -370,7 +485,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
                 factorization_info,
             )
 
-        if converged is True:
+        if converged:
             break
 
     f_min = evaluate_model_criterion(
@@ -404,20 +519,23 @@ def evaluate_model_criterion(
     Returns:
         float: Criterion value of the main model.
     """
-    return gradient.T @ x + 0.5 * x.T @ hessian @ x
+    out = gradient.T @ x + 0.5 * x.T @ hessian @ x
+    return out
 
 
-def evaluate_model_gradient(x, model):
+def evaluate_model_gradient(x, gradient, hessian):
     """Evaluate the derivative of the main model.
 
     Args:
         x (np.ndarray): Candidate vector of shape (n,).
-        main_model (NamedTuple): NamedTuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``", a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
+        gradient (np.ndarray): Gradient of shape (n,) for which the main model
+            shall be evaluated.
+        hessian (np.ndarray): Hessian of shape (n, n) for which the main model
+            shall be evaulated.
+
 
     Returns:
         np.ndarray: Derivative of the main model of shape (n,).
     """
-    return model.linear_terms + model.square_terms @ x
+    out = gradient + hessian @ x
+    return out

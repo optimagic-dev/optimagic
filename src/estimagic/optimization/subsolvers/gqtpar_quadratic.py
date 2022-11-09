@@ -202,7 +202,7 @@ def check_for_interior_convergence_and_update(
     s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
     step_len = 2
 
-    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas.current:
+    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas.candidate:
         x_candidate = step_len * z_min
         converged = True
 
@@ -265,8 +265,8 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
     """Update current lambda so that it lies within its bounds.
 
     Args:
-        lambdas_new (NamedTuple): Named tuple containing the current candidate
-            value for the damping factor lambda, its lower bound and upper bound.
+        lower_boud (float): lower bound of the current candidate dumping factor.
+        upper_bound(float): upper bound of the current candidate dumping factor.
 
     Returns:
         float: New candidate for the damping factor lambda.
