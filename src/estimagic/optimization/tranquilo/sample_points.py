@@ -6,6 +6,7 @@ import estimagic as em
 import numpy as np
 from estimagic.optimization.tranquilo.options import Bounds
 from scipy.spatial.distance import pdist
+from scipy.special import gammainc
 from scipy.special import logsumexp
 
 
@@ -36,6 +37,7 @@ def get_sampler(
 
     built_in_samplers = {
         "naive": _naive_sampler,
+        "ball": _ball_sampler,
         "hull_sampler": _hull_sampler,
         "optimal_hull_sampler": _optimal_hull_sampler,
         "cube": partial(_hull_sampler, order=np.inf),
@@ -119,7 +121,7 @@ def _naive_sampler(
     existing_xs=None,
     bounds=None,
 ):
-    """Naive random generation of trustregion points.
+    """Naive random generation of trustregion points inside a box.
 
     This is just a reference implementation to illustrate the interface of trustregion
     samplers. Mathematically it samples uniformaly from inside the cube defined by the
@@ -136,10 +138,10 @@ def _naive_sampler(
         target_size (int): Target number of points in the combined sample of existing_xs
             and newly sampled points. The sampler does not have to guarantee that this
             number will actually be reached.
+        rng (numpy.random.Generator): Random number generator.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
-        rng (numpy.random.Generator): Random number generator.
         bounds (Bounds or None): NamedTuple.
 
     """
@@ -153,6 +155,39 @@ def _naive_sampler(
         size=(n_points, n_params),
     )
     return points
+
+
+def _ball_sampler(trustregion, target_size, rng, existing_xs=None, bounds=None):
+    """Naive random generation of trustregion points inside a ball.
+
+    Mathematically it samples uniformaly from inside the ball defined by the
+    intersection of the trustregion and the bounds.
+
+    Code is adapted from https://tinyurl.com/y3p2dz6b.
+
+    Args:
+        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        target_size (int): Target number of points in the combined sample of existing_xs
+            and newly sampled points. The sampler does not have to guarantee that this
+            number will actually be reached.
+        rng (numpy.random.Generator): Random number generator.
+        existing_xs (np.ndarray or None): 2d numpy array in which each row is an
+            x vector at which the criterion function has already been evaluated, that
+            satisfies lower_bounds <= existing_xs <= upper_bounds.
+        bounds (Bounds or None): NamedTuple.
+
+    """
+    n_points = _get_effective_n_points(target_size, existing_xs=existing_xs)
+    n_params = len(trustregion.center)
+    effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
+
+    raw = rng.normal(size=(n_points, n_params))
+    norm = np.linalg.norm(raw, axis=1, ord=2)
+    scale = gammainc(n_params / 2, norm**2 / 2) ** (1 / n_params) / norm
+    points = raw * scale.reshape(-1, 1)
+
+    out = _map_into_feasible_trustregion(points, bounds=effective_bounds)
+    return out
 
 
 def _hull_sampler(
