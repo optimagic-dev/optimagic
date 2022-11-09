@@ -20,6 +20,7 @@ from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.tranquilo_history import History
+from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 
 
 def _tranquilo(
@@ -43,6 +44,8 @@ def _tranquilo(
     fit_options=None,
     solver_options=None,
     conv_options=None,
+    batch_evaluator="joblib",
+    n_cores=1,
     silence_experimental_warning=False,
 ):
     """Find the local minimum to a noisy optimization problem.
@@ -85,6 +88,8 @@ def _tranquilo(
         solver_options (dict or NoneType): Additional keyword arguments passed to the
             sub-solver function.
         conv_options (NamedTuple or NoneType): Criteria for successful convergence.
+        batch_evaluator (str or callabler)
+        n_cores (int): Number of cores.
 
     Returns:
         (dict): Results dictionary with the following items:
@@ -155,6 +160,14 @@ def _tranquilo(
     # ==================================================================================
 
     history = History(functype=functype)
+
+    wrapped_criterion = get_wrapped_criterion(
+        criterion=criterion,
+        batch_evaluator=batch_evaluator,
+        n_cores=n_cores,
+        history=history,
+    )
+
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
     sample_points = get_sampler(
         sampler,
@@ -183,17 +196,16 @@ def _tranquilo(
         bounds=bounds,
     )
 
-    first_eval = criterion(x)
-    history.add_entries(x, first_eval)
+    _, _first_fval, _first_indices = wrapped_criterion(x)
 
     state = State(
         safety=False,
         trustregion=TrustRegion(center=x, radius=radius_options.initial_radius),
-        model_indices=np.array([0]),
+        model_indices=_first_indices,
         model=None,
         index=0,
-        x=history.get_xs(0),
-        fval=history.get_fvals(0),
+        x=x,
+        fval=_first_fval,
         rho=np.nan,
         accepted=True,
     )
@@ -227,12 +239,9 @@ def _tranquilo(
         # ==============================================================================
         # criterion evaluations
         # ==============================================================================
-        new_fvecs = [criterion(_x) for _x in new_xs]
-        new_indices = np.arange(history.get_n_fun(), history.get_n_fun() + len(new_xs))
-        history.add_entries(new_xs, new_fvecs)
 
+        _, _, new_indices = wrapped_criterion(new_xs)
         model_indices = np.hstack([filtered_indices, new_indices])
-
         model_xs = history.get_xs(model_indices)
         model_fvecs = history.get_fvecs(model_indices)
 
@@ -255,10 +264,8 @@ def _tranquilo(
         # ==============================================================================
 
         candidate_x = sub_sol["x"]
-        candidate_fvec = criterion(candidate_x)
-        candidate_index = history.get_n_fun()
-        history.add_entries(candidate_x, candidate_fvec)
-        candidate_fval = history.get_fvals(-1)
+
+        _, candidate_fval, candidate_index = wrapped_criterion(candidate_x)
         actual_improvement = -(candidate_fval - state.fval)
 
         rho = _calculate_rho(

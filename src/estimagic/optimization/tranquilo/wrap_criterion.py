@@ -9,6 +9,9 @@ def get_wrapped_criterion(criterion, batch_evaluator, n_cores, history):
 
     @functools.wraps(criterion)
     def wrapper_criterion(params):
+        if np.array(params).size == 0:
+            return (np.array([]), np.array([]), np.array([]).astype(int))
+
         _is_just_one = np.array(params).ndim == 1
 
         _parlist = list(np.atleast_2d(params))
