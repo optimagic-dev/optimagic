@@ -437,7 +437,7 @@ def _map_into_feasible_trustregion(points, bounds):
 
 
 def _map_from_feasible_trustregion(points, bounds):
-    """Map points from a feasible trustregion definde by boudns into unit space.
+    """Map points from a feasible trustregion definde by bounds into unit space.
 
     Args:
         points (np.ndarray): 2d array of points to be mapped. Each value is in [-1, 1].

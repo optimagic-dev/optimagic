@@ -1,5 +1,4 @@
 from functools import partial
-from typing import NamedTuple
 
 import numpy as np
 from estimagic.optimization.tranquilo.options import TrustRegion
@@ -10,12 +9,7 @@ from estimagic.optimization.tranquilo.sample_points import (
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
-class GeometryChecker(NamedTuple):
-    quality_calculator: callable
-    cutoff_simulator: callable
-
-
-def get_geometry_checker(checker, reference_sampler, bounds, n_params):
+def get_geometry_checker_pair(checker, reference_sampler, n_params, bounds=None):
     """Get a geometry checker.
 
     Args:
@@ -28,9 +22,11 @@ def get_geometry_checker(checker, reference_sampler, bounds, n_params):
         reference_sampler (str): Either "box" or "ball", corresponding to comparison
             samples drawn inside a box or a ball, respectively.
         n_params (int): Number of parameters.
+        bounds (Bounds): The parameter bounds.
 
     Returns:
-        GeometryChecker: The geometry checker.
+        callable: The sample quality calculator.
+        callable: The quality cutoff simulator.
 
     """
     if reference_sampler not in {"box", "ball"}:
@@ -45,21 +41,34 @@ def get_geometry_checker(checker, reference_sampler, bounds, n_params):
 
     _checker = built_in_checker[checker]
 
-    out = GeometryChecker(
-        quality_calculator=partial(_checker["quality_calculator"], bounds=bounds),
-        cutoff_simulator=partial(
-            _checker["cutoff_simulator"],
-            reference_sampler=reference_sampler,
-            bounds=bounds,
-            n_params=n_params,
-        ),
+    quality_calculator = partial(_checker["quality_calculator"], bounds=bounds)
+    cutoff_simulator = partial(
+        _checker["cutoff_simulator"],
+        reference_sampler=reference_sampler,
+        bounds=bounds,
+        n_params=n_params,
     )
-    return out
+    return quality_calculator, cutoff_simulator
 
 
 def log_d_cutoff_simulator(
     n_samples, rng, reference_sampler, bounds, n_params, n_simulations=100
 ):
+    """Simulate the mean logarithm of the d-optimality criterion.
+
+    Args:
+        n_samples (int): Size of the sample.
+        rng (np.random.Generator): The random number generator.
+        reference_sampler (str): Either "box" or "ball", corresponding to comparison
+            samples drawn inside a box or a ball, respectively.
+        bounds (Bounds): The parameter bounds.
+        n_params (int): Dimensionality of the sample.
+        n_simulations (int): Number of simulations for the mean calculation.
+
+    Returns:
+        float: The simulated mean logarithm of the d-optimality criterion.
+
+    """
     _sampler = get_sampler(reference_sampler, bounds)
     trustregion = TrustRegion(center=np.zeros(n_params), radius=1)
     sampler = partial(_sampler, trustregion=trustregion)
