@@ -3,6 +3,10 @@ from typing import NamedTuple
 
 import numpy as np
 from estimagic.optimization.tranquilo.options import TrustRegion
+from estimagic.optimization.tranquilo.sample_points import _get_effective_bounds
+from estimagic.optimization.tranquilo.sample_points import (
+    _map_from_feasible_trustregion,
+)
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
@@ -11,7 +15,7 @@ class GeometryChecker(NamedTuple):
     cutoff_simulator: callable
 
 
-def get_geometry_checker(checker, reference_sampler, n_params):
+def get_geometry_checker(checker, reference_sampler, bounds, n_params):
     """Get a geometry checker.
 
     Args:
@@ -41,49 +45,52 @@ def get_geometry_checker(checker, reference_sampler, n_params):
 
     _checker = built_in_checker[checker]
 
-    _cutoff_sampler = _get_cutoff_simulator_sampler(reference_sampler, n_params)
-
     out = GeometryChecker(
-        quality_calculator=_checker["quality_calculator"],
-        cutoff_simulator=partial(_checker["cutoff_simulator"], sampler=_cutoff_sampler),
+        quality_calculator=partial(_checker["quality_calculator"], bounds=bounds),
+        cutoff_simulator=partial(
+            _checker["cutoff_simulator"],
+            reference_sampler=reference_sampler,
+            bounds=bounds,
+            n_params=n_params,
+        ),
     )
     return out
 
 
-def _get_cutoff_simulator_sampler(reference_sampler, n_params):
+def log_d_cutoff_simulator(
+    n_samples, rng, reference_sampler, bounds, n_params, n_simulations=100
+):
+    _sampler = get_sampler(reference_sampler, bounds)
     trustregion = TrustRegion(center=np.zeros(n_params), radius=1)
-    sampler = get_sampler(reference_sampler, bounds=None)
-    out = partial(sampler, trustregion=trustregion)
-    return out
-
-
-def log_d_cutoff_simulator(n_samples, rng, sampler, n_simulations=100):
+    sampler = partial(_sampler, trustregion=trustregion)
     raw = []
     for _ in range(n_simulations):
         x = sampler(target_size=n_samples, rng=rng)
-        raw.append(log_d_quality_calculator(x))
+        raw.append(log_d_quality_calculator(x, trustregion, bounds))
     out = np.nanmean(raw)
     return out
 
 
-def log_d_quality_calculator(sample):
+def log_d_quality_calculator(sample, trustregion, bounds):
     """Logarithm of the d-optimality criterion.
 
     For a data sample x the log_d_criterion is defined as log(det(x.T @ x)). If the
-    determinant is zero the function returns np.nan.
+    determinant is zero the function returns -np.inf. Before computation the sample is
+    mapped into unit space.
 
     Args:
         sample (np.ndarray): The data sample, shape = (n, p).
+        trustregion:
+        bounds:
 
     Returns:
         np.ndarray: The criterion values, shape = (n, ).
 
     """
-    n_samples, n_params = sample.shape
-    xtx = sample.T @ sample
+    effective_bounds = _get_effective_bounds(trustregion, bounds)
+    points = _map_from_feasible_trustregion(sample, effective_bounds)
+    n_samples, n_params = points.shape
+    xtx = points.T @ points
     det = np.linalg.det(xtx / n_samples)
-    if det <= 0:
-        out = np.nan
-    else:
-        out = n_params * np.log(n_samples) + np.log(det)
+    out = n_params * np.log(n_samples) + np.log(det)
     return out
