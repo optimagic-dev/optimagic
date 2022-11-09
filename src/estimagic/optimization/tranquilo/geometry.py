@@ -9,7 +9,9 @@ from estimagic.optimization.tranquilo.sample_points import (
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
-def get_geometry_checker_pair(checker, reference_sampler, n_params, bounds=None):
+def get_geometry_checker_pair(
+    checker, reference_sampler, n_params, n_simulations=200, bounds=None
+):
     """Get a geometry checker.
 
     Args:
@@ -22,6 +24,7 @@ def get_geometry_checker_pair(checker, reference_sampler, n_params, bounds=None)
         reference_sampler (str): Either "box" or "ball", corresponding to comparison
             samples drawn inside a box or a ball, respectively.
         n_params (int): Number of parameters.
+        n_simulations (int): Number of simulations for the mean calculation.
         bounds (Bounds): The parameter bounds.
 
     Returns:
@@ -47,12 +50,13 @@ def get_geometry_checker_pair(checker, reference_sampler, n_params, bounds=None)
         reference_sampler=reference_sampler,
         bounds=bounds,
         n_params=n_params,
+        n_simulations=n_simulations,
     )
     return quality_calculator, cutoff_simulator
 
 
 def log_d_cutoff_simulator(
-    n_samples, rng, reference_sampler, bounds, n_params, n_simulations=100
+    n_samples, rng, reference_sampler, bounds, n_params, n_simulations
 ):
     """Simulate the mean logarithm of the d-optimality criterion.
 
