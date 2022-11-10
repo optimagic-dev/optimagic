@@ -1,6 +1,7 @@
 from functools import partial
 
 import numpy as np
+from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import _get_effective_bounds
 from estimagic.optimization.tranquilo.sample_points import (
@@ -107,3 +108,87 @@ def log_d_quality_calculator(sample, trustregion, bounds):
     det = np.linalg.det(xtx / n_samples)
     out = n_params * np.log(n_samples) + np.log(det)
     return out
+
+
+# =====================================================================================
+
+
+def maximize_absolute_value_trust_trsbox(
+    scalar_model,
+    trustregion,
+    lower_bounds,
+    upper_bounds,
+):
+    """Maximize the absolute value of a Lagrange polynomial in a trust-region setting.
+
+    Let a Lagrange polynomial of degree two be defined by:
+        L(x) = c + g.T @ x + 0.5 x.T @ H @ x,
+
+    where c, g, H denote the intercept, linear terms, and square terms of the
+    scalar model, respectively.
+
+    In order to maximize L(x), we maximize the absolute value of L(x) in a
+    trust-region setting. I.e. we solve:
+
+        max_x  abs(c + g.T @ x + 0.5 x.T @ H @ x)
+            s.t. lower_bound <= x <= upper_bound
+                 ||x|| <= trustregion_radius
+
+    In order to find the solution x*, we both minimize and maximize
+    the objective c + g.T @ x + 0.5 x.T @ H @ x.
+    The resulting candidate vectors are then plugged into the objective function L(x)
+    to check which one yields the largest absolute value of the Lagrange polynomial.
+
+    Args:
+        scalar_model (NamedTuple): Named tuple containing the parameters of the
+            scalar surrogate model, i.e.:
+            - ``intercept`` (float): Intercept of the scalar model.
+            - ``linear_terms`` (np.ndarray): 1d array of shape (n,) with the linear
+                terms of the mdoel.
+            - ``square_terms`` (np.ndarray): 2d array of shape (n, n) containing
+                the model's square terms
+        trustregion (NamedTuple): Contains ``center`` (np.ndarray) and ``radius``
+            (float). Used to center bounds.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
+
+    Returns:
+        np.ndarray: Solution vector of shape (n,).
+
+    """
+    radius = trustregion.radius
+
+    x_min = minimize_trust_trsbox(
+        scalar_model.linear_terms,
+        scalar_model.square_terms,
+        radius,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
+    x_max = minimize_trust_trsbox(
+        -scalar_model.linear_terms,
+        -scalar_model.square_terms,
+        radius,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
+
+    criterion_min = _evaluate_scalar_model(x_min, scalar_model)
+    criterion_max = _evaluate_scalar_model(x_max, scalar_model)
+
+    if abs(criterion_min) >= abs(criterion_max):
+        x_out = x_min
+    else:
+        x_out = x_max
+
+    return x_out
+
+
+def _evaluate_scalar_model(x, scalar_model):
+    return (
+        scalar_model.intercept
+        + scalar_model.linear_terms.T @ x
+        + 0.5 * x.T @ scalar_model.square_terms @ x
+    )
