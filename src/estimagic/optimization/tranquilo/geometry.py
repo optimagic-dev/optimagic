@@ -1,3 +1,4 @@
+import warnings
 from functools import partial
 
 import numpy as np
@@ -105,5 +106,7 @@ def log_d_quality_calculator(sample, trustregion, bounds):
     n_samples, n_params = points.shape
     xtx = points.T @ points
     det = np.linalg.det(xtx / n_samples)
-    out = n_params * np.log(n_samples) + np.log(det)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        out = n_params * np.log(n_samples) + np.log(det)
     return out

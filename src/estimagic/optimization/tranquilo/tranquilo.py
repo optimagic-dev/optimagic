@@ -9,6 +9,7 @@ from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
+from estimagic.optimization.tranquilo.geometry import get_geometry_checker_pair
 from estimagic.optimization.tranquilo.models import ModelInfo
 from estimagic.optimization.tranquilo.models import n_free_params
 from estimagic.optimization.tranquilo.models import ScalarModel
@@ -16,6 +17,7 @@ from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import ConvOptions
 from estimagic.optimization.tranquilo.options import RadiusFactors
 from estimagic.optimization.tranquilo.options import RadiusOptions
+from estimagic.optimization.tranquilo.options import SampleQualityOptions
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
@@ -47,6 +49,9 @@ def _tranquilo(
     batch_evaluator="joblib",
     n_cores=1,
     silence_experimental_warning=False,
+    sample_quality_checker="d_optimality",
+    sample_quality_options=None,
+    disable_safety_iterations=True,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -114,6 +119,7 @@ def _tranquilo(
     # set default values for optional arguments
     # ==================================================================================
     sampling_rng = np.random.default_rng(random_seed)
+    quality_rng = np.random.default_rng(random_seed + 69128466)
 
     if radius_options is None:
         radius_options = RadiusOptions()
@@ -154,6 +160,9 @@ def _tranquilo(
 
     if conv_options is None:
         conv_options = ConvOptions()
+
+    if sample_quality_options is None:
+        sample_quality_options = SampleQualityOptions()
 
     # ==================================================================================
     # initialize compoments for the solver
@@ -196,6 +205,16 @@ def _tranquilo(
         bounds=bounds,
     )
 
+    check_sample_quality, simulate_quality_cutoff = get_geometry_checker_pair(
+        checker=sample_quality_checker,
+        reference_sampler=sample_quality_options.reference_sampler,
+        n_params=len(x),
+        n_simulations=sample_quality_options.n_simulations,
+        bounds=bounds,
+    )
+
+    quality_cutoff = simulate_quality_cutoff(target_sample_size, rng=quality_rng)
+
     _, _first_fval, _first_indices = wrapped_criterion(x)
 
     state = State(
@@ -229,20 +248,46 @@ def _tranquilo(
             state=state,
         )
 
-        new_xs = sample_points(
-            trustregion=state.trustregion,
-            target_size=target_sample_size,
-            existing_xs=filtered_xs,
-            rng=sampling_rng,
-        )
+        if not state.safety:
+
+            new_xs = sample_points(
+                trustregion=state.trustregion,
+                target_size=target_sample_size,
+                existing_xs=filtered_xs,
+                rng=sampling_rng,
+            )
+
+            model_xs = _safe_stack(filtered_xs, new_xs)
+
+            sample_quality = check_sample_quality(
+                sample=model_xs,
+                trustregion=state.trustregion,
+            )
+
+        else:
+            for n_to_add in range(1, len(x)):
+                new_xs = sample_points(
+                    trustregion=state.trustregion,
+                    target_size=max(target_sample_size, len(filtered_xs)) + n_to_add,
+                    existing_xs=filtered_xs,
+                    rng=sampling_rng,
+                )
+
+                model_xs = _safe_stack(filtered_xs, new_xs)
+
+                sample_quality = check_sample_quality(
+                    sample=model_xs,
+                    trustregion=state.trustregion,
+                )
+
+                if sample_quality >= quality_cutoff:
+                    break
 
         # ==============================================================================
         # criterion evaluations
         # ==============================================================================
-
         _, _, new_indices = wrapped_criterion(new_xs)
         model_indices = np.hstack([filtered_indices, new_indices])
-        model_xs = history.get_xs(model_indices)
         model_fvecs = history.get_fvecs(model_indices)
 
         # ==============================================================================
@@ -297,11 +342,13 @@ def _tranquilo(
         # update state for beginning of next iteration
         # ==============================================================================
 
-        new_radius = adjust_radius(
+        new_radius, needs_safety = adjust_radius(
             radius=state.trustregion.radius,
             rho=rho,
             step=candidate_x - state.trustregion.center,
             options=radius_options,
+            is_good_geometry=sample_quality >= quality_cutoff,
+            disable_safety_iterations=disable_safety_iterations,
         )
 
         if is_accepted:
@@ -311,7 +358,7 @@ def _tranquilo(
         else:
             new_trustregion = state.trustregion._replace(radius=new_radius)
 
-        state = state._replace(trustregion=new_trustregion)
+        state = state._replace(trustregion=new_trustregion, safety=needs_safety)
 
         # ==============================================================================
         # convergence check
@@ -443,6 +490,16 @@ def _process_sample_size(user_sample_size, model_info, x):
         out = int(user_sample_size)
     else:
         raise ValueError(f"invalid sample size: {user_sample_size}")
+    return out
+
+
+def _safe_stack(a, b):
+    if a.size > 0 and b.size > 0:
+        out = np.vstack([a, b])
+    elif a.size > 0:
+        out = a
+    else:
+        out = b
     return out
 
 

@@ -50,7 +50,6 @@ class RadiusOptions(NamedTuple):
     shrinking_factor: float = 0.5
     expansion_factor: float = 2.0
     large_step: float = 0.5
-    max_radius_to_step_ratio: float = np.inf
 
 
 class TrustRegion(NamedTuple):
@@ -63,3 +62,8 @@ class RadiusFactors(NamedTuple):
     centric: float = 0.1
     outer: float = 0.6
     neighborhood: float = 1.5
+
+
+class SampleQualityOptions(NamedTuple):
+    reference_sampler: str = "ball"
+    n_simulations: int = 200
