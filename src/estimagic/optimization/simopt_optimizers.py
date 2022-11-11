@@ -29,14 +29,48 @@ def simopt_adam(
     upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    crn_across_solns=True,
+    r=30,
+    beta_1=0.9,
+    beta_2=0.999,
+    alpha=0.5,
+    epsilon=10e-8,
+    sensitivity=10e-7,
 ):
+    """Minimize a scalar function using the ADAM algorithm from SimOpt.
+
+    Algorithm Options
+    -----------------
+
+    - crn_across_solns (bool): Use CRN across solutions? Default True.
+    - r (int): Number of replications taken at each solution. Default 30.
+    - beta_1 (float): Exponential decay of the rate for the first moment estimates.
+    Default 0.9.
+    - beta_2 (float): Exponential decay rate for the second-moment estimates. Default
+    0.999.
+    - alpha (float): Step size. Default 0.5.
+    - epsilon (float): A small value to prevent zero-division. Default 10e-8.
+    - sensitivity (float): Shrinking scale for variable bounds. Default 10e-7.
+
+    """
+    solver_options = {
+        "crn_across_solns": crn_across_solns,
+        "r": r,
+        "beta_1": beta_1,
+        "beta_2": beta_2,
+        "alpha": alpha,
+        "epsilon": epsilon,
+        "sensitivity": sensitivity,
+    }
+
     out = _minimize_simopt(
-        name="ADAM",
+        algorithm="ADAM",
         criterion=criterion,
         derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        solver_options=solver_options,
         budget=stopping_max_iterations,
     )
     return out
@@ -57,14 +91,53 @@ def simopt_aloe(
     upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    crn_across_solns=True,
+    r=30,
+    theta=0.2,
+    gamma=0.8,
+    alpha_max=10,
+    alpha_0=1.0,
+    epsilon_f=1.0,
+    sensitivity=10e-7,
+    _lambda=2.0,
 ):
+    """Minimize a scalar function using the ALOE algorithm from SimOpt.
+
+    Algorithm Options
+    -----------------
+
+    - crn_across_solns (bool): Use CRN across solutions? Default True.
+    - r (int): Number of replications taken at each solution. Default 30.
+    - theta (float): Constant in the Armijo condition. Default 0.2.
+    - gamma (float): Constant for shrinking the step size. Default 0.8.
+    - alpha_max (int): Maximum step size. Default 10.
+    - alpha_0 (float): Initial step size. Default 1.0.
+    - epsilon_f (float): Additive constant in the Armijo condition. Default 1.0.
+    - sensitivity (float): Shrinking scale for variable bounds. Default 1e-7.
+    - _lambda (float): Magnifying factor for n_r inside the finite difference function.
+    Default 2.0.
+
+    """
+    solver_options = {
+        "crn_across_solns": crn_across_solns,
+        "r": r,
+        "theta": theta,
+        "gamma": alpha_max,
+        "alpha_max": alpha_0,
+        "alpha_0": epsilon_f,
+        "epsilon_f": gamma,
+        "sensitivity": sensitivity,
+        "lambda": _lambda,
+    }
+
     out = _minimize_simopt(
-        name="ALOE",
+        algorithm="ALOE",
         criterion=criterion,
         derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        solver_options=solver_options,
         budget=stopping_max_iterations,
     )
     return out
@@ -79,20 +152,73 @@ def simopt_aloe(
 )
 def simopt_astrodf(
     criterion,
-    derivative,
     x,
     lower_bounds,
     upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    crn_across_solns=True,
+    delta_max=50.0,
+    eta_1=0.1,
+    eta_2=0.5,
+    gamma_1=1.5,
+    gamma_2=0.75,
+    w=0.85,
+    mu=1_000.0,
+    beta=10.0,
+    lambda_min=8,
+    simple_solve=True,
+    criticality_select=True,
+    criticality_threshold=0.1,
 ):
+    """Minimize a scalar function using the ASTRODF algorithm from SimOpt.
+
+    Algorithm Options
+    -----------------
+
+    - crn_across_solns (bool): Use CRN across solutions? Default True.
+    - delta_max (float): Maximum value of the trust-region radius. Default 50.0
+    - eta_1 (float): Threshhold for a successful iteration. Default 0.1.
+    - eta_2 (float): Threshhold for a very successful iteration. Default 0.5.
+    - gamma_1 (float): Very successful step trust-region radius increase. Default 1.5.
+    - gamma_2 (float): Unsuccessful step trust-region radius decrease. Default 0.75.
+    - w (float): trust-region radius rate of shrinkage in contracation loop. Default
+    0.85.
+    - mu (int): trust-region radius ratio upper bound in contraction loop. Default 1000.
+    - beta (int): trust-region radius ratio lower bound in contraction loop. Default 10.
+    - lambda_min (int): minimum sample size value. Default 8.
+    - simple_solve (bool): Solve subproblem with Cauchy point (rough approximate)?
+    Default True.
+    - criticality_select (bool): Skip contraction loop if not near critical
+    region? Default True.
+    - criticality_threshold (float): Threshold on gradient norm indicating
+    near-critical region. Default 0.1.
+
+    """
+    solver_options = {
+        "crn_across_solns": crn_across_solns,
+        "delta_max": delta_max,
+        "eta_1": eta_1,
+        "eta_2": eta_2,
+        "gamma_1": gamma_1,
+        "gamma_2": gamma_2,
+        "w": w,
+        "mu": mu,
+        "beta": beta,
+        "lambda_min": lambda_min,
+        "simple_solve": simple_solve,
+        "criticality_select": criticality_select,
+        "criticality_threshold": criticality_threshold,
+    }
+
     out = _minimize_simopt(
-        name="ASTRODF",
+        algorithm="ASTRODF",
         criterion=criterion,
-        derivative=derivative,
+        derivative=None,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        solver_options=solver_options,
         budget=stopping_max_iterations,
     )
     return out
@@ -107,20 +233,55 @@ def simopt_astrodf(
 )
 def simopt_neldmd(
     criterion,
-    derivative,
     x,
     lower_bounds,
     upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    crn_across_solns=True,
+    r=30,
+    alpha=1.0,
+    gammap=0.5,
+    betap=0.5,
+    delta=0.5,
+    sensitivity=10e-7,
+    initial_spread=0.1,
 ):
+    """Minimize a scalar function using the Nelder-Mead algorithm from SimOpt.
+
+    Algorithm Options
+    -----------------
+
+    - crn_across_solns (bool): Use CRN across solutions? Default True.
+    - r (int): Number of replications taken at each solution. Default 30.
+    - alpha (float): Reflection coefficient > 0. Default 1.0.
+    - gammap (float): Expansion coefficient > 1. Default 2.0.
+    - betap (float): Contraction coefficient > 0, < 1. Default 0.5.
+    - delta (float): Shrink factor > 0, < 1. Default 0.5.
+    - sensitivity (float): Shrinking scale for bounds. Default 10e-7.
+    - initial_spread (float): Fraction of the distance between bounds used to select
+    initial points. Default 1 / 10.
+
+    """
+    solver_options = {
+        "crn_across_solns": crn_across_solns,
+        "r": r,
+        "alpha": alpha,
+        "gammap": gammap,
+        "betap": betap,
+        "delta": delta,
+        "sensitivity": sensitivity,
+        "initial_spread": initial_spread,
+    }
+
     out = _minimize_simopt(
-        name="NELDMD",
+        algorithm="NELDMD",
         criterion=criterion,
-        derivative=derivative,
+        derivative=None,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        solver_options=solver_options,
         budget=stopping_max_iterations,
     )
     return out
@@ -135,20 +296,62 @@ def simopt_neldmd(
 )
 def simopt_spsa(
     criterion,
-    derivative,
     x,
     lower_bounds,
     upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    crn_across_solns=True,
+    alpha=0.602,
+    gamma=0.101,
+    step=0.1,
+    gavg=1,
+    n_reps=30,
+    n_loss=2,
+    eval_pct=2 / 3,
+    iter_pct=0.1,
 ):
+    """Minimize a scalar function using the SPSA algorithm from SimOpt.
+
+    Algorithm Options
+    -----------------
+
+    - crn_across_solns (bool): Use CRN across solutions? Default True.
+    - alpha (float): Non-negative coefficient in the SPSA gain sequecence ak. Default
+    0.602.
+    - gamma (float): Non-negative coefficient in the SPSA gain sequence ck. Default
+    0.101.
+    - step (float): Initial desired magnitude of change in the theta elements. Default
+    0.1.
+    - gavg (int): Averaged SP gradients used per iteration. Default 1.
+    - n_reps (int): Number of replications takes at each solution. Default 30.
+    - n_loss (int): Number of loss function evaluations used in this gain calculation.
+    Default 2.
+    - eval_pct (float): Percentage of the expected number of loss evaluations per run.
+    Default 2/3.
+    - iter_pct (float): Percentage of the maximum expected number of iterations. Default
+    0.1.
+
+    """
+    solver_options = {
+        "crn_across_solns": crn_across_solns,
+        "alpha": alpha,
+        "gamma": gamma,
+        "step": step,
+        "gavg": gavg,
+        "n_reps": n_reps,
+        "n_loss": n_loss,
+        "eval_pct": eval_pct,
+        "iter_pct": iter_pct,
+    }
+
     out = _minimize_simopt(
-        name="SPSA",
+        algorithm="SPSA",
         criterion=criterion,
-        derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        solver_options=solver_options,
         budget=stopping_max_iterations,
     )
     return out
@@ -163,21 +366,67 @@ def simopt_spsa(
 )
 def simopt_strong(
     criterion,
-    derivative,
     x,
     lower_bounds,
     upper_bounds,
     *,
-    budget=None,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    crn_across_solns=True,
+    n0=10,
+    n_r=10,
+    sensitivity=10e-7,
+    delta_threshold=1.2,
+    delta_T=2.0,  # noqa: N803
+    eta_0=0.01,
+    eta_1=0.3,
+    gamma_1=0.9,
+    gamma_2=1.11,
+    _lambda=2,
+    lambda_2=1.01,
 ):
+    """Minimize a scalar function using the STRONG algorithm from SimOpt.
+
+    Algorithm Options
+    -----------------
+
+    - crn_across_solns (bool): Use CRN across solutions? Default True.
+    - n0 (int): Initial sample size Default 10.
+    - n_r (int): Number of replications taken at each solution. Default 10.
+    - sensitivity (float): Shrinking scale for VarBds. Default 10e-7.
+    - delta_threshold (float): Maximum value of the radius. Default 1.2.
+    - delta_T (float): Initial size of trust region. Default 2.0.
+    - eta_0 (float): Constant for accepting. Default 0.01.
+    - eta_1 (float): Constant for more confident accepting. Default 0.3.
+    - gamma_1 (float): Constant for shrinking the trust region. Default 0.9.
+    - gamma_2 (float): Constant for expanding the trust region. Default 1.11.
+    - lambda (int): Magnifying factor for n_r inside the finite difference function.
+    Default 2.
+    - lambda_2 (float): Magnifying factor for n_r in stage I and stage II. Default 1.01.
+
+    """
+    solver_options = {
+        "crn_across_solns": crn_across_solns,
+        "n0": n0,
+        "n_r": n_r,
+        "sensitivity": sensitivity,
+        "delta_threshold": delta_threshold,
+        "delta_T": delta_T,
+        "eta_0": eta_0,
+        "eta_1": eta_1,
+        "gamma_1": gamma_1,
+        "gamma_2": gamma_2,
+        "lambda": _lambda,
+        "lambda_2": lambda_2,
+    }
+
     out = _minimize_simopt(
-        name="STRONG",
+        algorithm="STRONG",
         criterion=criterion,
-        derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        budget=budget,
+        solver_options=solver_options,
+        budget=stopping_max_iterations,
     )
     return out
 
@@ -188,17 +437,15 @@ def simopt_strong(
 
 
 def _minimize_simopt(
-    name,
+    algorithm,
     criterion,
     derivative,
     x,
     lower_bounds,
     upper_bounds,
-    *,
-    budget=None,
+    solver_options,
+    budget,
 ):
-    budget = 1_000 if budget is None else budget
-
     problem = MinimzerClass(
         criterion=criterion,
         gradient=derivative,
@@ -207,7 +454,9 @@ def _minimize_simopt(
         upper_bounds=upper_bounds,
         budget=budget,
     )
-    solver = ProblemSolver(solver_name=name, problem=problem)
+    solver = ProblemSolver(
+        solver_name=algorithm, problem=problem, solver_fixed_factors=solver_options
+    )
     # overwrite method of simopt ProblemSolver class that pickles interim results
     solver.record_experiment_results = _do_nothing.__get__(solver, ProblemSolver)
     solver.run(n_macroreps=1)
@@ -263,7 +512,7 @@ class MinimzerClass(Problem):
         self.dim = len(x)
         self.n_objectives = 1
         self.n_stochastic_constraints = 0
-        self.minmax = (-1,)
+        self.minmax = (-1,)  # minimize objective
         self.constraint_type = "box"
         self.variable_type = "continuous"
         self.lower_bounds = lower_bounds
@@ -276,10 +525,6 @@ class MinimzerClass(Problem):
             "initial_solution": {"default": x},
             "budget": {"default": budget},
         }
-        self.check_factor_list = {
-            "initial_solution": self.check_initial_solution,
-            "budget": self.check_budget,
-        }
         super().__init__(fixed_factors, model_fixed_factors)
         self.model = CriterionClass(
             criterion=criterion,
@@ -289,7 +534,7 @@ class MinimzerClass(Problem):
         )
 
     def vector_to_factor_dict(self, vector):
-        factor_dict = {"x": vector[:]}
+        factor_dict = {"x": vector}
         return factor_dict
 
     def factor_dict_to_vector(self, factor_dict):
