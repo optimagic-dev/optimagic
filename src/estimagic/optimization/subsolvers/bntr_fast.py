@@ -14,7 +14,7 @@ from numba import njit
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
 
-def minimize_bntr_fast(
+def bntr_fast(
     model,
     lower_bounds,
     upper_bounds,
@@ -93,7 +93,7 @@ def minimize_bntr_fast(
         niter,
         converged,
         convergence_reason,
-    ) = minimize_bntr_fast_jitted(
+    ) = _bntr_fast_jitted(
         model_gradient=model_gradient,
         model_hessian=model_hessian,
         lower_bounds=lower_bounds,
@@ -120,7 +120,7 @@ def minimize_bntr_fast(
 
 
 @njit
-def minimize_bntr_fast_jitted(
+def _bntr_fast_jitted(
     model_gradient,
     model_hessian,
     lower_bounds,

@@ -23,7 +23,7 @@ class ActiveBounds(NamedTuple):
     inactive: Union[np.ndarray, None] = None
 
 
-def minimize_bntr(
+def bntr(
     model,
     lower_bounds,
     upper_bounds,

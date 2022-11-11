@@ -21,7 +21,7 @@ class DampingFactors(NamedTuple):
     upper_bound: Union[float, None] = None
 
 
-def minimize_gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
+def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     """Solve the quadratic trust-region subproblem via nearly exact iterative method.
 
     This subproblem solver is mainly based on Conn et al. (2000) "Trust region methods"

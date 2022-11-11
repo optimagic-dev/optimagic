@@ -3,14 +3,14 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
-    minimize_bntr,
+from estimagic.optimization.subsolvers.bntr import (
+    bntr,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
-    minimize_bntr_fast,
+from estimagic.optimization.subsolvers.bntr_fast import (
+    bntr_fast,
 )
 from estimagic.optimization.subsolvers.gqtpar import (
-    minimize_gqtpar,
+    gqtpar,
 )
 from estimagic.optimization.tranquilo.models import evaluate_model
 from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
@@ -60,9 +60,9 @@ def get_subsolver(solver, user_options=None, bounds=None):
     user_options = {} if user_options is None else user_options
 
     built_in_solvers = {
-        "bntr": minimize_bntr,
-        "bntr_fast": minimize_bntr_fast,
-        "gqtpar": minimize_gqtpar,
+        "bntr": bntr,
+        "bntr_fast": bntr_fast,
+        "gqtpar": gqtpar,
         "thorough": solve_thorough,
     }
 

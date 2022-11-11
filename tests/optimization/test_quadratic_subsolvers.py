@@ -9,14 +9,14 @@ from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
     minimize_trust_stcg,
 )
 from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
-    minimize_bntr,
+from estimagic.optimization.subsolvers.bntr import (
+    bntr,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
-    minimize_bntr_fast,
+from estimagic.optimization.subsolvers.bntr_fast import (
+    bntr_fast,
 )
 from estimagic.optimization.subsolvers.gqtpar import (
-    minimize_gqtpar,
+    gqtpar,
 )
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -466,8 +466,8 @@ def test_bounded_newton_trustregion(
         "gtol_rel_conjugate_gradient": 1e-6,
     }
 
-    result = minimize_bntr(main_model, lower_bounds, upper_bounds, **options)
-    result_fast = minimize_bntr_fast(main_model, lower_bounds, upper_bounds, **options)
+    result = bntr(main_model, lower_bounds, upper_bounds, **options)
+    result_fast = bntr_fast(main_model, lower_bounds, upper_bounds, **options)
     aaae(result["x"], x_expected, decimal=5)
     aaae(result_fast["x"], x_expected, decimal=5)
 
@@ -504,7 +504,7 @@ TEST_CASES_GQTPAR = [
 def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
-    result = minimize_gqtpar(main_model)
+    result = gqtpar(main_model)
 
     aaae(result["x"], x_expected)
     aaae(result["criterion"], criterion_expected)

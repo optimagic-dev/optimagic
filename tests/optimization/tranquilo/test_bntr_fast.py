@@ -1,90 +1,90 @@
 import numpy as np
 import pandas as pd
 from estimagic.config import TEST_FIXTURES_DIR
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _apply_bounds_to_x_candidate as apply_bounds_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _compute_conjugate_gradient_step as cg_step_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _compute_predicted_reduction_from_conjugate_gradient_step as reduction_cg_step_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _evaluate_model_criterion as eval_criterion_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _find_hessian_submatrix_where_bounds_inactive as find_hessian_inact_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _get_fischer_burmeister_direction_vector as fb_vector_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _get_information_on_active_bounds as get_info_bounds_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _perform_gradient_descent_step as gradient_descent_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _project_gradient_onto_feasible_set as grad_feas_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _take_preliminary_gradient_descent_step_and_check_for_solution as pgd_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _update_trustregion_radius_and_gradient_descent,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
+from estimagic.optimization.subsolvers.bntr import (
     _update_trustregion_radius_conjugate_gradient as update_radius_cg_orig,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import ActiveBounds
-from estimagic.optimization.subsolvers.bounded_newton_trust_region import (
-    minimize_bntr,
+from estimagic.optimization.subsolvers.bntr import ActiveBounds
+from estimagic.optimization.subsolvers.bntr import (
+    bntr,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _apply_bounds_to_x_candidate as apply_bounds_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
+    _bntr_fast_jitted,
+)
+from estimagic.optimization.subsolvers.bntr_fast import (
     _compute_conjugate_gradient_step as cg_step_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _compute_predicted_reduction_from_conjugate_gradient_step as reduction_cg_step_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _evaluate_model_criterion as eval_criterion_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _find_hessian_submatrix_where_bounds_inactive as find_hessian_inact_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _get_fischer_burmeister_direction_vector as fb_vector_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _get_information_on_active_bounds as get_info_bounds_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _perform_gradient_descent_step as gradient_descent_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _project_gradient_onto_feasible_set as grad_feas_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _take_preliminary_gradient_descent_step_and_check_for_solution as pgd_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _update_trustregion_radius_and_gradient_descent as _update_trr_and_gd_fast,
 )
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
+from estimagic.optimization.subsolvers.bntr_fast import (
     _update_trustregion_radius_conjugate_gradient as update_radius_cg_fast,
-)
-from estimagic.optimization.subsolvers.bounded_newton_trust_region_fast import (
-    minimize_bntr_fast_jitted,
 )
 from estimagic.optimization.tranquilo.models import ScalarModel
 from numpy.testing import assert_array_almost_equal as aaae
@@ -495,8 +495,8 @@ def test_minimize_bntr():
         "gtol_abs_conjugate_gradient": 1e-08,
         "gtol_rel_conjugate_gradient": 1e-06,
     }
-    res_orig = minimize_bntr(model, lower_bounds, upper_bounds, **options)
-    res_fast = minimize_bntr_fast_jitted(
+    res_orig = bntr(model, lower_bounds, upper_bounds, **options)
+    res_fast = _bntr_fast_jitted(
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )
     # using aaae to get tests run on windows machines.
@@ -519,7 +519,7 @@ def test_minimize_bntr_break_loop_early():
         "gtol_abs_conjugate_gradient": 10,
         "gtol_rel_conjugate_gradient": 10,
     }
-    res_fast = minimize_bntr_fast_jitted(
+    res_fast = _bntr_fast_jitted(
         model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
     )
     # using aaae to get tests run on windows machines.
