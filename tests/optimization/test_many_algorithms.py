@@ -1,4 +1,4 @@
-"""Test all availabl algorithms on a simple sum of squares function.
+"""Test all available algorithms on a simple sum of squares function.
 
 - only minimize
 - only numerical derivative
@@ -81,7 +81,7 @@ skip_msg = (
 )
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason=skip_msg)
+#@pytest.mark.skipif(sys.platform != "linux", reason=skip_msg)
 @pytest.mark.parametrize("algorithm", GLOBAL_ALGORITHMS_AVAILABLE)
 def test_global_algorithms_on_sum_of_squares(algorithm):
     params = pd.DataFrame()
