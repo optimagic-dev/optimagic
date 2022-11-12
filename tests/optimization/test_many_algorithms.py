@@ -8,7 +8,6 @@ import inspect
 import sys
 
 import numpy as np
-import pandas as pd
 import pytest
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization import GLOBAL_ALGORITHMS
@@ -39,9 +38,6 @@ def sos(x):
 
 @pytest.mark.parametrize("algorithm", LOCAL_ALGORITHMS)
 def test_algorithm_on_sum_of_squares(algorithm):
-    params = pd.DataFrame()
-    params["value"] = [1, 2, 3]
-
     res = minimize(
         criterion=sos,
         params=np.arange(3),
@@ -49,18 +45,12 @@ def test_algorithm_on_sum_of_squares(algorithm):
         collect_history=True,
         skip_checks=True,
     )
-
     assert res.success in [True, None]
     aaae(res.params, np.zeros(3), decimal=4)
 
 
 @pytest.mark.parametrize("algorithm", BOUNDED_ALGORITHMS)
 def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
-    params = pd.DataFrame()
-    params["value"] = [3, 2, -3]
-    params["lower_bound"] = [1, np.nan, np.nan]
-    params["upper_bound"] = [np.nan, np.nan, -1]
-
     res = minimize(
         criterion=sos,
         params=np.array([3, 2, -3]),
@@ -70,7 +60,6 @@ def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
         collect_history=True,
         skip_checks=True,
     )
-
     assert res.success in [True, None]
     aaae(res.params, np.array([1, 0, -1]), decimal=3)
 
@@ -84,10 +73,6 @@ skip_msg = (
 @pytest.mark.skipif(sys.platform != "linux", reason=skip_msg)
 @pytest.mark.parametrize("algorithm", GLOBAL_ALGORITHMS_AVAILABLE)
 def test_global_algorithms_on_sum_of_squares(algorithm):
-    params = pd.DataFrame()
-    params["value"] = [0.35, 0.35]
-    params["lower_bound"] = [0.2, -0.5]
-    params["upper_bound"] = [1, 0.5]
     res = minimize(
         criterion=sos,
         params=np.array([0.35, 0.35]),

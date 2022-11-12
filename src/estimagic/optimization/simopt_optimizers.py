@@ -93,6 +93,7 @@ def simopt_astrodf(
     upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    bounds_padding=1e-8,
     crn_across_solns=True,
     delta_max=50.0,
     eta_1=0.1,
@@ -112,8 +113,8 @@ def simopt_astrodf(
     Note
     ----
     To get more accurate results in the case of binding bounds we revert the subtraction
-    of a fixed value from the bounds. See https://tinyurl.com/5fxcvw2k for details of
-    what the ASTRODF algorithm is doing.
+    of a large value from the bounds, and replace it with a small one: `bounds_padding`.
+    See https://tinyurl.com/5fxcvw2k for details of what the ASTRODF algorithm is doing.
 
     Algorithm Options
     -----------------
@@ -154,8 +155,8 @@ def simopt_astrodf(
     }
 
     # Revert bounds shifting of ASTRODF to improve accuracy. For details see docstring.
-    lower_bounds -= 0.01
-    upper_bounds += 0.01
+    lower_bounds -= 0.01 - bounds_padding
+    upper_bounds += 0.01 + bounds_padding
 
     out = _minimize_simopt(
         algorithm="ASTRODF",
