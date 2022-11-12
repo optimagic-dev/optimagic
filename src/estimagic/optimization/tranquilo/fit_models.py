@@ -101,9 +101,10 @@ def get_fitter(fitter, user_options=None, model_info=None):
 def _fitter_template(
     x,
     y,
-    fitter,
-    model_info,
-    options,
+    weights=None,
+    fitter=None,
+    model_info=None,
+    options=None,
 ):
     """Fit a model to data.
 
@@ -122,8 +123,15 @@ def _fitter_template(
     Returns:
         VectorModel or ScalarModel: Results container.
     """
-    n_params = x.shape[1]
+    n_samples, n_params = x.shape
     n_residuals = y.shape[1]
+
+    # weight the data in order to get weighted fitting from fitters that do not support
+    # weights. Inspired by: https://stackoverflow.com/a/52452833
+    if weights is not None:
+        _root_weights = np.sqrt(weights).reshape(n_samples, 1)
+        y = y * _root_weights
+        x = x * _root_weights
 
     coef = fitter(x, y, model_info, **options)
 
