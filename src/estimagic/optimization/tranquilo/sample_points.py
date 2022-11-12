@@ -331,7 +331,7 @@ def _optimal_hull_sampler(
     else:
 
         func_dict = {
-            "determinant": _log_determinant_on_hull,
+            "determinant": _determinant_on_hull,
             "distance": _minimal_pairwise_distance_on_hull,
         }
 
@@ -413,7 +413,7 @@ def _minimal_pairwise_distance_on_hull(x, existing_xs, order, hardness, n_params
     return crit_value
 
 
-def _log_determinant_on_hull(x, existing_xs, order, n_params):
+def _determinant_on_hull(x, existing_xs, order, n_params):
     """Compute d-optimality criterion of new and existing points.
 
     Instead of optimizing the distance of points in the feasible trustregion, this
@@ -443,7 +443,7 @@ def _log_determinant_on_hull(x, existing_xs, order, n_params):
     else:
         sample = x
 
-    crit_value = np.log(np.linalg.det(sample.T @ sample / n_samples))
+    crit_value = np.linalg.det(sample.T @ sample / n_samples)
 
     return crit_value
 
