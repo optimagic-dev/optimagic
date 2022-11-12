@@ -10,6 +10,7 @@ from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.count_points import get_counter
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
+from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
 from estimagic.optimization.tranquilo.models import ModelInfo
 from estimagic.optimization.tranquilo.models import n_free_params
 from estimagic.optimization.tranquilo.models import ScalarModel
@@ -51,6 +52,7 @@ def _tranquilo(
     batch_evaluator="joblib",
     n_cores=1,
     silence_experimental_warning=False,
+    infinity_handling="relative",
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -204,6 +206,8 @@ def _tranquilo(
 
     calculate_weights = get_weighter(weighter, bounds=bounds)
 
+    clip_infinite_values = get_infinity_handler(infinity_handling)
+
     _, _first_fval, _first_indices = wrapped_criterion(x)
 
     state = State(
@@ -268,7 +272,9 @@ def _tranquilo(
 
         centered_xs = (model_xs - state.trustregion.center) / state.trustregion.radius
 
-        vector_model = fit_model(centered_xs, model_fvecs, weights=weights)
+        clipped_fvecs = clip_infinite_values(model_fvecs)
+
+        vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,

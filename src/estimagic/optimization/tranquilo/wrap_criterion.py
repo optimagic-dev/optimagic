@@ -24,8 +24,16 @@ def get_wrapped_criterion(criterion, batch_evaluator, n_cores, history):
             n_cores=_effective_n_cores,
         )
 
+        # replace NaNs but keep infinite values. NaNs would be problematic in many
+        # places, infs are only a problem in the model fitting and will thus be handled
+        # there
+        _clipped_evals = [
+            np.nan_to_num(critval, nan=np.inf, posinf=np.inf, neginf=-np.inf)
+            for critval in _raw_evals
+        ]
+
         indices = np.arange(history.get_n_fun(), history.get_n_fun() + len(_parlist))
-        history.add_entries(_parlist, _raw_evals)
+        history.add_entries(_parlist, _clipped_evals)
         fvecs = history.get_fvecs(indices)
         fvals = history.get_fvals(indices)
 
