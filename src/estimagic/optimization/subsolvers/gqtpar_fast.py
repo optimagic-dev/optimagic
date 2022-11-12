@@ -272,7 +272,8 @@ def _find_new_candidate_and_update_parameters(
 ):
     """Find new candidate vector and update transformed hessian and lambdas."""
     x_candidate = cho_solve(
-        (hessian_upper_triangular, False), -model_gradient, check_finite=False
+        (hessian_upper_triangular, False),
+        -model_gradient,
     )
     x_norm = _norm(x_candidate, -1.0)
 
@@ -280,7 +281,9 @@ def _find_new_candidate_and_update_parameters(
         converged = True
 
     w = solve_triangular(
-        hessian_upper_triangular, x_candidate, trans="T", check_finite=False
+        hessian_upper_triangular,
+        x_candidate,
+        trans="T",
     )
     w_norm = _norm(w, -1.0)
 
@@ -614,7 +617,6 @@ def _compute_terms_to_make_leading_submatrix_singular(
         v[: k - 1] = solve_triangular(
             upper_triangular[: k - 1, : k - 1],
             -upper_triangular[: k - 1, k - 1],
-            check_finite=False,
         )
 
     return delta, v
@@ -695,7 +697,7 @@ def _estimate_smallest_singular_value(u):
     w = _estimate_condition(u)
 
     # The system `U v = w` is solved using backward substitution.
-    v = solve_triangular(u, w, check_finite=False)
+    v = solve_triangular(u, w)
 
     v_norm = _norm(v, -1.0)
     w_norm = _norm(w, -1.0)
