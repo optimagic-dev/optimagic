@@ -237,6 +237,7 @@ def _optimal_hull_sampler(
     bounds=None,
     algorithm="scipy_lbfgsb",
     algo_options=None,
+    criterion=None,
 ):
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
@@ -267,6 +268,18 @@ def _optimal_hull_sampler(
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm. Default
             sets ``stopping_max_iterations=n_params``.
+        criterion (str or None): "distance", "determinant" or None.
+            - "distance": maximize the minimal distance between points, excluding
+              distances between existing points. This is a fast and relatively simple
+              optimization problem and yields the same points as "determinant" in
+              many circumstances.
+            - "determinant": maximize the determinant of the x'x where x is the matrix
+              of points. This is known as d-optimality in the optimal design literature
+              and as fekete points in the function approximation literature. This
+              criterion has the best theoretical properties but is very hard to
+              optimize. Thus the practical performance can be bad.
+            - None: Use the "determinant" criterion if only one point is added and the
+              "distance" criterion if multiple points are added.
 
     Returns:
         np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
@@ -277,9 +290,15 @@ def _optimal_hull_sampler(
     if n_points <= 0:
         return np.array([])
 
+    if criterion is None:
+        if n_points == 1:
+            criterion = "determinant"
+        else:
+            criterion = "distance"
+
     algo_options = {} if algo_options is None else algo_options
     if "stopping_max_iterations" not in algo_options:
-        algo_options["stopping_max_iterations"] = 2 * n_params
+        algo_options["stopping_max_iterations"] = 2 * n_params + 1
 
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
@@ -287,13 +306,13 @@ def _optimal_hull_sampler(
         # map existing points into unit space for easier optimization
         existing_xs_unit = _map_from_feasible_trustregion(existing_xs, effective_bounds)
 
-        dist_to_center = np.linalg.norm(existing_xs_unit, axis=1)
-        not_centric = dist_to_center >= radius_factors.centric
-
-        if not_centric.any():
-            existing_xs_unit = existing_xs_unit[not_centric]
-        else:
-            existing_xs_unit = None
+        if criterion == "distance":
+            dist_to_center = np.linalg.norm(existing_xs_unit, axis=1)
+            not_centric = dist_to_center >= radius_factors.centric
+            if not_centric.any():
+                existing_xs_unit = existing_xs_unit[not_centric]
+            else:
+                existing_xs_unit = None
 
     else:
         existing_xs_unit = None
@@ -310,16 +329,26 @@ def _optimal_hull_sampler(
     if existing_xs_unit is None and n_points == 1:
         opt_params = x0
     else:
+
+        func_dict = {
+            "determinant": _log_determinant_on_hull,
+            "distance": _minimal_pairwise_distance_on_hull,
+        }
+
+        criterion_kwargs = {
+            "existing_xs": existing_xs_unit,
+            "order": order,
+            "n_params": n_params,
+        }
+
+        if criterion == "distance":
+            criterion_kwargs["hardness"] = hardness
+
         res = em.maximize(
-            criterion=_minimal_pairwise_distance_on_hull,
+            criterion=func_dict[criterion],
             params=x0,
             algorithm=algorithm,
-            criterion_kwargs={
-                "existing_xs": existing_xs_unit,
-                "order": order,
-                "hardness": hardness,
-                "n_params": n_params,
-            },
+            criterion_kwargs=criterion_kwargs,
             lower_bounds=-np.ones_like(x0),
             upper_bounds=np.ones_like(x0),
             algo_options=algo_options,
@@ -381,6 +410,41 @@ def _minimal_pairwise_distance_on_hull(x, existing_xs, order, hardness, n_params
 
     # soft minimum
     crit_value = -logsumexp(-hardness * dist)
+    return crit_value
+
+
+def _log_determinant_on_hull(x, existing_xs, order, n_params):
+    """Compute d-optimality criterion of new and existing points.
+
+    Instead of optimizing the distance of points in the feasible trustregion, this
+    criterion function leads to the maximization of the minimum distance of the points
+    in the unit space.
+
+    Args:
+        x (np.ndarray): Flattened 1d array of internal points. Each value is in [-1, 1].
+        existing_xs (np.ndarray or None): 2d numpy array in which each row is an
+            x vector at which the criterion function has already been evaluated, that
+            satisfies -1 <= existing_xs <= 1.
+        order (int): Type of norm to use when scaling the sampled points. For 2 we
+            project onto the hull of a sphere, for np.inf onto the hull of a cube.
+        n_params (int): Dimensionality of the problem.
+
+    Returns:
+        float: The criterion value.
+
+    """
+    x = x.reshape(-1, n_params)
+    n_samples = len(x)
+
+    x = _project_onto_unit_hull(x, order=order)
+
+    if existing_xs is not None:
+        sample = np.row_stack([x, existing_xs])
+    else:
+        sample = x
+
+    crit_value = np.log(np.linalg.det(sample.T @ sample / n_samples))
+
     return crit_value
 
 
