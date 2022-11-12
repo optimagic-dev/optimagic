@@ -1,7 +1,7 @@
 from functools import partial
 
 
-def get_weighter(weighter, bounds):
+def get_sample_weighter(weighter, bounds):
     """Get a function that calculates weights for points in a sample.
 
     The resulting function takes the following arguments:

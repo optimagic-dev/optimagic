@@ -22,7 +22,7 @@ from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.tranquilo_history import History
-from estimagic.optimization.tranquilo.weighting import get_weighter
+from estimagic.optimization.tranquilo.weighting import get_sample_weighter
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 
 
@@ -204,7 +204,7 @@ def _tranquilo(
 
     count_points = get_counter(counter, bounds=bounds)
 
-    calculate_weights = get_weighter(weighter, bounds=bounds)
+    calculate_weights = get_sample_weighter(weighter, bounds=bounds)
 
     clip_infinite_values = get_infinity_handler(infinity_handling)
 

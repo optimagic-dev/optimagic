@@ -29,7 +29,15 @@ def clip_relative(fvecs):
 
     # abs is necessary because if all values are infinite, the diffs can switch sign
     # due to the initial value in the masked min and max
-    _diff = np.abs(_maxs - _mins)
+    _diff = _maxs - _mins
+
+    # Due to the initial value of the masked min and max, the sign of the diff can
+    # be negative if all values are infinite. In that case we want to switch the
+    # signe of _diff, _mins and _maxs.
+    _signs = np.sign(_diff)
+    _diff *= _signs
+    _maxs *= _signs
+    _mins *= _signs
 
     _pos_penalty = _maxs + 2 * _diff + 1
     _neg_penalty = _mins - 2 * _diff - 1
