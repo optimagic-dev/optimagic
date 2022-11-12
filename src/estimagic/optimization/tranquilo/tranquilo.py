@@ -7,6 +7,7 @@ import numpy as np
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
+from estimagic.optimization.tranquilo.count_points import get_counter
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
@@ -41,6 +42,7 @@ def _tranquilo(
     radius_options=None,
     radius_factors=None,
     sampler_options=None,
+    counter="count_all",
     fit_options=None,
     solver_options=None,
     conv_options=None,
@@ -196,6 +198,8 @@ def _tranquilo(
         bounds=bounds,
     )
 
+    count_points = get_counter(counter, bounds=bounds)
+
     _, _first_fval, _first_indices = wrapped_criterion(x)
 
     state = State(
@@ -229,9 +233,13 @@ def _tranquilo(
             state=state,
         )
 
+        n_effective_points = count_points(filtered_xs, trustregion=state.trustregion)
+
+        n_to_sample = max(0, target_sample_size - n_effective_points)
+
         new_xs = sample_points(
             trustregion=state.trustregion,
-            target_size=target_sample_size,
+            n_points=n_to_sample,
             existing_xs=filtered_xs,
             rng=sampling_rng,
         )

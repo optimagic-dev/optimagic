@@ -22,7 +22,7 @@ def test_bounds_are_satisfied(sampler):
     sampler = get_sampler(sampler, bounds)
     sample = sampler(
         trustregion=TrustRegion(center=np.zeros(2), radius=1),
-        target_size=5,
+        n_points=5,
         rng=np.random.default_rng(1234),
     )
     lower = np.full_like(sample, bounds.lower)
@@ -37,7 +37,7 @@ def test_bounds_are_satisfied_general_hull_sampler(order):
     sampler = get_sampler("hull_sampler", bounds, user_options={"order": order})
     sample = sampler(
         trustregion=TrustRegion(center=np.zeros(2), radius=1),
-        target_size=5,
+        n_points=5,
         rng=np.random.default_rng(1234),
     )
     lower = np.full_like(sample, bounds.lower)
@@ -55,7 +55,7 @@ def test_enough_existing_points(sampler):
     )
     calculated = sampler(
         trustregion=TrustRegion(center=np.zeros(3), radius=1),
-        target_size=5,
+        n_points=0,
         existing_xs=np.empty((5, 3)),
         rng=np.random.default_rng(1234),
     )
@@ -74,7 +74,7 @@ def test_optimization_ignores_existing_points(sampler):
     )
     calculated = sampler(
         trustregion=TrustRegion(center=np.zeros(3), radius=1),
-        target_size=5,
+        n_points=3,
         existing_xs=np.ones((2, 3)),  # same point implies min distance of zero always
         rng=np.random.default_rng(1234),
     )
@@ -98,7 +98,7 @@ def test_optimality(sampler):
     for sampler in [standard_sampler, optimal_sampler]:
         sample = sampler(
             trustregion=TrustRegion(center=np.zeros(3), radius=1),
-            target_size=5,
+            n_points=5,
             rng=np.random.default_rng(1234),
         )
         distances.append(pdist(sample).min())

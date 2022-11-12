@@ -18,7 +18,7 @@ def get_sampler(
     Args:
         sampler (str or callable): Name of a sampling method or sampling function.
             The arguments of sampling functions need to be: ``trustregion``,
-            ``target_size``, ``rng``, ``existing_xs`` and ``bounds``.
+            ``n_points``, ``rng``, ``existing_xs`` and ``bounds``.
             Sampling functions need to return a dictionary with the entry "points"
             (and arbitrary additional information). See ``reference_sampler`` for
             details.
@@ -29,7 +29,7 @@ def get_sampler(
             argument 'order', which is a positive integer.
 
     Returns:
-        callable: Function that depends on trustregion, target_size, existing_xs and
+        callable: Function that depends on trustregion, n_points, existing_xs and
             existing_fvals, model_info and  and returns a new sample.
 
     """
@@ -72,7 +72,7 @@ def get_sampler(
     mandatory_args = {
         "bounds",
         "trustregion",
-        "target_size",
+        "n_points",
         "existing_xs",
         "rng",
     }
@@ -116,7 +116,7 @@ def get_sampler(
 
 def _box_sampler(
     trustregion,
-    target_size,
+    n_points,
     rng,
     existing_xs=None,
     bounds=None,
@@ -135,9 +135,7 @@ def _box_sampler(
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
-        target_size (int): Target number of points in the combined sample of existing_xs
-            and newly sampled points. The sampler does not have to guarantee that this
-            number will actually be reached.
+        n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
@@ -145,7 +143,6 @@ def _box_sampler(
         bounds (Bounds or None): NamedTuple.
 
     """
-    n_points = _get_effective_n_points(target_size, existing_xs=existing_xs)
     n_params = len(trustregion.center)
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
@@ -157,7 +154,7 @@ def _box_sampler(
     return points
 
 
-def _ball_sampler(trustregion, target_size, rng, existing_xs=None, bounds=None):
+def _ball_sampler(trustregion, n_points, rng, existing_xs=None, bounds=None):
     """Naive random generation of trustregion points inside a ball.
 
     Mathematically it samples uniformaly from inside the ball defined by the
@@ -167,9 +164,7 @@ def _ball_sampler(trustregion, target_size, rng, existing_xs=None, bounds=None):
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
-        target_size (int): Target number of points in the combined sample of existing_xs
-            and newly sampled points. The sampler does not have to guarantee that this
-            number will actually be reached.
+        n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
@@ -177,7 +172,6 @@ def _ball_sampler(trustregion, target_size, rng, existing_xs=None, bounds=None):
         bounds (Bounds or None): NamedTuple.
 
     """
-    n_points = _get_effective_n_points(target_size, existing_xs=existing_xs)
     n_params = len(trustregion.center)
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
@@ -192,7 +186,7 @@ def _ball_sampler(trustregion, target_size, rng, existing_xs=None, bounds=None):
 
 def _hull_sampler(
     trustregion,
-    target_size,
+    n_points,
     rng,
     order,
     distribution=None,
@@ -207,9 +201,7 @@ def _hull_sampler(
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
-        target_size (int): Target number of points in the combined sample of existing_xs
-            and newly sampled points. The sampler does not have to guarantee that this
-            number will actually be reached.
+        n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         order (int): Type of norm to use when scaling the sampled points. For 2 it will
             result in sphere sampling, for np.inf in cube sampling.
@@ -221,7 +213,6 @@ def _hull_sampler(
         bounds (Bounds or None): NamedTuple.
 
     """
-    n_points = _get_effective_n_points(target_size, existing_xs=existing_xs)
     n_params = len(trustregion.center)
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
@@ -235,7 +226,7 @@ def _hull_sampler(
 
 def _optimal_hull_sampler(
     trustregion,
-    target_size,
+    n_points,
     rng,
     model_info,
     radius_factors,
@@ -259,9 +250,7 @@ def _optimal_hull_sampler(
 
     Args:
         trustregion (TrustRegion): NamedTuple with attributes center and radius.
-        target_size (int): Target number of points in the combined sample of existing_xs
-            and newly sampled points. The sampler does not have to guarantee that this
-            number will actually be reached.
+        n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         order (int): Type of norm to use when scaling the sampled points. For 2 it will
             result in sphere sampling, for np.inf in cube sampling.
@@ -280,10 +269,9 @@ def _optimal_hull_sampler(
             sets ``stopping_max_iterations=n_params``.
 
     Returns:
-        np.ndarray: Generated points. Has shape (target_size, len(trustregion.center)).
+        np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
 
     """
-    n_points = _get_effective_n_points(target_size, existing_xs=existing_xs)
     n_params = len(trustregion.center)
 
     if n_points <= 0:
@@ -480,11 +468,3 @@ def _get_effective_bounds(trustregion, bounds):
         upper_bounds = np.clip(upper_bounds, -np.inf, bounds.upper)
 
     return Bounds(lower=lower_bounds, upper=upper_bounds)
-
-
-def _get_effective_n_points(target_size, existing_xs):
-    if existing_xs is not None:
-        n_points = max(0, target_size - len(existing_xs))
-    else:
-        n_points = target_size
-    return n_points
