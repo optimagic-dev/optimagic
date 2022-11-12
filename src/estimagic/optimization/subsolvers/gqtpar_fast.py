@@ -148,6 +148,7 @@ def gqtpar_fast(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     return result
 
 
+@njit
 def _get_initial_guess_for_lambdas(
     main_model,
 ):
@@ -177,15 +178,15 @@ def _get_initial_guess_for_lambdas(
     model_hessian = main_model.square_terms
 
     hessian_infinity_norm = np.linalg.norm(model_hessian, np.Inf)
-    hessian_frobenius_norm = np.linalg.norm(model_hessian, "fro")
+    hessian_frobenius_norm = np.linalg.norm(model_hessian)
 
     hessian_gershgorin_lower, hessian_gershgorin_upper = _compute_gershgorin_bounds(
-        main_model
+        main_model.square_terms
     )
 
     lambda_lower_bound = max(
         0,
-        -min(model_hessian.diagonal()),
+        -min(np.diag(model_hessian)),
         gradient_norm
         - min(hessian_gershgorin_upper, hessian_frobenius_norm, hessian_infinity_norm),
     )
@@ -328,7 +329,7 @@ def _check_for_interior_convergence_and_update(
         x_candidate = np.zeros_like(x_candidate)
         converged = True
 
-    s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
+    s_min, z_min = _estimate_smallest_singular_value(hessian_info.upper_triangular)
     step_len = 2
 
     if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas.candidate:
@@ -374,6 +375,7 @@ def _update_lambdas_when_factorization_unsuccessful(
     return lambdas_new
 
 
+@njit
 def _get_new_lambda_candidate(lower_bound, upper_bound):
     """Update current lambda so that it lies within its bounds.
 
@@ -392,7 +394,8 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
     return lambda_new_candidate
 
 
-def _compute_gershgorin_bounds(main_model):
+@njit
+def _compute_gershgorin_bounds(model_hessian):
     """Compute upper and lower Gregoshgorin bounds for a square matrix.
 
     The Gregoshgorin bounds are the upper and lower bounds for the
@@ -410,7 +413,6 @@ def _compute_gershgorin_bounds(main_model):
         - lower_bound (float): Lower Gregoshgorin bound.
         - upper_bound (float): Upper Gregoshgorin bound.
     """
-    model_hessian = main_model.square_terms
 
     hessian_diag = np.diag(model_hessian)
     hessian_diag_abs = np.abs(hessian_diag)
@@ -451,7 +453,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
     """Update candidate vector, hessian, and lambdas when x outside trust-region."""
     n = len(x_candidate)
 
-    s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
+    s_min, z_min = _estimate_smallest_singular_value(hessian_info.upper_triangular)
     step_len = _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min)
 
     quadratic_term = x_candidate.T @ hessian_info.hessian_plus_lambda @ x_candidate
@@ -616,7 +618,17 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
 
 
 @njit
-def block_jittable(u):
+def _estimate_condition(u):
+    """Return largest possible solution w to the system u.T w = e.
+
+    u is an upper triangular matrix, and components of e are selected from {+1, -1}.
+
+    Args:
+        u (np.ndarray): Upper triangular matrix of shape (n,n).
+    Returns:
+        w (np.ndarray): 1d array of len n.
+
+    """
     u = np.atleast_2d(u)
     m, n = u.shape
 
@@ -649,7 +661,7 @@ def block_jittable(u):
     return w
 
 
-def estimate_smallest_singular_value(u):
+def _estimate_smallest_singular_value(u):
     """Given upper triangular matrix ``U`` estimate the smallest singular
     value and the correspondent right singular vector in O(n**2) operations.
     Parameters
@@ -677,7 +689,7 @@ def estimate_smallest_singular_value(u):
            An estimate for the condition number of a matrix.  1979.
            SIAM Journal on Numerical Analysis, 16(2), 368-375.
     """
-    w = block_jittable(u)
+    w = _estimate_condition(u)
 
     # The system `U v = w` is solved using backward substitution.
     v = solve_triangular(u, w, check_finite=False)
