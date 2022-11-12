@@ -67,7 +67,7 @@ def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
         lower_bounds=np.array([1, -np.inf, -np.inf]),
         upper_bounds=np.array([np.inf, np.inf, -1]),
         algorithm=algorithm,
-        collect_history=False,
+        collect_history=True,
         skip_checks=True,
     )
 

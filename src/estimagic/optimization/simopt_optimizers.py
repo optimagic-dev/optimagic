@@ -1,11 +1,12 @@
 """Implement `simopt` optimizers.
 
-https://github.com/simopt-admin/simopt
+See: https://github.com/simopt-admin/simopt.
 
 """
 import numpy as np
 from estimagic.config import IS_SIMOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
+from estimagic.logging.database_utilities import list_of_dicts_to_dict_of_lists
 from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
@@ -80,73 +81,6 @@ def simopt_adam(
 
 
 @mark_minimizer(
-    name="simopt_aloe",
-    primary_criterion_entry="value",
-    needs_scaling=True,
-    is_available=IS_SIMOPT_INSTALLED,
-    is_global=True,
-)
-def simopt_aloe(
-    criterion,
-    derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    crn_across_solns=True,
-    r=30,
-    theta=0.2,
-    gamma=0.8,
-    alpha_max=10,
-    alpha_0=1.0,
-    epsilon_f=1.0,
-    sensitivity=10e-7,
-    _lambda=2.0,
-):
-    """Minimize a scalar function using the ALOE algorithm from SimOpt.
-
-    Algorithm Options
-    -----------------
-
-    - crn_across_solns (bool): Use CRN across solutions? Default True.
-    - r (int): Number of replications taken at each solution. Default 30.
-    - theta (float): Constant in the Armijo condition. Default 0.2.
-    - gamma (float): Constant for shrinking the step size. Default 0.8.
-    - alpha_max (int): Maximum step size. Default 10.
-    - alpha_0 (float): Initial step size. Default 1.0.
-    - epsilon_f (float): Additive constant in the Armijo condition. Default 1.0.
-    - sensitivity (float): Shrinking scale for variable bounds. Default 1e-7.
-    - _lambda (float): Magnifying factor for n_r inside the finite difference function.
-    Default 2.0.
-
-    """
-    solver_options = {
-        "crn_across_solns": crn_across_solns,
-        "r": r,
-        "theta": theta,
-        "gamma": alpha_max,
-        "alpha_max": alpha_0,
-        "alpha_0": epsilon_f,
-        "epsilon_f": gamma,
-        "sensitivity": sensitivity,
-        "lambda": _lambda,
-    }
-
-    out = _minimize_simopt(
-        algorithm="ALOE",
-        criterion=criterion,
-        derivative=derivative,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        solver_options=solver_options,
-        budget=stopping_max_iterations,
-    )
-    return out
-
-
-@mark_minimizer(
     name="simopt_astrodf",
     primary_criterion_entry="value",
     needs_scaling=True,
@@ -174,6 +108,12 @@ def simopt_astrodf(
     criticality_threshold=0.1,
 ):
     """Minimize a scalar function using the ASTRODF algorithm from SimOpt.
+
+    Note
+    ----
+    To get more accurate results in the case of binding bounds we revert the subtraction
+    of a fixed value from the bounds. See https://tinyurl.com/5fxcvw2k for details of
+    what the ASTRODF algorithm is doing.
 
     Algorithm Options
     -----------------
@@ -213,71 +153,12 @@ def simopt_astrodf(
         "criticality_threshold": criticality_threshold,
     }
 
+    # Revert bounds shifting of ASTRODF to improve accuracy. For details see docstring.
+    lower_bounds -= 0.01
+    upper_bounds += 0.01
+
     out = _minimize_simopt(
         algorithm="ASTRODF",
-        criterion=criterion,
-        derivative=None,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        solver_options=solver_options,
-        budget=stopping_max_iterations,
-    )
-    return out
-
-
-@mark_minimizer(
-    name="simopt_neldmd",
-    primary_criterion_entry="value",
-    needs_scaling=True,
-    is_available=IS_SIMOPT_INSTALLED,
-    is_global=True,
-)
-def simopt_neldmd(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    crn_across_solns=True,
-    r=30,
-    alpha=1.0,
-    gammap=0.5,
-    betap=0.5,
-    delta=0.5,
-    sensitivity=10e-7,
-    initial_spread=0.1,
-):
-    """Minimize a scalar function using the Nelder-Mead algorithm from SimOpt.
-
-    Algorithm Options
-    -----------------
-
-    - crn_across_solns (bool): Use CRN across solutions? Default True.
-    - r (int): Number of replications taken at each solution. Default 30.
-    - alpha (float): Reflection coefficient > 0. Default 1.0.
-    - gammap (float): Expansion coefficient > 1. Default 2.0.
-    - betap (float): Contraction coefficient > 0, < 1. Default 0.5.
-    - delta (float): Shrink factor > 0, < 1. Default 0.5.
-    - sensitivity (float): Shrinking scale for bounds. Default 10e-7.
-    - initial_spread (float): Fraction of the distance between bounds used to select
-    initial points. Default 1 / 10.
-
-    """
-    solver_options = {
-        "crn_across_solns": crn_across_solns,
-        "r": r,
-        "alpha": alpha,
-        "gammap": gammap,
-        "betap": betap,
-        "delta": delta,
-        "sensitivity": sensitivity,
-        "initial_spread": initial_spread,
-    }
-
-    out = _minimize_simopt(
-        algorithm="NELDMD",
         criterion=criterion,
         derivative=None,
         x=x,
@@ -298,8 +179,6 @@ def simopt_neldmd(
 def simopt_spsa(
     criterion,
     x,
-    lower_bounds,
-    upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     crn_across_solns=True,
@@ -313,6 +192,12 @@ def simopt_spsa(
     iter_pct=0.1,
 ):
     """Minimize a scalar function using the SPSA algorithm from SimOpt.
+
+    Note
+    ----
+
+    This algorithm is actually a bounded algorithm, however, due to accuracy reasons
+    we do not support it with bounds.
 
     Algorithm Options
     -----------------
@@ -351,8 +236,8 @@ def simopt_spsa(
         criterion=criterion,
         derivative=None,
         x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        lower_bounds=np.full_like(x, -np.inf),
+        upper_bounds=np.full_like(x, np.inf),
         solver_options=solver_options,
         budget=stopping_max_iterations,
     )
@@ -368,8 +253,6 @@ def simopt_spsa(
 def simopt_strong(
     criterion,
     x,
-    lower_bounds,
-    upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     crn_across_solns=True,
@@ -386,6 +269,12 @@ def simopt_strong(
     lambda_2=1.01,
 ):
     """Minimize a scalar function using the STRONG algorithm from SimOpt.
+
+    Note
+    ----
+
+    This algorithm is actually a bounded algorithm, however, due to accuracy reasons
+    we do not support it with bounds.
 
     Algorithm Options
     -----------------
@@ -425,8 +314,8 @@ def simopt_strong(
         criterion=criterion,
         derivative=None,
         x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        lower_bounds=np.full_like(x, -np.inf),
+        upper_bounds=np.full_like(x, np.inf),
         solver_options=solver_options,
         budget=stopping_max_iterations,
     )
@@ -463,10 +352,21 @@ def _minimize_simopt(
     solver.record_experiment_results = _do_nothing.__get__(solver, ProblemSolver)
     solver.run(n_macroreps=1)
 
+    criterion_history = criterion.keywords["history_container"]
+    criterion_history = list_of_dicts_to_dict_of_lists(criterion_history)
+    arg_min = np.argmin(criterion_history["criterion"])
+
     out = {
-        "solution_x": np.array(solver.all_recommended_xs[0][-1]),
-        "solution_criterion": np.nan,
+        "solution_x": criterion_history["params"][arg_min],
+        "solution_criterion": criterion_history["criterion"][arg_min],
+        "n_criterion_evaluations": len(criterion_history["criterion"]),
     }
+    if derivative is not None:
+        derivative_history = derivative.keywords["history_container"]
+        derivative_history = list_of_dicts_to_dict_of_lists(derivative_history)
+        out["solution_derivative"] = derivative_history["criterion"][arg_min]
+        out["n_derivative_evaluations"] = len(derivative_history["criterion"])
+
     return out
 
 
