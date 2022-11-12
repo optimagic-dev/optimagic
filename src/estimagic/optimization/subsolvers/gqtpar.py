@@ -69,7 +69,7 @@ def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
                 solution.
     """
     hessian_info = HessianInfo()
-
+    x_candidate = np.zeros_like(model.linear_terms)
     # Small floating point number signaling that for vectors smaller
     # than that backward substituition is not reliable.
     # See Golub, G. H., Van Loan, C. F. (2013), "Matrix computations", p.165.
