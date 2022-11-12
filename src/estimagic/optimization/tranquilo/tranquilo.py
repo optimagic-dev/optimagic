@@ -21,6 +21,7 @@ from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.tranquilo_history import History
+from estimagic.optimization.tranquilo.weighting import get_weighter
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 
 
@@ -43,6 +44,7 @@ def _tranquilo(
     radius_factors=None,
     sampler_options=None,
     counter="count_all",
+    weighter="no_weights",
     fit_options=None,
     solver_options=None,
     conv_options=None,
@@ -200,6 +202,8 @@ def _tranquilo(
 
     count_points = get_counter(counter, bounds=bounds)
 
+    calculate_weights = get_weighter(weighter, bounds=bounds)
+
     _, _first_fval, _first_indices = wrapped_criterion(x)
 
     state = State(
@@ -222,7 +226,7 @@ def _tranquilo(
     converged, msg = False, None
     for _ in range(stopping_max_iterations):
         # ==============================================================================
-        # sampling
+        # find, filter and count points
         # ==============================================================================
         old_indices = history.get_indices_in_trustregion(state.trustregion)
         old_xs = history.get_xs(old_indices)
@@ -235,6 +239,9 @@ def _tranquilo(
 
         n_effective_points = count_points(filtered_xs, trustregion=state.trustregion)
 
+        # ==============================================================================
+        # sample new points
+        # ==============================================================================
         n_to_sample = max(0, target_sample_size - n_effective_points)
 
         new_xs = sample_points(
@@ -257,9 +264,11 @@ def _tranquilo(
         # build surrogate and optimize it
         # ==============================================================================
 
+        weights = calculate_weights(model_xs, trustregion=state.trustregion)
+
         centered_xs = (model_xs - state.trustregion.center) / state.trustregion.radius
 
-        vector_model = fit_model(centered_xs, model_fvecs)
+        vector_model = fit_model(centered_xs, model_fvecs, weights=weights)
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,
