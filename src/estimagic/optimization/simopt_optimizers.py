@@ -11,13 +11,6 @@ from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
 
-try:
-    from simopt.base import Model
-    from simopt.base import Problem
-    from simopt.experiment_base import ProblemSolver
-except ImportError:
-    pass
-
 
 @mark_minimizer(
     name="simopt_adam",
@@ -380,63 +373,67 @@ def _do_nothing(self):
 # ======================================================================================
 
 
-class ProblemSpecification(Problem):
-    def __init__(
-        self,
-        criterion,
-        derivative,
-        x,
-        lower_bounds,
-        upper_bounds,
-        budget,
-        fixed_factors=None,
-    ):
-        fixed_factors = {} if fixed_factors is None else fixed_factors
-        self.name = "ProblemSpecification"
-        self.dim = len(x)
-        self.n_objectives = 1
-        self.n_stochastic_constraints = 0
-        self.minmax = (-1,)  # minimize objective
-        self.lower_bounds = lower_bounds
-        self.upper_bounds = upper_bounds
-        self.gradient_available = derivative is not None
-        self.model_default_factors = {}
-        self.specifications = {
-            "initial_solution": {"default": x},
-            "budget": {"default": budget},
-        }
-        super().__init__(fixed_factors, model_fixed_factors={})
-        self.model = CriterionWrapper(
-            criterion=criterion,
-            gradient=derivative,
-            x=x,
-        )
+if IS_SIMOPT_INSTALLED:
+    from simopt.base import Model
+    from simopt.base import Problem
+    from simopt.experiment_base import ProblemSolver
 
-    def vector_to_factor_dict(self, x):
-        return {"x": x}
+    class ProblemSpecification(Problem):
+        def __init__(
+            self,
+            criterion,
+            derivative,
+            x,
+            lower_bounds,
+            upper_bounds,
+            budget,
+            fixed_factors=None,
+        ):
+            fixed_factors = {} if fixed_factors is None else fixed_factors
+            self.name = "ProblemSpecification"
+            self.dim = len(x)
+            self.n_objectives = 1
+            self.n_stochastic_constraints = 0
+            self.minmax = (-1,)  # minimize objective
+            self.lower_bounds = lower_bounds
+            self.upper_bounds = upper_bounds
+            self.gradient_available = derivative is not None
+            self.model_default_factors = {}
+            self.specifications = {
+                "initial_solution": {"default": x},
+                "budget": {"default": budget},
+            }
+            super().__init__(fixed_factors, model_fixed_factors={})
+            self.model = CriterionWrapper(
+                criterion=criterion,
+                gradient=derivative,
+                x=x,
+            )
 
-    def factor_dict_to_vector(self, d):
-        return d["x"]
+        def vector_to_factor_dict(self, x):
+            return {"x": x}
 
-    def response_dict_to_objectives(self, d):
-        return (d["value"],)
+        def factor_dict_to_vector(self, d):
+            return d["x"]
 
+        def response_dict_to_objectives(self, d):
+            return (d["value"],)
 
-class CriterionWrapper(Model):
-    def __init__(self, criterion, gradient, x):
-        self.n_rngs = 0
-        self.n_responses = 1
-        self.specifications = {"x": {"default": x}}
-        self.criterion = criterion
-        self.gradient_available = gradient is not None
-        self.gradient = gradient
-        super().__init__(fixed_factors={})
+    class CriterionWrapper(Model):
+        def __init__(self, criterion, gradient, x):
+            self.n_rngs = 0
+            self.n_responses = 1
+            self.specifications = {"x": {"default": x}}
+            self.criterion = criterion
+            self.gradient_available = gradient is not None
+            self.gradient = gradient
+            super().__init__(fixed_factors={})
 
-    def replicate(self, rng_list):
-        x = np.array(self.factors["x"])
-        criterion = {"value": self.criterion(x)}
-        if self.gradient_available:
-            gradient = {"value": {"x": self.gradient(x)}}
-        else:
-            gradient = None
-        return criterion, gradient
+        def replicate(self, rng_list):
+            x = np.array(self.factors["x"])
+            criterion = {"value": self.criterion(x)}
+            if self.gradient_available:
+                gradient = {"value": {"x": self.gradient(x)}}
+            else:
+                gradient = None
+            return criterion, gradient
