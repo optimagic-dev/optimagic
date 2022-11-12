@@ -70,6 +70,8 @@ def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     """
     hessian_info = HessianInfo()
 
+    x_candidate = np.zeros_like(model.linear_terms)
+
     # Small floating point number signaling that for vectors smaller
     # than that backward substituition is not reliable.
     # See Golub, G. H., Van Loan, C. F. (2013), "Matrix computations", p.165.
@@ -383,7 +385,7 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
         float: New candidate for the damping factor lambda.
     """
     lambda_new_candidate = max(
-        np.sqrt(lower_bound * upper_bound),
+        np.sqrt(np.clip(lower_bound * upper_bound, 0, np.inf)),
         lower_bound + 0.01 * (upper_bound - lower_bound),
     )
 

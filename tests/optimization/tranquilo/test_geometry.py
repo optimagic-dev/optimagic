@@ -10,7 +10,7 @@ def test_geometry_checker():
     sampler = get_sampler("sphere", bounds=None)
     trustregion = TrustRegion(center=np.zeros(2), radius=1)
 
-    x = sampler(trustregion, target_size=10, rng=rng)
+    x = sampler(trustregion, n_points=10, rng=rng)
     x_scaled = x * 0.5
 
     quality_calculator, cutoff_simulator = get_geometry_checker_pair(
@@ -34,7 +34,7 @@ def test_geometry_checker_scale_invariance():
     trustregion = TrustRegion(center=np.zeros(2), radius=1)
     trustregion_scaled = TrustRegion(center=np.ones(2), radius=2)
 
-    x = sampler(trustregion, target_size=10, rng=rng)
+    x = sampler(trustregion, n_points=10, rng=rng)
     x_scaled = 1 + 2 * x
 
     quality_calculator, _ = get_geometry_checker_pair(
