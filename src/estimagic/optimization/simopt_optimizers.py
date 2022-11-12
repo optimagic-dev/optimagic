@@ -1,4 +1,8 @@
-"""Implement `simopt` optimizers."""
+"""Implement `simopt` optimizers.
+
+https://github.com/simopt-admin/simopt
+
+"""
 import numpy as np
 from estimagic.config import IS_SIMOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
@@ -104,6 +108,7 @@ def simopt_aloe(
 
     Algorithm Options
     -----------------
+
     - crn_across_solns (bool): Use CRN across solutions? Default True.
     - r (int): Number of replications taken at each solution. Default 30.
     - theta (float): Constant in the Armijo condition. Default 0.2.
@@ -179,11 +184,11 @@ def simopt_astrodf(
     - eta_2 (float): Threshhold for a very successful iteration. Default 0.5.
     - gamma_1 (float): Very successful step trust-region radius increase. Default 2.0.
     - gamma_2 (float): Unsuccessful step trust-region radius decrease. Default 0.5.
-    - w (float): trust-region radius rate of shrinkage in contracation loop. Default
+    - w (float): Trust-region radius rate of shrinkage in contracation loop. Default
     0.85.
-    - mu (int): trust-region radius ratio upper bound in contraction loop. Default 1000.
-    - beta (int): trust-region radius ratio lower bound in contraction loop. Default 10.
-    - lambda_min (int): minimum sample size value. Default 8.
+    - mu (int): Trust-region radius ratio upper bound in contraction loop. Default 1000.
+    - beta (int): Trust-region radius ratio lower bound in contraction loop. Default 10.
+    - lambda_min (int): Minimum sample size value. Default 8.
     - simple_solve (bool): Solve subproblem with Cauchy point (rough approximate)?
     Default False.
     - criticality_select (bool): Skip contraction loop if not near critical
@@ -443,14 +448,9 @@ def _minimize_simopt(
     solver_options,
     budget,
 ):
-    gradient_info = {
-        "gradient_available": derivative is not None,
-        "gradient": derivative,
-    }
-
-    problem = MinimzerClass(
+    problem = ProblemSpecification(
         criterion=criterion,
-        gradient_info=gradient_info,
+        derivative=derivative,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -459,15 +459,15 @@ def _minimize_simopt(
     solver = ProblemSolver(
         solver_name=algorithm, problem=problem, solver_fixed_factors=solver_options
     )
-    # overwrite method of simopt ProblemSolver class that pickles interim results
+    # overwrite method of simopt ProblemSolver class that pickles temporary results
     solver.record_experiment_results = _do_nothing.__get__(solver, ProblemSolver)
     solver.run(n_macroreps=1)
 
-    processed = {
+    out = {
         "solution_x": np.array(solver.all_recommended_xs[0][-1]),
-        "solution_criterion": 0,
+        "solution_criterion": np.nan,
     }
-    return processed
+    return out
 
 
 def _do_nothing(self):
@@ -479,73 +479,63 @@ def _do_nothing(self):
 # ======================================================================================
 
 
-class CriterionClass(Model):
-    def __init__(self, criterion, gradient_info, x, fixed_factors=None):
-        fixed_factors = {} if fixed_factors is None else fixed_factors
-        self.n_rngs = 0
-        self.n_responses = 1
-        self.specifications = {"x": {"default": x}}
-        self.criterion = criterion
-        self.gradient_info = gradient_info
-        super().__init__(fixed_factors)
-
-    def replicate(self, rng_list):
-        x = np.array(self.factors["x"])
-        responses = {"value": self.criterion(x)}
-        if self.gradient_info["gradient_available"]:
-            gradients = {"value": {"x": self.gradient_info["gradient"](x)}}
-        else:
-            gradients = {"value": {"x": np.nan}}
-        return responses, gradients
-
-
-class MinimzerClass(Problem):
+class ProblemSpecification(Problem):
     def __init__(
         self,
         criterion,
-        gradient_info,
+        derivative,
         x,
         lower_bounds,
         upper_bounds,
         budget,
         fixed_factors=None,
-        model_fixed_factors=None,
     ):
         fixed_factors = {} if fixed_factors is None else fixed_factors
-        model_fixed_factors = {} if model_fixed_factors is None else model_fixed_factors
-        self.name = "MinimizerClass"
+        self.name = "ProblemSpecification"
         self.dim = len(x)
         self.n_objectives = 1
         self.n_stochastic_constraints = 0
         self.minmax = (-1,)  # minimize objective
-        self.constraint_type = "box"
-        self.variable_type = "continuous"
         self.lower_bounds = lower_bounds
         self.upper_bounds = upper_bounds
-        self.gradient_available = gradient_info["gradient_available"]
+        self.gradient_available = derivative is not None
         self.model_default_factors = {}
-        self.model_decision_factors = {"x"}
-        self.factors = fixed_factors
         self.specifications = {
             "initial_solution": {"default": x},
             "budget": {"default": budget},
         }
-        super().__init__(fixed_factors, model_fixed_factors)
-        self.model = CriterionClass(
+        super().__init__(fixed_factors, model_fixed_factors={})
+        self.model = CriterionWrapper(
             criterion=criterion,
-            gradient_info=gradient_info,
+            gradient=derivative,
             x=x,
-            fixed_factors=self.model_fixed_factors,
         )
 
-    def vector_to_factor_dict(self, vector):
-        factor_dict = {"x": vector}
-        return factor_dict
+    def vector_to_factor_dict(self, x):
+        return {"x": x}
 
-    def factor_dict_to_vector(self, factor_dict):
-        vector = factor_dict["x"]
-        return vector
+    def factor_dict_to_vector(self, d):
+        return d["x"]
 
-    def response_dict_to_objectives(self, response_dict):
-        objectives = (response_dict["value"],)
-        return objectives
+    def response_dict_to_objectives(self, d):
+        return (d["value"],)
+
+
+class CriterionWrapper(Model):
+    def __init__(self, criterion, gradient, x):
+        self.n_rngs = 0
+        self.n_responses = 1
+        self.specifications = {"x": {"default": x}}
+        self.criterion = criterion
+        self.gradient_available = gradient is not None
+        self.gradient = gradient
+        super().__init__(fixed_factors={})
+
+    def replicate(self, rng_list):
+        x = np.array(self.factors["x"])
+        criterion = {"value": self.criterion(x)}
+        if self.gradient_available:
+            gradient = {"value": {"x": self.gradient(x)}}
+        else:
+            gradient = None
+        return criterion, gradient
