@@ -12,6 +12,7 @@ from estimagic.optimization.subsolvers.bntr_fast import (
 from estimagic.optimization.subsolvers.gqtpar import (
     gqtpar,
 )
+from estimagic.optimization.subsolvers.gqtpar_fast import gqtpar_fast
 from estimagic.optimization.tranquilo.models import evaluate_model
 from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
 
@@ -63,6 +64,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
         "bntr": bntr,
         "bntr_fast": bntr_fast,
         "gqtpar": gqtpar,
+        "gqtpar_fast": gqtpar_fast,
         "thorough": solve_thorough,
     }
 

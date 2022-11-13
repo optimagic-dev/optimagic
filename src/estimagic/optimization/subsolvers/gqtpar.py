@@ -384,6 +384,7 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
     Returns:
         float: New candidate for the damping factor lambda.
     """
+
     lambda_new_candidate = max(
         np.sqrt(np.clip(lower_bound * upper_bound, 0, np.inf)),
         lower_bound + 0.01 * (upper_bound - lower_bound),
