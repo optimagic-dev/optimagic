@@ -6,7 +6,7 @@ from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from numpy.testing import assert_array_almost_equal as aaae
 
-solvers = ["bntr", "bntr_fast", "gqtpar"]
+solvers = ["bntr", "bntr_fast", "gqtpar", "gqtpar_fast"]
 
 
 @pytest.mark.parametrize("solver_name", solvers, ids=solvers)
@@ -45,5 +45,5 @@ def test_without_bounds(solver_name):
         trustregion=trustregion,
     )
 
-    if solver_name == "gqtpar":
+    if solver_name in ["gqtpar", "gqtpar_fast"]:
         aaae(calculated["x"], expected_x)

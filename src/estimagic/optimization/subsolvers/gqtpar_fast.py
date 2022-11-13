@@ -87,7 +87,7 @@ def gqtpar_fast(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
                 hessian_plus_lambda,
                 hessian_upper_triangular,
                 factorization_info,
-            ) = add_lambda_and_factorize_hessian(model_hessian, lambda_candidate)
+            ) = _add_lambda_and_factorize_hessian(model_hessian, lambda_candidate)
 
         if factorization_info == 0 and gradient_norm > zero_threshold:
             (
@@ -162,25 +162,21 @@ def gqtpar_fast(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
 def _get_initial_guess_for_lambdas(model_gradient, model_hessian):
     """Return good initial guesses for lambda, its lower and upper bound.
 
-    Given a trust-region radius, good initial guesses for the damping factor lambda,
-    along with its lower bound and upper bound, are computed.
-
     The values are chosen accordingly to the guidelines on
     section 7.3.8 (p. 192) from :cite:`Conn2000`.
 
     Args:
-        main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
+        model_gradient (np.ndarray): 1d array, of len n, of linear terms of the
+            surrogate model.
+        model_hessian (np.ndarray): 2d array, of shape (n,n), of square terms of the
+            surrogate model.
 
     Returns:
-        (dict): Dictionary containing the initial guess for the damping
-            factor lambda, along with its lower and upper bound.
-            The respective keys are:
-            - "candidate"
-            - "upper_bound"
-            - "lower_bound"
+        lambda_candidate (float): initial guess for damping factor
+        lambda_lower_bound (float): initial guess for the lower bound of the damping
+            factor.
+        lambda_upper_bound(float): initial guess for the upper bound of the damping
+            factor.
     """
     gradient_norm = _norm(model_gradient, -1.0)
     model_hessian = model_hessian
@@ -214,40 +210,25 @@ def _get_initial_guess_for_lambdas(model_gradient, model_hessian):
     return lambda_candidate, lambda_lower_bound, lambda_upper_bound
 
 
-def add_lambda_and_factorize_hessian(model_hessian, lambda_candidate):
+def _add_lambda_and_factorize_hessian(model_hessian, lambda_candidate):
     """Add lambda to hessian and factorize it into its upper triangular matrix.
 
     Args:
-        main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
-        hessian_info (NamedTuple): Named tuple containing transformations
-            of the hessian, i.e. square_terms, from the main model. The keys are:
-
-            - ``hessian_plus_lambda`` (np.ndarray): The square terms of the main model
+        model_hessian (np.ndarray): 2d array, of shape (n,n), of square terms of the
+            surrogate model.
+        lambda_candidate (float): dampig factor.
+    Returns:
+        hessian_plus_lambda (np.ndarray):  The square terms of the main model
                 plus the identity matrix times lambda. 2d array of shape (n, n).
-            - ``upper_triangular`` (np.ndarray): Factorization of the hessian from the
+        hessian_upper_triangular (np.ndarray): Factorization of the hessian from the
                 main model into its upper triangular matrix. The diagonal is filled
                 and the lower lower triangular contains zeros.
-                2d array of shape (n, n).
-            - ``info_already_factorized`` (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-
-    Returns:
-        Tuple:
-        - hessian_info (dict): Named tuple containing the updated transformations
-            of the hessian, i.e. square_terms, from the main model. See above.
-        - factorization_info (int): Non-negative integer k indicating whether the
-            factorization of the hessian into its upper triangular matrix has been
-            successful.
-            If k = 0, the factorization has been successful.
-            A value k > 0 means that the leading k by k submatrix constitues the
-            first non-positive definite leading submatrix of the hessian.
+        factorization_info (int): success flag returned by scipy.dpotrf
     """
-    n = model_hessian.shape[0]
 
-    hessian_plus_lambda = model_hessian + lambda_candidate * _identity(n)
+    hessian_plus_lambda = model_hessian + lambda_candidate * _identity(
+        model_hessian.shape[0]
+    )
     hessian_upper_triangular, factorization_info = compute_cholesky_factorization(
         hessian_plus_lambda,
         lower=False,
@@ -397,7 +378,7 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
         float: New candidate for the damping factor lambda.
     """
     lambda_new_candidate = max(
-        np.sqrt(lower_bound * upper_bound),
+        np.sqrt(max(0, lower_bound * upper_bound)),
         lower_bound + 0.01 * (upper_bound - lower_bound),
     )
 
@@ -413,15 +394,11 @@ def _compute_gershgorin_bounds(model_hessian):
     the main model). See :cite:`Conn2000`.
 
     Args:
-        main_model (NamedTuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - ``linear_terms``, a np.ndarray of shape (n,) and
-            - ``square_terms``, a np.ndarray of shape (n,n).
-
+        model_hessian (np.ndarray): 2d array, of shape (n,n), with square terms of the
+            surrogate model
     Returns:
-        Tuple:
-        - lower_bound (float): Lower Gregoshgorin bound.
-        - upper_bound (float): Upper Gregoshgorin bound.
+        lower_gershgorin (float): Lower Gregoshgorin bound.
+        upper_gershgorin (float): Upper Gregoshgorin bound.
     """
 
     hessian_diag = np.diag(model_hessian)
@@ -439,8 +416,7 @@ def _compute_newton_step(lambda_candidate, p_norm, w_norm):
     """Compute the Newton step.
 
     Args:
-        lambdas (NamedTuple): Named tuple containing the current candidate
-            value for the damping factor lambda, its lower bound and upper bound.
+        lambda_candidate (float): Damping factor.
         p_norm (float): Frobenius (i.e. L2-norm) of the candidate vector.
         w_norm (float): Frobenius (i.e. L2-norm) of vector w, which is the solution
             to the following triangular system: U.T w = p.
@@ -465,7 +441,6 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
     converged,
 ):
     """Update candidate vector, hessian, and lambdas when x outside trust-region."""
-    n = len(x_candidate)
 
     s_min, z_min = _estimate_smallest_singular_value(hessian_upper_triangular)
     step_len = _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min)
@@ -479,7 +454,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
 
     lambda_new_lower_bound = max(lambda_lower_bound, lambda_candidate - s_min**2)
 
-    hessian_plus_lambda = model_hessian + newton_step * _identity(n)
+    hessian_plus_lambda = model_hessian + newton_step * _identity(len(x_candidate))
     _, factorization_unsuccessful = compute_cholesky_factorization(
         hessian_plus_lambda,
         lower=False,
@@ -535,44 +510,6 @@ def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
     return step_len
 
 
-def _solve_scalar_quadratic_equation(z, d):
-    """Return the sorted values that solve the scalar quadratic equation.
-
-    Solve the scalar quadratic equation ||z + t d|| == trustregion_radius.
-    This is like a line-sphere intersection.
-
-
-    Computation of the ``aux`` step, ``ta`` and ``tb`` is mathematically equivalent
-    to equivalent the following calculation:
-
-    ta = (-b - sqrt_discriminant) / (2*a)
-    tb = (-b + sqrt_discriminant) / (2*a)
-
-    but produces smaller round-off errors.
-    For more details, look at "Matrix Computation" p.97.
-
-    Args:
-        z (np.ndarray): Eigenvector of the upper triangular hessian matrix.
-        d (float): Smallest singular value of the upper triangular of the
-            hessian matrix.
-
-    Returns
-        Tuple: The two values of t, sorted from low to high.
-        - (float) Lower value of t.
-        - (float) Higher value of t.
-    """
-    a = d.T @ d
-    b = 2 * z.T @ d
-    c = z.T @ z - 1
-    sqrt_discriminant = np.sqrt(b * b - 4 * a * c)
-
-    aux = b + np.copysign(sqrt_discriminant, b)
-    ta = -aux / (2 * a)
-    tb = -2 * c / aux
-
-    return ta, tb
-
-
 def _compute_terms_to_make_leading_submatrix_singular(
     hessian_upper_triangular, hessian_plus_lambda, k
 ):
@@ -587,10 +524,10 @@ def _compute_terms_to_make_leading_submatrix_singular(
     hessian matrix.
 
     Args:
-        hessian (np.ndarray): Symmetric k by k hessian matrix, which is not
-            positive definite.
-        upper_triangular (np.ndarray) Upper triangular matrix resulting of an
+        hessian_upper_triangular (np.ndarray) Upper triangular matrix resulting of an
             incomplete Cholesky decomposition of the hessian matrix.
+        hessian_plus_lambda (np.ndarray): Symmetric k by k hessian matrix, which is not
+            positive definite.
         k (int): Positive integer such that the leading k by k submatrix from
             hessian is the first non-positive definite leading submatrix.
 
@@ -603,14 +540,13 @@ def _compute_terms_to_make_leading_submatrix_singular(
     """
     hessian_plus_lambda = hessian_plus_lambda
     upper_triangular = hessian_upper_triangular
-    n = len(hessian_plus_lambda)
 
     delta = (
         np.sum(upper_triangular[: k - 1, k - 1] ** 2)
         - hessian_plus_lambda[k - 1, k - 1]
     )
 
-    v = np.zeros(n)
+    v = np.zeros(len(hessian_plus_lambda))
     v[k - 1] = 1
 
     if k != 1:
@@ -635,9 +571,8 @@ def _estimate_condition(u):
 
     """
     u = np.atleast_2d(u)
-    m, n = u.shape
 
-    if m != n:
+    if u.shape[0] != u.shape[1]:
         raise ValueError("A square triangular matrix should be provided.")
 
     # A vector `e` with components selected from {+1, -1}
@@ -645,13 +580,13 @@ def _estimate_condition(u):
     # `U.T w = e` is as large as possible. Implementation
     # based on algorithm 3.5.1, p. 142, from reference [2]
     # adapted for lower triangular matrix.
-
-    p = np.zeros(n)
-    w = np.zeros(n)
+    m = u.shape[0]
+    p = np.zeros(m)
+    w = np.zeros(m)
 
     # Implemented according to:  Golub, G. H., Van Loan, C. F. (2013).
     # "Matrix computations". Forth Edition. JHU press. pp. 140-142.
-    for k in range(n):
+    for k in range(m):
         wp = (1 - p[k]) / u.T[k, k]
         wm = (-1 - p[k]) / u.T[k, k]
         pp = p[k + 1 :] + u.T[k + 1 :, k] * wp
@@ -666,38 +601,42 @@ def _estimate_condition(u):
     return w
 
 
-def _estimate_smallest_singular_value(u):
-    """Given upper triangular matrix ``U`` estimate the smallest singular
-    value and the correspondent right singular vector in O(n**2) operations.
-    Parameters
-    ----------
-    U : ndarray
-        Square upper triangular matrix.
-    Returns
-    -------
-    s_min : float
-        Estimated smallest singular value of the provided matrix.
-    z_min : ndarray
-        Estimatied right singular vector.
-    Notes
-    -----
-    The procedure is based on [1] and is done in two steps. First, it finds
-    a vector ``e`` with components selected from {+1, -1} such that the
-    solution ``w`` from the system ``U.T w = e`` is as large as possible.
-    Next it estimate ``U v = w``. The smallest singular value is close
-    to ``norm(w)/norm(v)`` and the right singular vector is close
-    to ``v/norm(v)``.
-    The estimation will be better more ill-conditioned is the matrix.
-    References
-    ----------
+def _estimate_smallest_singular_value(upper_triangular):
+    """Estimate the smallest singular vlue and the correspondent right singular vector.
+
+    Given an upper triangular matrix `u`, performs in O(n**2) operations and returns
+    estimated values of smalles singular value and the correspondent right singular
+    vector.
+
+    Based on estimate_smallest_singular_value from scipy.optimize._trustregion_exact,
+    jitting some calculations in a separate function and calling them here.
+
+    Args:
+        upper_triangular (np.ndarray) : Square upper triangular matrix of shape (n,n)
+
+    Returns:
+        s_min (float): Estimated smallest singular value of the provided matrix.
+        z_min (np.ndarray): Estimatied right singular vector.
+
+    Notes:
+        The procedure is based on [1] and is done in two steps. First, it finds
+        a vector ``e`` with components selected from {+1, -1} such that the
+        solution ``w`` from the system ``U.T w = e`` is as large as possible.
+        Next it estimate ``U v = w``. The smallest singular value is close
+        to ``norm(w)/norm(v)`` and the right singular vector is close
+        to ``v/norm(v)``.
+        The estimation will be better more ill-conditioned is the matrix.
+
+    References:
     .. [1] Cline, A. K., Moler, C. B., Stewart, G. W., Wilkinson, J. H.
-           An estimate for the condition number of a matrix.  1979.
-           SIAM Journal on Numerical Analysis, 16(2), 368-375.
+        An estimate for the condition number of a matrix.  1979.
+        SIAM Journal on Numerical Analysis, 16(2), 368-375.
+
     """
-    w = _estimate_condition(u)
+    w = _estimate_condition(upper_triangular)
 
     # The system `U v = w` is solved using backward substitution.
-    v = solve_triangular(u, w)
+    v = solve_triangular(upper_triangular, w)
 
     v_norm = _norm(v, -1.0)
     w_norm = _norm(w, -1.0)
@@ -713,6 +652,7 @@ def _estimate_smallest_singular_value(u):
 
 @njit
 def _norm(a, order):
+    """A wrapper to jit np.linalg.norm."""
     if order == -1:
         out = np.linalg.norm(a)
     else:
@@ -721,5 +661,6 @@ def _norm(a, order):
 
 
 @njit
-def _identity(n):
-    return np.eye(n)
+def _identity(dim):
+    """A wrapper to jit np.eye."""
+    return np.eye(dim)
