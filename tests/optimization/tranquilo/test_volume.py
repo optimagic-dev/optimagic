@@ -6,6 +6,12 @@ from estimagic.optimization.tranquilo.volume import _sphere_radius
 from estimagic.optimization.tranquilo.volume import _sphere_volume
 from estimagic.optimization.tranquilo.volume import get_radius
 from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
+from estimagic.optimization.tranquilo.volume import (
+    get_radius_of_cube_with_volume_of_sphere,
+)
+from estimagic.optimization.tranquilo.volume import (
+    get_radius_of_sphere_with_volume_of_cube,
+)
 from estimagic.optimization.tranquilo.volume import get_volume
 
 dims = dims = [1, 2, 3, 4, 12, 13, 15]
@@ -18,6 +24,26 @@ coeffs = [
     128 * np.pi**6 / 135135,
     256 * np.pi**7 / 2027025,
 ]
+
+
+@pytest.mark.parametrize("dim", dims)
+def test_get_radius_of_sphere_with_volume_of_cube(dim):
+    cube_radius = 1.5
+    scaling_factor = 0.95
+    vol = _cube_volume(cube_radius, dim) * scaling_factor
+    expected = _sphere_radius(vol, dim)
+    got = get_radius_of_sphere_with_volume_of_cube(cube_radius, dim, scaling_factor)
+    assert np.allclose(got, expected)
+
+
+@pytest.mark.parametrize("dim", dims)
+def test_get_radius_of_cube_with_volume_of_sphere(dim):
+    sphere_radius = 1.5
+    scaling_factor = 0.95
+    vol = _sphere_volume(sphere_radius, dim) * scaling_factor
+    expected = _cube_radius(vol, dim)
+    got = get_radius_of_cube_with_volume_of_sphere(sphere_radius, dim, scaling_factor)
+    assert np.allclose(got, expected)
 
 
 @pytest.mark.parametrize("dim", dims)
