@@ -35,7 +35,7 @@ def test_get_initial_guess_for_lambda():
     expected = init_lambdas_orig(model)
     assert res[0] == expected.candidate
     assert res[1] == expected.lower_bound
-    assert res[2] == expected.upper_bound
+    aaae(res[2], expected.upper_bound)
 
 
 def test_find_new_candidate_and_update_parameters():
