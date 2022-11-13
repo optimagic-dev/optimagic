@@ -1,6 +1,9 @@
 """Implement `simopt` optimizers.
 
-See: https://github.com/simopt-admin/simopt.
+
+.. note::
+    `simopt`'s SPSA and STRONG support box constraints, i.e. parameter bounds. However,
+    for the moment they are not supported.
 
 """
 import numpy as np
@@ -36,18 +39,7 @@ def simopt_adam(
 ):
     """Minimize a scalar function using the ADAM algorithm from SimOpt.
 
-    Algorithm Options
-    -----------------
-
-    - crn_across_solns (bool): Use CRN across solutions? Default True.
-    - r (int): Number of replications taken at each solution. Default 1.
-    - beta_1 (float): Exponential decay of the rate for the first moment estimates.
-    Default 0.9.
-    - beta_2 (float): Exponential decay rate for the second-moment estimates. Default
-    0.999.
-    - alpha (float): Step size. Default 1.0.
-    - epsilon (float): A small value to prevent zero-division. Default 10e-8.
-    - sensitivity (float): Shrinking scale for variable bounds. Default 10e-7.
+    For details see :ref:`list_of_scipy_algorithms`.
 
     """
     solver_options = {
@@ -103,32 +95,7 @@ def simopt_astrodf(
 ):
     """Minimize a scalar function using the ASTRODF algorithm from SimOpt.
 
-    Note
-    ----
-    To get more accurate results in the case of binding bounds we revert the subtraction
-    of a large value from the bounds, and replace it with a small one: `bounds_padding`.
-    See https://tinyurl.com/5fxcvw2k for details of what the ASTRODF algorithm is doing.
-
-    Algorithm Options
-    -----------------
-
-    - crn_across_solns (bool): Use CRN across solutions? Default True.
-    - delta_max (float): Maximum value of the trust-region radius. Default 50.0
-    - eta_1 (float): Threshhold for a successful iteration. Default 0.1.
-    - eta_2 (float): Threshhold for a very successful iteration. Default 0.5.
-    - gamma_1 (float): Very successful step trust-region radius increase. Default 2.0.
-    - gamma_2 (float): Unsuccessful step trust-region radius decrease. Default 0.5.
-    - w (float): Trust-region radius rate of shrinkage in contracation loop. Default
-    0.85.
-    - mu (int): Trust-region radius ratio upper bound in contraction loop. Default 1000.
-    - beta (int): Trust-region radius ratio lower bound in contraction loop. Default 10.
-    - lambda_min (int): Minimum sample size value. Default 8.
-    - simple_solve (bool): Solve subproblem with Cauchy point (rough approximate)?
-    Default False.
-    - criticality_select (bool): Skip contraction loop if not near critical
-    region? Default True.
-    - criticality_threshold (float): Threshold on gradient norm indicating
-    near-critical region. Default 0.1.
+    For details see :ref:`list_of_scipy_algorithms`.
 
     """
     solver_options = {
@@ -187,30 +154,7 @@ def simopt_spsa(
 ):
     """Minimize a scalar function using the SPSA algorithm from SimOpt.
 
-    Note
-    ----
-
-    This algorithm is actually a bounded algorithm, however, due to accuracy reasons
-    we do not support it with bounds.
-
-    Algorithm Options
-    -----------------
-
-    - crn_across_solns (bool): Use CRN across solutions? Default True.
-    - alpha (float): Non-negative coefficient in the SPSA gain sequecence ak. Default
-    0.602.
-    - gamma (float): Non-negative coefficient in the SPSA gain sequence ck. Default
-    0.101.
-    - step (float): Initial desired magnitude of change in the theta elements. Default
-    0.5.
-    - gavg (int): Averaged SP gradients used per iteration. Default 1.
-    - n_reps (int): Number of replications takes at each solution. Default 2.
-    - n_loss (int): Number of loss function evaluations used in this gain calculation.
-    Default 2.
-    - eval_pct (float): Percentage of the expected number of loss evaluations per run.
-    Default 2/3.
-    - iter_pct (float): Percentage of the maximum expected number of iterations. Default
-    0.1.
+    For details see :ref:`list_of_scipy_algorithms`.
 
     """
     solver_options = {
@@ -264,28 +208,7 @@ def simopt_strong(
 ):
     """Minimize a scalar function using the STRONG algorithm from SimOpt.
 
-    Note
-    ----
-
-    This algorithm is actually a bounded algorithm, however, due to accuracy reasons
-    we do not support it with bounds.
-
-    Algorithm Options
-    -----------------
-
-    - crn_across_solns (bool): Use CRN across solutions? Default True.
-    - n0 (int): Initial sample size Default 10.
-    - n_r (int): Number of replications taken at each solution. Default 1.
-    - sensitivity (float): Shrinking scale for VarBds. Default 10e-7.
-    - delta_threshold (float): Maximum value of the radius. Default 1.2.
-    - delta_T (float): Initial size of trust region. Default 2.0.
-    - eta_0 (float): Constant for accepting. Default 0.01.
-    - eta_1 (float): Constant for more confident accepting. Default 0.3.
-    - gamma_1 (float): Constant for shrinking the trust region. Default 0.9.
-    - gamma_2 (float): Constant for expanding the trust region. Default 1.11.
-    - lambda (int): Magnifying factor for n_r inside the finite difference function.
-    Default 2.
-    - lambda_2 (float): Magnifying factor for n_r in stage I and stage II. Default 1.01.
+    For details see :ref:`list_of_scipy_algorithms`.
 
     """
     solver_options = {
