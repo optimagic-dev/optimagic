@@ -17,7 +17,6 @@ def get_radius_after_volume_scaling(radius, dim, scaling_factor):
 
 
 def get_radius_of_sphere_with_volume_of_cube(cube_radius, dim, scaling_factor):
-    # might be numerically unstable for high dim -> derive better version
     log_radius = (
         loggamma(dim / 2 + 1) / dim
         - np.log(np.pi) / 2
@@ -30,7 +29,6 @@ def get_radius_of_sphere_with_volume_of_cube(cube_radius, dim, scaling_factor):
 
 
 def get_radius_of_cube_with_volume_of_sphere(sphere_radius, dim, scaling_factor):
-    # might be numerically unstable for high dim -> derive better version
     log_radius = (
         np.log(scaling_factor) / dim
         + np.log(np.pi) / 2
