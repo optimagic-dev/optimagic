@@ -1,12 +1,16 @@
 import numpy as np
 import pytest
+from estimagic.optimization.tranquilo.geometry import build_interpolation_matrix
 from estimagic.optimization.tranquilo.geometry import get_geometry_checker_pair
+from estimagic.optimization.tranquilo.geometry import get_lagrange_polynomial
 from estimagic.optimization.tranquilo.geometry import (
     maximize_absolute_value_trust_trsbox,
 )
+from estimagic.optimization.tranquilo.geometry import poisedness_constant
 from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
+from numpy.testing import assert_allclose
 from numpy.testing import assert_array_almost_equal
 
 
@@ -16,6 +20,10 @@ def aaae(x, y, case=None):
         "hessian": 3,
     }
     assert_array_almost_equal(x, y, decimal=tolerance[case])
+
+
+def _evaluate_scalar_model(x, intercept, linear_terms, square_terms):
+    return intercept + linear_terms.T @ x + 0.5 * x.T @ square_terms @ x
 
 
 def test_geometry_checker():
@@ -62,6 +70,87 @@ def test_geometry_checker_scale_invariance():
 
 
 # =====================================================================================
+
+
+TEST_CASES = [
+    (np.array([[1, 0.0], [0.0, 1]]), 1.0 + np.sqrt(2.0)),
+    (
+        np.array(
+            [
+                [-0.45, -0.4],
+                [-0.4, -0.45],
+                [0.45, 0.4],
+                [0.4, 0.45],
+                [0.35, 0.35],
+            ]
+        ),
+        1179.497744338786,
+    ),
+    (
+        np.array(
+            [
+                [0.024, -0.4994],
+                [-0.468, -0.177],
+                [-0.313, 0.39],
+                [0.482, -0.132],
+            ]
+        ),
+        3.226777830135947,
+    ),
+]
+
+
+@pytest.mark.parametrize("sample, expected", TEST_CASES)
+def test_poisedness_constant(sample, expected):
+    n_params = 2
+
+    lower_bounds = -1 * np.ones(n_params)
+    upper_bounds = 1 * np.ones(n_params)
+
+    out = poisedness_constant(sample, lower_bounds, upper_bounds)
+
+    assert_allclose(out, expected)
+
+
+TEST_CASES = [
+    (np.array([[0.0, 0.0], [3.2, -0.1]]), np.array([2.2, -0.1])),
+    (
+        np.array([[0.0, 0.0], [1.0, 0.0], [-0.1, 0.0]]),
+        np.array([0.1, 0.9]),
+    ),
+    (
+        np.array([[0.0, 0.0], [1.0, 0.0], [-0.1, 0.0], [-0.1, 2.0]]),
+        np.array([0.1, 0.9]),
+    ),
+    (
+        np.array([[0.0, 0.0], [1.0, 0.0], [-0.1, 0.0], [-0.1, 2.0], [-1.1, 1.0]]),
+        np.array([0.1, 0.9]),
+    ),
+]
+
+
+@pytest.mark.parametrize("sample, center", TEST_CASES)
+def test_lagrange_polynomial(sample, center):
+
+    sample_with_center = np.row_stack((center, sample))
+    n_samples = len(sample_with_center)
+
+    sample_centered = sample - center
+
+    for index in range(n_samples):
+        intercept, linear_terms, square_terms = get_lagrange_polynomial(
+            sample_with_center,
+            sample_centered,
+            index,
+        )
+
+        for j in range(n_samples):
+            x_centered = sample_with_center[j] - center
+            critval = _evaluate_scalar_model(
+                x_centered, intercept, linear_terms, square_terms
+            )
+            expected_value = 1 if index == j else 0
+            aaae(critval, expected_value)
 
 
 TEST_CASES = [
@@ -196,3 +285,39 @@ def test_improve_geometry_trsbox_quadratic(
         scalar_model, trustregion, lower_bounds, upper_bounds
     )
     aaae(x_out, x_expected, case)
+
+
+TEST_CASES = [
+    (np.array([[-2.2, 0.1], [1.0, 0.0]]), np.array([[-2.2, 0.1], [1.0, 0.0]])),
+    (
+        np.array([[-0.1, -0.9], [0.9, -0.9], [-0.2, -0.9]]),
+        np.array(
+            [
+                [0.3362, 0.2592, 0.34445, -0.1, -0.9],
+                [0.2592, 1.3122, 0.19845, 0.9, -0.9],
+                [0.34445, 0.19845, 0.36125, -0.2, -0.9],
+                [-0.1, 0.9, -0.2, 0.0, 0.0],
+                [-0.9, -0.9, -0.9, 0.0, 0.0],
+            ]
+        ),
+    ),
+    (
+        np.array([[-0.1, -0.9], [0.9, -0.9], [-0.2, -0.9], [-0.2, 1.1]]),
+        np.array(
+            [
+                [0.3362, 0.2592, 0.34445, 0.47045, -0.1, -0.9],
+                [0.2592, 1.3122, 0.19845, 0.68445, 0.9, -0.9],
+                [0.34445, 0.19845, 0.36125, 0.45125, -0.2, -0.9],
+                [0.47045, 0.68445, 0.45125, 0.78125, -0.2, 1.1],
+                [-0.1, 0.9, -0.2, -0.2, 0.0, 0.0],
+                [-0.9, -0.9, -0.9, 1.1, 0.0, 0.0],
+            ]
+        ),
+    ),
+]
+
+
+@pytest.mark.parametrize("sample, expected", TEST_CASES)
+def test_get_interpolation_matrix(sample, expected):
+    mat = build_interpolation_matrix(sample.T)
+    aaae(mat, expected)

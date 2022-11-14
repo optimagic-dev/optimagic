@@ -2,6 +2,7 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import _get_effective_bounds
 from estimagic.optimization.tranquilo.sample_points import (
@@ -94,8 +95,8 @@ def log_d_quality_calculator(sample, trustregion, bounds):
 
     Args:
         sample (np.ndarray): The data sample, shape = (n, p).
-        trustregion:
-        bounds:
+        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        bounds (Bounds): The parameter bounds.
 
     Returns:
         np.ndarray: The criterion values, shape = (n, ).
@@ -111,6 +112,48 @@ def log_d_quality_calculator(sample, trustregion, bounds):
 
 
 # =====================================================================================
+
+
+def poisedness_constant(sample, lower_bounds, upper_bounds):
+    """Calculate the poisedness constant of the points inside the trust region.
+
+    Args:
+        sample (np.ndarray): The data sample, shape = (n, p).
+        bounds (Bounds): The parameter bounds.
+
+    Returns:
+        float: The maximum absolute criterion value.
+
+    """
+    n_samples, n_params = sample.shape
+    trustregion = TrustRegion(center=np.zeros(n_params), radius=1)
+
+    sample_with_center = np.row_stack((trustregion.center, sample))
+    critval_max = -999
+
+    for index in range(n_samples + 1):
+        intercept, linear_terms, square_terms = get_lagrange_polynomial(
+            sample_with_center,
+            sample,
+            index,
+        )
+
+        scalar_model = ScalarModel(
+            intercept=intercept, linear_terms=linear_terms, square_terms=square_terms
+        )
+        xmax = maximize_absolute_value_trust_trsbox(
+            scalar_model,
+            trustregion,
+            lower_bounds,
+            upper_bounds,
+        )
+
+        critval_current = abs(_evaluate_scalar_model(xmax, scalar_model))
+
+        if critval_current > critval_max:
+            critval_max = critval_current
+
+    return critval_max
 
 
 def maximize_absolute_value_trust_trsbox(
@@ -184,6 +227,112 @@ def maximize_absolute_value_trust_trsbox(
         x_out = x_max
 
     return x_out
+
+
+def get_lagrange_polynomial(
+    sample,
+    sample_without_xopt,
+    index,
+):
+    n_samples, n_params = sample.shape
+
+    center_index = 0
+    center = sample[center_index]
+    row_index = index - 1
+
+    if n_samples == n_params + 1:
+        if row_index >= 0:
+            rhs = np.zeros(n_params)
+            rhs[row_index] = 1.0
+        else:
+            rhs = -np.ones(n_params)
+    elif n_samples == (n_params + 1) * (n_params + 2) // 2:
+        if row_index >= 0:
+            rhs = np.zeros(n_samples - 1)
+            rhs[row_index] = 1.0
+        else:
+            rhs = -np.ones(n_samples - 1)
+    else:
+        rhs = np.zeros(n_samples + n_params - 1)
+        if row_index >= 0:
+            rhs[row_index] = 1.0
+        else:
+            rhs[: n_samples - 1] = -1.0
+
+    interpolation_mat = build_interpolation_matrix(sample_without_xopt.T)
+    coef, *_ = np.linalg.lstsq(interpolation_mat, rhs, rcond=None)
+
+    intercept = 1.0 if index == center_index else 0.0
+
+    if n_samples == n_params + 1:
+        grad = coef
+        hess = np.zeros((n_params, n_params))
+    elif n_samples == (n_params + 1) * (n_params + 2) // 2:
+        grad = coef[:n_params]
+        hess = _build_symmetric_matrix_from_vector(coef[n_params:], n_params)
+    else:
+        grad = coef[n_samples - 1 :]
+        fval_row_idx = np.arange(1, n_samples)
+
+        hess = np.zeros((n_params, n_params))
+        for i in range(n_samples - 1):
+            dx = sample[fval_row_idx[i]] - center
+            hess += coef[i] * np.outer(dx, dx)
+
+    return intercept, grad, hess
+
+
+def build_interpolation_matrix(sample):
+    n_params, n_samples = sample.shape
+    assert (
+        n_params + 1 <= n_samples + 1 <= (n_params + 1) * (n_params + 2) // 2
+    ), "npt must be in range [n+1, (n+1)(n+2)/2]"
+
+    if n_samples == n_params:
+        mat = sample.T
+    elif n_samples + 1 == (n_params + 1) * (n_params + 2) // 2:
+        mat = np.empty((n_samples, n_samples))
+        mat[:, :n_params] = sample.T
+        for i in range(n_samples):
+            mat[i, n_params:] = _to_upper_triangular_vector(
+                np.outer(sample[:, i], sample[:, i])
+                - 0.5 * np.diag(np.square(sample[:, i]))
+            )
+    else:
+        mat = np.zeros((n_samples + n_params, n_samples + n_params))
+        for i in range(n_samples):
+            for j in range(n_samples):
+                mat[i, j] = 0.5 * np.dot(sample[:, i], sample[:, j]) ** 2
+        mat[:n_samples, n_samples:] = sample.T
+        mat[n_samples:, :n_samples] = sample
+
+    return mat
+
+
+def _build_symmetric_matrix_from_vector(entries, n):
+    mat = np.empty((n, n))
+    idx = -1
+
+    for j in range(n):
+        for i in range(j + 1):
+            idx += 1
+            mat[i, j] = entries[idx]
+            mat[j, i] = entries[idx]
+
+    return mat
+
+
+def _to_upper_triangular_vector(triu):
+    n = triu.shape[0]
+    vec = np.empty(n * (n + 1) // 2)
+    idx = -1
+
+    for j in range(n):
+        for i in range(j + 1):
+            idx += 1
+            vec[idx] = triu[i, j]
+
+    return vec
 
 
 def _evaluate_scalar_model(x, scalar_model):
