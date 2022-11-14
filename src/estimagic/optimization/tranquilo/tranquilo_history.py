@@ -21,7 +21,7 @@ class History:
         self.functype = functype
 
         if functype == "scalar":
-            self.aggregate = lambda x: x
+            self.aggregate = lambda x: x.flatten()
         elif functype == "likelihood":
             self.aggregate = lambda x: x.sum(axis=-1)
         elif functype == "least_squares":
@@ -41,16 +41,20 @@ class History:
                 least square fvecs.
         """
         xs = np.atleast_2d(xs)
-        if len(xs) == 0:
+
+        n_new_points = len(xs) if xs.size != 0 else 0
+
+        if n_new_points == 0:
             return
 
         if self.functype == "scalar":
             fvecs = np.reshape(fvecs, (-1, 1))
         else:
             fvecs = np.atleast_2d(fvecs)
+
         fvals = np.atleast_1d(self.aggregate(fvecs))
 
-        if len(xs) != len(fvecs):
+        if n_new_points != len(fvecs):
             raise ValueError()
 
         self.xs = _add_entries_to_array(self.xs, xs, self.n_fun)
@@ -160,15 +164,17 @@ def _add_entries_to_array(arr, new, position):
         shape = 100_000 if new.ndim == 1 else (100_000, new.shape[1])
         arr = np.full(shape, np.nan)
 
-    if len(arr) - position - len(new) < 0:
-        n_extend = max(len(arr), len(new))
+    n_new_points = len(new) if new.size != 0 else 0
+
+    if len(arr) - position - n_new_points < 0:
+        n_extend = max(len(arr), n_new_points)
         if arr.ndim == 2:
             extension_shape = (n_extend, arr.shape[1])
             arr = np.vstack([arr, np.full(extension_shape, np.nan)])
         else:
             arr = np.hstack([arr, np.full(n_extend, np.nan)])
 
-    arr[position : position + len(new)] = new
+    arr[position : position + n_new_points] = new
 
     return arr
 

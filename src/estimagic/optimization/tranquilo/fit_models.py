@@ -4,6 +4,8 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.models import n_interactions
+from estimagic.optimization.tranquilo.models import n_second_order_terms
 from estimagic.optimization.tranquilo.models import VectorModel
 from numba import njit
 from scipy.linalg import qr_multiply
@@ -99,9 +101,10 @@ def get_fitter(fitter, user_options=None, model_info=None):
 def _fitter_template(
     x,
     y,
-    fitter,
-    model_info,
-    options,
+    weights=None,
+    fitter=None,
+    model_info=None,
+    options=None,
 ):
     """Fit a model to data.
 
@@ -120,8 +123,15 @@ def _fitter_template(
     Returns:
         VectorModel or ScalarModel: Results container.
     """
-    n_params = x.shape[1]
+    n_samples, n_params = x.shape
     n_residuals = y.shape[1]
+
+    # weight the data in order to get weighted fitting from fitters that do not support
+    # weights. Inspired by: https://stackoverflow.com/a/52452833
+    if weights is not None:
+        _root_weights = np.sqrt(weights).reshape(n_samples, 1)
+        y = y * _root_weights
+        x = x * _root_weights
 
     coef = fitter(x, y, model_info, **options)
 
@@ -369,16 +379,15 @@ def _get_current_fit_minimal_frobenius_norm_of_hessian(
 
     for k in range(n_residuals):
         z_y_vec = np.dot(z_mat.T, y[:, k])
-        coeffs_first_stage = np.linalg.solve(
-            np.atleast_2d(n_z_mat_square),
-            np.atleast_1d(z_y_vec),
+        coeffs_first_stage, *_ = np.linalg.lstsq(
+            np.atleast_2d(n_z_mat_square), np.atleast_1d(z_y_vec), rcond=None
         )
 
         coeffs_second_stage = np.atleast_2d(n_z_mat) @ coeffs_first_stage
 
         rhs = y[:, k] - n_mat @ coeffs_second_stage
 
-        alpha = np.linalg.solve(m_mat, rhs[: n_params + 1])
+        alpha, *_ = np.linalg.lstsq(m_mat, rhs[: n_params + 1], rcond=None)
         coeffs_linear[k, :] = alpha[offset : (n_params + 1)]
 
         coeffs_square[k] = coeffs_second_stage
@@ -442,11 +451,11 @@ def _polynomial_features(x, has_squares):
     n_samples, n_params = x.shape
 
     if has_squares:
-        n_poly_terms = n_params * (n_params + 1) // 2
+        n_poly_terms = n_second_order_terms(n_params)
     else:
-        n_poly_terms = n_params * (n_params - 1) // 2
+        n_poly_terms = n_interactions(n_params)
 
-    poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
+    poly_terms = np.empty((n_poly_terms, n_samples), np.float64)
     xt = x.T
 
     idx = 0

@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from estimagic.optimization.tranquilo.filter_points import _scaled_square_features
 from estimagic.optimization.tranquilo.filter_points import drop_collinear_pounders
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.tranquilo import State
@@ -40,14 +41,18 @@ def basic_case():
     )
     indices = np.arange(len(xs))
 
+    trustregion = TrustRegion(radius=radius, center=x_accepted)
+
     state = State(
-        index=20,
+        safety=False,
+        trustregion=trustregion,
+        model_indices=None,
         model=None,
-        rho=None,
-        radius=radius,
+        index=20,
         x=x_accepted,
-        fvec=0,
         fval=0,
+        rho=None,
+        accepted=True,
     )
 
     expected_indices = np.array([20, 19, 18, 17, 16, 15, 13, 12, 8, 5, 4, 3, 2, 1, 0])
@@ -208,3 +213,10 @@ def test_drop_collinear_pounders(test_case, request):
 
     assert_equal(filtered_indices, expected_indices)
     aaae(filtered_xs, expected_xs)
+
+
+def test_scaled_square_features():
+    x = np.arange(4).reshape(2, 2)
+    got = _scaled_square_features(x)
+    expected = np.array([[0, 0, 1 / 2], [2, 6 / np.sqrt(2), 9 / 2]])
+    assert_equal(got, expected)

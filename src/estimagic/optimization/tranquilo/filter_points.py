@@ -1,4 +1,5 @@
 import numpy as np
+from estimagic.optimization.tranquilo.models import n_second_order_terms
 from numba import njit
 from scipy.linalg import qr_multiply
 
@@ -22,6 +23,7 @@ def get_sample_filter(sample_filter="keep_all"):
     built_in_filters = {
         "discard_all": discard_all,
         "keep_all": keep_all,
+        "keep_sphere": keep_sphere,
         "drop_collinear": drop_collinear,
         "drop_pounders": drop_collinear_pounders,
     }
@@ -44,6 +46,12 @@ def keep_all(xs, indices, state):
     return xs, indices
 
 
+def keep_sphere(xs, indices, state):
+    dists = np.linalg.norm(xs - state.trustregion.center, axis=1)
+    keep = dists <= state.trustregion.radius
+    return xs[keep], indices[keep]
+
+
 def drop_collinear(xs, indices, state):
     """Make sure that the points that are kept are linearly independent."""
     raise NotImplementedError()
@@ -62,13 +70,13 @@ def drop_collinear_pounders(xs, indices, state):
 def _drop_collinear_pounders(xs, indices, state):
     theta2 = 1e-4
     n_samples, n_params = xs.shape
-    n_poly_terms = n_params * (n_params + 1) // 2
+    n_poly_terms = n_second_order_terms(n_params)
 
     indices_reverse = indices[::-1]
     indexer_reverse = np.arange(n_samples)[::-1]
 
-    radius = state.radius
-    center = state.x
+    radius = state.trustregion.radius
+    center = state.trustregion.center
     index_center = int(np.where(indices_reverse == state.index)[0])
     centered_xs = (xs - center) / radius
 
@@ -97,7 +105,9 @@ def _drop_collinear_pounders(xs, indices, state):
             continue
 
         linear_features[counter, 1:] = centered_xs[index]
-        square_features[counter, :] = _square_features(linear_features[counter, 1:])
+        square_features[counter, :] = _scaled_square_features(
+            linear_features[counter, 1:]
+        )
 
         linear_features_pad = np.zeros((n_samples, n_samples))
         linear_features_pad[:n_samples, : n_params + 1] = linear_features
@@ -127,7 +137,7 @@ def _get_polynomial_feature_matrices(
     square_features = np.zeros((n_samples, n_poly_terms))
 
     linear_features[0, 1:] = centered_xs[indexer[index_center]]
-    square_features[0, :] = _square_features(linear_features[0, 1:]).flatten()
+    square_features[0, :] = _scaled_square_features(linear_features[0, 1:]).flatten()
 
     _is_center_in_head = index_center < n_params
     idx_list_n = [i for i in range(n_params + _is_center_in_head) if i != index_center]
@@ -135,7 +145,7 @@ def _get_polynomial_feature_matrices(
 
     linear_features[:, 0] = 1
     linear_features[: n_params + 1, 1:] = centered_xs[indexer[idx_list_n_plus_1]]
-    square_features[: n_params + 1, :] = _square_features(
+    square_features[: n_params + 1, :] = _scaled_square_features(
         linear_features[: n_params + 1, 1:]
     )
 
@@ -145,16 +155,29 @@ def _get_polynomial_feature_matrices(
 
 
 @njit
-def _square_features(x):
-    n_samples, n_params = np.atleast_2d(x).shape
-    n_poly_terms = n_params * (n_params + 1) // 2
+def _scaled_square_features(x):
+    """Construct scaled interaction and square terms.
 
-    poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
+    The interaction terms are scaled by 1 / sqrt{2} while the square terms are scaled
+    by 1 / 2.
+
+    Args:
+        x (np.ndarray): Array of shape (n_samples, n_params).
+
+    Returns:
+        np.ndarray: Scaled interaction and square terms. Has shape (n_samples,
+            n_params + (n_params - 1) * n_params / 1).
+
+    """
+    n_samples, n_params = np.atleast_2d(x).shape
+    n_poly_terms = n_second_order_terms(n_params)
+
+    poly_terms = np.empty((n_poly_terms, n_samples), np.float64)
     xt = x.T
 
     idx = 0
     for i in range(n_params):
-        poly_terms[idx] = 0.5 * xt[i] ** 2
+        poly_terms[idx] = xt[i] ** 2 / 2
         idx += 1
 
         for j in range(i + 1, n_params):

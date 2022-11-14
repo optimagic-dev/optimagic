@@ -7,17 +7,23 @@ import numpy as np
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
+from estimagic.optimization.tranquilo.count_points import get_counter
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
+from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
 from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.models import n_free_params
 from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import ConvOptions
+from estimagic.optimization.tranquilo.options import RadiusFactors
 from estimagic.optimization.tranquilo.options import RadiusOptions
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.tranquilo_history import History
+from estimagic.optimization.tranquilo.weighting import get_sample_weighter
+from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 
 
 def _tranquilo(
@@ -31,16 +37,22 @@ def _tranquilo(
     random_seed=925408,
     sampler="sphere",
     sample_filter="keep_all",
-    fitter="ols",
+    fitter=None,
     subsolver="bntr",
     sample_size=None,
     surrogate_model=None,
     radius_options=None,
+    radius_factors=None,
     sampler_options=None,
+    counter="count_all",
+    weighter="no_weights",
     fit_options=None,
     solver_options=None,
     conv_options=None,
+    batch_evaluator="joblib",
+    n_cores=1,
     silence_experimental_warning=False,
+    infinity_handling="relative",
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -82,6 +94,8 @@ def _tranquilo(
         solver_options (dict or NoneType): Additional keyword arguments passed to the
             sub-solver function.
         conv_options (NamedTuple or NoneType): Criteria for successful convergence.
+        batch_evaluator (str or callabler)
+        n_cores (int): Number of cores.
 
     Returns:
         (dict): Results dictionary with the following items:
@@ -109,6 +123,8 @@ def _tranquilo(
 
     if radius_options is None:
         radius_options = RadiusOptions()
+    if radius_factors is None:
+        radius_factors = RadiusFactors()
     if sampler_options is None:
         sampler_options = {}
     if fit_options is None:
@@ -127,6 +143,12 @@ def _tranquilo(
         x=x,
     )
 
+    if fitter is None:
+        if functype == "scalar":
+            fitter = "powell"
+        else:
+            fitter = "ols"
+
     if functype == "scalar":
         aggregator = "identity"
     elif functype == "likelihood":
@@ -144,9 +166,22 @@ def _tranquilo(
     # ==================================================================================
 
     history = History(functype=functype)
+
+    wrapped_criterion = get_wrapped_criterion(
+        criterion=criterion,
+        batch_evaluator=batch_evaluator,
+        n_cores=n_cores,
+        history=history,
+    )
+
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
-    trustregion = TrustRegion(center=x, radius=radius_options.initial_radius)
-    sample_points = get_sampler(sampler, bounds=bounds, user_options=sampler_options)
+    sample_points = get_sampler(
+        sampler,
+        bounds=bounds,
+        model_info=model_info,
+        radius_factors=radius_factors,
+        user_options=sampler_options,
+    )
     filter_points = get_sample_filter(sample_filter)
 
     aggregate_vector_model = get_aggregator(
@@ -167,18 +202,26 @@ def _tranquilo(
         bounds=bounds,
     )
 
-    first_eval = criterion(x)
-    history.add_entries(x, first_eval)
+    count_points = get_counter(counter, bounds=bounds)
+
+    calculate_weights = get_sample_weighter(weighter, bounds=bounds)
+
+    clip_infinite_values = get_infinity_handler(infinity_handling)
+
+    _, _first_fval, _first_indices = wrapped_criterion(x)
 
     state = State(
-        index=0,
+        safety=False,
+        trustregion=TrustRegion(center=x, radius=radius_options.initial_radius),
+        model_indices=_first_indices,
         model=None,
-        rho=None,
-        radius=trustregion.radius,
-        x=history.get_xs(0),
-        fvec=history.get_fvecs(0),
-        fval=history.get_fvals(0),
+        index=0,
+        x=x,
+        fval=_first_fval,
+        rho=np.nan,
+        accepted=True,
     )
+
     states = [state]
 
     # ==================================================================================
@@ -186,7 +229,10 @@ def _tranquilo(
     # ==================================================================================
     converged, msg = False, None
     for _ in range(stopping_max_iterations):
-        old_indices = history.get_indices_in_trustregion(trustregion)
+        # ==============================================================================
+        # find, filter and count points
+        # ==============================================================================
+        old_indices = history.get_indices_in_trustregion(state.trustregion)
         old_xs = history.get_xs(old_indices)
 
         filtered_xs, filtered_indices = filter_points(
@@ -195,42 +241,54 @@ def _tranquilo(
             state=state,
         )
 
-        if state.index not in filtered_indices:
-            raise ValueError()
+        n_effective_points = count_points(filtered_xs, trustregion=state.trustregion)
+
+        # ==============================================================================
+        # sample new points
+        # ==============================================================================
+        n_to_sample = max(0, target_sample_size - n_effective_points)
 
         new_xs = sample_points(
-            trustregion=trustregion,
-            target_size=target_sample_size,
+            trustregion=state.trustregion,
+            n_points=n_to_sample,
             existing_xs=filtered_xs,
             rng=sampling_rng,
         )
 
-        new_fvecs = [criterion(_x) for _x in new_xs]
-        new_indices = np.arange(history.get_n_fun(), history.get_n_fun() + len(new_xs))
-        history.add_entries(new_xs, new_fvecs)
+        # ==============================================================================
+        # criterion evaluations
+        # ==============================================================================
 
+        _, _, new_indices = wrapped_criterion(new_xs)
         model_indices = np.hstack([filtered_indices, new_indices])
-
         model_xs = history.get_xs(model_indices)
         model_fvecs = history.get_fvecs(model_indices)
 
-        centered_xs = (model_xs - trustregion.center) / trustregion.radius
+        # ==============================================================================
+        # build surrogate and optimize it
+        # ==============================================================================
 
-        vector_model = fit_model(centered_xs, model_fvecs)
+        weights = calculate_weights(model_xs, trustregion=state.trustregion)
+
+        centered_xs = (model_xs - state.trustregion.center) / state.trustregion.radius
+
+        clipped_fvecs = clip_infinite_values(model_fvecs)
+
+        vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,
-            fvec_center=state.fvec,
         )
 
-        sub_sol = solve_subproblem(model=scalar_model, trustregion=trustregion)
+        sub_sol = solve_subproblem(model=scalar_model, trustregion=state.trustregion)
+
+        # ==============================================================================
+        # acceptance decision
+        # ==============================================================================
 
         candidate_x = sub_sol["x"]
 
-        candidate_fvec = criterion(candidate_x)
-        candidate_index = history.get_n_fun()
-        history.add_entries(candidate_x, candidate_fvec)
-        candidate_fval = history.get_fvals(-1)
+        _, candidate_fval, candidate_index = wrapped_criterion(candidate_x)
         actual_improvement = -(candidate_fval - state.fval)
 
         rho = _calculate_rho(
@@ -238,34 +296,49 @@ def _tranquilo(
             expected_improvement=sub_sol["expected_improvement"],
         )
 
-        new_radius = adjust_radius(
-            radius=trustregion.radius,
+        is_accepted = actual_improvement > 0
+
+        # ==============================================================================
+        # update state with information on this iteration
+        # ==============================================================================
+
+        state = state._replace(
+            model_indices=model_indices,
+            model=scalar_model,
             rho=rho,
-            step=candidate_x - state.x,
-            options=radius_options,
+            accepted=is_accepted,
         )
 
-        if actual_improvement > 0:
-            trustregion = trustregion._replace(center=candidate_x, radius=new_radius)
-            state = State(
-                index=candidate_index,
-                model=scalar_model,
-                rho=rho,
-                radius=new_radius,
-                x=candidate_x,
-                fvec=history.get_fvecs(candidate_index),
-                fval=history.get_fvals(candidate_index),
-            )
-
-        else:
-            trustregion = trustregion._replace(radius=new_radius)
+        if is_accepted:
             state = state._replace(
-                model=scalar_model,
-                rho=rho,
-                radius=new_radius,
+                index=candidate_index, x=candidate_x, fval=candidate_fval
             )
 
         states.append(state)
+
+        # ==============================================================================
+        # update state for beginning of next iteration
+        # ==============================================================================
+
+        new_radius = adjust_radius(
+            radius=state.trustregion.radius,
+            rho=rho,
+            step=candidate_x - state.trustregion.center,
+            options=radius_options,
+        )
+
+        if is_accepted:
+            new_trustregion = state.trustregion._replace(
+                center=candidate_x, radius=new_radius
+            )
+        else:
+            new_trustregion = state.trustregion._replace(radius=new_radius)
+
+        state = state._replace(trustregion=new_trustregion)
+
+        # ==============================================================================
+        # convergence check
+        # ==============================================================================
 
         if actual_improvement >= 0 and not disable_convergence:
             converged, msg = _is_converged(states=states, options=conv_options)
@@ -292,18 +365,28 @@ def _calculate_rho(actual_improvement, expected_improvement):
         rho = -np.inf
     else:
         rho = actual_improvement / expected_improvement
-
     return rho
 
 
 class State(NamedTuple):
-    index: int
+    # Whether this is a safety iteration
+    safety: bool
+
+    # the trustregion at the beginning of the iteration
+    trustregion: TrustRegion
+
+    # Information about the model used to make the acceptance decision in the iteration
+    model_indices: np.ndarray
     model: ScalarModel
-    rho: float
-    radius: float
+
+    # accepted parameters and function values at the end of the iteration
+    index: int
     x: np.ndarray
-    fvec: np.ndarray
-    fval: np.ndarray
+    fval: np.ndarray  # this is an estimate for noisy functions
+
+    # success Information
+    rho: float
+    accepted: bool
 
 
 def _is_converged(states, options):
@@ -349,10 +432,10 @@ def _process_surrogate_model(surrogate_model, functype):
     elif isinstance(surrogate_model, str):
         if surrogate_model == "linear":
             out = ModelInfo(has_squares=False, has_interactions=False)
-        elif surrogate_model == "quadratic":
-            out = ModelInfo(has_squares=True, has_interactions=True)
         elif surrogate_model == "diagonal":
             out = ModelInfo(has_squares=True, has_interactions=False)
+        elif surrogate_model == "quadratic":
+            out = ModelInfo(has_squares=True, has_interactions=True)
         else:
             raise ValueError(f"Invalid surrogate model: {surrogate_model}")
 
@@ -371,11 +454,11 @@ def _process_sample_size(user_sample_size, model_info, x):
     elif isinstance(user_sample_size, str):
         user_sample_size = user_sample_size.replace(" ", "")
         if user_sample_size in ["linear", "n+1"]:
-            out = len(x) + 1
+            out = n_free_params(dim=len(x), info_or_name="linear")
         elif user_sample_size in ["powell", "2n+1", "2*n+1"]:
             out = 2 * len(x) + 1
         elif user_sample_size == "quadratic":
-            out = len(x) * (len(x) + 1) // 2 + len(x) + 1
+            out = n_free_params(dim=len(x), info_or_name="quadratic")
         else:
             raise ValueError(f"Invalid sample size: {user_sample_size}")
 

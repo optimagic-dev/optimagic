@@ -3,12 +3,16 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_bntr_quadratic,
+from estimagic.optimization.subsolvers.bntr import (
+    bntr,
 )
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_gqtpar_quadratic,
+from estimagic.optimization.subsolvers.bntr_fast import (
+    bntr_fast,
 )
+from estimagic.optimization.subsolvers.gqtpar import (
+    gqtpar,
+)
+from estimagic.optimization.subsolvers.gqtpar_fast import gqtpar_fast
 from estimagic.optimization.tranquilo.models import evaluate_model
 from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
 
@@ -57,8 +61,10 @@ def get_subsolver(solver, user_options=None, bounds=None):
     user_options = {} if user_options is None else user_options
 
     built_in_solvers = {
-        "bntr": minimize_bntr_quadratic,
-        "gqtpar": minimize_gqtpar_quadratic,
+        "bntr": bntr,
+        "bntr_fast": bntr_fast,
+        "gqtpar": gqtpar,
+        "gqtpar_fast": gqtpar_fast,
         "thorough": solve_thorough,
     }
 
@@ -77,7 +83,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     default_options = {
         "maxiter": 20,
         "maxiter_gradient_descent": 5,
-        "conjugate_gradient_method": "trsbox",
+        "conjugate_gradient_method": "cg",
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,
@@ -96,13 +102,13 @@ def get_subsolver(solver, user_options=None, bounds=None):
 
     valid_bounds = {"lower_bounds", "upper_bounds"}.intersection(args)
 
-    bounds_dict = {}
-    if bounds is None:
-        bounds_dict["lower_bounds"] = None
-        bounds_dict["upper_bounds"] = None
-    else:
-        bounds_dict["lower_bounds"] = getattr(bounds, "lower", None)
-        bounds_dict["upper_bounds"] = getattr(bounds, "upper", None)
+    bounds_dict = {"lower_bounds": None, "upper_bounds": None}
+    if bounds is not None:
+        for type_ in ["lower", "upper"]:
+            if hasattr(bounds, type_):
+                candidate = getattr(bounds, type_)
+                if candidate is not None and np.isfinite(candidate).any():
+                    bounds_dict[f"{type_}_bounds"] = candidate
 
     for name, value in bounds_dict.items():
         if name not in valid_bounds and value is not None:

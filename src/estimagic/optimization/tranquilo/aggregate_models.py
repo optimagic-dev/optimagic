@@ -9,18 +9,14 @@ def get_aggregator(aggregator, functype, model_info):
 
     Args:
         aggregator (str or callable): Name of an aggregator or aggregator function.
-            The function must take as arguments (in that order):
+            The function must take as argument:
             - vector_model (VectorModel): A fitted vector model.
-            - fvec_center (np.ndarray): A 1d array of the residuals at the center of the
-            trust-region. In the noisy case, this may be an average.
-            - model_info (ModelInfo): The model information.
         functype (str): One of "scalar", "least_squares" and "likelihood".
         model_info (ModelInfo): Information that describes the functional form of
             the model.
 
     Returns:
-        callable: The partialled aggregator that only depends on vector_model and
-            fvec_center.
+        callable: The partialled aggregator that only depends on vector_model.
 
     """
     built_in_aggregators = {
@@ -46,7 +42,7 @@ def get_aggregator(aggregator, functype, model_info):
 
     # determine if aggregator is compatible with functype and model_info
     aggregator_compatible_with_functype = {
-        "scalar": ("identity", "identity_old", "sum"),
+        "scalar": ("identity", "sum"),
         "least_squares": ("least_squares_linear",),
         "likelihood": (
             "sum",
@@ -83,45 +79,29 @@ def get_aggregator(aggregator, functype, model_info):
             )
 
     # create aggregator
-    out = partial(
-        _aggregate_models_template, aggregator=_aggregator, model_info=model_info
-    )
+    out = partial(_aggregate_models_template, aggregator=_aggregator)
     return out
 
 
-def _aggregate_models_template(vector_model, fvec_center, aggregator, model_info):
+def _aggregate_models_template(vector_model, aggregator):
     """Aggregate a VectorModel into a ScalarModel.
-
-    Note on fvec_center:
-    --------------------
-    Let x0 be the x-value at which the x-sample is centered. If there is little noise
-    and the criterion function f is evaluated at x0, then fvec_center = f(x0). If,
-    however, the criterion function is very noisy or only evaluated in a neighborhood
-    around x0, then fvec_center is constructed as an average over evaluations of f
-    with x close to x0.
 
     Args:
         vector_model (VectorModel): The VectorModel to aggregate.
-        fvec_center (np.ndarray): A 1d array of the residuals at the center of the
-            trust-region. In the noisy case, this may be an average.
         aggregator (callable): The function that does the actual aggregation.
-        model_info (ModelInfo): Information that describes the functional form of
-            the model.
 
     Returns:
         ScalarModel: The aggregated model
 
     """
-    intercept, linear_terms, square_terms = aggregator(
-        vector_model, fvec_center, model_info
-    )
+    intercept, linear_terms, square_terms = aggregator(vector_model)
     scalar_model = ScalarModel(
         intercept=intercept, linear_terms=linear_terms, square_terms=square_terms
     )
     return scalar_model
 
 
-def aggregator_identity(vector_model, fvec_center, model_info):
+def aggregator_identity(vector_model):
     """Aggregate quadratic VectorModel using identity function.
 
     This aggregation is useful if the underlying maximization problem is a scalar
@@ -135,14 +115,14 @@ def aggregator_identity(vector_model, fvec_center, model_info):
     """
     intercept = float(vector_model.intercepts)
     linear_terms = np.squeeze(vector_model.linear_terms)
-    if model_info.has_squares or model_info.has_interactions:
-        square_terms = np.squeeze(vector_model.square_terms)
-    else:
+    if vector_model.square_terms is None:
         square_terms = np.zeros((len(linear_terms), len(linear_terms)))
+    else:
+        square_terms = np.squeeze(vector_model.square_terms)
     return intercept, linear_terms, square_terms
 
 
-def aggregator_sum(vector_model, fvec_center, model_info):
+def aggregator_sum(vector_model):
     """Aggregate quadratic VectorModel using sum function.
 
     This aggregation is useful if the underlying maximization problem is a likelihood
@@ -163,7 +143,7 @@ def aggregator_sum(vector_model, fvec_center, model_info):
     return intercept, linear_terms, square_terms
 
 
-def aggregator_least_squares_linear(vector_model, fvec_center, model_info):
+def aggregator_least_squares_linear(vector_model):
     """Aggregate linear VectorModel assuming a least_squares functype.
 
     This aggregation is useful if the underlying maximization problem is a least-squares
@@ -190,7 +170,7 @@ def aggregator_least_squares_linear(vector_model, fvec_center, model_info):
     return intercept, linear_terms, square_terms
 
 
-def aggregator_information_equality_linear(vector_model, fvec_center, model_info):
+def aggregator_information_equality_linear(vector_model):
     """Aggregate linear VectorModel using the Fisher information equality.
 
     This aggregation is useful if the underlying maximization problem is a likelihood

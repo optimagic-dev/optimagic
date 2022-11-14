@@ -56,3 +56,10 @@ class RadiusOptions(NamedTuple):
 class TrustRegion(NamedTuple):
     center: np.ndarray
     radius: float
+
+
+class RadiusFactors(NamedTuple):
+    accepatance: float = 0.02
+    centric: float = 0.1
+    outer: float = 0.6
+    neighborhood: float = 1.5
