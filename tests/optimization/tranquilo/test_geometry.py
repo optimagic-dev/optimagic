@@ -97,7 +97,7 @@ def test_poisedness_constant(sample, expected):
 
     out = poisedness_constant(sample, lower_bounds, upper_bounds)
 
-    assert_allclose(out, expected, rtol=1e-3, atol=1e-8)
+    assert_allclose(out, expected, rtol=1e-2, atol=1e-8)
 
 
 TEST_CASES = [
