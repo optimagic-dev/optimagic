@@ -77,18 +77,6 @@ TEST_CASES = [
     (
         np.array(
             [
-                [-0.45, -0.4],
-                [-0.4, -0.45],
-                [0.45, 0.4],
-                [0.4, 0.45],
-                [0.35, 0.35],
-            ]
-        ),
-        1179.497744338786,
-    ),
-    (
-        np.array(
-            [
                 [0.024, -0.4994],
                 [-0.468, -0.177],
                 [-0.313, 0.39],
@@ -109,7 +97,35 @@ def test_poisedness_constant(sample, expected):
 
     out = poisedness_constant(sample, lower_bounds, upper_bounds)
 
-    assert_allclose(out, expected, atol=0)
+    assert_allclose(out, expected)
+
+
+TEST_CASES = [
+    (
+        np.array(
+            [
+                [-0.45, -0.4],
+                [-0.4, -0.45],
+                [0.45, 0.4],
+                [0.4, 0.45],
+                [0.35, 0.35],
+            ]
+        ),
+        1179.497744338786,
+    )
+]
+
+
+@pytest.mark.parametrize("sample, expected", TEST_CASES)
+def test_poisedness_constant_imprecise(sample, expected):
+    n_params = 2
+
+    lower_bounds = -1 * np.ones(n_params)
+    upper_bounds = 1 * np.ones(n_params)
+
+    out = poisedness_constant(sample, lower_bounds, upper_bounds)
+
+    assert np.round(out) == np.round(expected)
 
 
 TEST_CASES = [
