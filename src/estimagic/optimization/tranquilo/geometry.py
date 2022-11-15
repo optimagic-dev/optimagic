@@ -114,22 +114,55 @@ def log_d_quality_calculator(sample, trustregion, bounds):
 # =====================================================================================
 
 
-def poisedness_constant(sample, lower_bounds, upper_bounds):
-    """Calculate the poisedness constant of the points inside the trust region.
+def get_lambda_poisedness_constant(sample, lower_bounds, upper_bounds):
+    """Calculate the lambda poisedness constant of the sample.
+
+    Lambda-poisedness is a concept to measure how well a set of points is dispersed
+    through a region of interest; here the trust-region. Put differently, the
+    poisedness of a sample reflects how well the sample “spans” the region of
+    interest. Ultimately, it is a measure for how well a model will estimate the
+    criterion function in that region.
+
+    In general, if the sample is lambda-poised with a small lambda, the sample is
+    said to habe "good" geometry. As lambda grows, the system represented by these
+    "points", i.e. vectors, becomes increasingly linearly dependent.
+
+    The metric used for quantifying how well points are positioned in the region
+    of interest is based on Lagrange polynomials.
+
+    Formal definition:
+    A sample Y is said to be lambda-poised on a region of interest if Y is linearly
+    independent and the Lagrange polynomials L(i) of points (vectors) in the
+    sample satisfy:
+
+        lambda >= max_i max_x | L(i) |      (1)
+
+    i.e. for each point i in the sample, we maximize the absolute criterion value
+    of its lagrange polynomial L(i); we then take the maximum over all these
+    criterion values as the lambda constant for this particular sample on the
+    given trust-region.
+
+    Say we compare different samples on the same trust-region, we are usually
+    interested in keeping the sample with the least corresponding value of lambda
+    so that (1) holds. Lambda is >= 1.
+
+    For more details, see Conn et al. (:cite:`Conn2010`).
+
+    Note that the trust-region centered around the origin, and its corresponding
+    radius is normalized to 1.
 
     Args:
         sample (np.ndarray): The data sample, shape = (n, p).
         bounds (Bounds): The parameter bounds.
 
     Returns:
-        float: The maximum absolute criterion value.
+        float: The lambda poisedness constant.
 
     """
     n_samples, n_params = sample.shape
-    trustregion = TrustRegion(center=np.zeros(n_params), radius=1)
 
-    sample_with_center = np.row_stack((trustregion.center, sample))
-    critval_max = -999
+    sample_with_center = np.row_stack((np.zeros(n_params), sample))
+    lambda_max = -999
 
     for index in range(n_samples + 1):
         intercept, linear_terms, square_terms = get_lagrange_polynomial(
@@ -137,28 +170,24 @@ def poisedness_constant(sample, lower_bounds, upper_bounds):
             sample,
             index,
         )
-
-        scalar_model = ScalarModel(
+        lagrange_polynomial = ScalarModel(
             intercept=intercept, linear_terms=linear_terms, square_terms=square_terms
         )
-        xmax = maximize_absolute_value_trust_trsbox(
-            scalar_model,
-            trustregion,
+
+        current_critval = maximize_absolute_value_trust_trsbox(
+            lagrange_polynomial,
             lower_bounds,
             upper_bounds,
         )
 
-        critval_current = abs(_evaluate_scalar_model(xmax, scalar_model))
+        if current_critval > lambda_max:
+            lambda_max = current_critval
 
-        if critval_current > critval_max:
-            critval_max = critval_current
-
-    return critval_max
+    return lambda_max
 
 
 def maximize_absolute_value_trust_trsbox(
-    scalar_model,
-    trustregion,
+    lagrange_polynomial,
     lower_bounds,
     upper_bounds,
 ):
@@ -171,62 +200,58 @@ def maximize_absolute_value_trust_trsbox(
     scalar model, respectively.
 
     In order to maximize L(x), we maximize the absolute value of L(x) in a
-    trust-region setting. I.e. we solve:
+    trust-region setting with radius 1. I.e. we solve:
 
         max_x  abs(c + g.T @ x + 0.5 x.T @ H @ x)
             s.t. lower_bound <= x <= upper_bound
-                 ||x|| <= trustregion_radius
+                 ||x|| <= 1
 
     In order to find the solution x*, we both minimize and maximize
     the objective c + g.T @ x + 0.5 x.T @ H @ x.
-    The resulting candidate vectors are then plugged into the objective function L(x)
-    to check which one yields the largest absolute value of the Lagrange polynomial.
+    The resulting candidate vectors are then plugged into the criterion function L(x)
+    to see which one yields the largest absolute criterion value of the Lagrange
+    polynomial.
 
     Args:
-        scalar_model (NamedTuple): Named tuple containing the parameters of the
-            scalar surrogate model, i.e.:
-            - ``intercept`` (float): Intercept of the scalar model.
-            - ``linear_terms`` (np.ndarray): 1d array of shape (n,) with the linear
-                terms of the mdoel.
+        lagrange_polynomial (NamedTuple): Named tuple containing the parameters of the
+            lagrange polynomial, i.e.:
+            - ``intercept`` (float): Intercept.
+            - ``linear_terms`` (np.ndarray): 1d array of shape (n,) with linear terms.
             - ``square_terms`` (np.ndarray): 2d array of shape (n, n) containing
-                the model's square terms
-        trustregion (NamedTuple): Contains ``center`` (np.ndarray) and ``radius``
-            (float). Used to center bounds.
+                quare terms.
         lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
 
     Returns:
-        np.ndarray: Solution vector of shape (n,).
+        float: The largest absolute criterion value.
 
     """
-    radius = trustregion.radius
-
     x_min = minimize_trust_trsbox(
-        scalar_model.linear_terms,
-        scalar_model.square_terms,
-        radius,
+        lagrange_polynomial.linear_terms,
+        lagrange_polynomial.square_terms,
+        trustregion_radius=1,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
     )
     x_max = minimize_trust_trsbox(
-        -scalar_model.linear_terms,
-        -scalar_model.square_terms,
-        radius,
+        -lagrange_polynomial.linear_terms,
+        -lagrange_polynomial.square_terms,
+        trustregion_radius=1,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
     )
 
-    criterion_min = _evaluate_scalar_model(x_min, scalar_model)
-    criterion_max = _evaluate_scalar_model(x_max, scalar_model)
+    critval_min = abs(_evaluate_scalar_model(x_min, lagrange_polynomial))
+    critval_max = abs(_evaluate_scalar_model(x_max, lagrange_polynomial))
 
-    if abs(criterion_min) >= abs(criterion_max):
-        x_out = x_min
+    if abs(critval_min) >= abs(critval_max):
+        critval = critval_min
     else:
-        x_out = x_max
+        critval = critval_max
 
-    return x_out
+    return critval
 
 
 def get_lagrange_polynomial(
@@ -259,7 +284,9 @@ def get_lagrange_polynomial(
         else:
             rhs[: n_samples - 1] = -1.0
 
-    interpolation_mat = build_interpolation_matrix(sample_without_xopt.T)
+    interpolation_mat = build_interpolation_matrix(
+        sample_without_xopt.T, n_params, n_samples - 1
+    )
     coef, *_ = np.linalg.lstsq(interpolation_mat, rhs, rcond=None)
 
     intercept = 1.0 if index == center_index else 0.0
@@ -269,7 +296,7 @@ def get_lagrange_polynomial(
         hess = np.zeros((n_params, n_params))
     elif n_samples == (n_params + 1) * (n_params + 2) // 2:
         grad = coef[:n_params]
-        hess = _build_symmetric_matrix_from_vector(coef[n_params:], n_params)
+        hess = _reshape_square_terms_to_hess(coef[n_params:], n_params)
     else:
         grad = coef[n_samples - 1 :]
         fval_row_idx = np.arange(1, n_samples)
@@ -282,21 +309,17 @@ def get_lagrange_polynomial(
     return intercept, grad, hess
 
 
-def build_interpolation_matrix(sample):
-    n_params, n_samples = sample.shape
-    assert (
-        n_params + 1 <= n_samples + 1 <= (n_params + 1) * (n_params + 2) // 2
-    ), "npt must be in range [n+1, (n+1)(n+2)/2]"
-
+def build_interpolation_matrix(sample, n_params, n_samples):
     if n_samples == n_params:
         mat = sample.T
     elif n_samples + 1 == (n_params + 1) * (n_params + 2) // 2:
         mat = np.empty((n_samples, n_samples))
         mat[:, :n_params] = sample.T
         for i in range(n_samples):
-            mat[i, n_params:] = _to_upper_triangular_vector(
+            mat[i, n_params:] = _reshape_mat_to_upper_triangular(
                 np.outer(sample[:, i], sample[:, i])
-                - 0.5 * np.diag(np.square(sample[:, i]))
+                - 0.5 * np.diag(np.square(sample[:, i])),
+                n_params,
             )
     else:
         mat = np.zeros((n_samples + n_params, n_samples + n_params))
@@ -309,30 +332,29 @@ def build_interpolation_matrix(sample):
     return mat
 
 
-def _build_symmetric_matrix_from_vector(entries, n):
-    mat = np.empty((n, n))
+def _reshape_square_terms_to_hess(vec, n_params):
+    mat = np.empty((n_params, n_params))
     idx = -1
 
-    for j in range(n):
+    for j in range(n_params):
         for i in range(j + 1):
             idx += 1
-            mat[i, j] = entries[idx]
-            mat[j, i] = entries[idx]
+            mat[i, j] = vec[idx]
+            mat[j, i] = vec[idx]
 
     return mat
 
 
-def _to_upper_triangular_vector(triu):
-    n = triu.shape[0]
-    vec = np.empty(n * (n + 1) // 2)
+def _reshape_mat_to_upper_triangular(mat, n_params):
+    triu = np.empty(n_params * (n_params + 1) // 2)
     idx = -1
 
-    for j in range(n):
+    for j in range(n_params):
         for i in range(j + 1):
             idx += 1
-            vec[idx] = triu[i, j]
+            triu[idx] = mat[i, j]
 
-    return vec
+    return triu
 
 
 def _evaluate_scalar_model(x, scalar_model):
