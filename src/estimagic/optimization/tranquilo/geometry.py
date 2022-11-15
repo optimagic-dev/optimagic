@@ -80,7 +80,7 @@ def log_d_cutoff_simulator(
     sampler = partial(_sampler, trustregion=trustregion)
     raw = []
     for _ in range(n_simulations):
-        x = sampler(target_size=n_samples, rng=rng)
+        x = sampler(n_points=n_samples, rng=rng)
         raw.append(log_d_quality_calculator(x, trustregion, bounds))
     out = np.nanmean(raw)
     return out
