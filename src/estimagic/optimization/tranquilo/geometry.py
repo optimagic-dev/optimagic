@@ -2,7 +2,6 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
-from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.sample_points import _get_effective_bounds
 from estimagic.optimization.tranquilo.sample_points import (
@@ -161,24 +160,38 @@ def get_lambda_poisedness_constant(sample, lower_bounds, upper_bounds):
     """
     n_samples, n_params = sample.shape
 
-    sample_with_center = np.row_stack((np.zeros(n_params), sample))
+    interpolation_mat = build_interpolation_matrix(sample.T, n_params, n_samples)
     lambda_max = -999
 
-    for index in range(n_samples + 1):
-        intercept, linear_terms, square_terms = get_lagrange_polynomial(
-            sample_with_center,
-            sample,
-            index,
-        )
-        lagrange_polynomial = ScalarModel(
-            intercept=intercept, linear_terms=linear_terms, square_terms=square_terms
+    for index in range(n_samples):
+        linear_terms, square_terms = get_lagrange_polynomial(
+            sample=sample,
+            interpolation_mat=interpolation_mat,
+            index=index,
         )
 
-        current_critval = maximize_absolute_value_trust_trsbox(
-            lagrange_polynomial,
-            lower_bounds,
-            upper_bounds,
+        x_argmax = minimize_trust_trsbox(
+            linear_terms,
+            square_terms,
+            trustregion_radius=1,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
         )
+        critval_min = abs(_evaluate_scalar_model(x_argmax, linear_terms, square_terms))
+
+        x_argmin = minimize_trust_trsbox(
+            -linear_terms,
+            -square_terms,
+            trustregion_radius=1,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+        )
+        critval_max = abs(_evaluate_scalar_model(x_argmin, linear_terms, square_terms))
+
+        if abs(critval_min) >= abs(critval_max):
+            current_critval = critval_min
+        else:
+            current_critval = critval_max
 
         if current_critval > lambda_max:
             lambda_max = current_critval
@@ -256,57 +269,28 @@ def maximize_absolute_value_trust_trsbox(
 
 def get_lagrange_polynomial(
     sample,
-    sample_without_xopt,
+    interpolation_mat,
     index,
 ):
     n_samples, n_params = sample.shape
 
-    center_index = 0
-    center = sample[center_index]
-    row_index = index - 1
-
-    if n_samples == n_params + 1:
-        if row_index >= 0:
-            rhs = np.zeros(n_params)
-            rhs[row_index] = 1.0
-        else:
-            rhs = -np.ones(n_params)
-    elif n_samples == (n_params + 1) * (n_params + 2) // 2:
-        if row_index >= 0:
-            rhs = np.zeros(n_samples - 1)
-            rhs[row_index] = 1.0
-        else:
-            rhs = -np.ones(n_samples - 1)
-    else:
-        rhs = np.zeros(n_samples + n_params - 1)
-        if row_index >= 0:
-            rhs[row_index] = 1.0
-        else:
-            rhs[: n_samples - 1] = -1.0
-
-    interpolation_mat = build_interpolation_matrix(
-        sample_without_xopt.T, n_params, n_samples - 1
-    )
+    rhs = _get_rhs(index, n_samples, n_params)
     coef, *_ = np.linalg.lstsq(interpolation_mat, rhs, rcond=None)
 
-    intercept = 1.0 if index == center_index else 0.0
-
-    if n_samples == n_params + 1:
-        grad = coef
-        hess = np.zeros((n_params, n_params))
-    elif n_samples == (n_params + 1) * (n_params + 2) // 2:
-        grad = coef[:n_params]
-        hess = _reshape_square_terms_to_hess(coef[n_params:], n_params)
+    if n_samples == n_params:
+        linear_terms = coef
+        square_terms = np.zeros((n_params, n_params))
+    elif n_samples == (n_params + 1) * (n_params + 2) // 2 - 1:
+        linear_terms = coef[:n_params]
+        square_terms = _reshape_coef_to_square_terms(coef[n_params:], n_params)
     else:
-        grad = coef[n_samples - 1 :]
-        fval_row_idx = np.arange(1, n_samples)
+        linear_terms = coef[n_samples:]
+        square_terms = np.zeros((n_params, n_params))
+        for i in range(n_samples):
+            x = sample[i]
+            square_terms += coef[i] * np.outer(x, x)
 
-        hess = np.zeros((n_params, n_params))
-        for i in range(n_samples - 1):
-            dx = sample[fval_row_idx[i]] - center
-            hess += coef[i] * np.outer(dx, dx)
-
-    return intercept, grad, hess
+    return linear_terms, square_terms
 
 
 def build_interpolation_matrix(sample, n_params, n_samples):
@@ -332,7 +316,21 @@ def build_interpolation_matrix(sample, n_params, n_samples):
     return mat
 
 
-def _reshape_square_terms_to_hess(vec, n_params):
+def _get_rhs(index, n_samples, n_params):
+    if n_samples == n_params:
+        rhs = np.zeros(n_params)
+        rhs[index] = 1.0
+    elif n_samples == (n_params + 1) * (n_params + 2) // 2 - 1:
+        rhs = np.zeros(n_samples)
+        rhs[index] = 1.0
+    else:
+        rhs = np.zeros(n_samples + n_params)
+        rhs[index] = 1.0
+
+    return rhs
+
+
+def _reshape_coef_to_square_terms(vec, n_params):
     mat = np.empty((n_params, n_params))
     idx = -1
 
@@ -357,9 +355,5 @@ def _reshape_mat_to_upper_triangular(mat, n_params):
     return triu
 
 
-def _evaluate_scalar_model(x, scalar_model):
-    return (
-        scalar_model.intercept
-        + scalar_model.linear_terms.T @ x
-        + 0.5 * x.T @ scalar_model.square_terms @ x
-    )
+def _evaluate_scalar_model(x, linear_terms, square_terms):
+    return linear_terms.T @ x + 0.5 * x.T @ square_terms @ x
