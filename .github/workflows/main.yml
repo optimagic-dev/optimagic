@@ -42,7 +42,7 @@ jobs:
         run: tox -e pytest-linux -- --cov-report=xml --cov=./
 
       - name: Upload coverage report.
-        if: runner.os == 'Linux' && matrix.python-version == '3.9'
+        if: runner.os == 'Linux' && matrix.python-version == '3.10'
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -83,7 +83,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Install core dependencies.
         shell: bash -l {0}
@@ -104,7 +104,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Install core dependencies.
         shell: bash -l {0}
