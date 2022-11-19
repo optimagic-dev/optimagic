@@ -239,6 +239,7 @@ def _tranquilo(
             xs=old_xs,
             indices=old_indices,
             state=state,
+            target_size=target_sample_size,
         )
 
         n_effective_points = count_points(filtered_xs, trustregion=state.trustregion)
