@@ -170,6 +170,7 @@ def run_multistart_optimization(
             starts=starts,
             results=batch_results,
             convergence_criteria=convergence_criteria,
+            primary_key=primary_key,
         )
         opt_counter += len(batch)
         scheduled_steps = scheduled_steps[len(batch) :]
@@ -427,7 +428,9 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
     return batched
 
 
-def update_convergence_state(current_state, starts, results, convergence_criteria):
+def update_convergence_state(
+    current_state, starts, results, convergence_criteria, primary_key
+):
     """Update the state of all quantities related to convergence.
 
     Args:
@@ -442,6 +445,8 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         starts (list): List of starting points for local optimizations.
         results (list): List of results from local optimizations.
         convergence_criteria (dict): Dict with the entries "xtol" and "max_discoveries"
+        primary_key: The primary criterion entry of the local optimizer. Needed to
+            interpret the output of the internal criterion function.
 
 
     Returns:
@@ -465,7 +470,20 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     valid_starts = [starts[i] for i in valid_indices]
 
     valid_new_x = [res["solution_x"] for res in valid_results]
-    valid_new_y = [res["solution_criterion"] for res in valid_results]
+    valid_new_y = []
+
+    # make the criterion output scalar if a least squares optimizer returns an
+    # array as solution_criterion.
+    for res in valid_results:
+        if np.isscalar(res["solution_criterion"]):
+            valid_new_y.append(res["solution_criterion"])
+        else:
+            valid_new_y.append(
+                aggregate_func_output_to_value(
+                    f_eval=res["solution_criterion"],
+                    primary_key=primary_key,
+                )
+            )
 
     best_index = np.argmin(valid_new_y)
     if valid_new_y[best_index] <= best_y:
