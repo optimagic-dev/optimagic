@@ -406,6 +406,25 @@ flat numpy array are explained in the next section.
 
     Where the product of all but the last parameters is equal to 1.
 
+    If you have a function that calculates the derivative of your constraint, you can
+    add this under the key `"derivative"` to the constraint dictionary.
+
+    .. code-block:: python
+
+        >>> res = em.minimize(
+        ...    criterion=criterion,
+        ...    params=np.ones(6),
+        ...    algorithm="scipy_slsqp",
+        ...    constraints={
+        ...    "type": "nonlinear",
+        ...    "selector": lambda x: x[:-1],
+        ...    "func": lambda x: np.prod(x),
+        ...    "derivative": my_derivative_func,
+        ...    "value": 1.0,
+        ...    },
+        ...    )
+
+
 ```
 
 ## Imposing multiple constraints at once
