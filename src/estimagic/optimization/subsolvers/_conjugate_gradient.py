@@ -47,6 +47,7 @@ def minimize_trust_cg(
             x_candidate, direction, trustregion_radius
         )
 
+        # avoid divide by zero warning
         if square_terms > 0:
             step_size = (residual @ residual) / square_terms
         else:
