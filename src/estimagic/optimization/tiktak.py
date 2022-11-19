@@ -461,14 +461,19 @@ def update_convergence_state(
     best_y = current_state["best_y"]
     best_res = current_state["best_res"]
 
+    # get indices of local optimizations that did not fail
     valid_indices = [i for i, res in enumerate(results) if not isinstance(res, str)]
 
+    # If all local optimizations failed, return early so we don't have to worry about
+    # index errors later.
     if not valid_indices:
         return current_state, False
 
+    # ==================================================================================
+    # reduce eveything to valid optimizations
+    # ==================================================================================
     valid_results = [results[i] for i in valid_indices]
     valid_starts = [starts[i] for i in valid_indices]
-
     valid_new_x = [res["solution_x"] for res in valid_results]
     valid_new_y = []
 
@@ -485,6 +490,9 @@ def update_convergence_state(
                 )
             )
 
+    # ==================================================================================
+    # accept new best point if we find a new lowest function value
+    # ==================================================================================
     best_index = np.argmin(valid_new_y)
     if valid_new_y[best_index] <= best_y:
         best_x = valid_new_x[best_index]
@@ -496,6 +504,9 @@ def update_convergence_state(
     elif best_res is None:
         best_res = valid_results[best_index]
 
+    # ==================================================================================
+    # update history and state
+    # ==================================================================================
     new_x_history = current_state["x_history"] + valid_new_x
     all_x = np.array(new_x_history)
     relative_diffs = (all_x - best_x) / np.clip(best_x, 0.1, np.inf)
