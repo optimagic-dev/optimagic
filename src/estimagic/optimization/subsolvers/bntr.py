@@ -4,13 +4,13 @@ from typing import NamedTuple
 from typing import Union
 
 import numpy as np
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient import (
     minimize_trust_cg,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
+from estimagic.optimization.subsolvers._steihaug_toint import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 

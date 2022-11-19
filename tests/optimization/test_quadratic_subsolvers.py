@@ -2,13 +2,13 @@
 import numpy as np
 import pytest
 from estimagic.optimization.pounders_auxiliary import MainModel
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient import (
     minimize_trust_cg,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
+from estimagic.optimization.subsolvers._steihaug_toint import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
 from estimagic.optimization.subsolvers.bntr import (
     bntr,
 )

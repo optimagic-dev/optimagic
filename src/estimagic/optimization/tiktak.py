@@ -454,6 +454,9 @@ def update_convergence_state(
         bool: A bool that indicates if the optimizer has converged.
 
     """
+    # ==================================================================================
+    # unpack some variables
+    # ==================================================================================
     xtol = convergence_criteria["xtol"]
     max_discoveries = convergence_criteria["max_discoveries"]
 
@@ -461,6 +464,9 @@ def update_convergence_state(
     best_y = current_state["best_y"]
     best_res = current_state["best_res"]
 
+    # ==================================================================================
+    # filter out optimizations that raised errors
+    # ==================================================================================
     # get indices of local optimizations that did not fail
     valid_indices = [i for i, res in enumerate(results) if not isinstance(res, str)]
 
