@@ -49,7 +49,11 @@ def minimize_trust_cg_fast(
             x_candidate, direction, trustregion_radius
         )
 
-        step_size = (residual @ residual) / square_terms
+        # avoid divide by zero warning
+        if square_terms > 0:
+            step_size = (residual @ residual) / square_terms
+        else:
+            step_size = np.inf
 
         if square_terms <= 0 or step_size > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
