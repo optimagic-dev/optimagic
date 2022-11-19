@@ -1,6 +1,4 @@
 """Implement the fides optimizer."""
-import logging
-
 import numpy as np
 from estimagic.config import IS_FIDES_INSTALLED
 from estimagic.decorators import mark_minimizer
@@ -11,6 +9,8 @@ from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+
+import logging
 
 if IS_FIDES_INSTALLED:
     from fides import hessian_approximation
@@ -108,8 +108,27 @@ def _process_fides_res(raw_res, opt):
         "solution_hessian": hess,
         "success": opt.converged,
         "n_iterations": opt.iteration,
+        "message": _process_exitflag(opt.exitflag),
     }
     return res
+
+
+def _process_exitflag(exitflag):
+    messages = {
+        "DID_NOT_RUN": "The optimizer did not run",
+        "MAXITER": "Reached maximum number of allowed iterations",
+        "MAXTIME": "Expected to reach maximum allowed time in next iteration",
+        "NOT_FINITE": "Encountered non-finite fval/grad/hess",
+        "EXCEEDED_BOUNDARY": "Exceeded specified boundaries",
+        "DELTA_TOO_SMALL": "Trust Region Radius too small to proceed",
+        "FTOL": "Converged according to fval difference",
+        "XTOL": "Converged according to x difference",
+        "GTOL": "Converged according to gradient norm",
+    }
+
+    out = messages.get(exitflag.name)
+
+    return out
 
 
 def _create_hessian_updater_from_user_input(hessian_update_strategy):
