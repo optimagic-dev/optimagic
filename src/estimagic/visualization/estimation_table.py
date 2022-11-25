@@ -106,7 +106,7 @@ def estimation_table(
         confidence_intervals (bool): If True, display confidence intervals as inference
             values. Display standard errors otherwise. Default False.
         significance_levels (list): a list of floats for p value's significance cut-off
-            values.This is used to generate the significance stars. Default is
+            values. This is used to generate the significance stars. Default is
             [0.1,0.05,0.01].
         append_notes (bool): A boolean variable for printing p value cutoff explanation
             and additional notes, if applicable. Default is True.
@@ -346,8 +346,10 @@ def render_latex(
     latex_str = latex_str.split("\\bottomrule")[0]
     if show_footer:
         footer = footer.copy(deep=True)
-        for _, r in footer.iterrows():
-            r = _center_align_integers_and_non_numeric_strings(r)
+        for i in range(len(footer.index)):
+            footer.iloc[i] = _center_align_integers_and_non_numeric_strings(
+                footer.iloc[i]
+            )
         footer_styler = footer.style
         stats_str = footer_styler.to_latex(**default_options)
         if "\\midrule" in stats_str:
