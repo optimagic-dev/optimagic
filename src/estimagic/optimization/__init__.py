@@ -15,18 +15,18 @@ from estimagic.optimization.tranquilo import tranquilo
 
 
 MODULES = [
-    # cyipopt_optimizers,
-    # fides_optimizers,
-    # nag_optimizers,
-    # nlopt_optimizers,
-    # pygmo_optimizers,
-    # scipy_optimizers,
-    scipy_global_optimizers,
-    # tao_optimizers,
-    # bhhh,
-    # neldermead,
-    # pounders,
-    # tranquilo,
+    cyipopt_optimizers,
+    fides_optimizers,
+    nag_optimizers,
+    nlopt_optimizers,
+    pygmo_optimizers,
+    scipy_optimizers,
+    #scipy_global_optimizers,
+    tao_optimizers,
+    bhhh,
+    neldermead,
+    pounders,
+    tranquilo,
 ]
 
 ALL_ALGORITHMS = {}
