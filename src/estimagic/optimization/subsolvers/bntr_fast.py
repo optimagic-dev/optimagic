@@ -1,12 +1,12 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
 import numpy as np
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+from estimagic.optimization.subsolvers._conjugate_gradient_fast import (
     minimize_trust_cg_fast,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic_fast import (
+from estimagic.optimization.subsolvers._steihaug_toint_fast import (
     minimize_trust_stcg_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     minimize_trust_trsbox_fast,
 )
 from numba import njit

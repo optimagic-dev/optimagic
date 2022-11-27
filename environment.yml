@@ -6,7 +6,7 @@ channels:
   - opensourceeconomics
 
 dependencies:
-  - python=3.9
+  - python=3.10
   - pip
   - setuptools_scm
   - toml
@@ -57,3 +57,4 @@ dependencies:
       - gif
       - gif[matplotlib]
       - kaleido
+      - simoptlib

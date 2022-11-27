@@ -153,6 +153,7 @@ def test_update_state_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
+        primary_key="value",
     )
 
     aaae(new_state["best_x"], np.arange(3))
@@ -176,6 +177,7 @@ def test_update_state_not_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
+        primary_key="value",
     )
 
     assert not is_converged

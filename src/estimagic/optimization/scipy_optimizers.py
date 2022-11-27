@@ -33,10 +33,6 @@ The following arguments are not supported as part of ``algo_options``:
     This argument would be called after each iteration and the algorithm would
     terminate if it returned True.
 
-.. note::
-    `scipy`'s COBYLA, SLSQP and trust-constr support general non linear constraints
-    in principle. However, for the moment they are not supported.
-
 """
 import functools
 
