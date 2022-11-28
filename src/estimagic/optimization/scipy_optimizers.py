@@ -707,7 +707,7 @@ def scipy_differential_evolution(
         atol=convergence_absolute_criterion_tolerance,
         updating=updating,
         workers=workers_parallel,
-        constraints=nonlinear_constraints,
+        constraints=_get_scipy_constraints(nonlinear_constraints),
         x0=x,
         integrality=integrality,
         vectorized=vectorized,
@@ -831,10 +831,11 @@ def scipy_dual_annealing(
 @mark_minimizer(name="scipy_direct", is_global=True)
 def scipy_direct(
     criterion,
-    x,
     lower_bounds,
     upper_bounds,
+    *,
     eps=1e-6,
+    x=None,
     stopping_max_criterion_evaluations=None,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     locally_biased=True,
