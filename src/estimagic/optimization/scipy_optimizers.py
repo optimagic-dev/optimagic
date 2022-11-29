@@ -462,7 +462,7 @@ def _get_scipy_bounds(lower_bounds, upper_bounds):
 def _get_scipy_constraints(constraints):
     """Transform internal nonlinear constraints to scipy readable format.
 
-    This format is currently only used by scipy_trust-constr.
+    This format is currently only used by scipy_trust_constr.
 
     """
     scipy_constraints = [_internal_to_scipy_constraint(c) for c in constraints]
@@ -692,6 +692,8 @@ def scipy_differential_evolution(
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
+    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
+
     res = scipy.optimize.differential_evolution(
         func=criterion,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
@@ -707,10 +709,7 @@ def scipy_differential_evolution(
         atol=convergence_absolute_criterion_tolerance,
         updating=updating,
         workers=workers_parallel,
-        constraints=_get_scipy_constraints(nonlinear_constraints),
-        x0=x,
-        integrality=integrality,
-        vectorized=vectorized,
+        constraints= _get_scipy_constraints(nonlinear_constraints),
     )
 
     return process_scipy_result(res)
