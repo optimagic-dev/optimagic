@@ -709,7 +709,7 @@ def scipy_differential_evolution(
         atol=convergence_absolute_criterion_tolerance,
         updating=updating,
         workers=workers_parallel,
-        constraints= _get_scipy_constraints(nonlinear_constraints),
+        constraints=_get_scipy_constraints(nonlinear_constraints),
     )
 
     return process_scipy_result(res)
