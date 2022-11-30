@@ -11,6 +11,7 @@
 [![image](https://results.pre-commit.ci/badge/github/OpenSourceEconomics/estimagic/main.svg)](https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain)
 [![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![image](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![image](https://pepy.tech/badge/estimagic/month)](https://pepy.tech/project/estimagic)
 
 
 ## Introduction
