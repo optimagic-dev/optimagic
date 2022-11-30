@@ -164,7 +164,7 @@ def _harmonize_data(data):
 
 def _make_string_index(ind):
     if isinstance(ind, pd.MultiIndex):
-        out = ind.map(lambda tup: "_".join((str(name) for name in tup))).tolist()
+        out = ind.map(lambda tup: "_".join(str(name) for name in tup)).tolist()
     else:
         out = ind.map(str).tolist()
     return out
