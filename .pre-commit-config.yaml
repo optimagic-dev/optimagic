@@ -90,8 +90,3 @@ repos:
     rev: "0.48"
     hooks:
     -   id: check-manifest
-
--   repo: https://github.com/dosisod/refurb
-    rev: v1.8.0
-    hooks:
-    -   id: refurb

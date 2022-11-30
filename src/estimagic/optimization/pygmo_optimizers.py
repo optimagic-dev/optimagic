@@ -1,4 +1,5 @@
 """Implement pygmo optimizers."""
+import contextlib
 import warnings
 
 import numpy as np
@@ -13,10 +14,8 @@ from estimagic.optimization.algo_options import (
 
 STOPPING_MAX_ITERATIONS_GENETIC = 250
 
-try:
+with contextlib.suppress(ImportError):
     import pygmo as pg
-except ImportError:
-    pass
 
 
 @mark_minimizer(
@@ -1130,11 +1129,10 @@ def pygmo_de1220(
     if allowed_variants is None:
         allowed_variant_codes = [2, 3, 7, 10, 13, 14, 15, 16]
     else:
-        allowed_variant_codes = []
-        for variant in allowed_variants:
-            allowed_variant_codes.append(
-                _convert_str_to_int(variant_str_to_int, variant)
-            )
+        allowed_variant_codes = [
+            _convert_str_to_int(variant_str_to_int, variant)
+            for variant in allowed_variants
+        ]
 
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=64

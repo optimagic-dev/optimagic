@@ -389,9 +389,7 @@ def _consolidate_linear_constraints(
         constr_info["fixed_values"],
     )
 
-    involved_parameters = []
-    for _, w in weights.iterrows():
-        involved_parameters.append(set(w[w != 0].index))
+    involved_parameters = [set(w[w != 0].index) for _, w in weights.iterrows()]
 
     bundled_indices = _join_overlapping_lists(involved_parameters)
 

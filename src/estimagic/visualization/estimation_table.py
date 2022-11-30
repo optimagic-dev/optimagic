@@ -1,6 +1,7 @@
 import re
 from copy import deepcopy
 from functools import partial
+from pathlib import Path
 from warnings import warn
 
 import numpy as np
@@ -214,11 +215,12 @@ def estimation_table(
             ['data_frame', 'render_inputs','latex' ,'html']
             or a path ending with '.html' or '.tex'. Not: {return_type}."""
         )
-    if not str(return_type).endswith((".html", ".tex")):
+
+    return_type = Path(return_type)
+    if return_type.suffix not in (".html", ".tex"):
         return out
     else:
-        with open(return_type, "w") as t:
-            t.write(out)
+        return_type.write_text(out)
 
 
 def render_latex(
@@ -1215,7 +1217,7 @@ def _generate_notes_latex(
         # is not followed by a semi column
         for i in range(len(significance_levels) - 1):
             star = "*" * (len(significance_levels) - i)
-            notes_text += f"$^{{{star}}}$p$<${str(significance_levels[i])};"
+            notes_text += f"$^{{{star}}}$p$<${significance_levels[i]};"
         notes_text += "$^{*}$p$<$" + str(significance_levels[-1]) + "} \\\\\n"
         if custom_notes:
             amp_n = "&" * n_levels
