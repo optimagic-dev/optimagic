@@ -356,9 +356,7 @@ def run_explorations(
         error_handling=error_handling,
     )
 
-    arguments = []
-    for x in sample:
-        arguments.append({"x": x, "fixed_log_data": {"step": int(step_id)}})
+    arguments = [{"x": x, "fixed_log_data": {"step": int(step_id)}} for x in sample]
 
     batch_evaluator = process_batch_evaluator(batch_evaluator)
 

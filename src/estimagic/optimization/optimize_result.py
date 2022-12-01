@@ -165,4 +165,4 @@ def _create_stars(sr):
 
 def _format_float(number):
     """Round to four significant digits."""
-    return "{0:.4g}".format(number)
+    return f"{number:.4g}"

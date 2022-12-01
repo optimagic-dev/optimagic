@@ -62,7 +62,7 @@ def process_selectors(constraints, params, tree_converter, param_names):
         except Exception as e:
             msg = (
                 "An error occurred when trying to select parameters for the following "
-                "constraint:\n{constr}"
+                f"constraint:\n{constr}"
             )
             raise InvalidConstraintError(msg) from e
 
