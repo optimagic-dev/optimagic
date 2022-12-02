@@ -128,6 +128,11 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
     if "equality" in constr_type and algorithm == "nlopt_mma":
         pytest.skip(reason="Very slow and low accuracy.")
 
+    if constr_type in ("flat", "long") and algorithm == "scipy_shgo":
+        pytest.xfail(
+            reason="scipy_shgo accepts constraint functions only with scalar codomain."
+        )
+
     solution_x, kwargs = nlc_2d_example
     if algorithm == "scipy_cobyla":
         del kwargs[constr_type]["lower_bounds"]

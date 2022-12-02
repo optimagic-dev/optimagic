@@ -709,7 +709,7 @@ def scipy_differential_evolution(
         atol=convergence_absolute_criterion_tolerance,
         updating=updating,
         workers=workers_parallel,
-        constraints= _get_scipy_constraints(nonlinear_constraints),
+        constraints=_get_scipy_constraints(nonlinear_constraints),
     )
 
     return process_scipy_result(res)
@@ -733,10 +733,10 @@ def scipy_shgo(
     criterion_convergence_tolerance=None,
     stopping_max_iterations=None,
     stopping_max_criterion_evaluations=None,
-    maximum_processing_time=None,
+    maximum_processing_time=1000.0,
     minimum_homology_group_rank_differential=None,
     symmetry=None,
-    minimize_every_iteration=None,
+    minimize_every_iteration=False,
     local_iteration=None,
     infty_constraints=None,
 ):
