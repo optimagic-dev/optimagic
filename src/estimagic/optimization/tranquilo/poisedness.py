@@ -146,11 +146,9 @@ def get_center_and_radius(sample):
 
 
 def _find_sorted_index_closest_point_to_center(sample):
-    sample_mean = _average_point(sample)
-
     dyn_list = []
     for i in range(sample.shape[1]):
-        dy = sample[:, i] - sample_mean
+        dy = sample[:, i]
         dyn = np.linalg.norm(dy)
         dyn_list.append(dyn)
 
@@ -163,7 +161,3 @@ def _find_ball(sample):
     center = sample[:, 0]
     rad = np.linalg.norm(sample[:, 0] - sample[:, -1])
     return center, rad
-
-
-def _average_point(y):
-    return np.mean(y, axis=1)
