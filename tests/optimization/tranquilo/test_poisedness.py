@@ -79,7 +79,7 @@ def test_poisedness_constant(sample, expected, actual):
     assert np.allclose(
         got,
         actual,
-        rtol=1e-01,
+        rtol=1e-02,
     )
 
 
@@ -94,7 +94,7 @@ def test_poisedness_constant_centered_sample(sample, expected, actual):
 
     got = get_poisedness_constant(sample_centered)
 
-    assert np.allclose(got, actual, rtol=1e-05)
+    assert np.allclose(got, actual, rtol=1e-02)
 
 
 @pytest.mark.xfail(reason="Cannot reproduce the textbook results.")
