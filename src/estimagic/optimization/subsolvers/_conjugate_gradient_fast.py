@@ -1,9 +1,11 @@
 """Implementation of the Conjugate Gradient algorithm."""
 import numpy as np
+from numba import njit
 
 
-def minimize_trust_cg(
-    model_gradient, model_hessian, trustregion_radius, *, gtol_abs=1e-8, gtol_rel=1e-6
+@njit
+def minimize_trust_cg_fast(
+    model_gradient, model_hessian, trustregion_radius, gtol_abs, gtol_rel
 ):
     """Minimize the quadratic subproblem via (standard) conjugate gradient.
 
@@ -47,7 +49,11 @@ def minimize_trust_cg(
             x_candidate, direction, trustregion_radius
         )
 
-        step_size = (residual @ residual) / square_terms
+        # avoid divide by zero warning
+        if square_terms > 0:
+            step_size = (residual @ residual) / square_terms
+        else:
+            step_size = np.inf
 
         if square_terms <= 0 or step_size > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
@@ -61,6 +67,7 @@ def minimize_trust_cg(
     return x_candidate
 
 
+@njit
 def _update_vectors_for_next_iteration(
     x_candidate, residual, direction, hessian, alpha
 ):
@@ -75,22 +82,29 @@ def _update_vectors_for_next_iteration(
         direction (np.ndarray): Direction vector of shape (n,).
 
     Returns:
-        (tuple) Tuple containing:
-            - x_candidate (np.ndarray): Updated candidate vector of shape (n,).
-            - residual (np.ndarray): Updated array of residuals of shape (n,).
-            - direction (np.darray): Updated direction vector of shape (n,).
+            x_candidate (np.ndarray): Updated candidate vector of shape (n,).
+            residual_new (np.ndarray): Updated array of residuals of shape (n,).
+            direction (np.darray): Updated direction vector of shape (n,).
     """
-    residual_old = residual
+    residual_new = np.zeros(len(residual))
+    nom = 0.0
+    denom = 0.0
+    for i in range(len(x_candidate)):
+        x_candidate[i] = x_candidate[i] + alpha * direction[i]
+        temp = 0
+        for j in range(len(x_candidate)):
+            temp += hessian[i, j] * direction[j]
+        residual_new[i] = temp * alpha + residual[i]
 
-    x_candidate = x_candidate + alpha * direction
-    residual = residual_old + alpha * (hessian @ direction)
+        nom += residual_new[i] * residual_new[i]
+        denom += residual[i] * residual[i]
+    beta = nom / denom
+    direction = -residual_new + beta * direction
 
-    beta = (residual @ residual) / (residual_old @ residual_old)
-    direction = -residual + beta * direction
-
-    return x_candidate, residual, direction
+    return x_candidate, residual_new, direction
 
 
+@njit
 def _get_distance_to_trustregion_boundary(candidate, direction, radius):
     """Compute the distance of the candidate vector to trustregion boundary.
 
@@ -109,11 +123,14 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
         float: The candidate vector's distance to the trustregion
             boundary.
     """
-    cc = candidate @ candidate
-    cd = candidate @ direction
-    dd = direction @ direction
-
+    cc = 0
+    cd = 0
+    dd = 0
+    for i in range(len(direction)):
+        cc += candidate[i] ** 2
+        dd += direction[i] ** 2
+        cd += candidate[i] * direction[i]
     sigma = -cd + np.sqrt(cd * cd + dd * (radius**2 - cc))
-    sigma /= dd
+    sigma = sigma / dd
 
     return sigma

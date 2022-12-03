@@ -19,3 +19,7 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.0"]
 
 [tool.setuptools_scm]
 write_to = "src/estimagic/_version.py"
+
+
+[tool.pytask]
+infer_latex_dependencies = true

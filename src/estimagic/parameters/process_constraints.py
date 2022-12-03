@@ -128,9 +128,10 @@ def _replace_pairwise_equality_by_equality(constraints):
     pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
     constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
-        equality_constraints = []
-        for elements in zip(*constr["indices"]):
-            equality_constraints.append({"index": list(elements), "type": "equality"})
+        equality_constraints = [
+            {"index": list(elements), "type": "equality"}
+            for elements in zip(*constr["indices"])
+        ]
         constraints += equality_constraints
 
     return constraints

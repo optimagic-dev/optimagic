@@ -4,13 +4,13 @@ from typing import NamedTuple
 from typing import Union
 
 import numpy as np
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient import (
     minimize_trust_cg,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
+from estimagic.optimization.subsolvers._steihaug_toint import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
@@ -674,7 +674,7 @@ def _get_information_on_active_bounds(
     """Return the index set of active bounds."""
     active_lower = np.where((x <= lower_bounds) & (gradient_unprojected > 0))[0]
     active_upper = np.where((x >= upper_bounds) & (gradient_unprojected < 0))[0]
-    active_fixed = np.where((lower_bounds == upper_bounds))[0]
+    active_fixed = np.where(lower_bounds == upper_bounds)[0]
     active_all = reduce(np.union1d, (active_fixed, active_lower, active_upper))
     inactive = np.setdiff1d(np.arange(len(x)), active_all)
 
