@@ -264,7 +264,6 @@ def neldermead_parallel(
             optimal = True
             converge = False
             reason_to_stop = "Maximum number of interation exceeded"
-        continue
 
     # save results
     result = {

@@ -674,7 +674,7 @@ def _get_information_on_active_bounds(
     """Return the index set of active bounds."""
     active_lower = np.where((x <= lower_bounds) & (gradient_unprojected > 0))[0]
     active_upper = np.where((x >= upper_bounds) & (gradient_unprojected < 0))[0]
-    active_fixed = np.where((lower_bounds == upper_bounds))[0]
+    active_fixed = np.where(lower_bounds == upper_bounds)[0]
     active_all = reduce(np.union1d, (active_fixed, active_lower, active_upper))
     inactive = np.setdiff1d(np.arange(len(x)), active_all)
 
