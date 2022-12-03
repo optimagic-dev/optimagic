@@ -153,11 +153,13 @@ def calculate_estimation_summary(
 
     df = pd.DataFrame(flat_data, index=names)
 
-    df.loc[free_names, "stars"] = pd.cut(
+    stars = pd.cut(
         df.loc[free_names, "p_value"],
         bins=[-1, 0.01, 0.05, 0.1, 2],
         labels=["***", "**", "*", ""],
     )
+
+    df["stars"] = stars
 
     # ==================================================================================
     # Map summary data into params tree structure

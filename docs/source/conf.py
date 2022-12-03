@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # estimagic documentation build configuration file, created by
 # sphinx-quickstart on Fri Jan 18 10:59:27 2019.

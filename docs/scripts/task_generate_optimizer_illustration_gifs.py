@@ -358,9 +358,7 @@ def task_create_convergence_gif(produces, algorithm):
         )
         sns.despine()
 
-    frames = []
-    for i in range(len(points)):
-        frames.append(_plot_history(points[: i + 1]))
+    frames = [_plot_history[: i + 1] for i in range(len(points))]
 
     gif.save(frames, produces, duration=2.5, unit="s")
 
@@ -409,8 +407,6 @@ def task_create_stylized_algo_gif(produces, algorithm):
                 },
             )
 
-    frames = []
-    for data in plot_data:
-        frames.append(visualize_step(**data))
+    frames = [visualize_step(**data) for data in plot_data]
 
     gif.save(frames, produces, duration=7.5, unit="s")

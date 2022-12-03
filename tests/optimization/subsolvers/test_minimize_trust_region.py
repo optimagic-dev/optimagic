@@ -1,93 +1,93 @@
 import numpy as np
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient import (
     _get_distance_to_trustregion_boundary as gdtb,
 )
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient import (
     _update_vectors_for_next_iteration as uvnr,
 )
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient import (
     minimize_trust_cg,
 )
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+from estimagic.optimization.subsolvers._conjugate_gradient_fast import (
     _get_distance_to_trustregion_boundary as gdtb_fast,
 )
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+from estimagic.optimization.subsolvers._conjugate_gradient_fast import (
     _update_vectors_for_next_iteration as uvnr_fast,
 )
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic_fast import (
+from estimagic.optimization.subsolvers._conjugate_gradient_fast import (
     minimize_trust_cg_fast,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
+from estimagic.optimization.subsolvers._steihaug_toint import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic_fast import (
+from estimagic.optimization.subsolvers._steihaug_toint_fast import (
     minimize_trust_stcg_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _apply_bounds_to_candidate_vector,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _calc_greatest_criterion_reduction as greatest_reduction_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _calc_new_reduction as new_reduction_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _calc_upper_bound_on_tangent as upper_bound_tangent_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _compute_new_search_direction_and_norm as new_dir_and_norm_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _take_constrained_step_up_to_boundary as step_constrained_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _take_unconstrained_step_up_to_boundary as step_unconstrained_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _update_candidate_vectors_and_reduction as update_candidate_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _update_candidate_vectors_and_reduction_alt_step as update_candidate_alt_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import (
+from estimagic.optimization.subsolvers._trsbox import (
     _update_tangent as update_tanget_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _calc_greatest_criterion_reduction as greatest_reduction_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _calc_new_reduction as new_reduction_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _calc_upper_bound_on_tangent as upper_bound_tangent_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _compute_new_search_direction_and_norm as new_dir_and_norm_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _perform_alternative_trustregion_step as perform_step_alt_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _perform_alternative_trustregion_step as perform_step_alt_orig,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _take_constrained_step_up_to_boundary as step_constrained_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _take_unconstrained_step_up_to_boundary as step_unconstrained_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _update_candidate_vectors_and_reduction as update_candidate_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _update_candidate_vectors_and_reduction_alt_step as update_candidate_alt_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     _update_tangent as update_tanget_fast,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic_fast import (
+from estimagic.optimization.subsolvers._trsbox_fast import (
     minimize_trust_trsbox_fast,
 )
 from numpy.testing import assert_array_almost_equal as aaae

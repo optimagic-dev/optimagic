@@ -406,6 +406,10 @@ flat numpy array are explained in the next section.
 
     Where the product of all but the last parameters is equal to 1.
 
+    If you have a function that calculates the derivative of your constraint, you can
+    add this under the key `"derivative"` to the constraint dictionary. Otherwise,
+    numerical derivatives are calculated for you if needed.
+
 ```
 
 ## Imposing multiple constraints at once

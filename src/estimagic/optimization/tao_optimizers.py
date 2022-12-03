@@ -1,4 +1,5 @@
 """This module implements the POUNDERs algorithm."""
+import contextlib
 import functools
 
 import numpy as np
@@ -11,10 +12,8 @@ from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.utilities import calculate_trustregion_initial_radius
 
-try:
+with contextlib.suppress(ImportError):
     from petsc4py import PETSc
-except ImportError:
-    pass
 
 
 @mark_minimizer(

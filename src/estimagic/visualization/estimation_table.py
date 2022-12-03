@@ -1,6 +1,7 @@
 import re
 from copy import deepcopy
 from functools import partial
+from pathlib import Path
 from warnings import warn
 
 import numpy as np
@@ -214,11 +215,12 @@ def estimation_table(
             ['data_frame', 'render_inputs','latex' ,'html']
             or a path ending with '.html' or '.tex'. Not: {return_type}."""
         )
-    if not str(return_type).endswith((".html", ".tex")):
+
+    return_type = Path(return_type)
+    if return_type.suffix not in (".html", ".tex"):
         return out
     else:
-        with open(return_type, "w") as t:
-            t.write(out)
+        return_type.write_text(out)
 
 
 def render_latex(
@@ -236,7 +238,7 @@ def render_latex(
     show_col_groups=True,
     escape_special_characters=True,
 ):
-    """Return estimation table in LaTeX format as string.
+    r"""Return estimation table in LaTeX format as string.
 
     Args:
         body (pandas.DataFrame): DataFrame with formatted strings of parameter
@@ -1215,7 +1217,7 @@ def _generate_notes_latex(
         # is not followed by a semi column
         for i in range(len(significance_levels) - 1):
             star = "*" * (len(significance_levels) - i)
-            notes_text += "$^{{{}}}$p$<${};".format(star, str(significance_levels[i]))
+            notes_text += f"$^{{{star}}}$p$<${significance_levels[i]};"
         notes_text += "$^{*}$p$<$" + str(significance_levels[-1]) + "} \\\\\n"
         if custom_notes:
             amp_n = "&" * n_levels
@@ -1276,8 +1278,8 @@ def _generate_notes_html(
         )
         for i in range(len(significance_levels) - 1):
             stars = "*" * (len(significance_levels) - i)
-            notes_text += "<sup>{}</sup>p&lt;{}; ".format(stars, significance_levels[i])
-        notes_text += """<sup>*</sup>p&lt;{} </td>""".format(significance_levels[-1])
+            notes_text += f"<sup>{stars}</sup>p&lt;{significance_levels[i]}; "
+        notes_text += f"""<sup>*</sup>p&lt;{significance_levels[-1]} </td>"""
         if custom_notes:
             if isinstance(custom_notes, list):
                 if not all(isinstance(n, str) for n in custom_notes):
@@ -1445,7 +1447,7 @@ def _unformat_integers(sr):
     """Remove trailing zeros from integer numbers."""
     for i in sr.index:
         res_numeric = re.findall(
-            "[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
+            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
         )
         if res_numeric:
             num = res_numeric[0]
