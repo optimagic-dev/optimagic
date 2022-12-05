@@ -583,17 +583,17 @@ you install estimagic.
       - "Powell"
       - "CG"
       - "BFGS"
-      - "Newton-CG" 
+      - "Newton-CG"
       - "L-BFGS-B"
       - "TNC"
-      - "COBYLA" 
-      - "SLSQP" 
+      - "COBYLA"
+      - "SLSQP"
       - "trust-constr"
-      - "dogleg" 
-      - "trust-ncg" 
-      - "trust-exact" 
+      - "dogleg"
+      - "trust-ncg"
+      - "trust-exact"
       - "trust-krylov"
-    or a custom function for local minimization, default is "L-BFGS-B". 
+    or a custom function for local minimization, default is "L-BFGS-B".
     - **n_iter**: (int) The number of basin-hopping iterations resulting in a total of n_iter + 1 local minimization. Default is 100 as in scipy's default.
     - **temperature_parameter**: (float) Controls the randomness in the optimization process. Higher the temperatures the larger jumps in function value will be accepted. Default is 1.0 as in scipy's default.
     - **step_size**: (float) Maximum step size. Default is 0.5 as in scipy's default.
