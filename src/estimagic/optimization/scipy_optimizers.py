@@ -692,7 +692,6 @@ def scipy_differential_evolution(
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
-    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
 
     res = scipy.optimize.differential_evolution(
         func=criterion,
