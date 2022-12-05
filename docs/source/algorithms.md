@@ -565,6 +565,48 @@ you install estimagic.
 
 ```
 
+```{eval-rst}
+.. dropdown::  scipy_basinhopping
+
+    .. code-block::
+
+        "scipy_basinhopping"
+
+    Find the global minimum of a function using the basin-hopping algorithm which combines a global stepping algorithm with local minimization at each step.
+
+    When provided the derivative is passed to the local minimization method.
+
+    The algorithm supports the following options:
+
+    - **local_method** (str/callable): Any scipy local minimizer:
+      - "Nelder-Mead"
+      - "Powell"
+      - "CG"
+      - "BFGS"
+      - "Newton-CG" 
+      - "L-BFGS-B"
+      - "TNC"
+      - "COBYLA" 
+      - "SLSQP" 
+      - "trust-constr"
+      - "dogleg" 
+      - "trust-ncg" 
+      - "trust-exact" 
+      - "trust-krylov"
+    or a custom function for local minimization, default is "L-BFGS-B". 
+    - **n_iter**: (int) The number of basin-hopping iterations resulting in a total of n_iter + 1 local minimization. Default is 100 as in scipy's default.
+    - **temperature_parameter**: (float) Controls the randomness in the optimization process. Higher the temperatures the larger jumps in function value will be accepted. Default is 1.0 as in scipy's default.
+    - **step_size**: (float) Maximum step size. Default is 0.5 as in scipy's default.
+    - **take_step**: (callable) Replaces the default step-taking routine. Default is None as in scipy's default.
+    - **accept_test**: (callable) Define a test to judge the acception of steps. Default is None as in scipy's default.
+    - **interval**: (int) Determined how often the step size is updated. Default is 50 as in scipy's default.
+    - **n_iter_success**: (int) Number of iterations the global minimum estimate stays the same to stops the algorithm. Default is None as in scipy's default.
+    - **seed**: (None, int, numpy.random.Generator,numpy.random.RandomState)Default is None as in scipy's default.
+    - **target_accept_rate**: (float) Adjusts the step size. Default is 0.5 as in scipy's default.
+    - **stepwise_factor**: (float) Step size multiplier upon each step. Lies between (0,1), default is 0.9 as in scipy's default.
+
+```
+
 (own-algorithms)=
 
 ## Own optimizers
