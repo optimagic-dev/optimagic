@@ -110,7 +110,7 @@ def _scaled_polynomial_features(x):
 
 
 def _reshape_coef_to_square_terms(coef, n_params):
-    """Reshape coefficients to matrix of square terms."""
+    """Reshape square coefficients to matrix of square terms."""
     mat = np.empty((n_params, n_params))
     idx = -1
 
