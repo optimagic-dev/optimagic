@@ -21,7 +21,6 @@ def get_poisedness_constant(sample):
 
     lagrange_mat = lagrange_poly_matrix(sample)
     center = np.zeros(n_params)
-    radius = 1
 
     lambda_ = 0
     for poly in lagrange_mat:
@@ -31,9 +30,7 @@ def get_poisedness_constant(sample):
         _coef_square_terms = poly[n_params + 1 :]
         square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
 
-        nonlinear_constraint = NonlinearConstraint(
-            lambda x: np.linalg.norm(x), 0, radius
-        )
+        nonlinear_constraint = NonlinearConstraint(lambda x: np.linalg.norm(x), 0, 1)
         _func_to_maximize = partial(
             _get_neg_absolute_value,
             intercept=intercept,
