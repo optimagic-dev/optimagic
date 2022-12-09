@@ -8,7 +8,7 @@ from scipy.optimize import NonlinearConstraint
 def get_poisedness_constant(sample):
     """Calculate the lambda poisedness constant.
 
-    The implentation is based on :cite:`Conn2009`, Chapters 3 and 4.
+    The implementation is based on :cite:`Conn2009`, Chapters 3 and 4.
 
     Args:
         sample (np.ndarry): Array of shape (n_samples, n_params).
@@ -20,7 +20,8 @@ def get_poisedness_constant(sample):
     n_params = sample.shape[1]
 
     lagrange_mat = lagrange_poly_matrix(sample)
-    center, radius = get_center_and_radius(sample)
+    center = np.zeros(n_params)
+    radius = 1
 
     lambda_ = 0
     for poly in lagrange_mat:
@@ -31,21 +32,23 @@ def get_poisedness_constant(sample):
         square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
 
         nonlinear_constraint = NonlinearConstraint(
-            lambda x: np.linalg.norm(x - center), 0, radius
+            lambda x: np.linalg.norm(x), 0, radius
         )
-        _func_to_minimize = partial(
+        _func_to_maximize = partial(
             _get_neg_absolute_value,
             intercept=intercept,
             linear_terms=linear_terms,
             square_terms=square_terms,
         )
-        res = minimize(
-            _func_to_minimize,
+        results_max = minimize(
+            _func_to_maximize,
             center,
             method="trust-constr",
             constraints=[nonlinear_constraint],
         )
-        critval = _get_absolute_value(res.x, intercept, linear_terms, square_terms)
+        critval = _get_absolute_value(
+            results_max.x, intercept, linear_terms, square_terms
+        )
 
         if critval > lambda_:
             lambda_ = critval
@@ -86,7 +89,7 @@ def _scaled_polynomial_features(x):
 
     """
     n_samples, n_params = np.atleast_2d(x).shape
-    n_poly_terms = _n_second_order_terms(n_params)
+    n_poly_terms = n_params * (n_params + 1) // 2
 
     poly_terms = np.empty((n_poly_terms, n_samples), np.float64)
     xt = x.T
@@ -104,11 +107,6 @@ def _scaled_polynomial_features(x):
     out = np.concatenate((intercept, xt, poly_terms), axis=0)
 
     return out.T
-
-
-def _n_second_order_terms(dim):
-    """Number of free second order terms in a quadratic model."""
-    return dim * (dim + 1) // 2
 
 
 def _reshape_coef_to_square_terms(coef, n_params):
@@ -131,33 +129,3 @@ def _get_absolute_value(x, intercept, linear_terms, square_terms):
 
 def _get_neg_absolute_value(x, intercept, linear_terms, square_terms):
     return -_get_absolute_value(x, intercept, linear_terms, square_terms)
-
-
-# =====================================================================================
-
-
-def get_center_and_radius(sample):
-    sample_t = sample.T
-    sorted_index = _find_sorted_index_closest_point_to_center(sample_t)
-    sample_t = sample_t[:, sorted_index]
-    center, rad = _find_ball(sample_t)
-
-    return center, rad
-
-
-def _find_sorted_index_closest_point_to_center(sample):
-    dyn_list = []
-    for i in range(sample.shape[1]):
-        dy = sample[:, i]
-        dyn = np.linalg.norm(dy)
-        dyn_list.append(dyn)
-
-    sorted_index = sorted(range(len(dyn_list)), key=lambda k: dyn_list[k])
-
-    return sorted_index
-
-
-def _find_ball(sample):
-    center = sample[:, 0]
-    rad = np.linalg.norm(sample[:, 0] - sample[:, -1])
-    return center, rad
