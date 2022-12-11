@@ -50,7 +50,7 @@ def process_internal_optimizer_result(
             res.convergence_report = conv_report
 
             res.algorithm = f"multistart_{res.algorithm}"
-            res.n_iterations = res.n_iterations = _sum_or_none(
+            res.n_iterations = _sum_or_none(
                 [opt.n_iterations for opt in info["local_optima"]]
             )
 

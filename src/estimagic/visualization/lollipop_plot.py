@@ -1,6 +1,5 @@
 import math
 
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from estimagic.config import PLOTLY_PALETTE
@@ -168,10 +167,3 @@ def _make_string_index(ind):
     else:
         out = ind.map(str).tolist()
     return out
-
-
-df = pd.DataFrame(
-    np.arange(12).reshape(4, 3),
-    index=pd.MultiIndex.from_tuples([(0, "a"), ("b", 1), ("a", "b"), (2, 3)]),
-    columns=["a", "b", "c"],
-)

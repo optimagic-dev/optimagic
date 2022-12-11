@@ -251,7 +251,7 @@ def nag_dfols(
 
 
 @mark_minimizer(
-    name="nag_dfols",
+    name="nag_pybobyqa",
     needs_scaling=True,
     is_available=IS_PYBOBYQA_INSTALLED,
 )
@@ -344,6 +344,8 @@ def nag_pybobyqa(
         "restarts.auto_detect.min_chg_model_slope": trustregion_reset_options[
             "auto_detect_min_jacobian_increase"
         ],
+        "logging.save_diagnostic_info": True,
+        "logging.save_xk": True,
     }
 
     advanced_options.update(pybobyqa_options)
@@ -386,6 +388,8 @@ def _process_nag_result(nag_result_obj, len_x):
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,
+        "states": nag_result_obj.states,
+        "diagnostic_info": nag_result_obj.diagnostic_info,
     }
     if nag_result_obj.x is not None:
         processed["solution_x"] = nag_result_obj.x
@@ -397,6 +401,7 @@ def _process_nag_result(nag_result_obj, len_x):
         processed["solution_hessian"] = nag_result_obj.hessian
     if processed["message"].startswith("Error (bad input)"):
         raise ValueError(processed["message"])
+
     return processed
 
 
