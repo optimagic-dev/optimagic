@@ -4,46 +4,31 @@ from estimagic import minimize
 from estimagic.visualization.visualize_tranquilo import visualize_tranquilo
 
 cases = []
+algo_options = {
+    "sphere": {
+        "sampler": "sphere",
+        "subsolver": "gqtpar_fast",
+        "sample_filter": "drop_pounders",
+        "stopping.max_iterations": 10,
+    },
+    "optimal_sphere": {
+        "sampler": "optimal_sphere",
+        "subsolver": "gqtpar_fast",
+        "sample_filter": "drop_pounders",
+        "stopping.max_iterations": 10,
+    },
+}
 for problem in ["rosenbrock_good_start", "watson_6_good_start"]:
     inputs = get_benchmark_problems("more_wild")[problem]["inputs"]
     criterion = inputs["criterion"]
     start_params = inputs["params"]
-    for setting in [
-        {
-            "tranquilo_sphere": {
-                "sampler": "sphere",
-                "subsolver": "gqtpar_fast",
-                "sample_filter": "drop_pounders",
-                "stopping.max_iterations": 10,
-            },
-            "tanquilo_optimal_sphere": {
-                "sampler": "optimal_sphere",
-                "subsolver": "gqtpar_fast",
-                "sample_filter": "drop_pounders",
-                "stopping.max_iterations": 10,
-            },
-        },
-        {
-            "tranquilo_ls_sphere": {
-                "sampler": "sphere",
-                "subsolver": "gqtpar_fast",
-                "sample_filter": "drop_pounders",
-                "stopping.max_iterations": 10,
-            },
-            "tranquilo_ls_optimal_sphere": {
-                "sampler": "optimal_sphere",
-                "subsolver": "gqtpar_fast",
-                "sample_filter": "drop_pounders",
-                "stopping.max_iterations": 10,
-            },
-        },
-    ]:
+    for algo in ["tranquilo", "tranquilo_ls"]:
         results = {}
-        for s, options in setting.items():
+        for s, options in algo_options.items():
             results[s] = minimize(
                 criterion=criterion,
                 params=start_params,
-                algorithm=s,
+                algorithm=algo,
                 algo_options=options,
             )
         cases.append(results)
