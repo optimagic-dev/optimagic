@@ -9,7 +9,6 @@ The following arguments are not supported as ``algo_options``:
   and algorithm.
 
 """
-import contextlib
 import warnings
 
 import numpy as np
@@ -390,20 +389,15 @@ def _process_nag_result(nag_result_obj, len_x):
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,
-        "states": nag_result_obj.states,
         "diagnostic_info": nag_result_obj.diagnostic_info,
+        "n_iterations": nag_result_obj.diagnostic_info["iters_total"].iloc[-1],
     }
+    if hasattr(nag_result_obj, "states"):
+        processed.update({"states": nag_result_obj.states})
     if nag_result_obj.x is not None:
         processed["solution_x"] = nag_result_obj.x
     else:
         processed["solution_x"] = np.array([np.nan] * len_x)
-    with contextlib.suppress(AttributeError):
-        processed["solution_derivative"] = nag_result_obj.gradient
-    with contextlib.suppress(AttributeError):
-        processed["solution_hessian"] = nag_result_obj.hessian
-    if processed["message"].startswith("Error (bad input)"):
-        raise ValueError(processed["message"])
-
     return processed
 
 
