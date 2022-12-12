@@ -227,6 +227,8 @@ def nag_dfols(
         "growing.num_new_dirns_each_iter": fast_start[
             "n_extra_search_directions_per_iteration"
         ],
+        "logging.save_diagnostic_info": True,
+        "logging.save_xk": True,
     }
 
     advanced_options.update(dfols_options)
