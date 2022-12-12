@@ -10,22 +10,32 @@ for problem in ["rosenbrock_good_start", "watson_6_good_start"]:
     start_params = inputs["params"]
     for setting in [
         {
-            "tranquilo": {
+            "tranquilo_sphere": {
                 "sampler": "sphere",
                 "subsolver": "gqtpar_fast",
                 "sample_filter": "drop_pounders",
                 "stopping.max_iterations": 10,
             },
-            "nag_pybobyqa": {"stopping.max_iterations": 10},
+            "tanquilo_optimal_sphere": {
+                "sampler": "optimal_sphere",
+                "subsolver": "gqtpar_fast",
+                "sample_filter": "drop_pounders",
+                "stopping.max_iterations": 10,
+            },
         },
         {
-            "tranquilo_ls": {
+            "tranquilo_ls_sphere": {
                 "sampler": "sphere",
                 "subsolver": "gqtpar_fast",
                 "sample_filter": "drop_pounders",
                 "stopping.max_iterations": 10,
             },
-            "nag_dfols": {"stopping.max_iterations": 10},
+            "tranquilo_ls_optimal_sphere": {
+                "sampler": "sphere",
+                "subsolver": "gqtpar_fast",
+                "sample_filter": "drop_pounders",
+                "stopping.max_iterations": 10,
+            },
         },
     ]:
         results = {}
