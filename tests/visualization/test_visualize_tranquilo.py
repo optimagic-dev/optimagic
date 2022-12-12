@@ -31,7 +31,7 @@ for problem in ["rosenbrock_good_start", "watson_6_good_start"]:
                 "stopping.max_iterations": 10,
             },
             "tranquilo_ls_optimal_sphere": {
-                "sampler": "sphere",
+                "sampler": "optimal_sphere",
                 "subsolver": "gqtpar_fast",
                 "sample_filter": "drop_pounders",
                 "stopping.max_iterations": 10,
