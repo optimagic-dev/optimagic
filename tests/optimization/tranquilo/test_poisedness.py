@@ -2,12 +2,53 @@ import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.poisedness import _reshape_coef_to_square_terms
 from estimagic.optimization.tranquilo.poisedness import get_poisedness_constant
+from estimagic.optimization.tranquilo.poisedness import improve_poisedness
 from estimagic.optimization.tranquilo.poisedness import lagrange_poly_matrix
 from numpy.testing import assert_array_almost_equal as aaae
 
 
 def evaluate_scalar_model(x, intercept, linear_terms, square_terms):
     return intercept + linear_terms.T @ x + 0.5 * x.T @ square_terms @ x
+
+
+# ======================================================================================
+# Improve poisedness
+# ======================================================================================
+
+
+def test_improve_poisedness():
+    sample = np.array(
+        [
+            [-0.98, -0.96],
+            [-0.96, -0.98],
+            [0, 0],
+            [0.98, 0.96],
+            [0.96, 0.98],
+            [0.94, 0.94],
+        ]
+    )
+    expected_sample = np.array(
+        [
+            [0.99974443, -0.02260675],
+            [-0.96, -0.98],
+            [-0.02131938, 0.03287205],
+            [0.98, 0.96],
+            [-0.52862931, 0.84885279],
+            [0.2545369, -0.96706306],
+        ]
+    )
+    expected_lambdas = [
+        5324.240935366314,
+        36.87996947175511,
+        11.090857556966462,
+        1.3893207179888898,
+        1.0016763267639168,
+    ]
+
+    got_sample, got_lambdas = improve_poisedness(sample)
+
+    aaae(got_sample, expected_sample)
+    aaae(got_lambdas, expected_lambdas)
 
 
 # ======================================================================================
@@ -61,7 +102,7 @@ TEST_CASES = [
 def test_poisedness_scaled_precise(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
-    got = get_poisedness_constant(sample)
+    got, *_ = get_poisedness_constant(sample)
     assert np.allclose(got, expected, rtol=1e-2)
 
 
@@ -113,7 +154,7 @@ TEST_CASES = [
 def test_poisedness_scaled_imprecise(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
-    got = get_poisedness_constant(sample)
+    got, *_ = get_poisedness_constant(sample)
     assert np.allclose(got, expected, rtol=1e-2)
 
 
@@ -143,7 +184,7 @@ def test_poisedness_unscaled_precise(sample, expected):
     center = 0.5 * np.ones(n_params)
     sample_centered = (sample - center) / radius
 
-    got = get_poisedness_constant(sample_centered)
+    got, *_ = get_poisedness_constant(sample_centered)
     assert np.allclose(got, expected, rtol=1e-2)
 
 
@@ -200,7 +241,7 @@ def test_poisedness_unscaled_imprecise(sample, expected):
     center = 0.5 * np.ones(n_params)
     sample_centered = (sample - center) / radius
 
-    got = get_poisedness_constant(sample_centered)
+    got, *_ = get_poisedness_constant(sample_centered)
     assert np.allclose(got, expected, rtol=1e-2)
 
 

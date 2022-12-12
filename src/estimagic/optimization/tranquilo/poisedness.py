@@ -5,6 +5,36 @@ from scipy.optimize import minimize
 from scipy.optimize import NonlinearConstraint
 
 
+def improve_poisedness(sample, maxiter=5):
+    """Improve the poisedness of a sample.
+
+    The implementation is based on algorithm 6.3 in :cite:`Conn2009`,
+    Chapter 6, p. 95 ff.
+
+    Args:
+        sample (np.ndarry): Array of shape (n_samples, n_params).
+        maxiter (int): Maximum number of iterations.
+
+    Returns:
+        tuple:
+            - sample_improved (np.ndarray): Sample with improved poisedness.
+            - lambdas (list): History of lambdas.
+
+    """
+    sample_improved = sample.copy()
+
+    lambdas = []
+
+    for _ in range(maxiter):
+
+        lambda_, argmax, idx_max = get_poisedness_constant(sample_improved)
+
+        lambdas += [lambda_]
+        sample_improved[idx_max] = argmax
+
+    return sample_improved, lambdas
+
+
 def get_poisedness_constant(sample):
     """Calculate the lambda poisedness constant.
 
@@ -14,16 +44,22 @@ def get_poisedness_constant(sample):
         sample (np.ndarry): Array of shape (n_samples, n_params).
 
     Returns:
-        float: The lambda poisedness constant.
+        tuple:
+            - lambda (float): The lambda poisedness constant.
+            - argmax (np.ndarray): 1d array of shape (n_params,) containing the
+                parameter vector that maximizes lambda.
+            - idx_max (int): Index relating to the position of the argmax in the sample.
 
     """
     n_params = sample.shape[1]
-
-    lagrange_mat = lagrange_poly_matrix(sample)
     center = np.zeros(n_params)
 
+    lagrange_mat = lagrange_poly_matrix(sample)
+
     lambda_ = 0
-    for poly in lagrange_mat:
+    idx_max = None
+
+    for idx, poly in enumerate(lagrange_mat):
 
         intercept = poly[0]
         linear_terms = poly[1 : n_params + 1]
@@ -49,8 +85,10 @@ def get_poisedness_constant(sample):
 
         if critval > lambda_:
             lambda_ = critval
+            argmax = results_max.x
+            idx_max = idx
 
-    return lambda_
+    return lambda_, argmax, idx_max
 
 
 def lagrange_poly_matrix(sample):
