@@ -14,7 +14,43 @@ from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 
 
-def diagnose(results, iterations):
+def visualize_tranquilo(results, iterations):
+    """Plot diagnostic information of optimization result in given iteration(s).
+
+    Generates plots with sample points (trustregion or heatmap), criterion evaluations,
+    trustregion radii and other diagnostic information to compare different algorithms
+    at an iteration or different iterations for a given algorithm.
+
+    Currently works for the following algorithms: `tranquilo`, `tranquilo_ls`,
+    `nag_pybobyqa` and `nag_dfols`.
+
+    Args:
+        results (dict or OptimizeResult): An estimagic optimization result or a
+            dictionary with different estimagic optimization results.
+        iterations (int, list, tuple or dict): The iterations to compare the results
+            at. Can be an integer if we want to compare different results at the same
+            iteration, a list or tuple if we want to compare different iterations of
+            the same optimization result, or dictionary with the same keys as results
+            and with integer values if we want to compare different iterations of
+            different results.
+    Returns:
+        fig (plotly.Figure): Plotly figure that combines the following plots:
+            - sample points: plot with model points at current iteration and the
+                trust region, if number of parameters is not larger than 2, or
+                a heatmap of (absolute) correlations of sample points for higher
+                dimensional parameter spaces.
+            - distance plot: L2 and infinity norm-distances of model points from
+                the trustregion center.
+            - criterion plot: function evaluations with sample points and current
+                accepted point highlighted.
+            - rho plots: the ratio of expected and actual improvement in function
+                values at each iteration.
+            - radius plots: trustregion radii at each iteration.
+            - cluster plots: number of clusters relative to number of sample points
+                at each iteration.
+            - fekete criterion plots: the value of the fekete criterion at each
+                iteration.
+    """
     results = deepcopy(results)
     if isinstance(iterations, int):
         iterations = {case: iterations for case in results}
@@ -66,7 +102,7 @@ def diagnose(results, iterations):
         fig.layout.annotations[i].update(y=1.015)
     for r in [2, 3]:
         for c in range(1, ncols + 1):
-            fig.update_xaxes(range=[min(xl) - 0.5, max(xu) + 0.5], row=r, col=c)
+            fig.update_xaxes(range=[min(xl) - 0.25, max(xu) + 0.25], row=r, col=c)
     fig = _clean_legend_duplicates(fig)
     fig.update_layout(height=400 * nrows, width=460 * ncols, template="plotly_white")
     fig.update_yaxes(
@@ -480,6 +516,7 @@ def _clean_legend_duplicates(fig):
 
 
 def _process_results(result):
+    """Add model indices to states of optimization result."""
     result = deepcopy(result)
     xs = np.array(result.history["params"])
     if result.algorithm in ["nag_pybobyqa", "nag_dfols"]:
@@ -493,6 +530,12 @@ def _process_results(result):
                     state.x,
                 )[0],
             )
+    elif result.algorithm in ["tranquilo", "tranquilo_ls"]:
+        pass
+    else:
+        NotImplementedError(
+            f"Diagnostic plots are not implemented for {result.algorithm}"
+        )
     return result
 
 
