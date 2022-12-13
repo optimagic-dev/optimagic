@@ -1,6 +1,4 @@
 """Implement the fides optimizer."""
-import logging
-
 import numpy as np
 from estimagic.config import IS_FIDES_INSTALLED
 from estimagic.decorators import mark_minimizer
@@ -11,6 +9,8 @@ from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+
+import logging
 
 if IS_FIDES_INSTALLED:
     from fides import hessian_approximation
