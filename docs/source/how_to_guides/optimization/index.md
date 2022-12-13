@@ -15,6 +15,7 @@ how_to_handle_errors_during_optimization.ipynb
 how_to_scale_optimization_problems
 how_to_do_multistart_optimizations.ipynb
 how_to_benchmark_optimization_algorithms.ipynb
+how_to_visualize_histories.ipynb
 how_to_visualize_an_optimization_problem.ipynb
 how_to_pick_an_optimizer.ipynb
 ```
