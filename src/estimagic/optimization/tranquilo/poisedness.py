@@ -36,12 +36,35 @@ def improve_poisedness(sample, maxiter=5):
 
 
 def get_poisedness_constant(sample):
-    """Calculate the lambda poisedness constant.
+    """Calculate the lambda poisedness constant of a sample inside the trust-region.
+
+    Note that the trust-region is centered around the origin, and its radius is
+    normalized to 1.
 
     The implementation is based on :cite:`Conn2009`, Chapters 3 and 4.
 
+    In general, if the sample is lambda-poised with a small lambda, where lambda >=1,
+    the sample is said to have "good" geometry or "spans" the trust-region well.
+    As lambda grows, the system represented by these points becomes increasingly
+    linearly dependent.
+
+    Formal definition:
+    A sample Y is said to be lambda-poised on a region of interest if it is linearly
+    independent and the Lagrange polynomials L(i) of points i through N in Y satisfy:
+
+        lambda >= max_i max_x | L(i) |      (1)
+
+    i.e. for each point i in the sample, we maximize the absolute criterion value
+    of its lagrange polynomial L(i); we then take the maximum over all these
+    criterion values as the lambda constant.
+
+    When we compare different samples on the same trust-region, we are usually
+    interested in keeping the sample with the least lambda, so that (1) holds.
+
+
     Args:
-        sample (np.ndarry): Array of shape (n_samples, n_params).
+        sample (np.ndarry): Array of shape (n_samples, n_params) containing the scaled
+            sample of points that lie within a trust-region with center 0 and radius 1.
 
     Returns:
         tuple:
@@ -79,6 +102,7 @@ def get_poisedness_constant(sample):
             method="trust-constr",
             constraints=[nonlinear_constraint],
         )
+
         critval = _get_absolute_value(
             results_max.x, intercept, linear_terms, square_terms
         )
