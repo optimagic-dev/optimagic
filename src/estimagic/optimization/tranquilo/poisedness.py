@@ -13,7 +13,7 @@ def improve_poisedness(sample, maxiter=5):
 
     Args:
         sample (np.ndarry): Array of shape (n_samples, n_params).
-        maxiter (int): Maximum number of iterations.
+        maxiter (int): Maximum number of iterations. Default is 5.
 
     Returns:
         tuple:
