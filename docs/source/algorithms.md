@@ -578,14 +578,20 @@ We implement a few algorithms from scratch. They are currently considered experi
 
         "bhhh"
 
-    Minimize a likelihood function using the BHHH algorithm.
+    Minimize a likelihood function using the box-constraint BHHH algorithm.
 
     BHHH (:cite:`Berndt1974`) can - and should ONLY - be used for minimizing
-    (or maximizing) a likelihood. It is similar to the Newton-Raphson
+    (or maximizing) a likelihood function. It is similar to the Newton-Raphson
     algorithm, but replaces the Hessian matrix with the outer product of the
     gradient. This approximation is based on the information matrix equality
     (:cite:`Halbert1982`) and is thus only vaid when minimizing (or maximizing)
     a likelihood.
+
+    Bounds, i.e. box constraints, are supported. In order to identify the active
+    constraints in the set of inequality constraints, an epsilon-active-set approach is
+    used (see, e.g. :cite:`Nocedal2006`, p. 308, for the active-set method in general and
+    :cite:`Kelley1999`, p. 97, on the estimation of epsilon-active sets a la the
+    Projected BFGS–Armijo algorithm).
 
     The criterion function :func:`func` should return a dictionary with
     at least the entry ``{"contributions": array_or_pytree}`` where ``array_or_pytree``
@@ -593,10 +599,13 @@ We implement a few algorithms from scratch. They are currently considered experi
 
     bhhh supports the following options:
 
-    - **convergence_absolute_gradient_tolerance** (float): Stopping criterion for the
-      gradient tolerance. Default is 1e-8.
-    - **stopping_max_iterations** (int): Maximum number of iterations.
-      If reached, terminate. Default is 200.
+    - **convergence.relative_params_tolerance** (float): Stop when the relative movement
+            between parameter vectors is smaller than this. The default is 1e-8.
+    - **convergence.absolute_gradient_tolerance** (float): Stop if all elements of the
+            projected gradient are smaller than this. The default is 1e-8.
+    - **stopping.max_iterations** (int): If the maximum number of iterations is reached,
+      the optimization stops, but we do not count this as convergence.
+      The default is 200.
 
 ```
 
