@@ -64,7 +64,7 @@ repos:
         language_version: python3.9
 
 -   repo: https://github.com/PyCQA/flake8
-    rev: "5.0.4"
+    rev: "6.0.0"
     hooks:
     -   id: flake8
         types: [python]
