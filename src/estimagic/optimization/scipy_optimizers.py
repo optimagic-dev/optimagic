@@ -146,6 +146,8 @@ def scipy_slsqp(
 def scipy_neldermead(
     criterion,
     x,
+    lower_bounds,
+    upper_bounds,
     *,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
@@ -171,6 +173,7 @@ def scipy_neldermead(
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         method="Nelder-Mead",
         options=options,
     )

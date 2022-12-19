@@ -3728,7 +3728,7 @@ using an NLOPT algorithm. To install nlopt run `conda install nlopt`.
 estimagic supports the following [SimOpt](https://github.com/simopt-admin/simopt)
 algorithms. Please add the [appropriate
 citations](https://github.com/simopt-admin/simopt) in addition to estimagic when using a
-SimOpt algorithm. To install simopt run `pip install simoptlib`.
+SimOpt algorithm. To install simopt run `pip install simoptlib==1.0.1`.
 
 ```{eval-rst}
 .. dropdown:: simopt_adam
