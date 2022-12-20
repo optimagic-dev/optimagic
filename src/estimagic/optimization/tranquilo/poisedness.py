@@ -129,7 +129,7 @@ def lagrange_poly_matrix(sample):
 
     """
     basis_mat = _scaled_polynomial_features(sample)
-    lagrange_mat = basis_mat @ np.linalg.inv(basis_mat.T @ basis_mat)
+    lagrange_mat = basis_mat @ np.linalg.pinv(basis_mat.T @ basis_mat)
 
     return lagrange_mat
 
