@@ -68,6 +68,82 @@ def test_improve_poisedness(shape, maxiter, expected):
 # ======================================================================================
 # Lambda poisedness constant
 # ======================================================================================
+TEST_CASES = [
+    (
+        np.array(
+            [
+                [-0.98, -0.96],
+                [-0.96, -0.98],
+                [0, 0],
+                [0.98, 0.96],
+                [0.96, 0.98],
+                [0.94, 0.94],
+            ]
+        ),
+        5324.241743151584,
+    ),
+    (
+        np.array(
+            [
+                [-0.98, -0.96],
+                [-0.96, -0.98],
+                [0.0, 0.0],
+                [0.98, 0.96],
+                [0.96, 0.98],
+                [-0.70710678, 0.70710678],
+            ]
+        ),
+        36.87996947175511,
+    ),
+    (
+        np.array(
+            [
+                [-0.98, -0.96],
+                [-0.96, -0.98],
+                [0.0, 0.0],
+                [0.84885278, -0.52862932],
+                [0.96, 0.98],
+                [-0.70710678, 0.70710678],
+            ]
+        ),
+        11.090857500607644,
+    ),
+    (
+        np.array(
+            [
+                [-0.98, -0.96],
+                [-0.02260674, 0.99974443],
+                [0.0, 0.0],
+                [0.84885278, -0.52862932],
+                [0.96, 0.98],
+                [-0.70710678, 0.70710678],
+            ]
+        ),
+        1.3893205660280858,
+    ),
+    (
+        np.array(
+            [
+                [-0.98, -0.96],
+                [-0.02260674, 0.99974443],
+                [0.0, 0.0],
+                [0.84885278, -0.52862932],
+                [0.96, 0.98],
+                [-0.96706306, 0.2545369],
+            ]
+        ),
+        1.0016763272061744,
+    ),
+]
+
+
+@pytest.mark.parametrize("sample, expected", TEST_CASES)
+def test_get_poisedness_constant(sample, expected):
+    """Test cases are taken from :cite:`Conn2009` p. 99."""
+
+    got, *_ = get_poisedness_constant(sample, shape="sphere")
+    assert np.allclose(got, expected)
+
 
 TEST_CASES = [
     (
@@ -88,10 +164,10 @@ TEST_CASES = [
             [
                 [-0.98, -0.96],
                 [-0.96, -0.98],
-                [0, 0],
+                [0.0, 0.0],
                 [0.98, 0.96],
                 [0.96, 0.98],
-                [0.707, -0.707],
+                [-0.70710678, 0.70710678],
             ]
         ),
         36.88,
@@ -117,7 +193,7 @@ def test_poisedness_scaled_precise(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
     got, *_ = get_poisedness_constant(sample, shape="sphere")
-    assert np.allclose(got, expected, rtol=1e-2)
+    assert np.allclose(got, expected, rtol=1e-3)
 
 
 TEST_CASES = [
@@ -169,7 +245,7 @@ def test_poisedness_scaled_imprecise(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
     got, *_ = get_poisedness_constant(sample, shape="sphere")
-    assert np.allclose(got, expected, rtol=1e-2)
+    assert np.allclose(got, expected, rtol=1e-3)
 
 
 TEST_CASES = [
@@ -199,7 +275,7 @@ def test_poisedness_unscaled_precise(sample, expected):
     sample_centered = (sample - center) / radius
 
     got, *_ = get_poisedness_constant(sample_centered, shape="sphere")
-    assert np.allclose(got, expected, rtol=1e-2)
+    assert np.allclose(got, expected, rtol=1e-3)
 
 
 def test_get_maximizer():
