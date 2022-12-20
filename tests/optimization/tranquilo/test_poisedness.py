@@ -15,8 +15,39 @@ def evaluate_scalar_model(x, intercept, linear_terms, square_terms):
 # Improve poisedness
 # ======================================================================================
 
+TEST_CASES = [
+    (
+        "sphere",
+        5,
+        [
+            5324.240935366314,
+            36.87996947175511,
+            11.090857556966462,
+            1.3893207179888898,
+            1.0016763267639168,
+        ],
+    ),
+    (
+        "cube",
+        10,
+        [
+            10648.478006222356,
+            49.998826793338836,
+            13.145227394549012,
+            1.0313287779903457,
+            1.008398336326099,
+            1.0306831620836225,
+            1.0019247733166188,
+            1.0044418474330754,
+            1.0024393102571791,
+            1.0017007017773365,
+        ],
+    ),
+]
 
-def test_improve_poisedness():
+
+@pytest.mark.parametrize("shape, maxiter, expected", TEST_CASES)
+def test_improve_poisedness(shape, maxiter, expected):
     sample = np.array(
         [
             [-0.98, -0.96],
@@ -27,27 +58,10 @@ def test_improve_poisedness():
             [0.94, 0.94],
         ]
     )
-    _ = np.array(
-        [
-            [0.99974443, -0.02260675],
-            [-0.96, -0.98],
-            [-0.02131938, 0.03287205],
-            [0.98, 0.96],
-            [-0.52862931, 0.84885279],
-            [0.2545369, -0.96706306],
-        ]
-    )
-    expected_lambdas = [
-        5324.240935366314,
-        36.87996947175511,
-        11.090857556966462,
-        1.3893207179888898,
-        1.0016763267639168,
-    ]
 
-    got_sample, got_lambdas = improve_poisedness(sample)
+    _, got_lambdas = improve_poisedness(sample=sample, shape=shape, maxiter=maxiter)
 
-    aaae(got_lambdas, expected_lambdas, decimal=2)
+    aaae(got_lambdas, expected, decimal=2)
 
 
 # ======================================================================================
@@ -101,7 +115,7 @@ TEST_CASES = [
 def test_poisedness_scaled_precise(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
-    got, *_ = get_poisedness_constant(sample)
+    got, *_ = get_poisedness_constant(sample, shape="sphere")
     assert np.allclose(got, expected, rtol=1e-2)
 
 
@@ -153,7 +167,7 @@ TEST_CASES = [
 def test_poisedness_scaled_imprecise(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
-    got, *_ = get_poisedness_constant(sample)
+    got, *_ = get_poisedness_constant(sample, shape="sphere")
     assert np.allclose(got, expected, rtol=1e-2)
 
 
@@ -183,64 +197,7 @@ def test_poisedness_unscaled_precise(sample, expected):
     center = 0.5 * np.ones(n_params)
     sample_centered = (sample - center) / radius
 
-    got, *_ = get_poisedness_constant(sample_centered)
-    assert np.allclose(got, expected, rtol=1e-2)
-
-
-TEST_CASES = [
-    (
-        np.array(
-            [
-                [0.05, 0.1],
-                [0.1, 0.05],
-                [0.5, 0.5],
-                [0.95, 0.9],
-                [0.9, 0.95],
-                [0.85, 0.85],
-            ]
-        ),
-        440,
-    ),
-    (
-        np.array(
-            [
-                [0.01, 0.02],
-                [0.02, 0.01],
-                [0.5, 0.5],
-                [0.99, 0.98],
-                [0.98, 0.99],
-                [0.97, 0.97],
-            ]
-        ),
-        21296,
-    ),
-    (
-        np.array(
-            [
-                [0.524, 0.0006],
-                [0.032, 0.323],
-                [0.187, 0.890],
-                [0.854, 0.853],
-                [0.982, 0.368],
-                [0.774, 0.918],
-            ]
-        ),
-        524982,
-    ),
-]
-
-
-@pytest.mark.xfail(reason="Lambda is scale-sensitive.")
-@pytest.mark.parametrize("sample, expected", TEST_CASES)
-def test_poisedness_unscaled_imprecise(sample, expected):
-    """Test cases are taken from :cite:`Conn2009` p. 43ff."""
-    n_params = sample.shape[1]
-
-    radius = 0.5
-    center = 0.5 * np.ones(n_params)
-    sample_centered = (sample - center) / radius
-
-    got, *_ = get_poisedness_constant(sample_centered)
+    got, *_ = get_poisedness_constant(sample_centered, shape="sphere")
     assert np.allclose(got, expected, rtol=1e-2)
 
 

@@ -1,11 +1,12 @@
 from functools import partial
 
 import numpy as np
+from scipy.optimize import Bounds
 from scipy.optimize import minimize
 from scipy.optimize import NonlinearConstraint
 
 
-def improve_poisedness(sample, maxiter=5):
+def improve_poisedness(sample, shape="sphere", maxiter=5):
     """Improve the poisedness of a sample.
 
     The implementation is based on algorithm 6.3 in :cite:`Conn2009`,
@@ -13,6 +14,8 @@ def improve_poisedness(sample, maxiter=5):
 
     Args:
         sample (np.ndarry): Array of shape (n_samples, n_params).
+        shape (str): Geometric shape of the sample space. One of "sphere", "cube".
+            Default is "sphere".
         maxiter (int): Maximum number of iterations. Default is 5.
 
     Returns:
@@ -27,7 +30,7 @@ def improve_poisedness(sample, maxiter=5):
 
     for _ in range(maxiter):
 
-        lambda_, argmax, idx_max = get_poisedness_constant(sample_improved)
+        lambda_, argmax, idx_max = get_poisedness_constant(sample_improved, shape=shape)
 
         lambdas += [lambda_]
         sample_improved[idx_max] = argmax
@@ -35,7 +38,7 @@ def improve_poisedness(sample, maxiter=5):
     return sample_improved, lambdas
 
 
-def get_poisedness_constant(sample):
+def get_poisedness_constant(sample, shape="sphere"):
     """Calculate the lambda poisedness constant of a sample inside the trust-region.
 
     Note that the trust-region is centered around the origin, and its radius is
@@ -65,6 +68,8 @@ def get_poisedness_constant(sample):
     Args:
         sample (np.ndarry): Array of shape (n_samples, n_params) containing the scaled
             sample of points that lie within a trust-region with center 0 and radius 1.
+        shape (str): Geometric shape of the sample space. One of "sphere", "cube".
+            Default is "sphere".
 
     Returns:
         tuple:
@@ -75,7 +80,7 @@ def get_poisedness_constant(sample):
 
     """
     n_params = sample.shape[1]
-    center = np.zeros(n_params)
+    _maximize = _get_maximizer(shape, n_params)
 
     lagrange_mat = lagrange_poly_matrix(sample)
 
@@ -89,27 +94,22 @@ def get_poisedness_constant(sample):
         _coef_square_terms = poly[n_params + 1 :]
         square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
 
-        nonlinear_constraint = NonlinearConstraint(lambda x: np.linalg.norm(x), 0, 1)
-        _func_to_maximize = partial(
+        _criterion = partial(
             _get_neg_absolute_value,
             intercept=intercept,
             linear_terms=linear_terms,
             square_terms=square_terms,
         )
-        results_max = minimize(
-            _func_to_maximize,
-            center,
-            method="trust-constr",
-            constraints=[nonlinear_constraint],
-        )
+
+        result_max = _maximize(_criterion)
 
         critval = _get_absolute_value(
-            results_max.x, intercept, linear_terms, square_terms
+            result_max.x, intercept, linear_terms, square_terms
         )
 
         if critval > lambda_:
             lambda_ = critval
-            argmax = results_max.x
+            argmax = result_max.x
             idx_max = idx
 
     return lambda_, argmax, idx_max
@@ -166,6 +166,36 @@ def _scaled_polynomial_features(x):
     out = np.concatenate((intercept, xt, poly_terms), axis=0)
 
     return out.T
+
+
+def _get_maximizer(shape, n_params):
+    """Get the maximizer function with partialled arguments."""
+    center = np.zeros(n_params)
+
+    if shape == "sphere":
+        nonlinear_constraint = NonlinearConstraint(lambda x: np.linalg.norm(x), 0, 1)
+
+        func = partial(
+            minimize,
+            x0=center,
+            method="trust-constr",
+            constraints=[nonlinear_constraint],
+        )
+    elif shape == "cube":
+        bound_constraints = Bounds(-np.ones(n_params), np.ones(n_params))
+
+        func = partial(
+            minimize,
+            x0=center,
+            method="trust-constr",
+            bounds=bound_constraints,
+        )
+    else:
+        raise ValueError(
+            f"Invalid shape argument: {shape}. Must be one of sphere, cube."
+        )
+
+    return func
 
 
 def _reshape_coef_to_square_terms(coef, n_params):
