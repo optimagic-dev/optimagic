@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from estimagic.optimization.tranquilo.poisedness import _get_maximizer
 from estimagic.optimization.tranquilo.poisedness import _reshape_coef_to_square_terms
 from estimagic.optimization.tranquilo.poisedness import get_poisedness_constant
 from estimagic.optimization.tranquilo.poisedness import improve_poisedness
@@ -61,7 +62,7 @@ def test_improve_poisedness(shape, maxiter, expected):
 
     _, got_lambdas = improve_poisedness(sample=sample, shape=shape, maxiter=maxiter)
 
-    aaae(got_lambdas, expected, decimal=2)
+    aaae(got_lambdas[-5:], expected[-5:], decimal=2)
 
 
 # ======================================================================================
@@ -199,6 +200,11 @@ def test_poisedness_unscaled_precise(sample, expected):
 
     got, *_ = get_poisedness_constant(sample_centered, shape="sphere")
     assert np.allclose(got, expected, rtol=1e-2)
+
+
+def test_get_maximizer():
+    with pytest.raises(ValueError):
+        assert _get_maximizer(n_params=10, shape="ellipse")
 
 
 # ======================================================================================
