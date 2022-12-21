@@ -138,8 +138,8 @@ TEST_CASES = [
 
 
 @pytest.mark.parametrize("sample, expected", TEST_CASES)
-def test_get_poisedness_constant(sample, expected):
-    """Test cases are taken from :cite:`Conn2009` p. 99."""
+def test_poisedness_constant_scaled(sample, expected):
+    """Test cases are modified versions from :cite:`Conn2009` p. 99."""
 
     got, *_ = get_poisedness_constant(sample, shape="sphere")
     assert np.allclose(got, expected)
@@ -167,7 +167,7 @@ TEST_CASES = [
                 [0.0, 0.0],
                 [0.98, 0.96],
                 [0.96, 0.98],
-                [-0.70710678, 0.70710678],
+                [-0.707, 0.707],
             ]
         ),
         36.88,
@@ -189,59 +189,7 @@ TEST_CASES = [
 
 
 @pytest.mark.parametrize("sample, expected", TEST_CASES)
-def test_poisedness_scaled_precise(sample, expected):
-    """Test cases are taken from :cite:`Conn2009` p. 99."""
-
-    got, *_ = get_poisedness_constant(sample, shape="sphere")
-    assert np.allclose(got, expected, rtol=1e-3)
-
-
-TEST_CASES = [
-    (
-        np.array(
-            [
-                [0.848, 0.528],
-                [-0.96, -0.98],
-                [0, 0],
-                [0.98, 0.96],
-                [-0.96, -0.98],
-                [0.707, -0.707],
-            ]
-        ),
-        15.66,
-    ),
-    (
-        np.array(
-            [
-                [-0.848, 0.528],
-                [-0.96, -0.98],
-                [0, 0],
-                [0.98, 0.96],
-                [-0.89, 0.996],
-                [0.707, -0.707],
-            ]
-        ),
-        1.11,
-    ),
-    (
-        np.array(
-            [
-                [-0.967, 0.254],
-                [-0.96, -0.98],
-                [0, 0],
-                [0.98, 0.96],
-                [-0.89, 0.996],
-                [0.707, -0.707],
-            ]
-        ),
-        1.01,
-    ),
-]
-
-
-@pytest.mark.xfail(reason="Imprecise results, but expected decrease in lambda.")
-@pytest.mark.parametrize("sample, expected", TEST_CASES)
-def test_poisedness_scaled_imprecise(sample, expected):
+def test_poisedness_constant_textbook_scaled(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
     got, *_ = get_poisedness_constant(sample, shape="sphere")
@@ -266,15 +214,15 @@ TEST_CASES = [
 
 
 @pytest.mark.parametrize("sample, expected", TEST_CASES)
-def test_poisedness_unscaled_precise(sample, expected):
+def test_poisedness_constant_textbook_unscaled(sample, expected):
     """This test case is taken from :cite:`Conn2009` p. 45."""
     n_params = sample.shape[1]
 
     radius = 0.5
     center = 0.5 * np.ones(n_params)
-    sample_centered = (sample - center) / radius
+    sample_scaled = (sample - center) / radius
 
-    got, *_ = get_poisedness_constant(sample_centered, shape="sphere")
+    got, *_ = get_poisedness_constant(sample_scaled, shape="sphere")
     assert np.allclose(got, expected, rtol=1e-3)
 
 
