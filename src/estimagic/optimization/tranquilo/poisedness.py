@@ -80,7 +80,7 @@ def get_poisedness_constant(sample, shape="sphere"):
 
     """
     n_params = sample.shape[1]
-    _maximize = _get_maximizer(shape, n_params)
+    _minimize = _get_minimizer(shape, n_params)
 
     lagrange_mat = lagrange_poly_matrix(sample)
 
@@ -94,14 +94,14 @@ def get_poisedness_constant(sample, shape="sphere"):
         _coef_square_terms = poly[n_params + 1 :]
         square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
 
-        _criterion = partial(
+        _neg_criterion = partial(
             _get_neg_absolute_value,
             intercept=intercept,
             linear_terms=linear_terms,
             square_terms=square_terms,
         )
 
-        result_max = _maximize(_criterion)
+        result_max = _minimize(_neg_criterion)
 
         critval = _get_absolute_value(
             result_max.x, intercept, linear_terms, square_terms
@@ -168,8 +168,8 @@ def _scaled_polynomial_features(x):
     return out.T
 
 
-def _get_maximizer(shape, n_params):
-    """Get the maximizer function with partialled arguments."""
+def _get_minimizer(shape, n_params):
+    """Get the minimizer function with partialled arguments."""
     center = np.zeros(n_params)
 
     if shape == "sphere":
