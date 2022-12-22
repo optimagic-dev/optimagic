@@ -6,38 +6,6 @@ from scipy.optimize import minimize
 from scipy.optimize import NonlinearConstraint
 
 
-def improve_poisedness(sample, shape="sphere", maxiter=5):
-    """Improve the poisedness of a sample.
-
-    The implementation is based on algorithm 6.3 in :cite:`Conn2009`,
-    Chapter 6, p. 95 ff.
-
-    Args:
-        sample (np.ndarry): Array of shape (n_samples, n_params).
-        shape (str): Geometric shape of the sample space. One of "sphere", "cube".
-            Default is "sphere".
-        maxiter (int): Maximum number of iterations. Default is 5.
-
-    Returns:
-        tuple:
-            - sample_improved (np.ndarray): Sample with improved poisedness.
-            - lambdas (list): History of lambdas.
-
-    """
-    sample_improved = sample.copy()
-
-    lambdas = []
-
-    for _ in range(maxiter):
-
-        lambda_, argmax, idx_max = get_poisedness_constant(sample_improved, shape=shape)
-
-        lambdas += [lambda_]
-        sample_improved[idx_max] = argmax
-
-    return sample_improved, lambdas
-
-
 def get_poisedness_constant(sample, shape="sphere"):
     """Calculate the lambda poisedness constant of a sample inside the trust-region.
 
@@ -113,6 +81,42 @@ def get_poisedness_constant(sample, shape="sphere"):
             idx_max = idx
 
     return lambda_, argmax, idx_max
+
+
+def improve_poisedness(sample, shape="sphere", maxiter=5):
+    """Improve the poisedness of a sample.
+
+    The lambda poisedness of the sample is improved in an incremental manner,
+    replacing one point at a time and reducing the upper bound on the
+    absolute value of the Lagrange polynomial.
+
+    The implementation is based on algorithm 6.3 in :cite:`Conn2009`,
+    Chapter 6, p. 95 ff.
+
+    Args:
+        sample (np.ndarry): Array of shape (n_samples, n_params).
+        shape (str): Geometric shape of the sample space. One of "sphere", "cube".
+            Default is "sphere".
+        maxiter (int): Maximum number of replacement iterations. Default is 5.
+
+    Returns:
+        tuple:
+            - sample_improved (np.ndarray): Sample with improved poisedness.
+            - lambdas (list): History of lambdas.
+
+    """
+    sample_improved = sample.copy()
+
+    lambdas = []
+
+    for _ in range(maxiter):
+
+        lambda_, argmax, idx_max = get_poisedness_constant(sample_improved, shape=shape)
+
+        lambdas += [lambda_]
+        sample_improved[idx_max] = argmax
+
+    return sample_improved, lambdas
 
 
 def lagrange_poly_matrix(sample):
