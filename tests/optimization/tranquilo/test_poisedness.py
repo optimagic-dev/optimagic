@@ -113,7 +113,7 @@ TEST_CASES = [
 def test_improve_poisedness(sample, shape, maxiter, expected):
 
     _, got_lambdas = improve_poisedness(sample=sample, shape=shape, maxiter=maxiter)
-    aaae(got_lambdas[-5:], expected[-5:], decimal=3)
+    aaae(got_lambdas[-5:], expected[-5:], decimal=2)
 
 
 # ======================================================================================
