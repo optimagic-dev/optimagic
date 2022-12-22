@@ -18,6 +18,16 @@ def evaluate_scalar_model(x, intercept, linear_terms, square_terms):
 
 TEST_CASES = [
     (
+        np.array(
+            [
+                [-0.98, -0.96],
+                [-0.96, -0.98],
+                [0, 0],
+                [0.98, 0.96],
+                [0.96, 0.98],
+                [0.94, 0.94],
+            ]
+        ),
         "sphere",
         5,
         [
@@ -29,6 +39,16 @@ TEST_CASES = [
         ],
     ),
     (
+        np.array(
+            [
+                [-0.98, -0.96],
+                [-0.96, -0.98],
+                [0, 0],
+                [0.98, 0.96],
+                [0.96, 0.98],
+                [0.94, 0.94],
+            ]
+        ),
         "cube",
         10,
         [
@@ -44,25 +64,56 @@ TEST_CASES = [
             1.0017007017773365,
         ],
     ),
+    (
+        np.array(
+            [
+                [-0.98, -0],
+                [-0.96, -0.01],
+                [0, 0],
+                [-0.02, 0.98],
+                [0.03, -0.96],
+                [0.94, 0.06],
+            ]
+        ),
+        "sphere",
+        5,
+        [
+            50.83088699521032,
+            1.4010345122261196,
+            1.109469103188152,
+            1.0614725892080803,
+            1.0368961283088556,
+        ],
+    ),
+    (
+        np.array(
+            [
+                [-0.98, 0.0],
+                [-0.56, -0.01],
+                [-0.3, -0.07],
+                [0.98, 0.02],
+                [0.46, 0.03],
+                [0.94, 0.06],
+            ]
+        ),
+        "sphere",
+        5,
+        [
+            687.9333361325548,
+            22.830295678507802,
+            11.89595397927371,
+            1.590858593504958,
+            1.1143219029197806,
+        ],
+    ),
 ]
 
 
-@pytest.mark.parametrize("shape, maxiter, expected", TEST_CASES)
-def test_improve_poisedness(shape, maxiter, expected):
-    sample = np.array(
-        [
-            [-0.98, -0.96],
-            [-0.96, -0.98],
-            [0, 0],
-            [0.98, 0.96],
-            [0.96, 0.98],
-            [0.94, 0.94],
-        ]
-    )
+@pytest.mark.parametrize("sample, shape, maxiter, expected", TEST_CASES)
+def test_improve_poisedness(sample, shape, maxiter, expected):
 
     _, got_lambdas = improve_poisedness(sample=sample, shape=shape, maxiter=maxiter)
-
-    aaae(got_lambdas[-5:], expected[-5:], decimal=2)
+    aaae(got_lambdas[-5:], expected[-5:], decimal=3)
 
 
 # ======================================================================================
