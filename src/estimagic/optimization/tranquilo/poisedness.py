@@ -48,7 +48,7 @@ def get_poisedness_constant(sample, shape="sphere"):
 
     """
     n_params = sample.shape[1]
-    _minimize = _get_minimizer(shape, n_params)
+    _minimize = _get_minimize_func(shape, n_params)
 
     lagrange_mat = lagrange_poly_matrix(sample)
 
@@ -63,7 +63,7 @@ def get_poisedness_constant(sample, shape="sphere"):
         square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
 
         _neg_criterion = partial(
-            _get_neg_absolute_value,
+            _eval_neg_absolute_value,
             intercept=intercept,
             linear_terms=linear_terms,
             square_terms=square_terms,
@@ -71,7 +71,7 @@ def get_poisedness_constant(sample, shape="sphere"):
 
         result_max = _minimize(_neg_criterion)
 
-        critval = _get_absolute_value(
+        critval = _eval_absolute_value(
             result_max.x, intercept, linear_terms, square_terms
         )
 
@@ -172,36 +172,6 @@ def _scaled_polynomial_features(x):
     return out.T
 
 
-def _get_minimizer(shape, n_params):
-    """Get the minimizer function with partialled arguments."""
-    center = np.zeros(n_params)
-
-    if shape == "sphere":
-        nonlinear_constraint = NonlinearConstraint(lambda x: np.linalg.norm(x), 0, 1)
-
-        func = partial(
-            minimize,
-            x0=center,
-            method="trust-constr",
-            constraints=[nonlinear_constraint],
-        )
-    elif shape == "cube":
-        bound_constraints = Bounds(-np.ones(n_params), np.ones(n_params))
-
-        func = partial(
-            minimize,
-            x0=center,
-            method="trust-constr",
-            bounds=bound_constraints,
-        )
-    else:
-        raise ValueError(
-            f"Invalid shape argument: {shape}. Must be one of sphere, cube."
-        )
-
-    return func
-
-
 def _reshape_coef_to_square_terms(coef, n_params):
     """Reshape square coefficients to matrix of square terms."""
     mat = np.empty((n_params, n_params))
@@ -216,9 +186,39 @@ def _reshape_coef_to_square_terms(coef, n_params):
     return mat
 
 
-def _get_absolute_value(x, intercept, linear_terms, square_terms):
+def _get_minimize_func(shape, n_params):
+    """Get the minimizer function with partialled arguments."""
+    center = np.zeros(n_params)
+
+    if shape == "sphere":
+        nonlinear_constraint = NonlinearConstraint(lambda x: np.linalg.norm(x), 0, 1)
+
+        _minimize = partial(
+            minimize,
+            x0=center,
+            method="trust-constr",
+            constraints=[nonlinear_constraint],
+        )
+    elif shape == "cube":
+        bound_constraints = Bounds(-np.ones(n_params), np.ones(n_params))
+
+        _minimize = partial(
+            minimize,
+            x0=center,
+            method="trust-constr",
+            bounds=bound_constraints,
+        )
+    else:
+        raise ValueError(
+            f"Invalid shape argument: {shape}. Must be one of sphere, cube."
+        )
+
+    return _minimize
+
+
+def _eval_absolute_value(x, intercept, linear_terms, square_terms):
     return np.abs(intercept + linear_terms.T @ x + 0.5 * x.T @ square_terms @ x)
 
 
-def _get_neg_absolute_value(x, intercept, linear_terms, square_terms):
-    return -_get_absolute_value(x, intercept, linear_terms, square_terms)
+def _eval_neg_absolute_value(x, intercept, linear_terms, square_terms):
+    return -_eval_absolute_value(x, intercept, linear_terms, square_terms)
