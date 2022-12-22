@@ -7,10 +7,10 @@ from scipy.optimize import NonlinearConstraint
 
 
 def get_poisedness_constant(sample, shape="sphere"):
-    """Calculate the lambda poisedness constant of a sample inside the trust-region.
+    """Calculate the lambda poisedness constant of a sample.
 
-    Note that the trust-region is centered around the origin, and its radius is
-    normalized to 1.
+    Note that the sample space is a trust-region with center 0 and radius 1.
+    It may be a (hyper-) sphere or cube.
 
     The implementation is based on :cite:`Conn2009`, Chapters 3 and 4.
 
@@ -50,45 +50,19 @@ def get_poisedness_constant(sample, shape="sphere"):
     n_params = sample.shape[1]
     _minimize = _get_minimize_func(shape, n_params)
 
-    lagrange_mat = lagrange_poly_matrix(sample)
-
-    lambda_ = 0
-    idx_max = None
-
-    for idx, poly in enumerate(lagrange_mat):
-
-        intercept = poly[0]
-        linear_terms = poly[1 : n_params + 1]
-        _coef_square_terms = poly[n_params + 1 :]
-        square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
-
-        _neg_criterion = partial(
-            _eval_neg_absolute_value,
-            intercept=intercept,
-            linear_terms=linear_terms,
-            square_terms=square_terms,
-        )
-
-        result_max = _minimize(_neg_criterion)
-
-        critval = _eval_absolute_value(
-            result_max.x, intercept, linear_terms, square_terms
-        )
-
-        if critval > lambda_:
-            lambda_ = critval
-            argmax = result_max.x
-            idx_max = idx
+    lambda_, argmax, idx_max = _get_poisedness_constant_internal(
+        sample=sample, n_params=n_params, _minimize=_minimize
+    )
 
     return lambda_, argmax, idx_max
 
 
 def improve_poisedness(sample, shape="sphere", maxiter=5):
-    """Improve the poisedness of a sample.
+    """Improve the lambda poisedness of the sample.
 
-    The lambda poisedness of the sample is improved in an incremental manner,
-    replacing one point at a time and reducing the upper bound on the
-    absolute value of the Lagrange polynomial.
+    The poisedness of the sample is improved in an incremental manner; replacing
+    one point at a time and reducing the upper bound on the absolute value of
+    the Lagrange polynomial.
 
     The implementation is based on algorithm 6.3 in :cite:`Conn2009`,
     Chapter 6, p. 95 ff.
@@ -105,13 +79,18 @@ def improve_poisedness(sample, shape="sphere", maxiter=5):
             - lambdas (list): History of lambdas.
 
     """
+    n_params = sample.shape[1]
+    _minimize = _get_minimize_func(shape, n_params)
+
     sample_improved = sample.copy()
 
     lambdas = []
 
     for _ in range(maxiter):
 
-        lambda_, argmax, idx_max = get_poisedness_constant(sample_improved, shape=shape)
+        lambda_, argmax, idx_max = _get_poisedness_constant_internal(
+            sample=sample_improved, n_params=n_params, _minimize=_minimize
+        )
 
         lambdas += [lambda_]
         sample_improved[idx_max] = argmax
@@ -119,7 +98,57 @@ def improve_poisedness(sample, shape="sphere", maxiter=5):
     return sample_improved, lambdas
 
 
-def lagrange_poly_matrix(sample):
+def _get_poisedness_constant_internal(sample, n_params, _minimize):
+    """Internal interface for the calculation of the lambda poisedness constant.
+
+    Args:
+        sample (np.ndarry): Array of shape (n_samples, n_params) containing the scaled
+            sample of points that lie within a trust-region with center 0 and radius 1.
+        n_params (int): Dimensionality of the sample.
+        _minimize (callable): The minimize function with partialled arguments.
+
+    Returns:
+        tuple:
+            - lambda (float): The lambda poisedness constant.
+            - argmax (np.ndarray): 1d array of shape (n_params,) containing the
+                parameter vector that maximizes lambda.
+            - idx_max (int): Index relating to the position of the argmax in the sample.
+
+    """
+    lagrange_mat = _lagrange_poly_matrix(sample)
+
+    lambda_ = 0
+    idx_max = None
+
+    for idx, poly in enumerate(lagrange_mat):
+
+        intercept = poly[0]
+        linear_terms = poly[1 : n_params + 1]
+        _coef_square_terms = poly[n_params + 1 :]
+        square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
+
+        neg_criterion = partial(
+            _eval_neg_absolute_value,
+            intercept=intercept,
+            linear_terms=linear_terms,
+            square_terms=square_terms,
+        )
+
+        result_max = _minimize(neg_criterion)
+
+        critval = _eval_absolute_value(
+            result_max.x, intercept, linear_terms, square_terms
+        )
+
+        if critval > lambda_:
+            lambda_ = critval
+            argmax = result_max.x
+            idx_max = idx
+
+    return lambda_, argmax, idx_max
+
+
+def _lagrange_poly_matrix(sample):
     """Construct matrix of lagrange polynomials.
 
     See :cite:`Conn2009`, Chapter 4.2, p. 60.
@@ -139,7 +168,7 @@ def lagrange_poly_matrix(sample):
 
 
 def _scaled_polynomial_features(x):
-    """Construct linear terms, interactions and scaled square terms.
+    """Construct linear terms, interactions, and scaled square terms.
 
     The square terms are scaled by 1 / 2.
 
