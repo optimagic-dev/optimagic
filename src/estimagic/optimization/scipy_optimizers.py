@@ -712,6 +712,8 @@ def scipy_differential_evolution(
         updating=updating,
         workers=workers_parallel,
         constraints=_get_scipy_constraints(nonlinear_constraints),
+        integrality=integrality,
+        vectorized=vectorized,
     )
 
     return process_scipy_result(res)
