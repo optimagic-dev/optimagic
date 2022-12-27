@@ -708,7 +708,7 @@ you install estimagic.
 ```
 
 
-``{eval-rst}
+```{eval-rst}
 .. dropdown::  scipy_dual_annealing
 
     .. code-block::
@@ -732,7 +732,7 @@ you install estimagic.
 ```
 
 
-``{eval-rst}
+```{eval-rst}
 .. dropdown::  scipy_direct
 
     .. code-block::
