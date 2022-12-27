@@ -675,6 +675,86 @@ you install estimagic.
 
 ```
 
+
+```{eval-rst}
+.. dropdown::  scipy_shgo
+
+    .. code-block::
+
+        "scipy_shgo"
+
+    Find the global minimum of a fuction using simplicial homology global optimization.
+
+    Note: scipy_shgo requires the constraints' codomain to be a scalar.
+
+    The algorithm supports the following options:
+
+    - **local_algorithm** (str): The local optimization algorithm to be used. Only COBYLA and SLSQP supports constraints. Default is SLSQP.
+    - **n_sampling_points** (int): Specify the number of sampling points to construct the simplical complex.
+    - **n_iterations** (int): Number of iterations to construct the simplical complex. Default is 3 differing from scipy default 1.
+    - **sampling_method** (str/callable): The method to use for sampling the search space.
+    - **max_criterion_evaluations** (): The maximum number of evaluations of the criterion function.
+    - **criterion_minimum** (): The minimum value of the criterion function.
+    - **criterion_convergence_tolerance** (float): The tolerance for convergence of the criterion function.
+    - **stopping_max_iterations** (int): The maximum number of iterations of the criterion function.
+    - **stopping_max_criterion_evaluations** (int): The maximum number of sampling evaluation.
+    - **maximum_processing_time** (int): The maximum time allowed for the optimization.
+    - **minimum_homology_group_rank_differential** (int): The minimum difference in the rank of the homology group between iterations.
+    - **symmetry** (bool): Specify whether the criterion contains symetric variables.
+    - **minimize_every_iteration** ()bool: Specify whether the gloabal sampling points are passed to the local algorithm in every iteration.
+    - **local_iteration** (int): The number of iterations to run the local optimization algorithm.
+    - **infty_constraints** (bool): Specify whether to save the sampling points outside the feasible domain. Default is True.
+
+```
+
+
+``{eval-rst}
+.. dropdown::  scipy_dual_annealing
+
+    .. code-block::
+
+        "scipy_dual_annealing"
+
+    Find the global minimum of a function using dual annealing for continuous variables.
+
+    The algorithm supports the following options:
+
+    - **stopping_max_iterations** (int): Specify the maximum number of global searh iterations.
+    - **local_algorithm** (str): The local optimization algorithm to be used.
+    - **initial_temperature** (float): The temparature algorithm starts with. The higer values lead to a wider search space. The range is (0.01, 5.e4] and defalt is 5230.0.
+    - **restart_temperature_ratio** (float): Reanneling starts when the algorithm is decreased to initial_temperature * restart_temperature_ratio. Default is 2e-05.
+    - **visit** (float): Specify the thickness of visiting distribution's tails. Range is (1, 3] and default is scipy's default, 2.62.
+    - **accept** (float): Controls the probability of acceptance. Range is (-1e4, -5] and default is scipy's default, -5.0. Smaller values lead to lower acceptance probability.
+    - **stopping_max_criterion_evaluations** (int): soft limit for the number of criterion evaluations.
+    - **seed** (int): Dual annealing is a stochastic process. Define seed for reproducibility.
+    - **no_local_search** (bool): Specify whether to apply a traditional Generalized Simulated Annealing with no local search. Default is False.
+
+```
+
+
+``{eval-rst}
+.. dropdown::  scipy_direct
+
+    .. code-block::
+
+        "scipy_direct"
+
+    Find the global minimum of a function using dividing rectangles method. It is not necessary to provide an initial guess.
+
+    The algorithm supports the following options:
+
+    - **eps** (float): Specify the minimum difference of the criterion values between the current best hyperrectangle and the next potentially best hyperrectangle to be divided determining the trade off between global and local search. Default is 1e-6 differing from scipy's default 1e-4.
+    - **stopping_max_criterion_evaluations** (int/None): Maximum number of criterion evaluations allowed. Default is None which caps the number of evaluations at 1000 * number of dimentions automatically.
+    - **stopping_max_iterations** (int): Maximum number of iterations allowed.
+    - **locally_biased** (bool): Determine whether to use the locally biased variant of the algorithm DIRECT_L. Default is True.
+    - **criterion_minimum** (float): Specify the global minimum when it is known. Default is - **np.inf.
+    - **criterion_minimum_relative_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
+    - **volume_hyperrectangle_tolerance** (float): Specify the smallest volume of the hyperrectangle containing the lowest criterion value allowed. Range is (0,1). Default is 1e-16.
+    - **length_hyperrectangle_tolerance** (float): Depending on locally_biased it can refer to normalized side (True) or diagonal (False) length of the hyperrectangle containing the lowest criterion value. Range is (0,1). Default is scipy's default, 1e-6.
+
+```
+
+
 (own-algorithms)=
 
 ## Own optimizers

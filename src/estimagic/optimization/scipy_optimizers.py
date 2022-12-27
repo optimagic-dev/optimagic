@@ -845,7 +845,7 @@ def scipy_direct(
     criterion_minimum=-np.inf,
     criterion_minimum_relative_tolerance=1e-4,
     volume_hyperrectangle_tolerance=1e-16,
-    side_length_hyperrectangle_tolerance=1e-6,
+    length_hyperrectangle_tolerance=1e-6,
 ):
     """Finds the global minimum of a function using the DIRECT algorithm.
 
@@ -863,7 +863,7 @@ def scipy_direct(
         f_min=criterion_minimum,
         f_min_rtol=criterion_minimum_relative_tolerance,
         vol_tol=volume_hyperrectangle_tolerance,
-        len_tol=side_length_hyperrectangle_tolerance,
+        len_tol=length_hyperrectangle_tolerance,
     )
 
     return process_scipy_result(res)
