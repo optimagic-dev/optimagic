@@ -1359,7 +1359,7 @@ def _determine_population_size(population_size, x, lower_bound):
 
 
 def _convert_str_to_int(str_to_int, value):
-    if value in str_to_int.keys():
+    if value in str_to_int:
         out = str_to_int[value]
     elif value not in str_to_int.values():
         raise ValueError(

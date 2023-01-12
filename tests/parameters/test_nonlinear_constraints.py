@@ -55,7 +55,7 @@ def test_get_transformation_type(lower_bounds, upper_bounds, expected):
 # ======================================================================================
 
 TEST_CASES = [
-    #  (lower_bounds, upper_bounds, case, expected)  # noqa: E800
+    #  (lower_bounds, upper_bounds, case, expected)  # noqa: ERA001
     (0, 0, "func", {"name": "stack", "out": np.array([1, -1])}),
     (1, 1, "func", {"name": "stack", "out": np.array([0, 0])}),
     (0, 0, "derivative", {"name": "stack", "out": np.array([1, -1])}),

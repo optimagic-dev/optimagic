@@ -265,7 +265,7 @@ def test_process_sample_size_none_linear(has_interactions, has_squares):
 
 
 STR_TEST_CASES = [  # assume len(x) = 3
-    # (user_sample_size, expected)  # noqa: E800
+    # (user_sample_size, expected)  # noqa: ERA001
     ("linear", 3 + 1),
     ("n+1", 3 + 1),
     ("n + 1", 3 + 1),

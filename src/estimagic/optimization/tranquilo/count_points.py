@@ -24,9 +24,9 @@ def get_counter(counter, bounds):
     return out
 
 
-def count_all(xs, trustregion, bounds):  # noqa: U100
+def count_all(xs, trustregion, bounds):
     return len(xs)
 
 
-def count_clusters(xs, trustregion, bounds):  # noqa: U100
+def count_clusters(xs, trustregion, bounds):
     raise NotImplementedError()
