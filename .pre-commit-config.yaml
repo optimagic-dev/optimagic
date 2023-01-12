@@ -63,18 +63,6 @@ repos:
       - id: black
         language_version: python3.10
 
--   repo: https://github.com/PyCQA/flake8
-    rev: "5.0.4"
-    hooks:
-    -   id: flake8
-        types: [python]
-        exclude: estimagic/parameters/kernel_transformations.py
-        additional_dependencies: [
-            flake8-alfred, flake8-bugbear, flake8-builtins, flake8-comprehensions,
-            flake8-docstrings, flake8-eradicate, flake8-print, flake8-rst-docstrings,
-            flake8-todo, pep8-naming, pydocstyle,
-        ]
-
 -   repo: https://github.com/nbQA-dev/nbQA
     rev: "1.6.1"
     hooks:
@@ -90,3 +78,8 @@ repos:
     rev: "0.49"
     hooks:
     -   id: check-manifest
+
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.205
+    hooks:
+      - id: ruff

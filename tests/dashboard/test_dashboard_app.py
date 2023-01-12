@@ -1,5 +1,4 @@
 """Test the functions of the dashboard app."""
-import estimagic.dashboard.dashboard_app as dashboard_app
 import numpy as np
 import pandas as pd
 import pandas.testing as pdt
@@ -7,6 +6,7 @@ import pytest
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
 from estimagic import minimize
+from estimagic.dashboard import dashboard_app
 
 
 def pybaum_sphere(params):
