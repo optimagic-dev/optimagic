@@ -5,6 +5,9 @@ channels:
   - defaults
 
 dependencies:
+  - pip
+  - toml
+  - setuptools_scm
   - python=3.10
   - jupyterlab
   - nbsphinx
