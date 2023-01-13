@@ -89,7 +89,7 @@ jobs:
       - name: create build environment
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: ./environment.yml
+          environment-file: ./.envs/testenv-linkcheck.yml
           environment-name: estimagic
           cache-env: true
       - name: run sphinx
