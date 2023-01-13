@@ -36,6 +36,8 @@ jobs:
           environment-file: ./environment.yml
           environment-name: estimagic
           cache-env: true
+          extra-specs:
+            python=${{ matrix.python-version }}
       - name: run pytest
         shell: bash -l {0}
         run: |
@@ -68,6 +70,8 @@ jobs:
           environment-file: ./environment.yml
           environment-name: estimagic
           cache-env: true
+          extra-specs:
+            python=${{ matrix.python-version }}
       - name: run pytest
         shell: bash -l {0}
         run: |
