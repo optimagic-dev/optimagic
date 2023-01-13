@@ -42,7 +42,7 @@ jobs:
         shell: bash -l {0}
         run: |
           micromamba activate estimagic
-          pytest -m "not slow and not jax" --cov-report=xml --cov=./
+          pytest -m "not slow" --cov-report=xml --cov=./
 
       - name: Upload coverage report.
         if: runner.os == 'Linux' && matrix.python-version == '3.10'

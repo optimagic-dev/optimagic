@@ -9,7 +9,7 @@ dependencies:
   - toml
   - bokeh<=2.4.3
   - click
-  - cyipopt
+  - pygmo
   - fuzzywuzzy
   - joblib
   - cloudpickle
@@ -25,6 +25,7 @@ dependencies:
   - nlopt
   - pybaum >= 0.1.2
   - numba
+  - jax
 
   - pip:
       - Py-BOBYQA
