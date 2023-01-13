@@ -22,7 +22,6 @@ exclude *.yaml
 exclude *.yml
 exclude *.pickle
 exclude pytask.ini
-exclude tox.ini
 
 prune docs
 prune tests
