@@ -108,9 +108,12 @@ jobs:
       - name: create build environment
         uses: mamba-org/provision-with-micromamba@main
         with:
-          environment-file: ./environment.yml
+          environment-file: ./.envs/testenv-linux.yml
           environment-name: estimagic
           cache-env: true
+          extra-specs: |
+            python=3.9
+
       - name: run sphinx
         shell: bash -l {0}
         run: |
