@@ -36,7 +36,7 @@ jobs:
           environment-file: ./environment.yml
           environment-name: estimagic
           cache-env: true
-          extra-specs:
+          extra-specs: |
             python=${{ matrix.python-version }}
       - name: run pytest
         shell: bash -l {0}
@@ -70,7 +70,7 @@ jobs:
           environment-file: ./environment.yml
           environment-name: estimagic
           cache-env: true
-          extra-specs:
+          extra-specs: |
             python=${{ matrix.python-version }}
       - name: run pytest
         shell: bash -l {0}
@@ -98,3 +98,22 @@ jobs:
           micromamba activate estimagic
           cd docs/source
           sphinx-build -T -b linkcheck -d doctrees . linkcheck
+
+  code-in-docs:
+    name: Run code snippets in documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: create build environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: ./environment.yml
+          environment-name: estimagic
+          cache-env: true
+      - name: run sphinx
+        shell: bash -l {0}
+        run: |
+          micromamba activate estimagic
+          cd docs/source
+          python -m doctest -v how_to_guides/optimization/how_to_specify_constraints.md
