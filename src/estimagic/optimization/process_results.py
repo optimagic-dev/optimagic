@@ -153,7 +153,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
     return out
 
 
-def _dummy_result_from_traceback(candidate, fixed_kwargs):
+def _dummy_result_from_traceback(candidate, fixed_kwargs):  # noqa: ARG001
     out = OptimizeResult(
         params=None,
         criterion=None,

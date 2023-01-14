@@ -8,7 +8,7 @@ from estimagic.optimization.optimize import minimize
 
 
 def test_missing_criterion_kwargs():
-    def f(params, bla, blubb):
+    def f(params, bla, blubb):  # noqa: ARG001
         return (params["value"].to_numpy() ** 2).sum()
 
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
@@ -21,7 +21,7 @@ def test_missing_derivative_kwargs():
     def f(params):
         return (params["value"].to_numpy() ** 2).sum()
 
-    def grad(params, bla, blubb):
+    def grad(params, bla, blubb):  # noqa: ARG001
         return params["value"].to_numpy() * 2
 
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
@@ -36,7 +36,7 @@ def test_missing_criterion_and_derivative_kwargs():
     def f(params):
         return (params["value"].to_numpy() ** 2).sum()
 
-    def f_and_grad(params, bla, blubb):
+    def f_and_grad(params, bla, blubb):  # noqa: ARG001
         return f(params), params["value"].to_numpy() * 2
 
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
@@ -52,7 +52,7 @@ def test_missing_criterion_and_derivative_kwargs():
 
 
 def test_typo_in_criterion_kwarg():
-    def f(params, bla, foo):
+    def f(params, bla, foo):  # noqa: ARG001
         return (params["value"].to_numpy() ** 2).sum()
 
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
@@ -91,7 +91,7 @@ def test_criterion_with_runtime_error_during_numerical_derivative():
 
 
 def test_criterion_fails_at_start_values():
-    def just_fail(params):
+    def just_fail(params):  # noqa: ARG001
         raise RuntimeError()
 
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
