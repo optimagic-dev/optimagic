@@ -270,7 +270,7 @@ def test_process_nonlinear_constraints():
 
 def test_get_components():
     fun = lambda x: np.array([x[0], 2 * x[1]])
-    jac = lambda x: np.array([[1, 0], [0, 2]])
+    jac = lambda x: np.array([[1, 0], [0, 2]])  # noqa: ARG005
 
     fun_component, jac_component = _get_components(fun, jac, idx=1)
 

@@ -629,7 +629,7 @@ def scipy_brute(
     lower_bounds,
     upper_bounds,
     *,
-    x=None,
+    x=None,  # noqa: ARG001
     n_grid_points=7,
     polishing_function=None,
     workers_parallel=1,
@@ -674,7 +674,7 @@ def scipy_differential_evolution(
     lower_bounds,
     upper_bounds,
     *,
-    x=None,
+    x=None,  # noqa: ARG001
     nonlinear_constraints=(),
     strategy="best1bin",
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
@@ -725,7 +725,7 @@ def scipy_shgo(
     lower_bounds,
     upper_bounds,
     *,
-    x=None,
+    x=None,  # noqa: ARG001
     derivative=None,
     nonlinear_constraints=(),
     local_algorithm="SLSQP",
@@ -839,7 +839,7 @@ def scipy_direct(
     lower_bounds,
     upper_bounds,
     *,
-    x=None,
+    x=None,  # noqa: ARG001
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
