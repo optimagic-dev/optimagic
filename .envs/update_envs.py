@@ -5,12 +5,10 @@ from pathlib import Path
 def _keep_line(line: str, flag: str) -> bool:
     """Return True if line contains flag and does not include a comment.
 
-    >>> _keep_line("  - jax  # tests", "tests")
-    >>> True
-    >>> _keep_line("name: env", "tests")
-    >>> True
-    >>> _keep_lone("  - jax  # run", "tests")
-    >>> False
+    Examples:
+    >>> assert _keep_line("  - jax  # tests", "tests") is True
+    >>> assert _keep_line("name: env", "tests") is True
+    >>> assert _keep_line("  - jax  # run", "tests") is False
     """
     return flag in line or "#" not in line
 
