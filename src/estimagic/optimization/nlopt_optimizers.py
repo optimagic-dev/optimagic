@@ -811,11 +811,11 @@ def _process_nlopt_results(nlopt_obj, solution_x):
         ),
         3: (
             "Optimizer stopped because convergence_relative_criterion_tolerance or "
-            + "convergence_absolute_criterion_tolerance was reached"
+            "convergence_absolute_criterion_tolerance was reached"
         ),
         4: (
             "Optimizer stopped because convergence_relative_params_tolerance or "
-            + "convergence_absolute_params_tolerance was reached"
+            "convergence_absolute_params_tolerance was reached"
         ),
         5: "Optimizer stopped because max_criterion_evaluations was reached",
         6: "Optimizer stopped because max running time was reached",

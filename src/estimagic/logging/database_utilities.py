@@ -400,7 +400,7 @@ def _execute_read_statement(database, table_name, statement, return_type):
     else:
         raise NotImplementedError(
             "The return_type must be 'list_of_dicts' or 'dict_of_lists', "
-            + f"not {return_type}."
+            f"not {return_type}."
         )
 
     return result

@@ -55,15 +55,14 @@ extend-ignore = [
     "ANN401",  # flake8-annotate typing.Any
     "PD",  # pandas-vet
     "E731",  # do not assign a lambda expression, use a def
+    "RET", # unnecessary elif or else statements after return, rais, continue, ...
+    "BLE001", # Do not catch blind exceptions. Complains even if done at end of except block.
 
     # Things ignored during transition phase
     # ======================================
     "D",
     "ANN",
     "C901",  # function too complex
-    "RET",
-    "ISC",
-    "BLE",
     # ======================================
 ]
 
