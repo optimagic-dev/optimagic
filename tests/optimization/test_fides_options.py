@@ -11,9 +11,9 @@ if IS_FIDES_INSTALLED:
     from fides.hessian_approximation import FX
     from fides.hessian_approximation import SR1
 else:
-    FX = lambda: None  # noqa: E731
-    SR1 = lambda: None  # noqa: E731
-    Broyden = lambda phi: None  # noqa: E731
+    FX = lambda: None
+    SR1 = lambda: None
+    Broyden = lambda phi: None  # noqa: ARG005
 
 test_cases_no_contribs_needed = [
     {},

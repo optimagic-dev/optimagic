@@ -23,7 +23,7 @@ def test_sign_is_switched_back_after_maximization():
 def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
     params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
 
-    def raising_crit_and_deriv(params):
+    def raising_crit_and_deriv(params):  # noqa: ARG001
         raise Exception()
 
     with pytest.raises(Exception):

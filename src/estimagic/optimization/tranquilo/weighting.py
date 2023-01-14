@@ -23,5 +23,5 @@ def get_sample_weighter(weighter, bounds):
     return out
 
 
-def no_weights(xs, trustregion, bounds):
+def no_weights(xs, trustregion, bounds):  # noqa: ARG001
     return None

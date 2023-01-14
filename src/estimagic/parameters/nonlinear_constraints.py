@@ -458,11 +458,11 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
         else:
             try:
                 c["selector"](params)
-            except Exception:
+            except Exception as e:
                 raise InvalidFunctionError(
                     "Error when calling 'selector' function on params in constraint "
                     f" {c}"
-                )
+                ) from e
 
     elif "loc" in c:
         if not isinstance(params, (pd.Series, pd.DataFrame)):
@@ -472,8 +472,8 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
             )
         try:
             params.loc[c["loc"]]
-        except (KeyError, IndexError):
-            raise InvalidConstraintError("'loc' string is invalid.")
+        except (KeyError, IndexError) as e:
+            raise InvalidConstraintError("'loc' string is invalid.") from e
 
     elif "query" in c:
         if not isinstance(params, pd.DataFrame):
@@ -483,10 +483,10 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
             )
         try:
             params.query(c["query"])
-        except Exception:
+        except Exception as e:
             raise InvalidConstraintError(
                 f"'query' string is invalid in constraint {c}."
-            )
+            ) from e
 
     # ==================================================================================
     # check that constraints can be evaluated
@@ -500,9 +500,9 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
 
         try:
             constraint_eval = c["func"](selector(params))
-        except Exception:
+        except Exception as e:
             raise InvalidFunctionError(
                 f"Error when evaluating function of constraint {c}."
-            )
+            ) from e
 
     return constraint_eval

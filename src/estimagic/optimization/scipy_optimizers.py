@@ -127,8 +127,6 @@ def scipy_slsqp(
     """
     options = {
         "maxiter": stopping_max_iterations,
-        # this is the absolute criterion tolerance according to
-        # scipy/optimize/slsqp/slsqp_optmz.f:495
         "ftol": convergence_absolute_criterion_tolerance,
     }
 

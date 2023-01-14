@@ -67,7 +67,7 @@ def test_bootstrap_estimates_from_indices_without_errors(data):
 def test_get_bootstrap_estimates_with_error_and_raise(data):
     rng = get_rng(seed=1234)
 
-    def _raise_assertion_error(data):
+    def _raise_assertion_error(data):  # noqa: ARG001
         assert 1 == 2
 
     with pytest.raises(AssertionError):
@@ -83,7 +83,7 @@ def test_get_bootstrap_estimates_with_error_and_raise(data):
 def test_get_bootstrap_estimates_with_all_errors_and_continue(data):
     rng = get_rng(seed=1234)
 
-    def _raise_assertion_error(data):
+    def _raise_assertion_error(data):  # noqa: ARG001
         assert 1 == 2
 
     with pytest.warns(UserWarning):
