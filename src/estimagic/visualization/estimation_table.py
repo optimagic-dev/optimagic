@@ -384,7 +384,7 @@ def render_html(
     show_col_names=True,
     show_col_groups=True,
     escape_special_characters=True,
-    **kwargs,
+    **kwargs,  # noqa: ARG001
 ):
     """Return estimation table in html format as string.
 

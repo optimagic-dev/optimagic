@@ -1175,7 +1175,7 @@ def _minimize_pygmo(
     upper_bounds,
     method,
     algo_options,
-    derivative=None,
+    derivative=None,  # noqa: ARG001
 ):
     """Minimize a function with pygmo.
 
@@ -1246,7 +1246,7 @@ def _create_problem(func, bounds, dim, batch_evaluator, n_cores):
         def get_bounds(self):
             return bounds
 
-        def gradient(self, dv):
+        def gradient(self, dv):  # noqa: ARG002
             raise ValueError("No pygmo optimizer should use a gradient.")
 
         def batch_fitness(self, dvs):

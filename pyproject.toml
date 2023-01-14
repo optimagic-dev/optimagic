@@ -65,7 +65,6 @@ extend-ignore = [
     "ISC",
     "BLE",
     # "RUF100", # unused noqa directive
-    "ARG", # unused arguments
     "B904", # exception handling
     # ======================================
 ]

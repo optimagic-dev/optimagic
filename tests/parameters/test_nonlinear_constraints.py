@@ -173,7 +173,7 @@ TEST_CASES = [
             {
                 "type": "ineq",
                 "fun": lambda x: np.array([x]),
-                "jac": lambda x: np.array([[1]]),
+                "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # constraints
@@ -184,7 +184,7 @@ TEST_CASES = [
             {
                 "type": "ineq",
                 "fun": lambda x: np.array([x]),
-                "jac": lambda x: np.array([[1]]),
+                "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # constraints
@@ -192,7 +192,7 @@ TEST_CASES = [
             {
                 "type": "eq",
                 "fun": lambda x: np.array([x, -x]).reshape(-1, 1),
-                "jac": lambda x: np.array([[1], [-1]]),
+                "jac": lambda x: np.array([[1], [-1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # expected

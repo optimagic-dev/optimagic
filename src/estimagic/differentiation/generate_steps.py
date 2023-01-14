@@ -174,7 +174,9 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
     return base_steps
 
 
-def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_bounds):
+def _set_unused_side_to_nan(
+    x, pos, neg, method, lower_step_bounds, upper_step_bounds  # noqa: ARG001
+):
     """Set unused side (i.e. pos or neg) to np.nan.
 
     A side is not used if:

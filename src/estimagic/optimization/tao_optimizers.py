@@ -61,7 +61,7 @@ def tao_pounders(
 
     tao.setFromOptions()
 
-    def func_tao(tao, x, resid_out):
+    def func_tao(tao, x, resid_out):  # noqa: ARG001
         """Evaluate objective and attach result to an petsc object f.
 
         This is required to use the pounders solver from tao.

@@ -199,7 +199,9 @@ def append_row(data, table_name, database, path, fast_logging):
     _execute_write_statement(stmt, database, path, table_name, data)
 
 
-def _execute_write_statement(statement, database, path, table_name, data):
+def _execute_write_statement(
+    statement, database, path, table_name, data  # noqa: ARG001
+):
     try:
         # this will automatically roll back the transaction if any exception is raised
         # and then raise the exception
@@ -470,7 +472,7 @@ def _configure_engine(engine, fast_logging):
     """
 
     @event.listens_for(engine, "connect")
-    def do_connect(dbapi_connection, connection_record):
+    def do_connect(dbapi_connection, connection_record):  # noqa: ARG001
         # disable pysqlite's emitting of the BEGIN statement entirely.
         # also stops it from emitting COMMIT before absolutely necessary.
         dbapi_connection.isolation_level = None
@@ -481,7 +483,7 @@ def _configure_engine(engine, fast_logging):
         conn.execute("BEGIN DEFERRED")
 
     @event.listens_for(engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
+    def set_sqlite_pragma(dbapi_connection, connection_record):  # noqa: ARG001
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode = WAL")
         if fast_logging:
@@ -499,14 +501,20 @@ def _configure_reflect():
     """
 
     @event.listens_for(Table, "column_reflect")
-    def _setup_pickletype(inspector, table, column_info):
+    def _setup_pickletype(inspector, table, column_info):  # noqa: ARG001
         if isinstance(column_info["type"], BLOB):
             column_info["type"] = PickleType(pickler=RobustPickler)
 
 
 class RobustPickler:
     @staticmethod
-    def loads(data, fix_imports=True, encoding="ASCII", errors="strict", buffers=None):
+    def loads(
+        data,
+        fix_imports=True,  # noqa: ARG004
+        encoding="ASCII",  # noqa: ARG004
+        errors="strict",  # noqa: ARG004
+        buffers=None,  # noqa: ARG004
+    ):
         """Robust pickle loading
 
         We first try to unpickle the object with pd.read_pickle. This makes no
@@ -537,5 +545,7 @@ class RobustPickler:
         return res
 
     @staticmethod
-    def dumps(obj, protocol=None, *, fix_imports=True, buffer_callback=None):
+    def dumps(
+        obj, protocol=None, *, fix_imports=True, buffer_callback=None  # noqa: ARG004
+    ):
         return cloudpickle.dumps(obj, protocol=protocol)

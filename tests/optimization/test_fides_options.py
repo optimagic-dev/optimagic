@@ -13,7 +13,7 @@ if IS_FIDES_INSTALLED:
 else:
     FX = lambda: None
     SR1 = lambda: None
-    Broyden = lambda phi: None
+    Broyden = lambda phi: None  # noqa: ARG005
 
 test_cases_no_contribs_needed = [
     {},

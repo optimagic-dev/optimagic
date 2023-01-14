@@ -6,7 +6,7 @@ from estimagic.config import CRITERION_PENALTY_SLOPE
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 
 
-def _penalty_value(x, constant, slope, x0, dim_out=None):
+def _penalty_value(x, constant, slope, x0, dim_out=None):  # noqa: ARG001
     return constant + slope * np.linalg.norm(x - x0)
 
 
@@ -20,11 +20,11 @@ def _penalty_root_contributions(x, constant, slope, x0, dim_out):
     return np.ones(dim_out) * contrib
 
 
-def _penalty_value_derivative(x, constant, slope, x0, dim_out=None):
+def _penalty_value_derivative(x, constant, slope, x0, dim_out=None):  # noqa: ARG001
     return slope * (x - x0) / np.linalg.norm(x - x0)
 
 
-def _penalty_contributions_derivative(x, constant, slope, x0, dim_out):
+def _penalty_contributions_derivative(x, constant, slope, x0, dim_out):  # noqa: ARG001
     row = slope * (x - x0) / (dim_out * np.linalg.norm(x - x0))
     return np.full((dim_out, len(x)), row)
 

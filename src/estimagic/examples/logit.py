@@ -58,7 +58,7 @@ def logit_derivative(params, y, x):
     return out
 
 
-def logit_hessian(params, y, x):
+def logit_hessian(params, y, x):  # noqa: ARG001
     """Hessian matrix of the log-likelihood.
 
     Args:

@@ -51,7 +51,7 @@ def get_bounds(
 
     # Fill leaves with np.nan. If params contains a data frame with bounds as a column,
     # that column is NOT overwritten (as long as an extended registry is used).
-    nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)
+    nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)  # noqa: ARG005
 
     lower_flat = _update_bounds_and_flatten(
         nan_tree, lower_bounds, direction="lower_bound"

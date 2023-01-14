@@ -102,7 +102,7 @@ def test_create_cds_for_dashboard():
 
 
 def test_calculate_start_point(monkeypatch):
-    def fake_read_last_rows(**kwargs):
+    def fake_read_last_rows(**kwargs):  # noqa: ARG001
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
@@ -123,7 +123,7 @@ def test_calculate_start_point(monkeypatch):
 
 
 def test_calculate_start_point_no_negative_value(monkeypatch):
-    def fake_read_last_rows(**kwargs):
+    def fake_read_last_rows(**kwargs):  # noqa: ARG001
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
