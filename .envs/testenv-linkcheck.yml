@@ -5,19 +5,18 @@ channels:
   - defaults
 
 dependencies:
-  - pip
-  - toml
-  - setuptools_scm
-  - python=3.10
-  - jupyterlab
-  - nbsphinx
-  - myst-parser
-  - sphinx
-  - pydata-sphinx-theme>=0.3.0
-  - sphinxcontrib-bibtex
-  - sphinx-copybutton
-  - sphinx-panels
-  - nb_black
+  - jupyterlab  # dev, docs
+  - nb_black  # dev, docs
+  - pip  # dev, tests, docs
 
-  - pip:
+
+  - pydata-sphinx-theme>=0.3.0  # docs
+  - myst-parser  # docs
+  - nbsphinx  # docs
+  - sphinx  # docs
+  - sphinx-copybutton  # docs
+  - sphinx-panels  # docs
+  - sphinxcontrib-bibtex  # docs
+
+  - pip:  # dev, tests, docs
     - -e ../

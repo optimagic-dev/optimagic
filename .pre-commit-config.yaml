@@ -5,6 +5,15 @@ repos:
       - id: check-useless-excludes
     # -   id: identity  # Prints all files passed to pre-commits. Debugging.
 
+  - repo: local
+    hooks:
+      - id: update-environment-files
+        name: check environment file updates
+        entry: python .envs/update_envs.py
+        language: python
+        always_run: true
+        require_serial: true
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -15,7 +24,6 @@ repos:
       - id: check-merge-conflict
       - id: check-vcs-permalinks
       - id: check-yaml
-        exclude: meta.yaml
       - id: check-toml
       - id: debug-statements
       - id: end-of-file-fixer
