@@ -61,6 +61,9 @@ from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
 )
+from estimagic.parameters.nonlinear_constraints import (
+    vector_as_list_of_scalar_constraints,
+)
 from estimagic.utilities import calculate_trustregion_initial_radius
 from scipy.optimize import Bounds
 from scipy.optimize import NonlinearConstraint
@@ -575,11 +578,11 @@ def scipy_ls_lm(
 @mark_minimizer(name="scipy_basinhopping", is_global=True)
 def scipy_basinhopping(
     criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
     *,
-    derivative=None,
     local_algorithm="L-BFGS-B",
     n_iter=100,
     temperature_parameter=1.0,
@@ -695,7 +698,6 @@ def scipy_differential_evolution(
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
-
     res = scipy.optimize.differential_evolution(
         func=criterion,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
@@ -727,7 +729,7 @@ def scipy_shgo(
     *,
     x=None,
     derivative=None,
-    nonlinear_constraints=None,
+    nonlinear_constraints=(),
     local_algorithm="SLSQP",
     n_sampling_points=3,
     n_iterations=7,
@@ -745,6 +747,7 @@ def scipy_shgo(
     infty_constraints=None,
 ):
     """Finds the global minimum of a function using SHG optimization.
+
     SHGO stands for “simplicial homology global optimization”.
 
     For details see :ref:`list_of_scipy_algorithms`.
@@ -754,6 +757,8 @@ def scipy_shgo(
         nonlinear_constraints = equality_as_inequality_constraints(
             nonlinear_constraints
         )
+
+    nonlinear_constraints = vector_as_list_of_scalar_constraints(nonlinear_constraints)
 
     minimizer_kwargs = {"method": local_algorithm}
     options = {
@@ -765,8 +770,7 @@ def scipy_shgo(
         "maxtime": maximum_processing_time,
         "minhgrd": minimum_homology_group_rank_differential,
         "symmetry": symmetry,
-        # "jac": derivative, #problem with constraints of SLSQP having jac
-        # I omitted the hessian specification
+        "jac": derivative,
         "minimize_every_iter": minimize_every_iteration,
         "local_iter": local_iteration,
         "infty_constraints": infty_constraints,
@@ -824,8 +828,8 @@ def scipy_dual_annealing(
         accept=accept,
         maxfun=stopping_max_criterion_evaluations,
         seed=seed,
-        x0=x,
         no_local_search=no_local_search,
+        x0=x,
     )
 
     return process_scipy_result(res)
@@ -837,13 +841,13 @@ def scipy_direct(
     lower_bounds,
     upper_bounds,
     *,
-    eps=1e-6,
     x=None,
-    stopping_max_criterion_evaluations=None,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     locally_biased=True,
     criterion_minimum=-np.inf,
-    criterion_minimum_relative_tolerance=1e-4,
+    criterion_minimum_relative_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     volume_hyperrectangle_tolerance=1e-16,
     length_hyperrectangle_tolerance=1e-6,
 ):
@@ -856,7 +860,7 @@ def scipy_direct(
     res = scipy.optimize.direct(
         func=criterion,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
-        eps=eps,
+        eps=convergence_relative_criterion_tolerance,
         maxfun=stopping_max_criterion_evaluations,
         maxiter=stopping_max_iterations,
         locally_biased=locally_biased,

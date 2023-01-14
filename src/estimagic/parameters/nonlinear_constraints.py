@@ -1,3 +1,4 @@
+import itertools
 from functools import partial
 
 import numpy as np
@@ -227,6 +228,52 @@ def _equality_to_inequality(c):
     else:
         out = c
     return out
+
+
+def vector_as_list_of_scalar_constraints(nonlinear_constraints):
+    """Return constraints where vector constraints are converted to scalar constraints.
+
+    This is necessary for internal optimizers that only support scalar constraints.
+
+    """
+    list_of_constraints_lists = [
+        _vector_to_list_of_scalar(c) for c in nonlinear_constraints
+    ]
+    constraints = list(itertools.chain.from_iterable(list_of_constraints_lists))
+    return constraints
+
+
+def _vector_to_list_of_scalar(constraint):
+    if constraint["n_constr"] > 1:
+        out = []
+        for k in range(constraint["n_constr"]):
+            c = constraint.copy()
+            fun, jac = _get_components(constraint["fun"], constraint["jac"], idx=k)
+            c["fun"] = fun
+            c["jac"] = jac
+            c["n_constr"] = 1
+            out.append(c)
+    else:
+        out = [constraint]
+    return out
+
+
+def _get_components(fun, jac, idx):
+    """Return function and derivative for a single component of a vector function.
+
+    Args:
+        fun (callable): Function that returns a vector.
+        jac (callable): Derivative of the function that returns a matrix.
+        idx (int): Index of the component.
+
+    Returns:
+        callable: Component function at index idx.
+        callable: Jacobian of the component function.
+
+    """
+    fun_component = lambda x: fun(x)[idx]
+    jac_component = lambda x: jac(x)[idx]
+    return fun_component, jac_component
 
 
 # ======================================================================================

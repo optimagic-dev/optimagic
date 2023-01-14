@@ -5,7 +5,6 @@
 
 """
 import inspect
-import sys
 
 import numpy as np
 import pytest
@@ -70,7 +69,7 @@ skip_msg = (
 )
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason=skip_msg)
+# @pytest.mark.skipif(sys.platform != "linux", reason=skip_msg)
 @pytest.mark.parametrize("algorithm", GLOBAL_ALGORITHMS_AVAILABLE)
 def test_global_algorithms_on_sum_of_squares(algorithm):
     res = minimize(
