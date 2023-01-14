@@ -92,8 +92,7 @@ jobs:
           environment-file: ./.envs/testenv-linkcheck.yml
           environment-name: estimagic
           cache-env: true
-          extra-specs: |
-            'python=3.10'
+          extra-specs: python='3.10'
       - name: run sphinx
         shell: bash -l {0}
         run: |
@@ -114,7 +113,7 @@ jobs:
           environment-name: estimagic
           cache-env: true
           extra-specs: |
-            'python=3.10'
+            python='3.10'
 
       - name: run sphinx
         shell: bash -l {0}
