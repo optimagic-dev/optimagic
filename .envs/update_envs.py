@@ -2,27 +2,27 @@ from copy import deepcopy
 from pathlib import Path
 
 
-def _keep_line(line, flag):
+def _keep_line(line: str, flag: str) -> bool:
+    """Return True if line contains flag and does not include a comment.
+
+    >>> _keep_line("  - jax  # tests", "tests")
+    >>> True
+    >>> _keep_line("name: env", "tests")
+    >>> True
+    >>> _keep_lone("  - jax  # run", "tests")
+    >>> False
+    """
     return flag in line or "#" not in line
-
-
-def _add_local_installation(lines):
-    lines.append("    - -e ../")
-    return lines
 
 
 def main():
 
     lines = Path("environment.yml").read_text().splitlines()
 
-    # ==================================================================================
-    # Create test environments
-    # ==================================================================================
-
-    # standard testing
+    # create standard testing environments
 
     test_env = [line for line in lines if _keep_line(line, "tests")]
-    test_env = _add_local_installation(test_env)
+    test_env.append("    - -e ../")  # add local installation
 
     # find index to insert additional dependencies
     _insert_idx = [i for i, line in enumerate(lines) if "dependencies:" in line][0] + 1
@@ -36,14 +36,16 @@ def main():
     test_env_others = deepcopy(test_env)
     test_env_others.insert(_insert_idx, "  - cyipopt")
 
-    ## docs testing
-    docs_env = [line for line in lines if _keep_line(line, "docs")]
-    docs_env = _add_local_installation(docs_env)
+    # create docs testing environment
 
-    # Write environments
-    Path(".envs/testenv-linux.yml").write_text("\n".join(test_env_linux) + "\n")
-    Path(".envs/testenv-others.yml").write_text("\n".join(test_env_others) + "\n")
-    Path(".envs/testenv-linkcheck.yml").write_text("\n".join(docs_env) + "\n")
+    docs_env = [line for line in lines if _keep_line(line, "docs")]
+    docs_env.append("    - -e ../")  # add local installation
+
+    # write environments
+    for name, env in zip(
+        ["linux", "others", "linkcheck"], [test_env_linux, test_env_others, docs_env]
+    ):
+        Path(f".envs/testenv-{name}.yml").write_text("\n".join(env) + "\n")
 
 
 if __name__ == "__main__":
