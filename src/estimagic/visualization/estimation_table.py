@@ -486,11 +486,11 @@ def _process_model(model):
             name = info.pop("name")
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
+        except Exception as e:
             raise TypeError(
                 f"""Model can  be of type dict,  pd.DataFrame
                 or a statsmodels result. Model {model} is of type {type(model)}."""
-            )
+            ) from e
     if "pvalue" in params.columns:
         params = params.rename(columns={"pvalue": "p_value"})
     processed_model = {"params": params, "info": info, "name": name}
