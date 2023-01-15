@@ -93,8 +93,8 @@ def log_d_quality_calculator(sample, trustregion, bounds):
 
     Args:
         sample (np.ndarray): The data sample, shape = (n, p).
-        trustregion:
-        bounds:
+        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        bounds (Bounds): The parameter bounds.
 
     Returns:
         np.ndarray: The criterion values, shape = (n, ).
