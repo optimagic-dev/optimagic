@@ -55,7 +55,7 @@ def test_get_transformation_type(lower_bounds, upper_bounds, expected):
 # ======================================================================================
 
 TEST_CASES = [
-    #  (lower_bounds, upper_bounds, case, expected)  # noqa: E800
+    #  (lower_bounds, upper_bounds, case, expected)  # noqa: ERA001
     (0, 0, "func", {"name": "stack", "out": np.array([1, -1])}),
     (1, 1, "func", {"name": "stack", "out": np.array([0, 0])}),
     (0, 0, "derivative", {"name": "stack", "out": np.array([1, -1])}),
@@ -173,7 +173,7 @@ TEST_CASES = [
             {
                 "type": "ineq",
                 "fun": lambda x: np.array([x]),
-                "jac": lambda x: np.array([[1]]),
+                "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # constraints
@@ -184,7 +184,7 @@ TEST_CASES = [
             {
                 "type": "ineq",
                 "fun": lambda x: np.array([x]),
-                "jac": lambda x: np.array([[1]]),
+                "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # constraints
@@ -192,7 +192,7 @@ TEST_CASES = [
             {
                 "type": "eq",
                 "fun": lambda x: np.array([x, -x]).reshape(-1, 1),
-                "jac": lambda x: np.array([[1], [-1]]),
+                "jac": lambda x: np.array([[1], [-1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # expected

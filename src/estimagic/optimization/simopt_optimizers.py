@@ -287,7 +287,7 @@ def _minimize_simopt(
     return out
 
 
-def _do_nothing(self):
+def _do_nothing(self):  # noqa: ARG001
     pass
 
 
@@ -352,7 +352,7 @@ if IS_SIMOPT_INSTALLED:
             self.gradient = gradient
             super().__init__(fixed_factors={})
 
-        def replicate(self, rng_list):
+        def replicate(self, rng_list):  # noqa: ARG002
             x = np.array(self.factors["x"])
             criterion = {"value": self.criterion(x)}
             if self.gradient_available:

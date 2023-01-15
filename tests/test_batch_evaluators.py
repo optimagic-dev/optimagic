@@ -16,7 +16,7 @@ def double(x):
     return 2 * x
 
 
-def buggy_func(x):
+def buggy_func(x):  # noqa: ARG001
     raise AssertionError()
 
 

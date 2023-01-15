@@ -140,8 +140,8 @@ def _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol):
 
     try:
         arguments = list(arguments)
-    except Exception:
-        raise ValueError("arguments must be list like.")
+    except Exception as e:
+        raise ValueError("arguments must be list like.") from e
 
     try:
         int(n_cores)

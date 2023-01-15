@@ -135,5 +135,5 @@ def test_dict_criterion(input_params, crit):
         assert isinstance(out_dict["contributions"], np.ndarray)
         assert isinstance(out_dict["root_contributions"], np.ndarray)
 
-    for key in expected_dict.keys():
+    for key in expected_dict:
         assert_allclose(out_dict[key], expected_dict[key])

@@ -1,3 +1,5 @@
+name: estimagic-docs
+
 channels:
   - conda-forge
   - nodefaults

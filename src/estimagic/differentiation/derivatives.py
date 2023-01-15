@@ -817,7 +817,7 @@ def _consolidate_extrapolated(candidates):
     candidate_der_dict = {}
     candidate_err_dict = {}
 
-    for key in candidates.keys():
+    for key in candidates:
         _der = candidates[key]["derivative"]
         _err = candidates[key]["error"]
         derivative, error = _select_minimizer_along_axis(_der, _err)

@@ -45,7 +45,7 @@ def test_process_pandas_arguments_incompatible_names(inputs):
         process_pandas_arguments(**inputs)
 
 
-def _from_internal(x, return_type="flat"):
+def _from_internal(x, return_type="flat"):  # noqa: ARG001
     return x
 
 
@@ -202,7 +202,7 @@ def test_transform_free_values_to_params_tree():
 
 
 def test_get_derivative_case():
-    assert get_derivative_case(lambda x: True) == "closed-form"
+    assert get_derivative_case(lambda x: True) == "closed-form"  # noqa: ARG005
     assert get_derivative_case(False) == "skip"
     assert get_derivative_case(None) == "numerical"
 

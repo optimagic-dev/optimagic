@@ -38,11 +38,11 @@ def get_sample_filter(sample_filter="keep_all"):
     return out
 
 
-def discard_all(xs, indices, state):
+def discard_all(xs, indices, state):  # noqa: ARG001
     return state.x.reshape(1, -1), np.array([state.index])
 
 
-def keep_all(xs, indices, state):
+def keep_all(xs, indices, state):  # noqa: ARG001
     return xs, indices
 
 
@@ -52,7 +52,7 @@ def keep_sphere(xs, indices, state):
     return xs[keep], indices[keep]
 
 
-def drop_collinear(xs, indices, state):
+def drop_collinear(xs, indices, state):  # noqa: ARG001
     """Make sure that the points that are kept are linearly independent."""
     raise NotImplementedError()
 

@@ -1,5 +1,4 @@
 """Test the functions of the dashboard app."""
-import estimagic.dashboard.dashboard_app as dashboard_app
 import numpy as np
 import pandas as pd
 import pandas.testing as pdt
@@ -7,6 +6,7 @@ import pytest
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
 from estimagic import minimize
+from estimagic.dashboard import dashboard_app
 
 
 def pybaum_sphere(params):
@@ -102,7 +102,7 @@ def test_create_cds_for_dashboard():
 
 
 def test_calculate_start_point(monkeypatch):
-    def fake_read_last_rows(**kwargs):
+    def fake_read_last_rows(**kwargs):  # noqa: ARG001
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
@@ -123,7 +123,7 @@ def test_calculate_start_point(monkeypatch):
 
 
 def test_calculate_start_point_no_negative_value(monkeypatch):
-    def fake_read_last_rows(**kwargs):
+    def fake_read_last_rows(**kwargs):  # noqa: ARG001
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
