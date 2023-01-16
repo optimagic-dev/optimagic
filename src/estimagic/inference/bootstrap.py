@@ -209,7 +209,7 @@ class BootstrapResult:
         elif return_type != "array":
             raise ValueError(
                 "return_type must be one of pytree, array, or dataframe, "
-                f"not {return_type}."
+                f"not {return_type}.",
             )
         return cov
 
@@ -232,7 +232,7 @@ class BootstrapResult:
         base_outcome_flat, treedef = tree_flatten(self._base_outcome, registry=registry)
 
         lower_flat, upper_flat = calculate_ci(
-            base_outcome_flat, self._internal_outcomes, ci_method, ci_level
+            base_outcome_flat, self._internal_outcomes, ci_method, ci_level,
         )
 
         lower = tree_unflatten(treedef, lower_flat, registry=registry)
@@ -266,7 +266,7 @@ class BootstrapResult:
         registry = get_registry(extended=True)
         names = leaf_names(self.base_outcome, registry=registry)
         summary_data = _calulcate_summary_data_bootstrap(
-            self, ci_method=ci_method, ci_level=ci_level
+            self, ci_method=ci_method, ci_level=ci_level,
         )
         summary = calculate_estimation_summary(
             summary_data=summary_data,

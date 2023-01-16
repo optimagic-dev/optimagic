@@ -86,11 +86,11 @@ def criterion_plot(
 
         if isinstance(res, OptimizeResult):
             _data = _extract_plotting_data_from_results_object(
-                res, stack_multistart, show_exploration, plot_name="criterion_plot"
+                res, stack_multistart, show_exploration, plot_name="criterion_plot",
             )
         elif isinstance(res, (str, Path)):
             _data = _extract_plotting_data_from_database(
-                res, stack_multistart, show_exploration
+                res, stack_multistart, show_exploration,
             )
         else:
             msg = "results must be (or contain) an OptimizeResult or a path to a log"
@@ -276,7 +276,7 @@ def params_plot(
 
 
 def _extract_plotting_data_from_results_object(
-    res, stack_multistart, show_exploration, plot_name
+    res, stack_multistart, show_exploration, plot_name,
 ):
     """Extract data for plotting from results object.
 

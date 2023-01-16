@@ -26,7 +26,7 @@ IDS = list(TEST_CASES)
 PARAMETRIZATION = list(TEST_CASES.items())
 
 
-@pytest.mark.parametrize("method, expected", PARAMETRIZATION, ids=IDS)
+@pytest.mark.parametrize(("method", "expected"), PARAMETRIZATION, ids=IDS)
 def test_get_scale_converter_active(method, expected):
     params = InternalParams(
         values=np.arange(6),
@@ -56,7 +56,7 @@ def test_get_scale_converter_active(method, expected):
     calculated_jacobian = converter.derivative_to_internal(np.eye(len(params.values)))
 
     numerical_jacobian = first_derivative(
-        converter.params_from_internal, expected.values
+        converter.params_from_internal, expected.values,
     )["derivative"]
 
     aaae(calculated_jacobian, numerical_jacobian)

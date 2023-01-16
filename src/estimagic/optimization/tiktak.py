@@ -99,7 +99,7 @@ def run_multistart_optimization(
         warnings.warn(
             "There are less valid starting points than requested optimizations. "
             "The number of optimizations has been reduced from "
-            f"{options['n_optimizations']} to {len(sorted_sample)}."
+            f"{options['n_optimizations']} to {len(sorted_sample)}.",
         )
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
@@ -263,7 +263,7 @@ def draw_exploration_sample(
 
     if sampling_method not in valid_rules:
         raise ValueError(
-            f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
+            f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n",
         )
 
     if sampling_distribution not in valid_distributions:
@@ -273,7 +273,7 @@ def draw_exploration_sample(
         if not np.isfinite(bound).all():
             raise ValueError(
                 f"multistart optimization requires finite {name}_bounds or "
-                f"soft_{name}_bounds for all parameters."
+                f"soft_{name}_bounds for all parameters.",
             )
 
     if sampling_method == "sobol":
@@ -311,7 +311,7 @@ def draw_exploration_sample(
 
 
 def run_explorations(
-    func, primary_key, sample, batch_evaluator, n_cores, step_id, error_handling
+    func, primary_key, sample, batch_evaluator, n_cores, step_id, error_handling,
 ):
     """Do the function evaluations for the exploration phase.
 
@@ -378,7 +378,7 @@ def run_explorations(
     if not is_valid.any():
         raise RuntimeError(
             "All function evaluations of the exploration phase in a multistart "
-            "optimization are invalid. Check your code or the sampling bounds."
+            "optimization are invalid. Check your code or the sampling bounds.",
         )
 
     valid_values = raw_values[is_valid]
@@ -427,7 +427,7 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
 
 
 def update_convergence_state(
-    current_state, starts, results, convergence_criteria, primary_key
+    current_state, starts, results, convergence_criteria, primary_key,
 ):
     """Update the state of all quantities related to convergence.
 
@@ -491,7 +491,7 @@ def update_convergence_state(
                 aggregate_func_output_to_value(
                     f_eval=res["solution_criterion"],
                     primary_key=primary_key,
-                )
+                ),
             )
 
     # ==================================================================================

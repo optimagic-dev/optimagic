@@ -4,7 +4,7 @@ from estimagic.benchmarking.more_wild import get_start_points_mancino
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 
 
-@pytest.mark.parametrize("name, specification", list(MORE_WILD_PROBLEMS.items()))
+@pytest.mark.parametrize(("name", "specification"), list(MORE_WILD_PROBLEMS.items()))
 def test_more_wild_function_at_start_x(name, specification):  # noqa: ARG001
     _criterion = specification["criterion"]
     assert isinstance(specification["start_x"], list)

@@ -51,7 +51,7 @@ def get_poisedness_constant(sample, shape="sphere"):
     _minimize = _get_minimize_func(shape, n_params)
 
     lambda_, argmax, idx_max = _get_poisedness_constant_internal(
-        sample=sample, n_params=n_params, _minimize=_minimize
+        sample=sample, n_params=n_params, _minimize=_minimize,
     )
 
     return lambda_, argmax, idx_max
@@ -89,7 +89,7 @@ def improve_poisedness(sample, shape="sphere", maxiter=5):
     for _ in range(maxiter):
 
         lambda_, argmax, idx_max = _get_poisedness_constant_internal(
-            sample=sample_improved, n_params=n_params, _minimize=_minimize
+            sample=sample_improved, n_params=n_params, _minimize=_minimize,
         )
 
         lambdas += [lambda_]
@@ -137,7 +137,7 @@ def _get_poisedness_constant_internal(sample, n_params, _minimize):
         result_max = _minimize(neg_criterion)
 
         critval = _eval_absolute_value(
-            result_max.x, intercept, linear_terms, square_terms
+            result_max.x, intercept, linear_terms, square_terms,
         )
 
         if critval > lambda_:
@@ -239,7 +239,7 @@ def _get_minimize_func(shape, n_params):
         )
     else:
         raise ValueError(
-            f"Invalid shape argument: {shape}. Must be one of sphere, cube."
+            f"Invalid shape argument: {shape}. Must be one of sphere, cube.",
         )
 
     return _minimize

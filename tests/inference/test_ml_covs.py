@@ -16,7 +16,7 @@ from estimagic.inference.ml_covs import cov_strata_robust
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture
+@pytest.fixture()
 def jac():
     _jac = np.array(
         [
@@ -25,12 +25,12 @@ def jac():
             [0.0009111, 0.002733, 0, 0.009111],
             [-0.993307, -4.966536, 0, -3.973229],
             [0.119203, 0.238406, 0, 0.119203],
-        ]
+        ],
     )
     return _jac
 
 
-@pytest.fixture
+@pytest.fixture()
 def hess():
     _hess = np.array(
         [
@@ -38,12 +38,12 @@ def hess():
             [-0.349071, -1.124730, -0.014799, -0.606078],
             [-0.002467, -0.014799, -0.002467, -0.009866],
             [-0.185879, -0.606078, -0.009866, -0.412500],
-        ]
+        ],
     )
     return _hess
 
 
-@pytest.fixture
+@pytest.fixture()
 def design_options():
     df = pd.DataFrame(
         data=[
@@ -66,7 +66,7 @@ def test_clustering(jac, design_options):
             [6.204213, 30.914541, 0.000046, 24.706263],
             [0.000008, 0.000046, 0.000008, 0.000031],
             [4.951907, 24.706263, 0.000031, 19.752791],
-        ]
+        ],
     )
     np.allclose(calculated, expected)
 
@@ -80,7 +80,7 @@ def test_stratification(jac, design_options):
             [4.9634, 24.732, 0.000037, 19.765],
             [0.000006, 0.000037, 0.000006, 0.000024],
             [3.961525, 19.76501, 0.000024, 15.8022],
-        ]
+        ],
     )
     np.allclose(calculated, expected)
 
@@ -94,7 +94,7 @@ def test_sandwich_step(hess):
             [-1876.2415, 677.638707, -13145.02087, 101.11338],
             [36395.8461, -13145.0208, 254990.7081, -1961.4250],
             [-279.962055, 101.113381, -1961.425002, 15.087562],
-        ]
+        ],
     )
     np.allclose(calculated, expected)
 
@@ -108,7 +108,7 @@ def test_cov_robust(jac, hess):
             [-172.809772, 32.823296, -429.142924, 101.253230],
             [2264.150984, -429.142924, 5647.129400, -1333.791658],
             [-534.742254, 101.253230, -1333.791658, 315.253633],
-        ]
+        ],
     )
     np.allclose(calculated, expected)
 
@@ -126,7 +126,7 @@ def test_cov_cluster_robust(jac, hess, design_options):
             [-172.753, 32.8104, -429.901, 101.228],
             [2263.03, -428.901, 5643, -1333.24],
             [-534.648, 101.228, -1333.24, 315.225],
-        ]
+        ],
     )
 
     np.allclose(calculated, expected)
@@ -145,7 +145,7 @@ def test_cov_strata_robust(jac, hess, design_options):
             [-138.203, 26.2483, -343.121, 80.9828],
             [1810.42, -343.121, 4514.4, -1066.59],
             [-427.719, 80.9828, -1066.59, 252.18],
-        ]
+        ],
     )
     np.allclose(calculated, expected)
 
@@ -159,7 +159,7 @@ def test_cov_hessian(hess):
             [-14.56307, 9.01046, -14.14055, -6.3383],
             [41.65906, -14.14055, 487.09343, -9.645899],
             [0.240678, -6.338334, -9.645898, 11.859284],
-        ]
+        ],
     )
     np.allclose(calculated, expected)
 
@@ -172,7 +172,7 @@ def test_cov_jacobian(jac):
             [-780.893, 749.9739, -749.918, -742.28097],
             [781.1802, -749.918045, 164316.58829, 741.88592],
             [741.8099, -742.280970, 741.8859, 742.520006],
-        ]
+        ],
     )
     np.allclose(calculated, expected)
 
@@ -224,7 +224,7 @@ methods = ["jacobian", "hessian", "robust"]
 test_cases = list(product(models, methods))
 
 
-@pytest.mark.parametrize("model, method", test_cases)
+@pytest.mark.parametrize(("model", "method"), test_cases)
 def test_cov_function_against_statsmodels(model, method):
     expected = get_expected_covariance(model, method)
 

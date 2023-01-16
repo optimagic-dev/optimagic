@@ -28,7 +28,7 @@ def test_missing_derivative_kwargs():
 
     with pytest.raises(InvalidKwargsError):
         minimize(
-            f, params, "scipy_lbfgsb", derivative=grad, derivative_kwargs={"bla": 3}
+            f, params, "scipy_lbfgsb", derivative=grad, derivative_kwargs={"bla": 3},
         )
 
 

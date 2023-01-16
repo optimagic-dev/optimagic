@@ -6,7 +6,7 @@ from estimagic.benchmarking.cartis_roberts import get_start_points_msqrta
 from numpy.testing import assert_array_almost_equal
 
 
-@pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
+@pytest.mark.parametrize(("name", "specification"), list(CARTIS_ROBERTS_PROBLEMS.items()))
 def test_cartis_roberts_function_at_start_x(name, specification):  # noqa: ARG001
     _criterion = specification["criterion"]
     _x = np.array(specification["start_x"])
@@ -18,7 +18,7 @@ def test_cartis_roberts_function_at_start_x(name, specification):  # noqa: ARG00
     assert isinstance(specification["start_x"], list)
 
 
-@pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
+@pytest.mark.parametrize(("name", "specification"), list(CARTIS_ROBERTS_PROBLEMS.items()))
 def test_cartis_roberts_function_at_solution_x(name, specification):  # noqa: ARG001
     _criterion = specification["criterion"]
     _x = specification["solution_x"]
@@ -45,7 +45,7 @@ def test_get_start_points_msqrta():
             [0.9988, -0.4910, -0.6020, 0.9395, -0.9301],
             [-0.9992, -0.0265, -0.4041, 0.2794, -0.8509],
             [0.9235, 0.1935, 0.9365, -0.8860, 0.1760],
-        ]
+        ],
     )
     expected = 0.2 * matlab_mat.flatten()
     result = get_start_points_msqrta(5)

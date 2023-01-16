@@ -45,7 +45,7 @@ TEST_CASES_BNTR = [
                     1.1041403355728811e04,
                     9.2992625728417297e03,
                 ],
-            ]
+            ],
         ),
         -np.ones(3),
         np.ones(3),
@@ -58,7 +58,7 @@ TEST_CASES_BNTR = [
                 [3.97435226e00, 1.29126446e02, 1.90424789e02],
                 [1.29126446e02, 1.08362658e04, 9.05024598e03],
                 [1.90424789e02, 9.05024598e03, 1.06395102e04],
-            ]
+            ],
         ),
         np.array([-1.0, 0, -1.0]),
         np.ones(3),
@@ -83,7 +83,7 @@ TEST_CASES_BNTR = [
                     2.7006581320776222e03,
                     2.3157072223295277e03,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -283,7 +283,7 @@ TEST_CASES_BNTR = [
                     5.2619306030723321e08,
                     3.1297679051347983e08,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -308,7 +308,7 @@ TEST_CASES_BNTR = [
                     1.5388850550829183e05,
                     2.1840298326937514e05,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -333,7 +333,7 @@ TEST_CASES_BNTR = [
                     -4.3975347261092327e04,
                     3.5707186446013493e06,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -358,7 +358,7 @@ TEST_CASES_BNTR = [
                     1.5956835170839101e05,
                     6.7613560286023448e03,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -383,7 +383,7 @@ TEST_CASES_BNTR = [
                     4.9152962632434155e03,
                     2.7645273367617360e03,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -408,7 +408,7 @@ TEST_CASES_BNTR = [
                     5.7299202312126122e07,
                     5.0198599698606022e07,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -433,7 +433,7 @@ TEST_CASES_BNTR = [
                     5.4813989289859617e08,
                     4.9252782230468601e08,
                 ],
-            ]
+            ],
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
@@ -442,9 +442,9 @@ TEST_CASES_BNTR = [
 ]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
-    "linear_terms, square_terms, lower_bounds, upper_bounds, x_expected",
+    ("linear_terms", "square_terms", "lower_bounds", "upper_bounds", "x_expected"),
     TEST_CASES_BNTR,
 )
 def test_bounded_newton_trustregion(
@@ -485,23 +485,23 @@ TEST_CASES_GQTPAR = [
                 [2.05714077e-02, 7.58182390e-01, 9.00050279e-01],
                 [7.58182390e-01, 6.25867992e01, 4.20096648e01],
                 [9.00050279e-01, 4.20096648e01, 4.03810858e01],
-            ]
+            ],
         ),
         np.array(
             [
                 -0.9994584757179,
                 -0.007713730538474,
                 0.03198833730482,
-            ]
+            ],
         ),
         -0.001340933981148,
-    )
+    ),
 ]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
-    "linear_terms, square_terms, x_expected, criterion_expected", TEST_CASES_GQTPAR
+    ("linear_terms", "square_terms", "x_expected", "criterion_expected"), TEST_CASES_GQTPAR,
 )
 def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
@@ -523,7 +523,7 @@ TEST_CASES_CG = [
             [
                 [2.2267942225630835e08, 1.3303758212303287e08],
                 [1.3303758212303287e08, 7.9554367206848219e07],
-            ]
+            ],
         ),
         0.2393319731158,
         -np.array([0.0958339, -0.159809]),
@@ -535,7 +535,7 @@ TEST_CASES_CG = [
                 [4.00803604e00, 1.65790911e02, 1.73222977e02],
                 [1.65790911e02, 1.60880163e04, 1.10414034e04],
                 [1.73222977e02, 1.10414034e04, 9.29926257e03],
-            ]
+            ],
         ),
         9.5367431640625e-05,
         np.array([9.50204689e-05, 3.56030822e-06, -7.30627902e-06]),
@@ -547,7 +547,7 @@ TEST_CASES_CG = [
                 [4.00803604e00, 1.65790911e02, 1.73222977e02],
                 [1.65790911e02, 1.60880163e04, 1.10414034e04],
                 [1.73222977e02, 1.10414034e04, 9.29926257e03],
-            ]
+            ],
         ),
         9.5367431640625e-05,
         np.array([9.50204689e-05, 3.56030822e-06, -7.30627902e-06]),
@@ -571,7 +571,7 @@ TEST_CASES_CG = [
                     1.1041403355728811e04,
                     9.2992625728417297e03,
                 ],
-            ]
+            ],
         ),
         0.0003814697265625,
         np.array([-2.7382e-05, -3.66814e-07, 9.45617e-07]),
@@ -595,7 +595,7 @@ TEST_CASES_CG = [
                     1.6917615514201863e05,
                     1.4352314212505225e05,
                 ],
-            ]
+            ],
         ),
         0.0657627701334,
         np.array([-0.0656472, -0.00168561, 0.00351321]),
@@ -619,7 +619,7 @@ TEST_CASES_CG = [
                     2.7006581320776222e03,
                     2.3157072223295277e03,
                 ],
-            ]
+            ],
         ),
         0.0003814697265625,
         np.array([-0.000310185, -3.86464e-06, 9.67128e-06]),
@@ -643,7 +643,7 @@ TEST_CASES_CG = [
                     2.3274035648401971e09,
                     1.7782503817136776e09,
                 ],
-            ]
+            ],
         ),
         0.390625,
         np.array([-7.44084e-15, -6.07092e-16, 2.47754e-16]),
@@ -667,7 +667,7 @@ TEST_CASES_CG = [
                     7.8819891642426796e09,
                     6.0688426371444454e09,
                 ],
-            ]
+            ],
         ),
         0.0001192842356654,
         np.array([2.43607e-06, 9.32646e-05, 7.4327e-05]),
@@ -702,31 +702,31 @@ TEST_CASES_TRSBOX = [
 ]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
-    "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
+    ("gradient", "hessian", "trustregion_radius", "x_expected"), TEST_CASES_CG,
 )
 def test_trustregion_conjugate_gradient(
-    gradient, hessian, trustregion_radius, x_expected
+    gradient, hessian, trustregion_radius, x_expected,
 ):
     x_out = minimize_trust_cg(
-        gradient, hessian, trustregion_radius, gtol_abs=1e-8, gtol_rel=1e-6
+        gradient, hessian, trustregion_radius, gtol_abs=1e-8, gtol_rel=1e-6,
     )
     aaae(x_out, x_expected)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
-    "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
+    ("gradient", "hessian", "trustregion_radius", "x_expected"), TEST_CASES_CG,
 )
 def test_trustregion_steihaug_toint(gradient, hessian, trustregion_radius, x_expected):
     x_out = minimize_trust_stcg(gradient, hessian, trustregion_radius)
     aaae(x_out, x_expected)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
-    "linear_terms, square_terms, trustregion_radius, x_expected",
+    ("linear_terms", "square_terms", "trustregion_radius", "x_expected"),
     TEST_CASES_CG + TEST_CASES_TRSBOX,
 )
 def test_trustregion_trsbox(linear_terms, square_terms, trustregion_radius, x_expected):

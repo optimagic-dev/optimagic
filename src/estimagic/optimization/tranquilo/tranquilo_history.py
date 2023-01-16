@@ -28,7 +28,7 @@ class History:
             self.aggregate = lambda x: (x**2).sum(axis=-1)
         else:
             raise ValueError(
-                "funtype must be 'scalar', 'likelihood' or 'least_squares'."
+                "funtype must be 'scalar', 'likelihood' or 'least_squares'.",
             )
 
     def add_entries(self, xs, fvecs):
@@ -142,7 +142,7 @@ class History:
             xs = self.get_xs()
 
             out = _find_indices_in_trust_region(
-                xs, center=trustregion.center, radius=trustregion.radius
+                xs, center=trustregion.center, radius=trustregion.radius,
             )
 
             if norm != "infinity":

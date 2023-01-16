@@ -11,7 +11,7 @@ from pybaum import tree_equal
 from pybaum import tree_just_flatten
 
 
-@pytest.fixture
+@pytest.fixture()
 def example_db(tmp_path):
     path = tmp_path / "test.db"
 
@@ -62,7 +62,7 @@ def test_log_reader_read_history(example_db):
 def test_log_reader_read_multistart_history(example_db):
     reader = OptimizeLogReader(example_db)
     history, local_history, exploration = reader.read_multistart_history(
-        direction="minimize"
+        direction="minimize",
     )
     assert local_history is None
     assert exploration is None

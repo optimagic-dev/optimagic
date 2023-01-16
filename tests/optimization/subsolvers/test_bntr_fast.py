@@ -97,7 +97,7 @@ def test_eval_criterion():
     linear_terms = np.arange(5).astype(float)
     square_terms = np.arange(25).reshape(5, 5).astype(float)
     assert eval_criterion_orig(
-        x_candidate, linear_terms, square_terms
+        x_candidate, linear_terms, square_terms,
     ) == eval_criterion_fast(x_candidate, linear_terms, square_terms)
 
 
@@ -108,7 +108,7 @@ def test_get_info_on_active_bounds():
     lower_bounds = -np.ones(5)
     upper_bounds = np.ones(5)
     info_orig = get_info_bounds_orig(
-        x_candidate, linear_terms, lower_bounds, upper_bounds
+        x_candidate, linear_terms, lower_bounds, upper_bounds,
     )
     (
         active_lower,
@@ -162,7 +162,7 @@ def test_apply_bounds_candidate_x():
     aae(apply_bounds_orig(x, lb, ub), apply_bounds_fast(x, lb, ub))
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_take_preliminary_gradient_descent_and_check_for_convergence():
     model_gradient = np.array(
         [
@@ -171,7 +171,7 @@ def test_take_preliminary_gradient_descent_and_check_for_convergence():
             -8.18100e02,
             2.47760e02,
             -1.26540e02,
-        ]
+        ],
     )
     model_hessian = np.array(
         [
@@ -180,10 +180,10 @@ def test_take_preliminary_gradient_descent_and_check_for_convergence():
             [321.9, -250.05, -1456.88, -144.75, 900.99],
             [106.98, 165.77, -144.75, 686.35, -3.51],
             [-45.45, -47.47, 900.99, -3.51, -782.91],
-        ]
+        ],
     )
     model = ScalarModel(
-        linear_terms=model_gradient, square_terms=model_hessian, intercept=0
+        linear_terms=model_gradient, square_terms=model_hessian, intercept=0,
     )
     x_candidate = np.zeros(5)
     lower_bounds = -np.ones(len(x_candidate))
@@ -222,7 +222,7 @@ def test_take_preliminary_gradient_descent_and_check_for_convergence():
     assert res_orig[6] == res_fast[10]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_apply_bounds_to_conjugate_gradient_step():
     step_inactive = np.ones(7)
     x_candidate = np.zeros(10)
@@ -250,13 +250,13 @@ def test_apply_bounds_to_conjugate_gradient_step():
         active_fixed_bounds,
     )
     res_orig = bounds_cg_orig(
-        step_inactive, x_candidate, lower_bounds, upper_bounds, bounds_info
+        step_inactive, x_candidate, lower_bounds, upper_bounds, bounds_info,
     )
     aae(res_orig, res_fast)
     pass
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_compute_conjugate_gradient_setp():
     x_candidate = np.array([0] * 8 + [1.5] * 2)
     gradient_inactive = np.arange(6).astype(float)
@@ -322,7 +322,7 @@ def test_compute_conjugate_gradient_setp():
     aaae(res_orig[2], res_fast[2])
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_compute_predicet_reduction_from_conjugate_gradient_step():
     cg_step = np.arange(10).astype(float) / 10
     cg_step_inactive = np.array([1, 2, 3]).astype(float)
@@ -340,15 +340,15 @@ def test_compute_predicet_reduction_from_conjugate_gradient_step():
         inactive_bounds,
     )
     bounds_info = ActiveBounds(
-        inactive=indices[inactive_bounds], active=indices[~inactive_bounds]
+        inactive=indices[inactive_bounds], active=indices[~inactive_bounds],
     )
     res_orig = reduction_cg_step_orig(
-        cg_step, cg_step_inactive, grad, grad_inactive, hessian_inactive, bounds_info
+        cg_step, cg_step_inactive, grad, grad_inactive, hessian_inactive, bounds_info,
     )
     aae(res_orig, res_fast)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_update_trustregion_radius_conjugate_gradient():
     f_candidate = -1234.56
     predicted_reduction = 200
@@ -388,7 +388,7 @@ def test_update_trustregion_radius_conjugate_gradient():
     assert res_orig[1] == res_fast[1]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_perform_gradient_descent_step():
     x_candidate = np.zeros(10)
     f_candidate_initial = 1234.56
@@ -413,7 +413,7 @@ def test_perform_gradient_descent_step():
         "default_radius": 100,
     }
     model = ScalarModel(
-        linear_terms=model_gradient, square_terms=model_hessian, intercept=0
+        linear_terms=model_gradient, square_terms=model_hessian, intercept=0,
     )
     bounds_info = ActiveBounds(inactive=indices[inactive_bounds])
     res_fast = gradient_descent_fast(
@@ -446,7 +446,7 @@ def test_perform_gradient_descent_step():
         assert res_orig[i] == res_fast[i]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_update_trustregion_radius_and_gradient_descent():
     options_update_radius = {
         "mu1": 0.35,
@@ -489,7 +489,7 @@ def test_update_trustregion_radius_and_gradient_descent():
     assert res_fast[1] == res_orig[1]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_minimize_bntr():
     model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
     lower_bounds = -np.ones(len(model.linear_terms))
@@ -506,7 +506,7 @@ def test_minimize_bntr():
     }
     res_orig = bntr(model, lower_bounds, upper_bounds, **options)
     res_fast = _bntr_fast_jitted(
-        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
+        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options,
     )
     # using aaae to get tests run on windows machines.
     aaae(res_orig["x"], res_fast[0])
@@ -514,7 +514,7 @@ def test_minimize_bntr():
     assert res_orig["success"] == res_fast[3]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_minimize_bntr_break_loop_early():
     model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
     lower_bounds = -np.ones(len(model.linear_terms))
@@ -530,7 +530,7 @@ def test_minimize_bntr_break_loop_early():
         "gtol_rel_conjugate_gradient": 10,
     }
     res_fast = _bntr_fast_jitted(
-        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
+        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options,
     )
     # using aaae to get tests run on windows machines.
     aaae(np.zeros(len(model.linear_terms)), res_fast[0])

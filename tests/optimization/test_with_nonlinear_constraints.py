@@ -49,7 +49,7 @@ def nlc_2d_example():
             "derivative": constraint_jac,
             "lower_bounds": np.zeros(2),
             "tol": 1e-8,
-        }
+        },
     ]
 
     constraints_flat = [
@@ -60,7 +60,7 @@ def nlc_2d_example():
             "lower_bounds": 1,
             "upper_bounds": 2,
             "tol": 1e-8,
-        }
+        },
     ]
 
     constraints_equality = [
@@ -69,7 +69,7 @@ def nlc_2d_example():
             "func": lambda x: np.dot(x, x),
             "derivative": lambda x: 2 * x,
             "value": 2,
-        }
+        },
     ]
 
     constraints_equality_and_inequality = [
@@ -112,12 +112,12 @@ def nlc_2d_example():
 
 TEST_CASES = list(
     itertools.product(
-        NLC_ALGORITHMS, ["flat", "long", "equality", "equality_and_inequality"]
-    )
+        NLC_ALGORITHMS, ["flat", "long", "equality", "equality_and_inequality"],
+    ),
 )
 
 
-@pytest.mark.parametrize("algorithm, constr_type", TEST_CASES)
+@pytest.mark.parametrize(("algorithm", "constr_type"), TEST_CASES)
 def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
     """Test that available nonlinear optimizers solve a nonlinear constraints problem.
 
@@ -137,10 +137,7 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
         warnings.simplefilter("ignore")
         result = maximize(algorithm=algorithm, **kwargs[constr_type])
 
-    if AVAILABLE_ALGORITHMS[algorithm]._algorithm_info.is_global:
-        decimal = 0
-    else:
-        decimal = 4
+    decimal = 0 if AVAILABLE_ALGORITHMS[algorithm]._algorithm_info.is_global else 4
 
     aaae(result.params, solution_x, decimal=decimal)
 
@@ -180,7 +177,7 @@ def test_documentation_example(algorithm):
             "func": lambda x: np.prod(x),
             "value": 1.0,
         },
-        **kwargs
+        **kwargs,
     )
 
 
@@ -235,7 +232,7 @@ TEST_CASES = list(itertools.product(["ipopt"], [True, False]))
 
 
 @pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="Needs ipopt")
-@pytest.mark.parametrize("algorithm, skip_checks", TEST_CASES)
+@pytest.mark.parametrize(("algorithm", "skip_checks"), TEST_CASES)
 def test_general_example(general_example, algorithm, skip_checks):
 
     kwargs = general_example

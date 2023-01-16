@@ -25,7 +25,7 @@ def process_internal_optimizer_result(
         res = _dummy_result_from_traceback(res, fixed_kwargs)
     else:
         res = _process_one_result(
-            res, converter, primary_key, fixed_kwargs, skip_checks
+            res, converter, primary_key, fixed_kwargs, skip_checks,
         )
 
         if is_multistart:
@@ -51,14 +51,14 @@ def process_internal_optimizer_result(
 
             res.algorithm = f"multistart_{res.algorithm}"
             res.n_iterations = res.n_iterations = _sum_or_none(
-                [opt.n_iterations for opt in info["local_optima"]]
+                [opt.n_iterations for opt in info["local_optima"]],
             )
 
             res.n_criterion_evaluations = _sum_or_none(
-                [opt.n_criterion_evaluations for opt in info["local_optima"]]
+                [opt.n_criterion_evaluations for opt in info["local_optima"]],
             )
             res.n_derivative_evaluations = _sum_or_none(
-                [opt.n_derivative_evaluations for opt in info["local_optima"]]
+                [opt.n_derivative_evaluations for opt in info["local_optima"]],
             )
 
             res.multistart_info = info
@@ -71,7 +71,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
         _criterion = float(res["solution_criterion"])
     else:
         _criterion = aggregate_func_output_to_value(
-            res["solution_criterion"], primary_key
+            res["solution_criterion"], primary_key,
         )
 
     if fixed_kwargs["direction"] == "maximize":
@@ -175,8 +175,5 @@ def switch_sign(critval):
 
 
 def _sum_or_none(summands):
-    if any([s is None for s in summands]):
-        out = None
-    else:
-        out = int(np.sum(summands))
+    out = None if any([s is None for s in summands]) else int(np.sum(summands))
     return out

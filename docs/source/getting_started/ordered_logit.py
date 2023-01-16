@@ -27,7 +27,7 @@ def ordered_logit_processing(formula, data):
         [
             rng.uniform(low=-0.5, high=0.5, size=len(x.columns)),
             np.arange(num_cutoffs) * 2,
-        ]
+        ],
     )
 
     # make constraints

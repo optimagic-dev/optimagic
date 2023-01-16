@@ -341,7 +341,7 @@ def task_create_convergence_gif(produces, algorithm):
     start_x = np.array([2])
     hessian = example_hessian if algorithm == "trust-ncg" else NotImplementedError
     res = minimize_with_history(
-        example_criterion, start_x, method=algorithm, jac=example_gradient, hess=hessian
+        example_criterion, start_x, method=algorithm, jac=example_gradient, hess=hessian,
     )
 
     # repeat the last point to show it longer in the gif

@@ -38,7 +38,7 @@ def artif(x):
     fvec = np.zeros(dim_in)
     for i in range(dim_in):
         fvec[i] = -0.05 * (xvec[i + 1] + xvec[i + 2] + xvec[i]) + np.arctan(
-            np.sin(np.mod(i + 1, 100) * xvec[i + 1])
+            np.sin(np.mod(i + 1, 100) * xvec[i + 1]),
         )
     return fvec
 
@@ -135,7 +135,7 @@ def broydn_bd(x):
             if j != i:
                 ji.append(j)
         fvec[i - 1] = x[i - 1] * (2 + 5 * x[i - 1] ** 2) - np.sum(
-            x[np.array(ji) - 1] * (1 + x[np.array(ji) - 1])
+            x[np.array(ji) - 1] * (1 + x[np.array(ji) - 1]),
         )
     return fvec
 
@@ -301,7 +301,7 @@ def chnrsbne(x):
             1.40,
             0.60,
             1.50,
-        ]
+        ],
     )
     dim_in = len(x)
     fvec = np.zeros(2 * (dim_in - 1))
@@ -423,7 +423,7 @@ def msqrta(x):
     for i in range(1, dim_in + 1):
         for j in range(1, dim_in + 1):
             fmat[i - 1, j - 1] = (xmat[i - 1, :] * xmat[:, j - 1]).sum() - amat[
-                i - 1, j - 1
+                i - 1, j - 1,
             ]
     return fmat.flatten()
 

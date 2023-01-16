@@ -71,7 +71,7 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
     )
 
     new_sequence = convolve1d(
-        input=sequence, weights=richardson_coef[::-1], axis=0, origin=num_terms // 2
+        input=sequence, weights=richardson_coef[::-1], axis=0, origin=num_terms // 2,
     )
 
     m = seq_len - num_terms

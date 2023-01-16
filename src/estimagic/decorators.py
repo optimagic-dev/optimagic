@@ -183,7 +183,7 @@ def mark_minimizer(
     """
     if name is None:
         raise TypeError(
-            "mark_minimizer() missing 1 required keyword-only argument: 'name'"
+            "mark_minimizer() missing 1 required keyword-only argument: 'name'",
         )
     elif not isinstance(name, str):
         raise TypeError("name must be a string.")
@@ -192,7 +192,7 @@ def mark_minimizer(
     if primary_criterion_entry not in valid_entries:
         raise ValueError(
             f"primary_criterion_entry must be one of {valid_entries} not "
-            f"{primary_criterion_entry}."
+            f"{primary_criterion_entry}.",
         )
 
     if not isinstance(needs_scaling, bool):

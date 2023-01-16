@@ -15,21 +15,21 @@ def aaae(obj1, obj2, decimal=6):
     np.testing.assert_array_almost_equal(arr1, arr2, decimal=decimal)
 
 
-@pytest.fixture
+@pytest.fixture()
 def setup():
     out = {}
 
     out["df"] = pd.DataFrame(
-        np.array([[1, 10], [2, 7], [3, 6], [4, 5]]), columns=["x1", "x2"]
+        np.array([[1, 10], [2, 7], [3, 6], [4, 5]]), columns=["x1", "x2"],
     )
     out["estimates"] = np.array(
-        [[2.0, 8.0], [2.0, 8.0], [2.5, 7.0], [3.0, 6.0], [3.25, 5.75]]
+        [[2.0, 8.0], [2.0, 8.0], [2.5, 7.0], [3.0, 6.0], [3.25, 5.75]],
     )
 
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def expected():
     out = {}
 
@@ -38,7 +38,7 @@ def expected():
         [
             [1.5006105396891194, 3.499389460310881],
             [5.130313521781885, 8.869686478218114],
-        ]
+        ],
     )
     out["basic_ci"] = np.array([[1.775, 3.0], [6.0, 8.225]])
     out["bc_ci"] = np.array([[2, 3.2342835077057543], [5.877526959881923, 8]])
@@ -65,7 +65,7 @@ TEST_CASES = itertools.product(
 )
 
 
-@pytest.mark.parametrize("outcome, method", TEST_CASES)
+@pytest.mark.parametrize(("outcome", "method"), TEST_CASES)
 def test_ci(outcome, method, setup, expected):
     registry = get_registry(extended=True)
 

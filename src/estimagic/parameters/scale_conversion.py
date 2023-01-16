@@ -43,7 +43,7 @@ def get_scale_converter(
     scaling_options = {k: v for k, v in scaling_options.items() if k in valid_keys}
 
     factor, offset = calculate_scaling_factor_and_offset(
-        internal_params=internal_params, **scaling_options
+        internal_params=internal_params, **scaling_options,
     )
 
     _params_to_internal = partial(

@@ -96,7 +96,7 @@ def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
             hessian_info = hessian_info._replace(already_factorized=False)
         else:
             hessian_info, factorization_info = add_lambda_and_factorize_hessian(
-                model, hessian_info, lambdas
+                model, hessian_info, lambdas,
             )
 
         if factorization_info == 0 and gradient_norm > zero_threshold:
@@ -182,7 +182,7 @@ def _get_initial_guess_for_lambdas(
     hessian_frobenius_norm = np.linalg.norm(model_hessian, "fro")
 
     hessian_gershgorin_lower, hessian_gershgorin_upper = _compute_gershgorin_bounds(
-        main_model
+        main_model,
     )
 
     lambda_lower_bound = max(
@@ -201,7 +201,7 @@ def _get_initial_guess_for_lambdas(
         lambda_candidate = 0
     else:
         lambda_candidate = _get_new_lambda_candidate(
-            lower_bound=lambda_lower_bound, upper_bound=lambda_upper_bound
+            lower_bound=lambda_lower_bound, upper_bound=lambda_upper_bound,
         )
 
     lambdas = DampingFactors(
@@ -271,7 +271,7 @@ def _find_new_candidate_and_update_parameters(
 ):
     """Find new candidate vector and update transformed hessian and lambdas."""
     x_candidate = cho_solve(
-        (hessian_info.upper_triangular, False), -main_model.linear_terms
+        (hessian_info.upper_triangular, False), -main_model.linear_terms,
     )
     x_norm = np.linalg.norm(x_candidate)
 
@@ -337,7 +337,7 @@ def _check_for_interior_convergence_and_update(
 
     lambda_lower_bound = max(lambdas.lower_bound, lambdas.upper_bound - s_min**2)
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound, upper_bound=lambdas.candidate
+        lower_bound=lambda_lower_bound, upper_bound=lambdas.candidate,
     )
 
     lambdas_new = lambdas._replace(
@@ -350,7 +350,7 @@ def _check_for_interior_convergence_and_update(
 
 
 def _update_lambdas_when_factorization_unsuccessful(
-    hessian_info, lambdas, factorization_info
+    hessian_info, lambdas, factorization_info,
 ):
     """Update lambdas in the case that factorization of hessian not successful."""
     delta, v = _compute_terms_to_make_leading_submatrix_singular(
@@ -360,10 +360,10 @@ def _update_lambdas_when_factorization_unsuccessful(
     v_norm = np.linalg.norm(v)
 
     lambda_lower_bound = max(
-        lambdas.lower_bound, lambdas.candidate + delta / v_norm**2
+        lambdas.lower_bound, lambdas.candidate + delta / v_norm**2,
     )
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound, upper_bound=lambdas.upper_bound
+        lower_bound=lambda_lower_bound, upper_bound=lambdas.upper_bound,
     )
 
     lambdas_new = lambdas._replace(
@@ -479,7 +479,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
         hessian_already_factorized = hessian_info.already_factorized
         lambda_new_lower_bound = max(lambda_new_lower_bound, newton_step)
         lambda_new_candidate = _get_new_lambda_candidate(
-            lower_bound=lambda_new_lower_bound, upper_bound=lambdas.candidate
+            lower_bound=lambda_new_lower_bound, upper_bound=lambdas.candidate,
         )
 
     hessian_info_new = hessian_info._replace(
@@ -497,7 +497,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
 
 
 def _update_lambdas_when_candidate_outside_trustregion(
-    lambdas, newton_step, p_norm, stopping_criteria, converged
+    lambdas, newton_step, p_norm, stopping_criteria, converged,
 ):
     """Update lambas in the case that candidate vector lies outside trust-region."""
     relative_error = abs(p_norm - 1)
@@ -608,7 +608,7 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
 
     if k != 1:
         v[: k - 1] = solve_triangular(
-            upper_triangular[: k - 1, : k - 1], -upper_triangular[: k - 1, k - 1]
+            upper_triangular[: k - 1, : k - 1], -upper_triangular[: k - 1, k - 1],
         )
 
     return delta, v

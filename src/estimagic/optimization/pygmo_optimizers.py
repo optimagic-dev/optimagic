@@ -57,14 +57,14 @@ def pygmo_gaco(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
 
     if isinstance(speed_of_std_values_convergence, float):
         if not speed_of_std_values_convergence.is_integer():
             raise ValueError(
                 "The speed_of_std_values_convergence parameter must be an integer. "
-                f"You specified {speed_of_std_values_convergence}."
+                f"You specified {speed_of_std_values_convergence}.",
             )
 
     algo_specific_options = {
@@ -125,7 +125,7 @@ def pygmo_bee_colony(
 
     """
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=20
+        population_size=population_size, x=x, lower_bound=20,
     )
     algo_options = _create_algo_options(
         population_size=population_size,
@@ -177,7 +177,7 @@ def pygmo_de(
 
     """
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10
+        population_size=population_size, x=x, lower_bound=10,
     )
 
     # support both integer and string specification of the mutation variant
@@ -194,7 +194,7 @@ def pygmo_de(
         "rand/2/bin": 10,
     }
     mutation_variant = _convert_str_to_int(
-        str_to_int=mutation_variant_str_to_int, value=mutation_variant
+        str_to_int=mutation_variant_str_to_int, value=mutation_variant,
     )
 
     algo_specific_options = {
@@ -248,7 +248,7 @@ def pygmo_sea(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10
+        population_size=population_size, x=x, lower_bound=10,
     )
 
     algo_options = _create_algo_options(
@@ -304,14 +304,14 @@ def pygmo_sga(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
 
     if eta_c is not None and crossover_strategy != "sbx":
         warnings.warn(
             f"You specified crossover strategy {crossover_strategy} and eta_c. "
             "However, eta_c is ignored because it is only used when the "
-            "crossover_strategy is set to sbx."
+            "crossover_strategy is set to sbx.",
         )
     eta_c = 1.0 if eta_c is None else eta_c
 
@@ -321,22 +321,22 @@ def pygmo_sga(
         warnings.warn(
             "You specified a mutation_polynomial_distribution_index but did not choose "
             "polynomial as your mutation_strategy. Thus, "
-            "mutation_polynomial_distribution_index will be ignored."
+            "mutation_polynomial_distribution_index will be ignored.",
         )
     if mutation_gaussian_width is not None and mutation_strategy != "gaussian":
         warnings.warn(
             "You specified a mutation_gaussian_width but did not choose gaussion as "
-            "your mutation_strategy. Thus, mutation_gaussian_width will be ignored."
+            "your mutation_strategy. Thus, mutation_gaussian_width will be ignored.",
         )
     if selection_strategy != "truncated" and selection_truncated_n_best is not None:
         warnings.warn(
             "You specified selection_truncated_n_best but did not specify truncated as "
-            "your selection strategy. Therefore, selection_truncated_n_best is ignored."
+            "your selection strategy. Therefore, selection_truncated_n_best is ignored.",
         )
     if selection_strategy != "tournament" and selection_tournament_size is not None:
         warnings.warn(
             "You specified selection_tournament_size but did not specify tournament as "
-            "your selection strategy. Therefore, selection_tournament_size is ignored."
+            "your selection strategy. Therefore, selection_tournament_size is ignored.",
         )
 
     if mutation_strategy == "gaussian" and mutation_gaussian_width is not None:
@@ -416,7 +416,7 @@ def pygmo_sade(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
     mutation_variant_str_to_int = {
         "best/1/exp": 1,
@@ -439,7 +439,7 @@ def pygmo_sade(
         "rand-to-best-and-current/2/bin": 18,
     }
     mutation_variant = _convert_str_to_int(
-        str_to_int=mutation_variant_str_to_int, value=mutation_variant
+        str_to_int=mutation_variant_str_to_int, value=mutation_variant,
     )
 
     algo_specific_options = {
@@ -503,7 +503,7 @@ def pygmo_cmaes(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
 
     algo_specific_options = {
@@ -568,7 +568,7 @@ def pygmo_simulated_annealing(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
 
     algo_specific_options = {
@@ -633,13 +633,13 @@ def pygmo_pso(
     if neighbor_definition in [1, 3] and neighbor_param is not None:
         warnings.warn(
             "You gave a neighbor parameter but selected a neighbor_definition "
-            "that ignores this parameter."
+            "that ignores this parameter.",
         )
 
     neighbor_param = _replace_none(neighbor_param, 4)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10
+        population_size=population_size, x=x, lower_bound=10,
     )
 
     neighbor_definition_str_to_int = {
@@ -665,7 +665,7 @@ def pygmo_pso(
         "max_vel": max_velocity,
         "variant": _convert_str_to_int(algo_variant_str_to_int, algo_variant),
         "neighb_type": _convert_str_to_int(
-            neighbor_definition_str_to_int, neighbor_definition
+            neighbor_definition_str_to_int, neighbor_definition,
         ),
         "neighb_param": neighbor_param,
         "memory": keep_velocities,
@@ -726,7 +726,7 @@ def pygmo_pso_gen(
     if neighbor_definition in [1, 3] and neighbor_param is not None:
         warnings.warn(
             "You gave a neighbor parameter but selected a neighbor_definition "
-            "that ignores this parameter."
+            "that ignores this parameter.",
         )
     neighbor_param = _replace_none(neighbor_param, 4)
     neighbor_str_to_int = {
@@ -748,7 +748,7 @@ def pygmo_pso_gen(
     algo_variant = _convert_str_to_int(algo_variant_str_to_int, algo_variant)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10
+        population_size=population_size, x=x, lower_bound=10,
     )
 
     algo_specific_options = {
@@ -812,7 +812,7 @@ def pygmo_mbh(
 
     # the min default population size is this large to pass our sum of squares tests.
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=250
+        population_size=population_size, x=x, lower_bound=250,
     )
 
     algo_specific_options = {
@@ -872,7 +872,7 @@ def pygmo_xnes(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
 
     algo_specific_options = {
@@ -930,7 +930,7 @@ def pygmo_gwo(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
     algo_options = _create_algo_options(
         population_size=population_size,
@@ -981,7 +981,7 @@ def pygmo_compass_search(
     if population_size is not None:
         warnings.warn(
             f"You specified population size {population_size}. "
-            "compass_search does not have a population so this argument is ignored."
+            "compass_search does not have a population so this argument is ignored.",
         )
     else:
         # if discard_start_params is False population_size - 1 must still be positive
@@ -1046,7 +1046,7 @@ def pygmo_ihs(
         warnings.warn("The population size has no effect on IHS' performance.")
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=1
+        population_size=population_size, x=x, lower_bound=1,
     )
 
     algo_specific_options = {
@@ -1135,7 +1135,7 @@ def pygmo_de1220(
         ]
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        population_size=population_size, x=x, lower_bound=64,
     )
 
     algo_specific_options = {
@@ -1210,7 +1210,7 @@ def _minimize_pygmo(
             f"The {method} algorithm requires the pygmo package to be installed. "
             "You can install it with 'conda install -c conda-forge pygmo'. Visit "
             "https://esa.github.io/pygmo2/install.html for more detailed installation "
-            "instructions."
+            "instructions.",
         )
 
     population_size = algo_options.pop("population_size", 1)
@@ -1230,7 +1230,7 @@ def _minimize_pygmo(
     )
     algo = _create_algorithm(method, algo_options, n_cores)
     pop = _create_population(
-        prob, population_size, x, seed=seed, discard_start_params=discard_start_params
+        prob, population_size, x, seed=seed, discard_start_params=discard_start_params,
     )
     evolved = algo.evolve(pop)
     result = _process_pygmo_results(evolved)
@@ -1275,7 +1275,7 @@ def _create_algorithm(method, algo_options, n_cores):
         if n_cores >= 2:
             warnings.warn(
                 f"Your specified algorithm {method} does not support parallelization. "
-                "Choose another algorithm such as pygmo_gaco to parallelize."
+                "Choose another algorithm such as pygmo_gaco to parallelize.",
             )
     out = pg.algorithm(algo)
     return out
@@ -1364,7 +1364,7 @@ def _convert_str_to_int(str_to_int, value):
     elif value not in str_to_int.values():
         raise ValueError(
             f"You specified {value} as value. "
-            f"It must be one of {', '.join(str_to_int.keys())}"
+            f"It must be one of {', '.join(str_to_int.keys())}",
         )
     else:
         out = value

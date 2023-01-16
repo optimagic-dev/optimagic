@@ -28,7 +28,7 @@ def get_colors(palette, number):
         raise ValueError("Number must be non-negative")
     if palette not in palette_to_colors.keys():
         raise ValueError(
-            f"palette must be in {palette_to_colors.keys()}. You specified {palette}."
+            f"palette must be in {palette_to_colors.keys()}. You specified {palette}.",
         )
     colors = palette_to_colors[palette]
 

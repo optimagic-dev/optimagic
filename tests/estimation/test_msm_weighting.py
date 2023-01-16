@@ -11,7 +11,7 @@ from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture
+@pytest.fixture()
 def expected_values():
     values = np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 5, 6], [0, 0, 7, 8]])
     return values
@@ -23,7 +23,7 @@ cov_pd = pd.DataFrame(cov_np)
 test_cases = itertools.product([cov_np, cov_pd], ["diagonal", "optimal"])
 
 
-@pytest.mark.parametrize("moments_cov, method", test_cases)
+@pytest.mark.parametrize(("moments_cov", "method"), test_cases)
 def test_get_weighting_matrix(moments_cov, method):
     if isinstance(moments_cov, np.ndarray):
         fake_emp_moms = np.ones(len(moments_cov))

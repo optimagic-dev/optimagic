@@ -468,10 +468,7 @@ def nlopt_var(
     For details see :ref:`list_of_nlopt_algorithms`.
 
     """
-    if rank_1_update:
-        algo = nlopt.LD_VAR1
-    else:
-        algo = nlopt.LD_VAR2
+    algo = nlopt.LD_VAR1 if rank_1_update else nlopt.LD_VAR2
     out = _minimize_nlopt(
         criterion,
         x,

@@ -10,7 +10,7 @@ from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture
+@pytest.fixture()
 def data():
     df = pd.DataFrame([[1, 10], [2, 7], [3, 6], [4, 5]], columns=["x1", "x2"])
     return df

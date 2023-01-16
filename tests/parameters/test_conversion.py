@@ -114,7 +114,7 @@ def test_get_converter_with_trees():
     aaae(converter.func_to_internal({"contributions": {"d": 1, "e": 2}}), 3)
 
 
-@pytest.fixture
+@pytest.fixture()
 def fast_kwargs():
     kwargs = {
         "params": np.arange(3),
@@ -136,7 +136,7 @@ STILL_FAST = [
 ]
 
 
-@pytest.mark.parametrize("name, value", STILL_FAST)
+@pytest.mark.parametrize(("name", "value"), STILL_FAST)
 def test_is_fast_path_when_true(fast_kwargs, name, value):
     kwargs = fast_kwargs.copy()
     kwargs[name] = value
@@ -156,7 +156,7 @@ SLOW = [
 ]
 
 
-@pytest.mark.parametrize("name, value", SLOW)
+@pytest.mark.parametrize(("name", "value"), SLOW)
 def test_is_fast_path_when_false(fast_kwargs, name, value):
     kwargs = fast_kwargs.copy()
     kwargs[name] = value
@@ -171,7 +171,7 @@ FAST_EVAL_CASES = [
 ]
 
 
-@pytest.mark.parametrize("key, f", FAST_EVAL_CASES)
+@pytest.mark.parametrize(("key", "f"), FAST_EVAL_CASES)
 def test_is_fast_func_eval_true(key, f):
     assert _is_fast_func_eval(f, key)
 
@@ -189,7 +189,7 @@ FAST_DERIV_CASES = [
 ]
 
 
-@pytest.mark.parametrize("key, f", FAST_DERIV_CASES)
+@pytest.mark.parametrize(("key", "f"), FAST_DERIV_CASES)
 def test_is_fast_deriv_eval_true(key, f):
     assert _is_fast_deriv_eval(f, key)
 
@@ -202,7 +202,7 @@ SLOW_EVAL_CASES = [
 ]
 
 
-@pytest.mark.parametrize("key, f", SLOW_EVAL_CASES)
+@pytest.mark.parametrize(("key", "f"), SLOW_EVAL_CASES)
 def test_is_fast_func_eval_false(key, f):
     assert not _is_fast_func_eval(f, key)
 
@@ -215,6 +215,6 @@ SLOW_DERIV_CASES = [
 ]
 
 
-@pytest.mark.parametrize("key, f", SLOW_DERIV_CASES)
+@pytest.mark.parametrize(("key", "f"), SLOW_DERIV_CASES)
 def test_is_fast_deriv_eval_false(key, f):
     assert not _is_fast_deriv_eval(f, key)

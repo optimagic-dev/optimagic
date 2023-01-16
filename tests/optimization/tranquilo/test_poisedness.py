@@ -26,7 +26,7 @@ TEST_CASES = [
                 [0.98, 0.96],
                 [0.96, 0.98],
                 [0.94, 0.94],
-            ]
+            ],
         ),
         "sphere",
         5,
@@ -47,7 +47,7 @@ TEST_CASES = [
                 [0.98, 0.96],
                 [0.96, 0.98],
                 [0.94, 0.94],
-            ]
+            ],
         ),
         "cube",
         10,
@@ -73,7 +73,7 @@ TEST_CASES = [
                 [-0.02, 0.98],
                 [0.03, -0.96],
                 [0.94, 0.06],
-            ]
+            ],
         ),
         "sphere",
         5,
@@ -94,7 +94,7 @@ TEST_CASES = [
                 [0.98, 0.02],
                 [0.46, 0.03],
                 [0.94, 0.06],
-            ]
+            ],
         ),
         "sphere",
         5,
@@ -109,7 +109,7 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize("sample, shape, maxiter, expected", TEST_CASES)
+@pytest.mark.parametrize(("sample", "shape", "maxiter", "expected"), TEST_CASES)
 def test_improve_poisedness(sample, shape, maxiter, expected):
 
     _, got_lambdas = improve_poisedness(sample=sample, shape=shape, maxiter=maxiter)
@@ -129,7 +129,7 @@ TEST_CASES = [
                 [0.98, 0.96],
                 [0.96, 0.98],
                 [0.94, 0.94],
-            ]
+            ],
         ),
         5324.241743151584,
     ),
@@ -142,7 +142,7 @@ TEST_CASES = [
                 [0.98, 0.96],
                 [0.96, 0.98],
                 [-0.70710678, 0.70710678],
-            ]
+            ],
         ),
         36.87996947175511,
     ),
@@ -155,7 +155,7 @@ TEST_CASES = [
                 [0.84885278, -0.52862932],
                 [0.96, 0.98],
                 [-0.70710678, 0.70710678],
-            ]
+            ],
         ),
         11.090857500607644,
     ),
@@ -168,7 +168,7 @@ TEST_CASES = [
                 [0.84885278, -0.52862932],
                 [0.96, 0.98],
                 [-0.70710678, 0.70710678],
-            ]
+            ],
         ),
         1.3893205660280858,
     ),
@@ -181,14 +181,14 @@ TEST_CASES = [
                 [0.84885278, -0.52862932],
                 [0.96, 0.98],
                 [-0.96706306, 0.2545369],
-            ]
+            ],
         ),
         1.0016763272061744,
     ),
 ]
 
 
-@pytest.mark.parametrize("sample, expected", TEST_CASES)
+@pytest.mark.parametrize(("sample", "expected"), TEST_CASES)
 def test_poisedness_constant_scaled(sample, expected):
     """Test cases are modified versions from :cite:`Conn2009` p. 99."""
 
@@ -206,7 +206,7 @@ TEST_CASES = [
                 [0.98, 0.96],
                 [0.96, 0.98],
                 [0.94, 0.94],
-            ]
+            ],
         ),
         5324,
     ),
@@ -219,7 +219,7 @@ TEST_CASES = [
                 [0.98, 0.96],
                 [0.96, 0.98],
                 [-0.707, 0.707],
-            ]
+            ],
         ),
         36.88,
     ),
@@ -232,14 +232,14 @@ TEST_CASES = [
                 [0.98, 0.96],
                 [-0.199, 0.979],
                 [0.707, -0.707],
-            ]
+            ],
         ),
         1.001,
     ),
 ]
 
 
-@pytest.mark.parametrize("sample, expected", TEST_CASES)
+@pytest.mark.parametrize(("sample", "expected"), TEST_CASES)
 def test_poisedness_constant_textbook_scaled(sample, expected):
     """Test cases are taken from :cite:`Conn2009` p. 99."""
 
@@ -257,14 +257,14 @@ TEST_CASES = [
                 [0.5, 0.5],
                 [0.982, 0.368],
                 [0.774, 0.918],
-            ]
+            ],
         ),
         1,
-    )
+    ),
 ]
 
 
-@pytest.mark.parametrize("sample, expected", TEST_CASES)
+@pytest.mark.parametrize(("sample", "expected"), TEST_CASES)
 def test_poisedness_constant_textbook_unscaled(sample, expected):
     """This test case is taken from :cite:`Conn2009` p. 45."""
     n_params = sample.shape[1]
@@ -347,14 +347,14 @@ TEST_CASES = [
                     -4.70588235e-01,
                     -7.05882353e-01,
                 ],
-            ]
+            ],
         ),
         np.array([1, 0.84, 0.84, 0.99, 0.96, 0.99, 0.37]),
-    )
+    ),
 ]
 
 
-@pytest.mark.parametrize("sample, expected_lagrange_mat, expected_critval", TEST_CASES)
+@pytest.mark.parametrize(("sample", "expected_lagrange_mat", "expected_critval"), TEST_CASES)
 def test_lagrange_poly_matrix(sample, expected_lagrange_mat, expected_critval):
     """This test case is taken from :cite:`Conn2009` p. 62."""
     sample = np.array([[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [0.5, 0.5]])

@@ -64,14 +64,14 @@ def lollipop_plot(
         scatter_dict
         if scatterplot_kws is None
         else scatter_dict.update(
-            {k: v for k, v in scatterplot_kws.items() if k not in scatter_dict}
+            {k: v for k, v in scatterplot_kws.items() if k not in scatter_dict},
         )
     )
     barplot_kws = (
         bar_dict
         if barplot_kws is None
         else bar_dict.update(
-            {k: v for k, v in barplot_kws.items() if k not in bar_dict}
+            {k: v for k, v in barplot_kws.items() if k not in bar_dict},
         )
     )
 
@@ -154,7 +154,7 @@ def _harmonize_data(data):
     combined = pd.concat(to_concat)
     # so that it is possibel to facet the strip plot
     new_data = pd.melt(
-        combined, id_vars=["__name__", "__hue__"], var_name="indep", value_name="values"
+        combined, id_vars=["__name__", "__hue__"], var_name="indep", value_name="values",
     )
 
     varnames = new_data["indep"].unique()

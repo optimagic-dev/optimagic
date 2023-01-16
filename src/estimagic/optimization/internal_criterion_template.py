@@ -142,7 +142,7 @@ def internal_criterion_and_derivative_template(
     elif "criterion_and_derivative" in to_dos:
         try:
             new_external_criterion, new_external_derivative = criterion_and_derivative(
-                current_params
+                current_params,
             )
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -216,7 +216,7 @@ def internal_criterion_and_derivative_template(
 
     if caught_exceptions:
         new_criterion, new_derivative = error_penalty_func(
-            x, task="criterion_and_derivative"
+            x, task="criterion_and_derivative",
         )
 
     if new_criterion is not None:

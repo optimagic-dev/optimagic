@@ -12,7 +12,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.mark.parametrize(
-    "model_gradient, lower_bounds, upper_bounds, delta, expected",
+    ("model_gradient", "lower_bounds", "upper_bounds", "delta", "expected"),
     [
         (
             np.array([1.0, 0.0, 1.0]),
@@ -73,7 +73,7 @@ def test_trsbox_linear(model_gradient, lower_bounds, upper_bounds, delta, expect
 
 
 @pytest.mark.parametrize(
-    "x_center, c_term, model_gradient, lower_bounds, upper_bounds, delta, expected",
+    ("x_center", "c_term", "model_gradient", "lower_bounds", "upper_bounds", "delta", "expected"),
     [
         (
             np.array([0.0, 0.0]),

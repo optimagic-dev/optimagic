@@ -58,7 +58,7 @@ def pathos_mp_batch_evaluator(
     if not pathos_is_available:
         raise NotImplementedError(
             "To use the pathos_mp_batch_evaluator, install pathos with "
-            "conda install -c conda-forge pathos."
+            "conda install -c conda-forge pathos.",
         )
 
     _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol)
@@ -150,12 +150,12 @@ def _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol):
 
     if unpack_symbol not in (None, "*", "**"):
         raise ValueError(
-            f"unpack_symbol must be None, '*' or '**', not {unpack_symbol}"
+            f"unpack_symbol must be None, '*' or '**', not {unpack_symbol}",
         )
 
     if error_handling not in ["raise", "continue"]:
         raise ValueError(
-            f"error_handling must be 'raise' or 'continue', not {error_handling}"
+            f"error_handling must be 'raise' or 'continue', not {error_handling}",
         )
 
 
@@ -171,7 +171,7 @@ def process_batch_evaluator(batch_evaluator="joblib"):
         else:
             raise ValueError(
                 "Invalid batch evaluator requested. Currently only 'pathos' and "
-                "'joblib' are supported."
+                "'joblib' are supported.",
             )
     else:
         raise TypeError("batch_evaluator must be a callable or string.")

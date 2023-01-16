@@ -112,7 +112,7 @@ def make_optimization_iteration_table(database, if_exists="extend"):
     ]
 
     Table(
-        table_name, database, *columns, sqlite_autoincrement=True, extend_existing=True
+        table_name, database, *columns, sqlite_autoincrement=True, extend_existing=True,
     )
 
     database.create_all(database.bind)
@@ -129,7 +129,7 @@ def make_steps_table(database, if_exists="extend"):
         Column("name", String),  # e.g. "optimization-1", "exploration", not unique
     ]
     Table(
-        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True
+        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True,
     )
     database.create_all(database.bind)
 
@@ -153,7 +153,7 @@ def make_optimization_problem_table(database, if_exists="extend"):
     ]
 
     Table(
-        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True
+        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True,
     )
 
     database.create_all(database.bind)
@@ -200,7 +200,7 @@ def append_row(data, table_name, database, path, fast_logging):
 
 
 def _execute_write_statement(
-    statement, database, path, table_name, data  # noqa: ARG001
+    statement, database, path, table_name, data,  # noqa: ARG001
 ):
     try:
         # this will automatically roll back the transaction if any exception is raised
@@ -212,7 +212,7 @@ def _execute_write_statement(
     except Exception:
         exception_info = traceback.format_exc()
         warnings.warn(
-            f"Unable to write to database. The traceback was:\n\n{exception_info}"
+            f"Unable to write to database. The traceback was:\n\n{exception_info}",
         )
 
 
@@ -337,7 +337,7 @@ def read_last_rows(
 
 
 def read_specific_row(
-    database, table_name, rowid, return_type, path=None, fast_logging=False
+    database, table_name, rowid, return_type, path=None, fast_logging=False,
 ):
     """Read a specific row from a table.
 
@@ -382,7 +382,7 @@ def _execute_read_statement(database, table_name, statement, return_type):
         exception_info = traceback.format_exc()
         warnings.warn(
             "Unable to read {table_name} from database. Try again later. The traceback "
-            f"was: \n\n{exception_info}"
+            f"was: \n\n{exception_info}",
         )
         # if we only want to warn we must provide a raw_result to be processed below.
         raw_result = []
@@ -400,7 +400,7 @@ def _execute_read_statement(database, table_name, statement, return_type):
     else:
         raise NotImplementedError(
             "The return_type must be 'list_of_dicts' or 'dict_of_lists', "
-            f"not {return_type}."
+            f"not {return_type}.",
         )
 
     return result
@@ -539,13 +539,13 @@ class RobustPickler:
                 tb = get_traceback()
                 warnings.warn(
                     f"Unable to read PickleType column from database:\n{tb}\n "
-                    "The entry was replaced by None."
+                    "The entry was replaced by None.",
                 )
 
         return res
 
     @staticmethod
     def dumps(
-        obj, protocol=None, *, fix_imports=True, buffer_callback=None  # noqa: ARG004
+        obj, protocol=None, *, fix_imports=True, buffer_callback=None,  # noqa: ARG004
     ):
         return cloudpickle.dumps(obj, protocol=protocol)

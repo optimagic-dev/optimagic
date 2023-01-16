@@ -93,7 +93,7 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
 # ======================================================================================
 
 
-@pytest.fixture
+@pytest.fixture()
 def logit_np_inputs():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
@@ -107,7 +107,7 @@ def logit_np_inputs():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def fitted_logit_model(logit_object):
     """We need to use a generic model class to access all standard errors etc."""
 
@@ -140,11 +140,11 @@ test_cases = list(
         ],  # optimize_options
         [None, logit_jacobian, False],  # jacobian
         [None, logit_hessian, False],  # hessian
-    )
+    ),
 )
 
 
-@pytest.mark.parametrize("optimize_options, jacobian, hessian", test_cases)
+@pytest.mark.parametrize(("optimize_options", "jacobian", "hessian"), test_cases)
 def test_estimate_ml_with_logit_no_constraints(
     fitted_logit_model,
     logit_np_inputs,
@@ -249,11 +249,11 @@ test_cases_constr = list(
             {"loc": [0, 1], "type": "linear", "lower_bound": -20, "weights": 1},
             {"loc": [0, 1], "type": "increasing"},
         ],
-    )
+    ),
 )
 
 
-@pytest.mark.parametrize("jacobian, constraints", test_cases_constr)
+@pytest.mark.parametrize(("jacobian", "constraints"), test_cases_constr)
 def test_estimate_ml_with_logit_constraints(
     fitted_logit_model,
     logit_np_inputs,
@@ -374,7 +374,7 @@ def normal_loglike(params, y):
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def normal_inputs():
     true = {
         "mean": 1.0,

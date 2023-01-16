@@ -233,7 +233,7 @@ def _internal_robust_cholesky(matrix, threshold):
             diags[i] = 0
         else:
             raise np.linalg.LinAlgError(
-                "Diagonal entry below threshold in D from LDL decomposition."
+                "Diagonal entry below threshold in D from LDL decomposition.",
             )
 
     candidate = lu * diags.reshape(1, len(diags))
@@ -300,8 +300,7 @@ def isscalar(element):
     if np.isscalar(element):
         return True
     # call anything a scalar that says it has 0 dimensions
-    elif getattr(element, "ndim", -1) == 0:
-        return True
+    return (getattr(element, "ndim", -1) == 0)
     else:
         return False
 

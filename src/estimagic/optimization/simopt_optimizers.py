@@ -263,7 +263,7 @@ def _minimize_simopt(
         budget=budget,
     )
     solver = ProblemSolver(
-        solver_name=algorithm, problem=problem, solver_fixed_factors=solver_options
+        solver_name=algorithm, problem=problem, solver_fixed_factors=solver_options,
     )
     # overwrite method of simopt ProblemSolver class that pickles temporary results
     solver.record_experiment_results = _do_nothing.__get__(solver, ProblemSolver)

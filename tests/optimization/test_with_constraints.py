@@ -119,22 +119,22 @@ for crit_name in FUNC_INFO:
             if not any([unknown_res, known_failure]):
                 for deriv in None, FUNC_INFO[crit_name]["gradient"]:
                     test_cases.append(
-                        (crit_name, "scipy_lbfgsb", deriv, constr_name, ptype)
+                        (crit_name, "scipy_lbfgsb", deriv, constr_name, ptype),
                     )
 
                 if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
                     for deriv in [FUNC_INFO[crit_name].get("ls_jacobian"), None]:
                         test_cases.append(
-                            (crit_name, "scipy_ls_dogbox", deriv, constr_name, ptype)
+                            (crit_name, "scipy_ls_dogbox", deriv, constr_name, ptype),
                         )
 
 
 @pytest.mark.parametrize(
-    "criterion_name, algorithm, derivative, constraint_name, params_type",
+    ("criterion_name", "algorithm", "derivative", "constraint_name", "params_type"),
     test_cases,
 )
 def test_constrained_minimization(
-    criterion_name, algorithm, derivative, constraint_name, params_type
+    criterion_name, algorithm, derivative, constraint_name, params_type,
 ):
 
     constraints = CONSTR_INFO[constraint_name]
@@ -159,7 +159,7 @@ def test_constrained_minimization(
         calculated = res.params
 
     expected = FUNC_INFO[criterion_name].get(
-        f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"]
+        f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"],
     )
 
     aaae(calculated, expected, decimal=4)

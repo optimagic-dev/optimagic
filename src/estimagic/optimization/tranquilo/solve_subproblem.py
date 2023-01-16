@@ -77,7 +77,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     else:
         raise ValueError(
             "Invalid solver: {solver}. Must be one of {list(built_in_solvers)} "
-            "or a callable."
+            "or a callable.",
         )
 
     default_options = {
@@ -114,7 +114,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
         if name not in valid_bounds and value is not None:
             raise ValueError(
                 f"You have {name} but requested a subproblem solver that does not "
-                "support them. Use bntr or another bounded subproblem solver instead."
+                "support them. Use bntr or another bounded subproblem solver instead.",
             )
 
     bounds_dict = {k: v for k, v in bounds_dict.items() if k in valid_bounds}
@@ -135,11 +135,11 @@ def get_subsolver(solver, user_options=None, bounds=None):
     if ignored:
         warnings.warn(
             "The following options were ignored because they are not compatible "
-            f"with {_solver_name}:\n\n {ignored}"
+            f"with {_solver_name}:\n\n {ignored}",
         )
 
     out = partial(
-        _solve_subproblem_template, solver=_solver, bounds=bounds_dict, options=reduced
+        _solve_subproblem_template, solver=_solver, bounds=bounds_dict, options=reduced,
     )
 
     return out

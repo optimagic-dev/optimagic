@@ -191,7 +191,7 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize("raw_problems, internal_criterion_func", TEST_CASES)
+@pytest.mark.parametrize(("raw_problems", "internal_criterion_func"), TEST_CASES)
 def test_custom_benchmarks(raw_problems, internal_criterion_func):
     problems = get_benchmark_problems_custom(raw_problems, internal_criterion_func)
 

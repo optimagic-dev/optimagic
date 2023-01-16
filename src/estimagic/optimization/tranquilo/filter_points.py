@@ -106,7 +106,7 @@ def _drop_collinear_pounders(xs, indices, state):
 
         linear_features[counter, 1:] = centered_xs[index]
         square_features[counter, :] = _scaled_square_features(
-            linear_features[counter, 1:]
+            linear_features[counter, 1:],
         )
 
         linear_features_pad = np.zeros((n_samples, n_samples))
@@ -131,7 +131,7 @@ def _drop_collinear_pounders(xs, indices, state):
 
 
 def _get_polynomial_feature_matrices(
-    centered_xs, indexer, index_center, n_params, n_samples, n_poly_terms
+    centered_xs, indexer, index_center, n_params, n_samples, n_poly_terms,
 ):
     linear_features = np.zeros((n_samples, n_params + 1))
     square_features = np.zeros((n_samples, n_poly_terms))
@@ -146,7 +146,7 @@ def _get_polynomial_feature_matrices(
     linear_features[:, 0] = 1
     linear_features[: n_params + 1, 1:] = centered_xs[indexer[idx_list_n_plus_1]]
     square_features[: n_params + 1, :] = _scaled_square_features(
-        linear_features[: n_params + 1, 1:]
+        linear_features[: n_params + 1, 1:],
     )
 
     idx = n_samples - _is_center_in_head - len(idx_list_n) - 1

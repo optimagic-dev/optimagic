@@ -66,7 +66,7 @@ def process_nonlinear_constraints(
 
 
 def _process_nonlinear_constraint(
-    c, constraint_eval, params, converter, numdiff_options
+    c, constraint_eval, params, converter, numdiff_options,
 ):
     """Process a single nonlinear constraint."""
 
@@ -128,7 +128,7 @@ def _process_nonlinear_constraint(
         jac_matrix = block_tree_to_matrix(jac, constraint_eval, selected)
         jac_extended = _extend_jacobian(jac_matrix, selection_indices, n_params)
         jac_internal = converter.derivative_to_internal(
-            jac_extended, x, jac_is_flat=True
+            jac_extended, x, jac_is_flat=True,
         )
         return np.atleast_2d(jac_internal)
 
@@ -177,11 +177,11 @@ def _process_nonlinear_constraint(
         transformation = _get_transformation(lower_bounds, upper_bounds)
 
         internal_constraint_func = _compose_funcs(
-            _internal_constraint_func, transformation["func"]
+            _internal_constraint_func, transformation["func"],
         )
 
         jacobian_from_internal = _compose_funcs(
-            _internal_jacobian, transformation["derivative"]
+            _internal_jacobian, transformation["derivative"],
         )
 
         n_constr = 2 * _n_constr if transformation["name"] == "stack" else _n_constr
@@ -287,7 +287,7 @@ def _get_selection_indices(params, selector):
     params_indices = tree_unflatten(params_treedef, indices, registry=registry)
     selected = selector(params_indices)
     selection_indices = np.array(
-        tree_just_flatten(selected, registry=registry), dtype=int
+        tree_just_flatten(selected, registry=registry), dtype=int,
     )
     return selection_indices, n_params
 
@@ -317,7 +317,7 @@ def _get_transformation(lower_bounds, upper_bounds):
     elif transformation_type == "stack":
         transformer = {
             "func": lambda v: np.concatenate(
-                (v - lower_bounds, upper_bounds - v), axis=0
+                (v - lower_bounds, upper_bounds - v), axis=0,
             ),
             "derivative": lambda v: np.concatenate((v, -v), axis=0),
         }
@@ -361,16 +361,16 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
     if "func" not in c:
         raise InvalidConstraintError(
             "Constraint needs to have entry 'fun', representing the constraint "
-            "function."
+            "function.",
         )
     if not callable(c["func"]):
         raise InvalidConstraintError(
-            "Entry 'fun' in nonlinear constraints has be callable."
+            "Entry 'fun' in nonlinear constraints has be callable.",
         )
 
     if "derivative" in c and not callable(c["derivative"]):
         raise InvalidConstraintError(
-            "Entry 'jac' in nonlinear constraints has be callable."
+            "Entry 'jac' in nonlinear constraints has be callable.",
         )
 
     # ==================================================================================
@@ -383,20 +383,20 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
         if "lower_bounds" in c or "upper_bounds" in c:
             raise InvalidConstraintError(
                 "Only one of 'value' or ('lower_bounds', 'upper_bounds') can be "
-                "passed to a nonlinear constraint."
+                "passed to a nonlinear constraint.",
             )
 
     if not is_equality_constraint:
         if "lower_bounds" not in c and "upper_bounds" not in c:
             raise InvalidConstraintError(
                 "For inequality constraint at least one of ('lower_bounds', "
-                "'upper_bounds') has to be passed to the nonlinear constraint."
+                "'upper_bounds') has to be passed to the nonlinear constraint.",
             )
 
     if "lower_bounds" in c and "upper_bounds" in c:
         if not np.all(np.array(c["lower_bounds"]) <= np.array(c["upper_bounds"])):
             raise InvalidConstraintError(
-                "If lower bounds need to less than or equal to upper bounds."
+                "If lower bounds need to less than or equal to upper bounds.",
             )
 
     # ==================================================================================
@@ -406,7 +406,7 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
     if "selector" in c:
         if not callable(c["selector"]):
             raise InvalidConstraintError(
-                f"'selector' entry needs to be callable in constraint {c}."
+                f"'selector' entry needs to be callable in constraint {c}.",
             )
         else:
             try:
@@ -414,14 +414,14 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
             except Exception as e:
                 raise InvalidFunctionError(
                     "Error when calling 'selector' function on params in constraint "
-                    f" {c}"
+                    f" {c}",
                 ) from e
 
     elif "loc" in c:
         if not isinstance(params, (pd.Series, pd.DataFrame)):
             raise InvalidConstraintError(
                 "params needs to be pd.Series or pd.DataFrame to use 'loc' selector in "
-                f"in consrtaint {c}."
+                f"in consrtaint {c}.",
             )
         try:
             params.loc[c["loc"]]
@@ -432,13 +432,13 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
         if not isinstance(params, pd.DataFrame):
             raise InvalidConstraintError(
                 "params needs to be pd.DataFrame to use 'query' selector in "
-                f"constraints {c}."
+                f"constraints {c}.",
             )
         try:
             params.query(c["query"])
         except Exception as e:
             raise InvalidConstraintError(
-                f"'query' string is invalid in constraint {c}."
+                f"'query' string is invalid in constraint {c}.",
             ) from e
 
     # ==================================================================================
@@ -455,7 +455,7 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
             constraint_eval = c["func"](selector(params))
         except Exception as e:
             raise InvalidFunctionError(
-                f"Error when evaluating function of constraint {c}."
+                f"Error when evaluating function of constraint {c}.",
             ) from e
 
     return constraint_eval

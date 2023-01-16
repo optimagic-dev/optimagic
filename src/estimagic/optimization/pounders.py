@@ -289,10 +289,10 @@ def internal_solve_pounders(
     accepted_index = history.get_best_index()
 
     residual_model = create_initial_residual_model(
-        history=history, accepted_index=accepted_index, delta=delta
+        history=history, accepted_index=accepted_index, delta=delta,
     )
     main_model = create_main_from_residual_model(
-        residual_model=residual_model, multiply_square_terms_with_intercepts=False
+        residual_model=residual_model, multiply_square_terms_with_intercepts=False,
     )
 
     x_accepted = history.get_best_x()
@@ -331,7 +331,7 @@ def internal_solve_pounders(
         history.add_entries(x_candidate, residuals_candidate)
 
         predicted_reduction = history.get_critvals(
-            accepted_index
+            accepted_index,
         ) - history.get_critvals(-1)
         actual_reduction = -result_sub["criterion"]
 
@@ -341,16 +341,16 @@ def internal_solve_pounders(
 
         if (rho >= eta1) or (rho > eta0 and valid):
             residual_model = residual_model._replace(
-                intercepts=history.get_residuals(index=accepted_index)
+                intercepts=history.get_residuals(index=accepted_index),
             )
             center_info = {"x": history.get_best_x(), "radius": delta}
             x_candidate = history.get_centered_xs(center_info, index=-1)
 
             residual_model = update_residual_model_with_new_accepted_x(
-                residual_model=residual_model, x_candidate=x_candidate
+                residual_model=residual_model, x_candidate=x_candidate,
             )
             main_model = update_main_model_with_new_accepted_x(
-                main_model=main_model, x_candidate=x_candidate
+                main_model=main_model, x_candidate=x_candidate,
             )
             x_accepted = history.get_best_x()
             accepted_index = history.get_best_index()
@@ -470,7 +470,7 @@ def internal_solve_pounders(
                 )
 
         model_indices = add_accepted_point_to_residual_model(
-            model_indices, accepted_index, n_modelpoints
+            model_indices, accepted_index, n_modelpoints,
         )
 
         (
@@ -491,12 +491,12 @@ def internal_solve_pounders(
 
         center_info = {"x": x_accepted, "radius": delta_old}
         centered_xs = history.get_centered_xs(
-            center_info, index=model_indices[:n_modelpoints]
+            center_info, index=model_indices[:n_modelpoints],
         )
 
         center_info = {"residuals": residual_model.intercepts}
         centered_residuals = history.get_centered_residuals(
-            center_info, index=model_indices
+            center_info, index=model_indices,
         )
 
         y_residuals = evaluate_residual_model(
@@ -515,7 +515,7 @@ def internal_solve_pounders(
         )
 
         residual_model = residual_model._replace(
-            intercepts=history.get_residuals(index=accepted_index)
+            intercepts=history.get_residuals(index=accepted_index),
         )
         residual_model = update_residual_model(
             residual_model=residual_model,

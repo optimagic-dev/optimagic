@@ -18,7 +18,7 @@ from estimagic.benchmarking.process_benchmark_results import (
 PROBLEMS = ["prob1", "prob2", "prob3"]
 
 
-@pytest.fixture
+@pytest.fixture()
 def problem_algo_eval_df():
     df = pd.DataFrame()
     df["problem"] = ["prob1"] * 8 + ["prob2"] * 6
@@ -51,7 +51,7 @@ def test_find_first_converged(problem_algo_eval_df):
             False,
             False,
             False,
-        ]
+        ],
     )
     res = _find_first_converged(converged, problem_algo_eval_df)
     expected = pd.Series(
@@ -76,7 +76,7 @@ def test_find_first_converged(problem_algo_eval_df):
             False,
             False,
             False,
-        ]
+        ],
     )
     pd.testing.assert_series_equal(res, expected)
 
@@ -90,7 +90,7 @@ def test_normalize_minimize():
     df["criterion"] = start_values.tolist() + [2, 3, 9] + target_values.tolist()
 
     res = _normalize(
-        df=df, col="criterion", start_values=start_values, target_values=target_values
+        df=df, col="criterion", start_values=start_values, target_values=target_values,
     )
 
     # total improvements are [4, 4, 10]
@@ -109,7 +109,7 @@ def test_normalize_maximize():
     df["criterion"] = start_values.tolist() + [2, 4, 9] + target_values.tolist()
 
     res = _normalize(
-        df=df, col="criterion", start_values=start_values, target_values=target_values
+        df=df, col="criterion", start_values=start_values, target_values=target_values,
     )
 
     # total improvements are [4, 5, 7]
@@ -119,7 +119,7 @@ def test_normalize_maximize():
     pd.testing.assert_series_equal(res, expected)
 
 
-@pytest.fixture
+@pytest.fixture()
 def df_for_clip_histories(problem_algo_eval_df):
     df = problem_algo_eval_df
     df["monotone_criterion_normalized"] = [
@@ -262,10 +262,10 @@ def test_make_history_monotone_minimize():
     shuffled = sorted_df.sample(frac=1, random_state=40954)
 
     res_shuffled = _make_history_monotone(
-        df=shuffled, target_col="to_make_monotone", direction="minimize"
+        df=shuffled, target_col="to_make_monotone", direction="minimize",
     )
     res_sorted = _make_history_monotone(
-        df=sorted_df, target_col="to_make_monotone", direction="minimize"
+        df=sorted_df, target_col="to_make_monotone", direction="minimize",
     )
 
     expected = pd.Series(
@@ -291,7 +291,7 @@ def test_make_history_monotone_minimize():
     pd.testing.assert_series_equal(res_shuffled, expected)
 
 
-@pytest.fixture
+@pytest.fixture()
 def benchmark_results():
     sec = pd.Timedelta(seconds=1)
     results = {
@@ -303,7 +303,7 @@ def benchmark_results():
                     [1, 2],
                     [1, 1],
                     [0.5, 0.5],
-                ]
+                ],
             ),
         },
         ("prob1", "algo2"): {
@@ -349,7 +349,7 @@ def test_get_history_of_the_parameter_distance(benchmark_results):
 
 def test_get_history_as_stacked_sr_from_results(benchmark_results):
     res = _get_history_as_stacked_sr_from_results(
-        benchmark_results, key="criterion_history"
+        benchmark_results, key="criterion_history",
     )
     expected_df = pd.DataFrame(
         columns=["problem", "algorithm", "evaluation", "criterion"],
@@ -373,10 +373,10 @@ def test_get_history_as_stacked_sr_from_results(benchmark_results):
 def test_create_convergence_histories(benchmark_results):
     problems = {
         "prob1": {
-            "solution": {"value": 5, "params": pd.DataFrame(data={"value": [1, 1]})}
+            "solution": {"value": 5, "params": pd.DataFrame(data={"value": [1, 1]})},
         },
         "prob2": {
-            "solution": {"value": 1, "params": pd.DataFrame(data={"value": [3]})}
+            "solution": {"value": 1, "params": pd.DataFrame(data={"value": [3]})},
         },
     }
     res, _ = create_convergence_histories(

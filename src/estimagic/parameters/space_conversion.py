@@ -91,11 +91,11 @@ def get_space_converter(
     _dim_internal = int(constr_info["internal_free"].sum())
 
     _pre_replace_jac = pre_replace_jacobian(
-        pre_replacements=constr_info["pre_replacements"], dim_in=_dim_internal
+        pre_replacements=constr_info["pre_replacements"], dim_in=_dim_internal,
     )
 
     _post_replace_jac = post_replace_jacobian(
-        post_replacements=constr_info["post_replacements"]
+        post_replacements=constr_info["post_replacements"],
     )
 
     _derivative_to_internal = partial(
@@ -219,7 +219,7 @@ def reparametrize_from_internal(
     for constr in transformations:
         func = getattr(kt, f"{constr['type']}_from_internal")
         external_values[constr["index"]] = func(
-            external_values[constr["index"]], constr
+            external_values[constr["index"]], constr,
         )
 
     # do post-replacements
@@ -286,7 +286,7 @@ def convert_external_derivative_to_internal(
 
     if post_replacements is None and post_replace_jac is None:
         raise ValueError(
-            "either post_replacements or post_replace_jac must be specified."
+            "either post_replacements or post_replace_jac must be specified.",
         )
 
     if pre_replace_jac is None:

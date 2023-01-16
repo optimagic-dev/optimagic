@@ -37,7 +37,7 @@ def get_aggregator(aggregator, functype, model_info):
     else:
         raise ValueError(
             "Invalid aggregator: {aggregator}. Must be one of "
-            f"{list(built_in_aggregators)} or a callable."
+            f"{list(built_in_aggregators)} or a callable.",
         )
 
     # determine if aggregator is compatible with functype and model_info
@@ -56,10 +56,10 @@ def get_aggregator(aggregator, functype, model_info):
         "identity": lambda x: True,  # noqa: ARG005
         "sum": _is_second_order_model,
         "information_equality_linear": lambda model_info: not _is_second_order_model(
-            model_info
+            model_info,
         ),
         "least_squares_linear": lambda model_info: not _is_second_order_model(
-            model_info
+            model_info,
         ),
     }
 
@@ -68,14 +68,14 @@ def get_aggregator(aggregator, functype, model_info):
         if _aggregator_name not in aggregator_compatible_with_functype[functype]:
             raise ValueError(
                 f"Aggregator {_aggregator_name} is not compatible with functype "
-                f"{functype}. It would not produce a quadratic main model."
+                f"{functype}. It would not produce a quadratic main model.",
             )
         if not aggregator_compatible_with_model_info[_aggregator_name](model_info):
             raise ValueError(
                 f"ModelInfo {model_info} is not compatible with aggregator "
                 f"{_aggregator_name}. Depending on the aggregator this may be because "
                 "it would not produce a quadratic main model or that the aggregator "
-                "requires a different residual model for theoretical reasons."
+                "requires a different residual model for theoretical reasons.",
             )
 
     # create aggregator
@@ -96,7 +96,7 @@ def _aggregate_models_template(vector_model, aggregator):
     """
     intercept, linear_terms, square_terms = aggregator(vector_model)
     scalar_model = ScalarModel(
-        intercept=intercept, linear_terms=linear_terms, square_terms=square_terms
+        intercept=intercept, linear_terms=linear_terms, square_terms=square_terms,
     )
     return scalar_model
 

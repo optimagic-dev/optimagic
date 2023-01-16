@@ -57,7 +57,7 @@ def _load_database(path_or_database):
         res = load_database(path=path)
     else:
         raise ValueError(
-            "path_or_database must be a path or sqlalchemy.MetaData object"
+            "path_or_database must be a path or sqlalchemy.MetaData object",
         )
     return res
 
@@ -212,7 +212,7 @@ def _read_optimization_history(database, params_treedef, registry):
 
 
 def _read_multistart_optimization_history(
-    database, params_treedef, registry, direction
+    database, params_treedef, registry, direction,
 ):
     """Read multistart histories out values, parameters and other information.
 

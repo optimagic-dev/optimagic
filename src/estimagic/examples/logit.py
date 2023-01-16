@@ -20,10 +20,7 @@ def logit_loglike(params, y, x):
         loglike (np.array): 1d numpy array with likelihood contribution  per individual
 
     """
-    if isinstance(params, pd.DataFrame):
-        p = params["value"].to_numpy()
-    else:
-        p = params
+    p = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
     q = 2 * y - 1
     contribs = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
 
@@ -46,10 +43,7 @@ def logit_derivative(params, y, x):
             The derivative of the loglikelihood for each observation evaluated
             at `params`.
     """
-    if isinstance(params, pd.DataFrame):
-        p = params["value"].to_numpy()
-    else:
-        p = params
+    p = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
     y = y.to_numpy()
     c = 1 / (1 + np.exp(-(np.dot(x, p))))
     jac = (y - c)[:, None] * x
@@ -72,9 +66,6 @@ def logit_hessian(params, y, x):  # noqa: ARG001
             logl-ikelihood function evaluated at `params`
 
     """
-    if isinstance(params, pd.DataFrame):
-        p = params["value"].to_numpy()
-    else:
-        p = params
+    p = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
     c = 1 / (1 + np.exp(-(np.dot(x, p))))
     return -np.dot(c * (1 - c) * x.T, x)

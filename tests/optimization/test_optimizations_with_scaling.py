@@ -31,7 +31,7 @@ SCALING_OPTIONS = [
 PARAMETRIZATION = list(itertools.product(ALGORITHMS, SCALING_OPTIONS))
 
 
-@pytest.mark.parametrize("algorithm, scaling_options", PARAMETRIZATION)
+@pytest.mark.parametrize(("algorithm", "scaling_options"), PARAMETRIZATION)
 def test_optimizations_with_scaling(algorithm, scaling_options):
     params = pd.DataFrame()
     params["value"] = np.arange(5)

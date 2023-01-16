@@ -32,7 +32,7 @@ def read_yaml(path):
 # ======================================================================================
 
 
-@pytest.fixture
+@pytest.fixture()
 def quadratic_case():
     """Test scenario with true quadratic function.
 
@@ -54,7 +54,7 @@ def quadratic_case():
 
     # random data
     x = np.array(
-        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)]
+        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)],
     )
     y = np.array([func(_x) for _x in list(x)]).reshape(-1, 1)
 
@@ -69,7 +69,7 @@ def quadratic_case():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def just_identified_case():
     """Test scenario with true quadratic function and n + 1 points.
 
@@ -90,7 +90,7 @@ def just_identified_case():
 
     # random data
     x = np.array(
-        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)]
+        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)],
     )
     y = np.array([func(_x) for _x in list(x)]).reshape(-1, 1)
 
@@ -105,7 +105,7 @@ def just_identified_case():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_fit_pounders():
     """Test data from Tao Pounders."""
     test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
@@ -118,7 +118,7 @@ def data_fit_pounders():
     inputs_dict = {
         "y": np.array(test_data["f_interpolated"]),
         "m_mat": np.array(test_data["x_sample_monomial_basis"])[
-            : n_params + 1, : n_params + 1
+            : n_params + 1, : n_params + 1,
         ],
         "n_mat": np.array(test_data["monomial_basis"])[:n_samples],
         "z_mat": np.array(test_data["basis_null_space"]),
@@ -136,10 +136,10 @@ def data_fit_pounders():
     return inputs_dict, expected
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_get_feature_matrices_pounders():
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
+        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml",
     )
 
     n_params = 3
@@ -162,12 +162,12 @@ def data_get_feature_matrices_pounders():
 
     expected = {
         "m_mat": np.array(test_data["x_sample_monomial_basis_expected"])[
-            : n_params + 1, : n_params + 1
+            : n_params + 1, : n_params + 1,
         ],
         "n_mat": np.array(test_data["monomial_basis_expected"]),
         "z_mat": np.array(test_data["basis_null_space_expected"]),
         "n_z_mat": np.array(test_data["lower_triangular_expected"])[
-            :, n_params + 1 : n_samples
+            :, n_params + 1 : n_samples,
         ],
     }
 
@@ -201,10 +201,7 @@ def test_fit_powell_against_truth(scenario, request):
 
 @pytest.mark.parametrize("model", ["ols", "ridge"])
 def test_fit_ols_against_gradient(model, quadratic_case):
-    if model == "ridge":
-        options = {"l2_penalty_square": 0}
-    else:
-        options = None
+    options = {"l2_penalty_square": 0} if model == "ridge" else None
 
     fit_ols = get_fitter(model, options)
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
@@ -218,7 +215,7 @@ def test_fit_ols_against_gradient(model, quadratic_case):
 
 
 @pytest.mark.parametrize(
-    "model, options",
+    ("model", "options"),
     [("ols", None), ("ridge", {"l2_penalty_linear": 0, "l2_penalty_square": 0})],
 )
 def test_fit_ols_against_hessian(model, options, quadratic_case):
@@ -237,7 +234,7 @@ def test_polynomial_features(has_squares):
     expected = {
         # has_squares: expected value,
         True: np.array(
-            [[1, 0, 1, 2, 0, 0, 0, 1, 2, 4], [1, 3, 4, 5, 9, 12, 15, 16, 20, 25]]
+            [[1, 0, 1, 2, 0, 0, 0, 1, 2, 4], [1, 3, 4, 5, 9, 12, 15, 16, 20, 25]],
         ),
         False: np.array([[1, 0, 1, 2, 0, 0, 2], [1, 3, 4, 5, 12, 15, 20]]),
     }

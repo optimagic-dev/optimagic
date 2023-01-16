@@ -87,7 +87,7 @@ def generate_steps(
 
     """
     base_steps = _calculate_or_validate_base_steps(
-        base_steps, x, target, min_steps, scaling_factor
+        base_steps, x, target, min_steps, scaling_factor,
     )
     min_steps = base_steps if min_steps is None else min_steps
 
@@ -103,12 +103,12 @@ def generate_steps(
 
     if method in ["forward", "backward"]:
         pos, neg = _set_unused_side_to_nan(
-            x, pos, neg, method, lower_step_bounds, upper_step_bounds
+            x, pos, neg, method, lower_step_bounds, upper_step_bounds,
         )
 
     if np.isfinite(lower_bounds).any() or np.isfinite(upper_bounds).any():
         pos, neg = _rescale_to_accomodate_bounds(
-            base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
+            base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps,
         )
 
     with warnings.catch_warnings():
@@ -159,7 +159,7 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
 
         if min_steps is not None and (base_steps <= min_steps).any():
             raise ValueError(
-                "scaling_factor * base_steps must be larger than min_steps."
+                "scaling_factor * base_steps must be larger than min_steps.",
             )
     else:
         eps = np.finfo(float).eps
@@ -175,7 +175,7 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
 
 
 def _set_unused_side_to_nan(
-    x, pos, neg, method, lower_step_bounds, upper_step_bounds  # noqa: ARG001
+    x, pos, neg, method, lower_step_bounds, upper_step_bounds,  # noqa: ARG001
 ):
     """Set unused side (i.e. pos or neg) to np.nan.
 
@@ -216,7 +216,7 @@ def _set_unused_side_to_nan(
 
 
 def _rescale_to_accomodate_bounds(
-    base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
+    base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps,
 ):
     """Rescale steps to make them compatible with bounds unless this violates min_steps.
 
@@ -239,10 +239,10 @@ def _rescale_to_accomodate_bounds(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
         pos_needed_scaling = _fillna(
-            upper_step_bounds / np.nanmax(pos, axis=1), 1
+            upper_step_bounds / np.nanmax(pos, axis=1), 1,
         ).clip(0, 1)
         neg_needed_scaling = _fillna(
-            lower_step_bounds / np.nanmin(neg, axis=1), 1
+            lower_step_bounds / np.nanmin(neg, axis=1), 1,
         ).clip(0, 1)
     needed_scaling = np.minimum(pos_needed_scaling, neg_needed_scaling)
 

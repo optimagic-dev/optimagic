@@ -41,7 +41,7 @@ for algo in algorithms:
             valid_cases.append((crit, algo))
 
 
-@pytest.mark.parametrize("criterion, algorithm", valid_cases)
+@pytest.mark.parametrize(("criterion", "algorithm"), valid_cases)
 def test_valid_criterion_versions(criterion, algorithm):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]
@@ -54,7 +54,7 @@ def test_valid_criterion_versions(criterion, algorithm):
     aaae(res.params["value"].to_numpy(), np.zeros(3), decimal=4)
 
 
-@pytest.mark.parametrize("criterion, algorithm", invalid_cases)
+@pytest.mark.parametrize(("criterion", "algorithm"), invalid_cases)
 def test_invalid_criterion_versions(criterion, algorithm):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]

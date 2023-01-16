@@ -124,7 +124,7 @@ seeds = [58822, 3181, 98855, 44002, 47631, 97741, 10655, 4600, 1151, 58189]
 dims = [8] * 6 + [10, 12, 15, 20]
 
 
-@pytest.mark.parametrize("dim, seed", zip(dims, seeds))
+@pytest.mark.parametrize(("dim", "seed"), zip(dims, seeds))
 def test_robust_cholesky_with_zero_variance(dim, seed):
     cov = random_cov(dim, seed)
     chol = robust_cholesky(cov)

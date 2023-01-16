@@ -11,7 +11,7 @@ def test_change_evals_per_point_interface_none():
 
 def test_change_evals_per_point_interface_func():
     def return_args(
-        upper_trustregion_radius, lower_trustregion_radius, n_iterations, n_resets
+        upper_trustregion_radius, lower_trustregion_radius, n_iterations, n_resets,
     ):
         return (
             upper_trustregion_radius,

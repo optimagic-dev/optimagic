@@ -19,7 +19,7 @@ samples = [
 ]
 
 
-@pytest.mark.parametrize("sample, x, to_internal", samples)
+@pytest.mark.parametrize(("sample", "x", "to_internal"), samples)
 def test_process_multistart_sample(sample, x, to_internal):
 
     calculated = process_multistart_sample(sample, x, to_internal)

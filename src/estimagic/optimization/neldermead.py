@@ -108,7 +108,7 @@ def neldermead_parallel(
 
     # calculate criterion values for the initial simplex
     f_s = np.array(batch_evaluator(func=criterion, arguments=s, n_cores=n_cores))[
-        :, None
+        :, None,
     ]
 
     # parallelized function
@@ -117,26 +117,26 @@ def neldermead_parallel(
         criterion, s_j, s_j_r, f_s_0, f_s_j, f_s_j_1, m = args  # read arguments
 
         f_s_j_r = criterion(
-            s_j_r
+            s_j_r,
         )  # calculate value of the criterion at the reflection point
 
         if f_s_j_r < f_s_0:  # if the reflection point is better than the best point
 
             s_j_e = m + gamma * (s_j_r - m)  # calculate expansion point
             f_s_j_e = criterion(
-                s_j_e
+                s_j_e,
             )  # calculate value of the criterion at the expansion point
 
             if f_s_j_e < f_s_0:  # if the expansion point is better than the best point
 
                 return np.hstack(
-                    [s_j_e, f_s_j_e, 0]
+                    [s_j_e, f_s_j_e, 0],
                 )  # return the expansion point as a new point
 
             else:  # if the expansion point is worse than the best point
 
                 return np.hstack(
-                    [s_j_r, f_s_j_r, 0]
+                    [s_j_r, f_s_j_r, 0],
                 )  # return the reflection point as a new point
 
         elif (
@@ -144,7 +144,7 @@ def neldermead_parallel(
         ):  # if reflection point is better than the next worst point
 
             return np.hstack(
-                [s_j_r, f_s_j_r, 0]
+                [s_j_r, f_s_j_r, 0],
             )  # return reflection point as a new point
 
         else:  # if the reflection point is worse than the next worst point
@@ -158,30 +158,30 @@ def neldermead_parallel(
                 s_j_c = m - beta * (s_j_r - m)  # calculate inside contraction point
 
             f_s_j_c = criterion(
-                s_j_c
+                s_j_c,
             )  # calculate a value of the criterion at contraction point
 
             if f_s_j_c < np.minimum(
-                f_s_j, f_s_j_r
+                f_s_j, f_s_j_r,
             ):  # if ta value of the criterion at contraction point is better
                 # than original and refrelction point
 
                 return np.hstack(
-                    [s_j_c, f_s_j_c, 0]
+                    [s_j_c, f_s_j_c, 0],
                 )  # return contraction point as as new point
 
             else:
                 if f_s_j_r < f_s_j:
 
                     return np.hstack(
-                        [s_j_r, f_s_j_r, 1]
+                        [s_j_r, f_s_j_r, 1],
                     )  # return reflection point as a new point
 
                 else:  # if value of the criterion at contraction point is worse
                     # than the value uf the criterion at the reflection
                     # and the initial points
                     return np.hstack(
-                        [s_j, f_s_j, 1]
+                        [s_j, f_s_j, 1],
                     )  # return the old point as a new point
 
     optimal = False  # optmisation condition, if True stop the algorithem
@@ -220,7 +220,7 @@ def neldermead_parallel(
                         for i in range(p)
                     ),
                     n_cores=p,
-                )
+                ),
             ),
             [-2, -1],
             axis=1,
@@ -238,7 +238,7 @@ def neldermead_parallel(
                     func=criterion,
                     arguments=s,
                     n_cores=n_cores,
-                )
+                ),
             )[:, None]
 
         # termination criteria
@@ -250,8 +250,8 @@ def neldermead_parallel(
                     s[0, :]
                     - s[
                         1:,
-                    ]
-                )
+                    ],
+                ),
             )
             <= convergence_absolute_params_tolerance
         ):
@@ -307,7 +307,7 @@ def _init_simplex(x):
         [
             x,
         ]
-        * (len(x) + 1)
+        * (len(x) + 1),
     ).astype(np.float64)
 
     return s
@@ -359,7 +359,7 @@ def _gao_han(x):
             [
                 np.array([[(1 - (j + 1) ** 0.5) / j]]) * np.ones([1, j]),
                 np.eye(j),
-            ]
+            ],
         )
         * c_h
     )

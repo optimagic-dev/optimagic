@@ -52,7 +52,7 @@ def get_external_sdcorr(dim, seed=0):
     return external
 
 
-@pytest.mark.parametrize("dim, seed", to_test)
+@pytest.mark.parametrize(("dim", "seed"), to_test)
 def test_covariance_from_internal_jacobian(dim, seed):  # noqa: ARG001
     internal = get_internal_cholesky(dim)
 
@@ -63,7 +63,7 @@ def test_covariance_from_internal_jacobian(dim, seed):  # noqa: ARG001
     aaae(deriv, numerical_deriv["derivative"], decimal=3)
 
 
-@pytest.mark.parametrize("dim, seed", to_test)
+@pytest.mark.parametrize(("dim", "seed"), to_test)
 def test_covariance_to_internal_jacobian(dim, seed):  # noqa: ARG001
     external = get_external_covariance(dim)
 
@@ -74,7 +74,7 @@ def test_covariance_to_internal_jacobian(dim, seed):  # noqa: ARG001
     aaae(deriv, numerical_deriv["derivative"], decimal=3)
 
 
-@pytest.mark.parametrize("dim, seed", to_test)
+@pytest.mark.parametrize(("dim", "seed"), to_test)
 def test_probability_from_internal_jacobian(dim, seed):  # noqa: ARG001
     internal = get_internal_probability(dim)
 
@@ -85,7 +85,7 @@ def test_probability_from_internal_jacobian(dim, seed):  # noqa: ARG001
     aaae(deriv, numerical_deriv["derivative"], decimal=3)
 
 
-@pytest.mark.parametrize("dim, seed", to_test)
+@pytest.mark.parametrize(("dim", "seed"), to_test)
 def test_probability_to_internal_jacobian(dim, seed):  # noqa: ARG001
     external = get_external_probability(dim)
 
@@ -96,7 +96,7 @@ def test_probability_to_internal_jacobian(dim, seed):  # noqa: ARG001
     aaae(deriv, numerical_deriv["derivative"], decimal=3)
 
 
-@pytest.mark.parametrize("dim, seed", to_test)
+@pytest.mark.parametrize(("dim", "seed"), to_test)
 def test_sdcorr_from_internal_jacobian(dim, seed):  # noqa: ARG001
     internal = get_internal_cholesky(dim)
 
@@ -107,7 +107,7 @@ def test_sdcorr_from_internal_jacobian(dim, seed):  # noqa: ARG001
     aaae(deriv, numerical_deriv["derivative"], decimal=3)
 
 
-@pytest.mark.parametrize("dim, seed", to_test)
+@pytest.mark.parametrize(("dim", "seed"), to_test)
 def test_sdcorr_to_internal_jacobian(dim, seed):  # noqa: ARG001
     external = get_external_sdcorr(dim)
 
