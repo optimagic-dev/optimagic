@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.poisedness import _get_minimize_func
+from estimagic.optimization.tranquilo.poisedness import _get_minimize_options
 from estimagic.optimization.tranquilo.poisedness import _lagrange_poly_matrix
 from estimagic.optimization.tranquilo.poisedness import _reshape_coef_to_square_terms
 from estimagic.optimization.tranquilo.poisedness import get_poisedness_constant
@@ -277,9 +277,9 @@ def test_poisedness_constant_textbook_unscaled(sample, expected):
     assert np.allclose(got, expected, rtol=1e-3)
 
 
-def test_get_maximizer():
+def test_invalid_shape_argument():
     with pytest.raises(ValueError):
-        assert _get_minimize_func(n_params=10, shape="ellipse")
+        assert _get_minimize_options(shape="ellipse", n_params=10)
 
 
 # ======================================================================================
