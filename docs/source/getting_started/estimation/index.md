@@ -8,6 +8,6 @@ publication quality latex or html tables.
 ```{toctree}
 :maxdepth: 1
 
-first_likelihood_estimation_with_estimagic.ipynb
-first_msm_estimation_with_estimagic.ipynb
+first_likelihood_estimation_with_estimagic
+first_msm_estimation_with_estimagic
 ```

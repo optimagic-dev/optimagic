@@ -143,18 +143,13 @@ else:
     todo_include_todos = True
     todo_emit_warnings = True
 
-# -- Options for nbsphinx  ----------------------------------------
-# Execute notebooks before conversion: 'always', 'never', 'auto' (default)
-nbsphinx_execute = "never"
-nbsphinx_prolog = r"""
-{% set docname = 'docs/source/' + env.doc2path(env.docname, base=None) %}
+# -- Options for myst-nb  ----------------------------------------
+nb_execution_mode = "force"
+nb_execution_allow_errors = False
+nb_merge_streams = True
 
-.. only:: html
-
-    .. nbinfo::
-        Download the notebook :download:`here
-        <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/main/{{ docname }}>` # noqa: E501
-"""
+# Notebook cell execution timeout; defaults to 30.
+nb_execution_timeout = 1000
 
 # -- Options for HTML output ----------------------------------------------
 
