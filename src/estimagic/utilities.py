@@ -191,7 +191,7 @@ def robust_inverse(matrix, msg=""):
         "Standard matrix inversion failed due to LinAlgError described below. "
         "A pseudo inverse was calculated instead. "
     )
-    if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
+    if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:  # noqa: PLR2004
         raise ValueError("Matrix must be square.")
     try:
         out = np.linalg.inv(matrix)
@@ -300,9 +300,7 @@ def isscalar(element):
     if np.isscalar(element):
         return True
     # call anything a scalar that says it has 0 dimensions
-    return (getattr(element, "ndim", -1) == 0)
-    else:
-        return False
+    return getattr(element, "ndim", -1) == 0
 
 
 def get_rng(seed):

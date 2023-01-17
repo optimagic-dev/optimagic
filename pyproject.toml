@@ -57,6 +57,7 @@ extend-ignore = [
     "E731",  # do not assign a lambda expression, use a def
     "RET", # unnecessary elif or else statements after return, rais, continue, ...
     "BLE001", # Do not catch blind exceptions. Complains even if done at end of except block.
+    "S324", # Probable use of insecure hash function.
 
     # Things ignored during transition phase
     # ======================================
