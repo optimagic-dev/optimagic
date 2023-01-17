@@ -311,7 +311,13 @@ def draw_exploration_sample(
 
 
 def run_explorations(
-    func, primary_key, sample, batch_evaluator, n_cores, step_id, error_handling,
+    func,
+    primary_key,
+    sample,
+    batch_evaluator,
+    n_cores,
+    step_id,
+    error_handling,
 ):
     """Do the function evaluations for the exploration phase.
 
@@ -427,7 +433,11 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
 
 
 def update_convergence_state(
-    current_state, starts, results, convergence_criteria, primary_key,
+    current_state,
+    starts,
+    results,
+    convergence_criteria,
+    primary_key,
 ):
     """Update the state of all quantities related to convergence.
 

@@ -236,7 +236,8 @@ def estimate_ml(
 
     if jac_case == "closed-form":
         int_jac = converter.derivative_to_internal(
-            jacobian_eval, internal_estimates.values,
+            jacobian_eval,
+            internal_estimates.values,
         )
     elif jac_case == "numerical":
 
@@ -680,7 +681,9 @@ class LikelihoodResult:
 
         lower, upper = (
             transform_free_values_to_params_tree(
-                values, free_params=self._free_estimates, params=self._params,
+                values,
+                free_params=self._free_estimates,
+                params=self._params,
             )
             for values in (free_lower, free_upper)
         )
@@ -734,7 +737,9 @@ class LikelihoodResult:
         )
 
         p_values = transform_free_values_to_params_tree(
-            free_p_values, free_params=self._free_estimates, params=self._params,
+            free_p_values,
+            free_params=self._free_estimates,
+            params=self._params,
         )
         return p_values
 
@@ -766,11 +771,15 @@ def _calculate_free_cov_ml(
         int_cov = cov_robust(jac=internal_jacobian, hess=internal_hessian)
     elif method == "cluster_robust":
         int_cov = cov_cluster_robust(
-            jac=internal_jacobian, hess=internal_hessian, design_info=design_info,
+            jac=internal_jacobian,
+            hess=internal_hessian,
+            design_info=design_info,
         )
     elif method == "strata_robust":
         int_cov = cov_strata_robust(
-            jac=internal_jacobian, hess=internal_hessian, design_info=design_info,
+            jac=internal_jacobian,
+            hess=internal_hessian,
+            design_info=design_info,
         )
 
     rng = get_rng(seed)

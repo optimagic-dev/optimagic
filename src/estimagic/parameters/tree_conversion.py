@@ -90,7 +90,8 @@ def get_tree_converter(
 
     _params_flatten = _get_params_flatten(registry=_registry)
     _params_unflatten = _get_params_unflatten(
-        registry=_registry, treedef=_params_treedef,
+        registry=_registry,
+        treedef=_params_treedef,
     )
     _func_flatten = _get_func_flatten(
         registry=_registry,

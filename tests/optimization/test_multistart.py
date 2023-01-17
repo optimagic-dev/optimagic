@@ -31,7 +31,9 @@ test_cases = product(criteria, ["maximize", "minimize"])
 
 @pytest.mark.parametrize(("criterion", "direction"), test_cases)
 def test_multistart_minimize_with_sum_of_squares_at_defaults(
-    criterion, direction, params,
+    criterion,
+    direction,
+    params,
 ):
     if direction == "minimize":
         res = minimize(

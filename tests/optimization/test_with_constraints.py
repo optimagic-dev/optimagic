@@ -134,7 +134,11 @@ for crit_name in FUNC_INFO:
     test_cases,
 )
 def test_constrained_minimization(
-    criterion_name, algorithm, derivative, constraint_name, params_type,
+    criterion_name,
+    algorithm,
+    derivative,
+    constraint_name,
+    params_type,
 ):
 
     constraints = CONSTR_INFO[constraint_name]
@@ -159,7 +163,8 @@ def test_constrained_minimization(
         calculated = res.params
 
     expected = FUNC_INFO[criterion_name].get(
-        f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"],
+        f"{constraint_name}_result",
+        FUNC_INFO[criterion_name]["default_result"],
     )
 
     aaae(calculated, expected, decimal=4)

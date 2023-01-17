@@ -30,7 +30,10 @@ def test_wrapped_criterion(functype, n_evals):
 
     # set up wrapped params
     wrapped_criterion = get_wrapped_criterion(
-        criterion=criterion, batch_evaluator="joblib", n_cores=1, history=history,
+        criterion=criterion,
+        batch_evaluator="joblib",
+        n_cores=1,
+        history=history,
     )
 
     # set up params and expected results

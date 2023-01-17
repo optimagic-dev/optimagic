@@ -144,10 +144,12 @@ def estimation_table(
         model_names,
     )
     column_groups = _customize_col_groups(
-        default_col_groups=default_col_groups, custom_col_groups=custom_col_groups,
+        default_col_groups=default_col_groups,
+        custom_col_groups=custom_col_groups,
     )
     column_names = _customize_col_names(
-        default_col_names=default_col_names, custom_col_names=custom_col_names,
+        default_col_names=default_col_names,
+        custom_col_names=custom_col_names,
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
     stats_options = _set_default_stats_options(stats_options)
@@ -359,7 +361,11 @@ def render_latex(
             )
         latex_str += stats_str
     notes = _generate_notes_latex(
-        append_notes, notes_label, significance_levels, custom_notes, body,
+        append_notes,
+        notes_label,
+        significance_levels,
+        custom_notes,
+        body,
     )
     latex_str += notes
     latex_str += "\\bottomrule\n\\end{tabular}\n"
@@ -450,7 +456,11 @@ def render_html(
         stats_str = re.sub(r"(?<=[\d)}{)])}", "", re.sub(r"{(?=[}\d(])", "", stats_str))
         html_str += stats_str
     notes = _generate_notes_html(
-        append_notes, notes_label, significance_levels, custom_notes, body,
+        append_notes,
+        notes_label,
+        significance_levels,
+        custom_notes,
+        body,
     )
     html_str += notes
     html_str += "</tbody>\n</table>"
@@ -633,7 +643,11 @@ def _build_estimation_table_body(
 
     """
     dfs, max_trail = _reindex_and_float_format_params(
-        models, show_inference, confidence_intervals, number_format, add_trailing_zeros,
+        models,
+        show_inference,
+        confidence_intervals,
+        number_format,
+        add_trailing_zeros,
     )
     to_convert = []
     if show_stars:
@@ -720,13 +734,20 @@ def _build_estimation_table_footer(
 
 
 def _reindex_and_float_format_params(
-    models, show_inference, confidence_intervals, number_format, add_trailing_zeros,
+    models,
+    show_inference,
+    confidence_intervals,
+    number_format,
+    add_trailing_zeros,
 ):
     """Reindex all params DataFrames with a common index and apply number formatting."""
     dfs = _get_params_frames_with_common_index(models)
     cols_to_format = _get_cols_to_format(show_inference, confidence_intervals)
     formatted_frames, max_trail = _apply_number_formatting_frames(
-        dfs, cols_to_format, number_format, add_trailing_zeros,
+        dfs,
+        cols_to_format,
+        number_format,
+        add_trailing_zeros,
     )
     return formatted_frames, max_trail
 
@@ -1083,7 +1104,8 @@ def _create_statistics_sr(
     for k in stats_options:
         stats_values[stats_options[k]] = model["info"].get(k, np.nan)
     raw_formatted = _apply_number_format(
-        pd.DataFrame(pd.Series(stats_values)), number_format,
+        pd.DataFrame(pd.Series(stats_values)),
+        number_format,
     )
     if add_trailing_zeros:
         formatted = _apply_number_format(raw_formatted, max_trail)
@@ -1112,14 +1134,16 @@ def _create_statistics_sr(
         if show_dof:
             rse_str = "{{{}(df={})}}"
             stats_values["Residual Std. Error"] = rse_str.format(
-                stats_values["Residual Std. Error"], int(model["info"]["df_resid"]),
+                stats_values["Residual Std. Error"],
+                int(model["info"]["df_resid"]),
             )
     stat_sr = pd.Series(stats_values)
     # the follwing is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
     stat_ind = np.empty((len(stat_sr), model["params"].index.nlevels - 1), dtype=str)
     stat_ind = np.concatenate(
-        [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind], axis=1,
+        [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind],
+        axis=1,
     ).T
     stat_sr.index = pd.MultiIndex.from_arrays(stat_ind)
     return stat_sr.astype("str").replace("nan", "")
@@ -1177,7 +1201,11 @@ def _process_frame_indices(
 
 
 def _generate_notes_latex(
-    append_notes, notes_label, significance_levels, custom_notes, df,
+    append_notes,
+    notes_label,
+    significance_levels,
+    custom_notes,
+    df,
 ):
     """Generate the LaTex script of the notes section.
 
@@ -1199,7 +1227,8 @@ def _generate_notes_latex(
     if append_notes:
         notes_text += "\\midrule\n"
         notes_text += "\\textit{{{}}} & \\multicolumn{{{}}}{{r}}{{".format(
-            notes_label, str(n_columns + n_levels - 1),
+            notes_label,
+            str(n_columns + n_levels - 1),
         )
         # iterate over penultimate significance_lelvels since last item of legend
         # is not followed by a semi column
@@ -1221,11 +1250,15 @@ def _generate_notes_latex(
                 for n in custom_notes:
                     notes_text += """
                     {}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n""".format(
-                        amp_n, n_columns, n,
+                        amp_n,
+                        n_columns,
+                        n,
                     )
             elif isinstance(custom_notes, str):
                 notes_text += "{}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n".format(
-                    amp_n, n_columns, custom_notes,
+                    amp_n,
+                    n_columns,
+                    custom_notes,
                 )
             else:
                 raise ValueError(
@@ -1236,7 +1269,11 @@ def _generate_notes_latex(
 
 
 def _generate_notes_html(
-    append_notes, notes_label, significance_levels, custom_notes, df,
+    append_notes,
+    notes_label,
+    significance_levels,
+    custom_notes,
+    df,
 ):
     """Generate the html script of the notes section of the estimation table.
 
@@ -1262,7 +1299,8 @@ def _generate_notes_html(
         notes_text += """
         <tr><td style="text-align: left">{}</td><td colspan="{}"
         style="text-align: right">""".format(
-            notes_label, n_columns + n_levels - 1,
+            notes_label,
+            n_columns + n_levels - 1,
         )
         for i in range(len(significance_levels) - 1):
             stars = "*" * (len(significance_levels) - i)
@@ -1281,7 +1319,8 @@ def _generate_notes_html(
                 notes_text += """
                     <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
                     """.format(
-                    n_columns + n_levels - 1, custom_notes[0],
+                    n_columns + n_levels - 1,
+                    custom_notes[0],
                 )
                 if len(custom_notes) > 1:
                     for i in range(1, len(custom_notes)):
@@ -1289,13 +1328,15 @@ def _generate_notes_html(
                         <tr><td></td><td colspan="{}"style="text-align: right">
                         {}</td></tr>
                         """.format(
-                            n_columns + n_levels - 1, custom_notes[i],
+                            n_columns + n_levels - 1,
+                            custom_notes[i],
                         )
             elif isinstance(custom_notes, str):
                 notes_text += """
                     <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
                     """.format(
-                    n_columns + n_levels - 1, custom_notes,
+                    n_columns + n_levels - 1,
+                    custom_notes,
                 )
             else:
                 raise ValueError(
@@ -1421,7 +1462,8 @@ def _center_align_integers(sr):
     """Align integer numbers at the center of model column."""
     for i in sr.index:
         res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i],
+            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?",
+            sr[i],
         )
         if res_numeric:
             num = res_numeric[0]
@@ -1435,7 +1477,8 @@ def _unformat_integers(sr):
     """Remove trailing zeros from integer numbers."""
     for i in sr.index:
         res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i],
+            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?",
+            sr[i],
         )
         if res_numeric:
             num = res_numeric[0]
@@ -1446,7 +1489,11 @@ def _unformat_integers(sr):
 
 
 def _get_updated_styler(
-    df, show_index_names, show_col_names, show_col_groups, escape_special_characters,
+    df,
+    show_index_names,
+    show_col_names,
+    show_col_groups,
+    escape_special_characters,
 ):
     """Return pandas.Styler object based ont the data and styling options"""
     styler = df.style

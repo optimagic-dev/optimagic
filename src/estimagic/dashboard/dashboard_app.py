@@ -65,7 +65,8 @@ def dashboard_app(
     )
     free_mask = optimization_problem["free_mask"][0]
     params_groups, short_names = get_params_groups_and_short_names(
-        params=start_params_tree, free_mask=free_mask,
+        params=start_params_tree,
+        free_mask=free_mask,
     )
     start_params = pd.DataFrame(
         {

@@ -139,7 +139,10 @@ def get_subsolver(solver, user_options=None, bounds=None):
         )
 
     out = partial(
-        _solve_subproblem_template, solver=_solver, bounds=bounds_dict, options=reduced,
+        _solve_subproblem_template,
+        solver=_solver,
+        bounds=bounds_dict,
+        options=reduced,
     )
 
     return out

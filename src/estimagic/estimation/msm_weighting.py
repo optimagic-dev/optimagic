@@ -12,7 +12,11 @@ from scipy.linalg import block_diag
 
 
 def get_moments_cov(
-    data, calculate_moments, *, moment_kwargs=None, bootstrap_kwargs=None,
+    data,
+    calculate_moments,
+    *,
+    moment_kwargs=None,
+    bootstrap_kwargs=None,
 ):
     """Bootstrap the covariance matrix of the moment conditions.
 
@@ -69,7 +73,11 @@ def get_moments_cov(
 
 
 def get_weighting_matrix(
-    moments_cov, method, empirical_moments, clip_value=1e-6, return_type="pytree",
+    moments_cov,
+    method,
+    empirical_moments,
+    clip_value=1e-6,
+    return_type="pytree",
 ):
     """Calculate a weighting matrix from moments_cov.
 

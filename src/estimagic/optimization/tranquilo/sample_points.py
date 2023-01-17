@@ -11,7 +11,11 @@ from scipy.special import logsumexp
 
 
 def get_sampler(
-    sampler, bounds, model_info=None, radius_factors=None, user_options=None,
+    sampler,
+    bounds,
+    model_info=None,
+    radius_factors=None,
+    user_options=None,
 ):
     """Get sampling function partialled options.
 
@@ -155,7 +159,11 @@ def _box_sampler(
 
 
 def _ball_sampler(
-    trustregion, n_points, rng, existing_xs=None, bounds=None,  # noqa: ARG001
+    trustregion,
+    n_points,
+    rng,
+    existing_xs=None,
+    bounds=None,
 ):
     """Naive random generation of trustregion points inside a ball.
 

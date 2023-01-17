@@ -16,7 +16,8 @@ class ResidualModel(NamedTuple):
     intercepts: Union[np.ndarray, None] = None  # shape (n_residuals,)
     linear_terms: Union[np.ndarray, None] = None  # shape (n_residuals, n_params)
     square_terms: Union[
-        np.ndarray, None,
+        np.ndarray,
+        None,
     ] = None  # shape (n_residuals, n_params, n_params)
 
 
@@ -92,14 +93,16 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
     )
 
     residual_model_updated = residual_model._replace(
-        linear_terms=linear_terms_new, square_terms=square_terms_new,
+        linear_terms=linear_terms_new,
+        square_terms=square_terms_new,
     )
 
     return residual_model_updated
 
 
 def create_main_from_residual_model(
-    residual_model, multiply_square_terms_with_intercepts=True,
+    residual_model,
+    multiply_square_terms_with_intercepts=True,
 ):
     """Update linear and square terms of the main model via the residual model.
 
@@ -126,7 +129,8 @@ def create_main_from_residual_model(
         )
 
     main_model = MainModel(
-        linear_terms=linear_terms_main_model, square_terms=square_terms_main_model,
+        linear_terms=linear_terms_main_model,
+        square_terms=square_terms_main_model,
     )
 
     return main_model
@@ -173,7 +177,8 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
     )
 
     residual_model_updated = residual_model._replace(
-        intercepts=intercepts_new, linear_terms=linear_terms_new,
+        intercepts=intercepts_new,
+        linear_terms=linear_terms_new,
     )
 
     return residual_model_updated
@@ -448,13 +453,16 @@ def add_geomtery_points_to_make_main_model_fully_linear(
         # Project into feasible region
         if lower_bounds is not None and upper_bounds is not None:
             x_candidate = np.median(
-                np.stack([lower_bounds, x_candidate, upper_bounds]), axis=0,
+                np.stack([lower_bounds, x_candidate, upper_bounds]),
+                axis=0,
             )
         x_candidates_list.append(x_candidate)
         model_indices[i] = current_history + i - n_modelpoints
 
     criterion_candidates_list = batch_evaluator(
-        criterion, arguments=x_candidates_list, n_cores=n_cores,
+        criterion,
+        arguments=x_candidates_list,
+        n_cores=n_cores,
     )
 
     history.add_entries(x_candidates_list, criterion_candidates_list)
@@ -507,7 +515,13 @@ def evaluate_residual_model(
 
 
 def get_feature_matrices_residual_model(
-    history, x_accepted, model_indices, delta, c2, theta2, n_maxinterp,
+    history,
+    x_accepted,
+    model_indices,
+    delta,
+    c2,
+    theta2,
+    n_maxinterp,
 ):
     """Obtain the feature matrices for fitting the residual model.
 
@@ -726,7 +740,10 @@ def update_trustregion_radius(
 
 
 def get_last_model_indices_and_check_for_repeated_model(
-    model_indices, last_model_indices, n_modelpoints, n_last_modelpoints,
+    model_indices,
+    last_model_indices,
+    n_modelpoints,
+    n_last_modelpoints,
 ):
     """Get the last model_indices and check if we have reused the same model."""
     same_model_used = bool(n_modelpoints == n_last_modelpoints)

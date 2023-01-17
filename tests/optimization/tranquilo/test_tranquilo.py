@@ -69,10 +69,14 @@ TEST_CASES = itertools.chain.from_iterable(TEST_CASES)
 
 
 @pytest.mark.parametrize(
-    ("sample_filter", "fitter", "surrogate_model", "sample_size"), TEST_CASES,
+    ("sample_filter", "fitter", "surrogate_model", "sample_size"),
+    TEST_CASES,
 )
 def test_internal_tranquilo_scalar_sphere_defaults(
-    sample_filter, fitter, surrogate_model, sample_size,
+    sample_filter,
+    fitter,
+    surrogate_model,
+    sample_size,
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
@@ -109,10 +113,14 @@ TEST_CASES = itertools.chain.from_iterable(TEST_CASES)
 
 
 @pytest.mark.parametrize(
-    ("sample_filter", "fitter", "surrogate_model", "sample_size"), TEST_CASES,
+    ("sample_filter", "fitter", "surrogate_model", "sample_size"),
+    TEST_CASES,
 )
 def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
-    sample_filter, fitter, surrogate_model, sample_size,
+    sample_filter,
+    fitter,
+    surrogate_model,
+    sample_size,
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
@@ -165,10 +173,14 @@ TEST_CASES = itertools.chain.from_iterable(TEST_CASES)
 
 
 @pytest.mark.parametrize(
-    ("sample_filter", "fitter", "surrogate_model", "sample_size"), TEST_CASES,
+    ("sample_filter", "fitter", "surrogate_model", "sample_size"),
+    TEST_CASES,
 )
 def test_internal_tranquilo_ls_sphere_defaults(
-    sample_filter, fitter, surrogate_model, sample_size,
+    sample_filter,
+    fitter,
+    surrogate_model,
+    sample_size,
 ):
     res = tranquilo_ls(
         criterion=lambda x: x,

@@ -104,7 +104,8 @@ class OptimizeResult:
 
         if self.convergence_report is not None:
             convergence = _format_convergence_report(
-                self.convergence_report, self.algorithm,
+                self.convergence_report,
+                self.algorithm,
             )
         else:
             convergence = None

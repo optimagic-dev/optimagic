@@ -45,7 +45,8 @@ def test_aggregator_sum():
     assert_array_equal(got.intercept, 3.0)
     assert_array_equal(got.linear_terms, np.array([3, 5, 7]))
     assert_array_equal(
-        got.square_terms, np.array([[9, 11, 13], [15, 17, 19], [21, 23, 25]]),
+        got.square_terms,
+        np.array([[9, 11, 13], [15, 17, 19], [21, 23, 25]]),
     )
 
 
@@ -61,7 +62,8 @@ def test_aggregator_least_squares_linear():
     assert_array_equal(got.intercept, 4.0)
     assert_array_equal(got.linear_terms, np.array([12, 16, 20]))
     assert_array_equal(
-        got.square_terms, np.array([[18, 24, 30], [24, 34, 44], [30, 44, 58]]),
+        got.square_terms,
+        np.array([[18, 24, 30], [24, 34, 44], [30, 44, 58]]),
     )
 
 

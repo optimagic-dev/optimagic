@@ -501,7 +501,8 @@ TEST_CASES_GQTPAR = [
 
 @pytest.mark.slow()
 @pytest.mark.parametrize(
-    ("linear_terms", "square_terms", "x_expected", "criterion_expected"), TEST_CASES_GQTPAR,
+    ("linear_terms", "square_terms", "x_expected", "criterion_expected"),
+    TEST_CASES_GQTPAR,
 )
 def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
@@ -704,20 +705,29 @@ TEST_CASES_TRSBOX = [
 
 @pytest.mark.slow()
 @pytest.mark.parametrize(
-    ("gradient", "hessian", "trustregion_radius", "x_expected"), TEST_CASES_CG,
+    ("gradient", "hessian", "trustregion_radius", "x_expected"),
+    TEST_CASES_CG,
 )
 def test_trustregion_conjugate_gradient(
-    gradient, hessian, trustregion_radius, x_expected,
+    gradient,
+    hessian,
+    trustregion_radius,
+    x_expected,
 ):
     x_out = minimize_trust_cg(
-        gradient, hessian, trustregion_radius, gtol_abs=1e-8, gtol_rel=1e-6,
+        gradient,
+        hessian,
+        trustregion_radius,
+        gtol_abs=1e-8,
+        gtol_rel=1e-6,
     )
     aaae(x_out, x_expected)
 
 
 @pytest.mark.slow()
 @pytest.mark.parametrize(
-    ("gradient", "hessian", "trustregion_radius", "x_expected"), TEST_CASES_CG,
+    ("gradient", "hessian", "trustregion_radius", "x_expected"),
+    TEST_CASES_CG,
 )
 def test_trustregion_steihaug_toint(gradient, hessian, trustregion_radius, x_expected):
     x_out = minimize_trust_stcg(gradient, hessian, trustregion_radius)

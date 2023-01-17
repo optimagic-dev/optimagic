@@ -415,7 +415,11 @@ def get_msm_optimization_functions(
 
 
 def _msm_criterion(
-    params, simulate_moments, flat_empirical_moments, chol_weights, registry,
+    params,
+    simulate_moments,
+    flat_empirical_moments,
+    chol_weights,
+    registry,
 ):
     """Calculate msm criterion given parameters and building blocks."""
     simulated = simulate_moments(params)
@@ -742,7 +746,9 @@ class MomentsResult:
 
         lower, upper = (
             transform_free_values_to_params_tree(
-                values, free_params=self._free_estimates, params=self._params,
+                values,
+                free_params=self._free_estimates,
+                params=self._params,
             )
             for values in (free_lower, free_upper)
         )
@@ -794,7 +800,9 @@ class MomentsResult:
         )
 
         p_values = transform_free_values_to_params_tree(
-            free_p_values, free_params=self._free_estimates, params=self._params,
+            free_p_values,
+            free_params=self._free_estimates,
+            params=self._params,
         )
         return p_values
 
@@ -978,7 +986,9 @@ def _calculate_free_cov_msm(
         internal_cov = cov_optimal(internal_jacobian, internal_weights)
     else:
         internal_cov = cov_robust(
-            internal_jacobian, internal_weights, internal_moments_cov,
+            internal_jacobian,
+            internal_weights,
+            internal_moments_cov,
         )
 
     rng = get_rng(seed)

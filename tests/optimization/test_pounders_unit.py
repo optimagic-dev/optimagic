@@ -60,7 +60,8 @@ def data_create_initial_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_initial_residual_model.yaml")
     history = LeastSquaresHistory()
     ResidualModel = namedtuple(
-        "ResidualModel", ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel",
+        ["intercepts", "linear_terms", "square_terms"],
     )
 
     history.add_entries(
@@ -86,7 +87,8 @@ def data_update_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_residual_model.yaml")
 
     ResidualModel = namedtuple(
-        "ResidualModel", ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel",
+        ["intercepts", "linear_terms", "square_terms"],
     )
 
     residual_model = ResidualModel(
@@ -119,7 +121,8 @@ def data_update_main_from_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_main_from_residual_model.yaml")
 
     ResidualModel = namedtuple(
-        "ResidualModel", ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel",
+        ["intercepts", "linear_terms", "square_terms"],
     )
     MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
 
@@ -144,7 +147,8 @@ def data_update_residual_model_with_new_accepted_x():
     )
 
     ResidualModel = namedtuple(
-        "ResidualModel", ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel",
+        ["intercepts", "linear_terms", "square_terms"],
     )
     inputs_dict = {}
     residual_model_expected = {}
@@ -314,7 +318,8 @@ def data_get_interpolation_matrices_residual_model():
         ],
         "basis_null_space": test_data["basis_null_space_expected"],
         "lower_triangular": np.array(test_data["lower_triangular_expected"])[
-            :, n_params + 1 : n_maxinterp,
+            :,
+            n_params + 1 : n_maxinterp,
         ],
         "n_modelpoints": test_data["n_modelpoints_expected"],
     }
@@ -335,7 +340,8 @@ def data_evaluate_residual_model(request):
     )
 
     ResidualModel = namedtuple(
-        "ResidualModel", ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel",
+        ["intercepts", "linear_terms", "square_terms"],
     )
     residual_model = ResidualModel(
         intercepts=np.array(test_data["residuals"]),
@@ -350,12 +356,14 @@ def data_evaluate_residual_model(request):
 
     center_info = {"x": x_accepted, "radius": delta_old}
     centered_xs = history.get_centered_xs(
-        center_info, index=model_indices[:n_modelpoints],
+        center_info,
+        index=model_indices[:n_modelpoints],
     )
 
     center_info = {"residuals": residual_model.intercepts}
     centered_residuals = history.get_centered_residuals(
-        center_info, index=model_indices,
+        center_info,
+        index=model_indices,
     )
 
     inputs_dict = {
@@ -381,12 +389,14 @@ def data_fit_residual_model():
 
     inputs_dict = {
         "m_mat": np.array(test_data["x_sample_monomial_basis"])[
-            : n_params + 1, : n_params + 1,
+            : n_params + 1,
+            : n_params + 1,
         ],
         "n_mat": np.array(test_data["monomial_basis"])[:n_modelpoints],
         "z_mat": np.array(test_data["basis_null_space"]),
         "n_z_mat": np.array(test_data["lower_triangular"])[
-            :, n_params + 1 : n_maxinterp,
+            :,
+            n_params + 1 : n_maxinterp,
         ],
         "y_residuals": np.array(test_data["f_interpolated"]),
         "n_modelpoints": test_data["n_modelpoints"],
@@ -434,7 +444,8 @@ def test_update_main_from_residual_model(data_update_main_from_residual_model):
     residual_model, main_model_expected = data_update_main_from_residual_model
 
     main_model_out = create_main_from_residual_model(
-        residual_model, multiply_square_terms_with_intercepts=True,
+        residual_model,
+        multiply_square_terms_with_intercepts=True,
     )
 
     aaae(
@@ -505,7 +516,9 @@ def test_add_points_until_main_model_fully_linear(
         history_out,
         model_indices_out,
     ) = add_geomtery_points_to_make_main_model_fully_linear(
-        **inputs, n_cores=1, batch_evaluator=joblib_batch_evaluator,
+        **inputs,
+        n_cores=1,
+        batch_evaluator=joblib_batch_evaluator,
     )
 
     aaae(model_indices_out, expected["model_indices"])

@@ -90,7 +90,10 @@ def test_normalize_minimize():
     df["criterion"] = start_values.tolist() + [2, 3, 9] + target_values.tolist()
 
     res = _normalize(
-        df=df, col="criterion", start_values=start_values, target_values=target_values,
+        df=df,
+        col="criterion",
+        start_values=start_values,
+        target_values=target_values,
     )
 
     # total improvements are [4, 4, 10]
@@ -109,7 +112,10 @@ def test_normalize_maximize():
     df["criterion"] = start_values.tolist() + [2, 4, 9] + target_values.tolist()
 
     res = _normalize(
-        df=df, col="criterion", start_values=start_values, target_values=target_values,
+        df=df,
+        col="criterion",
+        start_values=start_values,
+        target_values=target_values,
     )
 
     # total improvements are [4, 5, 7]
@@ -262,10 +268,14 @@ def test_make_history_monotone_minimize():
     shuffled = sorted_df.sample(frac=1, random_state=40954)
 
     res_shuffled = _make_history_monotone(
-        df=shuffled, target_col="to_make_monotone", direction="minimize",
+        df=shuffled,
+        target_col="to_make_monotone",
+        direction="minimize",
     )
     res_sorted = _make_history_monotone(
-        df=sorted_df, target_col="to_make_monotone", direction="minimize",
+        df=sorted_df,
+        target_col="to_make_monotone",
+        direction="minimize",
     )
 
     expected = pd.Series(
@@ -349,7 +359,8 @@ def test_get_history_of_the_parameter_distance(benchmark_results):
 
 def test_get_history_as_stacked_sr_from_results(benchmark_results):
     res = _get_history_as_stacked_sr_from_results(
-        benchmark_results, key="criterion_history",
+        benchmark_results,
+        key="criterion_history",
     )
     expected_df = pd.DataFrame(
         columns=["problem", "algorithm", "evaluation", "criterion"],

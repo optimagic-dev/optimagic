@@ -52,7 +52,13 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     ttol = max(rtol * norm_r0, abstol)
 
     converged, diverged = _check_convergence(
-        norm_r, norm_r0, abstol, ttol, divtol, converged, diverged,
+        norm_r,
+        norm_r0,
+        abstol,
+        ttol,
+        divtol,
+        converged,
+        diverged,
     )
 
     p = model_hessian @ z
@@ -90,7 +96,12 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
 
             if norm_p > 0:
                 x_candidate = _take_step_to_trustregion_boundary(
-                    x_candidate, p, dp, radius_sq, norm_d, norm_p,
+                    x_candidate,
+                    p,
+                    dp,
+                    radius_sq,
+                    norm_d,
+                    norm_p,
                 )
 
             break
@@ -106,7 +117,13 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
         norm_r = np.linalg.norm(residual)
 
         converged, diverged = _check_convergence(
-            norm_r, norm_r0, abstol, ttol, divtol, converged, diverged,
+            norm_r,
+            norm_r0,
+            abstol,
+            ttol,
+            divtol,
+            converged,
+            diverged,
         )
 
         if converged or diverged:
@@ -136,7 +153,12 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
 
             if trustregion_radius != 0 and norm_p > 0:
                 x_candidate = _take_step_to_trustregion_boundary(
-                    x_candidate, p, dp, radius_sq, norm_d, norm_p,
+                    x_candidate,
+                    p,
+                    dp,
+                    radius_sq,
+                    norm_d,
+                    norm_p,
                 )
 
             break
@@ -184,7 +206,13 @@ def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, no
 
 
 def _check_convergence(
-    rnorm, rnorm0, abstol, ttol, divtol, converged, diverged,  # noqa: ARG001
+    rnorm,
+    rnorm0,
+    abstol,
+    ttol,
+    divtol,
+    converged,
+    diverged,
 ):
     """Check for convergence."""
     if rnorm <= ttol:

@@ -57,7 +57,9 @@ def pygmo_gaco(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
 
     if isinstance(speed_of_std_values_convergence, float):
@@ -125,7 +127,9 @@ def pygmo_bee_colony(
 
     """
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=20,
+        population_size=population_size,
+        x=x,
+        lower_bound=20,
     )
     algo_options = _create_algo_options(
         population_size=population_size,
@@ -177,7 +181,9 @@ def pygmo_de(
 
     """
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10,
+        population_size=population_size,
+        x=x,
+        lower_bound=10,
     )
 
     # support both integer and string specification of the mutation variant
@@ -194,7 +200,8 @@ def pygmo_de(
         "rand/2/bin": 10,
     }
     mutation_variant = _convert_str_to_int(
-        str_to_int=mutation_variant_str_to_int, value=mutation_variant,
+        str_to_int=mutation_variant_str_to_int,
+        value=mutation_variant,
     )
 
     algo_specific_options = {
@@ -248,7 +255,9 @@ def pygmo_sea(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10,
+        population_size=population_size,
+        x=x,
+        lower_bound=10,
     )
 
     algo_options = _create_algo_options(
@@ -304,7 +313,9 @@ def pygmo_sga(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
 
     if eta_c is not None and crossover_strategy != "sbx":
@@ -416,7 +427,9 @@ def pygmo_sade(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
     mutation_variant_str_to_int = {
         "best/1/exp": 1,
@@ -439,7 +452,8 @@ def pygmo_sade(
         "rand-to-best-and-current/2/bin": 18,
     }
     mutation_variant = _convert_str_to_int(
-        str_to_int=mutation_variant_str_to_int, value=mutation_variant,
+        str_to_int=mutation_variant_str_to_int,
+        value=mutation_variant,
     )
 
     algo_specific_options = {
@@ -503,7 +517,9 @@ def pygmo_cmaes(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
 
     algo_specific_options = {
@@ -568,7 +584,9 @@ def pygmo_simulated_annealing(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
 
     algo_specific_options = {
@@ -639,7 +657,9 @@ def pygmo_pso(
     neighbor_param = _replace_none(neighbor_param, 4)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10,
+        population_size=population_size,
+        x=x,
+        lower_bound=10,
     )
 
     neighbor_definition_str_to_int = {
@@ -665,7 +685,8 @@ def pygmo_pso(
         "max_vel": max_velocity,
         "variant": _convert_str_to_int(algo_variant_str_to_int, algo_variant),
         "neighb_type": _convert_str_to_int(
-            neighbor_definition_str_to_int, neighbor_definition,
+            neighbor_definition_str_to_int,
+            neighbor_definition,
         ),
         "neighb_param": neighbor_param,
         "memory": keep_velocities,
@@ -748,7 +769,9 @@ def pygmo_pso_gen(
     algo_variant = _convert_str_to_int(algo_variant_str_to_int, algo_variant)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=10,
+        population_size=population_size,
+        x=x,
+        lower_bound=10,
     )
 
     algo_specific_options = {
@@ -812,7 +835,9 @@ def pygmo_mbh(
 
     # the min default population size is this large to pass our sum of squares tests.
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=250,
+        population_size=population_size,
+        x=x,
+        lower_bound=250,
     )
 
     algo_specific_options = {
@@ -872,7 +897,9 @@ def pygmo_xnes(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
 
     algo_specific_options = {
@@ -930,7 +957,9 @@ def pygmo_gwo(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
     algo_options = _create_algo_options(
         population_size=population_size,
@@ -1046,7 +1075,9 @@ def pygmo_ihs(
         warnings.warn("The population size has no effect on IHS' performance.")
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=1,
+        population_size=population_size,
+        x=x,
+        lower_bound=1,
     )
 
     algo_specific_options = {
@@ -1135,7 +1166,9 @@ def pygmo_de1220(
         ]
 
     population_size = _determine_population_size(
-        population_size=population_size, x=x, lower_bound=64,
+        population_size=population_size,
+        x=x,
+        lower_bound=64,
     )
 
     algo_specific_options = {
@@ -1230,7 +1263,11 @@ def _minimize_pygmo(
     )
     algo = _create_algorithm(method, algo_options, n_cores)
     pop = _create_population(
-        prob, population_size, x, seed=seed, discard_start_params=discard_start_params,
+        prob,
+        population_size,
+        x,
+        seed=seed,
+        discard_start_params=discard_start_params,
     )
     evolved = algo.evolve(pop)
     result = _process_pygmo_results(evolved)

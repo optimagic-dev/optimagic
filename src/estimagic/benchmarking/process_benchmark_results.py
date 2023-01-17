@@ -5,7 +5,11 @@ from pybaum import tree_just_flatten
 
 
 def create_convergence_histories(
-    problems, results, stopping_criterion, x_precision, y_precision,
+    problems,
+    results,
+    stopping_criterion,
+    x_precision,
+    y_precision,
 ):
     """Create tidy DataFrame with all information needed for the benchmarking plots.
 
@@ -70,7 +74,10 @@ def create_convergence_histories(
 
     # normalizations
     df["criterion_normalized"] = _normalize(
-        df=df, col="criterion", start_values=f_0, target_values=f_opt,
+        df=df,
+        col="criterion",
+        start_values=f_0,
+        target_values=f_opt,
     )
     df["parameter_distance_normalized"] = _normalize(
         df=df,
@@ -82,10 +89,12 @@ def create_convergence_histories(
     df["monotone_criterion"] = _make_history_monotone(df, "criterion")
     df["monotone_parameter_distance"] = _make_history_monotone(df, "parameter_distance")
     df["monotone_criterion_normalized"] = _make_history_monotone(
-        df, "criterion_normalized",
+        df,
+        "criterion_normalized",
     )
     df["monotone_parameter_distance_normalized"] = _make_history_monotone(
-        df, "parameter_distance_normalized",
+        df,
+        "parameter_distance_normalized",
     )
 
     if stopping_criterion is not None:

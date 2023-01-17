@@ -79,7 +79,8 @@ def get_benchmark_problems(
 
     if multiplicative_noise:
         multiplicative_options = _process_noise_options(
-            multiplicative_noise_options, True,
+            multiplicative_noise_options,
+            True,
         )
     else:
         multiplicative_options = None
@@ -103,7 +104,8 @@ def get_benchmark_problems(
         problems[name] = {
             "inputs": inputs,
             "solution": _create_problem_solution(
-                specification, scaling_options=scaling_options,
+                specification,
+                scaling_options=scaling_options,
             ),
             "info": specification.get("info", {}),
         }
@@ -198,7 +200,11 @@ def _step_func(x, raw_func):
 
 
 def _create_problem_inputs(
-    specification, additive_options, multiplicative_options, scaling_options, rng,
+    specification,
+    additive_options,
+    multiplicative_options,
+    scaling_options,
+    rng,
 ):
     _x = np.array(specification["start_x"])
 
@@ -245,7 +251,12 @@ def _get_scaling_factor(x, options):
 
 
 def _internal_criterion_template(
-    params, criterion, additive_options, multiplicative_options, scaling_factor, rng,
+    params,
+    criterion,
+    additive_options,
+    multiplicative_options,
+    scaling_factor,
+    rng,
 ):
     if scaling_factor is not None:
         params = params / scaling_factor
@@ -280,14 +291,19 @@ def _get_combined_noise(fval, additive_options, multiplicative_options, rng):
         clipval = options.pop("clipping_value")
         scaled_std = std * _clip_away_from_zero(fval, clipval)
         multiplicative_noise = _sample_from_distribution(
-            **options, std=scaled_std, size=size, rng=rng,
+            **options,
+            std=scaled_std,
+            size=size,
+            rng=rng,
         )
     else:
         multiplicative_noise = 0
 
     if additive_options is not None:
         additive_noise = _sample_from_distribution(
-            **additive_options, size=size, rng=rng,
+            **additive_options,
+            size=size,
+            rng=rng,
         )
     else:
         additive_noise = 0

@@ -41,11 +41,15 @@ def matrix_to_block_tree(matrix, outer_tree, inner_tree):
 
     blocks = []
     for leaf_outer, s1, submat in zip(
-        flat_outer, shapes_outer, np.split(matrix, block_bounds_outer, axis=0),
+        flat_outer,
+        shapes_outer,
+        np.split(matrix, block_bounds_outer, axis=0),
     ):
         row = []
         for leaf_inner, s2, block_values in zip(
-            flat_inner, shapes_inner, np.split(submat, block_bounds_inner, axis=1),
+            flat_inner,
+            shapes_inner,
+            np.split(submat, block_bounds_inner, axis=1),
         ):
             raw_block = block_values.reshape((*s1, *s2))
             block = _convert_raw_block_to_pandas(raw_block, leaf_outer, leaf_inner)
@@ -54,7 +58,8 @@ def matrix_to_block_tree(matrix, outer_tree, inner_tree):
         blocks.append(row)
 
     block_tree = tree_unflatten(
-        treedef_outer, [tree_unflatten(treedef_inner, row) for row in blocks],
+        treedef_outer,
+        [tree_unflatten(treedef_inner, row) for row in blocks],
     )
 
     return block_tree
@@ -100,11 +105,15 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
     for s0, subarr in zip(shapes_f, np.split(hessian, block_bounds_f, axis=0)):
         blocks = []
         for leaf_outer, s1, submat in zip(
-            flat_p, shapes_p, np.split(subarr, block_bounds_p, axis=1),
+            flat_p,
+            shapes_p,
+            np.split(subarr, block_bounds_p, axis=1),
         ):
             row = []
             for leaf_inner, s2, block_values in zip(
-                flat_p, shapes_p, np.split(submat, block_bounds_p, axis=2),
+                flat_p,
+                shapes_p,
+                np.split(submat, block_bounds_p, axis=2),
             ):
                 raw_block = block_values.reshape((*s0, *s1, *s2))
                 raw_block = np.squeeze(raw_block)
@@ -112,7 +121,8 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
                 row.append(block)
             blocks.append(row)
         block_tree = tree_unflatten(
-            treedef_p, [tree_unflatten(treedef_p, row) for row in blocks],
+            treedef_p,
+            [tree_unflatten(treedef_p, row) for row in blocks],
         )
         sub_block_trees.append(block_tree)
 

@@ -938,7 +938,9 @@ def _fill_multistart_options_with_defaults(options, params, x, params_to_interna
 
     if out["sample"] is not None:
         out["sample"] = process_multistart_sample(
-            out["sample"], params, params_to_internal,
+            out["sample"],
+            params,
+            params_to_internal,
         )
         out["n_samples"] = len(out["sample"])
 

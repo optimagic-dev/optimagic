@@ -128,7 +128,8 @@ def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
             for task in ["criterion", "derivative", "criterion_and_derivative"]:
                 if task in _kwargs:
                     _kwargs[task] = partial(
-                        _kwargs[task], fixed_log_data={"step": step_id},
+                        _kwargs[task],
+                        fixed_log_data={"step": step_id},
                     )
 
             res = algorithm(**_kwargs)

@@ -354,7 +354,9 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize(("sample", "expected_lagrange_mat", "expected_critval"), TEST_CASES)
+@pytest.mark.parametrize(
+    ("sample", "expected_lagrange_mat", "expected_critval"), TEST_CASES,
+)
 def test_lagrange_poly_matrix(sample, expected_lagrange_mat, expected_critval):
     """This test case is taken from :cite:`Conn2009` p. 62."""
     sample = np.array([[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [0.5, 0.5]])

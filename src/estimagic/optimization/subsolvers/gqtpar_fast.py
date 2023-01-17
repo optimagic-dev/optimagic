@@ -204,7 +204,8 @@ def _get_initial_guess_for_lambdas(model_gradient, model_hessian):
         lambda_candidate = 0
     else:
         lambda_candidate = _get_new_lambda_candidate(
-            lower_bound=lambda_lower_bound, upper_bound=lambda_upper_bound,
+            lower_bound=lambda_lower_bound,
+            upper_bound=lambda_upper_bound,
         )
 
     return lambda_candidate, lambda_lower_bound, lambda_upper_bound
@@ -332,7 +333,8 @@ def _check_for_interior_convergence_and_update(
 
     lambda_lower_bound = max(lambda_lower_bound, lambda_upper_bound - s_min**2)
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound, upper_bound=lambda_candidate,
+        lower_bound=lambda_lower_bound,
+        upper_bound=lambda_candidate,
     )
     return (
         x_candidate,
@@ -361,7 +363,8 @@ def _update_lambdas_when_factorization_unsuccessful(
 
     lambda_lower_bound = max(lambda_lower_bound, lambda_candidate + delta / v_norm**2)
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound, upper_bound=lambda_upper_bound,
+        lower_bound=lambda_lower_bound,
+        upper_bound=lambda_upper_bound,
     )
     return lambda_new_candidate, lambda_lower_bound
 
@@ -468,7 +471,8 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
     else:
         lambda_new_lower_bound = max(lambda_new_lower_bound, newton_step)
         lambda_new_candidate = _get_new_lambda_candidate(
-            lower_bound=lambda_new_lower_bound, upper_bound=lambda_candidate,
+            lower_bound=lambda_new_lower_bound,
+            upper_bound=lambda_candidate,
         )
 
     lambda_new_upper_bound = lambda_candidate
@@ -508,7 +512,9 @@ def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
 
 
 def _compute_terms_to_make_leading_submatrix_singular(
-    hessian_upper_triangular, hessian_plus_lambda, k,
+    hessian_upper_triangular,
+    hessian_plus_lambda,
+    k,
 ):
     """Compute terms that make the leading submatrix of the hessian singular.
 

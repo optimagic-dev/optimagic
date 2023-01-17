@@ -39,7 +39,9 @@ test_cases = list(
 )
 
 
-@pytest.mark.parametrize(("simulate_moments", "moments_cov", "optimize_options"), test_cases)
+@pytest.mark.parametrize(
+    ("simulate_moments", "moments_cov", "optimize_options"), test_cases,
+)
 def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
     start_params = np.array([3, 2, 1])
 
@@ -114,7 +116,8 @@ ls_test_cases = list(
 
 
 @pytest.mark.parametrize(
-    ("simulate_moments", "moments_cov", "optimize_options"), ls_test_cases,
+    ("simulate_moments", "moments_cov", "optimize_options"),
+    ls_test_cases,
 )
 def test_estimate_msm_ls(simulate_moments, moments_cov, optimize_options):
     start_params = np.array([3, 2, 1])

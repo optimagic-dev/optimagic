@@ -31,7 +31,9 @@ def test_create_params_data_for_update():
     }
 
     res = _create_params_data_for_update(
-        data=data, param_ids=param_ids, clip_bound=1e100,
+        data=data,
+        param_ids=param_ids,
+        clip_bound=1e100,
     )
     assert res == expected
 

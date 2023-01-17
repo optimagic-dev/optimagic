@@ -308,7 +308,9 @@ def _tranquilo(
 
         if is_accepted:
             state = state._replace(
-                index=candidate_index, x=candidate_x, fval=candidate_fval,
+                index=candidate_index,
+                x=candidate_x,
+                fval=candidate_fval,
             )
 
         states.append(state)
@@ -326,7 +328,8 @@ def _tranquilo(
 
         if is_accepted:
             new_trustregion = state.trustregion._replace(
-                center=candidate_x, radius=new_radius,
+                center=candidate_x,
+                radius=new_radius,
             )
         else:
             new_trustregion = state.trustregion._replace(radius=new_radius)

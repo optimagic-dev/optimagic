@@ -113,7 +113,8 @@ def slice_plot(
         helper = converter.params_from_internal(selected)
         registry = get_registry(extended=True)
         selected = np.array(
-            tree_just_flatten(selector(helper), registry=registry), dtype=int,
+            tree_just_flatten(selector(helper), registry=registry),
+            dtype=int,
         )
 
     if not np.isfinite(internal_params.lower_bounds[selected]).all():

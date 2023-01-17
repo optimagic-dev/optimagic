@@ -26,7 +26,9 @@ def test_cov_robust_and_cov_optimal_are_equivalent_in_special_case(jac, moments_
     weights = np.linalg.inv(moments_cov)
     if isinstance(moments_cov, pd.DataFrame):
         weights = pd.DataFrame(
-            weights, index=moments_cov.index, columns=moments_cov.columns,
+            weights,
+            index=moments_cov.index,
+            columns=moments_cov.columns,
         )
 
     sandwich = cov_robust(jac, weights, moments_cov)

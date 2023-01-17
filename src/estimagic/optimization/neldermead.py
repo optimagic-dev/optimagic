@@ -108,7 +108,8 @@ def neldermead_parallel(
 
     # calculate criterion values for the initial simplex
     f_s = np.array(batch_evaluator(func=criterion, arguments=s, n_cores=n_cores))[
-        :, None,
+        :,
+        None,
     ]
 
     # parallelized function
@@ -162,7 +163,8 @@ def neldermead_parallel(
             )  # calculate a value of the criterion at contraction point
 
             if f_s_j_c < np.minimum(
-                f_s_j, f_s_j_r,
+                f_s_j,
+                f_s_j_r,
             ):  # if ta value of the criterion at contraction point is better
                 # than original and refrelction point
 

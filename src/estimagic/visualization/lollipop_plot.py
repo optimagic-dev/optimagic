@@ -154,7 +154,10 @@ def _harmonize_data(data):
     combined = pd.concat(to_concat)
     # so that it is possibel to facet the strip plot
     new_data = pd.melt(
-        combined, id_vars=["__name__", "__hue__"], var_name="indep", value_name="values",
+        combined,
+        id_vars=["__name__", "__hue__"],
+        var_name="indep",
+        value_name="values",
     )
 
     varnames = new_data["indep"].unique()

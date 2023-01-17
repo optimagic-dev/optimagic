@@ -25,7 +25,11 @@ def process_internal_optimizer_result(
         res = _dummy_result_from_traceback(res, fixed_kwargs)
     else:
         res = _process_one_result(
-            res, converter, primary_key, fixed_kwargs, skip_checks,
+            res,
+            converter,
+            primary_key,
+            fixed_kwargs,
+            skip_checks,
         )
 
         if is_multistart:
@@ -71,7 +75,8 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
         _criterion = float(res["solution_criterion"])
     else:
         _criterion = aggregate_func_output_to_value(
-            res["solution_criterion"], primary_key,
+            res["solution_criterion"],
+            primary_key,
         )
 
     if fixed_kwargs["direction"] == "maximize":

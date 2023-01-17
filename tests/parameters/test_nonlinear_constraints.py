@@ -65,7 +65,9 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize(("lower_bounds", "upper_bounds", "case", "expected"), TEST_CASES)
+@pytest.mark.parametrize(
+    ("lower_bounds", "upper_bounds", "case", "expected"), TEST_CASES,
+)
 def test_get_positivity_transform(lower_bounds, upper_bounds, case, expected):
     transform = _get_transformation(lower_bounds, upper_bounds)
 
@@ -160,7 +162,9 @@ def test_check_validity_nonlinear_constraint_correct_example():
         "selector": lambda x: x[:1],
     }
     _check_validity_and_return_evaluation(
-        constr, params=np.arange(4), skip_checks=False,
+        constr,
+        params=np.arange(4),
+        skip_checks=False,
     )
 
 
@@ -236,7 +240,11 @@ def test_process_nonlinear_constraints():
     numdiff_options = {"lower_bounds": params, "upper_bounds": params}
 
     got = process_nonlinear_constraints(
-        nonlinear_constraints, params, converter, numdiff_options, skip_checks=False,
+        nonlinear_constraints,
+        params,
+        converter,
+        numdiff_options,
+        skip_checks=False,
     )
 
     expected = [

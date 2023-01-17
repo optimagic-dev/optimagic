@@ -28,7 +28,9 @@ test_cases = [
 @pytest.mark.parametrize(("popsize", "x", "lower_bound", "expected"), test_cases)
 def test_determine_population_size(popsize, x, lower_bound, expected):
     res = _determine_population_size(
-        population_size=popsize, x=x, lower_bound=lower_bound,
+        population_size=popsize,
+        x=x,
+        lower_bound=lower_bound,
     )
     assert res == expected
 

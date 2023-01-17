@@ -131,7 +131,12 @@ def _drop_collinear_pounders(xs, indices, state):
 
 
 def _get_polynomial_feature_matrices(
-    centered_xs, indexer, index_center, n_params, n_samples, n_poly_terms,
+    centered_xs,
+    indexer,
+    index_center,
+    n_params,
+    n_samples,
+    n_poly_terms,
 ):
     linear_features = np.zeros((n_samples, n_params + 1))
     square_features = np.zeros((n_samples, n_poly_terms))

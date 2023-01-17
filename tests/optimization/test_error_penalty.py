@@ -52,7 +52,11 @@ def test_penalty_derivatives(func, deriv):
     calculated = deriv(x, constant, slope, x0, dim_out)
 
     partialed = functools.partial(
-        func, constant=constant, slope=slope, x0=x0, dim_out=dim_out,
+        func,
+        constant=constant,
+        slope=slope,
+        x0=x0,
+        dim_out=dim_out,
     )
     expected = first_derivative(partialed, x)
 

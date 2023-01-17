@@ -102,7 +102,9 @@ def test_add_centered_entries():
         "radius": 0.5,
     }
     history.add_centered_entries(
-        xs=np.ones(2), residuals=np.ones(4) * 2, center_info=center_info,
+        xs=np.ones(2),
+        residuals=np.ones(4) * 2,
+        center_info=center_info,
     )
 
     xs, residuals, critvals = history.get_entries(index=-1)
@@ -123,7 +125,8 @@ def test_get_centered_entries():
     }
 
     xs, residuals, critvals = history.get_centered_entries(
-        center_info=center_info, index=-1,
+        center_info=center_info,
+        index=-1,
     )
 
     aaae(xs, np.array([4, 0, -4]))

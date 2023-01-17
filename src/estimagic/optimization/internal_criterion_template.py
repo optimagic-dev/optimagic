@@ -216,7 +216,8 @@ def internal_criterion_and_derivative_template(
 
     if caught_exceptions:
         new_criterion, new_derivative = error_penalty_func(
-            x, task="criterion_and_derivative",
+            x,
+            task="criterion_and_derivative",
         )
 
     if new_criterion is not None:

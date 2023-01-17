@@ -202,7 +202,8 @@ def test_indices_in_trust_region(basic_case):
 
 
 @pytest.mark.parametrize(
-    "test_case", ["basic_case", "reordered_case", "truncated_case", "sparse_case"],
+    "test_case",
+    ["basic_case", "reordered_case", "truncated_case", "sparse_case"],
 )
 def test_drop_collinear_pounders(test_case, request):
     old_xs, old_indices, state, expected_xs, expected_indices = request.getfixturevalue(

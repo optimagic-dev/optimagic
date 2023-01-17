@@ -91,7 +91,9 @@ def process_constraints(
     is_fixed_to_value = constr_info.pop("is_fixed_to_value")
     is_fixed_to_other = constr_info.pop("is_fixed_to_other")
     int_lower, int_upper = _create_internal_bounds(
-        constr_info["lower_bounds"], constr_info["upper_bounds"], transformations,
+        constr_info["lower_bounds"],
+        constr_info["upper_bounds"],
+        transformations,
     )
     constr_info["internal_free"] = _create_internal_free(
         is_fixed_to_value=is_fixed_to_value,
@@ -106,7 +108,8 @@ def process_constraints(
     )
 
     constr_info["internal_fixed_values"] = _create_internal_fixed_value(
-        constr_info["fixed_values"], transformations,
+        constr_info["fixed_values"],
+        transformations,
     )
 
     del constr_info["fixed_values"]

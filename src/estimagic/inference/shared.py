@@ -96,7 +96,10 @@ def calculate_summary_data_estimation(
     seed,
 ):
     se = estimation_result.se(
-        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed,
+        method=method,
+        n_samples=n_samples,
+        bounds_handling=bounds_handling,
+        seed=seed,
     )
     lower, upper = estimation_result.ci(
         method=method,
@@ -106,7 +109,10 @@ def calculate_summary_data_estimation(
         seed=seed,
     )
     p_values = estimation_result.p_values(
-        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed,
+        method=method,
+        n_samples=n_samples,
+        bounds_handling=bounds_handling,
+        seed=seed,
     )
     summary_data = {
         "value": estimation_result.params,

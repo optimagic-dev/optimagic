@@ -112,7 +112,11 @@ def make_optimization_iteration_table(database, if_exists="extend"):
     ]
 
     Table(
-        table_name, database, *columns, sqlite_autoincrement=True, extend_existing=True,
+        table_name,
+        database,
+        *columns,
+        sqlite_autoincrement=True,
+        extend_existing=True,
     )
 
     database.create_all(database.bind)
@@ -129,7 +133,11 @@ def make_steps_table(database, if_exists="extend"):
         Column("name", String),  # e.g. "optimization-1", "exploration", not unique
     ]
     Table(
-        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True,
+        table_name,
+        database,
+        *columns,
+        extend_existing=True,
+        sqlite_autoincrement=True,
     )
     database.create_all(database.bind)
 
@@ -153,7 +161,11 @@ def make_optimization_problem_table(database, if_exists="extend"):
     ]
 
     Table(
-        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True,
+        table_name,
+        database,
+        *columns,
+        extend_existing=True,
+        sqlite_autoincrement=True,
     )
 
     database.create_all(database.bind)
@@ -200,7 +212,11 @@ def append_row(data, table_name, database, path, fast_logging):
 
 
 def _execute_write_statement(
-    statement, database, path, table_name, data,  # noqa: ARG001
+    statement,
+    database,
+    path,
+    table_name,
+    data,  # noqa: ARG001
 ):
     try:
         # this will automatically roll back the transaction if any exception is raised
@@ -337,7 +353,12 @@ def read_last_rows(
 
 
 def read_specific_row(
-    database, table_name, rowid, return_type, path=None, fast_logging=False,
+    database,
+    table_name,
+    rowid,
+    return_type,
+    path=None,
+    fast_logging=False,
 ):
     """Read a specific row from a table.
 
@@ -546,6 +567,10 @@ class RobustPickler:
 
     @staticmethod
     def dumps(
-        obj, protocol=None, *, fix_imports=True, buffer_callback=None,  # noqa: ARG004
+        obj,
+        protocol=None,
+        *,
+        fix_imports=True,
+        buffer_callback=None,  # noqa: ARG004
     ):
         return cloudpickle.dumps(obj, protocol=protocol)

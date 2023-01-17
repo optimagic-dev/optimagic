@@ -29,7 +29,9 @@ def test_get_initial_guess_for_lambda():
     model_hessian = rng.random((10, 10))
     model_hessian = model_hessian @ model_hessian.T
     model = ScalarModel(
-        linear_terms=model_gradient, square_terms=model_hessian, intercept=None,
+        linear_terms=model_gradient,
+        square_terms=model_hessian,
+        intercept=None,
     )
     res = init_lambdas_fast(model_gradient, model_hessian)
     expected = init_lambdas_orig(model)
@@ -44,7 +46,9 @@ def test_find_new_candidate_and_update_parameters():
     model_hessian = rng.random((10, 10))
     model_hessian = model_hessian @ model_hessian.T
     model = ScalarModel(
-        linear_terms=model_gradient, square_terms=model_hessian, intercept=None,
+        linear_terms=model_gradient,
+        square_terms=model_hessian,
+        intercept=None,
     )
     hessian_upper_triangular = np.triu(model_hessian)
     candidate = 0.8
@@ -55,7 +59,9 @@ def test_find_new_candidate_and_update_parameters():
     converged = False
     already_factorized = False
     lambdas = DampingFactors(
-        candidate=candidate, lower_bound=lower_bound, upper_bound=upper_bound,
+        candidate=candidate,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
     )
     hessian_info = HessianInfo(
         hessian_plus_lambda=hessian_plus_lambda,
@@ -75,7 +81,11 @@ def test_find_new_candidate_and_update_parameters():
         converged,
     )
     expected = find_new_and_update_candidate_orig(
-        model, hessian_info, lambdas, criteria, converged,
+        model,
+        hessian_info,
+        lambdas,
+        criteria,
+        converged,
     )
     aaae(res[0], expected[0])
     aaae(res[1], expected[1].hessian_plus_lambda)

@@ -66,7 +66,11 @@ def process_nonlinear_constraints(
 
 
 def _process_nonlinear_constraint(
-    c, constraint_eval, params, converter, numdiff_options,
+    c,
+    constraint_eval,
+    params,
+    converter,
+    numdiff_options,
 ):
     """Process a single nonlinear constraint."""
 
@@ -128,7 +132,9 @@ def _process_nonlinear_constraint(
         jac_matrix = block_tree_to_matrix(jac, constraint_eval, selected)
         jac_extended = _extend_jacobian(jac_matrix, selection_indices, n_params)
         jac_internal = converter.derivative_to_internal(
-            jac_extended, x, jac_is_flat=True,
+            jac_extended,
+            x,
+            jac_is_flat=True,
         )
         return np.atleast_2d(jac_internal)
 
@@ -177,11 +183,13 @@ def _process_nonlinear_constraint(
         transformation = _get_transformation(lower_bounds, upper_bounds)
 
         internal_constraint_func = _compose_funcs(
-            _internal_constraint_func, transformation["func"],
+            _internal_constraint_func,
+            transformation["func"],
         )
 
         jacobian_from_internal = _compose_funcs(
-            _internal_jacobian, transformation["derivative"],
+            _internal_jacobian,
+            transformation["derivative"],
         )
 
         n_constr = 2 * _n_constr if transformation["name"] == "stack" else _n_constr
@@ -287,7 +295,8 @@ def _get_selection_indices(params, selector):
     params_indices = tree_unflatten(params_treedef, indices, registry=registry)
     selected = selector(params_indices)
     selection_indices = np.array(
-        tree_just_flatten(selected, registry=registry), dtype=int,
+        tree_just_flatten(selected, registry=registry),
+        dtype=int,
     )
     return selection_indices, n_params
 
@@ -317,7 +326,8 @@ def _get_transformation(lower_bounds, upper_bounds):
     elif transformation_type == "stack":
         transformer = {
             "func": lambda v: np.concatenate(
-                (v - lower_bounds, upper_bounds - v), axis=0,
+                (v - lower_bounds, upper_bounds - v),
+                axis=0,
             ),
             "derivative": lambda v: np.concatenate((v, -v), axis=0),
         }

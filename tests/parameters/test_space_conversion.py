@@ -267,7 +267,9 @@ IDS = list(TEST_CASES)
 
 
 @pytest.mark.parametrize(
-    ("constraints", "params", "expected_internal"), PARAMETRIZATION, ids=IDS,
+    ("constraints", "params", "expected_internal"),
+    PARAMETRIZATION,
+    ids=IDS,
 )
 def test_space_converter_with_params(constraints, params, expected_internal):
     converter, internal = get_space_converter(
@@ -283,7 +285,8 @@ def test_space_converter_with_params(constraints, params, expected_internal):
     aaae(converter.params_from_internal(expected_internal.values), params.values)
 
     numerical_jacobian = first_derivative(
-        converter.params_from_internal, expected_internal.values,
+        converter.params_from_internal,
+        expected_internal.values,
     )["derivative"]
 
     calculated_jacobian = converter.derivative_to_internal(

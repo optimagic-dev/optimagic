@@ -96,7 +96,9 @@ def _aggregate_models_template(vector_model, aggregator):
     """
     intercept, linear_terms, square_terms = aggregator(vector_model)
     scalar_model = ScalarModel(
-        intercept=intercept, linear_terms=linear_terms, square_terms=square_terms,
+        intercept=intercept,
+        linear_terms=linear_terms,
+        square_terms=square_terms,
     )
     return scalar_model
 

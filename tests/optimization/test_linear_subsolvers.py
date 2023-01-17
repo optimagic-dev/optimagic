@@ -73,7 +73,15 @@ def test_trsbox_linear(model_gradient, lower_bounds, upper_bounds, delta, expect
 
 
 @pytest.mark.parametrize(
-    ("x_center", "c_term", "model_gradient", "lower_bounds", "upper_bounds", "delta", "expected"),
+    (
+        "x_center",
+        "c_term",
+        "model_gradient",
+        "lower_bounds",
+        "upper_bounds",
+        "delta",
+        "expected",
+    ),
     [
         (
             np.array([0.0, 0.0]),

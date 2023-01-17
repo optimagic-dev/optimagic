@@ -253,7 +253,9 @@ def first_derivative(
         updated_candidates = None
     else:
         richardson_candidates = _compute_richardson_candidates(
-            jac_candidates, steps, n_steps,
+            jac_candidates,
+            steps,
+            n_steps,
         )
         jac, updated_candidates = _consolidate_extrapolated(richardson_candidates)
 
@@ -274,7 +276,10 @@ def first_derivative(
         result["func_value"] = func_value
     if return_info:
         info = _collect_additional_info(
-            steps, evals, updated_candidates, target="first_derivative",
+            steps,
+            evals,
+            updated_candidates,
+            target="first_derivative",
         )
         result = {**result, **info}
     return result
@@ -524,7 +529,10 @@ def second_derivative(
     evals["one_step"] = _reshape_one_step_evals(raw_evals["one_step"], n_steps, len(x))
     evals["two_step"] = _reshape_two_step_evals(raw_evals["two_step"], n_steps, len(x))
     evals["cross_step"] = _reshape_cross_step_evals(
-        raw_evals["cross_step"], n_steps, len(x), f0,
+        raw_evals["cross_step"],
+        n_steps,
+        len(x),
+        f0,
     )
 
     # apply finite difference formulae
@@ -561,7 +569,10 @@ def second_derivative(
         result["func_value"] = func_value
     if return_info:
         info = _collect_additional_info(
-            steps, evals, updated_candidates, target="second_derivative",
+            steps,
+            evals,
+            updated_candidates,
+            target="second_derivative",
         )
         result = {**result, **info}
     return result
@@ -670,7 +681,9 @@ def _convert_evaluation_data_to_frame(steps, evals):
         df_steps = df_steps.reset_index()
         df_steps = df_steps.rename(columns={"index": "step_number"})
         df_steps = df_steps.melt(
-            id_vars="step_number", var_name="dim_x", value_name="step",
+            id_vars="step_number",
+            var_name="dim_x",
+            value_name="step",
         )
         df_steps = df_steps.sort_values("step_number")
         df_steps = df_steps.reset_index(drop=True)
@@ -722,7 +735,11 @@ def _convert_richardson_candidates_to_frame(jac, err):
 
 
 def _convert_evals_to_numpy(
-    raw_evals, key, registry, is_scalar_out=False, is_vector_out=False,
+    raw_evals,
+    key,
+    registry,
+    is_scalar_out=False,
+    is_vector_out=False,
 ):
     """harmonize the output of the function evaluations.
 
@@ -863,7 +880,10 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
     for method in ["forward", "backward", "central"]:
         for num_terms in range(1, n_steps):
             derivative, error = richardson_extrapolation(
-                jac_candidates[method], steps, method, num_terms,
+                jac_candidates[method],
+                steps,
+                method,
+                num_terms,
             )
             richardson_candidates[method + str(num_terms)] = {
                 "derivative": derivative,
@@ -910,7 +930,11 @@ def _select_minimizer_along_axis(derivative, errors):
 
 
 def _nan_skipping_batch_evaluator(
-    func, arguments, n_cores, error_handling, batch_evaluator,
+    func,
+    arguments,
+    n_cores,
+    error_handling,
+    batch_evaluator,
 ):
     """Evaluate func at each entry in arguments, skipping np.nan entries.
 
@@ -937,12 +961,16 @@ def _nan_skipping_batch_evaluator(
     # get the batch evaluator if it was provided as string
     if not callable(batch_evaluator):
         batch_evaluator = getattr(
-            batch_evaluators, f"{batch_evaluator}_batch_evaluator",
+            batch_evaluators,
+            f"{batch_evaluator}_batch_evaluator",
         )
 
     # evaluate functions
     evaluations = batch_evaluator(
-        func=func, arguments=real_args, n_cores=n_cores, error_handling=error_handling,
+        func=func,
+        arguments=real_args,
+        n_cores=n_cores,
+        error_handling=error_handling,
     )
 
     # combine results

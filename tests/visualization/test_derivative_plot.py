@@ -21,7 +21,8 @@ def test__select_derivative_with_minimal_error():
         ["central", 1, 0, 0, 0.07, 1.2],
     ]
     df_jac_cand = pd.DataFrame(
-        data, columns=["method", "num_term", "dim_x", "dim_f", "err", "der"],
+        data,
+        columns=["method", "num_term", "dim_x", "dim_f", "err", "der"],
     )
     df_jac_cand = df_jac_cand.set_index(["method", "num_term", "dim_x", "dim_f"])
     got = _select_derivative_with_minimal_error(df_jac_cand)
@@ -38,7 +39,8 @@ def test__select_derivative_with_minimal_error_given():
         ["central", 1, 0, 0, 0.07, 1.2],
     ]
     df_jac_cand = pd.DataFrame(
-        data, columns=["method", "num_term", "dim_x", "dim_f", "err", "der"],
+        data,
+        columns=["method", "num_term", "dim_x", "dim_f", "err", "der"],
     )
     df_jac_cand = df_jac_cand.set_index(["method", "num_term", "dim_x", "dim_f"])
     got = _select_derivative_with_minimal_error(df_jac_cand, given_method=True)
@@ -59,7 +61,8 @@ def test__select_eval_with_lowest_and_highest_step():
         [1, 5, 0, 0, 0.4, np.nan],
     ]
     df_evals = pd.DataFrame(
-        data, columns=["sign", "step_number", "dim_x", "dim_f", "step", "eval"],
+        data,
+        columns=["sign", "step_number", "dim_x", "dim_f", "step", "eval"],
     )
     df_evals = df_evals.set_index(["sign", "step_number", "dim_x", "dim_f"])
 

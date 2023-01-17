@@ -118,7 +118,8 @@ def data_fit_pounders():
     inputs_dict = {
         "y": np.array(test_data["f_interpolated"]),
         "m_mat": np.array(test_data["x_sample_monomial_basis"])[
-            : n_params + 1, : n_params + 1,
+            : n_params + 1,
+            : n_params + 1,
         ],
         "n_mat": np.array(test_data["monomial_basis"])[:n_samples],
         "z_mat": np.array(test_data["basis_null_space"]),
@@ -162,12 +163,14 @@ def data_get_feature_matrices_pounders():
 
     expected = {
         "m_mat": np.array(test_data["x_sample_monomial_basis_expected"])[
-            : n_params + 1, : n_params + 1,
+            : n_params + 1,
+            : n_params + 1,
         ],
         "n_mat": np.array(test_data["monomial_basis_expected"]),
         "z_mat": np.array(test_data["basis_null_space_expected"]),
         "n_z_mat": np.array(test_data["lower_triangular_expected"])[
-            :, n_params + 1 : n_samples,
+            :,
+            n_params + 1 : n_samples,
         ],
     }
 

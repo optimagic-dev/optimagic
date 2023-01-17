@@ -95,7 +95,8 @@ def test_create_cds_for_dashboard():
         k: v for k, v in d.items() if k in ["hello", "p1", "p2", "iteration"]
     }
     expected_param_cds = ColumnDataSource(
-        data=expected_param_data, name="params_history_cds",
+        data=expected_param_data,
+        name="params_history_cds",
     )
     _, params_history = dashboard_app._create_cds_for_dashboard(group_to_param_ids)
     assert expected_param_cds.data == params_history.data
@@ -106,7 +107,8 @@ def test_calculate_start_point(monkeypatch):
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
-        "estimagic.dashboard.dashboard_app.read_last_rows", fake_read_last_rows,
+        "estimagic.dashboard.dashboard_app.read_last_rows",
+        fake_read_last_rows,
     )
 
     updating_options = {
@@ -127,7 +129,8 @@ def test_calculate_start_point_no_negative_value(monkeypatch):
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
-        "estimagic.dashboard.dashboard_app.read_last_rows", fake_read_last_rows,
+        "estimagic.dashboard.dashboard_app.read_last_rows",
+        fake_read_last_rows,
     )
 
     res = dashboard_app._calculate_start_point(

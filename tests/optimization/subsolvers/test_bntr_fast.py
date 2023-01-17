@@ -97,7 +97,9 @@ def test_eval_criterion():
     linear_terms = np.arange(5).astype(float)
     square_terms = np.arange(25).reshape(5, 5).astype(float)
     assert eval_criterion_orig(
-        x_candidate, linear_terms, square_terms,
+        x_candidate,
+        linear_terms,
+        square_terms,
     ) == eval_criterion_fast(x_candidate, linear_terms, square_terms)
 
 
@@ -108,7 +110,10 @@ def test_get_info_on_active_bounds():
     lower_bounds = -np.ones(5)
     upper_bounds = np.ones(5)
     info_orig = get_info_bounds_orig(
-        x_candidate, linear_terms, lower_bounds, upper_bounds,
+        x_candidate,
+        linear_terms,
+        lower_bounds,
+        upper_bounds,
     )
     (
         active_lower,
@@ -183,7 +188,9 @@ def test_take_preliminary_gradient_descent_and_check_for_convergence():
         ],
     )
     model = ScalarModel(
-        linear_terms=model_gradient, square_terms=model_hessian, intercept=0,
+        linear_terms=model_gradient,
+        square_terms=model_hessian,
+        intercept=0,
     )
     x_candidate = np.zeros(5)
     lower_bounds = -np.ones(len(x_candidate))
@@ -250,7 +257,11 @@ def test_apply_bounds_to_conjugate_gradient_step():
         active_fixed_bounds,
     )
     res_orig = bounds_cg_orig(
-        step_inactive, x_candidate, lower_bounds, upper_bounds, bounds_info,
+        step_inactive,
+        x_candidate,
+        lower_bounds,
+        upper_bounds,
+        bounds_info,
     )
     aae(res_orig, res_fast)
     pass
@@ -340,10 +351,16 @@ def test_compute_predicet_reduction_from_conjugate_gradient_step():
         inactive_bounds,
     )
     bounds_info = ActiveBounds(
-        inactive=indices[inactive_bounds], active=indices[~inactive_bounds],
+        inactive=indices[inactive_bounds],
+        active=indices[~inactive_bounds],
     )
     res_orig = reduction_cg_step_orig(
-        cg_step, cg_step_inactive, grad, grad_inactive, hessian_inactive, bounds_info,
+        cg_step,
+        cg_step_inactive,
+        grad,
+        grad_inactive,
+        hessian_inactive,
+        bounds_info,
     )
     aae(res_orig, res_fast)
 
@@ -413,7 +430,9 @@ def test_perform_gradient_descent_step():
         "default_radius": 100,
     }
     model = ScalarModel(
-        linear_terms=model_gradient, square_terms=model_hessian, intercept=0,
+        linear_terms=model_gradient,
+        square_terms=model_hessian,
+        intercept=0,
     )
     bounds_info = ActiveBounds(inactive=indices[inactive_bounds])
     res_fast = gradient_descent_fast(
@@ -506,7 +525,11 @@ def test_minimize_bntr():
     }
     res_orig = bntr(model, lower_bounds, upper_bounds, **options)
     res_fast = _bntr_fast_jitted(
-        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options,
+        model.linear_terms,
+        model.square_terms,
+        lower_bounds,
+        upper_bounds,
+        **options,
     )
     # using aaae to get tests run on windows machines.
     aaae(res_orig["x"], res_fast[0])
@@ -530,7 +553,11 @@ def test_minimize_bntr_break_loop_early():
         "gtol_rel_conjugate_gradient": 10,
     }
     res_fast = _bntr_fast_jitted(
-        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options,
+        model.linear_terms,
+        model.square_terms,
+        lower_bounds,
+        upper_bounds,
+        **options,
     )
     # using aaae to get tests run on windows machines.
     aaae(np.zeros(len(model.linear_terms)), res_fast[0])

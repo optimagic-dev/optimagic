@@ -16,7 +16,8 @@ def test_get_params_groups_and_short_names_dict():
     }
     free_mask = [True] * 3 + [False] * 2 + [True] * (5 + 15)
     res_groups, res_names = get_params_groups_and_short_names(
-        params=params, free_mask=free_mask,
+        params=params,
+        free_mask=free_mask,
     )
     expected_groups = (
         [
@@ -56,7 +57,8 @@ def test_get_params_groups_and_short_names_numpy():
     expected_groups = ["Parameters, 1"] * 8 + ["Parameters, 2"] * 7
     expected_names = [f"{j}_{i}" for j in range(5) for i in range(3)]
     res_groups, res_names = get_params_groups_and_short_names(
-        params=params, free_mask=[True] * 15,
+        params=params,
+        free_mask=[True] * 15,
     )
     assert expected_groups == res_groups
     assert expected_names == res_names
@@ -67,7 +69,8 @@ def test_get_params_groups_and_short_names_dataframe():
     expected_groups = ["Parameters, 1"] * 8 + ["Parameters, 2"] * 7
     expected_names = [str(i) for i in range(15)]
     res_groups, res_names = get_params_groups_and_short_names(
-        params=params, free_mask=[True] * 15,
+        params=params,
+        free_mask=[True] * 15,
     )
     assert expected_groups == res_groups
     assert expected_names == res_names

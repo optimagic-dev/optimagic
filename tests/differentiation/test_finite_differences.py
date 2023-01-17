@@ -20,7 +20,8 @@ def jacobian_inputs():
     evals_neg1 = jac1 @ (np.zeros((4, 4)) - np.eye(4) * 0.1)
     evals_neg2 = jac2 @ (np.zeros((4, 4)) - np.eye(4) * 0.2)
     evals = Evals(
-        pos=np.array([evals_pos1, evals_pos2]), neg=np.array([evals_neg1, evals_neg2]),
+        pos=np.array([evals_pos1, evals_pos2]),
+        neg=np.array([evals_neg1, evals_neg2]),
     )
 
     expected_jac = np.array([jac1, jac2])

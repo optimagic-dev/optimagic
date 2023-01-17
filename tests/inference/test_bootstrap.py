@@ -17,7 +17,8 @@ def setup():
     out = {}
 
     out["df"] = pd.DataFrame(
-        np.array([[1, 10], [2, 7], [3, 6], [4, 5]]), columns=["x1", "x2"],
+        np.array([[1, 10], [2, 7], [3, 6], [4, 5]]),
+        columns=["x1", "x2"],
     )
 
     y = np.array([[2.0, 8.0], [2.0, 8.0], [2.5, 7.0], [3.0, 6.0], [3.25, 5.75]])
@@ -234,7 +235,9 @@ def test_cov_wrong_return_type(setup):
 
 def test_existing_result(seaborn_example):
     first_result = bootstrap(
-        data=seaborn_example["df"], outcome=_outcome_ols, seed=1234,
+        data=seaborn_example["df"],
+        outcome=_outcome_ols,
+        seed=1234,
     )
 
     expected_msg = "existing_result must be None or a BootstrapResult."

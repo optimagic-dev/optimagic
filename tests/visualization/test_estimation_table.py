@@ -35,7 +35,8 @@ from pandas.testing import assert_series_equal as ase
 # ======================================================================================
 def _get_models_multiindex():
     df = pd.DataFrame(
-        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"],
+        data=np.ones((3, 4)),
+        columns=["value", "ci_lower", "ci_upper", "p_value"],
     )
     df.index = pd.MultiIndex.from_tuples(
         [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")],
@@ -49,7 +50,8 @@ def _get_models_multiindex():
 
 def _get_models_single_index():
     df = pd.DataFrame(
-        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"],
+        data=np.ones((3, 4)),
+        columns=["value", "ci_lower", "ci_upper", "p_value"],
     )
     df.index = [f"p{i}" for i in [1, 2, 3]]
     info = {"n_obs": 400}
@@ -61,7 +63,8 @@ def _get_models_single_index():
 
 def _get_models_multiindex_multi_column():
     df = pd.DataFrame(
-        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"],
+        data=np.ones((3, 4)),
+        columns=["value", "ci_lower", "ci_upper", "p_value"],
     )
     df.index = pd.MultiIndex.from_tuples(
         [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")],
@@ -140,7 +143,9 @@ PARAMETRIZATION += [("html", render_html, models) for models in MODELS]
 @pytest.mark.parametrize(("return_type", "render_func", "models"), PARAMETRIZATION)
 def test_one_and_stage_rendering_are_equal(return_type, render_func, models):
     first_stage = estimation_table(
-        models, return_type="render_inputs", confidence_intervals=True,
+        models,
+        return_type="render_inputs",
+        confidence_intervals=True,
     )
     second_stage = render_func(siunitx_warning=False, **first_stage)
     one_stage = estimation_table(
@@ -242,7 +247,9 @@ def test_convert_model_to_series_without_inference():
     show_stars = True
     res = _convert_frame_to_string_series(df, significance_levels, show_stars)
     exp = pd.Series(
-        ["0.6$^{ }$", "2.3$^{** }$", "3.3$^{*** }$"], index=["a", "b", "c"], name="",
+        ["0.6$^{ }$", "2.3$^{** }$", "3.3$^{*** }$"],
+        index=["a", "b", "c"],
+        name="",
     )
     ase(exp, res)
 
@@ -444,7 +451,8 @@ def test_get_params_frames_with_common_index():
     exp = [
         pd.DataFrame(np.ones(5), index=list("abcde")),
         pd.DataFrame(
-            np.concatenate([np.ones(3), np.ones(2) * np.nan]), index=list("abcde"),
+            np.concatenate([np.ones(3), np.ones(2) * np.nan]),
+            index=list("abcde"),
         ),
     ]
     afe(res[0], exp[0])

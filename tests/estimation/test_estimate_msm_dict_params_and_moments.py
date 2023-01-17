@@ -68,7 +68,8 @@ def test_estimate_msm_dict_params_and_moments():
     }
 
     assert_almost_equal(
-        calculated.sensitivity("bias"), expected_sensitivity_to_bias_dict,
+        calculated.sensitivity("bias"),
+        expected_sensitivity_to_bias_dict,
     )
 
     expected_sensitivity_to_bias_arr = -np.eye(3)

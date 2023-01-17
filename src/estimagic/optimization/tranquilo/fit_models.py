@@ -92,7 +92,10 @@ def get_fitter(fitter, user_options=None, model_info=None):
         )
 
     out = partial(
-        _fitter_template, fitter=_fitter, model_info=model_info, options=reduced,
+        _fitter_template,
+        fitter=_fitter,
+        model_info=model_info,
+        options=reduced,
     )
 
     return out
@@ -142,7 +145,10 @@ def _fitter_template(
     # construct final square terms
     if model_info.has_interactions:
         square_terms = _reshape_square_terms_to_hess(
-            square_terms, n_params, n_residuals, model_info.has_squares,
+            square_terms,
+            n_params,
+            n_residuals,
+            model_info.has_squares,
         )
     elif model_info.has_squares:
         square_terms = 2 * np.stack([np.diag(a) for a in square_terms])
@@ -380,7 +386,9 @@ def _get_current_fit_minimal_frobenius_norm_of_hessian(
     for k in range(n_residuals):
         z_y_vec = np.dot(z_mat.T, y[:, k])
         coeffs_first_stage, *_ = np.linalg.lstsq(
-            np.atleast_2d(n_z_mat_square), np.atleast_1d(z_y_vec), rcond=None,
+            np.atleast_2d(n_z_mat_square),
+            np.atleast_1d(z_y_vec),
+            rcond=None,
         )
 
         coeffs_second_stage = np.atleast_2d(n_z_mat) @ coeffs_first_stage

@@ -61,11 +61,19 @@ def combine_plots(
     plots = deepcopy(plots)
 
     make_subplot_kwargs, nrows = get_make_subplot_kwargs(
-        sharex, sharey, make_subplot_kwargs, plots_per_row, plots,
+        sharex,
+        sharey,
+        make_subplot_kwargs,
+        plots_per_row,
+        plots,
     )
     fig = make_subplots(**make_subplot_kwargs)
     layout_kwargs = get_layout_kwargs(
-        layout_kwargs, legend_kwargs, title_kwargs, template, showlegend,
+        layout_kwargs,
+        legend_kwargs,
+        title_kwargs,
+        template,
+        showlegend,
     )
     for i, (row, col) in enumerate(
         itertools.product(np.arange(nrows), np.arange(plots_per_row)),
@@ -73,7 +81,9 @@ def combine_plots(
         try:
             subfig = plots[i]
             fig.update_xaxes(
-                title_text=subfig.layout.xaxis.title.text, col=col + 1, row=row + 1,
+                title_text=subfig.layout.xaxis.title.text,
+                col=col + 1,
+                row=row + 1,
             )
             if sharey:
                 if col == 0:
@@ -84,7 +94,9 @@ def combine_plots(
                     )
             else:
                 fig.update_yaxes(
-                    title_text=subfig.layout.yaxis.title.text, col=col + 1, row=row + 1,
+                    title_text=subfig.layout.yaxis.title.text,
+                    col=col + 1,
+                    row=row + 1,
                 )
         except IndexError:
             subfig = go.Figure()
@@ -251,7 +263,10 @@ def create_ind_dict(
             fig.add_trace(traces[trace])
         # adding title and styling axes and theme
         fig.update_layout(
-            title=names[ind], xaxis_title=x_title[ind], yaxis_title=y_title[ind], **kws,
+            title=names[ind],
+            xaxis_title=x_title[ind],
+            yaxis_title=y_title[ind],
+            **kws,
         )
         # scientific notations for axis ticks
         if scientific_notation:

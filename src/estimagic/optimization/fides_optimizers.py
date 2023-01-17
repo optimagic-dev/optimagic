@@ -160,7 +160,8 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
             hessian_class = getattr(hessian_approximation, hessian_name)
             hessian_instance = hessian_class()
     elif isinstance(
-        hessian_update_strategy, hessian_approximation.HessianApproximation,
+        hessian_update_strategy,
+        hessian_approximation.HessianApproximation,
     ):
         hessian_instance = hessian_update_strategy
         if isinstance(hessian_instance, hessians_needing_residuals):

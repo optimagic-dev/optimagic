@@ -63,7 +63,9 @@ def test_create_solution_times_n_evaluations():
     expected.columns.name = "algorithm"
 
     res = _create_solution_times(
-        df=df, runtime_measure="n_evaluations", converged_info=info,
+        df=df,
+        runtime_measure="n_evaluations",
+        converged_info=info,
     )
     pd.testing.assert_frame_equal(res, expected)
 

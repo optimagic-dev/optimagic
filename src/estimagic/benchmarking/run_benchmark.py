@@ -61,7 +61,8 @@ def run_benchmark(
     """
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(
-            batch_evaluators, f"{batch_evaluator}_batch_evaluator",
+            batch_evaluators,
+            f"{batch_evaluator}_batch_evaluator",
         )
     opt_options = _process_optimize_options(
         optimize_options,

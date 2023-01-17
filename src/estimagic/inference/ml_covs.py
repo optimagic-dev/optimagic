@@ -265,7 +265,8 @@ def _stratification(jac, design_info):
         psu_jac_mean = np.sum(psu_jac, axis=0) / len(psu_in_strata)
         if len(psu_in_strata) > 1:
             mid_step = np.dot(
-                (psu_jac[1:] - psu_jac_mean).T, (psu_jac[1:] - psu_jac_mean),
+                (psu_jac[1:] - psu_jac_mean).T,
+                (psu_jac[1:] - psu_jac_mean),
             )
             strata_meat += (
                 fpc * (len(psu_in_strata) / (len(psu_in_strata) - 1)) * mid_step

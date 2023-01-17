@@ -522,7 +522,9 @@ def _scipy_least_squares(
 
 _scipy_ls_trf = functools.partial(_scipy_least_squares, method="trf")
 scipy_ls_trf = mark_minimizer(
-    _scipy_ls_trf, name="scipy_ls_trf", primary_criterion_entry="root_contributions",
+    _scipy_ls_trf,
+    name="scipy_ls_trf",
+    primary_criterion_entry="root_contributions",
 )
 
 _scipy_ls_dogbox = functools.partial(_scipy_least_squares, method="dogbox")

@@ -112,7 +112,8 @@ def nlc_2d_example():
 
 TEST_CASES = list(
     itertools.product(
-        NLC_ALGORITHMS, ["flat", "long", "equality", "equality_and_inequality"],
+        NLC_ALGORITHMS,
+        ["flat", "long", "equality", "equality_and_inequality"],
     ),
 )
 

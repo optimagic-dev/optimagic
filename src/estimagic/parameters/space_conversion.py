@@ -91,7 +91,8 @@ def get_space_converter(
     _dim_internal = int(constr_info["internal_free"].sum())
 
     _pre_replace_jac = pre_replace_jacobian(
-        pre_replacements=constr_info["pre_replacements"], dim_in=_dim_internal,
+        pre_replacements=constr_info["pre_replacements"],
+        dim_in=_dim_internal,
     )
 
     _post_replace_jac = post_replace_jacobian(
@@ -219,7 +220,8 @@ def reparametrize_from_internal(
     for constr in transformations:
         func = getattr(kt, f"{constr['type']}_from_internal")
         external_values[constr["index"]] = func(
-            external_values[constr["index"]], constr,
+            external_values[constr["index"]],
+            constr,
         )
 
     # do post-replacements

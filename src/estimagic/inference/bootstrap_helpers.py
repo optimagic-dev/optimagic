@@ -2,7 +2,11 @@ import pandas as pd
 
 
 def check_inputs(
-    data=None, cluster_by=None, ci_method="percentile", ci_level=0.95, skipdata=False,
+    data=None,
+    cluster_by=None,
+    ci_method="percentile",
+    ci_level=0.95,
+    skipdata=False,
 ):
     """Check validity of inputs.
 

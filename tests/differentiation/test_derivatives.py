@@ -138,7 +138,11 @@ def test_first_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
         return x**2
 
     calculated = first_derivative(
-        f, 3.0, return_func_value=True, return_info=False, n_cores=1,
+        f,
+        3.0,
+        return_func_value=True,
+        return_info=False,
+        n_cores=1,
     )
     expected = {"derivative": 6.0, "func_value": 9.0}
     assert calculated == expected
@@ -150,7 +154,11 @@ def test_second_derivative_scalar_with_return_func_value(method):  # noqa: ARG00
         return x**3
 
     calculated = second_derivative(
-        f, 3.0, return_func_value=True, return_info=False, n_cores=1,
+        f,
+        3.0,
+        return_func_value=True,
+        return_info=False,
+        n_cores=1,
     )
     expected = {"derivative": 18.0, "func_value": 27.0}
 
@@ -187,7 +195,8 @@ def test_consolidate_one_step_derivatives():
     backward = np.zeros_like(forward)
 
     calculated = _consolidate_one_step_derivatives(
-        {"forward": forward, "backward": backward}, ["forward", "backward"],
+        {"forward": forward, "backward": backward},
+        ["forward", "backward"],
     )
     expected = np.array([[0, 1, 1]] * 4)
     aaae(calculated, expected)
@@ -267,7 +276,8 @@ def test_convert_evaluation_data_to_frame():
         [-1, 1, 1, 0, 3, -3],
     ]
     expected = pd.DataFrame(
-        expected, columns=["sign", "step_number", "dim_x", "dim_f", "step", "eval"],
+        expected,
+        columns=["sign", "step_number", "dim_x", "dim_f", "step", "eval"],
     )
     got = _convert_evaluation_data_to_frame(steps, evals)
     assert_frame_equal(expected, got.reset_index(), check_dtype=False)
@@ -293,7 +303,8 @@ def test__convert_richardson_candidates_to_frame():
         ["forward", 2, 1, 1, 3, 0],
     ]
     expected = pd.DataFrame(
-        expected, columns=["method", "num_term", "dim_x", "dim_f", "der", "err"],
+        expected,
+        columns=["method", "num_term", "dim_x", "dim_f", "der", "err"],
     )
     expected = expected.set_index(["method", "num_term", "dim_x", "dim_f"])
     got = _convert_richardson_candidates_to_frame(jac, err)

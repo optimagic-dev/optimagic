@@ -13,7 +13,10 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 def load_history(start_vec, solver_sub):
     start_vec_str = np.array2string(
-        start_vec, precision=3, separator=",", suppress_small=False,
+        start_vec,
+        precision=3,
+        separator=",",
+        suppress_small=False,
     )
 
     history_x = np.genfromtxt(

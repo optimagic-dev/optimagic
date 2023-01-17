@@ -142,7 +142,9 @@ class History:
             xs = self.get_xs()
 
             out = _find_indices_in_trust_region(
-                xs, center=trustregion.center, radius=trustregion.radius,
+                xs,
+                center=trustregion.center,
+                radius=trustregion.radius,
             )
 
             if norm != "infinity":

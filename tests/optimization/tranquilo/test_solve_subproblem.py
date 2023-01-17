@@ -30,7 +30,9 @@ def test_without_bounds(solver_name):
     )
 
     model = ScalarModel(
-        intercept=0, linear_terms=linear_terms, square_terms=quadratic_terms,
+        intercept=0,
+        linear_terms=linear_terms,
+        square_terms=quadratic_terms,
     )
 
     trustregion = namedtuple("Trustregion", ["center", "radius"])(

@@ -40,7 +40,9 @@ def tree_params_converter(tree_params):
             tree_just_flatten(params, registry=registry),
         ),
         params_unflatten=lambda x: tree_unflatten(
-            treedef, x.tolist(), registry=registry,
+            treedef,
+            x.tolist(),
+            registry=registry,
         ),
         func_flatten=None,
         derivative_flatten=None,
@@ -203,7 +205,9 @@ def test_process_selectors_numpy_array_invalid_fields(field, np_params_converter
 
 @pytest.mark.parametrize("field", ["selectors", "queries", "locs"])
 def test_process_selectors_dataframe_invalid_fields(
-    field, df_params, df_params_converter,
+    field,
+    df_params,
+    df_params_converter,
 ):
     with pytest.raises(InvalidConstraintError):
         process_selectors(
@@ -216,7 +220,9 @@ def test_process_selectors_dataframe_invalid_fields(
 
 @pytest.mark.parametrize("field", ["selectors", "queries", "query", "locs", "loc"])
 def test_process_selectors_tree_invalid_fields(
-    field, tree_params, tree_params_converter,
+    field,
+    tree_params,
+    tree_params_converter,
 ):
     with pytest.raises(InvalidConstraintError):
         process_selectors(

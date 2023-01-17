@@ -11,7 +11,9 @@ def pytree_params():
     pytree_params = {
         "delta": 0.95,
         "utility": pd.DataFrame(
-            [[0.5, 0]] * 3, index=["a", "b", "c"], columns=["value", "lower_bound"],
+            [[0.5, 0]] * 3,
+            index=["a", "b", "c"],
+            columns=["value", "lower_bound"],
         ),
         "probs": np.array([[0.8, 0.2], [0.3, 0.7]]),
     }
@@ -32,7 +34,9 @@ def test_get_bounds_subdataframe(pytree_params):
         "utility": pd.DataFrame([[1]] * 2, index=["a", "b"], columns=["value"]),
     }
     lb, ub = get_bounds(
-        pytree_params, lower_bounds=lower_bounds, upper_bounds=upper_bounds,
+        pytree_params,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
     )
 
     assert np.all(lb[1:3] == np.ones(2))

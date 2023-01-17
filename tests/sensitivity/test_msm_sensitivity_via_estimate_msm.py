@@ -53,7 +53,9 @@ def params():
     params_index = [["beta"], ["intersection", "x1", "x2"]]
     params_index = pd.MultiIndex.from_product(params_index, names=["type", "name"])
     params = pd.DataFrame(
-        data=[[0.57735], [0.57735], [0.57735]], index=params_index, columns=["value"],
+        data=[[0.57735], [0.57735], [0.57735]],
+        index=params_index,
+        columns=["value"],
     )
     return params
 
