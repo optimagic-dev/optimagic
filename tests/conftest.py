@@ -5,7 +5,7 @@ import pytest
 import statsmodels.api as sm
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(autouse=True)
 def fresh_directory(tmp_path):
     """Each test is executed in a fresh directory."""
     os.chdir(tmp_path)

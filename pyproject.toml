@@ -28,7 +28,7 @@ infer_latex_dependencies = true
 [tool.ruff]
 target-version = "py37"
 select = ["ALL"]
-fix = true
+fix = false
 extend-ignore = [
     # Docstrings
     "D103", # missing docstring in public function
@@ -58,6 +58,7 @@ extend-ignore = [
     "RET", # unnecessary elif or else statements after return, rais, continue, ...
     "S324", # Probable use of insecure hash function.
     "COM812", # trailing comma missing, but black takes care of that
+    "PT007", # wrong type in parametrize, gave false positives
 
 
     # Things we are not sure we want
@@ -75,11 +76,9 @@ extend-ignore = [
     "C901",  # function too complex
     "PT011",
     "PT006",
-    "PT003",
     "PT012",
     "PT004",
     "PT018",
-    "PT007",
 
 
     # ======================================

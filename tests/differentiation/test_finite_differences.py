@@ -6,7 +6,7 @@ from estimagic.differentiation.generate_steps import Steps
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def jacobian_inputs():
     """Very contrived test case for finite difference formulae with linear function."""
     steps_pos = np.array([[0.1, 0.1, 0.1, 0.1], [0.2, 0.2, 0.2, 0.2]])
