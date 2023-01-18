@@ -114,7 +114,7 @@ def test_get_converter_with_trees():
     aaae(converter.func_to_internal({"contributions": {"d": 1, "e": 2}}), 3)
 
 
-@pytest.fixture
+@pytest.fixture()
 def fast_kwargs():
     kwargs = {
         "params": np.arange(3),

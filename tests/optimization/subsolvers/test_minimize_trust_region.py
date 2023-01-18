@@ -269,7 +269,7 @@ def test_update_candidate_vector_and_reduction_without_active_bounds():
         aae(res_orig[i], res_fast[i])
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_perform_alternative_tr_step():
     x_candidate = np.zeros(5)
     x_bounded = np.array([0.1] * 2 + [0] * 3)
@@ -302,7 +302,7 @@ def test_perform_alternative_tr_step():
     aae(res_orig, res_fast)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_perform_alternative_tr_step_without_active_bounds():
     x_candidate = np.zeros(5)
     x_bounded = np.zeros(5)
@@ -392,7 +392,7 @@ def test_calc_upper_bound_on_tangent_without_active_bounds():
             assert res_fast[i].size == 0
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_minimize_trs_box_quadratic():
     model_gradient = np.arange(10).astype(float)
     model_hessian = np.arange(100).reshape(10, 10).astype(float)
@@ -412,7 +412,7 @@ def test_minimize_trs_box_quadratic():
     aae(res_fast, res_orig)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_minimize_stcg_fast():
     model_gradient = np.arange(10).astype(float)
     model_hessian = np.arange(100).reshape(10, 10).astype(float)

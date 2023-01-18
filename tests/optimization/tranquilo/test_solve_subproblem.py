@@ -9,7 +9,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 solvers = ["gqtpar", "gqtpar_fast"]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize("solver_name", solvers, ids=solvers)
 def test_without_bounds(solver_name):
     linear_terms = np.array([-0.0005429824695352, -0.1032556117176, -0.06816855282091])

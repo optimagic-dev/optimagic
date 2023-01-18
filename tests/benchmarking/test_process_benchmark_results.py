@@ -18,7 +18,7 @@ from estimagic.benchmarking.process_benchmark_results import (
 PROBLEMS = ["prob1", "prob2", "prob3"]
 
 
-@pytest.fixture
+@pytest.fixture()
 def problem_algo_eval_df():
     df = pd.DataFrame()
     df["problem"] = ["prob1"] * 8 + ["prob2"] * 6
@@ -119,7 +119,7 @@ def test_normalize_maximize():
     pd.testing.assert_series_equal(res, expected)
 
 
-@pytest.fixture
+@pytest.fixture()
 def df_for_clip_histories(problem_algo_eval_df):
     df = problem_algo_eval_df
     df["monotone_criterion_normalized"] = [
@@ -291,7 +291,7 @@ def test_make_history_monotone_minimize():
     pd.testing.assert_series_equal(res_shuffled, expected)
 
 
-@pytest.fixture
+@pytest.fixture()
 def benchmark_results():
     sec = pd.Timedelta(seconds=1)
     results = {
