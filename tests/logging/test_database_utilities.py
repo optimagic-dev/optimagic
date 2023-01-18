@@ -70,7 +70,8 @@ def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
     make_optimization_iteration_table(database)
     append_row(iteration_data, "optimization_iterations", database, path, False)
     res = read_last_rows(database, "optimization_iterations", 1, "list_of_dicts")
-    assert isinstance(res, list) and isinstance(res[0], dict)
+    assert isinstance(res, list)
+    assert isinstance(res[0], dict)
     res = res[0]
     assert res["rowid"] == 1
     assert_array_equal(res["params"], iteration_data["params"])
