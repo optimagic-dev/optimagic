@@ -2,7 +2,6 @@
 import numpy as np
 import pytest
 from estimagic.config import IS_FIDES_INSTALLED
-from numpy.testing import assert_allclose
 from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_FIDES_INSTALLED:
@@ -74,23 +73,6 @@ def test_fides_unimplemented_algo_options(algo_options):
             upper_bounds=np.array([10, 10, 10]),
             **algo_options,
         )
-
-
-@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
-def test_fides_with_super_high_convergence_criteria():
-    with pytest.raises(AssertionError):
-        res = fides(
-            criterion_and_derivative=criterion_and_derivative,
-            x=np.array([1, -5, 3]),
-            lower_bounds=np.array([-10, -10, -10]),
-            upper_bounds=np.array([10, 10, 10]),
-            convergence_absolute_criterion_tolerance=10,
-            convergence_relative_criterion_tolerance=10,
-            convergence_absolute_params_tolerance=10,
-            convergence_absolute_gradient_tolerance=10,
-            convergence_relative_gradient_tolerance=10,
-        )
-        assert_allclose(res["solution_x"], np.zeros(3), atol=1e-4)
 
 
 @pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")

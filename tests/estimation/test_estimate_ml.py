@@ -93,7 +93,7 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
 # ======================================================================================
 
 
-@pytest.fixture
+@pytest.fixture()
 def logit_np_inputs():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
@@ -107,7 +107,7 @@ def logit_np_inputs():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def fitted_logit_model(logit_object):
     """We need to use a generic model class to access all standard errors etc."""
 
@@ -374,7 +374,7 @@ def normal_loglike(params, y):
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def normal_inputs():
     true = {
         "mean": 1.0,
