@@ -1226,8 +1226,8 @@ def _generate_notes_latex(
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if not type(n)==str]} are of types
-                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        {[n for n in custom_notes if type(n) != str]} are of types
+                        {[type(n) for n in custom_notes if type(n) != str]}
                         respectively."""
                     )
                 for n in custom_notes:
@@ -1286,8 +1286,8 @@ def _generate_notes_html(
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if not type(n)==str]} are of types
-                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        {[n for n in custom_notes if type(n) != str]} are of types
+                        {[type(n) for n in custom_notes if type(n) != str]}
                         respectively."""
                     )
                 notes_text += """
