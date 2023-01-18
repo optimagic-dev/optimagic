@@ -45,7 +45,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
-    "nbsphinx",
+    "myst-nb",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
     "sphinx_copybutton",
