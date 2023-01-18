@@ -4,7 +4,7 @@ from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.options import RadiusOptions
 
 
-@pytest.fixture
+@pytest.fixture()
 def options():
     return RadiusOptions()
 
