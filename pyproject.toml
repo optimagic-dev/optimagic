@@ -74,7 +74,6 @@ extend-ignore = [
     "ANN",
     "C901",  # function too complex
     "PT", # pytest related warnings
-    "SIM210",
     # ======================================
 ]
 

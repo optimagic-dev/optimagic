@@ -251,7 +251,7 @@ def _process_pounders_results(residuals_out, tao):
         "n_criterion_evaluations": tao.getIterationNumber(),
         "n_derivative_evaluations": None,
         "n_iterations": None,
-        "success": True if convergence_code >= 0 else False,
+        "success": bool(convergence_code >= 0),
         "reached_convergence_criterion": convergence_reason
         if convergence_code >= 0
         else None,
