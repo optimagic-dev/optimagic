@@ -76,7 +76,6 @@ extend-ignore = [
     "PT", # pytest related warnings
     "SIM210",
     "SIM401",
-    "SIM103",
     # ======================================
 ]
 
