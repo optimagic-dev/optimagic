@@ -156,8 +156,6 @@ nb_execution_excludepatterns = [
     # Includes patsy that is not found  in the doc build
     # Even though it was added to the rtd_environment
     "getting_started/estimation/first_likelihood_estimation_with_estimagic",
-    # Slow notebook: long time to load tf.ds
-    "notebooks/neural_network_with_tfds_data.*",
 ]
 
 # -- Options for HTML output ----------------------------------------------
