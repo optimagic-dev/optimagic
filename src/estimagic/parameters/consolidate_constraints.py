@@ -198,10 +198,7 @@ def _consolidate_fixes_with_equality_constraints(
     """
     fixed_value = np.full(len(parvec), np.nan)
     for fix in fixed_constraints:
-        if "value" in fix:
-            fixed_value[fix["index"]] = fix["value"]
-        else:
-            fixed_value[fix["index"]] = parvec[fix["index"]]
+        fixed_value[fix["index"]] = fix.get("value", parvec[fix["index"]])
 
     for eq in equality_constraints:
         if np.isfinite(fixed_value[eq["index"]]).any():
