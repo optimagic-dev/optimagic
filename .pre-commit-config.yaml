@@ -1,10 +1,14 @@
+---
 repos:
   - repo: meta
     hooks:
       - id: check-hooks-apply
       - id: check-useless-excludes
     # -   id: identity  # Prints all files passed to pre-commits. Debugging.
-
+  - repo: https://github.com/lyz-code/yamlfix
+    rev: 1.2.0
+    hooks:
+      - id: yamlfix
   - repo: local
     hooks:
       - id: update-environment-files
@@ -18,7 +22,8 @@ repos:
     rev: v4.4.0
     hooks:
       - id: check-added-large-files
-        args: ["--maxkb=1300"]
+        args:
+          - --maxkb=1300
         exclude: tests/optimization/fixtures/
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -31,11 +36,18 @@ repos:
       - id: forbid-submodules
       - id: mixed-line-ending
       - id: name-tests-test
-        args: [--pytest-test-first]
+        args:
+          - --pytest-test-first
       - id: no-commit-to-branch
-        args: [--branch, main]
+        args:
+          - --branch
+          - main
       - id: trailing-whitespace
 
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.28.0
+    hooks:
+      - id: yamllint
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.9.0
     hooks:
@@ -50,43 +62,49 @@ repos:
     rev: v3.9.0
     hooks:
       - id: reorder-python-imports
-        types: [python]
+        types:
+          - python
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.3.1
     hooks:
       - id: pyupgrade
-        args: [--py38-plus]
+        args:
+          - --py38-plus
 
   - repo: https://github.com/asottile/blacken-docs
     rev: v1.12.1
     hooks:
       - id: blacken-docs
-        additional_dependencies: [black==22.3.0]
+        additional_dependencies:
+          - black==22.3.0
         exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.md
 
   - repo: https://github.com/psf/black
-    rev: "22.12.0"
+    rev: 22.12.0
     hooks:
       - id: black
         language_version: python3.10
 
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: "1.6.1"
+    rev: 1.6.1
 
     hooks:
       - id: nbqa-black
-        additional_dependencies: [black==22.3.0]
+        additional_dependencies:
+          - black==22.3.0
       - id: nbqa-pyupgrade
-        additional_dependencies: [pyupgrade==2.7.3]
-        exclude: "inference|differentiation|miscellaneous"
+        additional_dependencies:
+          - pyupgrade==2.7.3
+        exclude: inference|differentiation|miscellaneous
       - id: nbqa-isort
-        additional_dependencies: [isort==5.6.4]
+        additional_dependencies:
+          - isort==5.6.4
 
   - repo: https://github.com/mgedmin/check-manifest
-    rev: "0.49"
+    rev: '0.49'
     hooks:
-    -   id: check-manifest
+      - id: check-manifest
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.205
