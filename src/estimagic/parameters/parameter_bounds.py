@@ -54,14 +54,10 @@ def get_bounds(
     nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)  # noqa: ARG005
 
     lower_flat = _update_bounds_and_flatten(
-        nan_tree,
-        lower_bounds,
-        direction="lower_bound",
+        nan_tree, lower_bounds, direction="lower_bound"
     )
     upper_flat = _update_bounds_and_flatten(
-        nan_tree,
-        upper_bounds,
-        direction="upper_bound",
+        nan_tree, upper_bounds, direction="upper_bound"
     )
 
     if len(lower_flat) != n_params:
@@ -74,17 +70,13 @@ def get_bounds(
 
     if add_soft_bounds:
         lower_flat_soft = _update_bounds_and_flatten(
-            nan_tree,
-            soft_lower_bounds,
-            direction="soft_lower_bound",
+            nan_tree, soft_lower_bounds, direction="soft_lower_bound"
         )
         lower_flat_soft[np.isnan(lower_flat_soft)] = -np.inf
         lower_flat = np.maximum(lower_flat, lower_flat_soft)
 
         upper_flat_soft = _update_bounds_and_flatten(
-            nan_tree,
-            soft_upper_bounds,
-            direction="soft_upper_bound",
+            nan_tree, soft_upper_bounds, direction="soft_upper_bound"
         )
         upper_flat_soft[np.isnan(upper_flat_soft)] = np.inf
         upper_flat = np.minimum(upper_flat, upper_flat_soft)

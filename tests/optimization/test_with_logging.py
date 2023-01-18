@@ -32,7 +32,7 @@ for algo in algorithms:
         test_cases.append((algo, p))
 
 
-@pytest.mark.parametrize(("algorithm", "params"), test_cases)
+@pytest.mark.parametrize("algorithm, params", test_cases)
 def test_optimization_with_valid_logging(algorithm, params):
     res = minimize(
         flexible_sos_ls,

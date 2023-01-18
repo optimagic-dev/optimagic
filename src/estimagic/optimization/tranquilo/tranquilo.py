@@ -113,7 +113,7 @@ def _tranquilo(
     if not silence_experimental_warning:
         warnings.warn(
             "Tranquilo is extremely experimental. algo_options and results will change "
-            "frequently and without notice. Do not use.",
+            "frequently and without notice. Do not use."
         )
 
     # ==================================================================================
@@ -144,7 +144,10 @@ def _tranquilo(
     )
 
     if fitter is None:
-        fitter = "powell" if functype == "scalar" else "ols"
+        if functype == "scalar":
+            fitter = "powell"
+        else:
+            fitter = "ols"
 
     if functype == "scalar":
         aggregator = "identity"
@@ -308,9 +311,7 @@ def _tranquilo(
 
         if is_accepted:
             state = state._replace(
-                index=candidate_index,
-                x=candidate_x,
-                fval=candidate_fval,
+                index=candidate_index, x=candidate_x, fval=candidate_fval
             )
 
         states.append(state)
@@ -328,8 +329,7 @@ def _tranquilo(
 
         if is_accepted:
             new_trustregion = state.trustregion._replace(
-                center=candidate_x,
-                radius=new_radius,
+                center=candidate_x, radius=new_radius
             )
         else:
             new_trustregion = state.trustregion._replace(radius=new_radius)
@@ -422,7 +422,10 @@ def _is_converged(states, options):
 def _process_surrogate_model(surrogate_model, functype):
 
     if surrogate_model is None:
-        surrogate_model = "quadratic" if functype == "scalar" else "linear"
+        if functype == "scalar":
+            surrogate_model = "quadratic"
+        else:
+            surrogate_model = "linear"
 
     if isinstance(surrogate_model, ModelInfo):
         out = surrogate_model

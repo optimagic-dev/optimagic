@@ -10,7 +10,7 @@ from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture()
+@pytest.fixture
 def data():
     df = pd.DataFrame([[1, 10], [2, 7], [3, 6], [4, 5]], columns=["x1", "x2"])
     return df
@@ -68,7 +68,7 @@ def test_get_bootstrap_estimates_with_error_and_raise(data):
     rng = get_rng(seed=1234)
 
     def _raise_assertion_error(data):  # noqa: ARG001
-        assert 1 == 2
+        raise AssertionError()
 
     with pytest.raises(AssertionError):
         get_bootstrap_outcomes(
@@ -84,7 +84,7 @@ def test_get_bootstrap_estimates_with_all_errors_and_continue(data):
     rng = get_rng(seed=1234)
 
     def _raise_assertion_error(data):  # noqa: ARG001
-        assert 1 == 2
+        raise AssertionError()
 
     with pytest.warns(UserWarning):
         with pytest.raises(RuntimeError):

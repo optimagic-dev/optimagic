@@ -97,7 +97,7 @@ def criterion_and_derivative_probit(x):
     return -loglike(x), score(x)
 
 
-@pytest.fixture()
+@pytest.fixture
 def result_statsmodels_logit():
     endog, exog = generate_test_data()
     result = sm.Logit(endog, exog).fit()
@@ -105,7 +105,7 @@ def result_statsmodels_logit():
     return result
 
 
-@pytest.fixture()
+@pytest.fixture
 def result_statsmodels_probit():
     endog, exog = generate_test_data()
     result = sm.Probit(endog, exog).fit()
@@ -114,7 +114,7 @@ def result_statsmodels_probit():
 
 
 @pytest.mark.parametrize(
-    ("criterion_and_derivative", "result_statsmodels"),
+    "criterion_and_derivative, result_statsmodels",
     [
         (criterion_and_derivative_logit, "result_statsmodels_logit"),
         (criterion_and_derivative_probit, "result_statsmodels_probit"),

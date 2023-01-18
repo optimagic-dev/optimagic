@@ -43,7 +43,7 @@ def tao_pounders(
             "The 'tao_pounders' algorithm requires the petsc4py package to be "
             "installed. If you are using Linux or MacOS, install the package with "
             "'conda install -c conda-forge petsc4py. The package is not available on "
-            "Windows. Windows users can use estimagics 'pounders' algorithm instead.",
+            "Windows. Windows users can use estimagics 'pounders' algorithm instead."
         )
 
     first_eval = criterion(x)
@@ -127,14 +127,14 @@ def tao_pounders(
         and convergence_absolute_gradient_tolerance is False
     ):
         tao.setConvergenceTest(
-            functools.partial(_grtol_conv, convergence_relative_gradient_tolerance),
+            functools.partial(_grtol_conv, convergence_relative_gradient_tolerance)
         )
     elif (
         convergence_relative_gradient_tolerance is False
         and convergence_scaled_gradient_tolerance is False
     ):
         tao.setConvergenceTest(
-            functools.partial(_gatol_conv, convergence_absolute_gradient_tolerance),
+            functools.partial(_gatol_conv, convergence_absolute_gradient_tolerance)
         )
     elif convergence_scaled_gradient_tolerance is False:
         tao.setConvergenceTest(
@@ -142,7 +142,7 @@ def tao_pounders(
                 _grtol_gatol_conv,
                 convergence_relative_gradient_tolerance,
                 convergence_absolute_gradient_tolerance,
-            ),
+            )
         )
 
     # Run the problem.
@@ -251,7 +251,7 @@ def _process_pounders_results(residuals_out, tao):
         "n_criterion_evaluations": tao.getIterationNumber(),
         "n_derivative_evaluations": None,
         "n_iterations": None,
-        "success": bool(convergence_code >= 0),
+        "success": True if convergence_code >= 0 else False,
         "reached_convergence_criterion": convergence_reason
         if convergence_code >= 0
         else None,

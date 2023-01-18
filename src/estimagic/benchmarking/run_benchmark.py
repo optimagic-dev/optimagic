@@ -61,8 +61,7 @@ def run_benchmark(
     """
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(
-            batch_evaluators,
-            f"{batch_evaluator}_batch_evaluator",
+            batch_evaluators, f"{batch_evaluator}_batch_evaluator"
         )
     opt_options = _process_optimize_options(
         optimize_options,
@@ -161,7 +160,7 @@ def _get_results(names, raw_results, kwargs_list):
         if isinstance(result, OptimizeResult):
             history = result.history
             params_history = pd.DataFrame(
-                [tree_just_flatten(p, registry=registry) for p in history["params"]],
+                [tree_just_flatten(p, registry=registry) for p in history["params"]]
             )
             criterion_history = pd.Series(history["criterion"])
             time_history = pd.Series(history["runtime"])
@@ -169,14 +168,14 @@ def _get_results(names, raw_results, kwargs_list):
             _criterion = inputs["criterion"]
 
             params_history = pd.DataFrame(
-                tree_just_flatten(inputs["params"], registry=registry),
+                tree_just_flatten(inputs["params"], registry=registry)
             ).T
             criterion_history = pd.Series(_criterion(inputs["params"])["value"])
 
             time_history = pd.Series([np.inf])
         else:
             raise ValueError(
-                "'result' object is expected to be of type 'dict' or 'str'.",
+                "'result' object is expected to be of type 'dict' or 'str'."
             )
 
         results[name] = {

@@ -11,12 +11,7 @@ class LinearModel(NamedTuple):
 
 
 def minimize_trsbox_linear(
-    linear_model,
-    lower_bounds,
-    upper_bounds,
-    trustregion_radius,
-    *,
-    zero_treshold=1e-14,
+    linear_model, lower_bounds, upper_bounds, trustregion_radius, *, zero_treshold=1e-14
 ):
     """Minimize a linear trust-region subproblem using the trsbox algorithm.
 
@@ -70,10 +65,7 @@ def minimize_trsbox_linear(
             break
 
         x_candidate_unconstr = _take_unconstrained_step_up_to_boundary(
-            x_candidate,
-            direction,
-            trustregion_radius,
-            zero_treshold=zero_treshold,
+            x_candidate, direction, trustregion_radius, zero_treshold=zero_treshold
         )
 
         active_bound, index_active_bound = _find_next_active_bound(
@@ -105,7 +97,7 @@ def improve_geomtery_trsbox_linear(
     upper_bounds,
     trustregion_radius,
     *,
-    zero_treshold=1e-14,
+    zero_treshold=1e-14
 ):
     """Maximize a Lagrange polynomial of degree one to improve geometry of the model.
 
@@ -155,7 +147,7 @@ def improve_geomtery_trsbox_linear(
     # Minimize and maximize g.T @ (x - x_center), respectively
     linear_model_to_minimize = linear_model
     linear_model_to_maximize = linear_model._replace(
-        linear_terms=-linear_model.linear_terms,
+        linear_terms=-linear_model.linear_terms
     )
 
     x_candidate_min = minimize_trsbox_linear(
@@ -174,7 +166,7 @@ def improve_geomtery_trsbox_linear(
     )
 
     lagrange_polynomial = lambda x: abs(
-        linear_model.intercept + linear_model.linear_terms.T @ x,
+        linear_model.intercept + linear_model.linear_terms.T @ x
     )
 
     if lagrange_polynomial(x_candidate_min) >= lagrange_polynomial(x_candidate_max):
@@ -237,10 +229,7 @@ def _find_next_active_bound(
 
 
 def _take_constrained_step_up_to_boundary(
-    x_candidate,
-    direction,
-    active_bound,
-    index_bound_active,
+    x_candidate, direction, active_bound, index_bound_active
 ):
     """Take largest constrained step possible until trust-region boundary is hit.
 
@@ -271,10 +260,7 @@ def _take_constrained_step_up_to_boundary(
 
 
 def _take_unconstrained_step_up_to_boundary(
-    x_candidate,
-    direction,
-    trustregion_radius,
-    zero_treshold,
+    x_candidate, direction, trustregion_radius, zero_treshold
 ):
     """Take largest unconstrained step possible until trust-region boundary is hit.
 
@@ -289,10 +275,7 @@ def _take_unconstrained_step_up_to_boundary(
         np.ndarray: Updated, unconstrained candidate vector of shape (n,).
     """
     step_size_unconstr = _get_distance_to_trustregion_boundary(
-        x_candidate,
-        direction,
-        trustregion_radius,
-        zero_treshold,
+        x_candidate, direction, trustregion_radius, zero_treshold
     )
     x_candidate_unconstr = x_candidate + step_size_unconstr * direction
 
@@ -300,10 +283,7 @@ def _take_unconstrained_step_up_to_boundary(
 
 
 def _get_distance_to_trustregion_boundary(
-    x,
-    direction,
-    trustregion_radius,
-    zero_treshold,
+    x, direction, trustregion_radius, zero_treshold
 ):
     """Compute the candidate vector's distance to the trustregion boundary.
 
@@ -342,9 +322,8 @@ def _get_distance_to_trustregion_boundary(
         distance_to_boundary = (
             np.sqrt(
                 np.maximum(
-                    0,
-                    g_dot_x**2 + g_sumsq * (trustregion_radius**2 - x_sumsq),
-                ),
+                    0, g_dot_x**2 + g_sumsq * (trustregion_radius**2 - x_sumsq)
+                )
             )
             - g_dot_x
         ) / g_sumsq

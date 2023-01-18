@@ -88,7 +88,10 @@ def slice_plot(
     """
 
     layout_kwargs = None
-    title_kwargs = {"text": title} if title is not None else None
+    if title is not None:
+        title_kwargs = {"text": title}
+    else:
+        title_kwargs = None
 
     if func_kwargs is not None:
         func = partial(func, **func_kwargs)
@@ -113,8 +116,7 @@ def slice_plot(
         helper = converter.params_from_internal(selected)
         registry = get_registry(extended=True)
         selected = np.array(
-            tree_just_flatten(selector(helper), registry=registry),
-            dtype=int,
+            tree_just_flatten(selector(helper), registry=registry), dtype=int
         )
 
     if not np.isfinite(internal_params.lower_bounds[selected]).all():
@@ -202,7 +204,7 @@ def slice_plot(
                 x=[internal_params.values[pos]],
                 y=[converter.func_to_internal(func_eval)],
                 marker={"color": color},
-            ),
+            )
         )
         subfig.update_layout(**layout_kwargs)
         subfig.update_xaxes(title={"text": par_name})

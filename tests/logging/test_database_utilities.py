@@ -15,7 +15,7 @@ from estimagic.logging.database_utilities import update_row
 from numpy.testing import assert_array_equal
 
 
-@pytest.fixture()
+@pytest.fixture
 def iteration_data():
     data = {
         "params": np.ones(1),
@@ -25,7 +25,7 @@ def iteration_data():
     return data
 
 
-@pytest.fixture()
+@pytest.fixture
 def problem_data():
     data = {
         "direction": "maximize",

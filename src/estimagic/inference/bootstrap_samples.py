@@ -24,14 +24,11 @@ def get_bootstrap_indices(data, rng, cluster_by=None, n_draws=1000):
     else:
         clusters = data[cluster_by].unique()
         drawn_clusters = rng.choice(
-            clusters,
-            size=(n_draws, len(clusters)),
-            replace=True,
+            clusters, size=(n_draws, len(clusters)), replace=True
         )
 
         bootstrap_indices = _convert_cluster_ids_to_indices(
-            data[cluster_by],
-            drawn_clusters,
+            data[cluster_by], drawn_clusters
         )
 
     return bootstrap_indices

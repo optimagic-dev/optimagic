@@ -28,7 +28,7 @@ infer_latex_dependencies = true
 [tool.ruff]
 target-version = "py37"
 select = ["ALL"]
-fix = true
+fix = false
 extend-ignore = [
     # Docstrings
     "D103", # missing docstring in public function
@@ -56,14 +56,28 @@ extend-ignore = [
     "PD",  # pandas-vet
     "E731",  # do not assign a lambda expression, use a def
     "RET", # unnecessary elif or else statements after return, rais, continue, ...
-    "BLE001", # Do not catch blind exceptions. Complains even if done at end of except block.
     "S324", # Probable use of insecure hash function.
+    "COM812", # trailing comma missing, but black takes care of that
+
+
+    # Things we are not sure we want
+    # ==============================
+    "SIM102", # Use single if statement instead of nested if statements
+    "SIM108", # Use ternary operator instead of if-else block
+    "SIM117", # do not use nested with statements
+    "BLE001", # Do not catch blind exceptions (even after handling some specific ones)
+    "PLR2004", # Magic values used in comparison
 
     # Things ignored during transition phase
     # ======================================
     "D",
     "ANN",
     "C901",  # function too complex
+    "PT", # pytest related warnings
+    "SIM210",
+    "SIM401",
+    "SIM103",
+    "SIM201",
     # ======================================
 ]
 

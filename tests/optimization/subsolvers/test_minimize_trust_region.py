@@ -135,18 +135,10 @@ def test_take_unconstrained_step_towards_boundary():
     for i in range(2):
         assert (
             step_unconstrained_orig(
-                raw_distance,
-                gradient_sumsq,
-                gradient_projected_sumsq,
-                g_x,
-                g_hess_g,
+                raw_distance, gradient_sumsq, gradient_projected_sumsq, g_x, g_hess_g
             )[i]
             == step_unconstrained_fast(
-                raw_distance,
-                gradient_sumsq,
-                gradient_projected_sumsq,
-                g_x,
-                g_hess_g,
+                raw_distance, gradient_sumsq, gradient_projected_sumsq, g_x, g_hess_g
             )[i]
         )
 
@@ -160,18 +152,10 @@ def test_take_constrained_step_towards_boundary():
     for i in range(2):
         assert (
             step_constrained_orig(
-                x_candidate,
-                gradient_projected,
-                step_len,
-                lower_bounds,
-                upper_bounds,
+                x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
             )[i]
             == step_constrained_fast(
-                x_candidate,
-                gradient_projected,
-                step_len,
-                lower_bounds,
-                upper_bounds,
+                x_candidate, gradient_projected, step_len, lower_bounds, upper_bounds
             )[i]
         )
 
@@ -186,25 +170,11 @@ def test_update_candidate_vector_and_reduction_alt_step():
     hessian_s = np.ones(5)
     hes_red = np.ones(5)
     res_orig = update_candidate_alt_orig(
-        x,
-        search_direction,
-        x_bounded,
-        g,
-        cosine,
-        sine,
-        hessian_s,
-        hes_red,
+        x, search_direction, x_bounded, g, cosine, sine, hessian_s, hes_red
     )
 
     res_fast = update_candidate_alt_fast(
-        x,
-        search_direction,
-        x_bounded,
-        g,
-        cosine,
-        sine,
-        hessian_s,
-        hes_red,
+        x, search_direction, x_bounded, g, cosine, sine, hessian_s, hes_red
     )
     for i in range(len(res_orig)):
         aae(res_orig[i], res_fast[i])
@@ -299,7 +269,7 @@ def test_update_candidate_vector_and_reduction_without_active_bounds():
         aae(res_orig[i], res_fast[i])
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_perform_alternative_tr_step():
     x_candidate = np.zeros(5)
     x_bounded = np.array([0.1] * 2 + [0] * 3)
@@ -332,7 +302,7 @@ def test_perform_alternative_tr_step():
     aae(res_orig, res_fast)
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_perform_alternative_tr_step_without_active_bounds():
     x_candidate = np.zeros(5)
     x_bounded = np.zeros(5)
@@ -422,7 +392,7 @@ def test_calc_upper_bound_on_tangent_without_active_bounds():
             assert res_fast[i].size == 0
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_minimize_trs_box_quadratic():
     model_gradient = np.arange(10).astype(float)
     model_hessian = np.arange(100).reshape(10, 10).astype(float)
@@ -430,11 +400,7 @@ def test_minimize_trs_box_quadratic():
     lower_bounds = -np.ones(10)
     upper_bounds = np.ones(10)
     res_fast = minimize_trust_trsbox_fast(
-        model_gradient,
-        model_hessian,
-        trustregion_radius,
-        lower_bounds,
-        upper_bounds,
+        model_gradient, model_hessian, trustregion_radius, lower_bounds, upper_bounds
     )
     res_orig = minimize_trust_trsbox(
         model_gradient,
@@ -446,16 +412,14 @@ def test_minimize_trs_box_quadratic():
     aae(res_fast, res_orig)
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_minimize_stcg_fast():
     model_gradient = np.arange(10).astype(float)
     model_hessian = np.arange(100).reshape(10, 10).astype(float)
     trustregion_radius = 10.0
     res_orig = minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius)
     res_fast = minimize_trust_stcg_fast(
-        model_gradient,
-        model_hessian,
-        trustregion_radius,
+        model_gradient, model_hessian, trustregion_radius
     )
     aaae(res_orig, res_fast)
 
@@ -468,11 +432,7 @@ def test_minimize_cg():
     gtol_rel = 1e-6
     res_orig = minimize_trust_cg(model_gradient, model_hessian, trustregion_radius)
     res_fast = minimize_trust_cg_fast(
-        model_gradient,
-        model_hessian,
-        trustregion_radius,
-        gtol_abs,
-        gtol_rel,
+        model_gradient, model_hessian, trustregion_radius, gtol_abs, gtol_rel
     )
     aaae(res_orig, res_fast)
 
@@ -483,10 +443,7 @@ def test_apply_bounds_to_candidate_vector():
     lower_bounds = np.array([-1, -1, 0.01, -1, -1])
     upper_bounds = np.array([1, 1, 1, -0.01, 1])
     res = _apply_bounds_to_candidate_vector(
-        x_candidate,
-        x_bounded,
-        lower_bounds,
-        upper_bounds,
+        x_candidate, x_bounded, lower_bounds, upper_bounds
     )
     expected = np.array([-1, 1, 0.01, -0.01, 0])
     aae(res, expected)
@@ -518,20 +475,10 @@ def test_compute_new_search_direction_and_norm():
     x_grad = 1
     raw_reduction = 0.5
     res = new_dir_and_norm_fast(
-        x_candidate,
-        x_bounded,
-        x_reduced,
-        gradient_candidate,
-        x_grad,
-        raw_reduction,
+        x_candidate, x_bounded, x_reduced, gradient_candidate, x_grad, raw_reduction
     )
     expected = new_dir_and_norm_orig(
-        x_candidate,
-        x_bounded,
-        x_reduced,
-        gradient_candidate,
-        x_grad,
-        raw_reduction,
+        x_candidate, x_bounded, x_reduced, gradient_candidate, x_grad, raw_reduction
     )
     aaae(expected[0], res[0])
     aaae(expected[1], res[1])

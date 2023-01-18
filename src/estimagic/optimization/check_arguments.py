@@ -32,7 +32,7 @@ def check_optimize_kwargs(**kwargs):
         if arg in valid_types:
             if not isinstance(kwargs[arg], valid_types[arg]):
                 raise TypeError(
-                    f"Argument '{arg}' must be {valid_types[arg]} not {kwargs[arg]}.",
+                    f"Argument '{arg}' must be {valid_types[arg]} not {kwargs[arg]}."
                 )
 
     if kwargs["direction"] not in ["minimize", "maximize"]:

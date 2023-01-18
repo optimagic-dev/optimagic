@@ -60,13 +60,9 @@ crits_and_derivs = [sos_criterion_and_gradient, None]
 test_cases = list(itertools.product(directions, crits, derivs, crits_and_derivs))
 
 
-@pytest.mark.parametrize(("direction", "crit", "deriv", "crit_and_deriv"), test_cases)
+@pytest.mark.parametrize("direction, crit, deriv, crit_and_deriv", test_cases)
 def test_criterion_and_derivative_template(
-    base_inputs,
-    direction,
-    crit,
-    deriv,
-    crit_and_deriv,
+    base_inputs, direction, crit, deriv, crit_and_deriv
 ):
     converter, _ = get_converter(
         params=base_inputs["params"],
@@ -90,18 +86,15 @@ def test_criterion_and_derivative_template(
     inputs["direction"] = direction
 
     calc_criterion, calc_derivative = internal_criterion_and_derivative_template(
-        task="criterion_and_derivative",
-        **inputs,
+        task="criterion_and_derivative", **inputs
     )
 
     calc_criterion2 = internal_criterion_and_derivative_template(
-        task="criterion",
-        **inputs,
+        task="criterion", **inputs
     )
 
     calc_derivative2 = internal_criterion_and_derivative_template(
-        task="derivative",
-        **inputs,
+        task="derivative", **inputs
     )
 
     if direction == "minimize":
@@ -148,8 +141,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
 
     with pytest.warns():
         calc_criterion, calc_derivative = internal_criterion_and_derivative_template(
-            task="criterion_and_derivative",
-            **inputs,
+            task="criterion_and_derivative", **inputs
         )
 
     expected_crit = 42

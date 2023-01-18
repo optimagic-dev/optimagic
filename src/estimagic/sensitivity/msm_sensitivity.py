@@ -45,10 +45,7 @@ def calculate_sensitivity_to_bias(jac, weights):
 
 
 def calculate_fundamental_sensitivity_to_noise(
-    jac,
-    weights,
-    moments_cov,
-    params_cov_opt,
+    jac, weights, moments_cov, params_cov_opt
 ):
     """calculate the fundamental sensitivity to noise.
 
@@ -74,10 +71,7 @@ def calculate_fundamental_sensitivity_to_noise(
 
     """
     _jac, _weights, _moments_cov, _params_cov_opt, names = process_pandas_arguments(
-        jac=jac,
-        weights=weights,
-        moments_cov=moments_cov,
-        params_cov_opt=params_cov_opt,
+        jac=jac, weights=weights, moments_cov=moments_cov, params_cov_opt=params_cov_opt
     )
 
     m2 = []
@@ -108,10 +102,7 @@ def calculate_fundamental_sensitivity_to_noise(
 
 
 def calculate_actual_sensitivity_to_noise(
-    sensitivity_to_bias,
-    weights,
-    moments_cov,
-    params_cov,
+    sensitivity_to_bias, weights, moments_cov, params_cov
 ):
     """calculate the actual sensitivity to noise.
 
@@ -139,9 +130,7 @@ def calculate_actual_sensitivity_to_noise(
         sensitivity_to_bias = sensitivity_to_bias.to_numpy()
 
     _weights, _moments_cov, _params_cov, names = process_pandas_arguments(
-        weights=weights,
-        moments_cov=moments_cov,
-        params_cov=params_cov,
+        weights=weights, moments_cov=moments_cov, params_cov=params_cov
     )
 
     m3 = []
@@ -195,10 +184,7 @@ def calculate_actual_sensitivity_to_removal(jac, weights, moments_cov, params_co
     m4 = []
 
     _jac, _weights, _moments_cov, _params_cov, names = process_pandas_arguments(
-        jac=jac,
-        weights=weights,
-        moments_cov=moments_cov,
-        params_cov=params_cov,
+        jac=jac, weights=weights, moments_cov=moments_cov, params_cov=params_cov
     )
 
     for k in range(len(_weights)):
@@ -305,10 +291,7 @@ def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
 
     """
     _jac, _weights, _moments_cov, _params_cov, names = process_pandas_arguments(
-        jac=jac,
-        weights=weights,
-        moments_cov=moments_cov,
-        params_cov=params_cov,
+        jac=jac, weights=weights, moments_cov=moments_cov, params_cov=params_cov
     )
     gwg_inverse = _sandwich(_jac, _weights)
     gwg_inverse = robust_inverse(gwg_inverse, INVALID_SENSITIVITY_MSG)

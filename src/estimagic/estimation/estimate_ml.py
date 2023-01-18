@@ -236,8 +236,7 @@ def estimate_ml(
 
     if jac_case == "closed-form":
         int_jac = converter.derivative_to_internal(
-            jacobian_eval,
-            internal_estimates.values,
+            jacobian_eval, internal_estimates.values
         )
     elif jac_case == "numerical":
 
@@ -300,7 +299,7 @@ def estimate_ml(
         int_hess = hess_res["derivative"]
     elif hess_case == "closed-form" and constraints:
         raise NotImplementedError(
-            "Closed-form Hessians are not yet compatible with constraints.",
+            "Closed-form Hessians are not yet compatible with constraints."
         )
     elif hess_case == "closed-form":
         int_hess = block_tree_to_matrix(
@@ -376,7 +375,7 @@ class LikelihoodResult:
         if self._internal_jacobian is None and self._internal_hessian is None:
             raise ValueError(
                 "At least one of _internal_jacobian or _internal_hessian must be "
-                "not None.",
+                "not None."
             )
 
         elif self._internal_jacobian is None:
@@ -444,7 +443,7 @@ class LikelihoodResult:
     def jacobian(self):
         if self._jacobian is None:
             raise NotAvailableError(
-                f"No jacobian is available because {self._no_jacobian_reason}.",
+                f"No jacobian is available because {self._no_jacobian_reason}."
             )
         return self._jacobian
 
@@ -452,7 +451,7 @@ class LikelihoodResult:
     def hessian(self):
         if self._hessian is None:
             raise NotAvailableError(
-                f"No hessian is available because {self._no_hessian_reason}.",
+                f"No hessian is available because {self._no_hessian_reason}."
             )
         return self._hessian
 
@@ -681,9 +680,7 @@ class LikelihoodResult:
 
         lower, upper = (
             transform_free_values_to_params_tree(
-                values,
-                free_params=self._free_estimates,
-                params=self._params,
+                values, free_params=self._free_estimates, params=self._params
             )
             for values in (free_lower, free_upper)
         )
@@ -737,9 +734,7 @@ class LikelihoodResult:
         )
 
         p_values = transform_free_values_to_params_tree(
-            free_p_values,
-            free_params=self._free_estimates,
-            params=self._params,
+            free_p_values, free_params=self._free_estimates, params=self._params
         )
         return p_values
 
@@ -771,15 +766,11 @@ def _calculate_free_cov_ml(
         int_cov = cov_robust(jac=internal_jacobian, hess=internal_hessian)
     elif method == "cluster_robust":
         int_cov = cov_cluster_robust(
-            jac=internal_jacobian,
-            hess=internal_hessian,
-            design_info=design_info,
+            jac=internal_jacobian, hess=internal_hessian, design_info=design_info
         )
     elif method == "strata_robust":
         int_cov = cov_strata_robust(
-            jac=internal_jacobian,
-            hess=internal_hessian,
-            design_info=design_info,
+            jac=internal_jacobian, hess=internal_hessian, design_info=design_info
         )
 
     rng = get_rng(seed)

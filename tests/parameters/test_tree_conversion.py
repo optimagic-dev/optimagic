@@ -5,14 +5,14 @@ from estimagic.parameters.tree_conversion import get_tree_converter
 from numpy.testing import assert_array_equal as aae
 
 
-@pytest.fixture()
+@pytest.fixture
 def params():
     df = pd.DataFrame({"value": [3, 4], "lower_bound": [0, 0]}, index=["c", "d"])
     params = ([0, np.array([1, 2]), {"a": df, "b": 5}], 6)
     return params
 
 
-@pytest.fixture()
+@pytest.fixture
 def upper_bounds():
     upper = ([None, np.array([11, np.inf]), None], 100)
     return upper

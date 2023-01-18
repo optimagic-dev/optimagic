@@ -206,28 +206,28 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
             if subset["is_fixed_to_value"].any():
                 problematic = subset[subset["is_fixed_to_value"]].index
                 raise InvalidConstraintError(
-                    cov_msg.format(constr["type"], problematic),
+                    cov_msg.format(constr["type"], problematic)
                 )
             if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
                 raise InvalidConstraintError(
-                    cov_msg.format(constr["type"], problematic),
+                    cov_msg.format(constr["type"], problematic)
                 )
         elif constr["type"] == "probability":
             subset = df.iloc[constr["index"]]
             if subset["is_fixed_to_value"].any():
                 problematic = subset[subset["is_fixed_to_value"]].index
                 raise InvalidConstraintError(
-                    prob_msg.format(constr["type"], problematic),
+                    prob_msg.format(constr["type"], problematic)
                 )
             if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
                 raise InvalidConstraintError(
-                    prob_msg.format(constr["type"], problematic),
+                    prob_msg.format(constr["type"], problematic)
                 )
 
     invalid = df.query("lower_bounds >= upper_bounds")[["lower_bounds", "upper_bounds"]]

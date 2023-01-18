@@ -41,8 +41,7 @@ def main():
 
     # write environments
     for name, env in zip(
-        ["linux", "others", "linkcheck"],
-        [test_env_linux, test_env_others, docs_env],
+        ["linux", "others", "linkcheck"], [test_env_linux, test_env_others, docs_env]
     ):
         Path(f".envs/testenv-{name}.yml").write_text("\n".join(env) + "\n")
 

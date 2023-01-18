@@ -82,7 +82,7 @@ for p in PARAMS:
         TEST_CASES_SOS_LS.append((p, algo))
 
 
-@pytest.mark.parametrize(("params", "algorithm"), TEST_CASES_SOS_LS)
+@pytest.mark.parametrize("params, algorithm", TEST_CASES_SOS_LS)
 def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
     flat = np.array(tree_just_flatten(params, registry=REGISTRY))
     expected = np.zeros_like(flat)
@@ -96,7 +96,7 @@ def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
     aaae(calculated, expected)
 
 
-@pytest.mark.parametrize(("params", "algorithm"), TEST_CASES_SOS_LS)
+@pytest.mark.parametrize("params, algorithm", TEST_CASES_SOS_LS)
 def test_tree_params_sos_ls(params, algorithm):
     flat = np.array(tree_just_flatten(params, registry=REGISTRY))
     expected = np.zeros_like(flat)

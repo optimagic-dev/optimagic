@@ -54,8 +54,7 @@ def derivative_plot(
     # prepare derivative data
     df_der = _select_derivative_with_minimal_error(derivative_candidates)
     df_der_method = _select_derivative_with_minimal_error(
-        derivative_candidates,
-        given_method=True,
+        derivative_candidates, given_method=True
     )
 
     # auxiliary

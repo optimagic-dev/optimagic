@@ -11,11 +11,7 @@ from scipy.special import logsumexp
 
 
 def get_sampler(
-    sampler,
-    bounds,
-    model_info=None,
-    radius_factors=None,
-    user_options=None,
+    sampler, bounds, model_info=None, radius_factors=None, user_options=None
 ):
     """Get sampling function partialled options.
 
@@ -59,7 +55,7 @@ def get_sampler(
     else:
         raise ValueError(
             f"Invalid sampler: {sampler}. Must be one of {list(built_in_samplers)} "
-            "or a callable.",
+            "or a callable."
         )
 
     if "hull_sampler" in _sampler_name and "order" not in user_options:
@@ -92,7 +88,7 @@ def get_sampler(
     if problematic:
         raise ValueError(
             f"The following mandatory arguments are missing in {_sampler_name}: "
-            f"{problematic}",
+            f"{problematic}"
         )
 
     valid_options = args - mandatory_args
@@ -105,7 +101,7 @@ def get_sampler(
     if ignored:
         warnings.warn(
             "The following options were ignored because they are not compatible "
-            f"with {_sampler_name}:\n\n {ignored}",
+            f"with {_sampler_name}:\n\n {ignored}"
         )
 
     out = partial(
@@ -159,11 +155,7 @@ def _box_sampler(
 
 
 def _ball_sampler(
-    trustregion,
-    n_points,
-    rng,
-    existing_xs=None,
-    bounds=None,
+    trustregion, n_points, rng, existing_xs=None, bounds=None  # noqa: ARG001
 ):
     """Naive random generation of trustregion points inside a ball.
 
@@ -301,7 +293,10 @@ def _optimal_hull_sampler(
         return np.array([])
 
     if criterion is None:
-        criterion = "determinant" if n_points == 1 else "distance"
+        if n_points == 1:
+            criterion = "determinant"
+        else:
+            criterion = "distance"
 
     algo_options = {} if algo_options is None else algo_options
     if "stopping_max_iterations" not in algo_options:
@@ -445,7 +440,10 @@ def _determinant_on_hull(x, existing_xs, order, n_params):
 
     x = _project_onto_unit_hull(x, order=order)
 
-    sample = np.row_stack([x, existing_xs]) if existing_xs is not None else x
+    if existing_xs is not None:
+        sample = np.row_stack([x, existing_xs])
+    else:
+        sample = x
 
     crit_value = np.linalg.det(sample.T @ sample / n_samples)
 
@@ -471,7 +469,7 @@ def _draw_from_distribution(distribution, rng, size):
         draw = rng.uniform(-1, 1, size=size)
     else:
         raise ValueError(
-            f"distribution is {distribution}, but needs to be in ('normal', 'uniform').",
+            f"distribution is {distribution}, but needs to be in ('normal', 'uniform')."
         )
     return draw
 

@@ -37,7 +37,7 @@ def basic_case():
             [0.15692245, 0.00559149, 0.01197266],
             [0.15379745, 0.00562833, 0.01182871],
             [0.16004745, 0.00572722, 0.01158929],  # 20
-        ],
+        ]
     )
     indices = np.arange(len(xs))
 
@@ -73,7 +73,7 @@ def basic_case():
             [0.15, 0.108, 0.01],
             [0.25, 0.008, 0.01],
             [0.15, 0.008, 0.01],
-        ],
+        ]
     )
 
     return xs, indices, state, expected_xs, expected_indices
@@ -107,7 +107,7 @@ def reordered_case(basic_case):
             [0.16317245, 0.00558118, 0.01208116],
             [0.15692245, 0.00559149, 0.01197266],
             [0.15379745, 0.00562833, 0.01182871],
-        ],
+        ]
     )
 
     expected_indices = np.array([13, 20, 19, 18, 17, 16, 14, 12, 8, 5, 4, 3, 2, 1, 0])
@@ -135,7 +135,7 @@ def truncated_case(reordered_case):
             [0.16317245, 0.00558118, 0.01208116],
             [0.15692245, 0.00559149, 0.01197266],
             [0.15379745, 0.00562833, 0.01182871],
-        ],
+        ]
     )
     indices = np.array([6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20])
 
@@ -161,7 +161,7 @@ def sparse_case(reordered_case):
             [0.15067245, 0.00559504, 0.01191949],
             [0.15141789, 0.0056498, 0.01210095],
             [0.15379745, 0.00562833, 0.01182871],
-        ],
+        ]
     )
     indices = np.array([8, 9, 10, 11, 12, 13, 14, 16, 17, 20])
 
@@ -178,7 +178,7 @@ def sparse_case(reordered_case):
             [0.12530518, 0.00613383, 0.01349762],
             [0.14986784, 0.00809919, 0.00927703],
             [0.15046527, 0.00796766, 0.01269269],
-        ],
+        ]
     )
 
     return xs, indices, state, expected_xs, expected_indices
@@ -202,12 +202,11 @@ def test_indices_in_trust_region(basic_case):
 
 
 @pytest.mark.parametrize(
-    "test_case",
-    ["basic_case", "reordered_case", "truncated_case", "sparse_case"],
+    "test_case", ["basic_case", "reordered_case", "truncated_case", "sparse_case"]
 )
 def test_drop_collinear_pounders(test_case, request):
     old_xs, old_indices, state, expected_xs, expected_indices = request.getfixturevalue(
-        test_case,
+        test_case
     )
 
     filtered_xs, filtered_indices = drop_collinear_pounders(old_xs, old_indices, state)

@@ -98,8 +98,7 @@ def get_converter(
     )
 
     space_converter, internal_params = get_space_converter(
-        internal_params=internal_params,
-        internal_constraints=flat_constraints,
+        internal_params=internal_params, internal_constraints=flat_constraints
     )
 
     scale_converter, scaled_params = get_scale_converter(
@@ -140,11 +139,10 @@ def get_converter(
             jacobian = tree_converter.derivative_flatten(derivative_eval)
         x_unscaled = scale_converter.params_from_internal(x)
         jac_with_space_conversion = space_converter.derivative_to_internal(
-            jacobian,
-            x_unscaled,
+            jacobian, x_unscaled
         )
         jac_with_unscaling = scale_converter.derivative_to_internal(
-            jac_with_space_conversion,
+            jac_with_space_conversion
         )
         return jac_with_unscaling
 
@@ -219,9 +217,7 @@ def _fast_params_from_internal(x, return_type="tree"):
 
 def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
     def _fast_derivative_to_internal(
-        derivative_eval,
-        x,
-        jac_is_flat=True,  # noqa: ARG001
+        derivative_eval, x, jac_is_flat=True  # noqa: ARG001
     ):
         # make signature compatible with non-fast path
         return derivative_eval

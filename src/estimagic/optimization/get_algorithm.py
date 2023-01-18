@@ -35,7 +35,7 @@ def process_user_algorithm(algorithm):
         except KeyError:
             proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
             raise ValueError(
-                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?",
+                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
             ) from None
 
     algo_info = algorithm._algorithm_info
@@ -128,8 +128,7 @@ def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
             for task in ["criterion", "derivative", "criterion_and_derivative"]:
                 if task in _kwargs:
                     _kwargs[task] = partial(
-                        _kwargs[task],
-                        fixed_log_data={"step": step_id},
+                        _kwargs[task], fixed_log_data={"step": step_id}
                     )
 
             res = algorithm(**_kwargs)
@@ -189,7 +188,10 @@ def _add_history_collection_via_batch_evaluator(algorithm):
         @functools.wraps(batch_evaluator)
         def wrapped_batch_evaluator(*args, **kwargs):
 
-            func = args[0] if args else kwargs["func"]
+            if args:
+                func = args[0]
+            else:
+                func = kwargs["func"]
 
             # find out if func is our internal criterion function
             if isinstance(func, partial) and "history_container" in func.keywords:
@@ -271,21 +273,21 @@ def _adjust_options_to_algorithm(
     if ignored:
         warnings.warn(
             "The following algo_options were ignored because they are not compatible "
-            f"with {algo_name}:\n\n {ignored}",
+            f"with {algo_name}:\n\n {ignored}"
         )
 
     if "lower_bounds" not in valid_kwargs and not (lower_bounds == -np.inf).all():
         raise ValueError(
             f"{algo_name} does not support lower bounds but your optimization "
             "problem has lower bounds (either because you specified them explicitly "
-            "or because they were implied by other constraints).",
+            "or because they were implied by other constraints)."
         )
 
     if "upper_bounds" not in valid_kwargs and not (upper_bounds == np.inf).all():
         raise ValueError(
             f"{algo_name} does not support upper bounds but your optimization "
             "problem has upper bounds (either because you specified them explicitly "
-            "or because they were implied by other constraints).",
+            "or because they were implied by other constraints)."
         )
 
     if "lower_bounds" in valid_kwargs:

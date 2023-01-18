@@ -17,7 +17,7 @@ from pybaum import leaf_names
 from pybaum import tree_equal
 
 
-@pytest.fixture()
+@pytest.fixture
 def inputs():
     jac = pd.DataFrame(np.ones((5, 3)), columns=["a", "b", "c"])
     hess = pd.DataFrame(np.eye(3) / 2, columns=list("abc"), index=list("abc"))
@@ -77,9 +77,7 @@ def test_transform_covariance_no_bounds():
     )
 
     expected_sample = get_rng(seed=5687).multivariate_normal(
-        np.arange(2),
-        np.eye(2),
-        100,
+        np.arange(2), np.eye(2), 100
     )
     expected = np.cov(expected_sample, rowvar=False)
 
@@ -93,8 +91,7 @@ def test_transform_covariance_with_clipping():
 
     converter = FakeConverter()
     internal_params = FakeInternalParams(
-        lower_bounds=np.ones(2),
-        upper_bounds=np.ones(2),
+        lower_bounds=np.ones(2), upper_bounds=np.ones(2)
     )
 
     got = transform_covariance(
@@ -118,8 +115,7 @@ def test_transform_covariance_invalid_bounds():
 
     converter = FakeConverter()
     internal_params = FakeInternalParams(
-        lower_bounds=np.ones(2),
-        upper_bounds=np.ones(2),
+        lower_bounds=np.ones(2), upper_bounds=np.ones(2)
     )
 
     with pytest.raises(ValueError):

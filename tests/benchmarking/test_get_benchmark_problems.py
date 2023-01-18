@@ -12,8 +12,7 @@ for name in ["more_wild", "cartis_roberts", "example", "estimagic"]:
 
 
 @pytest.mark.parametrize(
-    ("name", "additive_noise", "multiplicative_noise", "scaling"),
-    PARMETRIZATION,
+    "name, additive_noise, multiplicative_noise, scaling", PARMETRIZATION
 )
 def test_get_problems(name, additive_noise, multiplicative_noise, scaling):
     is_noisy = any((additive_noise, multiplicative_noise))

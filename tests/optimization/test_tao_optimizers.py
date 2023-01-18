@@ -16,19 +16,14 @@ NUM_AGENTS = 2_000
 
 
 def get_random_params(
-    length,
-    rng,
-    low=0,
-    high=1,
-    lower_bound=-np.inf,
-    upper_bound=np.inf,
+    length, rng, low=0, high=1, lower_bound=-np.inf, upper_bound=np.inf  # noqa: ARG001
 ):
     params = pd.DataFrame(
         {
             "value": np.random.uniform(low, high, size=length),
             "lower_bound": lower_bound,
             "upper_bound": upper_bound,
-        },
+        }
     )
 
     return params
@@ -49,9 +44,7 @@ def test_robustness():
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
     np.testing.assert_almost_equal(
-        result.params["value"].to_numpy(),
-        expected,
-        decimal=6,
+        result.params["value"].to_numpy(), expected, decimal=6
     )
 
 

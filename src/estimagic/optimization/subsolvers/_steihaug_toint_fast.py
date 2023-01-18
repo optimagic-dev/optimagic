@@ -51,16 +51,13 @@ def minimize_trust_stcg_fast(model_gradient, model_hessian, trustregion_radius):
 
     norm_r = np.sqrt(rr)
     norm_r0 = norm_r
-    ttol = rtol * norm_r0 if rtol * norm_r0 >= abstol else abstol
+    if rtol * norm_r0 >= abstol:
+        ttol = rtol * norm_r0
+    else:
+        ttol = abstol
 
     converged, diverged = _check_convergence(
-        norm_r,
-        norm_r0,
-        abstol,
-        ttol,
-        divtol,
-        converged,
-        diverged,
+        norm_r, norm_r0, abstol, ttol, divtol, converged, diverged
     )
 
     p = model_hessian @ z
@@ -98,12 +95,7 @@ def minimize_trust_stcg_fast(model_gradient, model_hessian, trustregion_radius):
 
             if norm_p > 0:
                 x_candidate = _take_step_to_trustregion_boundary(
-                    x_candidate,
-                    p,
-                    dp,
-                    radius_sq,
-                    norm_d,
-                    norm_p,
+                    x_candidate, p, dp, radius_sq, norm_d, norm_p
                 )
 
             break
@@ -119,13 +111,7 @@ def minimize_trust_stcg_fast(model_gradient, model_hessian, trustregion_radius):
         norm_r = np.linalg.norm(residual)
 
         converged, diverged = _check_convergence(
-            norm_r,
-            norm_r0,
-            abstol,
-            ttol,
-            divtol,
-            converged,
-            diverged,
+            norm_r, norm_r0, abstol, ttol, divtol, converged, diverged
         )
 
         if converged or diverged:
@@ -155,12 +141,7 @@ def minimize_trust_stcg_fast(model_gradient, model_hessian, trustregion_radius):
 
             if trustregion_radius != 0 and norm_p > 0:
                 x_candidate = _take_step_to_trustregion_boundary(
-                    x_candidate,
-                    p,
-                    dp,
-                    radius_sq,
-                    norm_d,
-                    norm_p,
+                    x_candidate, p, dp, radius_sq, norm_d, norm_p
                 )
 
             break
@@ -190,7 +171,10 @@ def _update_candidate_vector_and_iteration_number(
         x_candidate = x_candidate + step * p
 
     elif radius != 0:
-        alpha = 1.0 if radius_sq >= rr else np.sqrt(radius_sq / rr)
+        if radius_sq >= rr:
+            alpha = 1.0
+        else:
+            alpha = np.sqrt(radius_sq / rr)
 
         x_candidate = x_candidate + alpha * residual
         z = model_gradient - 0.5 * (model_hessian @ x_candidate)
@@ -211,13 +195,7 @@ def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, no
 
 @njit
 def _check_convergence(
-    rnorm,
-    rnorm0,
-    abstol,
-    ttol,
-    divtol,
-    converged,
-    diverged,
+    rnorm, rnorm0, abstol, ttol, divtol, converged, diverged  # noqa: ARG001
 ):
     """Check for convergence."""
     if rnorm <= ttol:

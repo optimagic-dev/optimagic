@@ -35,11 +35,10 @@ from pandas.testing import assert_series_equal as ase
 # ======================================================================================
 def _get_models_multiindex():
     df = pd.DataFrame(
-        data=np.ones((3, 4)),
-        columns=["value", "ci_lower", "ci_upper", "p_value"],
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
     )
     df.index = pd.MultiIndex.from_tuples(
-        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")],
+        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
     )
     info = {"n_obs": 400}
     mod1 = {"params": df, "info": info, "name": "m1"}
@@ -50,8 +49,7 @@ def _get_models_multiindex():
 
 def _get_models_single_index():
     df = pd.DataFrame(
-        data=np.ones((3, 4)),
-        columns=["value", "ci_lower", "ci_upper", "p_value"],
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
     )
     df.index = [f"p{i}" for i in [1, 2, 3]]
     info = {"n_obs": 400}
@@ -63,11 +61,10 @@ def _get_models_single_index():
 
 def _get_models_multiindex_multi_column():
     df = pd.DataFrame(
-        data=np.ones((3, 4)),
-        columns=["value", "ci_lower", "ci_upper", "p_value"],
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
     )
     df.index = pd.MultiIndex.from_tuples(
-        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")],
+        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
     )
     info = {"n_obs": 400}
     mod1 = {"params": df.iloc[1:], "info": info, "name": "m1"}
@@ -140,12 +137,10 @@ PARAMETRIZATION = [("latex", render_latex, models) for models in MODELS]
 PARAMETRIZATION += [("html", render_html, models) for models in MODELS]
 
 
-@pytest.mark.parametrize(("return_type", "render_func", "models"), PARAMETRIZATION)
+@pytest.mark.parametrize("return_type, render_func,models", PARAMETRIZATION)
 def test_one_and_stage_rendering_are_equal(return_type, render_func, models):
     first_stage = estimation_table(
-        models,
-        return_type="render_inputs",
-        confidence_intervals=True,
+        models, return_type="render_inputs", confidence_intervals=True
     )
     second_stage = render_func(siunitx_warning=False, **first_stage)
     one_stage = estimation_table(
@@ -192,7 +187,7 @@ def test_process_model_stats_model():
 def test_convert_model_to_series_with_ci():
     df = pd.DataFrame(
         np.array(
-            [[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3], [1.2, 3.3, 4.33]],
+            [[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3], [1.2, 3.3, 4.33]]
         ).T,
         columns=["value", "p_value", "ci_lower", "ci_upper"],
         index=["a", "b", "c"],
@@ -247,9 +242,7 @@ def test_convert_model_to_series_without_inference():
     show_stars = True
     res = _convert_frame_to_string_series(df, significance_levels, show_stars)
     exp = pd.Series(
-        ["0.6$^{ }$", "2.3$^{** }$", "3.3$^{*** }$"],
-        index=["a", "b", "c"],
-        name="",
+        ["0.6$^{ }$", "2.3$^{** }$", "3.3$^{*** }$"], index=["a", "b", "c"], name=""
     )
     ase(exp, res)
 
@@ -280,7 +273,7 @@ def test_create_statistics_sr():
     )
     exp = pd.Series(["0.4500", "0.0002", "400.0000"])
     exp.index = pd.MultiIndex.from_arrays(
-        np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])]),
+        np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
     )
     ase(exp.sort_index(), res.sort_index())
 
@@ -289,7 +282,7 @@ def test_create_statistics_sr():
 def test_process_frame_indices_index():
     df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
     df.index = pd.MultiIndex.from_arrays(
-        np.array([["today", "today", "today"], ["var1", "var2", "var3"]]),
+        np.array([["today", "today", "today"], ["var1", "var2", "var3"]])
     )
     df.index.names = ["l1", "l2"]
     par_name_map = {"today": "tomorrow", "var1": "1stvar"}
@@ -364,7 +357,7 @@ def test_apply_number_format_callable():
 
 def test_get_digits_after_decimal():
     df = pd.DataFrame(
-        data=[["12.456", "0.00003", "1.23e+05"], ["16", "0.03", "1.2e+05"]],
+        data=[["12.456", "0.00003", "1.23e+05"], ["16", "0.03", "1.2e+05"]]
     ).T
     exp = 5
     res = _get_digits_after_decimal(df)
@@ -451,8 +444,7 @@ def test_get_params_frames_with_common_index():
     exp = [
         pd.DataFrame(np.ones(5), index=list("abcde")),
         pd.DataFrame(
-            np.concatenate([np.ones(3), np.ones(2) * np.nan]),
-            index=list("abcde"),
+            np.concatenate([np.ones(3), np.ones(2) * np.nan]), index=list("abcde")
         ),
     ]
     afe(res[0], exp[0])

@@ -531,7 +531,7 @@ def _optimize(
 
     if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
         raise ValueError(
-            f"Algorithm {algo_info.name} does not support nonlinear constraints.",
+            f"Algorithm {algo_info.name} does not support nonlinear constraints."
         )
 
     # the following constraints will be handled via reparametrization
@@ -579,7 +579,7 @@ def _optimize(
         )
     if isinstance(criterion_and_derivative, dict):
         criterion_and_derivative = criterion_and_derivative.get(
-            algo_info.primary_criterion_entry,
+            algo_info.primary_criterion_entry
         )
 
     if criterion_and_derivative is not None:
@@ -666,7 +666,7 @@ def _optimize(
     if converter.has_transforming_constraints and multistart:
         raise NotImplementedError(
             "multistart optimizations are not yet compatible with transforming "
-            "constraints.",
+            "constraints."
         )
 
     numdiff_options = _fill_numdiff_options_with_defaults(
@@ -818,7 +818,7 @@ def _create_and_initialize_database(logging, log_options, problem_data):
         if if_database_exists == "raise":
             raise FileExistsError(
                 f"The database {logging} already exists and the log_option "
-                "'if_database_exists' is set to 'raise'",
+                "'if_database_exists' is set to 'raise'"
             )
         elif if_database_exists == "replace":
             logging.unlink()
@@ -878,7 +878,7 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 
     if ignored:
         raise InvalidKwargsError(
-            f"The following numdiff_options are not allowed:\n\n{ignored}",
+            f"The following numdiff_options are not allowed:\n\n{ignored}"
         )
 
     numdiff_options = {
@@ -938,9 +938,7 @@ def _fill_multistart_options_with_defaults(options, params, x, params_to_interna
 
     if out["sample"] is not None:
         out["sample"] = process_multistart_sample(
-            out["sample"],
-            params,
-            params_to_internal,
+            out["sample"], params, params_to_internal
         )
         out["n_samples"] = len(out["sample"])
 

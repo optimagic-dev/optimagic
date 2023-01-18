@@ -54,7 +54,7 @@ def fides(
     if not IS_FIDES_INSTALLED:
         raise NotInstalledError(
             "The 'fides' algorithm requires the fides package to be installed. "
-            "You can install it with `pip install fides>=0.7.4`.",
+            "You can install it with `pip install fides>=0.7.4`."
         )
 
     fides_options = {
@@ -150,7 +150,7 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
             "You cannot use the Broyden update strategy without specifying the "
             "interpolation parameter phi. Import the Broyden class from "
             "`fides.hessian_approximation`, create an instance of it with your "
-            "desired value of phi and pass this instance instead.",
+            "desired value of phi and pass this instance instead."
         )
     elif isinstance(hessian_update_strategy, str):
         if hessian_update_strategy.lower() in ["fx", "ssm", "tssm", "gnsbfgs"]:
@@ -160,8 +160,7 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
             hessian_class = getattr(hessian_approximation, hessian_name)
             hessian_instance = hessian_class()
     elif isinstance(
-        hessian_update_strategy,
-        hessian_approximation.HessianApproximation,
+        hessian_update_strategy, hessian_approximation.HessianApproximation
     ):
         hessian_instance = hessian_update_strategy
         if isinstance(hessian_instance, hessians_needing_residuals):
@@ -169,6 +168,6 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
     else:
         raise ValueError(
             "You must provide a hessian_update_strategy that is either a string or an "
-            "instance of the fides.hessian_approximation.HessianApproximation class.",
+            "instance of the fides.hessian_approximation.HessianApproximation class."
         )
     return hessian_instance

@@ -10,19 +10,11 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 def test_scalars_as_base_steps():
     steps_scalar = _calculate_or_validate_base_steps(
-        0.1,
-        np.ones(3),
-        "first_derivative",
-        None,
-        scaling_factor=1,
+        0.1, np.ones(3), "first_derivative", None, scaling_factor=1
     )
 
     steps_array = _calculate_or_validate_base_steps(
-        np.full(3, 0.1),
-        np.ones(3),
-        "first_derivative",
-        None,
-        scaling_factor=1,
+        np.full(3, 0.1), np.ones(3), "first_derivative", None, scaling_factor=1
     )
 
     aaae(steps_scalar, steps_array)
@@ -30,11 +22,7 @@ def test_scalars_as_base_steps():
 
 def test_scalars_as_min_steps():
     steps_scalar = _calculate_or_validate_base_steps(
-        0.1,
-        np.ones(3),
-        "first_derivative",
-        0.12,
-        scaling_factor=1.5,
+        0.1, np.ones(3), "first_derivative", 0.12, scaling_factor=1.5
     )
 
     steps_array = _calculate_or_validate_base_steps(
@@ -53,11 +41,7 @@ def test_calculate_or_validate_base_steps_invalid_too_small():
     min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
         _calculate_or_validate_base_steps(
-            base_steps,
-            np.ones(3),
-            "first_derivative",
-            min_steps,
-            scaling_factor=1,
+            base_steps, np.ones(3), "first_derivative", min_steps, scaling_factor=1
         )
 
 
@@ -66,11 +50,7 @@ def test_calculate_or_validate_base_steps_wrong_shape():
     min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
         _calculate_or_validate_base_steps(
-            base_steps,
-            np.ones(2),
-            "first_derivative",
-            min_steps,
-            scaling_factor=1,
+            base_steps, np.ones(2), "first_derivative", min_steps, scaling_factor=1
         )
 
 
@@ -78,11 +58,7 @@ def test_calculate_or_validate_base_steps_jacobian():
     x = np.array([0.05, 1, -5])
     expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps)
     calculated = _calculate_or_validate_base_steps(
-        None,
-        x,
-        "first_derivative",
-        0,
-        scaling_factor=1.0,
+        None, x, "first_derivative", 0, scaling_factor=1.0
     )
     aaae(calculated, expected, decimal=12)
 
@@ -91,11 +67,7 @@ def test_calculate_or_validate_base_steps_jacobian_with_scaling_factor():
     x = np.array([0.05, 1, -5])
     expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps) * 2
     calculated = _calculate_or_validate_base_steps(
-        None,
-        x,
-        "first_derivative",
-        0,
-        scaling_factor=2.0,
+        None, x, "first_derivative", 0, scaling_factor=2.0
     )
     aaae(calculated, expected, decimal=12)
 
@@ -105,11 +77,7 @@ def test_calculate_or_validate_base_steps_binding_min_step():
     expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps)
     expected[0] = 1e-8
     calculated = _calculate_or_validate_base_steps(
-        None,
-        x,
-        "first_derivative",
-        1e-8,
-        scaling_factor=1.0,
+        None, x, "first_derivative", 1e-8, scaling_factor=1.0
     )
     aaae(calculated, expected, decimal=12)
 
@@ -118,11 +86,7 @@ def test_calculate_or_validate_base_steps_hessian():
     x = np.array([0.05, 1, -5])
     expected = np.array([0.1, 1, 5]) * np.finfo(float).eps ** (1 / 3)
     calculated = _calculate_or_validate_base_steps(
-        None,
-        x,
-        "second_derivative",
-        0,
-        scaling_factor=1.0,
+        None, x, "second_derivative", 0, scaling_factor=1.0
     )
     aaae(calculated, expected, decimal=12)
 
@@ -139,12 +103,7 @@ def test_set_unused_side_to_nan_forward():
     expected_neg = np.array([[-1, -1], [np.nan, np.nan], [np.nan, np.nan]])
 
     calculated_pos, calculated_neg = _set_unused_side_to_nan(
-        x,
-        pos,
-        neg,
-        method,
-        lower_bounds,
-        upper_bounds,
+        x, pos, neg, method, lower_bounds, upper_bounds
     )
 
     assert np.allclose(calculated_pos, expected_pos, equal_nan=True)
@@ -163,12 +122,7 @@ def test_set_unused_side_to_nan_backward():
     expected_neg = np.array([[-1, -1], [np.nan, np.nan], [-1, -1]])
 
     calculated_pos, calculated_neg = _set_unused_side_to_nan(
-        x,
-        pos,
-        neg,
-        method,
-        lower_bounds,
-        upper_bounds,
+        x, pos, neg, method, lower_bounds, upper_bounds
     )
 
     assert np.allclose(calculated_pos, expected_pos, equal_nan=True)
@@ -192,12 +146,7 @@ def test_rescale_to_accomodate_bounds():
     expected_neg = -expected_pos
 
     calculated_pos, calculated_neg = _rescale_to_accomodate_bounds(
-        base_steps,
-        pos,
-        neg,
-        lower_bounds,
-        upper_bounds,
-        min_step,
+        base_steps, pos, neg, lower_bounds, upper_bounds, min_step
     )
 
     np.allclose(calculated_pos, expected_pos, equal_nan=True)
@@ -216,12 +165,7 @@ def test_rescale_to_accomodate_bounds_binding_min_step():
     expected_neg = -expected_pos
 
     calculated_pos, calculated_neg = _rescale_to_accomodate_bounds(
-        base_steps,
-        pos,
-        neg,
-        lower_bounds,
-        upper_bounds,
-        min_step,
+        base_steps, pos, neg, lower_bounds, upper_bounds, min_step
     )
 
     aaae(calculated_pos, expected_pos)

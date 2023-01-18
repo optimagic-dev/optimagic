@@ -116,7 +116,7 @@ def nag_dfols(
     else:
         raise ValueError(
             "trustregion_method_to_replace_extra_points must be "
-            "'geometry_improving', 'momentum' or None.",
+            "'geometry_improving', 'momentum' or None."
         )
 
     advanced_options, trustregion_reset_options = _create_nag_advanced_options(
@@ -150,7 +150,7 @@ def nag_dfols(
     if fast_start["floor_of_jacobian_singular_values"] != 1:
         warnings.warn(
             "Setting the `floor_of_jacobian_singular_values` is not supported by "
-            "DF-OLS as of version 1.2.1.",
+            "DF-OLS as of version 1.2.1."
         )
     if (
         fast_start["shrink_upper_radius_in_safety_steps"]
@@ -158,7 +158,7 @@ def nag_dfols(
     ):
         raise ValueError(
             "full_geometry_improving_step of the trustregion_fast_start_options can "
-            "only be True if shrink_upper_radius_in_safety_steps is False.",
+            "only be True if shrink_upper_radius_in_safety_steps is False."
         )
 
     (
@@ -173,7 +173,7 @@ def nag_dfols(
         raise ValueError(
             "In the trustregion_reset_options "
             "'n_extra_interpolation_points_per_soft_reset' must "
-            "be larger or the same as 'n_extra_interpolation_points_per_hard_reset'.",
+            "be larger or the same as 'n_extra_interpolation_points_per_hard_reset'."
         )
 
     dfols_options = {
@@ -435,7 +435,7 @@ def _create_nag_advanced_options(
     )
     if trustregion_reset_options["reset_type"] not in ["soft", "hard"]:
         raise ValueError(
-            "reset_type in the trustregion_reset_options must be soft or hard.",
+            "reset_type in the trustregion_reset_options must be soft or hard."
         )
     if initial_directions not in ["coordinate", "random"]:
         raise ValueError("inital_directions must be either 'coordinate' or 'random'.")
@@ -544,7 +544,7 @@ def _build_options_dict(user_input, default_options):
     if len(invalid) > 0:
         raise ValueError(
             f"You specified illegal options {', '.join(invalid)}. Allowed are: "
-            ", ".join(full_options.keys()),
+            ", ".join(full_options.keys())
         )
     full_options.update(user_input)
     return full_options
@@ -556,7 +556,7 @@ def _get_fast_start_method(user_value):
     if user_value not in allowed_values:
         raise ValueError(
             "`perturb_jacobian_or_trustregion_step` must be one of "
-            f"{allowed_values}. You provided {user_value}.",
+            f"{allowed_values}. You provided {user_value}."
         )
     if user_value == "auto":
         faststart_jac = None

@@ -17,7 +17,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 criteria = [sos_scalar_criterion, sos_dict_criterion]
 
 
-@pytest.fixture()
+@pytest.fixture
 def params():
     params = pd.DataFrame()
     params["value"] = np.arange(4)
@@ -29,11 +29,9 @@ def params():
 test_cases = product(criteria, ["maximize", "minimize"])
 
 
-@pytest.mark.parametrize(("criterion", "direction"), test_cases)
+@pytest.mark.parametrize("criterion, direction", test_cases)
 def test_multistart_minimize_with_sum_of_squares_at_defaults(
-    criterion,
-    direction,
-    params,
+    criterion, direction, params
 ):
     if direction == "minimize":
         res = minimize(

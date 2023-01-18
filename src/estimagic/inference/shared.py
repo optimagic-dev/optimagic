@@ -96,10 +96,7 @@ def calculate_summary_data_estimation(
     seed,
 ):
     se = estimation_result.se(
-        method=method,
-        n_samples=n_samples,
-        bounds_handling=bounds_handling,
-        seed=seed,
+        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed
     )
     lower, upper = estimation_result.ci(
         method=method,
@@ -109,10 +106,7 @@ def calculate_summary_data_estimation(
         seed=seed,
     )
     p_values = estimation_result.p_values(
-        method=method,
-        n_samples=n_samples,
-        bounds_handling=bounds_handling,
-        seed=seed,
+        method=method, n_samples=n_samples, bounds_handling=bounds_handling, seed=seed
     )
     summary_data = {
         "value": estimation_result.params,
@@ -197,7 +191,7 @@ def calculate_estimation_summary(
                     (*row, col) if isinstance(row, tuple) else (row, col)
                     for row in params_leaf.index
                     for col in params_leaf.columns
-                ],
+                ]
             )
         elif isinstance(params_leaf, pd.Series):
             loc = index_leaf.to_numpy().flatten()
@@ -209,7 +203,7 @@ def calculate_estimation_summary(
                 index = pd.RangeIndex(stop=params_leaf.size)
             else:
                 index = pd.MultiIndex.from_arrays(
-                    np.unravel_index(np.arange(params_leaf.size), params_leaf.shape),
+                    np.unravel_index(np.arange(params_leaf.size), params_leaf.shape)
                 )
 
         df_chunk = df.loc[loc]
@@ -277,7 +271,7 @@ def _to_numpy(df_or_array, name):
         arr = df_or_array
     else:
         raise TypeError(
-            f"{name} must be a DataFrame or numpy array, not {type(df_or_array)}.",
+            f"{name} must be a DataFrame or numpy array, not {type(df_or_array)}."
         )
     return arr
 
@@ -347,7 +341,7 @@ def transform_free_cov_to_cov(free_cov, free_params, params, return_type):
     elif return_type != "array":
         raise ValueError(
             "return_type must be one of pytree, array, or dataframe, "
-            f"not {return_type}.",
+            f"not {return_type}."
         )
     return cov
 

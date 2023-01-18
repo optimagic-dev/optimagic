@@ -20,7 +20,7 @@ for entries in ENTRIES:
         TEST_CASES.append((entries, is_center))
 
 
-@pytest.mark.parametrize(("entries", "is_center"), TEST_CASES)
+@pytest.mark.parametrize("entries, is_center", TEST_CASES)
 def test_add_entries_not_initialized(entries, is_center):
     history = History(functype="least_squares")
 
@@ -46,7 +46,7 @@ def test_add_entries_not_initialized(entries, is_center):
     aaae(fvals_sinlge, np.array([30.0]))
 
 
-@pytest.mark.parametrize(("entries", "is_center"), TEST_CASES)
+@pytest.mark.parametrize("entries, is_center", TEST_CASES)
 def test_add_entries_initialized_with_space(entries, is_center):
     history = History(functype="least_squares")
     history.add_entries(np.ones((4, 3)), np.zeros((4, 5)))

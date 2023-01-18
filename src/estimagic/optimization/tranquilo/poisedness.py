@@ -48,13 +48,38 @@ def get_poisedness_constant(sample, shape="sphere"):
 
     """
     n_params = sample.shape[1]
-    _minimize = _get_minimize_func(shape, n_params)
+    options = _get_minimize_options(shape, n_params)
 
-    lambda_, argmax, idx_max = _get_poisedness_constant_internal(
-        sample=sample,
-        n_params=n_params,
-        _minimize=_minimize,
-    )
+    center = np.zeros(n_params)
+    lagrange_mat = _lagrange_poly_matrix(sample)
+
+    lambda_ = 0
+    idx_max = None
+
+    for idx, poly in enumerate(lagrange_mat):
+
+        intercept = poly[0]
+        linear_terms = poly[1 : n_params + 1]
+        _coef_square_terms = poly[n_params + 1 :]
+        square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
+
+        neg_criterion = partial(
+            _eval_neg_absolute_value,
+            intercept=intercept,
+            linear_terms=linear_terms,
+            square_terms=square_terms,
+        )
+
+        result_max = minimize(fun=neg_criterion, x0=center, **options)
+
+        critval = _eval_absolute_value(
+            result_max.x, intercept, linear_terms, square_terms
+        )
+
+        if critval > lambda_:
+            lambda_ = critval
+            argmax = result_max.x
+            idx_max = idx
 
     return lambda_, argmax, idx_max
 
@@ -81,78 +106,20 @@ def improve_poisedness(sample, shape="sphere", maxiter=5):
             - lambdas (list): History of lambdas.
 
     """
-    n_params = sample.shape[1]
-    _minimize = _get_minimize_func(shape, n_params)
-
     sample_improved = sample.copy()
 
     lambdas = []
 
     for _ in range(maxiter):
 
-        lambda_, argmax, idx_max = _get_poisedness_constant_internal(
-            sample=sample_improved,
-            n_params=n_params,
-            _minimize=_minimize,
+        lambda_, argmax, idx_max = get_poisedness_constant(
+            sample=sample_improved, shape=shape
         )
 
         lambdas += [lambda_]
         sample_improved[idx_max] = argmax
 
     return sample_improved, lambdas
-
-
-def _get_poisedness_constant_internal(sample, n_params, _minimize):
-    """Internal interface for the calculation of the lambda poisedness constant.
-
-    Args:
-        sample (np.ndarry): Array of shape (n_samples, n_params) containing the scaled
-            sample of points that lie within a trust-region with center 0 and radius 1.
-        n_params (int): Dimensionality of the sample.
-        _minimize (callable): The minimize function with partialled arguments.
-
-    Returns:
-        tuple:
-            - lambda (float): The lambda poisedness constant.
-            - argmax (np.ndarray): 1d array of shape (n_params,) containing the
-                parameter vector that maximizes lambda.
-            - idx_max (int): Index relating to the position of the argmax in the sample.
-
-    """
-    lagrange_mat = _lagrange_poly_matrix(sample)
-
-    lambda_ = 0
-    idx_max = None
-
-    for idx, poly in enumerate(lagrange_mat):
-
-        intercept = poly[0]
-        linear_terms = poly[1 : n_params + 1]
-        _coef_square_terms = poly[n_params + 1 :]
-        square_terms = _reshape_coef_to_square_terms(_coef_square_terms, n_params)
-
-        neg_criterion = partial(
-            _eval_neg_absolute_value,
-            intercept=intercept,
-            linear_terms=linear_terms,
-            square_terms=square_terms,
-        )
-
-        result_max = _minimize(neg_criterion)
-
-        critval = _eval_absolute_value(
-            result_max.x,
-            intercept,
-            linear_terms,
-            square_terms,
-        )
-
-        if critval > lambda_:
-            lambda_ = critval
-            argmax = result_max.x
-            idx_max = idx
-
-    return lambda_, argmax, idx_max
 
 
 def _lagrange_poly_matrix(sample):
@@ -222,34 +189,23 @@ def _reshape_coef_to_square_terms(coef, n_params):
     return mat
 
 
-def _get_minimize_func(shape, n_params):
-    """Get the minimizer function with partialled arguments."""
-    center = np.zeros(n_params)
+def _get_minimize_options(shape, n_params):
+    """Get the minimizer options."""
 
     if shape == "sphere":
         nonlinear_constraint = NonlinearConstraint(lambda x: np.linalg.norm(x), 0, 1)
+        options = {"method": "trust-constr", "constraints": [nonlinear_constraint]}
 
-        _minimize = partial(
-            minimize,
-            x0=center,
-            method="trust-constr",
-            constraints=[nonlinear_constraint],
-        )
     elif shape == "cube":
         bound_constraints = Bounds(-np.ones(n_params), np.ones(n_params))
+        options = {"method": "trust-constr", "bounds": bound_constraints}
 
-        _minimize = partial(
-            minimize,
-            x0=center,
-            method="trust-constr",
-            bounds=bound_constraints,
-        )
     else:
         raise ValueError(
-            f"Invalid shape argument: {shape}. Must be one of sphere, cube.",
+            f"Invalid shape argument: {shape}. Must be one of sphere, cube."
         )
 
-    return _minimize
+    return options
 
 
 def _eval_absolute_value(x, intercept, linear_terms, square_terms):

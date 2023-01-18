@@ -57,14 +57,10 @@ for algo in algorithms:
 
 
 @pytest.mark.parametrize(
-    ("direction", "algorithm", "derivative", "criterion_and_derivative"),
-    valid_cases,
+    "direction, algorithm, derivative, criterion_and_derivative", valid_cases
 )
 def test_valid_derivative_versions(
-    direction,
-    algorithm,
-    derivative,
-    criterion_and_derivative,
+    direction, algorithm, derivative, criterion_and_derivative
 ):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]
@@ -98,14 +94,10 @@ def test_valid_derivative_versions(
 
 
 @pytest.mark.parametrize(
-    ("direction", "algorithm", "derivative", "criterion_and_derivative"),
-    invalid_cases,
+    "direction, algorithm, derivative, criterion_and_derivative", invalid_cases
 )
 def test_invalid_derivative_versions(
-    direction,
-    algorithm,
-    derivative,
-    criterion_and_derivative,
+    direction, algorithm, derivative, criterion_and_derivative
 ):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]

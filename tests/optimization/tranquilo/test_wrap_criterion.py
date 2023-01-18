@@ -10,7 +10,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 TEST_CASES = list(itertools.product(["scalar", "least_squares", "likelihood"], [1, 2]))
 
 
-@pytest.mark.parametrize(("functype", "n_evals"), TEST_CASES)
+@pytest.mark.parametrize("functype, n_evals", TEST_CASES)
 def test_wrapped_criterion(functype, n_evals):
     # set up criterion (all should have same results)
     func_dict = {
@@ -30,10 +30,7 @@ def test_wrapped_criterion(functype, n_evals):
 
     # set up wrapped params
     wrapped_criterion = get_wrapped_criterion(
-        criterion=criterion,
-        batch_evaluator="joblib",
-        n_cores=1,
-        history=history,
+        criterion=criterion, batch_evaluator="joblib", n_cores=1, history=history
     )
 
     # set up params and expected results

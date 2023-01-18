@@ -13,10 +13,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 def load_history(start_vec, solver_sub):
     start_vec_str = np.array2string(
-        start_vec,
-        precision=3,
-        separator=",",
-        suppress_small=False,
+        start_vec, precision=3, separator=",", suppress_small=False
     )
 
     history_x = np.genfromtxt(
@@ -31,7 +28,7 @@ def load_history(start_vec, solver_sub):
     return history_x, history_criterion
 
 
-@pytest.fixture()
+@pytest.fixture
 def criterion():
     data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
@@ -91,7 +88,7 @@ specific_tests = [
 TEST_CASES = universal_tests + specific_tests
 
 
-@pytest.mark.parametrize(("start_vec", "conjugate_gradient_method_sub"), TEST_CASES)
+@pytest.mark.parametrize("start_vec, conjugate_gradient_method_sub", TEST_CASES)
 def test_bntr(
     start_vec,
     conjugate_gradient_method_sub,

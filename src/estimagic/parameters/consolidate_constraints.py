@@ -13,11 +13,7 @@ from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
 def consolidate_constraints(
-    constraints,
-    parvec,
-    lower_bounds,
-    upper_bounds,
-    param_names,
+    constraints, parvec, lower_bounds, upper_bounds, param_names
 ):
     """Consolidate constraints with each other and remove redundant ones.
 
@@ -43,13 +39,10 @@ def consolidate_constraints(
     equality_constraints = _consolidate_equality_constraints(raw_eq)
 
     fixed_constraints, other_constraints = _split_constraints(
-        other_constraints,
-        "fixed",
+        other_constraints, "fixed"
     )
     fixed_value = _consolidate_fixes_with_equality_constraints(
-        fixed_constraints,
-        equality_constraints,
-        parvec,
+        fixed_constraints, equality_constraints, parvec
     )
 
     constr_info = {
@@ -89,17 +82,14 @@ def consolidate_constraints(
         post_replacements,
         is_fixed_to_other,
     ) = _plug_equality_constraints_into_selectors(
-        equality_constraints,
-        other_constraints,
-        n_params=len(parvec),
+        equality_constraints, other_constraints, n_params=len(parvec)
     )
 
     constr_info["post_replacements"] = post_replacements
     constr_info["is_fixed_to_other"] = is_fixed_to_other
 
     linear_constraints, other_constraints = _split_constraints(
-        other_constraints,
-        "linear",
+        other_constraints, "linear"
     )
 
     if len(linear_constraints) > 0:
@@ -189,9 +179,7 @@ def _unite_first_with_all_intersecting_elements(indices):
 
 
 def _consolidate_fixes_with_equality_constraints(
-    fixed_constraints,
-    equality_constraints,
-    parvec,
+    fixed_constraints, equality_constraints, parvec
 ):
     """Consolidate fixes with equality constraints.
 
@@ -210,7 +198,10 @@ def _consolidate_fixes_with_equality_constraints(
     """
     fixed_value = np.full(len(parvec), np.nan)
     for fix in fixed_constraints:
-        fixed_value[fix["index"]] = fix.get("value", parvec[fix["index"]])
+        if "value" in fix:
+            fixed_value[fix["index"]] = fix["value"]
+        else:
+            fixed_value[fix["index"]] = parvec[fix["index"]]
 
     for eq in equality_constraints:
         if np.isfinite(fixed_value[eq["index"]]).any():
@@ -224,9 +215,7 @@ def _consolidate_fixes_with_equality_constraints(
 
 
 def _consolidate_bounds_with_equality_constraints(
-    equality_constraints,
-    lower_bounds,
-    upper_bounds,
+    equality_constraints, lower_bounds, upper_bounds
 ):
     """consolidate bounds with equality constraints.
 
@@ -311,9 +300,7 @@ def simplify_covariance_and_sdcorr_constraints(
 
 
 def _plug_equality_constraints_into_selectors(
-    equality_constraints,
-    other_constraints,
-    n_params,
+    equality_constraints, other_constraints, n_params
 ):
     """Rewrite all constraint in terms of free parameters.
 
@@ -361,10 +348,7 @@ def _plug_equality_constraints_into_selectors(
 
 
 def _consolidate_linear_constraints(
-    params_vec,
-    linear_constraints,
-    constr_info,
-    param_names,
+    params_vec, linear_constraints, constr_info, param_names
 ):
     """Consolidate linear constraints.
 
@@ -392,13 +376,11 @@ def _consolidate_linear_constraints(
 
     """
     weights, right_hand_side = _transform_linear_constraints_to_pandas_objects(
-        linear_constraints,
-        n_params=len(params_vec),
+        linear_constraints, n_params=len(params_vec)
     )
 
     weights = _plug_equality_constraints_into_linear_weights(
-        weights,
-        constr_info["post_replacements"],
+        weights, constr_info["post_replacements"]
     )
     weights, right_hand_side = _plug_fixes_into_linear_weights_and_rhs(
         weights,
@@ -418,10 +400,7 @@ def _consolidate_linear_constraints(
         ].copy(deep=True)
         rhs = right_hand_side.loc[w.index].copy(deep=True)
         w, rhs = _express_bounds_as_linear_constraints(
-            w,
-            rhs,
-            constr_info["lower_bounds"],
-            constr_info["upper_bounds"],
+            w, rhs, constr_info["lower_bounds"], constr_info["upper_bounds"]
         )
         w, rhs = _rescale_linear_constraints(w, rhs)
         w, rhs = _drop_redundant_linear_constraints(w, rhs)
@@ -496,10 +475,7 @@ def _plug_equality_constraints_into_linear_weights(weights, post_replacements):
 
 
 def _plug_fixes_into_linear_weights_and_rhs(
-    weights,
-    rhs,
-    is_fixed_to_value,
-    fixed_value,
+    weights, rhs, is_fixed_to_value, fixed_value
 ):
     """Set weights of fixed parameters to 0 and adjust right hand sides accordingly.
 
@@ -561,8 +537,7 @@ def _express_bounds_as_linear_constraints(weights, rhs, lower, upper):
 
     if len(additional_pc) > 0:
         new_weights, new_rhs = _transform_linear_constraints_to_pandas_objects(
-            additional_pc,
-            len(lower),
+            additional_pc, len(lower)
         )
         new_weights = new_weights[weights.columns]
 
@@ -594,12 +569,10 @@ def _rescale_linear_constraints(weights, rhs):
     scaled_rhs = scaling_factor * rhs
     new_rhs = scaled_rhs.copy()
     new_rhs["lower_bound"] = scaled_rhs["lower_bound"].where(
-        scaling_factor.flatten() > 0,
-        scaled_rhs["upper_bound"],
+        scaling_factor.flatten() > 0, scaled_rhs["upper_bound"]
     )
     new_rhs["upper_bound"] = scaled_rhs["upper_bound"].where(
-        scaling_factor.flatten() > 0,
-        scaled_rhs["lower_bound"],
+        scaling_factor.flatten() > 0, scaled_rhs["lower_bound"]
     )
 
     return new_weights, new_rhs
@@ -643,9 +616,7 @@ def _drop_redundant_linear_constraints(weights, rhs):
     lb = lb.where(fix.isnull(), -np.inf)
 
     new_rhs = pd.concat(
-        [lb, ub, fix],
-        axis=1,
-        names=["lower_bound", "upper_bound", "value"],
+        [lb, ub, fix], axis=1, names=["lower_bound", "upper_bound", "value"]
     )
     new_rhs = new_rhs.reindex(new_weights.index)
 
@@ -673,12 +644,12 @@ def _check_consolidated_weights(weights, param_names):
 
     if n_constraints > n_params:
         raise InvalidConstraintError(
-            msg_too_many + msg_general.format(relevant_names, weights),
+            msg_too_many + msg_general.format(relevant_names, weights)
         )
 
     if np.linalg.matrix_rank(weights) < n_constraints:
         raise InvalidConstraintError(
-            msg_rank + msg_general.format(relevant_names, weights),
+            msg_rank + msg_general.format(relevant_names, weights)
         )
 
 

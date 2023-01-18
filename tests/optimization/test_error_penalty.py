@@ -40,7 +40,7 @@ pairs = [
 ]
 
 
-@pytest.mark.parametrize(("func", "deriv"), pairs)
+@pytest.mark.parametrize("func, deriv", pairs)
 def test_penalty_derivatives(func, deriv):
     rng = get_rng(seed=5)
     x = rng.uniform(size=5)
@@ -52,11 +52,7 @@ def test_penalty_derivatives(func, deriv):
     calculated = deriv(x, constant, slope, x0, dim_out)
 
     partialed = functools.partial(
-        func,
-        constant=constant,
-        slope=slope,
-        x0=x0,
-        dim_out=dim_out,
+        func, constant=constant, slope=slope, x0=x0, dim_out=dim_out
     )
     expected = first_derivative(partialed, x)
 

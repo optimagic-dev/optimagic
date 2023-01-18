@@ -52,8 +52,7 @@ def get_error_penalty_function(
     error_penalty = {} if error_penalty is None else error_penalty
 
     first_value = aggregate_func_output_to_value(
-        f_eval=start_criterion,
-        primary_key=primary_key,
+        f_eval=start_criterion, primary_key=primary_key
     )
 
     constant, slope = _process_error_penalty(

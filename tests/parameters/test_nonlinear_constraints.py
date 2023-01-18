@@ -44,7 +44,7 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize(("lower_bounds", "upper_bounds", "expected"), TEST_CASES)
+@pytest.mark.parametrize("lower_bounds, upper_bounds, expected", TEST_CASES)
 def test_get_transformation_type(lower_bounds, upper_bounds, expected):
     got = _get_transformation_type(lower_bounds, upper_bounds)
     assert got == expected
@@ -65,9 +65,7 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize(
-    ("lower_bounds", "upper_bounds", "case", "expected"), TEST_CASES,
-)
+@pytest.mark.parametrize("lower_bounds, upper_bounds, case, expected", TEST_CASES)
 def test_get_positivity_transform(lower_bounds, upper_bounds, case, expected):
     transform = _get_transformation(lower_bounds, upper_bounds)
 
@@ -107,7 +105,7 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize(("constraint", "params", "expected"), TEST_CASES)
+@pytest.mark.parametrize("constraint, params, expected", TEST_CASES)
 def test_process_selector(constraint, params, expected):
     _selector = _process_selector(constraint)
     got = _selector(params)
@@ -144,11 +142,11 @@ TEST_CASES = [
 ]
 
 TEST_CASES = list(
-    itertools.product(TEST_CASES, [np.arange(3), pd.DataFrame({"a": [0, 1, 2]})]),
+    itertools.product(TEST_CASES, [np.arange(3), pd.DataFrame({"a": [0, 1, 2]})])
 )
 
 
-@pytest.mark.parametrize(("constraint", "params"), TEST_CASES)
+@pytest.mark.parametrize("constraint, params", TEST_CASES)
 def test_check_validity_nonlinear_constraint(constraint, params):
     with pytest.raises(InvalidConstraintError):
         _check_validity_and_return_evaluation(constraint, params, skip_checks=False)
@@ -162,9 +160,7 @@ def test_check_validity_nonlinear_constraint_correct_example():
         "selector": lambda x: x[:1],
     }
     _check_validity_and_return_evaluation(
-        constr,
-        params=np.arange(4),
-        skip_checks=False,
+        constr, params=np.arange(4), skip_checks=False
     )
 
 
@@ -179,7 +175,7 @@ TEST_CASES = [
                 "fun": lambda x: np.array([x]),
                 "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
-            },
+            }
         ],  # constraints
         "same",  # expected
     ),
@@ -190,7 +186,7 @@ TEST_CASES = [
                 "fun": lambda x: np.array([x]),
                 "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
-            },
+            }
         ],  # constraints
         [
             {
@@ -198,13 +194,13 @@ TEST_CASES = [
                 "fun": lambda x: np.array([x, -x]).reshape(-1, 1),
                 "jac": lambda x: np.array([[1], [-1]]),  # noqa: ARG005
                 "n_constr": 1,
-            },
+            }
         ],  # expected
     ),
 ]
 
 
-@pytest.mark.parametrize(("constraints", "expected"), TEST_CASES)
+@pytest.mark.parametrize("constraints, expected", TEST_CASES)
 def test_equality_as_inequality_constraints(constraints, expected):
     got = equality_as_inequality_constraints(constraints)
     if expected == "same":
@@ -240,11 +236,7 @@ def test_process_nonlinear_constraints():
     numdiff_options = {"lower_bounds": params, "upper_bounds": params}
 
     got = process_nonlinear_constraints(
-        nonlinear_constraints,
-        params,
-        converter,
-        numdiff_options,
-        skip_checks=False,
+        nonlinear_constraints, params, converter, numdiff_options, skip_checks=False
     )
 
     expected = [

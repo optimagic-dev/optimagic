@@ -42,20 +42,15 @@ TEST_CASES = list(
         [None, lambda x: x[:2]],  # selector
         [None, 50],  # max_evaluations
         [True, False],  # show_exploration
-    ),
+    )
 )
 
 
 @pytest.mark.parametrize(
-    ("multistart", "selector", "max_evaluations", "show_exploration"),
-    TEST_CASES,
+    "multistart, selector, max_evaluations, show_exploration", TEST_CASES
 )
 def test_params_plot_multistart(
-    minimize_result,
-    multistart,
-    selector,
-    max_evaluations,
-    show_exploration,
+    minimize_result, multistart, selector, max_evaluations, show_exploration
 ):
     for _res in minimize_result[multistart]:
         params_plot(
@@ -75,15 +70,10 @@ TEST_CASES = list(itertools.product([True, False], repeat=4))
 
 
 @pytest.mark.parametrize(
-    ("multistart", "monotone", "stack_multistart", "exploration"),
-    TEST_CASES,
+    "multistart, monotone, stack_multistart, exploration", TEST_CASES
 )
 def test_criterion_plot_list_input(
-    minimize_result,
-    multistart,
-    monotone,
-    stack_multistart,
-    exploration,
+    minimize_result, multistart, monotone, stack_multistart, exploration
 ):
 
     res = minimize_result[multistart]

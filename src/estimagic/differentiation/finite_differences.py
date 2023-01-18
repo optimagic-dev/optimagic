@@ -155,6 +155,6 @@ def _calculate_outer_product_steps(signed_steps, n_steps, dim_x):
 
     """
     outer_product_steps = np.array(
-        [np.outer(signed_steps[j], signed_steps[j]) for j in range(n_steps)],
+        [np.outer(signed_steps[j], signed_steps[j]) for j in range(n_steps)]
     ).reshape(n_steps, 1, dim_x, dim_x)
     return outer_product_steps

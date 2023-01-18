@@ -2,11 +2,7 @@ import pandas as pd
 
 
 def check_inputs(
-    data=None,
-    cluster_by=None,
-    ci_method="percentile",
-    ci_level=0.95,
-    skipdata=False,
+    data=None, cluster_by=None, ci_method="percentile", ci_level=0.95, skipdata=False
 ):
     """Check validity of inputs.
 
@@ -27,7 +23,7 @@ def check_inputs(
             raise TypeError("Data must be a pandas.DataFrame or pandas.Series.")
         elif (cluster_by is not None) and (cluster_by not in data.columns.tolist()):
             raise ValueError(
-                "Input 'cluster_by' must be None or a column name of 'data'.",
+                "Input 'cluster_by' must be None or a column name of 'data'."
             )
 
     if ci_method not in ci_method_list:

@@ -35,13 +35,11 @@ test_cases = list(
         [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
         [cov_np, cov_pd],  # moments_cov
         [{"algorithm": "scipy_lbfgsb"}, "scipy_lbfgsb"],  # optimize_options
-    ),
+    )
 )
 
 
-@pytest.mark.parametrize(
-    ("simulate_moments", "moments_cov", "optimize_options"), test_cases,
-)
+@pytest.mark.parametrize("simulate_moments, moments_cov, optimize_options", test_cases)
 def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
     start_params = np.array([3, 2, 1])
 
@@ -111,13 +109,12 @@ ls_test_cases = list(
         [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
         [cov_np, cov_pd],  # moments_cov
         [{"algorithm": "pounders"}, "pounders"],  # optimize_options
-    ),
+    )
 )
 
 
 @pytest.mark.parametrize(
-    ("simulate_moments", "moments_cov", "optimize_options"),
-    ls_test_cases,
+    "simulate_moments, moments_cov, optimize_options", ls_test_cases
 )
 def test_estimate_msm_ls(simulate_moments, moments_cov, optimize_options):
     start_params = np.array([3, 2, 1])

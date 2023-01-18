@@ -141,15 +141,13 @@ def estimation_table(
     models = [_process_model(model) for model in models]
     model_names = _get_model_names(models)
     default_col_names, default_col_groups = _get_default_column_names_and_groups(
-        model_names,
+        model_names
     )
     column_groups = _customize_col_groups(
-        default_col_groups=default_col_groups,
-        custom_col_groups=custom_col_groups,
+        default_col_groups=default_col_groups, custom_col_groups=custom_col_groups
     )
     column_names = _customize_col_names(
-        default_col_names=default_col_names,
-        custom_col_names=custom_col_names,
+        default_col_names=default_col_names, custom_col_names=custom_col_names
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
     stats_options = _set_default_stats_options(stats_options)
@@ -207,7 +205,7 @@ def estimation_table(
         if show_footer:
             footer.index.names = body.index.names
             out = pd.concat([body.reset_index(), footer.reset_index()]).set_index(
-                body.index.names,
+                body.index.names
             )
         else:
             out = body
@@ -215,7 +213,7 @@ def estimation_table(
         raise ValueError(
             f"""Value of return type can be either of
             ['data_frame', 'render_inputs','latex' ,'html']
-            or a path ending with '.html' or '.tex'. Not: {return_type}.""",
+            or a path ending with '.html' or '.tex'. Not: {return_type}."""
         )
 
     return_type = Path(return_type)
@@ -282,7 +280,7 @@ def render_latex(
             pandas 1.4.0 or higher. Update to a newer version of pandas or use
             estimation_table with return_type="render_inputs" and manually render those
             results using the DataFrame.to_latex method.
-        """,
+        """
         )
     if siunitx_warning:
         warn(
@@ -293,7 +291,7 @@ def render_latex(
                        group-digits             = false,
                     }
                     to your main tex file. To turn
-                    this warning off set value of siunitx_warning = False""",
+                    this warning off set value of siunitx_warning = False"""
         )
     body = body.copy(deep=True)
     try:
@@ -312,7 +310,10 @@ def render_latex(
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
 
-    escape_special_characters = "latex" if escape_special_characters else None
+    if escape_special_characters:
+        escape_special_characters = "latex"
+    else:
+        escape_special_characters = None
     body_styler = _get_updated_styler(
         body,
         show_index_names=show_index_names,
@@ -361,11 +362,7 @@ def render_latex(
             )
         latex_str += stats_str
     notes = _generate_notes_latex(
-        append_notes,
-        notes_label,
-        significance_levels,
-        custom_notes,
-        body,
+        append_notes, notes_label, significance_levels, custom_notes, body
     )
     latex_str += notes
     latex_str += "\\bottomrule\n\\end{tabular}\n"
@@ -426,12 +423,15 @@ def render_html(
             pandas 1.4.0 or higher. Update to a newer version of pandas or use
             estimation_table with return_type="render_inputs" and manually render those
             results using the DataFrame.to_html method.
-        """,
+        """
         )
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
     html_str = ""
-    escape_special_characters = "html" if escape_special_characters else None
+    if escape_special_characters:
+        escape_special_characters = "html"
+    else:
+        escape_special_characters = None
     body_styler = _get_updated_styler(
         body,
         show_index_names=show_index_names,
@@ -446,7 +446,7 @@ def render_html(
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
             </td></tr>""".format(
-            n_levels + n_columns,
+            n_levels + n_columns
         )
         stats_str += (
             footer.style.to_html(**default_options)
@@ -456,11 +456,7 @@ def render_html(
         stats_str = re.sub(r"(?<=[\d)}{)])}", "", re.sub(r"{(?=[}\d(])", "", stats_str))
         html_str += stats_str
     notes = _generate_notes_html(
-        append_notes,
-        notes_label,
-        significance_levels,
-        custom_notes,
-        body,
+        append_notes, notes_label, significance_levels, custom_notes, body
     )
     html_str += notes
     html_str += "</tbody>\n</table>"
@@ -493,7 +489,7 @@ def _process_model(model):
         except Exception as e:
             raise TypeError(
                 f"""Model can  be of type dict,  pd.DataFrame
-                or a statsmodels result. Model {model} is of type {type(model)}.""",
+                or a statsmodels result. Model {model} is of type {type(model)}."""
             ) from e
     if "pvalue" in params.columns:
         params = params.rename(columns={"pvalue": "p_value"})
@@ -643,17 +639,13 @@ def _build_estimation_table_body(
 
     """
     dfs, max_trail = _reindex_and_float_format_params(
-        models,
-        show_inference,
-        confidence_intervals,
-        number_format,
-        add_trailing_zeros,
+        models, show_inference, confidence_intervals, number_format, add_trailing_zeros
     )
     to_convert = []
     if show_stars:
         for df, mod in zip(dfs, models):
             to_convert.append(
-                pd.concat([df, mod["params"].reindex(df.index)["p_value"]], axis=1),
+                pd.concat([df, mod["params"].reindex(df.index)["p_value"]], axis=1)
             )
     else:
         to_convert = dfs
@@ -734,20 +726,13 @@ def _build_estimation_table_footer(
 
 
 def _reindex_and_float_format_params(
-    models,
-    show_inference,
-    confidence_intervals,
-    number_format,
-    add_trailing_zeros,
+    models, show_inference, confidence_intervals, number_format, add_trailing_zeros
 ):
     """Reindex all params DataFrames with a common index and apply number formatting."""
     dfs = _get_params_frames_with_common_index(models)
     cols_to_format = _get_cols_to_format(show_inference, confidence_intervals)
     formatted_frames, max_trail = _apply_number_formatting_frames(
-        dfs,
-        cols_to_format,
-        number_format,
-        add_trailing_zeros,
+        dfs, cols_to_format, number_format, add_trailing_zeros
     )
     return formatted_frames, max_trail
 
@@ -804,7 +789,10 @@ def _update_show_col_groups(show_col_groups, column_groups):
 
     """
     if show_col_groups is None:
-        show_col_groups = bool(column_groups is not None)
+        if column_groups is not None:
+            show_col_groups = True
+        else:
+            show_col_groups = False
     return show_col_groups
 
 
@@ -822,7 +810,7 @@ def _set_default_stats_options(stats_options):
         if not isinstance(stats_options, dict):
             raise TypeError(
                 f"""stats_options can be of types dict or NoneType.
-            Not: {type(stats_options)}.""",
+            Not: {type(stats_options)}."""
             )
     return stats_options
 
@@ -863,7 +851,7 @@ def _check_order_of_model_names(model_names):
         if positions != list(range(positions[0], positions[-1] + 1)):
             raise ValueError(
                 "If there are repetitions in model_names, models with the "
-                f"same name need to be adjacent. You provided: {model_names}",
+                f"same name need to be adjacent. You provided: {model_names}"
             )
 
 
@@ -910,7 +898,7 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
                 raise ValueError(
                     """With unique model names, multiple models can't be grouped
                 under common group name. Provide list of unique group names instead,
-                if you wish to add column level.""",
+                if you wish to add column level."""
                 )
             col_groups = custom_col_groups
         else:
@@ -923,7 +911,7 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
             else:
                 raise TypeError(
                     f"""Invalid type for custom_col_groups. Can be either list
-                    or dictionary, or NoneType. Not: {type(col_groups)}.""",
+                    or dictionary, or NoneType. Not: {type(col_groups)}."""
                 )
     else:
         col_groups = default_col_groups
@@ -952,7 +940,7 @@ def _customize_col_names(default_col_names, custom_col_names):
             raise ValueError(
                 f"""If provided as a list, custom_col_names should have same length as
                 default_col_names. Lenght of custom_col_names {len(custom_col_names)}
-                !=length of default_col_names {len(default_col_names)}""",
+                !=length of default_col_names {len(default_col_names)}"""
             )
         elif any(isinstance(i, list) for i in custom_col_names):
             raise ValueError("Custom_col_names cannot be a nested list")
@@ -960,7 +948,7 @@ def _customize_col_names(default_col_names, custom_col_names):
     else:
         raise TypeError(
             f"""Invalid type for custom_col_names.
-            Can be either list or dictionary, or NoneType. Not: {col_names}.""",
+            Can be either list or dictionary, or NoneType. Not: {col_names}."""
         )
     return col_names
 
@@ -1100,12 +1088,14 @@ def _create_statistics_sr(
     """
     stats_values = {}
     stats_options = deepcopy(stats_options)
-    show_dof = stats_options.pop("show_dof") if "show_dof" in stats_options else None
+    if "show_dof" in stats_options:
+        show_dof = stats_options.pop("show_dof")
+    else:
+        show_dof = None
     for k in stats_options:
         stats_values[stats_options[k]] = model["info"].get(k, np.nan)
     raw_formatted = _apply_number_format(
-        pd.DataFrame(pd.Series(stats_values)),
-        number_format,
+        pd.DataFrame(pd.Series(stats_values)), number_format
     )
     if add_trailing_zeros:
         formatted = _apply_number_format(raw_formatted, max_trail)
@@ -1134,16 +1124,14 @@ def _create_statistics_sr(
         if show_dof:
             rse_str = "{{{}(df={})}}"
             stats_values["Residual Std. Error"] = rse_str.format(
-                stats_values["Residual Std. Error"],
-                int(model["info"]["df_resid"]),
+                stats_values["Residual Std. Error"], int(model["info"]["df_resid"])
             )
     stat_sr = pd.Series(stats_values)
     # the follwing is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
     stat_ind = np.empty((len(stat_sr), model["params"].index.nlevels - 1), dtype=str)
     stat_ind = np.concatenate(
-        [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind],
-        axis=1,
+        [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind], axis=1
     ).T
     stat_sr.index = pd.MultiIndex.from_arrays(stat_ind)
     return stat_sr.astype("str").replace("nan", "")
@@ -1179,7 +1167,7 @@ def _process_frame_indices(
     if show_col_names:
         if show_col_groups:
             df.columns = pd.MultiIndex.from_tuples(
-                [(i, j) for i, j in zip(column_groups, column_names)],
+                [(i, j) for i, j in zip(column_groups, column_names)]
             )
         else:
             df.columns = column_names
@@ -1191,7 +1179,7 @@ def _process_frame_indices(
         else:
             TypeError(
                 f"""Invalid custom_index_names can be of type either list or dict,
-                or NoneType. Not: {type(custom_index_names)}.""",
+                or NoneType. Not: {type(custom_index_names)}."""
             )
     if custom_param_names:
         ind = df.index.to_frame()
@@ -1201,11 +1189,7 @@ def _process_frame_indices(
 
 
 def _generate_notes_latex(
-    append_notes,
-    notes_label,
-    significance_levels,
-    custom_notes,
-    df,
+    append_notes, notes_label, significance_levels, custom_notes, df
 ):
     """Generate the LaTex script of the notes section.
 
@@ -1227,8 +1211,7 @@ def _generate_notes_latex(
     if append_notes:
         notes_text += "\\midrule\n"
         notes_text += "\\textit{{{}}} & \\multicolumn{{{}}}{{r}}{{".format(
-            notes_label,
-            str(n_columns + n_levels - 1),
+            notes_label, str(n_columns + n_levels - 1)
         )
         # iterate over penultimate significance_lelvels since last item of legend
         # is not followed by a semi column
@@ -1243,37 +1226,29 @@ def _generate_notes_latex(
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if type(n) != str]} are of types
-                        {[type(n) for n in custom_notes if type(n) != str]}
-                        respectively.""",
+                        {[n for n in custom_notes if not type(n)==str]} are of types
+                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        respectively."""
                     )
                 for n in custom_notes:
                     notes_text += """
                     {}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n""".format(
-                        amp_n,
-                        n_columns,
-                        n,
+                        amp_n, n_columns, n
                     )
             elif isinstance(custom_notes, str):
                 notes_text += "{}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n".format(
-                    amp_n,
-                    n_columns,
-                    custom_notes,
+                    amp_n, n_columns, custom_notes
                 )
             else:
                 raise ValueError(
                     f"""Custom notes can be either a string or a list of strings.
-                    Not: {type(custom_notes)}.""",
+                    Not: {type(custom_notes)}."""
                 )
     return notes_text
 
 
 def _generate_notes_html(
-    append_notes,
-    notes_label,
-    significance_levels,
-    custom_notes,
-    df,
+    append_notes, notes_label, significance_levels, custom_notes, df
 ):
     """Generate the html script of the notes section of the estimation table.
 
@@ -1293,14 +1268,13 @@ def _generate_notes_html(
     significance_levels = sorted(significance_levels)
     notes_text = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
         </td></tr>""".format(
-        n_columns + n_levels,
+        n_columns + n_levels
     )
     if append_notes:
         notes_text += """
         <tr><td style="text-align: left">{}</td><td colspan="{}"
         style="text-align: right">""".format(
-            notes_label,
-            n_columns + n_levels - 1,
+            notes_label, n_columns + n_levels - 1
         )
         for i in range(len(significance_levels) - 1):
             stars = "*" * (len(significance_levels) - i)
@@ -1312,15 +1286,14 @@ def _generate_notes_html(
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if type(n) != str]} are of types
-                        {[type(n) for n in custom_notes if type(n) != str]}
-                        respectively.""",
+                        {[n for n in custom_notes if not type(n)==str]} are of types
+                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        respectively."""
                     )
                 notes_text += """
                     <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
                     """.format(
-                    n_columns + n_levels - 1,
-                    custom_notes[0],
+                    n_columns + n_levels - 1, custom_notes[0]
                 )
                 if len(custom_notes) > 1:
                     for i in range(1, len(custom_notes)):
@@ -1328,20 +1301,18 @@ def _generate_notes_html(
                         <tr><td></td><td colspan="{}"style="text-align: right">
                         {}</td></tr>
                         """.format(
-                            n_columns + n_levels - 1,
-                            custom_notes[i],
+                            n_columns + n_levels - 1, custom_notes[i]
                         )
             elif isinstance(custom_notes, str):
                 notes_text += """
                     <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
                     """.format(
-                    n_columns + n_levels - 1,
-                    custom_notes,
+                    n_columns + n_levels - 1, custom_notes
                 )
             else:
                 raise ValueError(
                     f"""Custom notes can be either a string or a list of strings,
-                    not {type(custom_notes)}.""",
+                    not {type(custom_notes)}."""
                 )
 
     return notes_text
@@ -1395,11 +1366,11 @@ def _apply_number_format(df, number_format):
         for formatter in processed_format[:-1]:
             df_formatted = df_formatted.applymap(formatter.format).astype("float")
         df_formatted = df_formatted.astype("float").applymap(
-            processed_format[-1].format,
+            processed_format[-1].format
         )
     elif isinstance(processed_format, str):
         df_formatted = df.astype("str").applymap(
-            partial(_format_non_scientific_numbers, format_string=processed_format),
+            partial(_format_non_scientific_numbers, format_string=processed_format)
         )
     elif callable(processed_format):
         df_formatted = df.applymap(processed_format)
@@ -1430,7 +1401,7 @@ def _process_number_format(raw_format):
     else:
         raise TypeError(
             f"""Number format can be either of [str, int, tuple, list, callable] types.
-           Not: {type(raw_format)}.""",
+           Not: {type(raw_format)}."""
         )
     return processed_format
 
@@ -1462,8 +1433,7 @@ def _center_align_integers(sr):
     """Align integer numbers at the center of model column."""
     for i in sr.index:
         res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?",
-            sr[i],
+            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
         )
         if res_numeric:
             num = res_numeric[0]
@@ -1477,8 +1447,7 @@ def _unformat_integers(sr):
     """Remove trailing zeros from integer numbers."""
     for i in sr.index:
         res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?",
-            sr[i],
+            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
         )
         if res_numeric:
             num = res_numeric[0]
@@ -1489,11 +1458,7 @@ def _unformat_integers(sr):
 
 
 def _get_updated_styler(
-    df,
-    show_index_names,
-    show_col_names,
-    show_col_groups,
-    escape_special_characters,
+    df, show_index_names, show_col_names, show_col_groups, escape_special_characters
 ):
     """Return pandas.Styler object based ont the data and styling options"""
     styler = df.style

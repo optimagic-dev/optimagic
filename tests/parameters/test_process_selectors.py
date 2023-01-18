@@ -23,26 +23,24 @@ def test_process_selectors_no_constraint(constraints):
     assert calculated == []
 
 
-@pytest.fixture()
+@pytest.fixture
 def tree_params():
     df = pd.DataFrame({"value": [3, 4], "lower_bound": [0, 0]}, index=["c", "d"])
     params = ([0, np.array([1, 2]), {"a": df, "b": 5}], 6)
     return params
 
 
-@pytest.fixture()
+@pytest.fixture
 def tree_params_converter(tree_params):
     registry = get_registry(extended=True)
     _, treedef = tree_flatten(tree_params, registry=registry)
 
     converter = TreeConverter(
         params_flatten=lambda params: np.array(
-            tree_just_flatten(params, registry=registry),
+            tree_just_flatten(params, registry=registry)
         ),
         params_unflatten=lambda x: tree_unflatten(
-            treedef,
-            x.tolist(),
-            registry=registry,
+            treedef, x.tolist(), registry=registry
         ),
         func_flatten=None,
         derivative_flatten=None,
@@ -50,7 +48,7 @@ def tree_params_converter(tree_params):
     return converter
 
 
-@pytest.fixture()
+@pytest.fixture
 def np_params_converter():
     converter = TreeConverter(
         lambda x: x,
@@ -61,14 +59,14 @@ def np_params_converter():
     return converter
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_params():
     df = pd.DataFrame({"value": np.arange(6) + 10}, index=list("abcdef"))
     df.index.name = "name"
     return df
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_params_converter(df_params):
     converter = TreeConverter(
         lambda x: x["value"].to_numpy(),
@@ -94,7 +92,7 @@ def test_process_selectors_tree_selectors(tree_params, tree_params_converter):
         {
             "type": "pairwise_equality",
             "selectors": [lambda x: x[1], lambda x: x[0][1][0]],
-        },
+        }
     ]
     calculated = process_selectors(
         constraints=constraints,
@@ -122,7 +120,7 @@ def test_process_selectors_numpy_array_locs(np_params_converter):
         {
             "type": "pairwise_equality",
             "locs": [[1, 4], [0, 3]],
-        },
+        }
     ]
     calculated = process_selectors(
         constraints=constraints,
@@ -205,9 +203,7 @@ def test_process_selectors_numpy_array_invalid_fields(field, np_params_converter
 
 @pytest.mark.parametrize("field", ["selectors", "queries", "locs"])
 def test_process_selectors_dataframe_invalid_fields(
-    field,
-    df_params,
-    df_params_converter,
+    field, df_params, df_params_converter
 ):
     with pytest.raises(InvalidConstraintError):
         process_selectors(
@@ -220,9 +216,7 @@ def test_process_selectors_dataframe_invalid_fields(
 
 @pytest.mark.parametrize("field", ["selectors", "queries", "query", "locs", "loc"])
 def test_process_selectors_tree_invalid_fields(
-    field,
-    tree_params,
-    tree_params_converter,
+    field, tree_params, tree_params_converter
 ):
     with pytest.raises(InvalidConstraintError):
         process_selectors(
@@ -238,7 +232,7 @@ def test_process_selectors_duplicates(np_params_converter):
         {
             "type": "pairwise_equality",
             "locs": [[1, 4], [0, 0]],
-        },
+        }
     ]
     with pytest.raises(InvalidConstraintError):
         process_selectors(
@@ -254,7 +248,7 @@ def test_process_selectors_differen_length_in_multiple_selectors(np_params_conve
         {
             "type": "pairwise_equality",
             "locs": [[1, 4], [0, 3, 5]],
-        },
+        }
     ]
     with pytest.raises(InvalidConstraintError):
         process_selectors(

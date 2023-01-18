@@ -41,7 +41,7 @@ def run_dashboard(
         database_path = pathlib.Path(database_path)
         if not database_path.exists():
             raise ValueError(
-                f"The database path {database_path} you supplied does not exist.",
+                f"The database path {database_path} you supplied does not exist."
             )
 
     session_data = {

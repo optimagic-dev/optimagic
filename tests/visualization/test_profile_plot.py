@@ -9,7 +9,7 @@ from estimagic.visualization.profile_plot import _find_switch_points
 from estimagic.visualization.profile_plot import profile_plot
 
 
-@pytest.fixture()
+@pytest.fixture
 def performance_ratios():
     df = pd.DataFrame(
         data={"algo1": [1.0, 1.0, 4.0], "algo2": [1.5, np.inf, 1.0]},
@@ -63,9 +63,7 @@ def test_create_solution_times_n_evaluations():
     expected.columns.name = "algorithm"
 
     res = _create_solution_times(
-        df=df,
-        runtime_measure="n_evaluations",
-        converged_info=info,
+        df=df, runtime_measure="n_evaluations", converged_info=info
     )
     pd.testing.assert_frame_equal(res, expected)
 

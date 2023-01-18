@@ -36,9 +36,7 @@ def test_matrix_to_block_tree_only_params_dfs():
         "a": {
             "a": pd.DataFrame([[0, 1], [5, 6]], columns=["a", "b"], index=["a", "b"]),
             "b": pd.DataFrame(
-                [[2, 3, 4], [7, 8, 9]],
-                columns=["j", "k", "l"],
-                index=["a", "b"],
+                [[2, 3, 4], [7, 8, 9]], columns=["j", "k", "l"], index=["a", "b"]
             ),
         },
         "b": {
@@ -103,9 +101,7 @@ def test_block_tree_to_matrix_only_params_dfs():
         "a": {
             "a": pd.DataFrame([[0, 1], [5, 6]], columns=["a", "b"], index=["a", "b"]),
             "b": pd.DataFrame(
-                [[2, 3, 4], [7, 8, 9]],
-                columns=["j", "k", "l"],
-                index=["a", "b"],
+                [[2, 3, 4], [7, 8, 9]], columns=["j", "k", "l"], index=["a", "b"]
             ),
         },
         "b": {

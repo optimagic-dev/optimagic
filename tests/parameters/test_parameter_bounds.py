@@ -6,21 +6,19 @@ from estimagic.parameters.parameter_bounds import get_bounds
 from numpy.testing import assert_array_equal
 
 
-@pytest.fixture()
+@pytest.fixture
 def pytree_params():
     pytree_params = {
         "delta": 0.95,
         "utility": pd.DataFrame(
-            [[0.5, 0]] * 3,
-            index=["a", "b", "c"],
-            columns=["value", "lower_bound"],
+            [[0.5, 0]] * 3, index=["a", "b", "c"], columns=["value", "lower_bound"]
         ),
         "probs": np.array([[0.8, 0.2], [0.3, 0.7]]),
     }
     return pytree_params
 
 
-@pytest.fixture()
+@pytest.fixture
 def array_params():
     return np.arange(2)
 
@@ -34,9 +32,7 @@ def test_get_bounds_subdataframe(pytree_params):
         "utility": pd.DataFrame([[1]] * 2, index=["a", "b"], columns=["value"]),
     }
     lb, ub = get_bounds(
-        pytree_params,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        pytree_params, lower_bounds=lower_bounds, upper_bounds=upper_bounds
     )
 
     assert np.all(lb[1:3] == np.ones(2))
@@ -52,7 +48,7 @@ TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize(("lower_bounds", "upper_bounds"), TEST_CASES)
+@pytest.mark.parametrize("lower_bounds, upper_bounds", TEST_CASES)
 def test_get_bounds_error(pytree_params, lower_bounds, upper_bounds):
     with pytest.raises(InvalidBoundsError):
         get_bounds(pytree_params, lower_bounds=lower_bounds, upper_bounds=upper_bounds)

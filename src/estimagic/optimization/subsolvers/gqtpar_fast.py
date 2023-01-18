@@ -185,7 +185,7 @@ def _get_initial_guess_for_lambdas(model_gradient, model_hessian):
     hessian_frobenius_norm = _norm(model_hessian, -1.0)
 
     hessian_gershgorin_lower, hessian_gershgorin_upper = _compute_gershgorin_bounds(
-        model_hessian,
+        model_hessian
     )
 
     lambda_lower_bound = max(
@@ -204,8 +204,7 @@ def _get_initial_guess_for_lambdas(model_gradient, model_hessian):
         lambda_candidate = 0
     else:
         lambda_candidate = _get_new_lambda_candidate(
-            lower_bound=lambda_lower_bound,
-            upper_bound=lambda_upper_bound,
+            lower_bound=lambda_lower_bound, upper_bound=lambda_upper_bound
         )
 
     return lambda_candidate, lambda_lower_bound, lambda_upper_bound
@@ -228,7 +227,7 @@ def _add_lambda_and_factorize_hessian(model_hessian, lambda_candidate):
     """
 
     hessian_plus_lambda = model_hessian + lambda_candidate * _identity(
-        model_hessian.shape[0],
+        model_hessian.shape[0]
     )
     hessian_upper_triangular, factorization_info = compute_cholesky_factorization(
         hessian_plus_lambda,
@@ -333,8 +332,7 @@ def _check_for_interior_convergence_and_update(
 
     lambda_lower_bound = max(lambda_lower_bound, lambda_upper_bound - s_min**2)
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound,
-        upper_bound=lambda_candidate,
+        lower_bound=lambda_lower_bound, upper_bound=lambda_candidate
     )
     return (
         x_candidate,
@@ -363,8 +361,7 @@ def _update_lambdas_when_factorization_unsuccessful(
 
     lambda_lower_bound = max(lambda_lower_bound, lambda_candidate + delta / v_norm**2)
     lambda_new_candidate = _get_new_lambda_candidate(
-        lower_bound=lambda_lower_bound,
-        upper_bound=lambda_upper_bound,
+        lower_bound=lambda_lower_bound, upper_bound=lambda_upper_bound
     )
     return lambda_new_candidate, lambda_lower_bound
 
@@ -471,8 +468,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
     else:
         lambda_new_lower_bound = max(lambda_new_lower_bound, newton_step)
         lambda_new_candidate = _get_new_lambda_candidate(
-            lower_bound=lambda_new_lower_bound,
-            upper_bound=lambda_candidate,
+            lower_bound=lambda_new_lower_bound, upper_bound=lambda_candidate
         )
 
     lambda_new_upper_bound = lambda_candidate
@@ -507,14 +503,15 @@ def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
     b = 2 * x_candidate.T @ z_min
     c = x_candidate.T @ x_candidate - 1
     ta, tb = np.roots(np.array([a, b, c]))
-    step_len = ta if abs(ta) <= abs(tb) else tb
+    if abs(ta) <= abs(tb):
+        step_len = ta
+    else:
+        step_len = tb
     return step_len
 
 
 def _compute_terms_to_make_leading_submatrix_singular(
-    hessian_upper_triangular,
-    hessian_plus_lambda,
-    k,
+    hessian_upper_triangular, hessian_plus_lambda, k
 ):
     """Compute terms that make the leading submatrix of the hessian singular.
 
@@ -656,7 +653,10 @@ def _estimate_smallest_singular_value(upper_triangular):
 @njit
 def _norm(a, order):
     """A wrapper to jit np.linalg.norm."""
-    out = np.linalg.norm(a) if order == -1 else np.linalg.norm(a, order)
+    if order == -1:
+        out = np.linalg.norm(a)
+    else:
+        out = np.linalg.norm(a, order)
     return out
 
 

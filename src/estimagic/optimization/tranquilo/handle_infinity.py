@@ -43,10 +43,7 @@ def clip_relative(fvecs):
     _neg_penalty = _mins - 2 * _diff - 1
 
     out = np.nan_to_num(
-        fvecs,
-        nan=_pos_penalty,
-        posinf=_pos_penalty,
-        neginf=_neg_penalty,
+        fvecs, nan=_pos_penalty, posinf=_pos_penalty, neginf=_neg_penalty
     )
 
     return out

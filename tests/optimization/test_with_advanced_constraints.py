@@ -23,7 +23,7 @@ CONSTR_INFO = {
             "type": "covariance",
             "bounds_distance": 0.1,
             "robust_bounds": True,
-        },
+        }
     ],
     "sdcorr_bounds_distance": [
         {
@@ -31,7 +31,7 @@ CONSTR_INFO = {
             "type": "sdcorr",
             "bounds_distance": 0.1,
             "robust_bounds": True,
-        },
+        }
     ],
     "fixed_and_decreasing": [
         {"loc": [1, 2, 3, 4], "type": "decreasing"},
@@ -66,7 +66,7 @@ constr_names = list(CONSTR_INFO.keys())
 test_cases = list(itertools.product(derivatives, constr_names))
 
 
-@pytest.mark.parametrize(("derivative", "constr_name"), test_cases)
+@pytest.mark.parametrize("derivative, constr_name", test_cases)
 def test_with_covariance_constraint_bounds_distance(derivative, constr_name):
     params = pd.Series(START_INFO[constr_name], name="value").to_frame()
 

@@ -9,6 +9,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 @click.version_option()
 def cli():
     """Command-line interface for estimagic."""
+    pass  # noqa: PIE790
 
 
 @cli.command()

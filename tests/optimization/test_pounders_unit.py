@@ -42,7 +42,7 @@ def read_yaml(path):
 # ======================================================================================
 
 
-@pytest.fixture()
+@pytest.fixture
 def criterion():
     data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
@@ -55,13 +55,12 @@ def criterion():
     return partial(func, exog=exog, endog=endog)
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_create_initial_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_initial_residual_model.yaml")
     history = LeastSquaresHistory()
     ResidualModel = namedtuple(
-        "ResidualModel",
-        ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
     )
 
     history.add_entries(
@@ -82,13 +81,12 @@ def data_create_initial_residual_model():
     return inputs_dict, residual_model_expected
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_update_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_residual_model.yaml")
 
     ResidualModel = namedtuple(
-        "ResidualModel",
-        ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
     )
 
     residual_model = ResidualModel(
@@ -116,13 +114,12 @@ def data_update_residual_model():
     return inputs_dict, expected_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_update_main_from_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_main_from_residual_model.yaml")
 
     ResidualModel = namedtuple(
-        "ResidualModel",
-        ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
     )
     MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
 
@@ -140,15 +137,14 @@ def data_update_main_from_residual_model():
     return residual_model, main_model_expected
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_update_residual_model_with_new_accepted_x():
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / "update_residual_model_with_new_accepted_x.yaml",
+        TEST_FIXTURES_DIR / "update_residual_model_with_new_accepted_x.yaml"
     )
 
     ResidualModel = namedtuple(
-        "ResidualModel",
-        ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
     )
     inputs_dict = {}
     residual_model_expected = {}
@@ -173,10 +169,10 @@ def data_update_residual_model_with_new_accepted_x():
     return inputs_dict, residual_model_expected
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_update_main_model_with_new_accepted_x():
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / "update_main_model_with_new_accepted_x.yaml",
+        TEST_FIXTURES_DIR / "update_main_model_with_new_accepted_x.yaml"
     )
 
     MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
@@ -208,11 +204,11 @@ def data_update_main_model_with_new_accepted_x():
         "nonzero_i",
         "nonzero_ii",
         "nonzero_iii",
-    ],
+    ]
 )
 def data_find_affine_points(request):
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / f"find_affine_points_{request.param}.yaml",
+        TEST_FIXTURES_DIR / f"find_affine_points_{request.param}.yaml"
     )
 
     history = LeastSquaresHistory()
@@ -244,7 +240,7 @@ def data_find_affine_points(request):
 def data_add_points_until_main_model_fully_linear(request, criterion):
     test_data = read_yaml(
         TEST_FIXTURES_DIR
-        / f"add_points_until_main_model_fully_linear_{request.param}.yaml",
+        / f"add_points_until_main_model_fully_linear_{request.param}.yaml"
     )
 
     history = LeastSquaresHistory()
@@ -285,10 +281,10 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
     return inputs_dict, expected_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_get_interpolation_matrices_residual_model():
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml",
+        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
     )
 
     history = LeastSquaresHistory()
@@ -311,15 +307,14 @@ def data_get_interpolation_matrices_residual_model():
 
     expected_dict = {
         "x_sample_monomial_basis": np.array(
-            test_data["x_sample_monomial_basis_expected"],
+            test_data["x_sample_monomial_basis_expected"]
         )[: n_params + 1, : n_params + 1],
         "monomial_basis": np.array(test_data["monomial_basis_expected"])[
             :n_modelpoints
         ],
         "basis_null_space": test_data["basis_null_space_expected"],
         "lower_triangular": np.array(test_data["lower_triangular_expected"])[
-            :,
-            n_params + 1 : n_maxinterp,
+            :, n_params + 1 : n_maxinterp
         ],
         "n_modelpoints": test_data["n_modelpoints_expected"],
     }
@@ -330,7 +325,7 @@ def data_get_interpolation_matrices_residual_model():
 @pytest.fixture(params=["4", "7"])
 def data_evaluate_residual_model(request):
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.yaml",
+        TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.yaml"
     )
 
     history = LeastSquaresHistory()
@@ -340,8 +335,7 @@ def data_evaluate_residual_model(request):
     )
 
     ResidualModel = namedtuple(
-        "ResidualModel",
-        ["intercepts", "linear_terms", "square_terms"],
+        "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
     )
     residual_model = ResidualModel(
         intercepts=np.array(test_data["residuals"]),
@@ -356,14 +350,12 @@ def data_evaluate_residual_model(request):
 
     center_info = {"x": x_accepted, "radius": delta_old}
     centered_xs = history.get_centered_xs(
-        center_info,
-        index=model_indices[:n_modelpoints],
+        center_info, index=model_indices[:n_modelpoints]
     )
 
     center_info = {"residuals": residual_model.intercepts}
     centered_residuals = history.get_centered_residuals(
-        center_info,
-        index=model_indices,
+        center_info, index=model_indices
     )
 
     inputs_dict = {
@@ -379,7 +371,7 @@ def data_evaluate_residual_model(request):
     return inputs_dict, expected_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_fit_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
 
@@ -389,14 +381,12 @@ def data_fit_residual_model():
 
     inputs_dict = {
         "m_mat": np.array(test_data["x_sample_monomial_basis"])[
-            : n_params + 1,
-            : n_params + 1,
+            : n_params + 1, : n_params + 1
         ],
         "n_mat": np.array(test_data["monomial_basis"])[:n_modelpoints],
         "z_mat": np.array(test_data["basis_null_space"]),
         "n_z_mat": np.array(test_data["lower_triangular"])[
-            :,
-            n_params + 1 : n_maxinterp,
+            :, n_params + 1 : n_maxinterp
         ],
         "y_residuals": np.array(test_data["f_interpolated"]),
         "n_modelpoints": test_data["n_modelpoints"],
@@ -444,8 +434,7 @@ def test_update_main_from_residual_model(data_update_main_from_residual_model):
     residual_model, main_model_expected = data_update_main_from_residual_model
 
     main_model_out = create_main_from_residual_model(
-        residual_model,
-        multiply_square_terms_with_intercepts=True,
+        residual_model, multiply_square_terms_with_intercepts=True
     )
 
     aaae(
@@ -516,9 +505,7 @@ def test_add_points_until_main_model_fully_linear(
         history_out,
         model_indices_out,
     ) = add_geomtery_points_to_make_main_model_fully_linear(
-        **inputs,
-        n_cores=1,
-        batch_evaluator=joblib_batch_evaluator,
+        **inputs, n_cores=1, batch_evaluator=joblib_batch_evaluator
     )
 
     aaae(model_indices_out, expected["model_indices"])

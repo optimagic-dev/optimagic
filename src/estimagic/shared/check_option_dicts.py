@@ -10,12 +10,12 @@ def check_optimization_options(options, usage, algorithm_mandatory=True):
         if not isinstance(options, dict) or "algorithm" not in options:
             raise ValueError(
                 "optimize_options or maximize_options must be a dict containing at "
-                "least the entry 'algorithm'",
+                "least the entry 'algorithm'"
             )
     else:
         if not isinstance(options, dict):
             raise ValueError(
-                "optimize_options or maximize_options must be a dict or None.",
+                "optimize_options or maximize_options must be a dict or None."
             )
 
     criterion_options = {

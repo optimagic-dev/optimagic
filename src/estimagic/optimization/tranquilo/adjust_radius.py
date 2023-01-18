@@ -33,7 +33,7 @@ def adjust_radius(radius, rho, step, options):
 
     if np.isfinite(options.max_radius_to_step_ratio):
         max_radius = np.min(
-            [options.max_radius, step_length * options.max_radius_to_step_ratio],
+            [options.max_radius, step_length * options.max_radius_to_step_ratio]
         )
     else:
         max_radius = options.max_radius

@@ -111,21 +111,13 @@ def test_pairwise_distance_on_hull(order):
 
     # equal points imply zero distance
     value = _minimal_pairwise_distance_on_hull(
-        x=np.ones(4),
-        existing_xs=None,
-        hardness=1,
-        order=order,
-        n_params=2,
+        x=np.ones(4), existing_xs=None, hardness=1, order=order, n_params=2
     )
     assert value == 0
 
     # non-equal points imply positive distance
     value = _minimal_pairwise_distance_on_hull(
-        x=np.arange(4),
-        existing_xs=None,
-        hardness=1,
-        order=order,
-        n_params=2,
+        x=np.arange(4), existing_xs=None, hardness=1, order=order, n_params=2
     )
     assert value > 0
 

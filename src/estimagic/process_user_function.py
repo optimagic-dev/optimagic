@@ -39,7 +39,7 @@ def process_func_of_params(func, kwargs, name="your function", skip_checks=False
         if no_free_argument_left and kept:
             raise InvalidKwargsError(
                 f"Too many keyword arguments for {name}. After applying all keyword "
-                "arguments there must be at least one free argument (the params) left.",
+                "arguments there must be at least one free argument (the params) left."
             )
         elif no_free_argument_left:
             raise InvalidFunctionError(f"{name} must have at least one free argument.")
@@ -56,7 +56,7 @@ def process_func_of_params(func, kwargs, name="your function", skip_checks=False
                 f"Too few keyword arguments for {name}. After applying all keyword "
                 "arguments at most one required argument (the params) should remain. "
                 "in your case the following required arguments remain: "
-                f"{required_args}.",
+                f"{required_args}."
             )
 
     return out

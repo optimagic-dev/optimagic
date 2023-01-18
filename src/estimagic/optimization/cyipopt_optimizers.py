@@ -220,16 +220,16 @@ def ipopt(
     if not IS_CYIPOPT_INSTALLED:
         raise NotInstalledError(
             "The 'ipopt' algorithm requires the cyipopt package to be installed. "
-            "You can it with: `conda install -c conda-forge cyipopt`.",
+            "You can it with: `conda install -c conda-forge cyipopt`."
         )
     if acceptable_tol <= convergence_relative_criterion_tolerance:
         raise ValueError(
-            "The acceptable tolerance must be larger than the desired tolerance.",
+            "The acceptable tolerance must be larger than the desired tolerance."
         )
     if mu_strategy not in ["monotone", "adaptive"]:
         raise ValueError(
             f"Unknown barrier strategy: {mu_strategy}. It must be 'monotone' or "
-            "'adaptive'.",
+            "'adaptive'."
         )
     if nlp_upper_bound_inf < 0:
         raise ValueError("nlp_upper_bound_inf should be > 0.")
@@ -279,7 +279,7 @@ def ipopt(
         "spral_ignore_numa"
         "spral_use_gpu"
         "wsmp_skip_inertia_check"
-        "wsmp_no_pivoting",
+        "wsmp_no_pivoting"
     ]
     for key, val in linear_solver_options.items():
         if key in boolean_linear_solver_options:
@@ -402,10 +402,10 @@ def ipopt(
         "sigma_min": sigma_min,
         "quality_function_norm_type": quality_function_norm_type,
         "quality_function_centrality": _convert_none_to_str(
-            quality_function_centrality,
+            quality_function_centrality
         ),
         "quality_function_balancing_term": _convert_none_to_str(
-            quality_function_balancing_term,
+            quality_function_balancing_term
         ),
         "quality_function_max_section_steps": int(quality_function_max_section_steps),
         "quality_function_section_sigma_tol": quality_function_section_sigma_tol,
@@ -471,7 +471,7 @@ def ipopt(
         "bound_mult_reset_threshold": float(bound_mult_reset_threshold),
         "constr_mult_reset_threshold": float(constr_mult_reset_threshold),
         "resto_failure_feasibility_threshold": float(
-            resto_failure_feasibility_threshold,
+            resto_failure_feasibility_threshold
         ),
         # hessian approximation
         "limited_memory_aug_solver": limited_memory_aug_solver,
@@ -524,7 +524,7 @@ def _convert_bool_to_str(var, name):
         out = var
     if out not in {"yes", "no"}:
         raise ValueError(
-            f"{name} must be 'yes', 'no', True or False. You specified {var}.",
+            f"{name} must be 'yes', 'no', True or False. You specified {var}."
         )
     return out
 

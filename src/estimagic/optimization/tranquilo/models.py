@@ -9,8 +9,7 @@ class VectorModel(NamedTuple):
     intercepts: np.ndarray  # shape (n_residuals,)
     linear_terms: np.ndarray  # shape (n_residuals, n_params)
     square_terms: Union[
-        np.ndarray,
-        None,
+        np.ndarray, None
     ] = None  # shape (n_residuals, n_params, n_params)
 
 

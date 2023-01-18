@@ -3,12 +3,7 @@ import numpy as np
 
 
 def minimize_trust_cg(
-    model_gradient,
-    model_hessian,
-    trustregion_radius,
-    *,
-    gtol_abs=1e-8,
-    gtol_rel=1e-6,
+    model_gradient, model_hessian, trustregion_radius, *, gtol_abs=1e-8, gtol_rel=1e-6
 ):
     """Minimize the quadratic subproblem via (standard) conjugate gradient.
 
@@ -49,24 +44,21 @@ def minimize_trust_cg(
         square_terms = direction.T @ model_hessian @ direction
 
         distance_to_boundary = _get_distance_to_trustregion_boundary(
-            x_candidate,
-            direction,
-            trustregion_radius,
+            x_candidate, direction, trustregion_radius
         )
 
         # avoid divide by zero warning
-        step_size = residual @ residual / square_terms if square_terms > 0 else np.inf
+        if square_terms > 0:
+            step_size = (residual @ residual) / square_terms
+        else:
+            step_size = np.inf
 
         if square_terms <= 0 or step_size > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
             break
 
         x_candidate, residual, direction = _update_vectors_for_next_iteration(
-            x_candidate,
-            residual,
-            direction,
-            model_hessian,
-            step_size,
+            x_candidate, residual, direction, model_hessian, step_size
         )
         gradient_norm = np.linalg.norm(residual)
 
@@ -74,11 +66,7 @@ def minimize_trust_cg(
 
 
 def _update_vectors_for_next_iteration(
-    x_candidate,
-    residual,
-    direction,
-    hessian,
-    alpha,
+    x_candidate, residual, direction, hessian, alpha
 ):
     """Update candidate, residual, and direction vectors for the next iteration.
 

@@ -40,7 +40,7 @@ from numpy.testing import assert_array_equal
 
 
 # Fix input params to test every criterion function
-@pytest.fixture()
+@pytest.fixture
 def input_params():
     params = pd.DataFrame({"value": [9, 9, 6, 7, -5]})
     return params
@@ -86,14 +86,14 @@ dict_criterion_output = {
         "value": 960,
         "contributions": np.array([81, 162, 198, 247, 272]),
         "root_contributions": np.array(
-            [9, 12.72792206, 14.07124728, 15.71623365, 16.4924225],
+            [9, 12.72792206, 14.07124728, 15.71623365, 16.4924225]
         ),
     },
     "rosenbrock": {
         "value": 1456789,
         "contributions": np.array([518464, 562564, 84125, 291636, 0]),
         "root_contributions": np.array(
-            [720.04444307, 750.04266545, 290.04310025, 540.0333323, 0],
+            [720.04444307, 750.04266545, 290.04310025, 540.0333323, 0]
         ),
     },
 }

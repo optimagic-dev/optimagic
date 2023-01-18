@@ -4,7 +4,7 @@ from estimagic.optimization.history_tools import get_history_arrays
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture()
+@pytest.fixture
 def history():
     hist = {
         "criterion": [5, 4, 5.5, 4.2],

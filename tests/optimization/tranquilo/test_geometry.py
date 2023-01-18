@@ -14,10 +14,7 @@ def test_geometry_checker():
     x_scaled = x * 0.5
 
     quality_calculator, cutoff_simulator = get_geometry_checker_pair(
-        "d_optimality",
-        reference_sampler="ball",
-        n_params=2,
-        bounds=None,
+        "d_optimality", reference_sampler="ball", n_params=2, bounds=None
     )
 
     x_quality = quality_calculator(x, trustregion, bounds=None)
@@ -41,10 +38,7 @@ def test_geometry_checker_scale_invariance():
     x_scaled = 1 + 2 * x
 
     quality_calculator, _ = get_geometry_checker_pair(
-        "d_optimality",
-        reference_sampler="ball",
-        n_params=2,
-        bounds=None,
+        "d_optimality", reference_sampler="ball", n_params=2, bounds=None
     )
 
     x_quality = quality_calculator(x, trustregion, bounds=None)

@@ -408,18 +408,14 @@ def get_msm_optimization_functions(
 
     if _jacobian is not None:
         raise NotImplementedError(
-            "Closed form jacobians are not yet supported in estimate_msm",
+            "Closed form jacobians are not yet supported in estimate_msm"
         )
 
     return out
 
 
 def _msm_criterion(
-    params,
-    simulate_moments,
-    flat_empirical_moments,
-    chol_weights,
-    registry,
+    params, simulate_moments, flat_empirical_moments, chol_weights, registry
 ):
     """Calculate msm criterion given parameters and building blocks."""
     simulated = simulate_moments(params)
@@ -448,7 +444,10 @@ def _partial_kwargs(func, kwargs):
     callable it simply returns None.
     """
     if isinstance(func, Callable):
-        out = functools.partial(func, **kwargs) if kwargs not in (None, {}) else func
+        if kwargs not in (None, {}):
+            out = functools.partial(func, **kwargs)
+        else:
+            out = func
     else:
         out = None
 
@@ -746,9 +745,7 @@ class MomentsResult:
 
         lower, upper = (
             transform_free_values_to_params_tree(
-                values,
-                free_params=self._free_estimates,
-                params=self._params,
+                values, free_params=self._free_estimates, params=self._params
             )
             for values in (free_lower, free_upper)
         )
@@ -800,9 +797,7 @@ class MomentsResult:
         )
 
         p_values = transform_free_values_to_params_tree(
-            free_p_values,
-            free_params=self._free_estimates,
-            params=self._params,
+            free_p_values, free_params=self._free_estimates, params=self._params
         )
         return p_values
 
@@ -874,7 +869,7 @@ class MomentsResult:
         """
         if self._has_constraints:
             raise NotImplementedError(
-                "Sensitivity measures with constraints are not yet implemented.",
+                "Sensitivity measures with constraints are not yet implemented."
             )
         jac = self._internal_jacobian
         weights = self._internal_weights
@@ -986,9 +981,7 @@ def _calculate_free_cov_msm(
         internal_cov = cov_optimal(internal_jacobian, internal_weights)
     else:
         internal_cov = cov_robust(
-            internal_jacobian,
-            internal_weights,
-            internal_moments_cov,
+            internal_jacobian, internal_weights, internal_moments_cov
         )
 
     rng = get_rng(seed)

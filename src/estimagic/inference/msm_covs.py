@@ -22,9 +22,7 @@ def cov_robust(jac, weights, moments_cov):
 
     """
     _jac, _weights, _moments_cov, names = process_pandas_arguments(
-        jac=jac,
-        weights=weights,
-        moments_cov=moments_cov,
+        jac=jac, weights=weights, moments_cov=moments_cov
     )
 
     bread = robust_inverse(

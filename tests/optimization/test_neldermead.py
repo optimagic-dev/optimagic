@@ -101,7 +101,7 @@ def test_varadhan_borchers():
             [2.3333, 0.3333, 1.3333],
             [1.3333, 1.3333, 1.3333],
             [1.3333, 0.3333, 2.3333],
-        ],
+        ]
     )
 
     np.testing.assert_allclose(result, expected, atol=1e-3)
