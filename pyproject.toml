@@ -77,7 +77,7 @@ extend-ignore = [
     "C901",  # function too complex
     "PT011", # pytest raises without match statement
     "PT004",
-    "PT018",
+    # "PT018",
 
 
     # ======================================
