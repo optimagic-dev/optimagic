@@ -639,7 +639,10 @@ you install estimagic.
 
     - **n_grid_points** (int):  the number of grid points to use for the brute force search. Default is 7 differing from scipy's default 20.
     - **polishing_function** (callable):  Function to seek a more precise minimum near brute-force' best gridpoint taking brute-force's result at initial guess as a positional argument. Default is None providing no polishing.
-    - **n_cores** (int): The number of workers to subdivide the grid and evaluate in parallel. Default is zero.
+    - **n_cores** (int): The number of cores on which the function is evaluated in
+    parallel. Default 1.
+    - **batch_evaluator** (str or callable). An estimagic batch evaluator. Default
+    'joblib'.
 
 ```
 

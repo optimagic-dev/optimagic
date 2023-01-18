@@ -38,6 +38,7 @@ import functools
 
 import numpy as np
 import scipy
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
@@ -629,7 +630,7 @@ def scipy_basinhopping(
     return process_scipy_result(res)
 
 
-@mark_minimizer(name="scipy_brute", is_global=True, disable_history=True)
+@mark_minimizer(name="scipy_brute", is_global=True)
 def scipy_brute(
     criterion,
     lower_bounds,
@@ -638,7 +639,8 @@ def scipy_brute(
     x=None,  # noqa: ARG001
     n_grid_points=7,
     polishing_function=None,
-    n_cores=1,
+    n_cores=2,
+    batch_evaluator="joblib",
 ):
     """Minimize a function over a given range by brute force.
 
@@ -654,13 +656,20 @@ def scipy_brute(
 
 
     """
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
+    batch_evaluator = functools.partial(
+        batch_evaluator,
+        n_cores=n_cores,
+        error_handling="raise",
+    )
+
     res = scipy.optimize.brute(
         func=criterion,
         ranges=tuple(map(tuple, np.column_stack([lower_bounds, upper_bounds]))),
         Ns=n_grid_points,
         full_output=True,
         finish=polishing_function,
-        workers=n_cores,
+        workers=batch_evaluator,
     )
     out = {
         "solution_x": res[0],
