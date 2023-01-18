@@ -629,7 +629,7 @@ def scipy_basinhopping(
     return process_scipy_result(res)
 
 
-@mark_minimizer(name="scipy_brute", is_global=True)
+@mark_minimizer(name="scipy_brute", is_global=True, disable_history=True)
 def scipy_brute(
     criterion,
     lower_bounds,
@@ -638,7 +638,7 @@ def scipy_brute(
     x=None,  # noqa: ARG001
     n_grid_points=7,
     polishing_function=None,
-    workers_parallel=1,
+    n_cores=1,
 ):
     """Minimize a function over a given range by brute force.
 
@@ -660,7 +660,7 @@ def scipy_brute(
         Ns=n_grid_points,
         full_output=True,
         finish=polishing_function,
-        workers=workers_parallel,
+        workers=n_cores,
     )
     out = {
         "solution_x": res[0],

@@ -626,15 +626,20 @@ you install estimagic.
 
     Find the global minimum of a fuction over a given range by brute force.
 
-    Brute force evaluates the criterion at each point and that is why better suited for problems with small search space.
+    Brute force evaluates the criterion at each point and that is why better suited for problems with very few parameters.
 
-    The lower and upper bound is for the range and there is no need to define x, starting values.
+    The start values are not actually used because the grid is only defined by bounds.
+    It is still necessary for estimagic to infer the number and format of the
+    parameters.
+
+    Due to the parallelization, this algorithm cannot collect a history of parameters
+    and criterion evaluations.
 
     The algorithm supports the following options:
 
     - **n_grid_points** (int):  the number of grid points to use for the brute force search. Default is 7 differing from scipy's default 20.
     - **polishing_function** (callable):  Function to seek a more precise minimum near brute-force' best gridpoint taking brute-force's result at initial guess as a positional argument. Default is None providing no polishing.
-    - **workers_parallel** (int): The number of workers to subdivide the grid and evaluate in parallel.
+    - **n_cores** (int): The number of workers to subdivide the grid and evaluate in parallel. Default is zero.
 
 ```
 
