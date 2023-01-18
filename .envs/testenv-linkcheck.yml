@@ -2,7 +2,7 @@ name: estimagic
 
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 
 dependencies:
   - jupyterlab  # dev, docs

@@ -28,7 +28,7 @@ infer_latex_dependencies = true
 [tool.ruff]
 target-version = "py37"
 select = ["ALL"]
-fix = false
+fix = true
 extend-ignore = [
     # Docstrings
     "D103", # missing docstring in public function
