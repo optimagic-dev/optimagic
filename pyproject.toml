@@ -68,15 +68,14 @@ extend-ignore = [
     "SIM117", # do not use nested with statements
     "BLE001", # Do not catch blind exceptions (even after handling some specific ones)
     "PLR2004", # Magic values used in comparison
+    "PT006", # Allows only lists of tuples in parametrize, even if single argument
 
     # Things ignored during transition phase
     # ======================================
-    "D",
-    "ANN",
+    "D",  # docstrings
+    "ANN",  # missing annotations
     "C901",  # function too complex
-    "PT011",
-    "PT006",
-    "PT012",
+    "PT011", # pytest raises without match statement
     "PT004",
     "PT018",
 
