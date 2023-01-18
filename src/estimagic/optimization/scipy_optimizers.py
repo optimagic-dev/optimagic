@@ -584,7 +584,8 @@ def scipy_basinhopping(
     local_algorithm="L-BFGS-B",
     n_iter=100,
     temperature_parameter=1.0,
-    step_size=0.5,
+    stepsize=0.5,
+    local_minimizer_options=None,
     take_step=None,
     accept_test=None,
     interval=50,
@@ -598,19 +599,24 @@ def scipy_basinhopping(
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
-
-    minimizer_kwargs = {
+    local_minimizer_options = (
+        {} if local_minimizer_options is None else local_minimizer_options
+    )
+    default_minimizer_kwargs = {
         "method": local_algorithm,
         "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
         "jac": derivative,
     }
+
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_minimizer_options}
+
     res = scipy.optimize.basinhopping(
         func=criterion,
         x0=x,
         minimizer_kwargs=minimizer_kwargs,
         niter=n_iter,
         T=temperature_parameter,
-        stepsize=step_size,
+        stepsize=stepsize,
         take_step=take_step,
         accept_test=accept_test,
         interval=interval,

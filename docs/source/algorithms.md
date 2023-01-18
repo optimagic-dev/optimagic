@@ -574,6 +574,13 @@ you install estimagic.
 
     Find the global minimum of a function using the basin-hopping algorithm which combines a global stepping algorithm with local minimization at each step.
 
+    Basin-hopping is a two-phase method that combines a global stepping algorithm with local minimization at each step. Designed to mimic the natural process of energy minimization of clusters of atoms, it works well for similar problems with “funnel-like, but rugged” energy landscapes.
+
+    This is mainly supported for completeness. Consider estimagic's built in multistart
+    optimization for a similar approach that can run multiple optimizations in parallel,
+    supports all local algorithms in estimagic (as opposed to just those from scipy)
+    and allows for a better visualization of the multistart history.
+
     When provided the derivative is passed to the local minimization method.
 
     The algorithm supports the following options:
@@ -596,7 +603,10 @@ you install estimagic.
     or a custom function for local minimization, default is "L-BFGS-B".
     - **n_iter**: (int) The number of basin-hopping iterations resulting in a total of n_iter + 1 local minimization. Default is 100 as in scipy's default.
     - **temperature_parameter**: (float) Controls the randomness in the optimization process. Higher the temperatures the larger jumps in function value will be accepted. Default is 1.0 as in scipy's default.
-    - **step_size**: (float) Maximum step size. Default is 0.5 as in scipy's default.
+    - **stepsize**: (float) Maximum step size. Default is 0.5 as in scipy's default.
+    - **local_minimizer_options**: (dict) Additional keyword arguments for the local
+      minimizer. Check the documentation of the local scipy algorithms for details on
+      what is supported.
     - **take_step**: (callable) Replaces the default step-taking routine. Default is None as in scipy's default.
     - **accept_test**: (callable) Define a test to judge the acception of steps. Default is None as in scipy's default.
     - **interval**: (int) Determined how often the step size is updated. Default is 50 as in scipy's default.
