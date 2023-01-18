@@ -151,6 +151,15 @@ nb_merge_streams = True
 # Notebook cell execution timeout; defaults to 30.
 nb_execution_timeout = 1000
 
+# List of notebooks that will not be executed.
+nb_execution_excludepatterns = [
+    # Includes patsy that is not found  in the doc build
+    # Even though it was added to the rtd_environment
+    'getting_started/estimation/first_likelihood_estimation_with_estimagic',
+    # Slow notebook: long time to load tf.ds
+    'notebooks/neural_network_with_tfds_data.*',
+]
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
