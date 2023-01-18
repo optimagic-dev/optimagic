@@ -29,7 +29,6 @@ dependencies:
   - scipy
   - patsy
   - joblib
-  - .[ci]
 
   - pip:
       - ../
