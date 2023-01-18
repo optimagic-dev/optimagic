@@ -630,7 +630,7 @@ def scipy_basinhopping(
     return process_scipy_result(res)
 
 
-@mark_minimizer(name="scipy_brute", is_global=True)
+@mark_minimizer(name="scipy_brute", is_global=True, disable_history=True)
 def scipy_brute(
     criterion,
     lower_bounds,
@@ -639,7 +639,7 @@ def scipy_brute(
     x=None,  # noqa: ARG001
     n_grid_points=7,
     polishing_function=None,
-    n_cores=2,
+    n_cores=1,
     batch_evaluator="joblib",
 ):
     """Minimize a function over a given range by brute force.
@@ -656,12 +656,7 @@ def scipy_brute(
 
 
     """
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
-    batch_evaluator = functools.partial(
-        batch_evaluator,
-        n_cores=n_cores,
-        error_handling="raise",
-    )
+    workers = _get_workers(n_cores, batch_evaluator)
 
     res = scipy.optimize.brute(
         func=criterion,
@@ -669,7 +664,7 @@ def scipy_brute(
         Ns=n_grid_points,
         full_output=True,
         finish=polishing_function,
-        workers=batch_evaluator,
+        workers=workers,
     )
     out = {
         "solution_x": res[0],
@@ -683,7 +678,9 @@ def scipy_brute(
     return out
 
 
-@mark_minimizer(name="scipy_differential_evolution", is_global=True)
+@mark_minimizer(
+    name="scipy_differential_evolution", is_global=True, disable_history=True
+)
 def scipy_differential_evolution(
     criterion,
     lower_bounds,
@@ -694,41 +691,38 @@ def scipy_differential_evolution(
     strategy="best1bin",
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     population_size=15,
-    relative_criterion_convergence_tolerance=0.01,
+    convergence_relative_criterion_tolerance=0.01,
     mutation_constant=(0.5, 1),
     recombination_constant=0.7,
     seed=None,
     polish=True,
     population_init="latinhypercube",
     convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
-    updating="immediate",
-    workers_parallel=1,
-    integrality=None,
-    vectorized=False,
+    n_cores=1,
+    batch_evaluator="joblib",
 ):
     """Finds the global minimum of a multivariate function.
 
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
+    workers = _get_workers(n_cores, batch_evaluator)
     res = scipy.optimize.differential_evolution(
         func=criterion,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         strategy=strategy,
         maxiter=stopping_max_iterations,
         popsize=population_size,
-        tol=relative_criterion_convergence_tolerance,
+        tol=convergence_relative_criterion_tolerance,
         mutation=mutation_constant,
         recombination=recombination_constant,
         seed=seed,
         polish=polish,
         init=population_init,
         atol=convergence_absolute_criterion_tolerance,
-        updating=updating,
-        workers=workers_parallel,
+        updating="deferred",
+        workers=workers,
         constraints=_get_scipy_constraints(nonlinear_constraints),
-        integrality=integrality,
-        vectorized=vectorized,
     )
 
     return process_scipy_result(res)
@@ -884,3 +878,14 @@ def scipy_direct(
     )
 
     return process_scipy_result(res)
+
+
+def _get_workers(n_cores, batch_evaluator):
+
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
+    out = functools.partial(
+        batch_evaluator,
+        n_cores=n_cores,
+        error_handling="raise",
+    )
+    return out

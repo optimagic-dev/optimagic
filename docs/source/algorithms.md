@@ -655,6 +655,9 @@ you install estimagic.
 
     Find the global minimum of a multivariate function using differential evolution (DE). DE is a gradient-free method.
 
+    Due to estimagic's general parameter format the integrality and vectorized
+    arguments are not supported.
+
     The algorithm supports the following options:
 
     - **strategy** (str): Measure of quality to improve a candidate solution, can be one of the following keywords
@@ -671,25 +674,25 @@ you install estimagic.
       - ‘rand2bin’
       - ‘rand1bin’
     ,default is 'best1bin'.
-    - **stopping_max_iterations** (int): The maximum number of criterion evaluations without polishing is is(stopping_max_iterations + 1) * population_size * number of parameters)
+    - **stopping.max_iterations** (int): The maximum number of criterion evaluations without polishing is(stopping.max_iterations + 1) * population_size * number of parameters)
     - **population_size** (int): A multiplier setting the population size. The number of individuals in the population is population_size * number of parameters. The default 15.
-    - **relative_criterion_convergence_tolerance** (float): Default 0.01.
+    - **convergence.relative_criterion_tolerance** (float): Default 0.01.
     - **mutation_constant** (float/tuple): The differential weight denoted by F in literature. Should be within 0 and 2.  The tuple form is used to specify (min, max) dithering which can help speed convergence.  Default is (0.5, 1).
     - **recombination_constant** (float): The crossover probability or CR in the literature determines the probability that two solution vectors will be combined to produce a new solution vector. Should be between 0 and 1. The default is 0.7.
     - **seed** (int): DE is stochastic. Define a seed for reproducability.
     - **polish** (bool): Uses scipy's L-BFGS-B for unconstrained problems and trust-constr for constrained problems to slightly improve the minimization. Default is True.
     - **population_init** (str/np.array): Specify the population initialization. It can be one of the following options
-       - ‘latinhypercube’
-       - ‘sobol’
-       - ‘halton’
-       - ‘random’
+       - "latinhypercube"
+       - "sobol"
+       - "halton"
+       - "random"
        - an array specifying the initial population of shape (total population size, number of parameters)
     population_init is clipped to bounds before use. Default is 'latinhypercube'
-    - **convergence_absolute_criterion_tolerance** (float): CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
-    - **updating** (str): Can be ‘immediate’ or ‘deferred’. Default is 'immediate'.
-    - **workers_parallel** (int): The number of workers to subdivide the population and evaluate in parallel. Default is 1.
-    - **integrality** (1-D array): Specifies which parameters of the objective function should be treated as integer variables with a boolean value.
-    - vectorized** (bool): specifies whether the objective function is vectorized. Vectorization can improve the efficiency of the optimization. Default is False.
+    - **convergence.absolute_criterion_tolerance** (float): CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
+    - **n_cores** (int): The number of cores on which the function is evaluated in
+    parallel. Default 1.
+    - **batch_evaluator** (str or callable). An estimagic batch evaluator. Default
+    'joblib'.
 
 ```
 
