@@ -712,18 +712,19 @@ you install estimagic.
 
     - **local_algorithm** (str): The local optimization algorithm to be used. Only COBYLA and SLSQP supports constraints. Default is SLSQP.
     - **n_sampling_points** (int): Specify the number of sampling points to construct the simplical complex.
-    - **n_iterations** (int): Number of iterations to construct the simplical complex. Default is 3 differing from scipy default 1.
-    - **sampling_method** (str/callable): The method to use for sampling the search space.
+    - **n_simplex_iterations** (int): Number of iterations to construct the simplical complex. Default is 1 as in scipy.
+    - **sampling_method** (str/callable): The method to use for sampling the search space. Default 'simplicial'.
     - **max_criterion_evaluations** (): The maximum number of evaluations of the criterion function.
-    - **criterion_minimum** (): The minimum value of the criterion function.
-    - **criterion_convergence_tolerance** (float): The tolerance for convergence of the criterion function.
-    - **stopping_max_iterations** (int): The maximum number of iterations of the criterion function.
+    - **convergence.minimum_criterion_value** (float): Specify the global minimum when it is known. Default is - **np.inf. For maximization problems, flip the sign.
+    - **convergence.minimum_criterion_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
+    - **stopping_max_iterations** (int): The maximum number of iterations.
     - **stopping_max_criterion_evaluations** (int): The maximum number of sampling evaluation.
     - **maximum_processing_time** (int): The maximum time allowed for the optimization.
     - **minimum_homology_group_rank_differential** (int): The minimum difference in the rank of the homology group between iterations.
     - **symmetry** (bool): Specify whether the criterion contains symetric variables.
     - **minimize_every_iteration** ()bool: Specify whether the gloabal sampling points are passed to the local algorithm in every iteration.
-    - **local_iteration** (int): The number of iterations to run the local optimization algorithm.
+    - **max_local_minimizations_per_iteration** (int): The maximum number of local
+    optimizations per iteration. Default False, i.e. no limit.
     - **infty_constraints** (bool): Specify whether to save the sampling points outside the feasible domain. Default is True.
 
 ```

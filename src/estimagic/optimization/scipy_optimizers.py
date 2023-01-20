@@ -686,8 +686,8 @@ def scipy_differential_evolution(
     lower_bounds,
     upper_bounds,
     x,  # noqa: ARG001
+    nonlinear_constraints,
     *,
-    nonlinear_constraints=(),
     strategy="best1bin",
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     population_size=15,
@@ -734,24 +734,24 @@ def scipy_shgo(
     lower_bounds,
     upper_bounds,
     x,  # noqa: ARG001
+    derivative,
+    nonlinear_constraints,
     *,
-    derivative=None,
-    nonlinear_constraints=(),
-    local_algorithm="SLSQP",
-    n_sampling_points=3,
-    n_iterations=7,
+    local_algorithm="L-BFGS-B",
+    n_sampling_points=128,
+    n_simplex_iterations=1,
     sampling_method="simplicial",
-    max_criterion_evaluations=None,
-    criterion_minimum=None,
-    criterion_convergence_tolerance=None,
+    max_sampling_evaluations=None,
+    convergence_minimum_criterion_value=None,
+    convergence_minimum_criterion_tolerance=1e-4,
     stopping_max_iterations=None,
-    stopping_max_criterion_evaluations=None,
-    maximum_processing_time=1000.0,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    maximum_processing_time=None,
     minimum_homology_group_rank_differential=None,
-    symmetry=None,
-    minimize_every_iteration=False,
-    local_iteration=None,
-    infty_constraints=None,
+    symmetry=False,
+    minimize_every_iteration=True,
+    max_local_minimizations_per_iteration=False,
+    infty_constraints=True,
 ):
     """Finds the global minimum of a function using SHG optimization.
 
@@ -769,9 +769,9 @@ def scipy_shgo(
 
     minimizer_kwargs = {"method": local_algorithm}
     options = {
-        "maxfev": max_criterion_evaluations,
-        "f_min": criterion_minimum,
-        "f_tol": criterion_convergence_tolerance,
+        "maxfev": max_sampling_evaluations,
+        "f_min": convergence_minimum_criterion_value,
+        "f_tol": convergence_minimum_criterion_tolerance,
         "maxiter": stopping_max_iterations,
         "maxev": stopping_max_criterion_evaluations,
         "maxtime": maximum_processing_time,
@@ -779,7 +779,7 @@ def scipy_shgo(
         "symmetry": symmetry,
         "jac": derivative,
         "minimize_every_iter": minimize_every_iteration,
-        "local_iter": local_iteration,
+        "local_iter": max_local_minimizations_per_iteration,
         "infty_constraints": infty_constraints,
     }
 
@@ -792,7 +792,7 @@ def scipy_shgo(
         constraints=nonlinear_constraints,
         minimizer_kwargs=minimizer_kwargs,
         n=n_sampling_points,
-        iters=n_iterations,
+        iters=n_simplex_iterations,
         sampling_method=sampling_method,
         options=options,
     )
