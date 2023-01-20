@@ -585,21 +585,9 @@ you install estimagic.
 
     The algorithm supports the following options:
 
-    - **local_method** (str/callable): Any scipy local minimizer:
-      - "Nelder-Mead"
-      - "Powell"
-      - "CG"
-      - "BFGS"
-      - "Newton-CG"
-      - "L-BFGS-B"
-      - "TNC"
-      - "COBYLA"
-      - "SLSQP"
-      - "trust-constr"
-      - "dogleg"
-      - "trust-ncg"
-      - "trust-exact"
-      - "trust-krylov"
+    - **local_algorithm** (str/callable): Any scipy local minimizer: valid options are.
+    "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
+    "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov".
     or a custom function for local minimization, default is "L-BFGS-B".
     - **n_iter**: (int) The number of basin-hopping iterations resulting in a total of n_iter + 1 local minimization. Default is 100 as in scipy's default.
     - **temperature_parameter**: (float) Controls the randomness in the optimization process. Higher the temperatures the larger jumps in function value will be accepted. Default is 1.0 as in scipy's default.
@@ -710,16 +698,23 @@ you install estimagic.
 
     The algorithm supports the following options:
 
-    - **local_algorithm** (str): The local optimization algorithm to be used. Only COBYLA and SLSQP supports constraints. Default is SLSQP.
+    - **local_algorithm** (str): The local optimization algorithm to be used. Only
+    COBYLA and SLSQP supports constraints. Valid options are
+    "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
+    "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov"
+    or a custom function for local minimization, default is "L-BFGS-B".
+    - **local_minimizer_options**: (dict) Additional keyword arguments for the local
+      minimizer. Check the documentation of the local scipy algorithms for details on
+      what is supported.
     - **n_sampling_points** (int): Specify the number of sampling points to construct the simplical complex.
     - **n_simplex_iterations** (int): Number of iterations to construct the simplical complex. Default is 1 as in scipy.
     - **sampling_method** (str/callable): The method to use for sampling the search space. Default 'simplicial'.
-    - **max_criterion_evaluations** (): The maximum number of evaluations of the criterion function.
+    - **stopping.max_criterion_evaluations** (): The maximum number of evaluations of the criterion function.
     - **convergence.minimum_criterion_value** (float): Specify the global minimum when it is known. Default is - **np.inf. For maximization problems, flip the sign.
     - **convergence.minimum_criterion_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
-    - **stopping_max_iterations** (int): The maximum number of iterations.
-    - **stopping_max_criterion_evaluations** (int): The maximum number of sampling evaluation.
-    - **maximum_processing_time** (int): The maximum time allowed for the optimization.
+    - **stopping.max_iterations** (int): The maximum number of iterations.
+    - **stopping.max_criterion_evaluations** (int): The maximum number of sampling evaluation.
+    - **stopping.max_processing_time** (int): The maximum time allowed for the optimization.
     - **minimum_homology_group_rank_differential** (int): The minimum difference in the rank of the homology group between iterations.
     - **symmetry** (bool): Specify whether the criterion contains symetric variables.
     - **minimize_every_iteration** ()bool: Specify whether the gloabal sampling points are passed to the local algorithm in every iteration.
@@ -742,8 +737,13 @@ you install estimagic.
     The algorithm supports the following options:
 
     - **stopping.max_iterations** (int): Specify the maximum number of global searh iterations.
-    - **local_algorithm** (str): The local optimization algorithm to be used.
-    Default "L-BFGS-B". Any local scipy optimizer works.
+    - **local_algorithm** (str): The local optimization algorithm to be used. valid
+    options are. "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC".
+    "COBYLA". "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact".
+    "trust-krylov". Default "L-BFGS-B".
+    - **local_minimizer_options**: (dict) Additional keyword arguments for the local
+      minimizer. Check the documentation of the local scipy algorithms for details on
+      what is supported.
     - **initial_temperature** (float): The temparature algorithm starts with. The higer values lead to a wider search space. The range is (0.01, 5.e4] and defalt is 5230.0.
     - **restart_temperature_ratio** (float): Reanneling starts when the algorithm is decreased to initial_temperature * restart_temperature_ratio. Default is 2e-05.
     - **visit** (float): Specify the thickness of visiting distribution's tails. Range is (1, 3] and default is scipy's default, 2.62.

@@ -738,6 +738,7 @@ def scipy_shgo(
     nonlinear_constraints,
     *,
     local_algorithm="L-BFGS-B",
+    local_minimizer_options=None,
     n_sampling_points=128,
     n_simplex_iterations=1,
     sampling_method="simplicial",
@@ -746,7 +747,7 @@ def scipy_shgo(
     convergence_minimum_criterion_tolerance=1e-4,
     stopping_max_iterations=None,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    maximum_processing_time=None,
+    stopping_max_processing_time=None,
     minimum_homology_group_rank_differential=None,
     symmetry=False,
     minimize_every_iteration=True,
@@ -767,14 +768,23 @@ def scipy_shgo(
 
     nonlinear_constraints = vector_as_list_of_scalar_constraints(nonlinear_constraints)
 
-    minimizer_kwargs = {"method": local_algorithm}
+    local_minimizer_options = (
+        {} if local_minimizer_options is None else local_minimizer_options
+    )
+    default_minimizer_kwargs = {
+        "method": local_algorithm,
+        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "jac": derivative,
+    }
+
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_minimizer_options}
     options = {
         "maxfev": max_sampling_evaluations,
         "f_min": convergence_minimum_criterion_value,
         "f_tol": convergence_minimum_criterion_tolerance,
         "maxiter": stopping_max_iterations,
         "maxev": stopping_max_criterion_evaluations,
-        "maxtime": maximum_processing_time,
+        "maxtime": stopping_max_processing_time,
         "minhgrd": minimum_homology_group_rank_differential,
         "symmetry": symmetry,
         "jac": derivative,
