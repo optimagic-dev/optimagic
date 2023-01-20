@@ -583,14 +583,14 @@ def scipy_basinhopping(
     upper_bounds,
     *,
     local_algorithm="L-BFGS-B",
-    n_iter=100,
-    temperature_parameter=1.0,
+    n_local_optimizations=100,
+    temperature=1.0,
     stepsize=0.5,
-    local_minimizer_options=None,
+    local_algo_options=None,
     take_step=None,
     accept_test=None,
     interval=50,
-    n_iter_success=None,
+    convergence_n_unchanged_iterations=None,
     seed=None,
     target_accept_rate=0.5,
     stepwise_factor=0.9,
@@ -600,28 +600,27 @@ def scipy_basinhopping(
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
-    local_minimizer_options = (
-        {} if local_minimizer_options is None else local_minimizer_options
-    )
+    n_local_optimizations = max(1, n_local_optimizations - 1)
+    local_algo_options = {} if local_algo_options is None else local_algo_options
     default_minimizer_kwargs = {
         "method": local_algorithm,
         "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
         "jac": derivative,
     }
 
-    minimizer_kwargs = {**default_minimizer_kwargs, **local_minimizer_options}
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
 
     res = scipy.optimize.basinhopping(
         func=criterion,
         x0=x,
         minimizer_kwargs=minimizer_kwargs,
-        niter=n_iter,
-        T=temperature_parameter,
+        niter=n_local_optimizations,
+        T=temperature,
         stepsize=stepsize,
         take_step=take_step,
         accept_test=accept_test,
         interval=interval,
-        niter_success=n_iter_success,
+        niter_success=convergence_n_unchanged_iterations,
         seed=seed,
         target_accept_rate=target_accept_rate,
         stepwise_factor=stepwise_factor,
@@ -637,7 +636,7 @@ def scipy_brute(
     upper_bounds,
     x,  # noqa: ARG001
     *,
-    n_grid_points=7,
+    n_grid_points=20,
     polishing_function=None,
     n_cores=1,
     batch_evaluator="joblib",
@@ -690,13 +689,13 @@ def scipy_differential_evolution(
     *,
     strategy="best1bin",
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    population_size=15,
+    population_size_multiplier=15,
     convergence_relative_criterion_tolerance=0.01,
     mutation_constant=(0.5, 1),
     recombination_constant=0.7,
     seed=None,
     polish=True,
-    population_init="latinhypercube",
+    sampling_method="latinhypercube",
     convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
     n_cores=1,
     batch_evaluator="joblib",
@@ -712,13 +711,13 @@ def scipy_differential_evolution(
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         strategy=strategy,
         maxiter=stopping_max_iterations,
-        popsize=population_size,
+        popsize=population_size_multiplier,
         tol=convergence_relative_criterion_tolerance,
         mutation=mutation_constant,
         recombination=recombination_constant,
         seed=seed,
         polish=polish,
-        init=population_init,
+        init=sampling_method,
         atol=convergence_absolute_criterion_tolerance,
         updating="deferred",
         workers=workers,
@@ -738,7 +737,7 @@ def scipy_shgo(
     nonlinear_constraints,
     *,
     local_algorithm="L-BFGS-B",
-    local_minimizer_options=None,
+    local_algo_options=None,
     n_sampling_points=128,
     n_simplex_iterations=1,
     sampling_method="simplicial",
@@ -752,7 +751,7 @@ def scipy_shgo(
     symmetry=False,
     minimize_every_iteration=True,
     max_local_minimizations_per_iteration=False,
-    infty_constraints=True,
+    infinity_constraints=True,
 ):
     """Finds the global minimum of a function using SHG optimization.
 
@@ -768,16 +767,14 @@ def scipy_shgo(
 
     nonlinear_constraints = vector_as_list_of_scalar_constraints(nonlinear_constraints)
 
-    local_minimizer_options = (
-        {} if local_minimizer_options is None else local_minimizer_options
-    )
+    local_algo_options = {} if local_algo_options is None else local_algo_options
     default_minimizer_kwargs = {
         "method": local_algorithm,
         "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
         "jac": derivative,
     }
 
-    minimizer_kwargs = {**default_minimizer_kwargs, **local_minimizer_options}
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
     options = {
         "maxfev": max_sampling_evaluations,
         "f_min": convergence_minimum_criterion_value,
@@ -790,7 +787,7 @@ def scipy_shgo(
         "jac": derivative,
         "minimize_every_iter": minimize_every_iteration,
         "local_iter": max_local_minimizations_per_iteration,
-        "infty_constraints": infty_constraints,
+        "infty_constraints": infinity_constraints,
     }
 
     if any(options.values()) is False:
@@ -820,7 +817,7 @@ def scipy_dual_annealing(
     *,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     local_algorithm="L-BFGS-B",
-    local_minimizer_options=None,
+    local_algo_options=None,
     initial_temperature=5230.0,
     restart_temperature_ratio=2e-05,
     visit=2.62,
@@ -834,16 +831,14 @@ def scipy_dual_annealing(
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
-    local_minimizer_options = (
-        {} if local_minimizer_options is None else local_minimizer_options
-    )
+    local_algo_options = {} if local_algo_options is None else local_algo_options
     default_minimizer_kwargs = {
         "method": local_algorithm,
         "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
         "jac": derivative,
     }
 
-    minimizer_kwargs = {**default_minimizer_kwargs, **local_minimizer_options}
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
 
     res = scipy.optimize.dual_annealing(
         func=criterion,

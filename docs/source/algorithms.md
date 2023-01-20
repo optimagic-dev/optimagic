@@ -589,16 +589,18 @@ you install estimagic.
     "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
     "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov".
     or a custom function for local minimization, default is "L-BFGS-B".
-    - **n_iter**: (int) The number of basin-hopping iterations resulting in a total of n_iter + 1 local minimization. Default is 100 as in scipy's default.
-    - **temperature_parameter**: (float) Controls the randomness in the optimization process. Higher the temperatures the larger jumps in function value will be accepted. Default is 1.0 as in scipy's default.
+    - **n_local_optimizations**: (int) The number local optimizations. Default is 100 as in scipy's default.
+    - **temperature**: (float) Controls the randomness in the optimization process. Higher the temperatures the larger jumps in function value will be accepted. Default is 1.0 as in scipy's default.
     - **stepsize**: (float) Maximum step size. Default is 0.5 as in scipy's default.
-    - **local_minimizer_options**: (dict) Additional keyword arguments for the local
+    - **local_algo_options**: (dict) Additional keyword arguments for the local
       minimizer. Check the documentation of the local scipy algorithms for details on
       what is supported.
     - **take_step**: (callable) Replaces the default step-taking routine. Default is None as in scipy's default.
     - **accept_test**: (callable) Define a test to judge the acception of steps. Default is None as in scipy's default.
     - **interval**: (int) Determined how often the step size is updated. Default is 50 as in scipy's default.
-    - **n_iter_success**: (int) Number of iterations the global minimum estimate stays the same to stops the algorithm. Default is None as in scipy's default.
+    - **convergence.n_unchanged_iterations**: (int) Number of iterations the global
+    minimum estimate stays the same to stops the algorithm. Default is None as in
+    scipy's default.
     - **seed**: (None, int, numpy.random.Generator,numpy.random.RandomState)Default is None as in scipy's default.
     - **target_accept_rate**: (float) Adjusts the step size. Default is 0.5 as in scipy's default.
     - **stepwise_factor**: (float) Step size multiplier upon each step. Lies between (0,1), default is 0.9 as in scipy's default.
@@ -625,7 +627,7 @@ you install estimagic.
 
     The algorithm supports the following options:
 
-    - **n_grid_points** (int):  the number of grid points to use for the brute force search. Default is 7 differing from scipy's default 20.
+    - **n_grid_points** (int):  the number of grid points to use for the brute force search. Default is 20 as in scipy.
     - **polishing_function** (callable):  Function to seek a more precise minimum near brute-force' best gridpoint taking brute-force's result at initial guess as a positional argument. Default is None providing no polishing.
     - **n_cores** (int): The number of cores on which the function is evaluated in
     parallel. Default 1.
@@ -663,19 +665,18 @@ you install estimagic.
       - ‘rand1bin’
     ,default is 'best1bin'.
     - **stopping.max_iterations** (int): The maximum number of criterion evaluations without polishing is(stopping.max_iterations + 1) * population_size * number of parameters)
-    - **population_size** (int): A multiplier setting the population size. The number of individuals in the population is population_size * number of parameters. The default 15.
+    - **population_size_multiplier** (int): A multiplier setting the population size. The number of individuals in the population is population_size * number of parameters. The default 15.
     - **convergence.relative_criterion_tolerance** (float): Default 0.01.
     - **mutation_constant** (float/tuple): The differential weight denoted by F in literature. Should be within 0 and 2.  The tuple form is used to specify (min, max) dithering which can help speed convergence.  Default is (0.5, 1).
     - **recombination_constant** (float): The crossover probability or CR in the literature determines the probability that two solution vectors will be combined to produce a new solution vector. Should be between 0 and 1. The default is 0.7.
     - **seed** (int): DE is stochastic. Define a seed for reproducability.
     - **polish** (bool): Uses scipy's L-BFGS-B for unconstrained problems and trust-constr for constrained problems to slightly improve the minimization. Default is True.
-    - **population_init** (str/np.array): Specify the population initialization. It can be one of the following options
+    - **sampling_method** (str/np.array): Specify the sampling method for the initial population. It can be one of the following options
        - "latinhypercube"
        - "sobol"
        - "halton"
        - "random"
-       - an array specifying the initial population of shape (total population size, number of parameters)
-    population_init is clipped to bounds before use. Default is 'latinhypercube'
+       - an array specifying the initial population of shape (total population size, number of parameters). The initial population is clipped to bounds before use. Default is 'latinhypercube'
     - **convergence.absolute_criterion_tolerance** (float): CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
     - **n_cores** (int): The number of cores on which the function is evaluated in
     parallel. Default 1.
@@ -703,24 +704,25 @@ you install estimagic.
     "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
     "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov"
     or a custom function for local minimization, default is "L-BFGS-B".
-    - **local_minimizer_options**: (dict) Additional keyword arguments for the local
+    - **local_algo_options**: (dict) Additional keyword arguments for the local
       minimizer. Check the documentation of the local scipy algorithms for details on
       what is supported.
     - **n_sampling_points** (int): Specify the number of sampling points to construct the simplical complex.
     - **n_simplex_iterations** (int): Number of iterations to construct the simplical complex. Default is 1 as in scipy.
     - **sampling_method** (str/callable): The method to use for sampling the search space. Default 'simplicial'.
-    - **stopping.max_criterion_evaluations** (): The maximum number of evaluations of the criterion function.
+    - **max_sampling_evaluations** (int): The maximum number of evaluations of the criterion function in the sampling phase.
     - **convergence.minimum_criterion_value** (float): Specify the global minimum when it is known. Default is - **np.inf. For maximization problems, flip the sign.
     - **convergence.minimum_criterion_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
     - **stopping.max_iterations** (int): The maximum number of iterations.
-    - **stopping.max_criterion_evaluations** (int): The maximum number of sampling evaluation.
+    - **stopping.max_criterion_evaluations** (int): The maximum number of criterion
+    evaluations.
     - **stopping.max_processing_time** (int): The maximum time allowed for the optimization.
     - **minimum_homology_group_rank_differential** (int): The minimum difference in the rank of the homology group between iterations.
     - **symmetry** (bool): Specify whether the criterion contains symetric variables.
     - **minimize_every_iteration** ()bool: Specify whether the gloabal sampling points are passed to the local algorithm in every iteration.
     - **max_local_minimizations_per_iteration** (int): The maximum number of local
     optimizations per iteration. Default False, i.e. no limit.
-    - **infty_constraints** (bool): Specify whether to save the sampling points outside the feasible domain. Default is True.
+    - **infinity_constraints** (bool): Specify whether to save the sampling points outside the feasible domain. Default is True.
 
 ```
 
@@ -741,7 +743,7 @@ you install estimagic.
     options are. "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC".
     "COBYLA". "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact".
     "trust-krylov". Default "L-BFGS-B".
-    - **local_minimizer_options**: (dict) Additional keyword arguments for the local
+    - **local_algo_options**: (dict) Additional keyword arguments for the local
       minimizer. Check the documentation of the local scipy algorithms for details on
       what is supported.
     - **initial_temperature** (float): The temparature algorithm starts with. The higer values lead to a wider search space. The range is (0.01, 5.e4] and defalt is 5230.0.
