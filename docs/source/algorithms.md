@@ -740,14 +740,16 @@ you install estimagic.
 
     The algorithm supports the following options:
 
-    - **stopping_max_iterations** (int): Specify the maximum number of global searh iterations.
+    - **stopping.max_iterations** (int): Specify the maximum number of global searh iterations.
     - **local_algorithm** (str): The local optimization algorithm to be used.
+    Default "L-BFGS-B". Any local scipy optimizer works.
     - **initial_temperature** (float): The temparature algorithm starts with. The higer values lead to a wider search space. The range is (0.01, 5.e4] and defalt is 5230.0.
     - **restart_temperature_ratio** (float): Reanneling starts when the algorithm is decreased to initial_temperature * restart_temperature_ratio. Default is 2e-05.
     - **visit** (float): Specify the thickness of visiting distribution's tails. Range is (1, 3] and default is scipy's default, 2.62.
     - **accept** (float): Controls the probability of acceptance. Range is (-1e4, -5] and default is scipy's default, -5.0. Smaller values lead to lower acceptance probability.
-    - **stopping_max_criterion_evaluations** (int): soft limit for the number of criterion evaluations.
-    - **seed** (int): Dual annealing is a stochastic process. Define seed for reproducibility.
+    - **stopping.max_criterion_evaluations** (int): soft limit for the number of criterion evaluations.
+    - **seed** (int, None or RNG): Dual annealing is a stochastic process. Seed or
+    random number generator. Default None.
     - **no_local_search** (bool): Specify whether to apply a traditional Generalized Simulated Annealing with no local search. Default is False.
 
 ```

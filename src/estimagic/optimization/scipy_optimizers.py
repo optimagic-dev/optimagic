@@ -635,8 +635,8 @@ def scipy_brute(
     criterion,
     lower_bounds,
     upper_bounds,
+    x,  # noqa: ARG001
     *,
-    x=None,  # noqa: ARG001
     n_grid_points=7,
     polishing_function=None,
     n_cores=1,
@@ -685,8 +685,8 @@ def scipy_differential_evolution(
     criterion,
     lower_bounds,
     upper_bounds,
+    x,  # noqa: ARG001
     *,
-    x=None,  # noqa: ARG001
     nonlinear_constraints=(),
     strategy="best1bin",
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
@@ -733,8 +733,8 @@ def scipy_shgo(
     criterion,
     lower_bounds,
     upper_bounds,
+    x,  # noqa: ARG001
     *,
-    x=None,  # noqa: ARG001
     derivative=None,
     nonlinear_constraints=(),
     local_algorithm="SLSQP",
@@ -803,12 +803,14 @@ def scipy_shgo(
 @mark_minimizer(name="scipy_dual_annealing", is_global=True)
 def scipy_dual_annealing(
     criterion,
+    derivative,
     lower_bounds,
     upper_bounds,
+    x,
     *,
-    x=None,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    local_algorithm=None,
+    local_algorithm="L-BFGS-B",
+    local_minimizer_options=None,
     initial_temperature=5230.0,
     restart_temperature_ratio=2e-05,
     visit=2.62,
@@ -822,7 +824,16 @@ def scipy_dual_annealing(
     For details see :ref:`list_of_scipy_algorithms`.
 
     """
-    minimizer_kwargs = {"method": local_algorithm}
+    local_minimizer_options = (
+        {} if local_minimizer_options is None else local_minimizer_options
+    )
+    default_minimizer_kwargs = {
+        "method": local_algorithm,
+        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "jac": derivative,
+    }
+
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_minimizer_options}
 
     res = scipy.optimize.dual_annealing(
         func=criterion,
@@ -847,8 +858,8 @@ def scipy_direct(
     criterion,
     lower_bounds,
     upper_bounds,
+    x,  # noqa: ARG001
     *,
-    x=None,  # noqa: ARG001
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
