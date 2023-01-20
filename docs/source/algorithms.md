@@ -770,8 +770,8 @@ you install estimagic.
     - **stopping_max_criterion_evaluations** (int/None): Maximum number of criterion evaluations allowed. Default is None which caps the number of evaluations at 1000 * number of dimentions automatically.
     - **stopping_max_iterations** (int): Maximum number of iterations allowed.
     - **locally_biased** (bool): Determine whether to use the locally biased variant of the algorithm DIRECT_L. Default is True.
-    - **criterion_minimum** (float): Specify the global minimum when it is known. Default is - **np.inf.
-    - **criterion_minimum_relative_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
+    - **convergence.minimum_criterion_value** (float): Specify the global minimum when it is known. Default is - **np.inf. For maximization problems, flip the sign.
+    - **convergence.minimum_criterion_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
     - **volume_hyperrectangle_tolerance** (float): Specify the smallest volume of the hyperrectangle containing the lowest criterion value allowed. Range is (0,1). Default is 1e-16.
     - **length_hyperrectangle_tolerance** (float): Depending on locally_biased it can refer to normalized side (True) or diagonal (False) length of the hyperrectangle containing the lowest criterion value. Range is (0,1). Default is scipy's default, 1e-6.
 

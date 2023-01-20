@@ -864,8 +864,8 @@ def scipy_direct(
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     locally_biased=True,
-    criterion_minimum=-np.inf,
-    criterion_minimum_relative_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_minimum_criterion_value=-np.inf,
+    convergence_minimum_criterion_tolerance=1e-4,
     volume_hyperrectangle_tolerance=1e-16,
     length_hyperrectangle_tolerance=1e-6,
 ):
@@ -882,8 +882,8 @@ def scipy_direct(
         maxfun=stopping_max_criterion_evaluations,
         maxiter=stopping_max_iterations,
         locally_biased=locally_biased,
-        f_min=criterion_minimum,
-        f_min_rtol=criterion_minimum_relative_tolerance,
+        f_min=convergence_minimum_criterion_value,
+        f_min_rtol=convergence_minimum_criterion_tolerance,
         vol_tol=volume_hyperrectangle_tolerance,
         len_tol=length_hyperrectangle_tolerance,
     )
