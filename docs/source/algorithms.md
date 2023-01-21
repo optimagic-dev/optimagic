@@ -695,8 +695,6 @@ you install estimagic.
 
     Find the global minimum of a fuction using simplicial homology global optimization.
 
-    Note: scipy_shgo requires the constraints' codomain to be a scalar.
-
     The algorithm supports the following options:
 
     - **local_algorithm** (str): The local optimization algorithm to be used. Only
