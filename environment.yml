@@ -3,7 +3,7 @@ name: estimagic
 
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 
 dependencies:
   - python=3.10  # dev

@@ -6,7 +6,7 @@ from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.utilities import get_rng
 
 
-@pytest.fixture
+@pytest.fixture()
 def convergence_report():
     conv_report = pd.DataFrame(
         index=[
@@ -28,7 +28,7 @@ def convergence_report():
     return conv_report
 
 
-@pytest.fixture
+@pytest.fixture()
 def base_inputs():
     out = {
         "params": np.ones(3),

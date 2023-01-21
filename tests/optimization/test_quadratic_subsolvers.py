@@ -442,7 +442,7 @@ TEST_CASES_BNTR = [
 ]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "linear_terms, square_terms, lower_bounds, upper_bounds, x_expected",
     TEST_CASES_BNTR,
@@ -499,7 +499,7 @@ TEST_CASES_GQTPAR = [
 ]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "linear_terms, square_terms, x_expected, criterion_expected", TEST_CASES_GQTPAR
 )
@@ -702,7 +702,7 @@ TEST_CASES_TRSBOX = [
 ]
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
 )
@@ -715,7 +715,7 @@ def test_trustregion_conjugate_gradient(
     aaae(x_out, x_expected)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
 )
@@ -724,7 +724,7 @@ def test_trustregion_steihaug_toint(gradient, hessian, trustregion_radius, x_exp
     aaae(x_out, x_expected)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "linear_terms, square_terms, trustregion_radius, x_expected",
     TEST_CASES_CG + TEST_CASES_TRSBOX,

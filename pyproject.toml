@@ -56,13 +56,28 @@ extend-ignore = [
     "PD",  # pandas-vet
     "E731",  # do not assign a lambda expression, use a def
     "RET", # unnecessary elif or else statements after return, rais, continue, ...
-    "BLE001", # Do not catch blind exceptions. Complains even if done at end of except block.
+    "S324", # Probable use of insecure hash function.
+    "COM812", # trailing comma missing, but black takes care of that
+    "PT007", # wrong type in parametrize, gave false positives
+
+
+    # Things we are not sure we want
+    # ==============================
+    "SIM102", # Use single if statement instead of nested if statements
+    "SIM108", # Use ternary operator instead of if-else block
+    "SIM117", # do not use nested with statements
+    "BLE001", # Do not catch blind exceptions (even after handling some specific ones)
+    "PLR2004", # Magic values used in comparison
+    "PT006", # Allows only lists of tuples in parametrize, even if single argument
 
     # Things ignored during transition phase
     # ======================================
-    "D",
-    "ANN",
+    "D",  # docstrings
+    "ANN",  # missing annotations
     "C901",  # function too complex
+    "PT011", # pytest raises without match statement
+
+
     # ======================================
 ]
 
@@ -91,6 +106,11 @@ filterwarnings = [
     "ignore:Standard matrix inversion failed due to LinAlgError",
     "ignore:Tranquilo is extremely experimental",
     "ignore:delta_grad == 0.0",
+    "ignore:Widget._active_widgets is deprecated",
+    "ignore:Widget._widget_types is deprecated",
+    "ignore:Widget.widget_types is deprecated",
+    "ignore:Widget.widgets is deprecated",
+    "ignore:Deprecated API features detected",
 ]
 addopts = ["--doctest-modules"]
 

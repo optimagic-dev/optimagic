@@ -29,7 +29,7 @@ from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
 
 
-@pytest.fixture
+@pytest.fixture()
 def binary_choice_inputs():
     fix_path = Path(__file__).resolve().parent / "binary_choice_inputs.pickle"
     inputs = pd.read_pickle(fix_path)
