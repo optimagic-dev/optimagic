@@ -17,7 +17,7 @@ from pybaum import leaf_names
 from pybaum import tree_equal
 
 
-@pytest.fixture
+@pytest.fixture()
 def inputs():
     jac = pd.DataFrame(np.ones((5, 3)), columns=["a", "b", "c"])
     hess = pd.DataFrame(np.eye(3) / 2, columns=list("abc"), index=list("abc"))
