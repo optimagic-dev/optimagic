@@ -20,7 +20,6 @@ import os
 from importlib.metadata import version
 
 
-
 year = dt.datetime.now().year
 
 author = "Janos Gabler"
