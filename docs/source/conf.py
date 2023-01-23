@@ -49,7 +49,6 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_panels",
     "sphinx_copybutton",
-    "myst_parser",
 ]
 
 myst_enable_extensions = [
