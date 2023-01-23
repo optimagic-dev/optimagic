@@ -29,6 +29,7 @@ dependencies:
   - patsy
   - joblib
   - plotly
+  - ipython
 
   - pip:
       - ../
