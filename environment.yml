@@ -34,7 +34,6 @@ dependencies:
   - sqlalchemy>=1.3  # run, tests
 
   - pydata-sphinx-theme>=0.3.0  # docs
-  - myst-parser  # docs
   - myst-nb  # docs
   - sphinx  # docs
   - sphinx-copybutton  # docs
