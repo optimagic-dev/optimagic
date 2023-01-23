@@ -18,6 +18,8 @@
 import datetime as dt
 import os
 from importlib.metadata import version
+from IPython.core.display import HTML
+from IPython.display import IFrame, Latex
 
 
 year = dt.datetime.now().year

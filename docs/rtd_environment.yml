@@ -21,7 +21,6 @@ dependencies:
   - pydata-sphinx-theme>=0.3.0
   - numba
   - pybaum
-  - myst-parser
   - matplotlib
   - seaborn
   - numpy
@@ -29,6 +28,10 @@ dependencies:
   - scipy
   - patsy
   - joblib
+  - plotly
+  - kaleido
+  - Py-BOBYQA
+  - DFO-LS
 
   - pip:
       - ../
