@@ -20,7 +20,7 @@ rules:
   empty-values: disable
   float-values: disable
   hyphens:
-    max-spaces-after: 4
+    max-spaces-after: 3
   indentation: {spaces: 2}
   key-duplicates: enable
   key-ordering: disable
