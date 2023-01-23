@@ -211,7 +211,7 @@ def _select_derivative_with_minimal_error(df_jac_cand, given_method=False):
 
     """
     given = ["method"] if given_method else []
-    minimizer = df_jac_cand.groupby(given + ["dim_x", "dim_f"])["err"].idxmin()
+    minimizer = df_jac_cand.groupby([*given, "dim_x", "dim_f"])["err"].idxmin()
     df = df_jac_cand.loc[minimizer]["der"]
     index_level_to_drop = list({"method", "num_term"} - set(given))
     df = df.droplevel(index_level_to_drop).copy()

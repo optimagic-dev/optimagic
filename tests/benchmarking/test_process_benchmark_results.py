@@ -87,7 +87,7 @@ def test_normalize_minimize():
 
     df = pd.DataFrame()
     df["problem"] = PROBLEMS * 3
-    df["criterion"] = start_values.tolist() + [2, 3, 9] + target_values.tolist()
+    df["criterion"] = [*start_values.tolist(), 2, 3, 9, *target_values.tolist()]
 
     res = _normalize(
         df=df, col="criterion", start_values=start_values, target_values=target_values
@@ -106,7 +106,7 @@ def test_normalize_maximize():
 
     df = pd.DataFrame()
     df["problem"] = PROBLEMS * 3
-    df["criterion"] = start_values.tolist() + [2, 4, 9] + target_values.tolist()
+    df["criterion"] = [*start_values.tolist(), 2, 4, 9, *target_values.tolist()]
 
     res = _normalize(
         df=df, col="criterion", start_values=start_values, target_values=target_values

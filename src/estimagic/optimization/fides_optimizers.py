@@ -166,7 +166,7 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
         if isinstance(hessian_instance, hessians_needing_residuals):
             raise NotImplementedError(unsupported_hess_msg)
     else:
-        raise ValueError(
+        raise TypeError(
             "You must provide a hessian_update_strategy that is either a string or an "
             "instance of the fides.hessian_approximation.HessianApproximation class."
         )

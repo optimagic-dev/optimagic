@@ -93,7 +93,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
 
     algo_output = {}
     for key in res:
-        if key not in optional_entries + ["solution_x", "solution_criterion"]:
+        if key not in [*optional_entries, "solution_x", "solution_criterion"]:
             algo_output[key] = res[key]
 
     if "history" in res and not skip_checks:

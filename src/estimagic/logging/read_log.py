@@ -56,7 +56,7 @@ def _load_database(path_or_database):
             raise FileNotFoundError(f"No such database file: {path}")
         res = load_database(path=path)
     else:
-        raise ValueError(
+        raise TypeError(
             "path_or_database must be a path or sqlalchemy.MetaData object"
         )
     return res

@@ -440,7 +440,7 @@ def _process_surrogate_model(surrogate_model, functype):
             raise ValueError(f"Invalid surrogate model: {surrogate_model}")
 
     else:
-        raise ValueError(f"Invalid surrogate model: {surrogate_model}")
+        raise TypeError(f"Invalid surrogate model: {surrogate_model}")
     return out
 
 
@@ -465,7 +465,7 @@ def _process_sample_size(user_sample_size, model_info, x):
     elif isinstance(user_sample_size, numbers.Number):
         out = int(user_sample_size)
     else:
-        raise ValueError(f"invalid sample size: {user_sample_size}")
+        raise TypeError(f"invalid sample size: {user_sample_size}")
     return out
 
 
