@@ -29,9 +29,9 @@ dependencies:
   - patsy
   - joblib
   - plotly
-  - kaleido
-  - Py-BOBYQA
-  - DFO-LS
 
   - pip:
       - ../
+      - kaleido
+      - Py-BOBYQA
+      - DFO-LS
