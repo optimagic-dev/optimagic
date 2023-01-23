@@ -38,6 +38,7 @@ import functools
 
 import numpy as np
 import scipy
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
@@ -54,9 +55,15 @@ from estimagic.optimization.algo_options import (
 from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.algo_options import (
+    STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+)
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
+)
+from estimagic.parameters.nonlinear_constraints import (
+    vector_as_list_of_scalar_constraints,
 )
 from estimagic.utilities import calculate_trustregion_initial_radius
 from scipy.optimize import Bounds
@@ -460,7 +467,7 @@ def _get_scipy_bounds(lower_bounds, upper_bounds):
 def _get_scipy_constraints(constraints):
     """Transform internal nonlinear constraints to scipy readable format.
 
-    This format is currently only used by scipy_trust-constr.
+    This format is currently only used by scipy_trust_constr.
 
     """
     scipy_constraints = [_internal_to_scipy_constraint(c) for c in constraints]
@@ -565,3 +572,336 @@ def scipy_ls_lm(
     )
 
     return process_scipy_result(res)
+
+
+@mark_minimizer(name="scipy_basinhopping", is_global=True)
+def scipy_basinhopping(
+    criterion,
+    derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    local_algorithm="L-BFGS-B",
+    n_local_optimizations=100,
+    temperature=1.0,
+    stepsize=0.5,
+    local_algo_options=None,
+    take_step=None,
+    accept_test=None,
+    interval=50,
+    convergence_n_unchanged_iterations=None,
+    seed=None,
+    target_accept_rate=0.5,
+    stepwise_factor=0.9,
+):
+    """Find the global minimum of a function using the basin-hopping algorithm.
+
+    For details see :ref:`list_of_scipy_algorithms`.
+
+    """
+    n_local_optimizations = max(1, n_local_optimizations - 1)
+    local_algo_options = {} if local_algo_options is None else local_algo_options
+    default_minimizer_kwargs = {
+        "method": local_algorithm,
+        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "jac": derivative,
+    }
+
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
+
+    res = scipy.optimize.basinhopping(
+        func=criterion,
+        x0=x,
+        minimizer_kwargs=minimizer_kwargs,
+        niter=n_local_optimizations,
+        T=temperature,
+        stepsize=stepsize,
+        take_step=take_step,
+        accept_test=accept_test,
+        interval=interval,
+        niter_success=convergence_n_unchanged_iterations,
+        seed=seed,
+        target_accept_rate=target_accept_rate,
+        stepwise_factor=stepwise_factor,
+    )
+
+    return process_scipy_result(res)
+
+
+@mark_minimizer(name="scipy_brute", is_global=True, disable_history=True)
+def scipy_brute(
+    criterion,
+    lower_bounds,
+    upper_bounds,
+    x,  # noqa: ARG001
+    *,
+    n_grid_points=20,
+    polishing_function=None,
+    n_cores=1,
+    batch_evaluator="joblib",
+):
+    """Minimize a function over a given range by brute force.
+
+    For details see :ref:`list_of_scipy_algorithms`.
+
+    Lower and upper bounds are passed to range where each component
+    of the ranges tuple must be either a “slice object” or a range tuple
+    of the form (low, high). The program uses these to create the
+    grid of points on which the objective function will be computed.
+
+    full_output always true.
+    polishing func none to stay inside bounds, bounds - ranges difference.
+
+
+    """
+    workers = _get_workers(n_cores, batch_evaluator)
+
+    res = scipy.optimize.brute(
+        func=criterion,
+        ranges=tuple(map(tuple, np.column_stack([lower_bounds, upper_bounds]))),
+        Ns=n_grid_points,
+        full_output=True,
+        finish=polishing_function,
+        workers=workers,
+    )
+    out = {
+        "solution_x": res[0],
+        "solution_criterion": res[1],
+        "n_criterion_evaluations": res[2].size,
+        "n_iterations": res[2].size,
+        "success": True,
+        "message": "brute force optimization terminated successfully",
+    }
+
+    return out
+
+
+@mark_minimizer(
+    name="scipy_differential_evolution", is_global=True, disable_history=True
+)
+def scipy_differential_evolution(
+    criterion,
+    lower_bounds,
+    upper_bounds,
+    x,  # noqa: ARG001
+    nonlinear_constraints,
+    *,
+    strategy="best1bin",
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    population_size_multiplier=15,
+    convergence_relative_criterion_tolerance=0.01,
+    mutation_constant=(0.5, 1),
+    recombination_constant=0.7,
+    seed=None,
+    polish=True,
+    sampling_method="latinhypercube",
+    convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
+    n_cores=1,
+    batch_evaluator="joblib",
+):
+    """Finds the global minimum of a multivariate function.
+
+    For details see :ref:`list_of_scipy_algorithms`.
+
+    """
+    workers = _get_workers(n_cores, batch_evaluator)
+    res = scipy.optimize.differential_evolution(
+        func=criterion,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        strategy=strategy,
+        maxiter=stopping_max_iterations,
+        popsize=population_size_multiplier,
+        tol=convergence_relative_criterion_tolerance,
+        mutation=mutation_constant,
+        recombination=recombination_constant,
+        seed=seed,
+        polish=polish,
+        init=sampling_method,
+        atol=convergence_absolute_criterion_tolerance,
+        updating="deferred",
+        workers=workers,
+        constraints=_get_scipy_constraints(nonlinear_constraints),
+    )
+
+    return process_scipy_result(res)
+
+
+@mark_minimizer(name="scipy_shgo", is_global=True)
+def scipy_shgo(
+    criterion,
+    lower_bounds,
+    upper_bounds,
+    x,  # noqa: ARG001
+    derivative,
+    nonlinear_constraints,
+    *,
+    local_algorithm="L-BFGS-B",
+    local_algo_options=None,
+    n_sampling_points=128,
+    n_simplex_iterations=1,
+    sampling_method="simplicial",
+    max_sampling_evaluations=None,
+    convergence_minimum_criterion_value=None,
+    convergence_minimum_criterion_tolerance=1e-4,
+    stopping_max_iterations=None,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    stopping_max_processing_time=None,
+    minimum_homology_group_rank_differential=None,
+    symmetry=False,
+    minimize_every_iteration=True,
+    max_local_minimizations_per_iteration=False,
+    infinity_constraints=True,
+):
+    """Finds the global minimum of a function using SHG optimization.
+
+    SHGO stands for “simplicial homology global optimization”.
+
+    For details see :ref:`list_of_scipy_algorithms`.
+
+    """
+    if local_algorithm == "COBYLA":
+        nonlinear_constraints = equality_as_inequality_constraints(
+            nonlinear_constraints
+        )
+
+    nonlinear_constraints = vector_as_list_of_scalar_constraints(nonlinear_constraints)
+
+    local_algo_options = {} if local_algo_options is None else local_algo_options
+    default_minimizer_kwargs = {
+        "method": local_algorithm,
+        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "jac": derivative,
+    }
+
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
+    options = {
+        "maxfev": max_sampling_evaluations,
+        "f_min": convergence_minimum_criterion_value,
+        "f_tol": convergence_minimum_criterion_tolerance,
+        "maxiter": stopping_max_iterations,
+        "maxev": stopping_max_criterion_evaluations,
+        "maxtime": stopping_max_processing_time,
+        "minhgrd": minimum_homology_group_rank_differential,
+        "symmetry": symmetry,
+        "jac": derivative,
+        "minimize_every_iter": minimize_every_iteration,
+        "local_iter": max_local_minimizations_per_iteration,
+        "infty_constraints": infinity_constraints,
+    }
+
+    if any(options.values()) is False:
+        options = None
+
+    res = scipy.optimize.shgo(
+        func=criterion,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        constraints=nonlinear_constraints,
+        minimizer_kwargs=minimizer_kwargs,
+        n=n_sampling_points,
+        iters=n_simplex_iterations,
+        sampling_method=sampling_method,
+        options=options,
+    )
+
+    return process_scipy_result(res)
+
+
+@mark_minimizer(name="scipy_dual_annealing", is_global=True)
+def scipy_dual_annealing(
+    criterion,
+    derivative,
+    lower_bounds,
+    upper_bounds,
+    x,
+    *,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    local_algorithm="L-BFGS-B",
+    local_algo_options=None,
+    initial_temperature=5230.0,
+    restart_temperature_ratio=2e-05,
+    visit=2.62,
+    accept=-5.0,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    seed=None,
+    no_local_search=False,
+):
+    """Find the global minimum of a function using Dual Annealing.
+
+    For details see :ref:`list_of_scipy_algorithms`.
+
+    """
+    local_algo_options = {} if local_algo_options is None else local_algo_options
+    default_minimizer_kwargs = {
+        "method": local_algorithm,
+        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "jac": derivative,
+    }
+
+    minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
+
+    res = scipy.optimize.dual_annealing(
+        func=criterion,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        maxiter=stopping_max_iterations,
+        minimizer_kwargs=minimizer_kwargs,
+        initial_temp=initial_temperature,
+        restart_temp_ratio=restart_temperature_ratio,
+        visit=visit,
+        accept=accept,
+        maxfun=stopping_max_criterion_evaluations,
+        seed=seed,
+        no_local_search=no_local_search,
+        x0=x,
+    )
+
+    return process_scipy_result(res)
+
+
+@mark_minimizer(name="scipy_direct", is_global=True)
+def scipy_direct(
+    criterion,
+    lower_bounds,
+    upper_bounds,
+    x,  # noqa: ARG001
+    *,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    stopping_max_iterations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    locally_biased=True,
+    convergence_minimum_criterion_value=-np.inf,
+    convergence_minimum_criterion_tolerance=1e-4,
+    volume_hyperrectangle_tolerance=1e-16,
+    length_hyperrectangle_tolerance=1e-6,
+):
+    """Finds the global minimum of a function using the DIRECT algorithm.
+
+    For details see :ref:`list_of_scipy_algorithms`.
+
+    """
+
+    res = scipy.optimize.direct(
+        func=criterion,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        eps=convergence_relative_criterion_tolerance,
+        maxfun=stopping_max_criterion_evaluations,
+        maxiter=stopping_max_iterations,
+        locally_biased=locally_biased,
+        f_min=convergence_minimum_criterion_value,
+        f_min_rtol=convergence_minimum_criterion_tolerance,
+        vol_tol=volume_hyperrectangle_tolerance,
+        len_tol=length_hyperrectangle_tolerance,
+    )
+
+    return process_scipy_result(res)
+
+
+def _get_workers(n_cores, batch_evaluator):
+
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
+    out = functools.partial(
+        batch_evaluator,
+        n_cores=n_cores,
+        error_handling="raise",
+    )
+    return out
