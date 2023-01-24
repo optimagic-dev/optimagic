@@ -152,9 +152,8 @@ nb_execution_timeout = 1000
 
 # List of notebooks that will not be executed.
 nb_execution_excludepatterns = [
-    # Includes patsy that is not found  in the doc build
-    # Even though it was added to the rtd_environment
-    # "getting_started/estimation/first_likelihood_estimation_with_estimagic",
+    # Problem with latex rendering
+    "/how_to_guides/miscellaneous/how_to_generate_publication_quality_tables",
 ]
 
 # -- Options for HTML output ----------------------------------------------
