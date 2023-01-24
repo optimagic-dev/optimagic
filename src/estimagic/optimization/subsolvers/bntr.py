@@ -89,6 +89,7 @@ def bntr(
                 termination.
             - ``success`` (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
+
     """
     options_update_radius = {
         "eta1": 1.0e-4,
@@ -915,6 +916,7 @@ def _get_fischer_burmeister_scalar(a, b):
 
     Returns:
         float: Value of the Fischer-Burmeister function for inputs a and b.
+
     """
     if a + b <= 0:
         fischer_burmeister = np.sqrt(a**2 + b**2) - (a + b)
@@ -940,5 +942,6 @@ def _evaluate_model_criterion(
 
     Returns:
         float: Criterion value of the main model.
+
     """
     return gradient.T @ x + 0.5 * x.T @ hessian @ x

@@ -65,6 +65,7 @@ def profile_plot(
 
     Returns:
         plotly.Figure
+
     """
     if stopping_criterion is None:
         raise ValueError(

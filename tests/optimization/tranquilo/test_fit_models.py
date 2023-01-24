@@ -37,6 +37,7 @@ def quadratic_case():
     """Test scenario with true quadratic function.
 
     We return true function, and function evaluations and data on random points.
+
     """
     n_params = 4
     n_samples = 2_000
@@ -74,6 +75,7 @@ def just_identified_case():
     """Test scenario with true quadratic function and n + 1 points.
 
     We return true function, and function evaluations and data on random points.
+
     """
     n_params = 4
     n_samples = n_params + 1
@@ -231,7 +233,6 @@ def test_fit_ols_against_hessian(model, options, quadratic_case):
 
 @pytest.mark.parametrize("has_squares", [True, False])
 def test_polynomial_features(has_squares):
-
     x = np.array([[0, 1, 2], [3, 4, 5]])
 
     expected = {

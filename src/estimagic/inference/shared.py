@@ -49,6 +49,7 @@ def transform_covariance(
             parameters. If parameters were fixed (explicitly or by other constraints),
             the index is a subset of params.index. The columns are the same as the
             index.
+
     """
     if converter.has_transforming_constraints:
         _from_internal = converter.params_from_internal

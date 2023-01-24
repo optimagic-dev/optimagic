@@ -9,12 +9,12 @@ def _keep_line(line: str, flag: str) -> bool:
     >>> assert _keep_line("  - jax  # tests", "tests") is True
     >>> assert _keep_line("name: env", "tests") is True
     >>> assert _keep_line("  - jax  # run", "tests") is False
+
     """
     return flag in line or "#" not in line
 
 
 def main():
-
     lines = Path("environment.yml").read_text().splitlines()
 
     # create standard testing environments

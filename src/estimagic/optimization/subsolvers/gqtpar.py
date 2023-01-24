@@ -67,6 +67,7 @@ def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
             - ``x`` (np.ndarray): Solution vector of the subproblem of shape (n,)
             - ``criterion`` (float): Minimum function value associated with the
                 solution.
+
     """
     hessian_info = HessianInfo()
 
@@ -174,6 +175,7 @@ def _get_initial_guess_for_lambdas(
             - "candidate"
             - "upper_bound"
             - "lower_bound"
+
     """
     gradient_norm = np.linalg.norm(main_model.linear_terms)
     model_hessian = main_model.square_terms
@@ -243,6 +245,7 @@ def add_lambda_and_factorize_hessian(main_model, hessian_info, lambdas):
             If k = 0, the factorization has been successful.
             A value k > 0 means that the leading k by k submatrix constitues the
             first non-positive definite leading submatrix of the hessian.
+
     """
     n = main_model.square_terms.shape[0]
 
@@ -383,6 +386,7 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
 
     Returns:
         float: New candidate for the damping factor lambda.
+
     """
 
     lambda_new_candidate = max(
@@ -410,6 +414,7 @@ def _compute_gershgorin_bounds(main_model):
         Tuple:
         - lower_bound (float): Lower Gregoshgorin bound.
         - upper_bound (float): Upper Gregoshgorin bound.
+
     """
     model_hessian = main_model.square_terms
 
@@ -436,6 +441,7 @@ def _compute_newton_step(lambdas, p_norm, w_norm):
     Returns:
         float: Newton step computed according to formula (4.44) p.87
             from Nocedal and Wright (2006).
+
     """
     return lambdas.candidate + (p_norm / w_norm) ** 2 * (p_norm - 1)
 
@@ -523,6 +529,7 @@ def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
 
     Returns:
         float: Step length with the smallest magnitude.
+
     """
     ta, tb = _solve_scalar_quadratic_equation(x_candidate, z_min)
     step_len = min([ta, tb], key=abs)
@@ -555,6 +562,7 @@ def _solve_scalar_quadratic_equation(z, d):
         Tuple: The two values of t, sorted from low to high.
         - (float) Lower value of t.
         - (float) Higher value of t.
+
     """
     a = d.T @ d
     b = 2 * z.T @ d
@@ -593,6 +601,7 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
             the leading k by k submatrix of the hessian to make it singular.
         - v (np.ndarray): A vector such that ``v.T B v = 0``. Where B is the
             hessian after ``delta`` is added to its element (k, k).
+
     """
     hessian_plus_lambda = hessian_info.hessian_plus_lambda
     upper_triangular = hessian_info.upper_triangular

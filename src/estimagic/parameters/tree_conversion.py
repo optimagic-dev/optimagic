@@ -130,7 +130,6 @@ def _get_params_unflatten(registry, treedef):
 
 
 def _get_func_flatten(registry, func_eval, primary_key):
-
     if isscalar(func_eval):
         if primary_key == "value":
             func_flatten = lambda func_eval: float(func_eval)

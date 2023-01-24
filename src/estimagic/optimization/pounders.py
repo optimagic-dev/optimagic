@@ -1,4 +1,4 @@
-"""Implement the POUNDERS algorithm"""
+"""Implement the POUNDERS algorithm."""
 import warnings
 
 import numpy as np
@@ -67,6 +67,7 @@ def pounders(
     n_cores=DEFAULT_N_CORES,
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
+
     For details, see :ref:`_own_algorithms`.
 
     """
@@ -265,6 +266,7 @@ def internal_solve_pounders(
             solution vector or reaching maxiter.
         - success (bool): Boolean indicating whether a solution has been found
             before reaching maxiter.
+
     """
     history = LeastSquaresHistory()
 

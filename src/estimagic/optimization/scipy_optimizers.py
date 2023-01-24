@@ -653,7 +653,6 @@ def scipy_brute(
     full_output always true.
     polishing func none to stay inside bounds, bounds - ranges difference.
 
-
     """
     workers = _get_workers(n_cores, batch_evaluator)
 
@@ -897,7 +896,6 @@ def scipy_direct(
 
 
 def _get_workers(n_cores, batch_evaluator):
-
     batch_evaluator = process_batch_evaluator(batch_evaluator)
     out = functools.partial(
         batch_evaluator,

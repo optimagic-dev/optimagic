@@ -205,8 +205,8 @@ def robust_inverse(matrix, msg=""):
 
 
 def _internal_robust_cholesky(matrix, threshold):
-    """Lower triangular cholesky factor of *matrix* using an LDL decomposition
-    and QR factorization.
+    """Lower triangular cholesky factor of *matrix* using an LDL decomposition and QR
+    factorization.
 
     Args:
         matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix

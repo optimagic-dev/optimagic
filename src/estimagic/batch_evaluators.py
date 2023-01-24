@@ -28,7 +28,7 @@ def pathos_mp_batch_evaluator(
     error_handling="continue",
     unpack_symbol=None,
 ):
-    """Batch evaluator based on pathos.multiprocess.ProcessPool
+    """Batch evaluator based on pathos.multiprocess.ProcessPool.
 
     This uses a patched but older version of python multiprocessing that replaces
     pickling with dill and can thus handle decorated functions.

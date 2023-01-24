@@ -48,7 +48,11 @@ def test_load_database_from_path(tmp_path):
 
 
 def test_load_database_after_pickling(tmp_path):
-    """Pickling unsets database.bind. Test that load_database sets it again."""
+    """Pickling unsets database.bind.
+
+    Test that load_database sets it again.
+
+    """
     path = tmp_path / "test.db"
     database = load_database(path=path)
     database = pickle.loads(pickle.dumps(database))

@@ -176,6 +176,7 @@ def _reset_column_data_sources(cds_list):
 
     Args:
         cds_list (list): list of boheh ColumnDataSources
+
     """
     for cds in cds_list:
         column_names = cds.data.keys()

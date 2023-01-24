@@ -442,6 +442,7 @@ def _partial_kwargs(func, kwargs):
 
     In contrast to normal partial this works if kwargs in None. If func is not a
     callable it simply returns None.
+
     """
     if isinstance(func, Callable):
         if kwargs not in (None, {}):
@@ -570,6 +571,7 @@ class MomentsResult:
         Returns:
             Any: A pytree with the same structure as params containing standard errors
                 for the parameter estimates.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -625,6 +627,7 @@ class MomentsResult:
         Returns:
             Any: The covariance matrix of the estimated parameters as block-pytree or
                 numpy array.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -674,6 +677,7 @@ class MomentsResult:
 
         Returns:
             Any: The estimation summary as pytree of DataFrames.
+
         """
         summary_data = calculate_summary_data_estimation(
             self,
@@ -729,6 +733,7 @@ class MomentsResult:
                 confidence intervals.
             Any: Pytree with the same structure as params containing upper bounds of
                 confidence intervals.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -783,6 +788,7 @@ class MomentsResult:
         Returns:
             Any: Pytree with the same structure as params containing p-values.
             Any: Pytree with the same structure as params containing p-values.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -866,6 +872,7 @@ class MomentsResult:
             Any: The sensitivity measure as a pytree, numpy array or DataFrame.
                 In 2d formats, the sensitivity measures have one row per estimated
                 parameter and one column per moment.
+
         """
         if self._has_constraints:
             raise NotImplementedError(
@@ -961,6 +968,7 @@ class MomentsResult:
 
         Args:
             path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
         """
         to_pickle(self, path=path)
 

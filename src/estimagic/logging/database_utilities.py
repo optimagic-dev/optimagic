@@ -372,7 +372,6 @@ def read_table(database, table_name, return_type, path=None, fast_logging=False)
 
 
 def _execute_read_statement(database, table_name, statement, return_type):
-
     try:
         with database.bind.begin() as connection:
             raw_result = list(connection.execute(statement))
@@ -515,7 +514,7 @@ class RobustPickler:
         errors="strict",  # noqa: ARG004
         buffers=None,  # noqa: ARG004
     ):
-        """Robust pickle loading
+        """Robust pickle loading.
 
         We first try to unpickle the object with pd.read_pickle. This makes no
         difference for non-pandas objects but makes the de-serialization

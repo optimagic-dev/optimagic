@@ -191,7 +191,6 @@ def test_process_selectors_dataframe_queries(df_params, df_params_converter):
 
 @pytest.mark.parametrize("field", ["selectors", "queries", "query", "locs"])
 def test_process_selectors_numpy_array_invalid_fields(field, np_params_converter):
-
     with pytest.raises(InvalidConstraintError):
         process_selectors(
             constraints=[{"type": "equality", field: None}],

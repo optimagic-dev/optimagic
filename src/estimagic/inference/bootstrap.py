@@ -58,6 +58,7 @@ def bootstrap(
     Returns:
         BootstrapResult: A BootstrapResult object storing information on summary
             statistics, the covariance matrix, and estimated boostrap outcomes.
+
     """
     if callable(outcome):
 
@@ -149,6 +150,7 @@ class BootstrapResult:
         Returns:
             pytree: Pytree of base outcomes, i.e. the outcome statistic(s) evaluated
                 on the original data set.
+
         """
         return self._base_outcome
 
@@ -158,6 +160,7 @@ class BootstrapResult:
 
         Returns:
             List[Any]: The boostrap outcomes as a list of pytrees.
+
         """
         registry = get_registry(extended=True)
         _, treedef = tree_flatten(self._base_outcome, registry=registry)
@@ -174,6 +177,7 @@ class BootstrapResult:
         Returns:
             Any: The standard errors of the estimated parameters as a block-pytree,
                 numpy.ndarray, or pandas.DataFrame.
+
         """
         cov = self._internal_cov
         se = np.sqrt(np.diagonal(cov))
@@ -197,6 +201,7 @@ class BootstrapResult:
         Returns:
             Any: The covariance matrix of the estimated parameters as a block-pytree,
                 numpy.ndarray, or pandas.DataFrame.
+
         """
         cov = self._internal_cov
 
@@ -227,6 +232,7 @@ class BootstrapResult:
                 bounds of confidence intervals.
             Any: Pytree with the same structure as base_outcome containing upper
                 bounds of confidence intervals.
+
         """
         registry = get_registry(extended=True)
         base_outcome_flat, treedef = tree_flatten(self._base_outcome, registry=registry)
@@ -245,6 +251,7 @@ class BootstrapResult:
         Returns:
             Any: A pytree with the same structure as base_outcome containing p-values
                 for the parameter estimates.
+
         """
         msg = "Bootstrap p_values are not yet implemented."
         raise NotImplementedError(msg)
@@ -262,6 +269,7 @@ class BootstrapResult:
             pd.DataFrame: The estimation summary as a DataFrame containing information
                 on the mean, standard errors, as well as the confidence intervals.
                 Soon this will be a pytree.
+
         """
         registry = get_registry(extended=True)
         names = leaf_names(self.base_outcome, registry=registry)

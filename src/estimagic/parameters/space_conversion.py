@@ -495,8 +495,6 @@ def post_replace_jacobian(post_replacements):
                [0., 1., 0.],
                [0., 1., 0.]])
 
-
-
     """
     dim = len(post_replacements)
     mask = post_replacements >= 0

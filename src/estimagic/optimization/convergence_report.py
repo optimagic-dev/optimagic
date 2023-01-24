@@ -3,7 +3,6 @@ from estimagic.optimization.history_tools import get_history_arrays
 
 
 def get_convergence_report(history, direction):
-
     history_arrs = get_history_arrays(
         history=history,
         direction=direction,

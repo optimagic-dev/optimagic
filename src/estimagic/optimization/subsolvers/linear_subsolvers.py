@@ -44,6 +44,7 @@ def minimize_trsbox_linear(
     Returns:
         (np.ndarray): Solution vector for the linear trust-region subproblem.
             Array of shape (n,).
+
     """
     lower_bounds_internal = np.minimum(lower_bounds, -zero_treshold)
     upper_bounds_internal = np.maximum(upper_bounds, zero_treshold)
@@ -138,6 +139,7 @@ def improve_geomtery_trsbox_linear(
     Returns:
         np.ndarray: Solution vector of shape (n,) that maximizes the Lagrange
             polynomial.
+
     """
     if np.any(lower_bounds > x_center + zero_treshold):
         raise ValueError("x_center violates lower bound.")
@@ -206,6 +208,7 @@ def _find_next_active_bound(
                 set of active search directions.
             - index_bound_active (int or None): Index where an active lower or
                 upper bound has been found. None, if no active bound has been detected.
+
     """
     index_active = next(set_active_directions)
 
@@ -245,6 +248,7 @@ def _take_constrained_step_up_to_boundary(
         - x_candidate (np.ndarray): New candidate vector of shape (n,).
         - direction (np.ndarray): New direction vector of shape (n,), where the
             search direction of the active_bound has been set to zero.
+
     """
     step_size_constr = (active_bound - x_candidate[index_bound_active]) / direction[
         index_bound_active
@@ -273,6 +277,7 @@ def _take_unconstrained_step_up_to_boundary(
 
     Returns:
         np.ndarray: Updated, unconstrained candidate vector of shape (n,).
+
     """
     step_size_unconstr = _get_distance_to_trustregion_boundary(
         x_candidate, direction, trustregion_radius, zero_treshold
@@ -309,6 +314,7 @@ def _get_distance_to_trustregion_boundary(
 
     Returns:
         float: Distance between the candidate vector and the trust-region boundary.
+
     """
     g_dot_x = direction.T @ x
     g_sumsq = direction @ direction

@@ -33,7 +33,6 @@ def test_empty_constraints_work():
 
 
 def test_to_many_bounds_in_increasing_constraint_raise_good_error():
-
     with pytest.raises(InvalidConstraintError):
         check_constraints(
             params=np.arange(3),

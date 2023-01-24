@@ -36,7 +36,6 @@ def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
 
 
 def test_with_invalid_numdiff_options():
-
     with pytest.raises(InvalidKwargsError):
         minimize(
             criterion=lambda x: x @ x,

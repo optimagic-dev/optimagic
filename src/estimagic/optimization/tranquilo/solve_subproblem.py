@@ -177,6 +177,7 @@ def _solve_subproblem_template(
             - "n_iterations" (int): Number of iterations performed before termination.
             - "success" (bool): Boolean indicating whether a solution has been found
               before reaching maxiter.
+
     """
 
     _bounds = _get_centered_and_scaled_bounds(bounds, trustregion)

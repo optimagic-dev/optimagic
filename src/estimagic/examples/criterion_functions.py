@@ -7,8 +7,8 @@ import pandas as pd
 
 
 def trid_scalar_criterion(params):
-    """Implement Trid function.
-    Function description: https://www.sfu.ca/~ssurjano/trid.html
+    """Implement Trid function. Function description:
+    https://www.sfu.ca/~ssurjano/trid.html.
 
     Args:
         params (pd.DataFrame): Must have the column "value" containing
@@ -16,6 +16,7 @@ def trid_scalar_criterion(params):
 
     Returns:
         int: Trid function output.
+
     """
     x = _get_x(params)
     return ((x - 1) ** 2).sum() - (x[1:] * x[:-1]).sum()
@@ -30,6 +31,7 @@ def trid_gradient(params):
 
     Returns:
         np.ndarray: gradient of trid function.
+
     """
     x = _get_x(params)
     l1 = np.insert(x, 0, 0)
@@ -49,6 +51,7 @@ def trid_criterion_and_gradient(params):
     Returns:
         int: trid function output.
         np.ndarray: gradient of trid function.
+
     """
     val = trid_scalar_criterion(params)
     grad = trid_gradient(params)
@@ -65,6 +68,7 @@ def trid_dict_criterion(params):
     Returns:
         Dictionary with the following entries:
         "value" (a scalar float): trid function output.
+
     """
     out = {
         "value": trid_scalar_criterion(params),
@@ -73,8 +77,8 @@ def trid_dict_criterion(params):
 
 
 def rotated_hyper_ellipsoid_scalar_criterion(params):
-    """Implement Rotated Hyper Ellipsoid function.
-    Function description: https://www.sfu.ca/~ssurjano/rothyp.html.
+    """Implement Rotated Hyper Ellipsoid function. Function description:
+    https://www.sfu.ca/~ssurjano/rothyp.html.
 
     Args:
         params (pd.DataFrame): Must have the column "value" containing
@@ -82,6 +86,7 @@ def rotated_hyper_ellipsoid_scalar_criterion(params):
 
     Returns:
         int: Rotated Hyper Ellipsoid function output.
+
     """
     return rotated_hyper_ellipsoid_contributions(params).sum()
 
@@ -95,6 +100,7 @@ def rotated_hyper_ellipsoid_gradient(params):
 
     Returns:
         np.ndarray: gradient of rotated hyper ellipsoid function.
+
     """
     x = _get_x(params)
     return np.arange(2 * len(x), 0, -2) * x
@@ -110,6 +116,7 @@ def rotated_hyper_ellipsoid_criterion_and_gradient(params):
     Returns:
         int: Rotated Hyper Ellipsoid function output.
         np.ndarray: gradient of rotated hyper ellipsoid function.
+
     """
     val = rotated_hyper_ellipsoid_scalar_criterion(params)
     grad = rotated_hyper_ellipsoid_gradient(params)
@@ -125,6 +132,7 @@ def rotated_hyper_ellipsoid_contributions(params):
 
     Returns:
         np.ndarray: array with contributions of function output as elements.
+
     """
     x = _get_x(params)
     dim = len(params)
@@ -135,8 +143,8 @@ def rotated_hyper_ellipsoid_contributions(params):
 
 
 def rotated_hyper_ellipsoid_dict_criterion(params):
-    """Implement Rotated Hyper Ellipsoid function and compute
-        contributions and root_contributions.
+    """Implement Rotated Hyper Ellipsoid function and compute contributions and
+    root_contributions.
 
     Args:
         params(pandas.DataFrame): Must have the column "value" containing
@@ -149,6 +157,7 @@ def rotated_hyper_ellipsoid_dict_criterion(params):
         as elements.
         "root_contributions" (np.ndarray): array with root of contributions of
         function output as elements.
+
     """
     contribs = rotated_hyper_ellipsoid_contributions(params)
     out = _out_dict_from_contribs(contribs)
@@ -156,8 +165,8 @@ def rotated_hyper_ellipsoid_dict_criterion(params):
 
 
 def rosenbrock_scalar_criterion(params):
-    """Implement Rosenbrock function.
-    Function description: https://www.sfu.ca/~ssurjano/rosen.html
+    """Implement Rosenbrock function. Function description:
+    https://www.sfu.ca/~ssurjano/rosen.html.
 
     Args:
         params (pd.DataFrame): Must have the column "value" containing
@@ -165,6 +174,7 @@ def rosenbrock_scalar_criterion(params):
 
     Returns:
         int: Rosenbrock function output.
+
     """
     return rosenbrock_contributions(params).sum()
 
@@ -178,6 +188,7 @@ def rosenbrock_gradient(params):
 
     Returns:
         np.ndarray: gradient of rosenbrock function.
+
     """
     x = _get_x(params)
     l1 = np.delete(x, [-1])
@@ -203,6 +214,7 @@ def rosenbrock_criterion_and_gradient(params):
     Returns:
         int: rosenbrock function output.
         np.ndarray: gradient of rosenbrock function.
+
     """
     return rosenbrock_scalar_criterion(params), rosenbrock_gradient(params)
 
@@ -216,6 +228,7 @@ def rosenbrock_contributions(params):
 
     Returns:
         np.ndarray: array with contributions of function output as elements.
+
     """
     x = _get_x(params)
     dim = len(params)
@@ -226,8 +239,7 @@ def rosenbrock_contributions(params):
 
 
 def rosenbrock_dict_criterion(params):
-    """Implement Rosenbrock function and compute
-        contributions and root_contributions.
+    """Implement Rosenbrock function and compute contributions and root_contributions.
 
     Args:
         params(pandas.DataFrame): Must have the column "value" containing
@@ -240,6 +252,7 @@ def rosenbrock_dict_criterion(params):
         as elements.
         "root_contributions" (np.ndarray): array with root of contributions of
         function output as elements.
+
     """
     contribs = rosenbrock_contributions(params)
     out = _out_dict_from_contribs(contribs)
@@ -247,8 +260,8 @@ def rosenbrock_dict_criterion(params):
 
 
 def sos_dict_criterion(params):
-    """Calculate the sum of squares function and compute
-        contributions and root_contributions.
+    """Calculate the sum of squares function and compute contributions and
+    root_contributions.
 
     Args:
         params(pandas.DataFrame): Must have the column "value" containing
@@ -269,8 +282,8 @@ def sos_dict_criterion(params):
 
 
 def sos_dict_criterion_with_pd_objects(params):
-    """Calculate the sum of squares function and compute
-        contributions and root_contributions as pandas objects.
+    """Calculate the sum of squares function and compute contributions and
+    root_contributions as pandas objects.
 
     Args:
         params(pandas.DataFrame): Must have the column "value" containing

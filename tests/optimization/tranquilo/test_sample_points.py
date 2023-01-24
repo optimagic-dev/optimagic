@@ -108,7 +108,6 @@ def test_optimality(sampler):
 
 @pytest.mark.parametrize("order", [2, np.inf])
 def test_pairwise_distance_on_hull(order):
-
     # equal points imply zero distance
     value = _minimal_pairwise_distance_on_hull(
         x=np.ones(4), existing_xs=None, hardness=1, order=order, n_params=2
@@ -124,7 +123,6 @@ def test_pairwise_distance_on_hull(order):
 
 @pytest.mark.parametrize("order", [2, np.inf])
 def test_project_onto_unit_hull(order):
-
     rng = np.random.default_rng(1234)
     old = rng.uniform(-1, 1, size=10).reshape(5, 2)
     new = _project_onto_unit_hull(old, order)

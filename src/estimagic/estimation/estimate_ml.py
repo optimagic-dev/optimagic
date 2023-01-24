@@ -507,6 +507,7 @@ class LikelihoodResult:
         Returns:
             Any: A pytree with the same structure as params containing standard errors
                 for the parameter estimates.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -561,6 +562,7 @@ class LikelihoodResult:
         Returns:
             Any: The covariance matrix of the estimated parameters as block-pytree,
                 numpy.ndarray or pandas.DataFrame.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -610,6 +612,7 @@ class LikelihoodResult:
 
         Returns:
             Any: The estimation summary as pytree of DataFrames.
+
         """
         summary_data = calculate_summary_data_estimation(
             self,
@@ -664,6 +667,7 @@ class LikelihoodResult:
                 confidence intervals.
             Any: Pytree with the same structure as params containing upper bounds of
                 confidence intervals.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -720,6 +724,7 @@ class LikelihoodResult:
         Returns:
             Any: Pytree with the same structure as params containing p-values.
             Any: Pytree with the same structure as params containing p-values.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -743,6 +748,7 @@ class LikelihoodResult:
 
         Args:
             path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
         """
         to_pickle(self, path=path)
 

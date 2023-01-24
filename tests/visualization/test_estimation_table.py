@@ -345,7 +345,7 @@ def test_apply_number_format_int():
 
 def test_apply_number_format_callable():
     def nsf(num, n=3):
-        """n-Significant Figures"""
+        """N-Significant Figures."""
         numstr = ("{0:.%ie}" % (n - 1)).format(num)
         return numstr
 

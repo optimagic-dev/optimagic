@@ -8,7 +8,6 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 
 def test_get_converter_fast_case():
-
     converter, internal = get_converter(
         params=np.arange(3),
         constraints=None,
@@ -61,7 +60,6 @@ def test_get_converter_with_constraints_and_bounds():
 
 
 def test_get_converter_with_scaling():
-
     converter, internal = get_converter(
         params=np.arange(3),
         constraints=None,

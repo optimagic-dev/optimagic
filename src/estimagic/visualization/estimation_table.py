@@ -465,6 +465,7 @@ def render_html(
 
 def _process_model(model):
     """Check model validity, convert to dictionary.
+
     Args
         model: Estimation result. See docstring of estimation_table for more info.
     Returns:
@@ -551,7 +552,6 @@ def _get_estimation_table_body_and_footer(
             and inference values and significance stars to display in estimation table.
         footer (DataFrame): DataFrame with formatted strings of summary statistics to
             display at the bottom of estimation table.
-
 
     """
     body, max_trail = _build_estimation_table_body(
@@ -756,8 +756,8 @@ def _get_common_index(dfs):
 def _get_cols_to_format(show_inference, confidence_intervals):
     """Get the list of names of columns that need to be formatted.
 
-    By default, formatting is applied to  parameter values. If inference values
-    need to displayed, adds confidence intervals or standard erros to the list.
+    By default, formatting is applied to  parameter values. If inference values need to
+    displayed, adds confidence intervals or standard erros to the list.
 
     """
     cols = ["value"]
@@ -770,7 +770,7 @@ def _get_cols_to_format(show_inference, confidence_intervals):
 
 
 def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_zeros):
-    """Apply string formatter to specific columns of a list of DataFrames"""
+    """Apply string formatter to specific columns of a list of DataFrames."""
 
     raw_formatted = [_apply_number_format(df[columns], number_format) for df in dfs]
     max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
@@ -1359,6 +1359,7 @@ def _apply_number_format(df, number_format):
 
     Returns:
         df_formatted (DataFrame): Formatted DataFrame.
+
     """
     processed_format = _process_number_format(number_format)
     if isinstance(processed_format, (list, tuple)):
@@ -1460,7 +1461,7 @@ def _unformat_integers(sr):
 def _get_updated_styler(
     df, show_index_names, show_col_names, show_col_groups, escape_special_characters
 ):
-    """Return pandas.Styler object based ont the data and styling options"""
+    """Return pandas.Styler object based ont the data and styling options."""
     styler = df.style
     if not show_index_names:
         styler = styler.hide(names=True)

@@ -31,6 +31,7 @@ def calculate_ci(
             contains the lower confidence interval for the k'th parameter.
         np.ndarray: 1d array of the upper confidence interval, where the k'th entry
             contains the upper confidence interval for the k'th parameter.
+
     """
     check_inputs(ci_method=ci_method, ci_level=ci_level, skipdata=True)
 
@@ -61,6 +62,7 @@ def _ci_percentile(estimates, alpha):
     Returns:
         cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
             for k'th parameter.
+
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -86,6 +88,7 @@ def _ci_bc(estimates, base_outcome, alpha):
     Returns:
         cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
             for k'th parameter.
+
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -121,6 +124,7 @@ def _ci_t(estimates, base_outcome, alpha):
     Returns:
         cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
             for k'th parameter.
+
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -153,6 +157,7 @@ def _ci_normal(estimates, base_outcome, alpha):
     Returns:
         cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
             for k'th parameter.
+
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -181,6 +186,7 @@ def _ci_basic(estimates, base_outcome, alpha):
     Returns:
         cis (np.ndarray): 2d array where k'th row contains the upper and lower CI
             for k'th parameter.
+
     """
     num_params = estimates.shape[1]
     cis = np.zeros((num_params, 2))
@@ -205,6 +211,7 @@ def _eqf(sample):
 
     Returns:
         f (callable): Quantile function for given sample.
+
     """
 
     def f(x):

@@ -191,7 +191,6 @@ def test_documentation_example(algorithm):
 
 @pytest.fixture()
 def general_example():
-
     params = {"a": np.array([0.1, 0.3, 0.4, 0.2]), "b": np.array([1.5, 2])}
 
     def criterion(params):
@@ -237,7 +236,6 @@ TEST_CASES = list(itertools.product(["ipopt"], [True, False]))
 @pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="Needs ipopt")
 @pytest.mark.parametrize("algorithm, skip_checks", TEST_CASES)
 def test_general_example(general_example, algorithm, skip_checks):
-
     kwargs = general_example
 
     with warnings.catch_warnings():

@@ -5,6 +5,7 @@ TO-DO:
     - finish medium scale problems from https://arxiv.org/pdf/1710.11005.pdf, Page 34.
     - add scalar problems from https://github.com/AxelThevenot
 - Add option for deterministic noise or wiggle.
+
 """
 import numpy as np
 import pandas as pd
@@ -58,6 +59,7 @@ def run_benchmark(
             are tuples where the first entry is the name of the problem and the second
             the name of the optimize options. The values are dicts with the entries:
             "params_history", "criterion_history", "time_history" and "solution".
+
     """
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(

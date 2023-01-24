@@ -178,7 +178,6 @@ def test_actual_sensitivity_to_removal(
 
 
 def test_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_opt, params):
-
     calculated = calculate_fundamental_sensitivity_to_removal(
         jac, moments_cov, params_cov_opt
     )

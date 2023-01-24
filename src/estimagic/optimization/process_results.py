@@ -16,7 +16,6 @@ def process_internal_optimizer_result(
     Args:
         res (dict): Results dictionary of an internal optimizer or multistart optimizer.
 
-
     """
     is_multistart = "multistart_info" in res
     multistart_info = res.get("multistart_info")
@@ -118,7 +117,6 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
 
 
 def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_checks):
-
     direction = fixed_kwargs["direction"]
 
     starts = [converter.params_from_internal(x) for x in info["start_parameters"]]

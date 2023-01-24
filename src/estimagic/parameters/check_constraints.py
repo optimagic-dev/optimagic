@@ -1,6 +1,7 @@
 """Check compatibility of pc with each other and with bounds and fixes.
 
 See the module docstring of process_constraints for naming conventions.
+
 """
 from functools import partial
 
@@ -120,8 +121,6 @@ def check_types(constraints):
 
     Raises:
         TypeError if invalid constraint types are encountered
-
-
 
     """
     valid_types = {

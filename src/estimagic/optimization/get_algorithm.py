@@ -187,7 +187,6 @@ def _add_history_collection_via_batch_evaluator(algorithm):
 
         @functools.wraps(batch_evaluator)
         def wrapped_batch_evaluator(*args, **kwargs):
-
             if args:
                 func = args[0]
             else:

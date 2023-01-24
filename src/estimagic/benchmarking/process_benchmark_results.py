@@ -42,6 +42,7 @@ def create_convergence_histories(
             - parameter_distance_normalized
             - monotone_parameter_distance
             - monotone_parameter_distance_normalized
+
     """
     # get solution values for each problem
     registry = get_registry(extended=True)

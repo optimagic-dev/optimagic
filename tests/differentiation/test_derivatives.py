@@ -196,13 +196,13 @@ def test_consolidate_one_step_derivatives():
 @pytest.fixture()
 def example_function_gradient_fixtures():
     def f(x):
-        """f:R^3 -> R"""
+        """F:R^3 -> R."""
         x1, x2, x3 = x[0], x[1], x[2]
         y1 = np.sin(x1) + np.cos(x2) + x3 - x3
         return y1
 
     def fprime(x):
-        """Gradient(f)(x):R^3 -> R^3"""
+        """Gradient(f)(x):R^3 -> R^3."""
         x1, x2, x3 = x[0], x[1], x[2]
         grad = np.array([np.cos(x1), -np.sin(x2), x3 - x3])
         return grad
@@ -213,7 +213,7 @@ def example_function_gradient_fixtures():
 @pytest.fixture()
 def example_function_jacobian_fixtures():
     def f(x):
-        """f:R^3 -> R^2"""
+        """F:R^3 -> R^2."""
         x1, x2, x3 = x[0], x[1], x[2]
         y1, y2 = np.sin(x1) + np.cos(x2), np.exp(x3)
         return np.array([y1, y2])

@@ -182,7 +182,6 @@ def test_multistart_with_numpy_params():
 
 
 def test_with_invalid_bounds():
-
     with pytest.raises(ValueError):
         minimize(
             criterion=lambda x: x @ x,

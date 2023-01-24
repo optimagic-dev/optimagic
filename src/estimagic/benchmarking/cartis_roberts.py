@@ -11,7 +11,6 @@ Implementation is based either on sources cited in the SIF files or
 where available, on AMPL implementaions available here:
 - https://vanderbei.princeton.edu/ampl/nlmodels/cute/index.html
 
-
 """
 from functools import partial
 

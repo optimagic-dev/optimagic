@@ -5,7 +5,6 @@ from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
 def test_geometry_checker():
-
     rng = np.random.default_rng()
     sampler = get_sampler("sphere", bounds=None)
     trustregion = TrustRegion(center=np.zeros(2), radius=1)
@@ -27,7 +26,6 @@ def test_geometry_checker():
 
 
 def test_geometry_checker_scale_invariance():
-
     rng = np.random.default_rng()
     sampler = get_sampler("sphere", bounds=None)
 

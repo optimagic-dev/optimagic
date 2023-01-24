@@ -1,9 +1,7 @@
 """Implement `simopt` optimizers.
 
-
-.. note::
-    `simopt`'s SPSA and STRONG support box constraints, i.e. parameter bounds. However,
-    for the moment they are not supported.
+.. note::     `simopt`'s SPSA and STRONG support box constraints, i.e. parameter bounds.
+However,     for the moment they are not supported.
 
 """
 import numpy as np

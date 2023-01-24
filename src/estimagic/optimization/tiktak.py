@@ -7,6 +7,7 @@ searches from a set of carefully-selected points in the parameter space.
 
 First implemented in Python by Alisdair McKay
 (`GitHub Repository <https://github.com/amckay/TikTak>`_)
+
 """
 import warnings
 from functools import partial
@@ -208,6 +209,7 @@ def determine_steps(n_samples, n_optimizations):
 
     Returns:
         list: List of dictionaries with information on each step.
+
     """
     exploration_step = {
         "type": "exploration",
@@ -257,6 +259,7 @@ def draw_exploration_sample(
     Returns:
         np.ndarray: Numpy array of shape (n_samples, n_params).
             Each row represents a vector of parameter values.
+
     """
     valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
     valid_distributions = ["uniform", "triangular"]

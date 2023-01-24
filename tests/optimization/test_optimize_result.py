@@ -49,7 +49,6 @@ def base_inputs():
 
 
 def test_optimize_result_runs(base_inputs, convergence_report):
-
     res = OptimizeResult(
         convergence_report=convergence_report,
         **base_inputs,
@@ -65,7 +64,6 @@ def test_create_stars():
 
 
 def test_to_pickle(base_inputs, convergence_report, tmp_path):
-
     res = OptimizeResult(
         convergence_report=convergence_report,
         **base_inputs,

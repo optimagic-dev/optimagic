@@ -84,7 +84,6 @@ def slice_plot(
         out (dict or plotly.Figure): Returns either dictionary with individual slice
             plots for each parameter or a plotly Figure combining the individual plots.
 
-
     """
 
     layout_kwargs = None

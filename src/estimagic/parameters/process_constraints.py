@@ -263,6 +263,7 @@ def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
 
     Returns:
         np.ndarray
+
     """
     int_fixed = is_fixed_to_value | is_fixed_to_other
 

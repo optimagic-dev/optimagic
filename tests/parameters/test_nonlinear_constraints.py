@@ -85,7 +85,6 @@ def test_get_positivity_transform(lower_bounds, upper_bounds, case, expected):
 
 
 def test_get_selection_indices():
-
     params = {"a": [0, 1, 2], "b": [3, 4, 5]}
     selector = lambda p: p["a"]
 
@@ -223,7 +222,6 @@ def test_equality_as_inequality_constraints(constraints, expected):
 
 
 def test_process_nonlinear_constraints():
-
     nonlinear_constraints = [
         {"type": "nonlinear", "func": lambda x: np.dot(x, x), "value": 1},
         {

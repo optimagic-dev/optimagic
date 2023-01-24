@@ -1,8 +1,9 @@
 # Optimization
 
 ```{toctree}
-:maxdepth: 1
-
+---
+maxdepth: 1
+---
 implementation_of_constraints
 internal_optimizers
 why_optimization_is_hard.ipynb

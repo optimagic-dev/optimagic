@@ -43,7 +43,6 @@ parametrization = [
 
 @pytest.mark.parametrize("func, kwargs", parametrization)
 def test_slice_plot(fixed_inputs, func, kwargs):
-
     slice_plot(
         func=func,
         **fixed_inputs,

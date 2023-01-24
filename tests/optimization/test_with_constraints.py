@@ -166,7 +166,6 @@ def test_constrained_minimization(
 
 
 def test_fix_that_differs_from_start_value_raises_an_error():
-
     with pytest.raises(InvalidParamsError):
         minimize(
             criterion=lambda x: x @ x,
@@ -253,11 +252,8 @@ def test_bug_from_copenhagen_presentation():
 
 
 def test_constraint_inheritance():
-    """Test that probability constraint applies both sets of parameters in a
-    pairwise equality constraint, no matter to which set they were applied
-    originally.
-
-    """
+    """Test that probability constraint applies both sets of parameters in a pairwise
+    equality constraint, no matter to which set they were applied originally."""
     for loc in [[0, 1], [2, 3]]:
         res = minimize(
             criterion=lambda x: x @ x,

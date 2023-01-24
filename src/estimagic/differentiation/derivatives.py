@@ -301,7 +301,8 @@ def second_derivative(
     return_info=False,
     key=None,
 ):
-    """Evaluate second derivative of func at params according to method and step options
+    """Evaluate second derivative of func at params according to method and step
+    options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
     array. Then the Hessians of that function are calculated. The resulting derivative

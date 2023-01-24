@@ -420,7 +420,6 @@ def _is_converged(states, options):
 
 
 def _process_surrogate_model(surrogate_model, functype):
-
     if surrogate_model is None:
         if functype == "scalar":
             surrogate_model = "quadratic"

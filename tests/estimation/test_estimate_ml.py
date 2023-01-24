@@ -39,7 +39,6 @@ def multivariate_normal_loglike(params, data):
 
 @pytest.fixture()
 def multivariate_normal_example():
-
     # true parameters
     true_mean = np.arange(1, 4)
     true_cov = np.diag(np.arange(1, 4))
@@ -56,7 +55,6 @@ def multivariate_normal_example():
 
 
 def test_estimate_ml_with_constraints(multivariate_normal_example):
-
     params, true_params, loglike_kwargs = multivariate_normal_example
 
     constraints = [
@@ -152,10 +150,8 @@ def test_estimate_ml_with_logit_no_constraints(
     jacobian,
     hessian,
 ):
-    """
-    Test that estimate_ml computes correct params and covariances under different
-    scenarios.
-    """
+    """Test that estimate_ml computes correct params and covariances under different
+    scenarios."""
 
     if jacobian is False and hessian is False:
         pytest.xfail("jacobian and hessian cannot both be False.")
@@ -260,10 +256,8 @@ def test_estimate_ml_with_logit_constraints(
     jacobian,
     constraints,
 ):
-    """
-    Test that estimate_ml computes correct params and standard errors under different
-    scenarios with constraints.
-    """
+    """Test that estimate_ml computes correct params and standard errors under different
+    scenarios with constraints."""
     seed = 1234
 
     # ==================================================================================
@@ -385,7 +379,6 @@ def normal_inputs():
 
 
 def test_estimate_ml_general_pytree(normal_inputs):
-
     # ==================================================================================
     # estimate
     # ==================================================================================

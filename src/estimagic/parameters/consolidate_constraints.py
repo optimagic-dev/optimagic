@@ -485,6 +485,7 @@ def _plug_fixes_into_linear_weights_and_rhs(
     Returns:
         new_weights (pd.DataFrame)
         new_rhs (pd.DataFrame)
+
     """
     ilocs = np.arange(len(fixed_value))
     fixed_ilocs = ilocs[is_fixed_to_value].tolist()

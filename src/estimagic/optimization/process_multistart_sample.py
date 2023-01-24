@@ -16,7 +16,6 @@ def process_multistart_sample(raw_sample, params, params_to_internal):
     Returns:
         np.ndarray: 2d numpy array where each row is an internal parameter vector.
 
-
     """
     is_df_params = isinstance(params, pd.DataFrame) and "value" in params
     is_np_params = isinstance(params, np.ndarray) and params.ndim == 1
