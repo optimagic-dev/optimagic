@@ -9,7 +9,7 @@ from estimagic.visualization.profile_plot import _find_switch_points
 from estimagic.visualization.profile_plot import profile_plot
 
 
-@pytest.fixture
+@pytest.fixture()
 def performance_ratios():
     df = pd.DataFrame(
         data={"algo1": [1.0, 1.0, 4.0], "algo2": [1.5, np.inf, 1.0]},

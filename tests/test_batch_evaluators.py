@@ -24,7 +24,7 @@ def add_x_and_y(x, y):
     return x + y
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
 
@@ -41,7 +41,7 @@ def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
     assert calculated == expected
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_unhandled_exceptions(batch_evaluator, n_cores):
 
@@ -55,7 +55,7 @@ def test_batch_evaluator_with_unhandled_exceptions(batch_evaluator, n_cores):
         )
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_handled_exceptions(batch_evaluator, n_cores):
     batch_evaluator = process_batch_evaluator(batch_evaluator)
@@ -73,7 +73,7 @@ def test_batch_evaluator_with_handled_exceptions(batch_evaluator, n_cores):
             assert isinstance(calc, str)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_list_unpacking(batch_evaluator, n_cores):
     batch_evaluator = process_batch_evaluator(batch_evaluator)
@@ -87,7 +87,7 @@ def test_batch_evaluator_with_list_unpacking(batch_evaluator, n_cores):
     assert calculated == expected
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_dict_unpacking(batch_evaluator, n_cores):
     batch_evaluator = process_batch_evaluator(batch_evaluator)

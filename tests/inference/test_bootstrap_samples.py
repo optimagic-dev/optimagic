@@ -10,7 +10,7 @@ from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
 
-@pytest.fixture
+@pytest.fixture()
 def data():
     df = pd.DataFrame()
     df["id"] = np.arange(900)

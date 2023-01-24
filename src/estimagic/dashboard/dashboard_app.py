@@ -43,7 +43,7 @@ def dashboard_app(
     # style the Document
     template_folder = Path(__file__).resolve().parent
     # conversion to string from pathlib Path is necessary for FileSystemLoader
-    env = Environment(loader=FileSystemLoader(str(template_folder)))
+    env = Environment(loader=FileSystemLoader(str(template_folder)), autoescape=True)
     doc.template = env.get_template("index.html")
 
     # process inputs
