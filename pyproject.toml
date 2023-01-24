@@ -28,7 +28,7 @@ infer_latex_dependencies = true
 [tool.ruff]
 target-version = "py37"
 select = ["ALL"]
-fix = true
+fix = false
 extend-ignore = [
     # Docstrings
     "D103", # missing docstring in public function
@@ -76,6 +76,7 @@ extend-ignore = [
     "ANN",  # missing annotations
     "C901",  # function too complex
     "PT011", # pytest raises without match statement
+    "INP001", # implicit namespace packages without init.
 
 
     # ======================================
