@@ -28,7 +28,6 @@ extend-ignore = [
     "RET504",  # unnecessary variable assignment before return.
     "S101",  # raise errors for asserts.
     "B905",  # strict parameter for zip that was implemented in py310.
-    "I",  # ignore isort
 
     "ANN101",  # type annotating self
     "ANN102",  # type annotating cls
@@ -58,6 +57,7 @@ extend-ignore = [
     "ANN",  # missing annotations
     "C901",  # function too complex
     "PT011", # pytest raises without match statement
+    "INP001", # implicit namespace packages without init.
 ]
 
 [tool.ruff.per-file-ignores]
@@ -69,17 +69,10 @@ convention = "google"
 
 
 [tool.nbqa.config]
-isort = "setup.cfg"
 black = "pyproject.toml"
 
 [tool.nbqa.mutate]
-isort = 1
 black = 1
-pyupgrade = 1
-
-[tool.nbqa.addopts]
-isort = ["--treat-comment-as-code", "# %%", "--profile=black"]
-pyupgrade = ["--py36-plus"]
 
 [tool.pytask]
 infer_latex_dependencies = true

@@ -56,29 +56,6 @@ repos:
     hooks:
       - id: yamllint
         exclude: tests/optimization/fixtures
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-      - id: python-check-blanket-noqa
-      - id: python-check-mock-methods
-      - id: python-no-eval
-      - id: python-no-log-warn
-      - id: python-use-type-annotations
-      - id: text-unicode-replacement-char
-  - repo: https://github.com/asottile/reorder_python_imports
-    rev: v3.9.0
-    hooks:
-      - id: reorder-python-imports
-        types:
-          - python
-        args:
-          - --py38-plus
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
-    hooks:
-      - id: pyupgrade
-        args:
-          - --py38-plus
   - repo: https://github.com/psf/black
     rev: 22.12.0
     hooks:
@@ -101,7 +78,7 @@ repos:
           - '88'
           - --blank
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.223
+    rev: v0.0.230
     hooks:
       - id: ruff
       #   args:
@@ -112,13 +89,11 @@ repos:
   #     - id: nbstripout
   #       args:
   #         - --extra-keys
-  #         - metadata.kernelspec
+  #         - metadata.kernelspec metadata.language_info.version metadata.vscode
   - repo: https://github.com/nbQA-dev/nbQA
     rev: 1.6.1
     hooks:
       - id: nbqa-black
-      - id: nbqa-pyupgrade
-        exclude: inference|differentiation|miscellaneous
       - id: nbqa-ruff
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.16
