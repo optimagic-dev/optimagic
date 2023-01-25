@@ -1,4 +1,5 @@
 import numpy as np
+
 from estimagic.optimization.history_tools import get_history_arrays
 
 

@@ -3,17 +3,16 @@ from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_PALETTE
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.logging.read_log import OptimizeLogReader
-from estimagic.logging.read_log import read_optimization_problem_table
+from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+
+from estimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from estimagic.logging.read_log import (
+    OptimizeLogReader,
+    read_optimization_problem_table,
+)
 from estimagic.optimization.history_tools import get_history_arrays
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import leaf_names
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def criterion_plot(
@@ -95,7 +94,7 @@ def criterion_plot(
         else:
             msg = "results must be (or contain) an OptimizeResult or a path to a log"
             f"file, but is type {type(res)}."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         _data["name"] = name
         data.append(_data)
@@ -160,7 +159,7 @@ def criterion_plot(
         if not isinstance(_color, str):
             msg = "highlight_palette needs to be a string or list of strings, but its "
             f"entry is of type {type(_color)}."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         line_kws = {
             "color": _color,
@@ -228,7 +227,7 @@ def params_plot(
         )
         start_params = data["start_params"]
     else:
-        raise ValueError("result must be an OptimizeResult or a path to a log file.")
+        raise TypeError("result must be an OptimizeResult or a path to a log file.")
 
     if data["stacked_local_histories"] is not None:
         history = data["stacked_local_histories"]["params"]

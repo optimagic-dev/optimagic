@@ -1,6 +1,5 @@
 """Collection of linear trust-region subsolvers."""
-from typing import NamedTuple
-from typing import Union
+from typing import NamedTuple, Union
 
 import numpy as np
 

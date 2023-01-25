@@ -3,10 +3,9 @@ import math
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_PALETTE
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.visualization.plotting_utilities import create_grid_plot
-from estimagic.visualization.plotting_utilities import create_ind_dict
+
+from estimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from estimagic.visualization.plotting_utilities import create_grid_plot, create_ind_dict
 
 
 def lollipop_plot(

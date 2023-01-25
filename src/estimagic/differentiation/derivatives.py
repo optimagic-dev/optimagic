@@ -6,18 +6,17 @@ from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
+from pybaum import tree_flatten, tree_unflatten
+from pybaum import tree_just_flatten as tree_leaves
+
 from estimagic import batch_evaluators
 from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
-from estimagic.parameters.block_trees import hessian_to_block_tree
-from estimagic.parameters.block_trees import matrix_to_block_tree
+from estimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten as tree_leaves
-from pybaum import tree_unflatten
 
 
 class Evals(NamedTuple):

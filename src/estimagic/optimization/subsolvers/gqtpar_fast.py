@@ -1,8 +1,7 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
 import numpy as np
 from numba import njit
-from scipy.linalg import cho_solve
-from scipy.linalg import solve_triangular
+from scipy.linalg import cho_solve, solve_triangular
 from scipy.linalg.lapack import dpotrf as compute_cholesky_factorization
 
 

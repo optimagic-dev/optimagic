@@ -3,12 +3,15 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic.optimization.tranquilo.models import ModelInfo
-from estimagic.optimization.tranquilo.models import n_interactions
-from estimagic.optimization.tranquilo.models import n_second_order_terms
-from estimagic.optimization.tranquilo.models import VectorModel
 from numba import njit
 from scipy.linalg import qr_multiply
+
+from estimagic.optimization.tranquilo.models import (
+    ModelInfo,
+    VectorModel,
+    n_interactions,
+    n_second_order_terms,
+)
 
 
 def get_fitter(fitter, user_options=None, model_info=None):

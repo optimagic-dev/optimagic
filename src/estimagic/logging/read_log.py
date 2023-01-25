@@ -13,14 +13,16 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import read_last_rows
-from estimagic.logging.database_utilities import read_new_rows
-from estimagic.logging.database_utilities import read_specific_row
-from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten
-from pybaum import tree_unflatten
+from pybaum import tree_flatten, tree_unflatten
 from sqlalchemy import MetaData
+
+from estimagic.logging.database_utilities import (
+    load_database,
+    read_last_rows,
+    read_new_rows,
+    read_specific_row,
+)
+from estimagic.parameters.tree_registry import get_registry
 
 
 def read_start_params(path_or_database):
@@ -56,7 +58,7 @@ def _load_database(path_or_database):
             raise FileNotFoundError(f"No such database file: {path}")
         res = load_database(path=path)
     else:
-        raise ValueError(
+        raise TypeError(
             "path_or_database must be a path or sqlalchemy.MetaData object"
         )
     return res

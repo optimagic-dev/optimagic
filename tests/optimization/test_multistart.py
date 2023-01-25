@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.decorators import switch_sign
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_scalar_criterion
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import read_new_rows
+from estimagic.examples.criterion_functions import (
+    sos_dict_criterion,
+    sos_scalar_criterion,
+)
+from estimagic.logging.database_utilities import load_database, read_new_rows
 from estimagic.logging.read_log import read_steps_table
-from estimagic.optimization.optimize import maximize
-from estimagic.optimization.optimize import minimize
+from estimagic.optimization.optimize import maximize, minimize
 from estimagic.optimization.optimize_result import OptimizeResult
 from numpy.testing import assert_array_almost_equal as aaae
 

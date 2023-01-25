@@ -1,28 +1,23 @@
 from estimagic import utilities
 from estimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 from estimagic.benchmarking.run_benchmark import run_benchmark
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.differentiation.derivatives import second_derivative
-from estimagic.estimation.estimate_ml import estimate_ml
-from estimagic.estimation.estimate_ml import LikelihoodResult
-from estimagic.estimation.estimate_msm import estimate_msm
-from estimagic.estimation.estimate_msm import MomentsResult
+from estimagic.differentiation.derivatives import first_derivative, second_derivative
+from estimagic.estimation.estimate_ml import LikelihoodResult, estimate_ml
+from estimagic.estimation.estimate_msm import MomentsResult, estimate_msm
 from estimagic.estimation.msm_weighting import get_moments_cov
-from estimagic.inference.bootstrap import bootstrap
-from estimagic.inference.bootstrap import BootstrapResult
+from estimagic.inference.bootstrap import BootstrapResult, bootstrap
 from estimagic.logging.read_log import OptimizeLogReader
-from estimagic.optimization.optimize import maximize
-from estimagic.optimization.optimize import minimize
+from estimagic.optimization.optimize import maximize, minimize
 from estimagic.optimization.optimize_result import OptimizeResult
-from estimagic.parameters.constraint_tools import check_constraints
-from estimagic.parameters.constraint_tools import count_free_params
+from estimagic.parameters.constraint_tools import check_constraints, count_free_params
 from estimagic.visualization.convergence_plot import convergence_plot
 from estimagic.visualization.derivative_plot import derivative_plot
-from estimagic.visualization.estimation_table import estimation_table
-from estimagic.visualization.estimation_table import render_html
-from estimagic.visualization.estimation_table import render_latex
-from estimagic.visualization.history_plots import criterion_plot
-from estimagic.visualization.history_plots import params_plot
+from estimagic.visualization.estimation_table import (
+    estimation_table,
+    render_html,
+    render_latex,
+)
+from estimagic.visualization.history_plots import criterion_plot, params_plot
 from estimagic.visualization.lollipop_plot import lollipop_plot
 from estimagic.visualization.profile_plot import profile_plot
 from estimagic.visualization.slice_plot import slice_plot

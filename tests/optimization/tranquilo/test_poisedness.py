@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.poisedness import _get_minimize_options
-from estimagic.optimization.tranquilo.poisedness import _lagrange_poly_matrix
-from estimagic.optimization.tranquilo.poisedness import _reshape_coef_to_square_terms
-from estimagic.optimization.tranquilo.poisedness import get_poisedness_constant
-from estimagic.optimization.tranquilo.poisedness import improve_poisedness
+from estimagic.optimization.tranquilo.poisedness import (
+    _get_minimize_options,
+    _lagrange_poly_matrix,
+    _reshape_coef_to_square_terms,
+    get_poisedness_constant,
+    improve_poisedness,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 

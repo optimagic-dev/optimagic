@@ -1,5 +1,6 @@
 """Implement Berndt-Hall-Hall-Hausman (BHHH) algorithm."""
 import numpy as np
+
 from estimagic.decorators import mark_minimizer
 
 

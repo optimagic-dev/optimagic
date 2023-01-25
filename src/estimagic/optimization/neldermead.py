@@ -1,14 +1,13 @@
 """Implementation of parallelosation of Nelder-Mead algorithm."""
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-)
-from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
 )
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 
 
 @mark_minimizer(

@@ -1,8 +1,9 @@
 from functools import partial
 
 import numpy as np
-from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
+
+from estimagic.parameters.tree_registry import get_registry
 
 
 def get_history_arrays(history, direction):

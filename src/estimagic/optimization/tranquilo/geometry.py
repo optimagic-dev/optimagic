@@ -1,12 +1,13 @@
 from functools import partial
 
 import numpy as np
+
 from estimagic.optimization.tranquilo.options import TrustRegion
-from estimagic.optimization.tranquilo.sample_points import _get_effective_bounds
 from estimagic.optimization.tranquilo.sample_points import (
+    _get_effective_bounds,
     _map_from_feasible_trustregion,
+    get_sampler,
 )
-from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
 def get_geometry_checker_pair(

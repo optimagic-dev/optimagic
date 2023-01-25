@@ -13,14 +13,16 @@ import warnings
 from functools import partial
 
 import numpy as np
+from scipy.stats import qmc, triang
+
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import AlgoInfo
-from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
-from estimagic.optimization.optimization_logging import update_step_status
+from estimagic.optimization.optimization_logging import (
+    log_scheduled_steps_and_get_ids,
+    update_step_status,
+)
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.utilities import get_rng
-from scipy.stats import qmc
-from scipy.stats import triang
 
 
 def run_multistart_optimization(

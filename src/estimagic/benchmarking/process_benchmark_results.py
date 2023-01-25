@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
+
+from estimagic.parameters.tree_registry import get_registry
 
 
 def create_convergence_histories(

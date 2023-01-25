@@ -3,14 +3,15 @@ import contextlib
 import warnings
 
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import get_population_size
 from estimagic.optimization.algo_options import (
+    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    get_population_size,
 )
 
 STOPPING_MAX_ITERATIONS_GENETIC = 250

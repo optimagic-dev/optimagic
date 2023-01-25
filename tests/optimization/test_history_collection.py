@@ -7,7 +7,6 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
-
 OPTIMIZERS = []
 BOUNDED = []
 for name, algo in AVAILABLE_ALGORITHMS.items():

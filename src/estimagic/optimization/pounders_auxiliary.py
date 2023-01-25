@@ -1,15 +1,15 @@
 """Auxiliary functions for the pounders algorithm."""
-from typing import NamedTuple
-from typing import Union
+from typing import NamedTuple, Union
 
 import numpy as np
+from scipy.linalg import qr_multiply
+
 from estimagic.optimization.subsolvers.bntr import (
     bntr,
 )
 from estimagic.optimization.subsolvers.gqtpar import (
     gqtpar,
 )
-from scipy.linalg import qr_multiply
 
 
 class ResidualModel(NamedTuple):

@@ -995,7 +995,7 @@ def _convert_frame_to_string_series(
     """
     value_sr = df["value"]
     if show_stars:
-        sig_bins = [-1] + sorted(significance_levels) + [2]
+        sig_bins = [-1, *sorted(significance_levels)] + [2]
         value_sr += "$^{"
         value_sr += (
             pd.cut(
@@ -1104,7 +1104,7 @@ def _create_statistics_sr(
     stats_values = formatted.to_dict()[0]
     if "fvalue" in model["info"] and "F Statistic" in stats_values:
         if show_stars and "f_pvalue" in model["info"]:
-            sig_bins = [-1] + sorted(significance_levels) + [2]
+            sig_bins = [-1, *sorted(significance_levels)] + [2]
             sig_icon_fstat = "*" * (
                 len(significance_levels)
                 - np.digitize(model["info"]["f_pvalue"], sig_bins)
@@ -1240,7 +1240,7 @@ def _generate_notes_latex(
                     amp_n, n_columns, custom_notes
                 )
             else:
-                raise ValueError(
+                raise TypeError(
                     f"""Custom notes can be either a string or a list of strings.
                     Not: {type(custom_notes)}."""
                 )
@@ -1310,7 +1310,7 @@ def _generate_notes_html(
                     n_columns + n_levels - 1, custom_notes
                 )
             else:
-                raise ValueError(
+                raise TypeError(
                     f"""Custom notes can be either a string or a list of strings,
                     not {type(custom_notes)}."""
                 )

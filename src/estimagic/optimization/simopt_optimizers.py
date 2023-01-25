@@ -5,6 +5,7 @@ However,     for the moment they are not supported.
 
 """
 import numpy as np
+
 from estimagic.config import IS_SIMOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.logging.database_utilities import list_of_dicts_to_dict_of_lists
@@ -295,8 +296,7 @@ def _do_nothing(self):  # noqa: ARG001
 
 
 if IS_SIMOPT_INSTALLED:
-    from simopt.base import Model
-    from simopt.base import Problem
+    from simopt.base import Model, Problem
     from simopt.experiment_base import ProblemSolver
 
     class ProblemSpecification(Problem):

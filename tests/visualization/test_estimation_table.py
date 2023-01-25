@@ -6,26 +6,24 @@ import pandas as pd
 import pytest
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
-from estimagic.visualization.estimation_table import _apply_number_format
-from estimagic.visualization.estimation_table import _check_order_of_model_names
-from estimagic.visualization.estimation_table import _convert_frame_to_string_series
-from estimagic.visualization.estimation_table import _create_group_to_col_position
-from estimagic.visualization.estimation_table import _create_statistics_sr
-from estimagic.visualization.estimation_table import _customize_col_groups
-from estimagic.visualization.estimation_table import _customize_col_names
 from estimagic.visualization.estimation_table import (
+    _apply_number_format,
+    _check_order_of_model_names,
+    _convert_frame_to_string_series,
+    _create_group_to_col_position,
+    _create_statistics_sr,
+    _customize_col_groups,
+    _customize_col_names,
     _get_default_column_names_and_groups,
-)
-from estimagic.visualization.estimation_table import _get_digits_after_decimal
-from estimagic.visualization.estimation_table import _get_model_names
-from estimagic.visualization.estimation_table import (
+    _get_digits_after_decimal,
+    _get_model_names,
     _get_params_frames_with_common_index,
+    _process_frame_indices,
+    _process_model,
+    estimation_table,
+    render_html,
+    render_latex,
 )
-from estimagic.visualization.estimation_table import _process_frame_indices
-from estimagic.visualization.estimation_table import _process_model
-from estimagic.visualization.estimation_table import estimation_table
-from estimagic.visualization.estimation_table import render_html
-from estimagic.visualization.estimation_table import render_latex
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 

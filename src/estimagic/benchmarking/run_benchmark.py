@@ -9,12 +9,13 @@ TO-DO:
 """
 import numpy as np
 import pandas as pd
+from pybaum import tree_just_flatten
+
 from estimagic import batch_evaluators
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten
 
 
 def run_benchmark(
@@ -176,7 +177,7 @@ def _get_results(names, raw_results, kwargs_list):
 
             time_history = pd.Series([np.inf])
         else:
-            raise ValueError(
+            raise TypeError(
                 "'result' object is expected to be of type 'dict' or 'str'."
             )
 

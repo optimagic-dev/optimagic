@@ -1,10 +1,13 @@
 """Implement cyipopt's Interior Point Optimizer."""
 import numpy as np
+
 from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
+)
 from estimagic.optimization.scipy_optimizers import process_scipy_result
 
 if IS_CYIPOPT_INSTALLED:

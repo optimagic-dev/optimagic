@@ -3,13 +3,16 @@ import contextlib
 import functools
 
 import numpy as np
+
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
+)
 from estimagic.utilities import calculate_trustregion_initial_radius
 
 with contextlib.suppress(ImportError):

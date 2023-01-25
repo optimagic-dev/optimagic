@@ -3,8 +3,7 @@ import itertools
 import numpy as np
 import pytest
 from estimagic.optimization.optimize import minimize
-from estimagic.visualization.history_plots import criterion_plot
-from estimagic.visualization.history_plots import params_plot
+from estimagic.visualization.history_plots import criterion_plot, params_plot
 
 
 @pytest.fixture()

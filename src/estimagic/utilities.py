@@ -4,8 +4,7 @@ from hashlib import sha1
 import cloudpickle
 import numpy as np
 import pandas as pd
-from scipy.linalg import ldl
-from scipy.linalg import qr
+from scipy.linalg import ldl, qr
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)

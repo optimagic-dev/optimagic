@@ -16,21 +16,23 @@ from pathlib import Path
 
 import cloudpickle
 import pandas as pd
-from estimagic.exceptions import get_traceback
-from estimagic.exceptions import TableExistsError
-from sqlalchemy import and_
-from sqlalchemy import BLOB
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import create_engine
-from sqlalchemy import event
-from sqlalchemy import Float
-from sqlalchemy import Integer
-from sqlalchemy import MetaData
-from sqlalchemy import PickleType
-from sqlalchemy import String
-from sqlalchemy import Table
-from sqlalchemy import update
+from sqlalchemy import (
+    BLOB,
+    Boolean,
+    Column,
+    Float,
+    Integer,
+    MetaData,
+    PickleType,
+    String,
+    Table,
+    and_,
+    create_engine,
+    event,
+    update,
+)
+
+from estimagic.exceptions import TableExistsError, get_traceback
 
 
 def load_database(metadata=None, path=None, fast_logging=False):

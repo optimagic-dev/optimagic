@@ -5,9 +5,7 @@ from estimagic.differentiation.derivatives import first_derivative
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import tree_just_flatten
-from pybaum import tree_map
-
+from pybaum import tree_just_flatten, tree_map
 
 REGISTRY = get_registry(extended=True)
 

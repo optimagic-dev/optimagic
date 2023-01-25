@@ -1,17 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.benchmarking.process_benchmark_results import _clip_histories
-from estimagic.benchmarking.process_benchmark_results import _find_first_converged
 from estimagic.benchmarking.process_benchmark_results import (
+    _clip_histories,
+    _find_first_converged,
     _get_history_as_stacked_sr_from_results,
-)
-from estimagic.benchmarking.process_benchmark_results import (
     _get_history_of_the_parameter_distance,
-)
-from estimagic.benchmarking.process_benchmark_results import _make_history_monotone
-from estimagic.benchmarking.process_benchmark_results import _normalize
-from estimagic.benchmarking.process_benchmark_results import (
+    _make_history_monotone,
+    _normalize,
     create_convergence_histories,
 )
 
@@ -87,7 +83,7 @@ def test_normalize_minimize():
 
     df = pd.DataFrame()
     df["problem"] = PROBLEMS * 3
-    df["criterion"] = start_values.tolist() + [2, 3, 9] + target_values.tolist()
+    df["criterion"] = [*start_values.tolist(), 2, 3, 9, *target_values.tolist()]
 
     res = _normalize(
         df=df, col="criterion", start_values=start_values, target_values=target_values
@@ -106,7 +102,7 @@ def test_normalize_maximize():
 
     df = pd.DataFrame()
     df["problem"] = PROBLEMS * 3
-    df["criterion"] = start_values.tolist() + [2, 4, 9] + target_values.tolist()
+    df["criterion"] = [*start_values.tolist(), 2, 4, 9, *target_values.tolist()]
 
     res = _normalize(
         df=df, col="criterion", start_values=start_values, target_values=target_values

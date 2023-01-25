@@ -1,15 +1,16 @@
 from typing import NamedTuple
 
 import numpy as np
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
+
 from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
     CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
+    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
 )
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 
 
 class Bounds(NamedTuple):

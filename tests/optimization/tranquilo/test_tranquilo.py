@@ -4,12 +4,13 @@ import numpy as np
 import pytest
 from estimagic.optimization.optimize import minimize
 from estimagic.optimization.tranquilo.models import ModelInfo
-from estimagic.optimization.tranquilo.tranquilo import _process_sample_size
-from estimagic.optimization.tranquilo.tranquilo import _process_surrogate_model
-from estimagic.optimization.tranquilo.tranquilo import tranquilo
-from estimagic.optimization.tranquilo.tranquilo import tranquilo_ls
+from estimagic.optimization.tranquilo.tranquilo import (
+    _process_sample_size,
+    _process_surrogate_model,
+    tranquilo,
+    tranquilo_ls,
+)
 from numpy.testing import assert_array_almost_equal as aaae
-
 
 # ======================================================================================
 # Test tranquilo end-to-end

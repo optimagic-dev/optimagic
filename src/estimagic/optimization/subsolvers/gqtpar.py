@@ -1,10 +1,8 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
-from typing import NamedTuple
-from typing import Union
+from typing import NamedTuple, Union
 
 import numpy as np
-from scipy.linalg import cho_solve
-from scipy.linalg import solve_triangular
+from scipy.linalg import cho_solve, solve_triangular
 from scipy.linalg.lapack import dpotrf as compute_cholesky_factorization
 from scipy.optimize._trustregion_exact import estimate_smallest_singular_value
 

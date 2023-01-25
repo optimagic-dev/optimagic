@@ -2,8 +2,10 @@ from itertools import product
 
 import numpy as np
 import pytest
-from estimagic.benchmarking.get_benchmark_problems import _step_func
-from estimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
+from estimagic.benchmarking.get_benchmark_problems import (
+    _step_func,
+    get_benchmark_problems,
+)
 
 PARMETRIZATION = []
 for name in ["more_wild", "cartis_roberts", "example", "estimagic"]:

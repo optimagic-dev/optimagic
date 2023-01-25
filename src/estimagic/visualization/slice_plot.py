@@ -3,15 +3,14 @@ from functools import partial
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from estimagic.batch_evaluators import process_batch_evaluator
-from estimagic.config import DEFAULT_N_CORES
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.parameters.conversion import get_converter
-from estimagic.parameters.tree_registry import get_registry
-from estimagic.visualization.plotting_utilities import combine_plots
-from estimagic.visualization.plotting_utilities import get_layout_kwargs
 from plotly import graph_objects as go
 from pybaum import tree_just_flatten
+
+from estimagic.batch_evaluators import process_batch_evaluator
+from estimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
+from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.tree_registry import get_registry
+from estimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
 
 
 def slice_plot(

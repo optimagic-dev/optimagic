@@ -1,7 +1,6 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
 from functools import reduce
-from typing import NamedTuple
-from typing import Union
+from typing import NamedTuple, Union
 
 import numpy as np
 from estimagic.optimization.subsolvers._conjugate_gradient import (

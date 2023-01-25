@@ -3,6 +3,7 @@ import warnings
 from functools import partial
 
 import numpy as np
+
 from estimagic.optimization.subsolvers.bntr import (
     bntr,
 )

@@ -1,14 +1,11 @@
 import numpy as np
 import pytest
 import yaml
-from estimagic import first_derivative
-from estimagic import second_derivative
+from estimagic import first_derivative, second_derivative
 from estimagic.config import TEST_FIXTURES_DIR
-from estimagic.optimization.tranquilo.fit_models import _polynomial_features
-from estimagic.optimization.tranquilo.fit_models import get_fitter
+from estimagic.optimization.tranquilo.fit_models import _polynomial_features, get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
-from numpy.testing import assert_array_almost_equal
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 
 def aaae(x, y, case=None):

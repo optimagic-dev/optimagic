@@ -3,8 +3,9 @@ from copy import deepcopy
 
 import numpy as np
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_TEMPLATE
 from plotly.subplots import make_subplots
+
+from estimagic.config import PLOTLY_TEMPLATE
 
 
 def combine_plots(

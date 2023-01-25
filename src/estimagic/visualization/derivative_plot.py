@@ -4,10 +4,9 @@ import itertools
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_PALETTE
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.visualization.plotting_utilities import create_grid_plot
-from estimagic.visualization.plotting_utilities import create_ind_dict
+
+from estimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from estimagic.visualization.plotting_utilities import create_grid_plot, create_ind_dict
 
 
 def derivative_plot(
@@ -211,7 +210,7 @@ def _select_derivative_with_minimal_error(df_jac_cand, given_method=False):
 
     """
     given = ["method"] if given_method else []
-    minimizer = df_jac_cand.groupby(given + ["dim_x", "dim_f"])["err"].idxmin()
+    minimizer = df_jac_cand.groupby([*given, "dim_x", "dim_f"])["err"].idxmin()
     df = df_jac_cand.loc[minimizer]["der"]
     index_level_to_drop = list({"method", "num_term"} - set(given))
     df = df.droplevel(index_level_to_drop).copy()

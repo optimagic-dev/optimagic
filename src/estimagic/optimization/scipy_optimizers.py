@@ -38,36 +38,30 @@ import functools
 
 import numpy as np
 import scipy
+from scipy.optimize import Bounds, NonlinearConstraint
+
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import mark_minimizer
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-)
-from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-)
-from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
-from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
-from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
-from estimagic.optimization.algo_options import (
+    LIMITED_MEMORY_STORAGE_LENGTH,
+    MAX_LINE_SEARCH_STEPS,
+    STOPPING_MAX_CRITERION_EVALUATIONS,
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    STOPPING_MAX_ITERATIONS,
 )
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
-)
-from estimagic.parameters.nonlinear_constraints import (
     vector_as_list_of_scalar_constraints,
 )
 from estimagic.utilities import calculate_trustregion_initial_radius
-from scipy.optimize import Bounds
-from scipy.optimize import NonlinearConstraint
 
 
 @mark_minimizer(name="scipy_lbfgsb")

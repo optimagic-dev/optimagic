@@ -1,12 +1,14 @@
 import numpy as np
 import pytest
-from estimagic.optimization.neldermead import _gao_han
-from estimagic.optimization.neldermead import _init_algo_params
-from estimagic.optimization.neldermead import _init_simplex
-from estimagic.optimization.neldermead import _nash
-from estimagic.optimization.neldermead import _pfeffer
-from estimagic.optimization.neldermead import _varadhan_borchers
-from estimagic.optimization.neldermead import neldermead_parallel
+from estimagic.optimization.neldermead import (
+    _gao_han,
+    _init_algo_params,
+    _init_simplex,
+    _nash,
+    _pfeffer,
+    _varadhan_borchers,
+    neldermead_parallel,
+)
 
 
 # function to test

@@ -7,10 +7,9 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
-from estimagic.exceptions import InvalidConstraintError
-from estimagic.exceptions import InvalidParamsError
-from estimagic.utilities import cov_params_to_matrix
-from estimagic.utilities import sdcorr_params_to_matrix
+
+from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
+from estimagic.utilities import cov_params_to_matrix, sdcorr_params_to_matrix
 
 
 def check_constraints_are_satisfied(flat_constraints, param_values, param_names):

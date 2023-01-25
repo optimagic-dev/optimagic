@@ -6,9 +6,7 @@ from estimagic.parameters.process_selectors import process_selectors
 from estimagic.parameters.tree_conversion import TreeConverter
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_equal as aae
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
+from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 
 @pytest.mark.parametrize("constraints", [None, []])

@@ -2,55 +2,48 @@
 import functools
 import warnings
 from collections.abc import Callable
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any
-from typing import Dict
-from typing import Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
+from pybaum import leaf_names, tree_just_flatten
+
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import InvalidFunctionError
-from estimagic.inference.msm_covs import cov_optimal
-from estimagic.inference.msm_covs import cov_robust
-from estimagic.inference.shared import calculate_ci
-from estimagic.inference.shared import calculate_estimation_summary
-from estimagic.inference.shared import calculate_free_estimates
-from estimagic.inference.shared import calculate_p_values
-from estimagic.inference.shared import calculate_summary_data_estimation
-from estimagic.inference.shared import FreeParams
-from estimagic.inference.shared import get_derivative_case
-from estimagic.inference.shared import transform_covariance
-from estimagic.inference.shared import transform_free_cov_to_cov
-from estimagic.inference.shared import transform_free_values_to_params_tree
+from estimagic.inference.msm_covs import cov_optimal, cov_robust
+from estimagic.inference.shared import (
+    FreeParams,
+    calculate_ci,
+    calculate_estimation_summary,
+    calculate_free_estimates,
+    calculate_p_values,
+    calculate_summary_data_estimation,
+    get_derivative_case,
+    transform_covariance,
+    transform_free_cov_to_cov,
+    transform_free_values_to_params_tree,
+)
 from estimagic.optimization.optimize import minimize
-from estimagic.parameters.block_trees import block_tree_to_matrix
-from estimagic.parameters.block_trees import matrix_to_block_tree
-from estimagic.parameters.conversion import Converter
-from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from estimagic.parameters.conversion import Converter, get_converter
 from estimagic.parameters.space_conversion import InternalParams
 from estimagic.parameters.tree_registry import get_registry
-from estimagic.sensitivity.msm_sensitivity import calculate_actual_sensitivity_to_noise
 from estimagic.sensitivity.msm_sensitivity import (
+    calculate_actual_sensitivity_to_noise,
     calculate_actual_sensitivity_to_removal,
-)
-from estimagic.sensitivity.msm_sensitivity import (
     calculate_fundamental_sensitivity_to_noise,
-)
-from estimagic.sensitivity.msm_sensitivity import (
     calculate_fundamental_sensitivity_to_removal,
+    calculate_sensitivity_to_bias,
+    calculate_sensitivity_to_weighting,
 )
-from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
-from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
-from estimagic.shared.check_option_dicts import check_numdiff_options
-from estimagic.shared.check_option_dicts import check_optimization_options
-from estimagic.utilities import get_rng
-from estimagic.utilities import to_pickle
-from pybaum import leaf_names
-from pybaum import tree_just_flatten
+from estimagic.shared.check_option_dicts import (
+    check_numdiff_options,
+    check_optimization_options,
+)
+from estimagic.utilities import get_rng, to_pickle
 
 
 def estimate_msm(

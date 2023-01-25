@@ -5,6 +5,8 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import calculate_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
@@ -13,10 +15,6 @@ from estimagic.inference.shared import calculate_estimation_summary
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import get_rng
-from pybaum import leaf_names
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def bootstrap(
@@ -67,7 +65,7 @@ def bootstrap(
         if outcome_kwargs is not None:
             outcome = functools.partial(outcome, **outcome_kwargs)
     else:
-        raise ValueError("outcome must be a callable.")
+        raise TypeError("outcome must be a callable.")
 
     if existing_result is None:
         base_outcome = outcome(data)

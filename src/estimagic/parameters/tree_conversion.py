@@ -1,15 +1,13 @@
 from typing import NamedTuple
 
 import numpy as np
+from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+
 from estimagic.exceptions import InvalidFunctionError
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import isscalar
-from pybaum import leaf_names
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def get_tree_converter(

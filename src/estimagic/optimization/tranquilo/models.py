@@ -1,5 +1,4 @@
-from typing import NamedTuple
-from typing import Union
+from typing import NamedTuple, Union
 
 import numpy as np
 from numba import njit

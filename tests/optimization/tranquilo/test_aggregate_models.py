@@ -1,15 +1,12 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.aggregate_models import aggregator_identity
 from estimagic.optimization.tranquilo.aggregate_models import (
+    aggregator_identity,
     aggregator_information_equality_linear,
-)
-from estimagic.optimization.tranquilo.aggregate_models import (
     aggregator_least_squares_linear,
+    aggregator_sum,
 )
-from estimagic.optimization.tranquilo.aggregate_models import aggregator_sum
-from estimagic.optimization.tranquilo.models import ScalarModel
-from estimagic.optimization.tranquilo.models import VectorModel
+from estimagic.optimization.tranquilo.models import ScalarModel, VectorModel
 from numpy.testing import assert_array_equal
 
 

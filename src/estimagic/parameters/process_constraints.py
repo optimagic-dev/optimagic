@@ -17,10 +17,13 @@ after consolidation.
 """
 import numpy as np
 import pandas as pd
-from estimagic.parameters.check_constraints import check_constraints_are_satisfied
-from estimagic.parameters.check_constraints import check_fixes_and_bounds
-from estimagic.parameters.check_constraints import check_for_incompatible_overlaps
-from estimagic.parameters.check_constraints import check_types
+
+from estimagic.parameters.check_constraints import (
+    check_constraints_are_satisfied,
+    check_fixes_and_bounds,
+    check_for_incompatible_overlaps,
+    check_types,
+)
 from estimagic.parameters.consolidate_constraints import consolidate_constraints
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
@@ -235,7 +238,7 @@ def _create_internal_bounds(lower, upper, constraints):
             # because the internal params contains the Cholesky factor of the implied
             # covariance matrix in both cases.
             dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
-            diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
+            diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             bd = constr.get("bounds_distance", 0)
             bd = np.sqrt(bd) if constr["type"] == "covariance" else bd

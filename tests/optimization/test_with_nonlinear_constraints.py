@@ -3,12 +3,10 @@ import warnings
 
 import numpy as np
 import pytest
-from estimagic import maximize
-from estimagic import minimize
+from estimagic import maximize, minimize
 from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
-
 
 NLC_ALGORITHMS = [
     name

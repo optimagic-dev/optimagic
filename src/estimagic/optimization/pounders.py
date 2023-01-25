@@ -2,36 +2,27 @@
 import warnings
 
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.config import DEFAULT_N_CORES
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
     add_accepted_point_to_residual_model,
-)
-from estimagic.optimization.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
-)
-from estimagic.optimization.pounders_auxiliary import create_initial_residual_model
-from estimagic.optimization.pounders_auxiliary import create_main_from_residual_model
-from estimagic.optimization.pounders_auxiliary import evaluate_residual_model
-from estimagic.optimization.pounders_auxiliary import find_affine_points
-from estimagic.optimization.pounders_auxiliary import fit_residual_model
-from estimagic.optimization.pounders_auxiliary import (
+    create_initial_residual_model,
+    create_main_from_residual_model,
+    evaluate_residual_model,
+    find_affine_points,
+    fit_residual_model,
     get_feature_matrices_residual_model,
-)
-from estimagic.optimization.pounders_auxiliary import (
     get_last_model_indices_and_check_for_repeated_model,
-)
-from estimagic.optimization.pounders_auxiliary import solve_subproblem
-from estimagic.optimization.pounders_auxiliary import (
+    solve_subproblem,
     update_main_model_with_new_accepted_x,
-)
-from estimagic.optimization.pounders_auxiliary import update_residual_model
-from estimagic.optimization.pounders_auxiliary import (
+    update_residual_model,
     update_residual_model_with_new_accepted_x,
+    update_trustregion_radius,
 )
-from estimagic.optimization.pounders_auxiliary import update_trustregion_radius
 
 
 @mark_minimizer(

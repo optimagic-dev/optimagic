@@ -3,12 +3,14 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.tiktak import _linear_weights
-from estimagic.optimization.tiktak import _tiktak_weights
-from estimagic.optimization.tiktak import draw_exploration_sample
-from estimagic.optimization.tiktak import get_batched_optimization_sample
-from estimagic.optimization.tiktak import run_explorations
-from estimagic.optimization.tiktak import update_convergence_state
+from estimagic.optimization.tiktak import (
+    _linear_weights,
+    _tiktak_weights,
+    draw_exploration_sample,
+    get_batched_optimization_sample,
+    run_explorations,
+    update_convergence_state,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 

@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
-from estimagic.parameters.conversion import _is_fast_deriv_eval
-from estimagic.parameters.conversion import _is_fast_func_eval
-from estimagic.parameters.conversion import _is_fast_path
-from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.conversion import (
+    _is_fast_deriv_eval,
+    _is_fast_func_eval,
+    _is_fast_path,
+    get_converter,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 

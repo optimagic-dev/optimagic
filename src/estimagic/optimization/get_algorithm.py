@@ -3,9 +3,12 @@ import warnings
 from functools import partial
 
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
-from estimagic.logging.database_utilities import list_of_dicts_to_dict_of_lists
-from estimagic.logging.database_utilities import update_row
+from estimagic.logging.database_utilities import (
+    list_of_dicts_to_dict_of_lists,
+    update_row,
+)
 from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 

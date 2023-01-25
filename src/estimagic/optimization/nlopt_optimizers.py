@@ -4,14 +4,15 @@ The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io
 
 """
 import numpy as np
+
 from estimagic.config import IS_NLOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    STOPPING_MAX_CRITERION_EVALUATIONS,
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
 from estimagic.parameters.nonlinear_constraints import (

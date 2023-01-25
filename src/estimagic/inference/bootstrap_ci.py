@@ -1,6 +1,7 @@
 import numpy as np
-from estimagic.inference.bootstrap_helpers import check_inputs
 from scipy.stats import norm
+
+from estimagic.inference.bootstrap_helpers import check_inputs
 
 
 def calculate_ci(

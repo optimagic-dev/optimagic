@@ -4,22 +4,17 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from bokeh.layouts import Column
-from bokeh.layouts import Row
-from bokeh.models import ColumnDataSource
-from bokeh.models import Div
-from bokeh.models import Toggle
+from bokeh.layouts import Column, Row
+from bokeh.models import ColumnDataSource, Div, Toggle
+from jinja2 import Environment, FileSystemLoader
+from pybaum import leaf_names, tree_just_flatten
+
 from estimagic.dashboard.callbacks import reset_and_start_convergence
 from estimagic.dashboard.plot_functions import plot_time_series
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import load_database, read_last_rows
 from estimagic.logging.read_log import read_start_params
 from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
 from estimagic.parameters.tree_registry import get_registry
-from jinja2 import Environment
-from jinja2 import FileSystemLoader
-from pybaum import leaf_names
-from pybaum import tree_just_flatten
 
 
 def dashboard_app(
@@ -179,7 +174,7 @@ def _create_cds_for_dashboard(group_to_param_ids):
     param_ids = []
     for id_list in group_to_param_ids.values():
         param_ids += id_list
-    params_data = {id_: [] for id_ in param_ids + ["iteration"]}
+    params_data = {id_: [] for id_ in [*param_ids, "iteration"]}
     params_history = ColumnDataSource(params_data, name="params_history_cds")
 
     return criterion_history, params_history
@@ -255,7 +250,7 @@ def _create_initial_plots(
         name="criterion_plot",
     )
 
-    plots = [Row(criterion_plot)] + arranged_param_plots
+    plots = [Row(criterion_plot), *arranged_param_plots]
     return plots
 
 

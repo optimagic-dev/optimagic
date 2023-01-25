@@ -4,7 +4,6 @@ import warnings
 import pytest
 from estimagic.batch_evaluators import process_batch_evaluator
 
-
 batch_evaluators = ["joblib"]
 
 n_core_list = [1, 2]

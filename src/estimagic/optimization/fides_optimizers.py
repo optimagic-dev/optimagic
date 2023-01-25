@@ -2,19 +2,21 @@
 import logging
 
 import numpy as np
+
 from estimagic.config import IS_FIDES_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
+)
 
 if IS_FIDES_INSTALLED:
-    from fides import hessian_approximation
-    from fides import Optimizer
+    from fides import Optimizer, hessian_approximation
 
 
 @mark_minimizer(
@@ -166,7 +168,7 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
         if isinstance(hessian_instance, hessians_needing_residuals):
             raise NotImplementedError(unsupported_hess_msg)
     else:
-        raise ValueError(
+        raise TypeError(
             "You must provide a hessian_update_strategy that is either a string or an "
             "instance of the fides.hessian_approximation.HessianApproximation class."
         )

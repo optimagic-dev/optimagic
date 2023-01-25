@@ -26,6 +26,7 @@ from estimagic.optimization.subsolvers._steihaug_toint_fast import (
 )
 from estimagic.optimization.subsolvers._trsbox import (
     _apply_bounds_to_candidate_vector,
+    minimize_trust_trsbox,
 )
 from estimagic.optimization.subsolvers._trsbox import (
     _calc_greatest_criterion_reduction as greatest_reduction_orig,
@@ -54,7 +55,6 @@ from estimagic.optimization.subsolvers._trsbox import (
 from estimagic.optimization.subsolvers._trsbox import (
     _update_tangent as update_tanget_orig,
 )
-from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
 from estimagic.optimization.subsolvers._trsbox_fast import (
     _calc_greatest_criterion_reduction as greatest_reduction_fast,
 )

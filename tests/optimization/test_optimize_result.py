@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.optimize_result import _create_stars
-from estimagic.optimization.optimize_result import OptimizeResult
+from estimagic.optimization.optimize_result import OptimizeResult, _create_stars
 from estimagic.utilities import get_rng
 
 

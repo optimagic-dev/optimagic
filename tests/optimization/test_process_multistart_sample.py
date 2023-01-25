@@ -4,7 +4,6 @@ import pytest
 from estimagic.optimization.process_multistart_sample import process_multistart_sample
 from numpy.testing import assert_array_almost_equal as aaae
 
-
 samples = [
     (
         pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]),

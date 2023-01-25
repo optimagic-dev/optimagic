@@ -1,7 +1,8 @@
 import numpy as np
-from estimagic.optimization.tranquilo.models import n_second_order_terms
 from numba import njit
 from scipy.linalg import qr_multiply
+
+from estimagic.optimization.tranquilo.models import n_second_order_terms
 
 
 def get_sample_filter(sample_filter="keep_all"):
@@ -141,7 +142,7 @@ def _get_polynomial_feature_matrices(
 
     _is_center_in_head = index_center < n_params
     idx_list_n = [i for i in range(n_params + _is_center_in_head) if i != index_center]
-    idx_list_n_plus_1 = [index_center] + idx_list_n
+    idx_list_n_plus_1 = [index_center, *idx_list_n]
 
     linear_features[:, 0] = 1
     linear_features[: n_params + 1, 1:] = centered_xs[indexer[idx_list_n_plus_1]]

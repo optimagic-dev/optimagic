@@ -1,17 +1,14 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.options import Bounds
-from estimagic.optimization.tranquilo.options import RadiusFactors
-from estimagic.optimization.tranquilo.options import TrustRegion
-from estimagic.optimization.tranquilo.sample_points import _draw_from_distribution
+from estimagic.optimization.tranquilo.options import Bounds, RadiusFactors, TrustRegion
 from estimagic.optimization.tranquilo.sample_points import (
+    _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
+    _project_onto_unit_hull,
+    get_sampler,
 )
-from estimagic.optimization.tranquilo.sample_points import _project_onto_unit_hull
-from estimagic.optimization.tranquilo.sample_points import get_sampler
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy.spatial.distance import pdist
-
 
 SAMPLERS = ["box", "ball", "cube", "sphere", "optimal_cube", "optimal_sphere"]
 
