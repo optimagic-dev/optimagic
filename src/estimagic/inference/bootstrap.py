@@ -66,7 +66,7 @@ def bootstrap(
         if outcome_kwargs is not None:
             outcome = functools.partial(outcome, **outcome_kwargs)
     else:
-        raise ValueError("outcome must be a callable.")
+        raise TypeError("outcome must be a callable.")
 
     if existing_result is None:
         base_outcome = outcome(data)
