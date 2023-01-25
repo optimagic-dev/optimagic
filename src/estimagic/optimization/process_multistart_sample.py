@@ -64,7 +64,7 @@ def process_multistart_sample(raw_sample, params, params_to_internal):
             "User provided multistart samples must be a list, tuple, numpy array or "
             "DataFrame."
         )
-        raise ValueError(msg)
+        raise TypeError(msg)
     else:
         list_sample = list(raw_sample)
 

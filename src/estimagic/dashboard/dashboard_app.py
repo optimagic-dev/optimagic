@@ -179,7 +179,7 @@ def _create_cds_for_dashboard(group_to_param_ids):
     param_ids = []
     for id_list in group_to_param_ids.values():
         param_ids += id_list
-    params_data = {id_: [] for id_ in param_ids + ["iteration"]}
+    params_data = {id_: [] for id_ in [*param_ids, "iteration"]}
     params_history = ColumnDataSource(params_data, name="params_history_cds")
 
     return criterion_history, params_history
@@ -255,7 +255,7 @@ def _create_initial_plots(
         name="criterion_plot",
     )
 
-    plots = [Row(criterion_plot)] + arranged_param_plots
+    plots = [Row(criterion_plot), *arranged_param_plots]
     return plots
 
 

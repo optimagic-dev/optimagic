@@ -95,7 +95,7 @@ def criterion_plot(
         else:
             msg = "results must be (or contain) an OptimizeResult or a path to a log"
             f"file, but is type {type(res)}."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         _data["name"] = name
         data.append(_data)
@@ -160,7 +160,7 @@ def criterion_plot(
         if not isinstance(_color, str):
             msg = "highlight_palette needs to be a string or list of strings, but its "
             f"entry is of type {type(_color)}."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         line_kws = {
             "color": _color,
@@ -228,7 +228,7 @@ def params_plot(
         )
         start_params = data["start_params"]
     else:
-        raise ValueError("result must be an OptimizeResult or a path to a log file.")
+        raise TypeError("result must be an OptimizeResult or a path to a log file.")
 
     if data["stacked_local_histories"] is not None:
         history = data["stacked_local_histories"]["params"]

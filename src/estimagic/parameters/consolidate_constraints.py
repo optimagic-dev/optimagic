@@ -175,7 +175,7 @@ def _unite_first_with_all_intersecting_elements(indices):
         else:
             new_others.append(idx)
 
-    return [new_first] + new_others
+    return [new_first, *new_others]
 
 
 def _consolidate_fixes_with_equality_constraints(
@@ -272,7 +272,7 @@ def simplify_covariance_and_sdcorr_constraints(
     for constr in to_simplify:
         dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
         if constr["type"] == "covariance":
-            diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
+            diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             off_indices = [i for i in constr["index"] if i not in diag_positions]
         if constr["type"] == "sdcorr":
