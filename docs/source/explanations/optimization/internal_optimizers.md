@@ -115,8 +115,8 @@ constraints = [
 ]
 ```
 
-:::\{note} **Equality.** Internal equality constraints assume that the constraint is met
-when the function is zero. That is
+**Equality.** Internal equality constraints assume that the constraint is met when the
+function is zero. That is
 
 $$
 0 = g(x) \in \mathbb{R}^m .
@@ -128,8 +128,6 @@ the function is greater or equal to zero. That is
 $$
 0 \leq g(x) \in \mathbb{R}^m .
 $$
-
-:::
 
 ## Other conventions
 
