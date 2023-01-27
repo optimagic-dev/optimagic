@@ -174,7 +174,7 @@ def _get_results(names, raw_results, kwargs_list):
 
             time_history = pd.Series([np.inf])
         else:
-            raise ValueError(
+            raise TypeError(
                 "'result' object is expected to be of type 'dict' or 'str'."
             )
 

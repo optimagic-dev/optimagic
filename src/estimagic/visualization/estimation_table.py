@@ -384,7 +384,7 @@ def render_html(
     show_col_names=True,
     show_col_groups=True,
     escape_special_characters=True,
-    **kwargs,
+    **kwargs,  # noqa: ARG001
 ):
     """Return estimation table in html format as string.
 
@@ -486,11 +486,11 @@ def _process_model(model):
             name = info.pop("name")
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
+        except Exception as e:
             raise TypeError(
                 f"""Model can  be of type dict,  pd.DataFrame
                 or a statsmodels result. Model {model} is of type {type(model)}."""
-            )
+            ) from e
     if "pvalue" in params.columns:
         params = params.rename(columns={"pvalue": "p_value"})
     processed_model = {"params": params, "info": info, "name": name}
@@ -995,7 +995,7 @@ def _convert_frame_to_string_series(
     """
     value_sr = df["value"]
     if show_stars:
-        sig_bins = [-1] + sorted(significance_levels) + [2]
+        sig_bins = [-1, *sorted(significance_levels)] + [2]
         value_sr += "$^{"
         value_sr += (
             pd.cut(
@@ -1104,7 +1104,7 @@ def _create_statistics_sr(
     stats_values = formatted.to_dict()[0]
     if "fvalue" in model["info"] and "F Statistic" in stats_values:
         if show_stars and "f_pvalue" in model["info"]:
-            sig_bins = [-1] + sorted(significance_levels) + [2]
+            sig_bins = [-1, *sorted(significance_levels)] + [2]
             sig_icon_fstat = "*" * (
                 len(significance_levels)
                 - np.digitize(model["info"]["f_pvalue"], sig_bins)
@@ -1226,8 +1226,8 @@ def _generate_notes_latex(
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if not type(n)==str]} are of types
-                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        {[n for n in custom_notes if type(n) != str]} are of types
+                        {[type(n) for n in custom_notes if type(n) != str]}
                         respectively."""
                     )
                 for n in custom_notes:
@@ -1240,7 +1240,7 @@ def _generate_notes_latex(
                     amp_n, n_columns, custom_notes
                 )
             else:
-                raise ValueError(
+                raise TypeError(
                     f"""Custom notes can be either a string or a list of strings.
                     Not: {type(custom_notes)}."""
                 )
@@ -1286,8 +1286,8 @@ def _generate_notes_html(
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if not type(n)==str]} are of types
-                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        {[n for n in custom_notes if type(n) != str]} are of types
+                        {[type(n) for n in custom_notes if type(n) != str]}
                         respectively."""
                     )
                 notes_text += """
@@ -1310,7 +1310,7 @@ def _generate_notes_html(
                     n_columns + n_levels - 1, custom_notes
                 )
             else:
-                raise ValueError(
+                raise TypeError(
                     f"""Custom notes can be either a string or a list of strings,
                     not {type(custom_notes)}."""
                 )

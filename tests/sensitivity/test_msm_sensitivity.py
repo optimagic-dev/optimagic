@@ -53,7 +53,7 @@ def simulate_moment_contributions(params, x, y):
     return mom_value
 
 
-@pytest.fixture
+@pytest.fixture()
 def moments_cov(params, func_kwargs):
     mom_value = simulate_moment_contributions(params, **func_kwargs)
     mom_value = mom_value.to_numpy()
@@ -61,7 +61,7 @@ def moments_cov(params, func_kwargs):
     return s
 
 
-@pytest.fixture
+@pytest.fixture()
 def params():
     params_index = [["beta"], ["intersection", "x1", "x2"]]
     params_index = pd.MultiIndex.from_product(params_index, names=["type", "name"])
@@ -71,7 +71,7 @@ def params():
     return params
 
 
-@pytest.fixture
+@pytest.fixture()
 def func_kwargs():
     data = pd.read_csv(EXAMPLE_DIR / "sensitivity_probit_example_data.csv")
     y_data = data[["y"]]
@@ -80,7 +80,7 @@ def func_kwargs():
     return func_kwargs
 
 
-@pytest.fixture
+@pytest.fixture()
 def jac(params, func_kwargs):
     derivative_dict = first_derivative(
         func=simulate_aggregated_moments,
@@ -92,12 +92,12 @@ def jac(params, func_kwargs):
     return g.to_numpy()
 
 
-@pytest.fixture
+@pytest.fixture()
 def weights(moments_cov):
     return np.linalg.inv(moments_cov)
 
 
-@pytest.fixture
+@pytest.fixture()
 def params_cov_opt(jac, weights):
     return cov_optimal(jac, weights)
 

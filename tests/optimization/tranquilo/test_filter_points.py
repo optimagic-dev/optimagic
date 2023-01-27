@@ -212,7 +212,9 @@ def test_drop_collinear_pounders(test_case, request):
         test_case
     )
 
-    filtered_xs, filtered_indices = drop_collinear_pounders(old_xs, old_indices, state)
+    filtered_xs, filtered_indices = drop_collinear_pounders(
+        old_xs, old_indices, state, target_size=None
+    )
 
     assert_equal(filtered_indices, expected_indices)
     aaae(filtered_xs, expected_xs)

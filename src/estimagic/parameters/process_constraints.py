@@ -235,7 +235,7 @@ def _create_internal_bounds(lower, upper, constraints):
             # because the internal params contains the Cholesky factor of the implied
             # covariance matrix in both cases.
             dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
-            diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
+            diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             bd = constr.get("bounds_distance", 0)
             bd = np.sqrt(bd) if constr["type"] == "covariance" else bd

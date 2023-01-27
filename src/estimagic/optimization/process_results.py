@@ -93,7 +93,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
 
     algo_output = {}
     for key in res:
-        if key not in optional_entries + ["solution_x", "solution_criterion"]:
+        if key not in [*optional_entries, "solution_x", "solution_criterion"]:
             algo_output[key] = res[key]
 
     if "history" in res and not skip_checks:
@@ -153,7 +153,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
     return out
 
 
-def _dummy_result_from_traceback(candidate, fixed_kwargs):
+def _dummy_result_from_traceback(candidate, fixed_kwargs):  # noqa: ARG001
     out = OptimizeResult(
         params=None,
         criterion=None,

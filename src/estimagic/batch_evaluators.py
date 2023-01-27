@@ -136,12 +136,12 @@ def joblib_batch_evaluator(
 
 def _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol):
     if not callable(func):
-        raise ValueError("func must be callable.")
+        raise TypeError("func must be callable.")
 
     try:
         arguments = list(arguments)
-    except Exception:
-        raise ValueError("arguments must be list like.")
+    except Exception as e:
+        raise ValueError("arguments must be list like.") from e
 
     try:
         int(n_cores)

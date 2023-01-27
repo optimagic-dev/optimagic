@@ -118,7 +118,7 @@ def _box_sampler(
     trustregion,
     n_points,
     rng,
-    existing_xs=None,
+    existing_xs=None,  # noqa: ARG001
     bounds=None,
 ):
     """Naive random generation of trustregion points inside a box.
@@ -154,7 +154,9 @@ def _box_sampler(
     return points
 
 
-def _ball_sampler(trustregion, n_points, rng, existing_xs=None, bounds=None):
+def _ball_sampler(
+    trustregion, n_points, rng, existing_xs=None, bounds=None  # noqa: ARG001
+):
     """Naive random generation of trustregion points inside a ball.
 
     Mathematically it samples uniformaly from inside the ball defined by the
@@ -190,7 +192,7 @@ def _hull_sampler(
     rng,
     order,
     distribution=None,
-    existing_xs=None,
+    existing_xs=None,  # noqa: ARG001
     bounds=None,
 ):
     """Random generation of trustregion points on the hull of general sphere / cube.
@@ -228,7 +230,7 @@ def _optimal_hull_sampler(
     trustregion,
     n_points,
     rng,
-    model_info,
+    model_info,  # noqa: ARG001
     radius_factors,
     order,
     distribution=None,

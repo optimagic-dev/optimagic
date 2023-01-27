@@ -233,7 +233,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
     invalid = df.query("lower_bounds >= upper_bounds")[["lower_bounds", "upper_bounds"]]
     msg = (
         "lower_bound must be strictly smaller than upper_bound. "
-        + f"This is violated for:\n{invalid}"
+        f"This is violated for:\n{invalid}"
     )
     if len(invalid) > 0:
         raise InvalidConstraintError(msg)

@@ -238,7 +238,7 @@ def _plot_sample_points(history, state, color_dict, fig, row, col):
         fig.update_yaxes(scaleanchor="x", scaleratio=1, col=col, row=row)
         fig.update_xaxes(scaleanchor="y", scaleratio=1, col=col, row=row)
     else:
-        params = [col for col in sample_points.columns if not col == "case"]
+        params = [col for col in sample_points.columns if col != "case"]
         corr = sample_points[params].corr().abs()
         mask = np.zeros_like(corr, dtype=bool)
         mask[np.tril_indices_from(mask, k=-1)] = True

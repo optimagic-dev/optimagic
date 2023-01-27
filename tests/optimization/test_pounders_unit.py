@@ -42,7 +42,7 @@ def read_yaml(path):
 # ======================================================================================
 
 
-@pytest.fixture
+@pytest.fixture()
 def criterion():
     data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
@@ -55,7 +55,7 @@ def criterion():
     return partial(func, exog=exog, endog=endog)
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_create_initial_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_initial_residual_model.yaml")
     history = LeastSquaresHistory()
@@ -81,7 +81,7 @@ def data_create_initial_residual_model():
     return inputs_dict, residual_model_expected
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_update_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_residual_model.yaml")
 
@@ -114,7 +114,7 @@ def data_update_residual_model():
     return inputs_dict, expected_dict
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_update_main_from_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "update_main_from_residual_model.yaml")
 
@@ -137,7 +137,7 @@ def data_update_main_from_residual_model():
     return residual_model, main_model_expected
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_update_residual_model_with_new_accepted_x():
     test_data = read_yaml(
         TEST_FIXTURES_DIR / "update_residual_model_with_new_accepted_x.yaml"
@@ -169,7 +169,7 @@ def data_update_residual_model_with_new_accepted_x():
     return inputs_dict, residual_model_expected
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_update_main_model_with_new_accepted_x():
     test_data = read_yaml(
         TEST_FIXTURES_DIR / "update_main_model_with_new_accepted_x.yaml"
@@ -281,7 +281,7 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
     return inputs_dict, expected_dict
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_get_interpolation_matrices_residual_model():
     test_data = read_yaml(
         TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
@@ -371,7 +371,7 @@ def data_evaluate_residual_model(request):
     return inputs_dict, expected_dict
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_fit_residual_model():
     test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
 

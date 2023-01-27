@@ -28,7 +28,7 @@ def load_history(start_vec, solver_sub):
     return history_x, history_criterion
 
 
-@pytest.fixture
+@pytest.fixture()
 def criterion():
     data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])

@@ -1,5 +1,7 @@
 import numpy as np
+from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.models import n_second_order_terms
+from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
 from numba import njit
 from scipy.linalg import qr_multiply
 
@@ -23,8 +25,8 @@ def get_sample_filter(sample_filter="keep_all"):
     built_in_filters = {
         "discard_all": discard_all,
         "keep_all": keep_all,
+        "clustering": keep_cluster_centers,
         "keep_sphere": keep_sphere,
-        "drop_collinear": drop_collinear,
         "drop_pounders": drop_collinear_pounders,
     }
 
@@ -38,26 +40,21 @@ def get_sample_filter(sample_filter="keep_all"):
     return out
 
 
-def discard_all(xs, indices, state):
+def discard_all(xs, indices, state, target_size):  # noqa: ARG001
     return state.x.reshape(1, -1), np.array([state.index])
 
 
-def keep_all(xs, indices, state):
+def keep_all(xs, indices, state, target_size):  # noqa: ARG001
     return xs, indices
 
 
-def keep_sphere(xs, indices, state):
+def keep_sphere(xs, indices, state, target_size):  # noqa: ARG001
     dists = np.linalg.norm(xs - state.trustregion.center, axis=1)
     keep = dists <= state.trustregion.radius
     return xs[keep], indices[keep]
 
 
-def drop_collinear(xs, indices, state):
-    """Make sure that the points that are kept are linearly independent."""
-    raise NotImplementedError()
-
-
-def drop_collinear_pounders(xs, indices, state):
+def drop_collinear_pounders(xs, indices, state, target_size):  # noqa: ARG001
     """Drop collinear points using pounders filtering."""
     if xs.shape[0] <= xs.shape[1] + 1:
         filtered_xs, filtered_indices = xs, indices
@@ -65,6 +62,23 @@ def drop_collinear_pounders(xs, indices, state):
         filtered_xs, filtered_indices = _drop_collinear_pounders(xs, indices, state)
 
     return filtered_xs, filtered_indices
+
+
+def keep_cluster_centers(
+    xs, indices, state, target_size, strictness=1e-20, shape="sphere"
+):
+    dim = xs.shape[1]
+    scaling_factor = strictness / target_size
+    cluster_radius = get_radius_after_volume_scaling(
+        radius=state.trustregion.radius,
+        dim=dim,
+        scaling_factor=scaling_factor,
+    )
+    _, centers = cluster(x=xs, epsilon=cluster_radius, shape=shape)
+
+    # do I need to make sure trustregion center is in there?
+    out = xs[centers], indices[centers]
+    return out
 
 
 def _drop_collinear_pounders(xs, indices, state):
@@ -141,7 +155,7 @@ def _get_polynomial_feature_matrices(
 
     _is_center_in_head = index_center < n_params
     idx_list_n = [i for i in range(n_params + _is_center_in_head) if i != index_center]
-    idx_list_n_plus_1 = [index_center] + idx_list_n
+    idx_list_n_plus_1 = [index_center, *idx_list_n]
 
     linear_features[:, 0] = 1
     linear_features[: n_params + 1, 1:] = centered_xs[indexer[idx_list_n_plus_1]]

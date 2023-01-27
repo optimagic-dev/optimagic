@@ -10,7 +10,7 @@ from estimagic.optimization.neldermead import neldermead_parallel
 
 
 # function to test
-def sphere(x, *args, **kwargs):
+def sphere(x, *args, **kwargs):  # noqa: ARG001
     return (x**2).sum()
 
 

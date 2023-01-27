@@ -248,7 +248,7 @@ def test_process_surrogate_model_str_invalid():
 @pytest.mark.parametrize("functype", ["scalar", "least_squares"])
 def test_process_surrogate_model_invalid(functype):
     surrogate_model = np.linalg.lstsq
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         _process_surrogate_model(surrogate_model, functype=functype)
 
 
@@ -265,7 +265,7 @@ def test_process_sample_size_none_linear(has_interactions, has_squares):
 
 
 STR_TEST_CASES = [  # assume len(x) = 3
-    # (user_sample_size, expected)  # noqa: E800
+    # (user_sample_size, expected)  # noqa: ERA001
     ("linear", 3 + 1),
     ("n+1", 3 + 1),
     ("n + 1", 3 + 1),
@@ -297,5 +297,5 @@ def test_process_sample_size_number(user_sample_size):
 
 def test_process_sample_size_invalid():
     x = np.ones((3, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         _process_sample_size(np.zeros_like(x), None, x)
