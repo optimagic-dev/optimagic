@@ -1,6 +1,5 @@
-from functools import partial
-
 """Functions to count the effective number of points in a given sample."""
+from functools import partial
 
 
 def get_counter(counter, bounds):

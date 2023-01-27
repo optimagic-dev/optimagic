@@ -58,6 +58,8 @@ extend-ignore = [
     "C901",  # function too complex
     "PT011", # pytest raises without match statement
     "INP001", # implicit namespace packages without init.
+    "TRY300", # consider moving this statement to an else block
+    # ======================================
 ]
 
 [tool.ruff.per-file-ignores]

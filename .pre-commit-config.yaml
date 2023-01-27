@@ -51,6 +51,7 @@ repos:
       - id: trailing-whitespace
       - id: check-ast
       - id: check-docstring-first
+        exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.28.0
     hooks:
@@ -95,6 +96,8 @@ repos:
     hooks:
       - id: nbqa-black
       - id: nbqa-ruff
+        args:
+          - --fix
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.16
     hooks:

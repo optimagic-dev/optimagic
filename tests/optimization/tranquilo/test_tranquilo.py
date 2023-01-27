@@ -249,7 +249,7 @@ def test_process_surrogate_model_str_invalid():
 @pytest.mark.parametrize("functype", ["scalar", "least_squares"])
 def test_process_surrogate_model_invalid(functype):
     surrogate_model = np.linalg.lstsq
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         _process_surrogate_model(surrogate_model, functype=functype)
 
 
@@ -298,5 +298,5 @@ def test_process_sample_size_number(user_sample_size):
 
 def test_process_sample_size_invalid():
     x = np.ones((3, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         _process_sample_size(np.zeros_like(x), None, x)

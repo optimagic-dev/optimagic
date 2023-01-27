@@ -90,7 +90,7 @@ def test_criterion_plot_name_input(minimize_result):
 
 
 def test_criterion_plot_wrong_results():
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         criterion_plot([10, np.array([1, 2, 3])])
 
 
