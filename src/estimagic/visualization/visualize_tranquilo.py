@@ -118,12 +118,13 @@ def visualize_tranquilo(results, iterations):
 
 def _plot_criterion(history, state, color_dict, fig, row, col):
     fig.add_trace(
-        go.Line(
+        go.Scatter(
             y=history,
             x=np.arange(len(history)),
             showlegend=False,
             line_color="#C0C0C0",
             name="Criterion",
+            mode="lines",
         ),
         row=row,
         col=col,
