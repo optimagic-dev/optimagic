@@ -394,6 +394,8 @@ def _process_nag_result(nag_result_obj, len_x):
     }
     if hasattr(nag_result_obj, "states"):
         processed.update({"states": nag_result_obj.states})
+    if hasattr(nag_result_obj, "history_params"):
+        processed.update({"history_params": nag_result_obj.history_params})
     if nag_result_obj.x is not None:
         processed["solution_x"] = nag_result_obj.x
     else:
