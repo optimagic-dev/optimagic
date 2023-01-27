@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.subsolvers.bntr import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_orig,
@@ -161,6 +162,7 @@ def test_apply_bounds_candidate_x():
     aae(apply_bounds_orig(x, lb, ub), apply_bounds_fast(x, lb, ub))
 
 
+@pytest.mark.slow()
 def test_take_preliminary_gradient_descent_and_check_for_convergence():
     model_gradient = np.array(
         [
@@ -220,6 +222,7 @@ def test_take_preliminary_gradient_descent_and_check_for_convergence():
     assert res_orig[6] == res_fast[10]
 
 
+@pytest.mark.slow()
 def test_apply_bounds_to_conjugate_gradient_step():
     step_inactive = np.ones(7)
     x_candidate = np.zeros(10)
@@ -253,6 +256,7 @@ def test_apply_bounds_to_conjugate_gradient_step():
     pass
 
 
+@pytest.mark.slow()
 def test_compute_conjugate_gradient_setp():
     x_candidate = np.array([0] * 8 + [1.5] * 2)
     gradient_inactive = np.arange(6).astype(float)
@@ -318,6 +322,7 @@ def test_compute_conjugate_gradient_setp():
     aaae(res_orig[2], res_fast[2])
 
 
+@pytest.mark.slow()
 def test_compute_predicet_reduction_from_conjugate_gradient_step():
     cg_step = np.arange(10).astype(float) / 10
     cg_step_inactive = np.array([1, 2, 3]).astype(float)
@@ -343,6 +348,7 @@ def test_compute_predicet_reduction_from_conjugate_gradient_step():
     aae(res_orig, res_fast)
 
 
+@pytest.mark.slow()
 def test_update_trustregion_radius_conjugate_gradient():
     f_candidate = -1234.56
     predicted_reduction = 200
@@ -382,6 +388,7 @@ def test_update_trustregion_radius_conjugate_gradient():
     assert res_orig[1] == res_fast[1]
 
 
+@pytest.mark.slow()
 def test_perform_gradient_descent_step():
     x_candidate = np.zeros(10)
     f_candidate_initial = 1234.56
@@ -439,6 +446,7 @@ def test_perform_gradient_descent_step():
         assert res_orig[i] == res_fast[i]
 
 
+@pytest.mark.slow()
 def test_update_trustregion_radius_and_gradient_descent():
     options_update_radius = {
         "mu1": 0.35,
@@ -481,6 +489,7 @@ def test_update_trustregion_radius_and_gradient_descent():
     assert res_fast[1] == res_orig[1]
 
 
+@pytest.mark.slow()
 def test_minimize_bntr():
     model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
     lower_bounds = -np.ones(len(model.linear_terms))
@@ -505,6 +514,7 @@ def test_minimize_bntr():
     assert res_orig["success"] == res_fast[3]
 
 
+@pytest.mark.slow()
 def test_minimize_bntr_break_loop_early():
     model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
     lower_bounds = -np.ones(len(model.linear_terms))

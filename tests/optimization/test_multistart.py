@@ -17,7 +17,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 criteria = [sos_scalar_criterion, sos_dict_criterion]
 
 
-@pytest.fixture
+@pytest.fixture()
 def params():
     params = pd.DataFrame()
     params["value"] = np.arange(4)

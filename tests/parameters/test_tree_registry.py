@@ -8,7 +8,7 @@ from pybaum import tree_flatten
 from pybaum import tree_unflatten
 
 
-@pytest.fixture
+@pytest.fixture()
 def value_df():
     df = pd.DataFrame(
         np.arange(6).reshape(3, 2),
@@ -18,7 +18,7 @@ def value_df():
     return df
 
 
-@pytest.fixture
+@pytest.fixture()
 def other_df():
     df = pd.DataFrame(index=["alpha", "beta", "gamma"])
     df["b"] = np.arange(3).astype(np.int16)

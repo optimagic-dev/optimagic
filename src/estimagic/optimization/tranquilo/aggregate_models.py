@@ -53,7 +53,7 @@ def get_aggregator(aggregator, functype, model_info):
     aggregator_compatible_with_model_info = {
         # keys are names of aggregators and values are functions of model_info that
         # return False in case of incompatibility
-        "identity": lambda x: True,
+        "identity": lambda x: True,  # noqa: ARG005
         "sum": _is_second_order_model,
         "information_equality_linear": lambda model_info: not _is_second_order_model(
             model_info

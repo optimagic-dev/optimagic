@@ -32,7 +32,7 @@ def read_yaml(path):
 # ======================================================================================
 
 
-@pytest.fixture
+@pytest.fixture()
 def quadratic_case():
     """Test scenario with true quadratic function.
 
@@ -69,7 +69,7 @@ def quadratic_case():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def just_identified_case():
     """Test scenario with true quadratic function and n + 1 points.
 
@@ -105,7 +105,7 @@ def just_identified_case():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_fit_pounders():
     """Test data from Tao Pounders."""
     test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
@@ -136,7 +136,7 @@ def data_fit_pounders():
     return inputs_dict, expected
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_get_feature_matrices_pounders():
     test_data = read_yaml(
         TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"

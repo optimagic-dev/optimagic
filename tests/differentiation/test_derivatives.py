@@ -29,7 +29,7 @@ from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
 
 
-@pytest.fixture
+@pytest.fixture()
 def binary_choice_inputs():
     fix_path = Path(__file__).resolve().parent / "binary_choice_inputs.pickle"
     inputs = pd.read_pickle(fix_path)
@@ -112,7 +112,7 @@ def test_second_derivative_hessian(binary_choice_inputs, method):
 
 
 @pytest.mark.parametrize("method", methods)
-def test_first_derivative_scalar(method):
+def test_first_derivative_scalar(method):  # noqa: ARG001
     def f(x):
         return x**2
 
@@ -122,7 +122,7 @@ def test_first_derivative_scalar(method):
 
 
 @pytest.mark.parametrize("method", methods_second_derivative)
-def test_second_derivative_scalar(method):
+def test_second_derivative_scalar(method):  # noqa: ARG001
     def f(x):
         return x**2
 
@@ -133,7 +133,7 @@ def test_second_derivative_scalar(method):
 
 
 @pytest.mark.parametrize("method", methods)
-def test_first_derivative_scalar_with_return_func_value(method):
+def test_first_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
     def f(x):
         return x**2
 
@@ -145,7 +145,7 @@ def test_first_derivative_scalar_with_return_func_value(method):
 
 
 @pytest.mark.parametrize("method", methods_second_derivative)
-def test_second_derivative_scalar_with_return_func_value(method):
+def test_second_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
     def f(x):
         return x**3
 

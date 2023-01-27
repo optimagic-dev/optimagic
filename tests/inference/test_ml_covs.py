@@ -16,7 +16,7 @@ from estimagic.inference.ml_covs import cov_strata_robust
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture
+@pytest.fixture()
 def jac():
     _jac = np.array(
         [
@@ -30,7 +30,7 @@ def jac():
     return _jac
 
 
-@pytest.fixture
+@pytest.fixture()
 def hess():
     _hess = np.array(
         [
@@ -43,7 +43,7 @@ def hess():
     return _hess
 
 
-@pytest.fixture
+@pytest.fixture()
 def design_options():
     df = pd.DataFrame(
         data=[

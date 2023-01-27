@@ -123,14 +123,14 @@ def convergence_plot(
         "criterion": "Current Function Value",
         "monotone_criterion": "Best Function Value Found So Far",
         "criterion_normalized": "Share of Function Distance to Optimum<br>"
-        + "Missing From Current Criterion Value",
+        "Missing From Current Criterion Value",
         "monotone_criterion_normalized": "Share of Function Distance to Optimum<br>"
-        + "Missing From Best So Far",
+        "Missing From Best So Far",
         "parameter_distance": "Distance Between Current and Optimal Parameters",
         "parameter_distance_normalized": "Share of Parameter Distance to Optimum<br>"
-        + "Missing From Current Parameters",
+        "Missing From Current Parameters",
         "monotone_parameter_distance_normalized": "Share of the Parameter Distance "
-        + "to Optimum<br> Missing From the Best Parameters So Far",
+        "to Optimum<br> Missing From the Best Parameters So Far",
         "monotone_parameter_distance": "Distance Between the Best Parameters So Far<br>"
         "and the Optimal Parameters",
     }

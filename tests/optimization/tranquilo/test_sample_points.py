@@ -142,5 +142,6 @@ def test_draw_from_distribution(distribution):
     rng = np.random.default_rng()
     draw = _draw_from_distribution(distribution, rng=rng, size=(3, 2))
     if distribution == "uniform":
-        assert (-1 <= draw).all() and (draw <= 1).all()
+        assert (-1 <= draw).all()
+        assert (draw <= 1).all()
     assert draw.shape == (3, 2)

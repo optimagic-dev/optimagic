@@ -8,14 +8,19 @@ from estimagic.exceptions import InvalidConstraintError
 from estimagic.parameters.nonlinear_constraints import (
     _check_validity_and_return_evaluation,
 )
+from estimagic.parameters.nonlinear_constraints import _get_components
 from estimagic.parameters.nonlinear_constraints import _get_selection_indices
 from estimagic.parameters.nonlinear_constraints import _get_transformation
 from estimagic.parameters.nonlinear_constraints import _get_transformation_type
 from estimagic.parameters.nonlinear_constraints import _process_selector
+from estimagic.parameters.nonlinear_constraints import _vector_to_list_of_scalar
 from estimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
 )
 from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
+from estimagic.parameters.nonlinear_constraints import (
+    vector_as_list_of_scalar_constraints,
+)
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
@@ -55,7 +60,7 @@ def test_get_transformation_type(lower_bounds, upper_bounds, expected):
 # ======================================================================================
 
 TEST_CASES = [
-    #  (lower_bounds, upper_bounds, case, expected)  # noqa: E800
+    #  (lower_bounds, upper_bounds, case, expected)  # noqa: ERA001
     (0, 0, "func", {"name": "stack", "out": np.array([1, -1])}),
     (1, 1, "func", {"name": "stack", "out": np.array([0, 0])}),
     (0, 0, "derivative", {"name": "stack", "out": np.array([1, -1])}),
@@ -173,7 +178,7 @@ TEST_CASES = [
             {
                 "type": "ineq",
                 "fun": lambda x: np.array([x]),
-                "jac": lambda x: np.array([[1]]),
+                "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # constraints
@@ -184,7 +189,7 @@ TEST_CASES = [
             {
                 "type": "ineq",
                 "fun": lambda x: np.array([x]),
-                "jac": lambda x: np.array([[1]]),
+                "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # constraints
@@ -192,7 +197,7 @@ TEST_CASES = [
             {
                 "type": "eq",
                 "fun": lambda x: np.array([x, -x]).reshape(-1, 1),
-                "jac": lambda x: np.array([[1], [-1]]),
+                "jac": lambda x: np.array([[1], [-1]]),  # noqa: ARG005
                 "n_constr": 1,
             }
         ],  # expected
@@ -256,3 +261,44 @@ def test_process_nonlinear_constraints():
             assert_array_equal(g["fun"](x), e["fun"](x))
         assert "jac" in g
         assert "tol" in g
+
+
+# ======================================================================================
+# vector_as_list_of_scalar_constraints
+# ======================================================================================
+
+
+def test_get_components():
+    fun = lambda x: np.array([x[0], 2 * x[1]])
+    jac = lambda x: np.array([[1, 0], [0, 2]])  # noqa: ARG005
+
+    fun_component, jac_component = _get_components(fun, jac, idx=1)
+
+    x = np.array([0, 3])
+    assert fun_component(x) == 6
+    assert_array_equal(jac_component(x), np.array([0, 2]))
+
+
+def test_vector_to_list_of_scalar():
+    constr = {
+        "fun": lambda x: x,
+        "jac": lambda x: np.eye(len(x)),
+        "n_constr": 2,
+    }
+    got = _vector_to_list_of_scalar(constr)
+    for got_constr in got:
+        assert got_constr["n_constr"] == 1
+    for i in range(2):
+        assert got[i]["fun"](np.arange(2)) == i
+        assert_array_equal(got[i]["jac"](np.arange(2)), np.eye(2)[i])
+
+
+def test_vector_as_list_of_scalar_constraints():
+    constr = {
+        "fun": lambda x: x,
+        "jac": lambda x: np.eye(len(x)),
+        "n_constr": 2,
+    }
+    constraints = [constr, constr]
+    got = vector_as_list_of_scalar_constraints(constraints)
+    assert len(got) == 4
