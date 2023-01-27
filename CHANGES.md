@@ -5,6 +5,25 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
 
 
+
+## 0.4.3
+
+- {gh}`416` improves documentation and packaging ({ghuser}`janosg`)
+
+## 0.4.2
+
+- {gh}`412` Improves the output of the fides optimizer among other small changes
+  ({ghuser}`janosg`)
+- {gh}`411` Fixes a bug in multistart optimizations with least squares optimizers.
+  See {gh}`410` for details ({ghuser}`janosg`)
+- {gh}`404` speeds up the gqtpar subsolver ({ghuser}`mpetrosian` )
+- {gh}`400` refactors subsolvers ({ghuser}`mpetrosian`)
+- {gh}`398`, {gh}`397`, {gh}`395`, {gh}`390`, {gh}`389`, {gh}`388` continue with the
+  implementation of tranquilo ({ghuser}`segsell`, {ghuser}`timmens`,
+  {ghuser}`mpetrosian`, {ghuser}`janosg`)
+- {gh}`391` speeds up the bntr subsolver ({ghuser}`mpetrosian`)
+
+
 ## 0.4.1
 
 - {gh}`307` Adopts a code of condact and governance model

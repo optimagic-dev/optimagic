@@ -1,8 +1,10 @@
 """Implementation of the Steihaug-Toint Conjugate Gradient algorithm."""
 import numpy as np
+from numba import njit
 
 
-def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
+@njit
+def minimize_trust_stcg_fast(model_gradient, model_hessian, trustregion_radius):
     """Minimize the quadratic subproblem via Steihaug-Toint conjugate gradient.
 
     Solve the quadratic trust-region subproblem:
@@ -49,7 +51,10 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
 
     norm_r = np.sqrt(rr)
     norm_r0 = norm_r
-    ttol = max(rtol * norm_r0, abstol)
+    if rtol * norm_r0 >= abstol:
+        ttol = rtol * norm_r0
+    else:
+        ttol = abstol
 
     converged, diverged = _check_convergence(
         norm_r, norm_r0, abstol, ttol, divtol, converged, diverged
@@ -144,6 +149,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     return x_candidate
 
 
+@njit
 def _update_candidate_vector_and_iteration_number(
     x_candidate,
     residual,
@@ -178,6 +184,7 @@ def _update_candidate_vector_and_iteration_number(
     return x_candidate, z, n_iter
 
 
+@njit
 def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, norm_p):
     """Take step to trust-region boundary."""
     step = (np.sqrt(dp * dp + norm_p * (radius_sq - norm_d)) - dp) / norm_p
@@ -186,7 +193,10 @@ def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, no
     return x_candidate
 
 
-def _check_convergence(rnorm, rnorm0, abstol, ttol, divtol, converged, diverged):
+@njit
+def _check_convergence(
+    rnorm, rnorm0, abstol, ttol, divtol, converged, diverged  # noqa: ARG001
+):
     """Check for convergence."""
     if rnorm <= ttol:
         converged = True

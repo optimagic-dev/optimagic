@@ -33,7 +33,6 @@ from estimagic.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.utilities import cov_matrix_to_sdcorr_params
 from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import dimension_to_number_of_triangular_elements
-from estimagic.utilities import get_rng
 from estimagic.utilities import robust_cholesky
 from estimagic.utilities import sdcorr_params_to_matrix
 

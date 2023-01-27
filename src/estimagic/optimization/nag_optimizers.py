@@ -183,7 +183,7 @@ def nag_dfols(
         ],
         "restarts.auto_detect.min_chgJ_slope": trustregion_reset_options[
             "auto_detect_min_jacobian_increase"
-        ],  # noqa: E501
+        ],
         "restarts.max_npt": trustregion_reset_options["max_interpolation_points"],
         "restarts.increase_npt": trustregion_reset_options[
             "n_extra_interpolation_points_per_soft_reset"
@@ -226,6 +226,8 @@ def nag_dfols(
         "growing.num_new_dirns_each_iter": fast_start[
             "n_extra_search_directions_per_iteration"
         ],
+        "logging.save_diagnostic_info": True,
+        "logging.save_xk": True,
     }
 
     advanced_options.update(dfols_options)
@@ -250,7 +252,7 @@ def nag_dfols(
 
 
 @mark_minimizer(
-    name="nag_dfols",
+    name="nag_pybobyqa",
     needs_scaling=True,
     is_available=IS_PYBOBYQA_INSTALLED,
 )
@@ -343,6 +345,8 @@ def nag_pybobyqa(
         "restarts.auto_detect.min_chg_model_slope": trustregion_reset_options[
             "auto_detect_min_jacobian_increase"
         ],
+        "logging.save_diagnostic_info": True,
+        "logging.save_xk": True,
     }
 
     advanced_options.update(pybobyqa_options)
@@ -385,21 +389,15 @@ def _process_nag_result(nag_result_obj, len_x):
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,
+        "diagnostic_info": nag_result_obj.diagnostic_info,
+        "n_iterations": nag_result_obj.diagnostic_info["iters_total"].iloc[-1],
     }
+    if hasattr(nag_result_obj, "states"):
+        processed.update({"states": nag_result_obj.states})
     if nag_result_obj.x is not None:
         processed["solution_x"] = nag_result_obj.x
     else:
         processed["solution_x"] = np.array([np.nan] * len_x)
-    try:
-        processed["solution_derivative"] = nag_result_obj.gradient
-    except AttributeError:
-        pass
-    try:
-        processed["solution_hessian"] = nag_result_obj.hessian
-    except AttributeError:
-        pass
-    if processed["message"].startswith("Error (bad input)"):
-        raise ValueError(processed["message"])
     return processed
 
 
@@ -460,9 +458,6 @@ def _create_nag_advanced_options(
         "tr_radius.gamma_inc_overline": trustregion_expansion_factor_very_successful,
         "tr_radius.alpha1": trustregion_shrinking_factor_lower_radius,
         "tr_radius.alpha2": trustregion_shrinking_factor_upper_radius,
-        "general.rounding_error_constant": interpolation_rounding_error,
-        "general.safety_step_thresh": threshold_for_safety_step,
-        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
         "init.random_initial_directions": initial_directions == "random",
         "init.random_directions_make_orthogonal": random_directions_orthogonal,
         "slow.thresh_for_slow": convergence_slow_progress[
@@ -491,11 +486,11 @@ def _create_nag_advanced_options(
         "restarts.soft.move_xk": trustregion_reset_options["move_center_at_soft_reset"],
         "restarts.soft.max_fake_successful_steps": trustregion_reset_options[
             "max_iterations_without_new_best_after_soft_reset"
-        ],  # noqa: E501
+        ],
         "restarts.auto_detect": trustregion_reset_options["auto_detect"],
         "restarts.auto_detect.history": trustregion_reset_options[
             "auto_detect_history"
-        ],  # noqa: E501
+        ],
         "restarts.auto_detect.min_correl": trustregion_reset_options[
             "auto_detect_min_correlations"
         ],

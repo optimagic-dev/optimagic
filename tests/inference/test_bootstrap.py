@@ -12,7 +12,7 @@ def aaae(obj1, obj2, decimal=6):
     np.testing.assert_array_almost_equal(arr1, arr2, decimal=decimal)
 
 
-@pytest.fixture
+@pytest.fixture()
 def setup():
     out = {}
 
@@ -28,7 +28,7 @@ def setup():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def expected():
     out = {}
 
@@ -61,7 +61,7 @@ def expected():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def seaborn_example():
     out = {}
 
@@ -189,7 +189,7 @@ def test_bootstrap_from_outcomes_single_outcome(setup, expected):
 def test_outcome_not_callable(setup):
     expected_msg = "outcome must be a callable."
 
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(TypeError) as error:
         assert bootstrap(data=setup["df"], outcome=setup["estimates_df"])
 
     assert str(error.value) == expected_msg

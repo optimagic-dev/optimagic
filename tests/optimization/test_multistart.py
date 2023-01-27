@@ -17,7 +17,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 criteria = [sos_scalar_criterion, sos_dict_criterion]
 
 
-@pytest.fixture
+@pytest.fixture()
 def params():
     params = pd.DataFrame()
     params["value"] = np.arange(4)
@@ -239,3 +239,17 @@ def test_with_ackley():
             "convergence_max_discoveries": 10,
         },
     )
+
+
+def test_multistart_with_least_squares_optimizers():
+    est = minimize(
+        criterion=sos_dict_criterion,
+        params=np.array([-1, 1.0]),
+        lower_bounds=np.full(2, -10.0),
+        upper_bounds=np.full(2, 10.0),
+        algorithm="scipy_ls_trf",
+        multistart=True,
+        multistart_options={"n_samples": 3, "share_optimizations": 1.0},
+    )
+
+    aaae(est.params, np.zeros(2))

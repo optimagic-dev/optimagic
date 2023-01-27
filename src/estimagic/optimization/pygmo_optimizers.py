@@ -1,4 +1,5 @@
 """Implement pygmo optimizers."""
+import contextlib
 import warnings
 
 import numpy as np
@@ -7,16 +8,15 @@ from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import get_population_size
 from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
 
 STOPPING_MAX_ITERATIONS_GENETIC = 250
 
-try:
+with contextlib.suppress(ImportError):
     import pygmo as pg
-except ImportError:
-    pass
 
 
 @mark_minimizer(
@@ -57,7 +57,7 @@ def pygmo_gaco(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
 
@@ -125,7 +125,7 @@ def pygmo_bee_colony(
     For details see :ref:`list_of_pygmo_algorithms`.
 
     """
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=20
     )
     algo_options = _create_algo_options(
@@ -177,7 +177,7 @@ def pygmo_de(
     For details see :ref:`list_of_pygmo_algorithms`.
 
     """
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=10
     )
 
@@ -248,7 +248,7 @@ def pygmo_sea(
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=10
     )
 
@@ -304,7 +304,7 @@ def pygmo_sga(
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
 
@@ -416,7 +416,7 @@ def pygmo_sade(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
     mutation_variant_str_to_int = {
@@ -503,7 +503,7 @@ def pygmo_cmaes(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
 
@@ -568,7 +568,7 @@ def pygmo_simulated_annealing(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
 
@@ -639,7 +639,7 @@ def pygmo_pso(
 
     neighbor_param = _replace_none(neighbor_param, 4)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=10
     )
 
@@ -748,7 +748,7 @@ def pygmo_pso_gen(
     }
     algo_variant = _convert_str_to_int(algo_variant_str_to_int, algo_variant)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=10
     )
 
@@ -812,7 +812,7 @@ def pygmo_mbh(
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
     # the min default population size is this large to pass our sum of squares tests.
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=250
     )
 
@@ -872,7 +872,7 @@ def pygmo_xnes(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
 
@@ -930,7 +930,7 @@ def pygmo_gwo(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
     algo_options = _create_algo_options(
@@ -1046,7 +1046,7 @@ def pygmo_ihs(
     if population_size is not None:
         warnings.warn("The population size has no effect on IHS' performance.")
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=1
     )
 
@@ -1130,13 +1130,12 @@ def pygmo_de1220(
     if allowed_variants is None:
         allowed_variant_codes = [2, 3, 7, 10, 13, 14, 15, 16]
     else:
-        allowed_variant_codes = []
-        for variant in allowed_variants:
-            allowed_variant_codes.append(
-                _convert_str_to_int(variant_str_to_int, variant)
-            )
+        allowed_variant_codes = [
+            _convert_str_to_int(variant_str_to_int, variant)
+            for variant in allowed_variants
+        ]
 
-    population_size = _determine_population_size(
+    population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
 
@@ -1177,7 +1176,7 @@ def _minimize_pygmo(
     upper_bounds,
     method,
     algo_options,
-    derivative=None,
+    derivative=None,  # noqa: ARG001
 ):
     """Minimize a function with pygmo.
 
@@ -1248,7 +1247,7 @@ def _create_problem(func, bounds, dim, batch_evaluator, n_cores):
         def get_bounds(self):
             return bounds
 
-        def gradient(self, dv):
+        def gradient(self, dv):  # noqa: ARG002
             raise ValueError("No pygmo optimizer should use a gradient.")
 
         def batch_fitness(self, dvs):
@@ -1352,16 +1351,8 @@ def _check_that_every_param_is_bounded(lower_bounds, upper_bounds):
     assert np.isfinite(upper_bounds).all(), "The upper bounds must all be finite."
 
 
-def _determine_population_size(population_size, x, lower_bound):
-    if population_size is None:
-        population_size = int(np.clip(10 * (len(x) + 1), lower_bound, np.inf))
-    else:
-        population_size = int(population_size)
-    return population_size
-
-
 def _convert_str_to_int(str_to_int, value):
-    if value in str_to_int.keys():
+    if value in str_to_int:
         out = str_to_int[value]
     elif value not in str_to_int.values():
         raise ValueError(

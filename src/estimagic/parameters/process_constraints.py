@@ -128,9 +128,10 @@ def _replace_pairwise_equality_by_equality(constraints):
     pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
     constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
-        equality_constraints = []
-        for elements in zip(*constr["indices"]):
-            equality_constraints.append({"index": list(elements), "type": "equality"})
+        equality_constraints = [
+            {"index": list(elements), "type": "equality"}
+            for elements in zip(*constr["indices"])
+        ]
         constraints += equality_constraints
 
     return constraints
@@ -234,7 +235,7 @@ def _create_internal_bounds(lower, upper, constraints):
             # because the internal params contains the Cholesky factor of the implied
             # covariance matrix in both cases.
             dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
-            diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
+            diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             bd = constr.get("bounds_distance", 0)
             bd = np.sqrt(bd) if constr["type"] == "covariance" else bd

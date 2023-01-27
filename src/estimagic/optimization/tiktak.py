@@ -170,6 +170,7 @@ def run_multistart_optimization(
             starts=starts,
             results=batch_results,
             convergence_criteria=convergence_criteria,
+            primary_key=primary_key,
         )
         opt_counter += len(batch)
         scheduled_steps = scheduled_steps[len(batch) :]
@@ -355,9 +356,7 @@ def run_explorations(
         error_handling=error_handling,
     )
 
-    arguments = []
-    for x in sample:
-        arguments.append({"x": x, "fixed_log_data": {"step": int(step_id)}})
+    arguments = [{"x": x, "fixed_log_data": {"step": int(step_id)}} for x in sample]
 
     batch_evaluator = process_batch_evaluator(batch_evaluator)
 
@@ -427,7 +426,9 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
     return batched
 
 
-def update_convergence_state(current_state, starts, results, convergence_criteria):
+def update_convergence_state(
+    current_state, starts, results, convergence_criteria, primary_key
+):
     """Update the state of all quantities related to convergence.
 
     Args:
@@ -442,6 +443,8 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         starts (list): List of starting points for local optimizations.
         results (list): List of results from local optimizations.
         convergence_criteria (dict): Dict with the entries "xtol" and "max_discoveries"
+        primary_key: The primary criterion entry of the local optimizer. Needed to
+            interpret the output of the internal criterion function.
 
 
     Returns:
@@ -449,6 +452,9 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         bool: A bool that indicates if the optimizer has converged.
 
     """
+    # ==================================================================================
+    # unpack some variables
+    # ==================================================================================
     xtol = convergence_criteria["xtol"]
     max_discoveries = convergence_criteria["max_discoveries"]
 
@@ -456,17 +462,41 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     best_y = current_state["best_y"]
     best_res = current_state["best_res"]
 
+    # ==================================================================================
+    # filter out optimizations that raised errors
+    # ==================================================================================
+    # get indices of local optimizations that did not fail
     valid_indices = [i for i, res in enumerate(results) if not isinstance(res, str)]
 
+    # If all local optimizations failed, return early so we don't have to worry about
+    # index errors later.
     if not valid_indices:
         return current_state, False
 
+    # ==================================================================================
+    # reduce eveything to valid optimizations
+    # ==================================================================================
     valid_results = [results[i] for i in valid_indices]
     valid_starts = [starts[i] for i in valid_indices]
-
     valid_new_x = [res["solution_x"] for res in valid_results]
-    valid_new_y = [res["solution_criterion"] for res in valid_results]
+    valid_new_y = []
 
+    # make the criterion output scalar if a least squares optimizer returns an
+    # array as solution_criterion.
+    for res in valid_results:
+        if np.isscalar(res["solution_criterion"]):
+            valid_new_y.append(res["solution_criterion"])
+        else:
+            valid_new_y.append(
+                aggregate_func_output_to_value(
+                    f_eval=res["solution_criterion"],
+                    primary_key=primary_key,
+                )
+            )
+
+    # ==================================================================================
+    # accept new best point if we find a new lowest function value
+    # ==================================================================================
     best_index = np.argmin(valid_new_y)
     if valid_new_y[best_index] <= best_y:
         best_x = valid_new_x[best_index]
@@ -478,6 +508,9 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     elif best_res is None:
         best_res = valid_results[best_index]
 
+    # ==================================================================================
+    # update history and state
+    # ==================================================================================
     new_x_history = current_state["x_history"] + valid_new_x
     all_x = np.array(new_x_history)
     relative_diffs = (all_x - best_x) / np.clip(best_x, 0.1, np.inf)

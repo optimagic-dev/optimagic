@@ -23,14 +23,14 @@ def test_process_selectors_no_constraint(constraints):
     assert calculated == []
 
 
-@pytest.fixture
+@pytest.fixture()
 def tree_params():
     df = pd.DataFrame({"value": [3, 4], "lower_bound": [0, 0]}, index=["c", "d"])
     params = ([0, np.array([1, 2]), {"a": df, "b": 5}], 6)
     return params
 
 
-@pytest.fixture
+@pytest.fixture()
 def tree_params_converter(tree_params):
     registry = get_registry(extended=True)
     _, treedef = tree_flatten(tree_params, registry=registry)
@@ -48,7 +48,7 @@ def tree_params_converter(tree_params):
     return converter
 
 
-@pytest.fixture
+@pytest.fixture()
 def np_params_converter():
     converter = TreeConverter(
         lambda x: x,
@@ -59,14 +59,14 @@ def np_params_converter():
     return converter
 
 
-@pytest.fixture
+@pytest.fixture()
 def df_params():
     df = pd.DataFrame({"value": np.arange(6) + 10}, index=list("abcdef"))
     df.index.name = "name"
     return df
 
 
-@pytest.fixture
+@pytest.fixture()
 def df_params_converter(df_params):
     converter = TreeConverter(
         lambda x: x["value"].to_numpy(),

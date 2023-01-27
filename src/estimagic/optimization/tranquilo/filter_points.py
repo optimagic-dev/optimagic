@@ -40,21 +40,21 @@ def get_sample_filter(sample_filter="keep_all"):
     return out
 
 
-def discard_all(xs, indices, state, target_size):
+def discard_all(xs, indices, state, target_size):  # noqa: ARG001
     return state.x.reshape(1, -1), np.array([state.index])
 
 
-def keep_all(xs, indices, state, target_size):
+def keep_all(xs, indices, state, target_size):  # noqa: ARG001
     return xs, indices
 
 
-def keep_sphere(xs, indices, state, target_size):
+def keep_sphere(xs, indices, state, target_size):  # noqa: ARG001
     dists = np.linalg.norm(xs - state.trustregion.center, axis=1)
     keep = dists <= state.trustregion.radius
     return xs[keep], indices[keep]
 
 
-def drop_collinear_pounders(xs, indices, state, target_size):
+def drop_collinear_pounders(xs, indices, state, target_size):  # noqa: ARG001
     """Drop collinear points using pounders filtering."""
     if xs.shape[0] <= xs.shape[1] + 1:
         filtered_xs, filtered_indices = xs, indices
@@ -155,7 +155,7 @@ def _get_polynomial_feature_matrices(
 
     _is_center_in_head = index_center < n_params
     idx_list_n = [i for i in range(n_params + _is_center_in_head) if i != index_center]
-    idx_list_n_plus_1 = [index_center] + idx_list_n
+    idx_list_n_plus_1 = [index_center, *idx_list_n]
 
     linear_features[:, 0] = 1
     linear_features[: n_params + 1, 1:] = centered_xs[indexer[idx_list_n_plus_1]]

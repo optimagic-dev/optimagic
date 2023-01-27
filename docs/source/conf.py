@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # estimagic documentation build configuration file, created by
 # sphinx-quickstart on Fri Jan 18 10:59:27 2019.
@@ -154,7 +153,7 @@ nbsphinx_prolog = r"""
 
     .. nbinfo::
         Download the notebook :download:`here
-        <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/master/{{ docname }}>`
+        <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/main/{{ docname }}>` # noqa: E501
 """
 
 # -- Options for HTML output ----------------------------------------------
@@ -175,7 +174,7 @@ html_css_files = ["css/custom.css"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["_static"]  # noqa: E800
+# html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

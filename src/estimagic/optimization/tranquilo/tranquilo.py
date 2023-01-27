@@ -220,6 +220,9 @@ def _tranquilo(
         fval=_first_fval,
         rho=np.nan,
         accepted=True,
+        new_indices=_first_indices,
+        old_indices_discarded=_first_indices,
+        old_indices_used=_first_indices,
     )
 
     states = [state]
@@ -308,11 +311,16 @@ def _tranquilo(
             model=scalar_model,
             rho=rho,
             accepted=is_accepted,
+            new_indices=new_indices,
+            old_indices_used=filtered_indices,
+            old_indices_discarded=np.setdiff1d(old_indices, filtered_indices),
         )
 
         if is_accepted:
             state = state._replace(
-                index=candidate_index, x=candidate_x, fval=candidate_fval
+                index=candidate_index,
+                x=candidate_x,
+                fval=candidate_fval,
             )
 
         states.append(state)
@@ -354,6 +362,7 @@ def _tranquilo(
         "solution_criterion": state.fval,
         "states": states,
         "message": msg,
+        "tranquilo_history": history,
     }
 
     return res
@@ -388,6 +397,11 @@ class State(NamedTuple):
     # success Information
     rho: float
     accepted: bool
+
+    # information on existing and new points
+    new_indices: np.ndarray
+    old_indices_used: np.ndarray
+    old_indices_discarded: np.ndarray
 
 
 def _is_converged(states, options):
@@ -441,7 +455,7 @@ def _process_surrogate_model(surrogate_model, functype):
             raise ValueError(f"Invalid surrogate model: {surrogate_model}")
 
     else:
-        raise ValueError(f"Invalid surrogate model: {surrogate_model}")
+        raise TypeError(f"Invalid surrogate model: {surrogate_model}")
     return out
 
 
@@ -466,7 +480,7 @@ def _process_sample_size(user_sample_size, model_info, x):
     elif isinstance(user_sample_size, numbers.Number):
         out = int(user_sample_size)
     else:
-        raise ValueError(f"invalid sample size: {user_sample_size}")
+        raise TypeError(f"invalid sample size: {user_sample_size}")
     return out
 
 

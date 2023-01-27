@@ -134,7 +134,7 @@ def _internal_criterion_pandas(params, criterion):
 
 def _internal_criterion_dict(params, criterion):
     if "b" in params:
-        x = np.array([params["a"]] + params["b"].flatten().tolist())
+        x = np.array([params["a"], *params["b"].flatten().tolist()])
     else:
         x = params["a"]
     critval = criterion(x)

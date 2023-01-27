@@ -11,7 +11,7 @@ from pybaum import tree_equal
 from pybaum import tree_just_flatten
 
 
-@pytest.fixture
+@pytest.fixture()
 def example_db(tmp_path):
     path = tmp_path / "test.db"
 

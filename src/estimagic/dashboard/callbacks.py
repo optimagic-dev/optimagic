@@ -6,8 +6,8 @@ from estimagic.logging.database_utilities import transpose_nested_list
 
 
 def reset_and_start_convergence(
-    attr,
-    old,
+    attr,  # noqa: ARG001
+    old,  # noqa: ARG001
     new,
     session_data,
     doc,

@@ -16,7 +16,7 @@ from estimagic.inference.ml_covs import cov_strata_robust
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture
+@pytest.fixture()
 def jac():
     _jac = np.array(
         [
@@ -30,7 +30,7 @@ def jac():
     return _jac
 
 
-@pytest.fixture
+@pytest.fixture()
 def hess():
     _hess = np.array(
         [
@@ -43,7 +43,7 @@ def hess():
     return _hess
 
 
-@pytest.fixture
+@pytest.fixture()
 def design_options():
     df = pd.DataFrame(
         data=[
@@ -210,7 +210,7 @@ def get_input(model, input_types):
     """
     inputs = {}
     for typ in input_types:
-        fix_name = "{}_{}_matrix.pickle".format(model, typ)
+        fix_name = f"{model}_{typ}_matrix.pickle"
         input_matrix = pd.read_pickle(FIX_PATH / fix_name)
         inputs[typ] = input_matrix
 
@@ -235,6 +235,6 @@ def test_cov_function_against_statsmodels(model, method):
 
     inputs = get_input(model, input_types)
 
-    calculated = getattr(ml_covs, "cov_{}".format(method))(**inputs)
+    calculated = getattr(ml_covs, f"cov_{method}")(**inputs)
 
     aaae(calculated, expected)

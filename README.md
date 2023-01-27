@@ -6,11 +6,12 @@
 [![image](https://img.shields.io/conda/pn/conda-forge/estimagic.svg)](https://anaconda.org/conda-forge/estimagic)
 [![image](https://img.shields.io/pypi/l/estimagic)](https://pypi.org/project/estimagic)
 [![image](https://readthedocs.org/projects/estimagic/badge/?version=latest)](https://estimagic.readthedocs.io/en/latest)
-[![image](https://img.shields.io/github/workflow/status/OpenSourceEconomics/estimagic/main/main)](https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain)
+[![image](https://img.shields.io/github/actions/workflow/status/OpenSourceEconomics/estimagic/main.yml?branch=main)](https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain)
 [![image](https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/main/graph/badge.svg)](https://codecov.io/gh/OpenSourceEconomics/estimagic)
 [![image](https://results.pre-commit.ci/badge/github/OpenSourceEconomics/estimagic/main.svg)](https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain)
 [![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![image](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![image](https://pepy.tech/badge/estimagic/month)](https://pepy.tech/project/estimagic)
 
 
 ## Introduction

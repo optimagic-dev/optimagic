@@ -6,7 +6,7 @@ from estimagic.parameters.parameter_bounds import get_bounds
 from numpy.testing import assert_array_equal
 
 
-@pytest.fixture
+@pytest.fixture()
 def pytree_params():
     pytree_params = {
         "delta": 0.95,
@@ -18,7 +18,7 @@ def pytree_params():
     return pytree_params
 
 
-@pytest.fixture
+@pytest.fixture()
 def array_params():
     return np.arange(2)
 

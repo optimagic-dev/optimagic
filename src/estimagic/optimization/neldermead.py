@@ -96,7 +96,7 @@ def neldermead_parallel(
 
     # construct initial simplex using one of feasible methods
     # see Wssing, Simon, Proper initialization is crucial for
-    # the Nelder–Mead simplex search, Optimization Letters, 2019
+    # the Nelder-Mead simplex search, Optimization Letters, 2019
     # for a discussion about the choice of initialization
 
     if not callable(init_simplex_method):
@@ -264,7 +264,6 @@ def neldermead_parallel(
             optimal = True
             converge = False
             reason_to_stop = "Maximum number of interation exceeded"
-        continue
 
     # save results
     result = {

@@ -175,7 +175,7 @@ def _unite_first_with_all_intersecting_elements(indices):
         else:
             new_others.append(idx)
 
-    return [new_first] + new_others
+    return [new_first, *new_others]
 
 
 def _consolidate_fixes_with_equality_constraints(
@@ -198,10 +198,7 @@ def _consolidate_fixes_with_equality_constraints(
     """
     fixed_value = np.full(len(parvec), np.nan)
     for fix in fixed_constraints:
-        if "value" in fix:
-            fixed_value[fix["index"]] = fix["value"]
-        else:
-            fixed_value[fix["index"]] = parvec[fix["index"]]
+        fixed_value[fix["index"]] = fix.get("value", parvec[fix["index"]])
 
     for eq in equality_constraints:
         if np.isfinite(fixed_value[eq["index"]]).any():
@@ -275,7 +272,7 @@ def simplify_covariance_and_sdcorr_constraints(
     for constr in to_simplify:
         dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
         if constr["type"] == "covariance":
-            diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
+            diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             off_indices = [i for i in constr["index"] if i not in diag_positions]
         if constr["type"] == "sdcorr":
@@ -389,9 +386,7 @@ def _consolidate_linear_constraints(
         constr_info["fixed_values"],
     )
 
-    involved_parameters = []
-    for _, w in weights.iterrows():
-        involved_parameters.append(set(w[w != 0].index))
+    involved_parameters = [set(w[w != 0].index) for _, w in weights.iterrows()]
 
     bundled_indices = _join_overlapping_lists(involved_parameters)
 

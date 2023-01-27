@@ -56,9 +56,7 @@ def _load_database(path_or_database):
             raise FileNotFoundError(f"No such database file: {path}")
         res = load_database(path=path)
     else:
-        raise ValueError(
-            "path_or_database must be a path or sqlalchemy.MetaData object"
-        )
+        raise TypeError("path_or_database must be a path or sqlalchemy.MetaData object")
     return res
 
 
@@ -269,14 +267,10 @@ def _read_multistart_optimization_history(
     # maximum. All other histories are defined as local histories.
 
     if direction == "minimize":
-        best_idx = (
-            histories["criterion"].groupby(level="step").min().idxmin()
-        )  # noqa: F841
+        best_idx = histories["criterion"].groupby(level="step").min().idxmin()
         exploration = exploration.sort_values(by="criterion", ascending=True)
     elif direction == "maximize":
-        best_idx = (
-            histories["criterion"].groupby(level="step").max().idxmax()
-        )  # noqa: F841
+        best_idx = histories["criterion"].groupby(level="step").max().idxmax()
         exploration = exploration.sort_values(by="criterion", ascending=False)
     else:
         raise ValueError()

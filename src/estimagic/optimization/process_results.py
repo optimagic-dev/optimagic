@@ -50,7 +50,7 @@ def process_internal_optimizer_result(
             res.convergence_report = conv_report
 
             res.algorithm = f"multistart_{res.algorithm}"
-            res.n_iterations = res.n_iterations = _sum_or_none(
+            res.n_iterations = _sum_or_none(
                 [opt.n_iterations for opt in info["local_optima"]]
             )
 
@@ -93,7 +93,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
 
     algo_output = {}
     for key in res:
-        if key not in optional_entries + ["solution_x", "solution_criterion"]:
+        if key not in [*optional_entries, "solution_x", "solution_criterion"]:
             algo_output[key] = res[key]
 
     if "history" in res and not skip_checks:
@@ -121,9 +121,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
 
     direction = fixed_kwargs["direction"]
 
-    starts = []
-    for x in info["start_parameters"]:
-        starts.append(converter.params_from_internal(x))
+    starts = [converter.params_from_internal(x) for x in info["start_parameters"]]
 
     optima = []
     for res, start in zip(info["local_optima"], starts):
@@ -139,16 +137,12 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
         )
         optima.append(processed)
 
-    sample = []
-    for x in info["exploration_sample"]:
-        sample.append(converter.params_from_internal(x))
+    sample = [converter.params_from_internal(x) for x in info["exploration_sample"]]
 
     if direction == "minimize":
         exploration_res = info["exploration_results"]
     else:
-        exploration_res = []
-        for res in info["exploration_results"]:
-            exploration_res.append(switch_sign(res))
+        exploration_res = [switch_sign(res) for res in info["exploration_results"]]
 
     out = {
         "start_parameters": starts,
@@ -159,7 +153,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
     return out
 
 
-def _dummy_result_from_traceback(candidate, fixed_kwargs):
+def _dummy_result_from_traceback(candidate, fixed_kwargs):  # noqa: ARG001
     out = OptimizeResult(
         params=None,
         criterion=None,

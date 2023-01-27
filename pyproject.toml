@@ -19,3 +19,106 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.0"]
 
 [tool.setuptools_scm]
 write_to = "src/estimagic/_version.py"
+
+
+[tool.pytask]
+infer_latex_dependencies = true
+
+
+[tool.ruff]
+target-version = "py37"
+select = ["ALL"]
+fix = false
+extend-ignore = [
+    # Docstrings
+    "D103", # missing docstring in public function
+    "D107",
+    "D203",
+    "D212",
+    "D213",
+    "D402",
+    "D413",
+    "D415",
+    "D416",
+    "D417",
+    # Others.
+    "D404",  # Do not start module docstring with "This".
+    "RET504",  # unnecessary variable assignment before return.
+    "S101",  # raise errors for asserts.
+    "B905",  # strict parameter for zip that was implemented in py310.
+    "I",  # ignore isort
+
+    "ANN101",  # type annotating self
+    "ANN102",  # type annotating cls
+    "FBT",  # flake8-boolean-trap
+    "EM",  # flake8-errmsg
+    "ANN401",  # flake8-annotate typing.Any
+    "PD",  # pandas-vet
+    "E731",  # do not assign a lambda expression, use a def
+    "RET", # unnecessary elif or else statements after return, rais, continue, ...
+    "S324", # Probable use of insecure hash function.
+    "COM812", # trailing comma missing, but black takes care of that
+    "PT007", # wrong type in parametrize, gave false positives
+
+
+    # Things we are not sure we want
+    # ==============================
+    "SIM102", # Use single if statement instead of nested if statements
+    "SIM108", # Use ternary operator instead of if-else block
+    "SIM117", # do not use nested with statements
+    "BLE001", # Do not catch blind exceptions (even after handling some specific ones)
+    "PLR2004", # Magic values used in comparison
+    "PT006", # Allows only lists of tuples in parametrize, even if single argument
+
+    # Things ignored during transition phase
+    # ======================================
+    "D",  # docstrings
+    "ANN",  # missing annotations
+    "C901",  # function too complex
+    "PT011", # pytest raises without match statement
+    "INP001", # implicit namespace packages without init.
+    "TRY300",
+
+
+    # ======================================
+]
+
+
+[tool.ruff.per-file-ignores]
+"docs/source/conf.py" = ["E501", "ERA001", "DTZ005"]
+"src/estimagic/parameters/kernel_transformations.py" = ["ARG001", "N806"]
+
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Using or importing the ABCs from 'collections'",
+    "ignore:the imp module is deprecated",
+    "ignore:indexing past lexsort depth may impact performance.",
+    "ignore:Method .ptp is deprecated and will be removed in a future version. Use numpy.ptp instead.",
+    "ignore:In a future version of pandas all arguments of concat except for the argument 'objs' will be keyword-only",
+    "ignore:Only a subset of the cartis_roberts",
+    "ignore:Please use `MemoizeJac` from the `scipy.optimize` namespace",
+    "ignore:Some algorithms did not converge. Their walltime has been set to a very high value instead of infinity because Timedeltas do notsupport infinite values",
+    "ignore:In a future version, the Index constructor will not infer numeric dtypes when passed object-dtype sequences",
+    "ignore:distutils Version classes are deprecated. Use packaging.version instead",
+    "ignore:Standard matrix inversion failed due to LinAlgError",
+    "ignore:Tranquilo is extremely experimental",
+    "ignore:delta_grad == 0.0",
+    "ignore:Widget._active_widgets is deprecated",
+    "ignore:Widget._widget_types is deprecated",
+    "ignore:Widget.widget_types is deprecated",
+    "ignore:Widget.widgets is deprecated",
+    "ignore:Deprecated API features detected",
+]
+addopts = ["--doctest-modules"]
+
+markers = [
+    "wip: Tests that are work-in-progress.",
+    "slow: Tests that take a long time to run and are skipped in continuous integration.",
+    "jax: Tests that require jax to be installed and are skipped on non-Linux systems.",
+]
+norecursedirs = ["docs"]

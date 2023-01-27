@@ -40,7 +40,7 @@ from numpy.testing import assert_array_equal
 
 
 # Fix input params to test every criterion function
-@pytest.fixture
+@pytest.fixture()
 def input_params():
     params = pd.DataFrame({"value": [9, 9, 6, 7, -5]})
     return params
@@ -135,5 +135,5 @@ def test_dict_criterion(input_params, crit):
         assert isinstance(out_dict["contributions"], np.ndarray)
         assert isinstance(out_dict["root_contributions"], np.ndarray)
 
-    for key in expected_dict.keys():
+    for key in expected_dict:
         assert_allclose(out_dict[key], expected_dict[key])

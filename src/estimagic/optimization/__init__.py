@@ -40,7 +40,6 @@ for module in MODULES:
                 AVAILABLE_ALGORITHMS[name] = func
 
 
-GLOBAL_ALGORITHMS = []
-for name, func in ALL_ALGORITHMS.items():
-    if func._algorithm_info.is_global:
-        GLOBAL_ALGORITHMS.append(name)
+GLOBAL_ALGORITHMS = [
+    name for name, func in ALL_ALGORITHMS.items() if func._algorithm_info.is_global
+]

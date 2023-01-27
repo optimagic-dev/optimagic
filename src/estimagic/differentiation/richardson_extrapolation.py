@@ -52,9 +52,9 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
     n_steps = steps.shape[0]
     num_terms = n_steps if num_terms is None else num_terms
 
-    assert seq_len == n_steps, (
-        "Length of ``steps`` must coincide with " "length of ``sequence``."
-    )
+    assert (
+        seq_len == n_steps
+    ), "Length of ``steps`` must coincide with length of ``sequence``."
     assert num_terms > 0, "``num_terms`` must be greater than zero."
     assert (
         seq_len - 1 >= num_terms

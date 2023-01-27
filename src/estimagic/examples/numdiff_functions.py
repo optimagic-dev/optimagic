@@ -36,7 +36,7 @@ def logit_loglikeobs_jacobian(params, y, x):
     return (y - c).reshape(-1, 1) * x
 
 
-def logit_loglike_hessian(params, y, x):
+def logit_loglike_hessian(params, y, x):  # noqa: ARG001
     c = 1 / (1 + np.exp(-(np.dot(x, params))))
     return -np.dot(c * (1 - c) * x.T, x)
 

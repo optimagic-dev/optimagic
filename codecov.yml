@@ -9,7 +9,7 @@ coverage:
   status:
     patch:
       default:
-        target: 80%
+        target: 70%
     project:
       default:
         target: 90%
@@ -20,7 +20,8 @@ ignore:
   - "setup.py"
   - "estimagic/tests/**/*"
   - "src/estimagic/optimization/subsolvers/bntr_fast.py"
-  - "src/estimagic/optimization/subsolvers/_trsbox_quadratic_fast.py"
-  - "src/estimagic/optimization/subsolvers/_conjugate_gradient_quadratic_fast.py"
-  - "src/estimagic/optimization/subsolvers/_steihaug_toint_quadratic_fast.py"
+  - "src/estimagic/optimization/subsolvers/_trsbox_fast.py"
+  - "src/estimagic/optimization/subsolvers/_conjugate_gradient_fast.py"
+  - "src/estimagic/optimization/subsolvers/_steihaug_toint_fast.py"
   - "src/estimagic/optimization/subsolvers/gqtpar_fast.py"
+  - "src/estimagic/optimization/tranquilo/clustering.py"

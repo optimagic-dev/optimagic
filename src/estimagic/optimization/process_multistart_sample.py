@@ -35,9 +35,7 @@ def process_multistart_sample(raw_sample, params, params_to_internal):
             )
             raise ValueError(msg)
 
-        list_sample = []
-        for _, row in raw_sample.iterrows():
-            list_sample.append(params.assign(value=row))
+        list_sample = [params.assign(value=row) for _, row in raw_sample.iterrows()]
 
     elif isinstance(raw_sample, np.ndarray):
         if not is_np_params:
@@ -66,7 +64,7 @@ def process_multistart_sample(raw_sample, params, params_to_internal):
             "User provided multistart samples must be a list, tuple, numpy array or "
             "DataFrame."
         )
-        raise ValueError(msg)
+        raise TypeError(msg)
     else:
         list_sample = list(raw_sample)
 
