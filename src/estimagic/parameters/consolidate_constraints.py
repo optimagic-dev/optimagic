@@ -8,6 +8,7 @@ Check the module docstring of process_constraints for naming conventions.
 """
 import numpy as np
 import pandas as pd
+
 from estimagic.exceptions import InvalidConstraintError
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
@@ -485,6 +486,7 @@ def _plug_fixes_into_linear_weights_and_rhs(
     Returns:
         new_weights (pd.DataFrame)
         new_rhs (pd.DataFrame)
+
     """
     ilocs = np.arange(len(fixed_value))
     fixed_ilocs = ilocs[is_fixed_to_value].tolist()

@@ -25,6 +25,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
 
     Returns:
         np.ndarray: Solution vector of shape (n,).
+
     """
     abstol = 1e-50
     rtol = 1e-5

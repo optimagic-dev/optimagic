@@ -4,7 +4,6 @@ import warnings
 import pytest
 from estimagic.batch_evaluators import process_batch_evaluator
 
-
 batch_evaluators = ["joblib"]
 
 n_core_list = [1, 2]
@@ -27,7 +26,6 @@ def add_x_and_y(x, y):
 @pytest.mark.slow()
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
-
     batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     calculated = batch_evaluator(
@@ -44,7 +42,6 @@ def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
 @pytest.mark.slow()
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_unhandled_exceptions(batch_evaluator, n_cores):
-
     batch_evaluator = process_batch_evaluator(batch_evaluator)
     with pytest.raises(AssertionError):
         batch_evaluator(

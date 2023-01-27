@@ -1,8 +1,8 @@
 import numpy as np
+from scipy.optimize import Bounds, minimize
+
 from estimagic.optimization.tiktak import draw_exploration_sample
 from estimagic.optimization.tranquilo.models import evaluate_model
-from scipy.optimize import Bounds
-from scipy.optimize import minimize
 
 
 def solve_thorough(model, lower_bounds, upper_bounds):

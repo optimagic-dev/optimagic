@@ -45,6 +45,7 @@ def logit_derivative(params, y, x):
         jac : array-like
             The derivative of the loglikelihood for each observation evaluated
             at `params`.
+
     """
     if isinstance(params, pd.DataFrame):
         p = params["value"].to_numpy()

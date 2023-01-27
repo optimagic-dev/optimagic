@@ -1,17 +1,14 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.options import Bounds
-from estimagic.optimization.tranquilo.options import RadiusFactors
-from estimagic.optimization.tranquilo.options import TrustRegion
-from estimagic.optimization.tranquilo.sample_points import _draw_from_distribution
+from estimagic.optimization.tranquilo.options import Bounds, RadiusFactors, TrustRegion
 from estimagic.optimization.tranquilo.sample_points import (
+    _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
+    _project_onto_unit_hull,
+    get_sampler,
 )
-from estimagic.optimization.tranquilo.sample_points import _project_onto_unit_hull
-from estimagic.optimization.tranquilo.sample_points import get_sampler
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy.spatial.distance import pdist
-
 
 SAMPLERS = ["box", "ball", "cube", "sphere", "optimal_cube", "optimal_sphere"]
 
@@ -108,7 +105,6 @@ def test_optimality(sampler):
 
 @pytest.mark.parametrize("order", [2, np.inf])
 def test_pairwise_distance_on_hull(order):
-
     # equal points imply zero distance
     value = _minimal_pairwise_distance_on_hull(
         x=np.ones(4), existing_xs=None, hardness=1, order=order, n_params=2
@@ -124,7 +120,6 @@ def test_pairwise_distance_on_hull(order):
 
 @pytest.mark.parametrize("order", [2, np.inf])
 def test_project_onto_unit_hull(order):
-
     rng = np.random.default_rng(1234)
     old = rng.uniform(-1, 1, size=10).reshape(5, 2)
     new = _project_onto_unit_hull(old, order)

@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.filter_points import _scaled_square_features
-from estimagic.optimization.tranquilo.filter_points import drop_collinear_pounders
+from estimagic.optimization.tranquilo.filter_points import (
+    _scaled_square_features,
+    drop_collinear_pounders,
+)
 from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.tranquilo import State
 from estimagic.optimization.tranquilo.tranquilo_history import History

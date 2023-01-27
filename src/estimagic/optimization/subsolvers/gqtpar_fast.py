@@ -1,8 +1,7 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
 import numpy as np
 from numba import njit
-from scipy.linalg import cho_solve
-from scipy.linalg import solve_triangular
+from scipy.linalg import cho_solve, solve_triangular
 from scipy.linalg.lapack import dpotrf as compute_cholesky_factorization
 
 
@@ -52,6 +51,7 @@ def gqtpar_fast(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
             - ``x`` (np.ndarray): Solution vector of the subproblem of shape (n,)
             - ``criterion`` (float): Minimum function value associated with the
                 solution.
+
     """
     hessian_already_factorized = False
     model_gradient = model.linear_terms
@@ -177,6 +177,7 @@ def _get_initial_guess_for_lambdas(model_gradient, model_hessian):
             factor.
         lambda_upper_bound(float): initial guess for the upper bound of the damping
             factor.
+
     """
     gradient_norm = _norm(model_gradient, -1.0)
     model_hessian = model_hessian
@@ -224,6 +225,7 @@ def _add_lambda_and_factorize_hessian(model_hessian, lambda_candidate):
                 main model into its upper triangular matrix. The diagonal is filled
                 and the lower lower triangular contains zeros.
         factorization_info (int): success flag returned by scipy.dpotrf
+
     """
 
     hessian_plus_lambda = model_hessian + lambda_candidate * _identity(
@@ -376,6 +378,7 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
 
     Returns:
         float: New candidate for the damping factor lambda.
+
     """
     lambda_new_candidate = max(
         np.sqrt(max(0, lower_bound * upper_bound)),
@@ -399,6 +402,7 @@ def _compute_gershgorin_bounds(model_hessian):
     Returns:
         lower_gershgorin (float): Lower Gregoshgorin bound.
         upper_gershgorin (float): Upper Gregoshgorin bound.
+
     """
 
     hessian_diag = np.diag(model_hessian)
@@ -424,6 +428,7 @@ def _compute_newton_step(lambda_candidate, p_norm, w_norm):
     Returns:
         float: Newton step computed according to formula (4.44) p.87
             from Nocedal and Wright (2006).
+
     """
     return lambda_candidate + (p_norm / w_norm) ** 2 * (p_norm - 1)
 
@@ -498,6 +503,7 @@ def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
 
     Returns:
         float: Step length with the smallest magnitude.
+
     """
     a = z_min @ z_min
     b = 2 * x_candidate.T @ z_min
@@ -537,6 +543,7 @@ def _compute_terms_to_make_leading_submatrix_singular(
             the leading k by k submatrix of the hessian to make it singular.
         - v (np.ndarray): A vector such that ``v.T B v = 0``. Where B is the
             hessian after ``delta`` is added to its element (k, k).
+
     """
     hessian_plus_lambda = hessian_plus_lambda
     upper_triangular = hessian_upper_triangular

@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
+
+from estimagic.parameters.tree_registry import get_registry
 
 
 def create_convergence_histories(
@@ -42,6 +43,7 @@ def create_convergence_histories(
             - parameter_distance_normalized
             - monotone_parameter_distance
             - monotone_parameter_distance_normalized
+
     """
     # get solution values for each problem
     registry = get_registry(extended=True)

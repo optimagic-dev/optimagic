@@ -1,6 +1,5 @@
-from functools import partial
-
 """Functions to count the effective number of points in a given sample."""
+from functools import partial
 
 
 def get_counter(counter, bounds):
@@ -13,6 +12,7 @@ def get_counter(counter, bounds):
     Args:
         counter (str)
         bounds (Bounds)
+
     """
     if isinstance(counter, str):
         built_in_counters = {"count_all": count_all}

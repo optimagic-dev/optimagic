@@ -3,10 +3,10 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import scipy
+from pybaum import tree_just_flatten, tree_unflatten
+
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def transform_covariance(
@@ -49,6 +49,7 @@ def transform_covariance(
             parameters. If parameters were fixed (explicitly or by other constraints),
             the index is a subset of params.index. The columns are the same as the
             index.
+
     """
     if converter.has_transforming_constraints:
         _from_internal = converter.params_from_internal

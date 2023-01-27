@@ -25,6 +25,7 @@ def minimize_trust_cg(
 
     Returns:
         np.ndarray: Solution vector of shape (n,).
+
     """
     n = len(model_gradient)
     max_iter = n * 2
@@ -83,6 +84,7 @@ def _update_vectors_for_next_iteration(
             - x_candidate (np.ndarray): Updated candidate vector of shape (n,).
             - residual (np.ndarray): Updated array of residuals of shape (n,).
             - direction (np.darray): Updated direction vector of shape (n,).
+
     """
     residual_old = residual
 
@@ -112,6 +114,7 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
     Returns:
         float: The candidate vector's distance to the trustregion
             boundary.
+
     """
     cc = candidate @ candidate
     cd = candidate @ direction

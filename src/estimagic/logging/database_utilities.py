@@ -16,21 +16,23 @@ from pathlib import Path
 
 import cloudpickle
 import pandas as pd
-from estimagic.exceptions import get_traceback
-from estimagic.exceptions import TableExistsError
-from sqlalchemy import and_
-from sqlalchemy import BLOB
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import create_engine
-from sqlalchemy import event
-from sqlalchemy import Float
-from sqlalchemy import Integer
-from sqlalchemy import MetaData
-from sqlalchemy import PickleType
-from sqlalchemy import String
-from sqlalchemy import Table
-from sqlalchemy import update
+from sqlalchemy import (
+    BLOB,
+    Boolean,
+    Column,
+    Float,
+    Integer,
+    MetaData,
+    PickleType,
+    String,
+    Table,
+    and_,
+    create_engine,
+    event,
+    update,
+)
+
+from estimagic.exceptions import TableExistsError, get_traceback
 
 
 def load_database(metadata=None, path=None, fast_logging=False):
@@ -372,7 +374,6 @@ def read_table(database, table_name, return_type, path=None, fast_logging=False)
 
 
 def _execute_read_statement(database, table_name, statement, return_type):
-
     try:
         with database.bind.begin() as connection:
             raw_result = list(connection.execute(statement))
@@ -515,7 +516,7 @@ class RobustPickler:
         errors="strict",  # noqa: ARG004
         buffers=None,  # noqa: ARG004
     ):
-        """Robust pickle loading
+        """Robust pickle loading.
 
         We first try to unpickle the object with pd.read_pickle. This makes no
         difference for non-pandas objects but makes the de-serialization

@@ -6,8 +6,7 @@ This test module only runs if jax is installed.
 import numpy as np
 import pytest
 from estimagic.config import IS_JAX_INSTALLED
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.differentiation.derivatives import second_derivative
+from estimagic.differentiation.derivatives import first_derivative, second_derivative
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_equal
 
@@ -30,12 +29,11 @@ def _tree_equal_numpy_leaves(tree1, tree2):
 
 
 def _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax=None):
-    """
+    """Computes first and second derivative using estimagic and jax.
 
-    Computes first and second derivative using estimagic and jax. Then converts leaves
-    of jax output to numpy so that we can use numpy.testing. For higher dimensional
-    output we need to define two function, one with numpy array output and one with
-    jax.numpy array output.
+    Then converts leaves of jax output to numpy so that we can use numpy.testing. For
+    higher dimensional output we need to define two function, one with numpy array
+    output and one with jax.numpy array output.
 
     """
     func_jax = func if func_jax is None else func_jax

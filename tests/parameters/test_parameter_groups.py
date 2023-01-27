@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
-from estimagic.parameters.parameter_groups import _get_group_and_name
-from estimagic.parameters.parameter_groups import _replace_too_common_groups
-from estimagic.parameters.parameter_groups import _split_long_group
-from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
+from estimagic.parameters.parameter_groups import (
+    _get_group_and_name,
+    _replace_too_common_groups,
+    _split_long_group,
+    get_params_groups_and_short_names,
+)
 
 
 def test_get_params_groups_and_short_names_dict():

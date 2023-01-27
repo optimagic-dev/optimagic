@@ -4,9 +4,11 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic import get_benchmark_problems
-from estimagic.benchmarking.more_wild import linear_full_rank
-from estimagic.benchmarking.more_wild import linear_full_rank_solution_x
-from estimagic.benchmarking.more_wild import rosenbrock
+from estimagic.benchmarking.more_wild import (
+    linear_full_rank,
+    linear_full_rank_solution_x,
+    rosenbrock,
+)
 from estimagic.benchmarking.run_benchmark import run_benchmark
 
 # ======================================================================================

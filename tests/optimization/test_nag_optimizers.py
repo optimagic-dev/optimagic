@@ -1,7 +1,9 @@
 import pytest
-from estimagic.optimization.nag_optimizers import _build_options_dict
-from estimagic.optimization.nag_optimizers import _change_evals_per_point_interface
-from estimagic.optimization.nag_optimizers import _get_fast_start_method
+from estimagic.optimization.nag_optimizers import (
+    _build_options_dict,
+    _change_evals_per_point_interface,
+    _get_fast_start_method,
+)
 
 
 def test_change_evals_per_point_interface_none():

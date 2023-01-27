@@ -21,19 +21,18 @@
 +---------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+-------------------------------------------------------------------+
 ```
 
-Janoś is the original developer and architect behind estimagic. All team members
-are active contributors in terms of commits, advice or community
-building. Aida and Bahar are supported by [TRA Modelling].
-Hans-Martin supports estimagic in many ways, including funding
-and great feedback from using and teaching estimagic.
-Ken supports estimagic with his expertise on all numerical topics,
-financed a research stay at Standford for Janoś, Sebi and Tim and organized a workshop
-on numerical optimization with estimagic at Hoover Institution.
+Janoś is the original developer and architect behind estimagic. All team members are
+active contributors in terms of commits, advice or community building. Aida and Bahar
+are supported by [TRA Modelling]. Hans-Martin supports estimagic in many ways, including
+funding and great feedback from using and teaching estimagic. Ken supports estimagic
+with his expertise on all numerical topics, financed a research stay at Standford for
+Janoś, Sebi and Tim and organized a workshop on numerical optimization with estimagic at
+Hoover Institution.
 
 ## Contributors
 
-We are grateful for many contributions from the community. In
-particular, we want to thank:
+We are grateful for many contributions from the community. In particular, we want to
+thank:
 
 - Moritz Mendel
 - Max Blesch
@@ -54,12 +53,9 @@ Issues and submit a Pull Request.
 
 ## Acknowledgements
 
-Estimagic is funded by the [TRA Modelling] (University of Bonn) as part of the Excellence
-Strategy of the federal and state governments.
+Estimagic is funded by the [TRA Modelling] (University of Bonn) as part of the
+Excellence Strategy of the federal and state governments.
 
-:::{figure} ../_static/images/tra_logo.png
-:width: 200px
-:::
-
+:::\{figure} ../\_static/images/tra_logo.png :width: 200px :::
 
 [tra modelling]: https://www.uni-bonn.de/en/research-and-teaching/research-profile/transdisciplinary-research-areas/tra-1-modelling

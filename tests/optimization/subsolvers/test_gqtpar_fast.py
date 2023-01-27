@@ -1,5 +1,9 @@
 import numpy as np
 from estimagic.optimization.subsolvers.gqtpar import (
+    DampingFactors,
+    HessianInfo,
+)
+from estimagic.optimization.subsolvers.gqtpar import (
     _compute_smallest_step_len_for_candidate_vector as compute_smallest_step_orig,
 )
 from estimagic.optimization.subsolvers.gqtpar import (
@@ -8,8 +12,6 @@ from estimagic.optimization.subsolvers.gqtpar import (
 from estimagic.optimization.subsolvers.gqtpar import (
     _get_initial_guess_for_lambdas as init_lambdas_orig,
 )
-from estimagic.optimization.subsolvers.gqtpar import DampingFactors
-from estimagic.optimization.subsolvers.gqtpar import HessianInfo
 from estimagic.optimization.subsolvers.gqtpar_fast import (
     _compute_smallest_step_len_for_candidate_vector as compute_smallest_step_fast,
 )

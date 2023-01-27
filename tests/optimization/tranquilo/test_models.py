@@ -1,11 +1,13 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.models import is_second_order_model
-from estimagic.optimization.tranquilo.models import ModelInfo
-from estimagic.optimization.tranquilo.models import n_free_params
-from estimagic.optimization.tranquilo.models import n_interactions
-from estimagic.optimization.tranquilo.models import n_second_order_terms
-from estimagic.optimization.tranquilo.models import ScalarModel
+from estimagic.optimization.tranquilo.models import (
+    ModelInfo,
+    ScalarModel,
+    is_second_order_model,
+    n_free_params,
+    n_interactions,
+    n_second_order_terms,
+)
 
 
 def test_n_free_params_name_quadratic():

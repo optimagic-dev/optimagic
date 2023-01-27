@@ -1,7 +1,8 @@
 import numpy as np
-from estimagic.optimization.tranquilo.models import n_second_order_terms
 from numba import njit
 from scipy.linalg import qr_multiply
+
+from estimagic.optimization.tranquilo.models import n_second_order_terms
 
 
 def get_sample_filter(sample_filter="keep_all"):

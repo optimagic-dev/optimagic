@@ -8,6 +8,7 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
 from bokeh.server.server import Server
+
 from estimagic.dashboard.dashboard_app import dashboard_app
 
 

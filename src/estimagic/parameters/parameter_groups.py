@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-from estimagic.parameters.tree_registry import get_registry
 from pybaum import leaf_names
+
+from estimagic.parameters.tree_registry import get_registry
 
 
 def get_params_groups_and_short_names(params, free_mask, max_group_size=8):

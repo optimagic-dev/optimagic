@@ -20,7 +20,6 @@ from estimagic.optimization.subsolvers.gqtpar import (
 )
 from numpy.testing import assert_array_almost_equal as aaae
 
-
 # ======================================================================================
 # Subsolver BNTR
 # ======================================================================================

@@ -1,3 +1,4 @@
+---
 name: estimagic
 
 channels:
@@ -42,14 +43,14 @@ dependencies:
   - sphinxcontrib-bibtex  # docs
 
   - pip:  # dev, tests, docs
-    - DFO-LS  # dev, tests
-    - Py-BOBYQA  # dev, tests
-    - black  # dev
-    - blackcellmagic  # dev
-    - fides==0.7.4  # dev, tests
-    - gif  # dev
-    - gif[matplotlib]  # dev
-    - kaleido  # dev, tests
-    - pre-commit  # dev
-    - simoptlib==1.0.1  # dev, tests
-    - -e .  # dev
+      - DFO-LS    # dev, tests
+      - Py-BOBYQA    # dev, tests
+      - black    # dev
+      - blackcellmagic    # dev
+      - fides==0.7.4    # dev, tests
+      - gif    # dev
+      - gif[matplotlib]    # dev
+      - kaleido    # dev, tests
+      - pre-commit    # dev
+      - simoptlib==1.0.1    # dev, tests
+      - -e .    # dev

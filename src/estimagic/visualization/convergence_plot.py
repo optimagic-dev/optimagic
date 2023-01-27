@@ -1,13 +1,13 @@
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.utilities import propose_alternatives
-from estimagic.visualization.plotting_utilities import create_grid_plot
-from estimagic.visualization.plotting_utilities import create_ind_dict
+from estimagic.visualization.plotting_utilities import create_grid_plot, create_ind_dict
 
 
 def convergence_plot(

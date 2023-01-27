@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Dict
-from typing import Union
+from dataclasses import dataclass, field
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
+
 from estimagic.utilities import to_pickle
 
 

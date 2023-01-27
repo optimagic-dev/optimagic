@@ -4,18 +4,14 @@ import pytest
 from estimagic.config import EXAMPLE_DIR
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.inference.msm_covs import cov_optimal
-from estimagic.sensitivity.msm_sensitivity import calculate_actual_sensitivity_to_noise
 from estimagic.sensitivity.msm_sensitivity import (
+    calculate_actual_sensitivity_to_noise,
     calculate_actual_sensitivity_to_removal,
-)
-from estimagic.sensitivity.msm_sensitivity import (
     calculate_fundamental_sensitivity_to_noise,
-)
-from estimagic.sensitivity.msm_sensitivity import (
     calculate_fundamental_sensitivity_to_removal,
+    calculate_sensitivity_to_bias,
+    calculate_sensitivity_to_weighting,
 )
-from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
-from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy import stats
 
@@ -178,7 +174,6 @@ def test_actual_sensitivity_to_removal(
 
 
 def test_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_opt, params):
-
     calculated = calculate_fundamental_sensitivity_to_removal(
         jac, moments_cov, params_cov_opt
     )
