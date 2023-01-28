@@ -38,7 +38,7 @@ def _tranquilo(
     sampler="sphere",
     sample_filter="keep_all",
     fitter=None,
-    subsolver="bntr",
+    subsolver="gqtpar_fast",
     sample_size=None,
     surrogate_model=None,
     radius_options=None,
