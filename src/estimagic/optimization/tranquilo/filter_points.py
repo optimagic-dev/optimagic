@@ -65,7 +65,7 @@ def drop_collinear_pounders(xs, indices, state, target_size):  # noqa: ARG001
 
 
 def keep_cluster_centers(
-    xs, indices, state, target_size, strictness=1e-20, shape="sphere"
+    xs, indices, state, target_size, strictness=1e-10, shape="sphere"
 ):
     dim = xs.shape[1]
     scaling_factor = strictness / target_size

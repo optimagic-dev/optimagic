@@ -134,24 +134,29 @@ class History:
     def get_n_fun(self):
         return self.n_fun
 
-    def get_indices_in_trustregion(self, trustregion, norm="infinity"):
-        if norm not in ("infinity", "euclidean"):
-            raise ValueError("norm must be 'infinity' or 'euclidean'")
+    def get_indices_in_trustregion(self, trustregion, search_options):
+        # early return if there are no entries
+        if self.get_n_fun() == 0:
+            return np.array([])
 
-        if self.get_n_fun() != 0:
-            xs = self.get_xs()
-
-            out = _find_indices_in_trust_region(
-                xs, center=trustregion.center, radius=trustregion.radius
-            )
-
-            if norm != "infinity":
-                # Important: Only screen the indices that are in the trustregion
-                # according to infinity norm! Otherwise this would be very expensive!
-                raise NotImplementedError
-
+        shape = search_options.shape
+        dim = len(trustregion.center)
+        if shape == "sphere" and search_options.radius_type == "circumscribed":
+            radius_factor = np.sqrt(dim) * search_options.radius_factor
         else:
-            out = np.array([])
+            radius_factor = search_options.radius_factor
+
+        search_radius = radius_factor * trustregion.radius
+
+        xs = self.get_xs()
+
+        out = _find_indices_in_trust_region(
+            xs, center=trustregion.center, radius=search_radius
+        )
+
+        if shape == "sphere":
+            mask = np.linalg.norm(xs[out] - trustregion.center, axis=1) <= search_radius
+            out = out[mask]
 
         return out
 

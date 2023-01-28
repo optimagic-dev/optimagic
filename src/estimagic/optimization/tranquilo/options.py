@@ -62,3 +62,9 @@ class RadiusFactors(NamedTuple):
     centric: float = 0.1
     outer: float = 0.6
     neighborhood: float = 1.5
+
+
+class HistorySearchOptions(NamedTuple):
+    shape: str = "sphere"
+    radius_type: str = "circumscribed"
+    radius_factor: float = 1.5

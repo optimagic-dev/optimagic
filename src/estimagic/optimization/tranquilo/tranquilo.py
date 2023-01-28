@@ -16,6 +16,7 @@ from estimagic.optimization.tranquilo.models import n_free_params
 from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.options import ConvOptions
+from estimagic.optimization.tranquilo.options import HistorySearchOptions
 from estimagic.optimization.tranquilo.options import RadiusFactors
 from estimagic.optimization.tranquilo.options import RadiusOptions
 from estimagic.optimization.tranquilo.options import TrustRegion
@@ -36,7 +37,7 @@ def _tranquilo(
     stopping_max_iterations=200,
     random_seed=925408,
     sampler=None,
-    sample_filter="keep_all",
+    sample_filter=None,
     fitter=None,
     subsolver=None,
     sample_size=None,
@@ -53,6 +54,7 @@ def _tranquilo(
     n_cores=1,
     silence_experimental_warning=False,
     infinity_handling="relative",
+    history_search_options=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -121,6 +123,9 @@ def _tranquilo(
     # ==================================================================================
     sampling_rng = np.random.default_rng(random_seed)
 
+    if sample_filter is None:
+        sample_filter = "clustering" if functype == "scalar" else "keep_all"
+
     if radius_options is None:
         radius_options = RadiusOptions()
     if radius_factors is None:
@@ -168,6 +173,9 @@ def _tranquilo(
 
     if conv_options is None:
         conv_options = ConvOptions()
+
+    if history_search_options is None:
+        history_search_options = HistorySearchOptions()
 
     # ==================================================================================
     # initialize compoments for the solver
@@ -243,7 +251,10 @@ def _tranquilo(
         # ==============================================================================
         # find, filter and count points
         # ==============================================================================
-        old_indices = history.get_indices_in_trustregion(state.trustregion)
+        old_indices = history.get_indices_in_trustregion(
+            state.trustregion,
+            search_options=history_search_options,
+        )
         old_xs = history.get_xs(old_indices)
 
         filtered_xs, filtered_indices = filter_points(
