@@ -155,10 +155,7 @@ def _tranquilo(
     )
 
     if fitter is None:
-        if functype == "scalar":
-            fitter = "powell"
-        else:
-            fitter = "ols"
+        fitter = "ols"
 
     if functype == "scalar":
         aggregator = "identity"
