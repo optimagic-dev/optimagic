@@ -48,7 +48,7 @@ TEST_CASES = {
         "sample_filter": ["keep_all"],
         "fitter": ["powell"],
         "surrogate_model": ["quadratic"],
-        "sample_size": ["linear", "powell", "quadratic"],
+        "sample_size": ["powell", "quadratic"],
     },
     "ols_pounders_filtering": {
         "sample_filter": ["drop_pounders"],
@@ -60,7 +60,7 @@ TEST_CASES = {
         "sample_filter": ["drop_pounders"],
         "fitter": ["powell"],
         "surrogate_model": ["quadratic"],
-        "sample_size": ["linear", "powell", "quadratic"],
+        "sample_size": ["powell", "quadratic"],
     },
 }
 

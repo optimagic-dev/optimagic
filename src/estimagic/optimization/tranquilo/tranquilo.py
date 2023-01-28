@@ -35,10 +35,10 @@ def _tranquilo(
     disable_convergence=False,
     stopping_max_iterations=200,
     random_seed=925408,
-    sampler="sphere",
+    sampler=None,
     sample_filter="keep_all",
     fitter=None,
-    subsolver="gqtpar_fast",
+    subsolver=None,
     sample_size=None,
     surrogate_model=None,
     radius_options=None,
@@ -136,6 +136,17 @@ def _tranquilo(
         surrogate_model=surrogate_model,
         functype=functype,
     )
+
+    if _has_bounds(lower_bounds, upper_bounds):
+        if sampler is None:
+            sampler = "optimal_cube"
+        if subsolver is None:
+            subsolver = "bntr_fast"
+    else:
+        if sampler is None:
+            sampler = "optimal_sphere"
+        if subsolver is None:
+            subsolver = "gqtpar_fast"
 
     target_sample_size = _process_sample_size(
         user_sample_size=sample_size,
@@ -408,11 +419,11 @@ def _is_converged(states, options):
     old, new = states[-2:]
 
     f_change_abs = np.abs(old.fval - new.fval)
-    f_change_rel = f_change_abs / max(np.abs(old.fval), 0.1)
+    f_change_rel = f_change_abs / max(np.abs(old.fval), 1)
     x_change_abs = np.linalg.norm(old.x - new.x)
-    x_change_rel = np.linalg.norm((old.x - new.x) / np.clip(np.abs(old.x), 0.1, np.inf))
+    x_change_rel = np.linalg.norm((old.x - new.x) / np.clip(np.abs(old.x), 1, np.inf))
     g_norm_abs = np.linalg.norm(new.model.linear_terms)
-    g_norm_rel = g_norm_abs / max(g_norm_abs, 0.1)
+    g_norm_rel = g_norm_abs / max(g_norm_abs, 1)
 
     converged = True
     if g_norm_rel <= options.gtol_rel:
@@ -501,3 +512,12 @@ tranquilo_ls = mark_minimizer(
     is_available=True,
     is_global=False,
 )
+
+
+def _has_bounds(lb, ub):
+    out = False
+    if lb is not None and np.isfinite(lb).any():
+        out = True
+    if ub is not None and np.isfinite(ub).any():
+        out = True
+    return out

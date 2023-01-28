@@ -2,7 +2,6 @@ from typing import NamedTuple
 
 import numpy as np
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import (
     CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
@@ -31,7 +30,7 @@ class ConvOptions(NamedTuple):
     """Criteria for successful convergence."""
 
     ftol_abs: float = CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-    gtol_abs: float = CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
+    gtol_abs: float = 0.0
     xtol_abs: float = CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
     ftol_rel: float = CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
     gtol_rel: float = CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
