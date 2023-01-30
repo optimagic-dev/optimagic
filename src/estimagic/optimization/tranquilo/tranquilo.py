@@ -175,7 +175,10 @@ def _tranquilo(
         conv_options = ConvOptions()
 
     if history_search_options is None:
-        history_search_options = HistorySearchOptions()
+        if functype == "scalar":
+            history_search_options = HistorySearchOptions(radius_factor=1.0)
+        else:
+            history_search_options = HistorySearchOptions()
 
     # ==================================================================================
     # initialize compoments for the solver
