@@ -3,15 +3,16 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from numba import njit
+from plotly import figure_factory as ff
+from plotly import graph_objects as go
+from plotly.subplots import make_subplots
+
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.geometry import log_d_quality_calculator
 from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
-from numba import njit
-from plotly import figure_factory as ff
-from plotly import graph_objects as go
-from plotly.subplots import make_subplots
 
 
 def visualize_tranquilo(results, iterations):
@@ -50,6 +51,7 @@ def visualize_tranquilo(results, iterations):
                 at each iteration.
             - fekete criterion plots: the value of the fekete criterion at each
                 iteration.
+
     """
     results = deepcopy(results)
     if isinstance(iterations, int):
@@ -371,7 +373,6 @@ def _plot_clusters_points_ratio(res, iteration, fig, row, col):
 
 
 def _plot_distances_from_center(history, state, fig, col, rows):
-
     dist_sq = (
         np.linalg.norm(
             history[state.model_indices] - state.trustregion.center,
@@ -437,7 +438,6 @@ def _get_fekete_criterion(res):
 
 
 def _get_sample_points(state, history):
-
     current_points = history[state.model_indices]
     discarded_points = history[
         getattr(state, "old_indices_discarded", np.array([], dtype="int"))

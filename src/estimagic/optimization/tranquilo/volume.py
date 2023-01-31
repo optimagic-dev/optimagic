@@ -7,8 +7,7 @@ This is why we caracterize hypercubes by their radius (half the side length).
 
 """
 import numpy as np
-from scipy.special import gamma
-from scipy.special import loggamma
+from scipy.special import gamma, loggamma
 
 
 def get_radius_after_volume_scaling(radius, dim, scaling_factor):
