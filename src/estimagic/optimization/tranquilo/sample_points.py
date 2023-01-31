@@ -300,7 +300,7 @@ def _optimal_hull_sampler(
 
     algo_options = {} if algo_options is None else algo_options
     if "stopping_max_iterations" not in algo_options:
-        algo_options["stopping_max_iterations"] = 2 * n_params + 1
+        algo_options["stopping_max_iterations"] = 2 * n_params + 5
 
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
@@ -332,31 +332,40 @@ def _optimal_hull_sampler(
         opt_params = x0
     else:
 
-        func_dict = {
-            "determinant": _determinant_on_hull,
-            "distance": _minimal_pairwise_distance_on_hull,
-        }
-
         criterion_kwargs = {
             "existing_xs": existing_xs_unit,
             "order": order,
             "n_params": n_params,
         }
 
-        if criterion == "distance":
-            criterion_kwargs["hardness"] = hardness
+        func_dict = {
+            "determinant": partial(_determinant_on_hull, **criterion_kwargs),
+            "distance": partial(
+                _minimal_pairwise_distance_on_hull,
+                **criterion_kwargs,
+                hardness=hardness,
+            ),
+        }
 
         res = em.maximize(
             criterion=func_dict[criterion],
             params=x0,
             algorithm=algorithm,
-            criterion_kwargs=criterion_kwargs,
             lower_bounds=-np.ones_like(x0),
             upper_bounds=np.ones_like(x0),
             algo_options=algo_options,
         )
 
         opt_params = res.params
+
+    # Make sure the optimal sampling is actually better than the initial one with
+    # respect to the fekete criterion. This could be violated if the surrogate
+    # criterion is not a good approximation or if the optimization fails.
+    start_fekete = func_dict["determinant"](x0)
+    end_fekete = func_dict["determinant"](opt_params)
+
+    if start_fekete >= end_fekete:
+        opt_params = x0
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)

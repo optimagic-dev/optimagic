@@ -26,7 +26,7 @@ dependencies:
   - plotly  # run, tests
   - pybaum >= 0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
-  - sqlalchemy>=1.3  # run, tests
+  - sqlalchemy <2.0   # run, tests
 
 
   - pip:  # dev, tests, docs
