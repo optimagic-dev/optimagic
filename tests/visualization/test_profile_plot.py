@@ -3,10 +3,12 @@ import pandas as pd
 import pytest
 from estimagic import get_benchmark_problems
 from estimagic.benchmarking.run_benchmark import run_benchmark
-from estimagic.visualization.profile_plot import _create_solution_times
-from estimagic.visualization.profile_plot import _determine_alpha_grid
-from estimagic.visualization.profile_plot import _find_switch_points
-from estimagic.visualization.profile_plot import profile_plot
+from estimagic.visualization.profile_plot import (
+    _create_solution_times,
+    _determine_alpha_grid,
+    _find_switch_points,
+    profile_plot,
+)
 
 
 @pytest.fixture()

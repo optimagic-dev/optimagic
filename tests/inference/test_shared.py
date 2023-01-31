@@ -3,18 +3,19 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.shared import _to_numpy
-from estimagic.inference.shared import calculate_estimation_summary
-from estimagic.inference.shared import get_derivative_case
-from estimagic.inference.shared import process_pandas_arguments
-from estimagic.inference.shared import transform_covariance
-from estimagic.inference.shared import transform_free_cov_to_cov
-from estimagic.inference.shared import transform_free_values_to_params_tree
+from estimagic.inference.shared import (
+    _to_numpy,
+    calculate_estimation_summary,
+    get_derivative_case,
+    process_pandas_arguments,
+    transform_covariance,
+    transform_free_cov_to_cov,
+    transform_free_values_to_params_tree,
+)
 from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import leaf_names
-from pybaum import tree_equal
+from pybaum import leaf_names, tree_equal
 
 
 @pytest.fixture()

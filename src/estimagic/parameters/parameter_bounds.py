@@ -1,9 +1,9 @@
 import numpy as np
+from pybaum import leaf_names, tree_map
+from pybaum import tree_just_flatten as tree_leaves
+
 from estimagic.exceptions import InvalidBoundsError
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import leaf_names
-from pybaum import tree_just_flatten as tree_leaves
-from pybaum import tree_map
 
 
 def get_bounds(

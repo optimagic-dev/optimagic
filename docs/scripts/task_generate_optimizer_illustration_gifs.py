@@ -9,7 +9,6 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from scipy.optimize import minimize
 
-
 gif.options.matplotlib["dpi"] = 200
 
 OUT = Path(__file__).resolve().parent.parent / "source" / "_static" / "images"

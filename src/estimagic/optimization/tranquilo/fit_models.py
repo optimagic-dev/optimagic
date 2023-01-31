@@ -3,12 +3,15 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic.optimization.tranquilo.models import ModelInfo
-from estimagic.optimization.tranquilo.models import n_interactions
-from estimagic.optimization.tranquilo.models import n_second_order_terms
-from estimagic.optimization.tranquilo.models import VectorModel
 from numba import njit
 from scipy.linalg import qr_multiply
+
+from estimagic.optimization.tranquilo.models import (
+    ModelInfo,
+    VectorModel,
+    n_interactions,
+    n_second_order_terms,
+)
 
 
 def get_fitter(fitter, user_options=None, model_info=None):
@@ -33,6 +36,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
 
     Returns:
         callable: The partialled fit method that only depends on x and y.
+
     """
     if user_options is None:
         user_options = {}
@@ -122,6 +126,7 @@ def _fitter_template(
 
     Returns:
         VectorModel or ScalarModel: Results container.
+
     """
     n_samples, n_params = x.shape
     n_residuals = y.shape[1]
@@ -168,6 +173,7 @@ def fit_ols(x, y, model_info):
 
     Returns:
         np.ndarray: The model coefficients.
+
     """
     features = _build_feature_matrix(x, model_info)
     coef = _fit_ols(features, y)
@@ -184,6 +190,7 @@ def _fit_ols(x, y):
 
     Returns:
         coef (np.ndarray): Array of shape (p, k) of coefficients.
+
     """
     coef, *_ = np.linalg.lstsq(x, y, rcond=None)
     coef = coef.T
@@ -214,6 +221,7 @@ def fit_ridge(
 
     Returns:
         np.ndarray: The model coefficients.
+
     """
     features = _build_feature_matrix(x, model_info)
 
@@ -241,6 +249,7 @@ def _fit_ridge(x, y, penalty):
 
     Returns:
         np.ndarray: Array of shape (p, k) of coefficients.
+
     """
     a = x.T @ x
     b = x.T @ y
@@ -272,6 +281,7 @@ def fit_powell(x, y, model_info):
 
     Returns:
         np.ndarray: The model coefficients.
+
     """
     n_samples, n_params = x.shape
 
@@ -322,6 +332,7 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
 
     Returns:
         np.ndarray: The model coefficients.
+
     """
     n_samples, n_params = x.shape
 

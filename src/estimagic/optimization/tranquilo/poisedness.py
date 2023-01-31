@@ -1,9 +1,7 @@
 from functools import partial
 
 import numpy as np
-from scipy.optimize import Bounds
-from scipy.optimize import minimize
-from scipy.optimize import NonlinearConstraint
+from scipy.optimize import Bounds, NonlinearConstraint, minimize
 
 
 def get_poisedness_constant(sample, shape="sphere"):

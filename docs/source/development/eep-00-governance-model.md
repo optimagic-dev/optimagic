@@ -1,6 +1,5 @@
 (eep-00)=
 
-
 # EEP-00: Governance model & code of conduct
 
 ```{eval-rst}
@@ -27,11 +26,9 @@
 
 ## Purpose
 
-This document formalizes the estimagic code of conduct and governance model. In case
-of changes, this document can be updated following the estimagic Enhancement Proposal
+This document formalizes the estimagic code of conduct and governance model. In case of
+changes, this document can be updated following the estimagic Enhancement Proposal
 process detailed below.
-
-
 
 ```{include} ../../../CODE_OF_CONDUCT.md
 ```
@@ -55,8 +52,8 @@ Most changes to estimagic are additions of new functionality or strict improveme
 existing functionality. Such changes can be discussed in GitHub issues and discussions
 and implemented in pull requests. They do not require an estimagic Enhancement Proposal.
 
-Before starting to work on estimagic, contributors should read [how to
-contribute](how-to) and the [styleguide](styleguide). They can also reach out to
+Before starting to work on estimagic, contributors should read
+[how to contribute](how-to) and the [styleguide](styleguide). They can also reach out to
 existing contributors if any help is needed or anything remains unclear. We are all
 happy to help onboarding new contributors in any way necessary. For example, we have
 given introductions to git and GitHub in the past to help people make a contribution to
@@ -73,13 +70,13 @@ one approving review.
 
 Reviewers should be polite, welcoming and helpful to the author of the pull request who
 might have spent many hours working on the changes. Authors of pull requests should keep
-in mind that reviewers' time is valuable. Major points should be discussed
-publicly on GitHub, but very critical feedback or small details can be moved to private
-discussions — if the latter are necessary at all (see [the bottom section of this blog
-post](https://rgommers.github.io/2019/06/the-cost-of-an-open-source-contribution/) for
-an excellent discussion of the burden that review comments place on maintainers, which
-might not always be obvious). Video calls can help if a discussion gets stuck. The code
-of conduct applies to all interactions related to code reviews.
+in mind that reviewers' time is valuable. Major points should be discussed publicly on
+GitHub, but very critical feedback or small details can be moved to private discussions
+— if the latter are necessary at all (see
+[the bottom section of this blog post](https://rgommers.github.io/2019/06/the-cost-of-an-open-source-contribution/)
+for an excellent discussion of the burden that review comments place on maintainers,
+which might not always be obvious). Video calls can help if a discussion gets stuck. The
+code of conduct applies to all interactions related to code reviews.
 
 ### estimagic Enhancement Proposals (EEPs) / Controversial decision process
 
@@ -99,11 +96,11 @@ in the relevant [Zulip topic](https://ose.zulipchat.com) and a comment on the PR
 contains the following information:
 
 1. Summary of all contentious aspects of the EEP and how they have been resolved
-2. Every interested party has seven days to comment on the PR proposing the EEP, either
+1. Every interested party has seven days to comment on the PR proposing the EEP, either
    with approval or objections. While only objections are relevant for the decision
    making process, approvals are a good way to signal interest in the planned change and
    recognize the work of the authors.
-3. If there are no unresolved objections after seven days, the EEP will automatically be
+1. If there are no unresolved objections after seven days, the EEP will automatically be
    accepted and can be merged.
 
 Note that the pull requests that actually implement the proposed enhancements still
@@ -117,14 +114,14 @@ steering council comes with no special rights. The main roles of the steering co
 are:
 
 - Facilitate the growth of estimagic and the estimagic community by organizing community
-events, identifying funding opportunities and improving the experience of all community
-members.
+  events, identifying funding opportunities and improving the experience of all
+  community members.
 - Develop a roadmap, break down large changes into smaller projects and find
-contributors to work on the implementation of these projects.
+  contributors to work on the implementation of these projects.
 - Ensure that new contributors are onboarded and assisted and that pull requests are
-reviewed in a timely fashion.
+  reviewed in a timely fashion.
 - Step in as moderators when discussions get heated, help to achieve consensus on
-controversial topics and enforce the code of conduct.
+  controversial topics and enforce the code of conduct.
 
 The Steering Council is elected by the estimagic community during a community meeting.
 
@@ -139,12 +136,12 @@ each participant casts as many votes as there are positions left. Remaining ties
 resolved by randomization.
 
 Current memebers of the estimagic Steering Council are:
+
 - [Janoś Gabler](https://github.com/janosg)
 - [Annica Gehlen](https://github.com/amageh)
 - [Hans-Martin von Gaudecker](https://github.com/hmgaudecker)
 - [Tim Mensinger](https://github.com/timmens)
 - [Mariam Petrosyan](https://github.com/mpetrosian)
-
 
 ### Community meeting
 
@@ -153,7 +150,7 @@ governance model or code of conduct, or to make other decisions that affect the
 community as a whole. Moreover, they serve to keep the community updated about the
 development of estimagic and get feedback.
 
-Community meetings need to be announced via our public channels (e.g. the [zulip
-workspace](https://ose.zulipchat.com) or GitHub discussions) with sufficient time until
-the meeting. The definition of sufficient time will increase with the size of the
+Community meetings need to be announced via our public channels (e.g. the
+[zulip workspace](https://ose.zulipchat.com) or GitHub discussions) with sufficient time
+until the meeting. The definition of sufficient time will increase with the size of the
 community.

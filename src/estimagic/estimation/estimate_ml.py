@@ -1,43 +1,42 @@
 import warnings
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any
-from typing import Dict
-from typing import Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.differentiation.derivatives import second_derivative
-from estimagic.exceptions import InvalidFunctionError
-from estimagic.exceptions import NotAvailableError
-from estimagic.inference.ml_covs import cov_cluster_robust
-from estimagic.inference.ml_covs import cov_hessian
-from estimagic.inference.ml_covs import cov_jacobian
-from estimagic.inference.ml_covs import cov_robust
-from estimagic.inference.ml_covs import cov_strata_robust
-from estimagic.inference.shared import calculate_ci
-from estimagic.inference.shared import calculate_estimation_summary
-from estimagic.inference.shared import calculate_free_estimates
-from estimagic.inference.shared import calculate_p_values
-from estimagic.inference.shared import calculate_summary_data_estimation
-from estimagic.inference.shared import FreeParams
-from estimagic.inference.shared import get_derivative_case
-from estimagic.inference.shared import transform_covariance
-from estimagic.inference.shared import transform_free_cov_to_cov
-from estimagic.inference.shared import transform_free_values_to_params_tree
+
+from estimagic.differentiation.derivatives import first_derivative, second_derivative
+from estimagic.exceptions import InvalidFunctionError, NotAvailableError
+from estimagic.inference.ml_covs import (
+    cov_cluster_robust,
+    cov_hessian,
+    cov_jacobian,
+    cov_robust,
+    cov_strata_robust,
+)
+from estimagic.inference.shared import (
+    FreeParams,
+    calculate_ci,
+    calculate_estimation_summary,
+    calculate_free_estimates,
+    calculate_p_values,
+    calculate_summary_data_estimation,
+    get_derivative_case,
+    transform_covariance,
+    transform_free_cov_to_cov,
+    transform_free_values_to_params_tree,
+)
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize_result import OptimizeResult
-from estimagic.parameters.block_trees import block_tree_to_matrix
-from estimagic.parameters.block_trees import matrix_to_block_tree
-from estimagic.parameters.conversion import Converter
-from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from estimagic.parameters.conversion import Converter, get_converter
 from estimagic.parameters.space_conversion import InternalParams
-from estimagic.shared.check_option_dicts import check_numdiff_options
-from estimagic.shared.check_option_dicts import check_optimization_options
-from estimagic.utilities import get_rng
-from estimagic.utilities import to_pickle
+from estimagic.shared.check_option_dicts import (
+    check_numdiff_options,
+    check_optimization_options,
+)
+from estimagic.utilities import get_rng, to_pickle
 
 
 def estimate_ml(
@@ -507,6 +506,7 @@ class LikelihoodResult:
         Returns:
             Any: A pytree with the same structure as params containing standard errors
                 for the parameter estimates.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -561,6 +561,7 @@ class LikelihoodResult:
         Returns:
             Any: The covariance matrix of the estimated parameters as block-pytree,
                 numpy.ndarray or pandas.DataFrame.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -610,6 +611,7 @@ class LikelihoodResult:
 
         Returns:
             Any: The estimation summary as pytree of DataFrames.
+
         """
         summary_data = calculate_summary_data_estimation(
             self,
@@ -664,6 +666,7 @@ class LikelihoodResult:
                 confidence intervals.
             Any: Pytree with the same structure as params containing upper bounds of
                 confidence intervals.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -720,6 +723,7 @@ class LikelihoodResult:
         Returns:
             Any: Pytree with the same structure as params containing p-values.
             Any: Pytree with the same structure as params containing p-values.
+
         """
         free_cov = self._get_free_cov(
             method=method,
@@ -743,6 +747,7 @@ class LikelihoodResult:
 
         Args:
             path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
         """
         to_pickle(self, path=path)
 

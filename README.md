@@ -13,11 +13,10 @@
 [![image](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![image](https://pepy.tech/badge/estimagic/month)](https://pepy.tech/project/estimagic)
 
-
 ## Introduction
 
-estimagic is a Python package for nonlinear optimization with or without constraints.
-It is particularly suited to solve difficult nonlinear estimation problems. On top, it
+estimagic is a Python package for nonlinear optimization with or without constraints. It
+is particularly suited to solve difficult nonlinear estimation problems. On top, it
 provides functionality to perform statistical inference on estimated parameters.
 
 ### Optimization
@@ -26,11 +25,11 @@ provides functionality to perform statistical inference on estimated parameters.
 - estimagic implements constraints efficiently via reparametrization, so you can solve
   constrained problems with any optimzer that supports bounds.
 - The parameters of an optimization problem can be arbitrary pytrees
-- The complete history of parameters and function evaluations can be saved in a
-  database for maximum reproducibility.
+- The complete history of parameters and function evaluations can be saved in a database
+  for maximum reproducibility.
 - Painless and efficient multistart optimization.
-- The progress of the optimization is displayed in real time via an
-  interactive dashboard.
+- The progress of the optimization is displayed in real time via an interactive
+  dashboard.
 
 <img src="docs/source/_static/images/dashboard.gif">
 
@@ -39,14 +38,15 @@ provides functionality to perform statistical inference on estimated parameters.
 - You can estimate a model using method of simulated moments (MSM), calculate standard
   errors and do sensitivity analysis with just one function call.
 - Asymptotic standard errors for maximum likelihood estimation.
-- estimagic also provides bootstrap confidence intervals and standard errors.
-  Of course the bootstrap procedures are parallelized.
+- estimagic also provides bootstrap confidence intervals and standard errors. Of course
+  the bootstrap procedures are parallelized.
 
 ### Numerical differentiation
 
-- estimagic can calculate precise numerical derivatives using [Richardson extrapolations](https://en.wikipedia.org/wiki/Richardson_extrapolation).
-- Function evaluations needed for numerical derivatives can be done in parallel
-  with pre-implemented or user provided batch evaluators.
+- estimagic can calculate precise numerical derivatives using
+  [Richardson extrapolations](https://en.wikipedia.org/wiki/Richardson_extrapolation).
+- Function evaluations needed for numerical derivatives can be done in parallel with
+  pre-implemented or user provided batch evaluators.
 
 ## Installation
 
@@ -64,10 +64,9 @@ dependencies.
 
 ## Installing optional dependencies
 
-Only `scipy` is a mandatory dependency of estimagic. Other algorithms
-become available if you install more packages. We make this optional because most of the
-time you will use at least one additional package, but only very rarely will you need all
-of them.
+Only `scipy` is a mandatory dependency of estimagic. Other algorithms become available
+if you install more packages. We make this optional because most of the time you will
+use at least one additional package, but only very rarely will you need all of them.
 
 For an overview of all optimizers and the packages you need to install to enable them
 see {ref}`list_of_algorithms`.

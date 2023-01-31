@@ -11,15 +11,17 @@ Implementation is based either on sources cited in the SIF files or
 where available, on AMPL implementaions available here:
 - https://vanderbei.princeton.edu/ampl/nlmodels/cute/index.html
 
-
 """
 from functools import partial
 
 import numpy as np
-from estimagic.benchmarking.more_wild import brown_almost_linear
-from estimagic.benchmarking.more_wild import linear_full_rank
-from estimagic.benchmarking.more_wild import linear_rank_one
-from estimagic.benchmarking.more_wild import watson
+
+from estimagic.benchmarking.more_wild import (
+    brown_almost_linear,
+    linear_full_rank,
+    linear_rank_one,
+    watson,
+)
 
 
 def argtrig(x):

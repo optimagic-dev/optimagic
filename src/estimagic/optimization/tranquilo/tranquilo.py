@@ -4,6 +4,7 @@ from functools import partial
 from typing import NamedTuple
 
 import numpy as np
+
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
@@ -11,15 +12,19 @@ from estimagic.optimization.tranquilo.count_points import get_counter
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
-from estimagic.optimization.tranquilo.models import ModelInfo
-from estimagic.optimization.tranquilo.models import n_free_params
-from estimagic.optimization.tranquilo.models import ScalarModel
-from estimagic.optimization.tranquilo.options import Bounds
-from estimagic.optimization.tranquilo.options import ConvOptions
-from estimagic.optimization.tranquilo.options import HistorySearchOptions
-from estimagic.optimization.tranquilo.options import RadiusFactors
-from estimagic.optimization.tranquilo.options import RadiusOptions
-from estimagic.optimization.tranquilo.options import TrustRegion
+from estimagic.optimization.tranquilo.models import (
+    ModelInfo,
+    ScalarModel,
+    n_free_params,
+)
+from estimagic.optimization.tranquilo.options import (
+    Bounds,
+    ConvOptions,
+    HistorySearchOptions,
+    RadiusFactors,
+    RadiusOptions,
+    TrustRegion,
+)
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.tranquilo_history import History
@@ -457,7 +462,6 @@ def _is_converged(states, options):
 
 
 def _process_surrogate_model(surrogate_model, functype):
-
     if surrogate_model is None:
         if functype == "scalar":
             surrogate_model = "quadratic"

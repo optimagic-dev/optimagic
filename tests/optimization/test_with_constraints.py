@@ -12,23 +12,21 @@ import numpy as np
 import pandas as pd
 import pytest
 import statsmodels.api as sm
-from estimagic.examples.criterion_functions import rosenbrock_dict_criterion
-from estimagic.examples.criterion_functions import rosenbrock_gradient
 from estimagic.examples.criterion_functions import (
+    rosenbrock_dict_criterion,
+    rosenbrock_gradient,
     rotated_hyper_ellipsoid_dict_criterion,
+    rotated_hyper_ellipsoid_gradient,
+    sos_dict_criterion,
+    sos_gradient,
+    sos_jacobian,
+    sos_ls_jacobian,
+    trid_gradient,
+    trid_scalar_criterion,
 )
-from estimagic.examples.criterion_functions import rotated_hyper_ellipsoid_gradient
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_gradient
-from estimagic.examples.criterion_functions import sos_jacobian
-from estimagic.examples.criterion_functions import sos_ls_jacobian
-from estimagic.examples.criterion_functions import trid_gradient
-from estimagic.examples.criterion_functions import trid_scalar_criterion
 from estimagic.examples.logit import logit_loglike
-from estimagic.exceptions import InvalidConstraintError
-from estimagic.exceptions import InvalidParamsError
-from estimagic.optimization.optimize import maximize
-from estimagic.optimization.optimize import minimize
+from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
+from estimagic.optimization.optimize import maximize, minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 FUNC_INFO = {
@@ -166,7 +164,6 @@ def test_constrained_minimization(
 
 
 def test_fix_that_differs_from_start_value_raises_an_error():
-
     with pytest.raises(InvalidParamsError):
         minimize(
             criterion=lambda x: x @ x,
@@ -253,11 +250,8 @@ def test_bug_from_copenhagen_presentation():
 
 
 def test_constraint_inheritance():
-    """Test that probability constraint applies both sets of parameters in a
-    pairwise equality constraint, no matter to which set they were applied
-    originally.
-
-    """
+    """Test that probability constraint applies both sets of parameters in a pairwise
+    equality constraint, no matter to which set they were applied originally."""
     for loc in [[0, 1], [2, 3]]:
         res = minimize(
             criterion=lambda x: x @ x,

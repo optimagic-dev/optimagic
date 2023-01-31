@@ -19,6 +19,7 @@ class LeastSquaresHistory:
 
     Critvals don't need to be added explicitly, as they are computed internally
     as the sum of squares of the residuals whenever new entries are added.
+
     """
 
     def __init__(self):
@@ -39,6 +40,7 @@ class LeastSquaresHistory:
                 parameter vectors.
             residuals (np.ndarray or list): 1d or 2d array or list of 1d arrays with
                 least square residuals.
+
         """
         xs = np.atleast_2d(xs)
         residuals = np.atleast_2d(residuals)
@@ -112,6 +114,7 @@ class LeastSquaresHistory:
 
         Returns:
             np.ndarray: 1d or 2d array with parameter vectors
+
         """
         out = self.xs[: self.n_fun]
         out = out[index] if index is not None else out
@@ -127,6 +130,7 @@ class LeastSquaresHistory:
 
         Returns:
             np.ndarray: 1d or 2d array with residuals.
+
         """
         out = self.residuals[: self.n_fun]
         out = out[index] if index is not None else out
@@ -142,6 +146,7 @@ class LeastSquaresHistory:
 
         Returns:
             np.ndarray: Float or 1d array with criterion values.
+
         """
         out = self.critvals[: self.n_fun]
         out = out[index] if index is not None else out
@@ -162,6 +167,7 @@ class LeastSquaresHistory:
             np.ndarray: 1d or 2d array with centered parameter vectors
             np.ndarray: 1d or 2d array with centered residuals
             np.ndarray: Float or 1d array with centered criterion values.
+
         """
         xs_unc, residuals_unc, _ = self.get_entries(index=index)
         xs = (xs_unc - center_info["x"]) / center_info["radius"]
@@ -181,6 +187,7 @@ class LeastSquaresHistory:
 
         Returns:
             np.ndarray: 1d or 2d array with centered parameter vectors.
+
         """
         xs_unc = self.get_xs(index=index)
         xs = (xs_unc - center_info["x"]) / center_info["radius"]
@@ -198,6 +205,7 @@ class LeastSquaresHistory:
 
         Returns:
             np.ndarray: 1d or 2d array with centered residuals.
+
         """
         residuals_unc = self.get_residuals(index=index)
         residuals = residuals_unc - center_info["residuals"]
@@ -215,6 +223,7 @@ class LeastSquaresHistory:
 
         Returns:
             np.ndarray: Float or 1d array with centered criterion values.
+
         """
         residuals_unc = self.get_residuals(index=index)
         residuals = residuals_unc - center_info["residuals"]

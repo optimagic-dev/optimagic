@@ -1,3 +1,4 @@
+---
 name: main
 
 # Automatically cancel a previous run.
@@ -5,29 +6,27 @@ concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
     branches:
-    - '*'
-
+      - '*'
 
 jobs:
-
   run-tests-linux:
-
     name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
-
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']
-        python-version: ['3.8', '3.9', '3.10']
-
+        os:
+          - ubuntu-latest
+        python-version:
+          - '3.8'
+          - '3.9'
+          - '3.10'
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -43,25 +42,25 @@ jobs:
         run: |
           micromamba activate estimagic
           pytest --cov-report=xml --cov=./
-
       - name: Upload coverage report.
         if: runner.os == 'Linux' && matrix.python-version == '3.10'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-
   run-tests-win-and-mac:
-
     name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
-
     strategy:
       fail-fast: false
       matrix:
-        os: ['macos-latest', 'windows-latest']
-        python-version: ['3.8', '3.9', '3.10']
-
+        os:
+          - macos-latest
+          - windows-latest
+        python-version:
+          - '3.8'
+          - '3.9'
+          - '3.10'
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -78,12 +77,9 @@ jobs:
           micromamba activate estimagic
           pytest -m "not slow and not jax"
 
-
   check-links-in-documentation:
-
     name: Check links in documentation.
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -103,7 +99,6 @@ jobs:
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -113,10 +108,9 @@ jobs:
           environment-name: estimagic
           cache-env: true
           extra-specs: python=3.10
-
       - name: run sphinx
         shell: bash -l {0}
-        run: |
+        run: |-
           micromamba activate estimagic
           cd docs/source
           python -m doctest -v how_to_guides/optimization/how_to_specify_constraints.md

@@ -2,8 +2,7 @@
 import inspect
 from functools import partial
 
-from estimagic.exceptions import InvalidFunctionError
-from estimagic.exceptions import InvalidKwargsError
+from estimagic.exceptions import InvalidFunctionError, InvalidKwargsError
 from estimagic.utilities import propose_alternatives
 
 

@@ -3,6 +3,11 @@ import pandas as pd
 import pytest
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.subsolvers.bntr import (
+    ActiveBounds,
+    _update_trustregion_radius_and_gradient_descent,
+    bntr,
+)
+from estimagic.optimization.subsolvers.bntr import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_orig,
 )
 from estimagic.optimization.subsolvers.bntr import (
@@ -36,14 +41,7 @@ from estimagic.optimization.subsolvers.bntr import (
     _take_preliminary_gradient_descent_step_and_check_for_solution as pgd_orig,
 )
 from estimagic.optimization.subsolvers.bntr import (
-    _update_trustregion_radius_and_gradient_descent,
-)
-from estimagic.optimization.subsolvers.bntr import (
     _update_trustregion_radius_conjugate_gradient as update_radius_cg_orig,
-)
-from estimagic.optimization.subsolvers.bntr import ActiveBounds
-from estimagic.optimization.subsolvers.bntr import (
-    bntr,
 )
 from estimagic.optimization.subsolvers.bntr_fast import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_fast,

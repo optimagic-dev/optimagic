@@ -4,8 +4,7 @@ import pandas as pd
 import pytest
 from estimagic.examples.criterion_functions import sos_scalar_criterion
 from estimagic.exceptions import InvalidKwargsError
-from estimagic.optimization.optimize import maximize
-from estimagic.optimization.optimize import minimize
+from estimagic.optimization.optimize import maximize, minimize
 
 
 def test_sign_is_switched_back_after_maximization():
@@ -36,7 +35,6 @@ def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
 
 
 def test_with_invalid_numdiff_options():
-
     with pytest.raises(InvalidKwargsError):
         minimize(
             criterion=lambda x: x @ x,

@@ -35,8 +35,9 @@ n_internal the length of the internal parameter vector.
 from functools import partial
 from typing import NamedTuple
 
-import estimagic.parameters.kernel_transformations as kt
 import numpy as np
+
+import estimagic.parameters.kernel_transformations as kt
 from estimagic.parameters.process_constraints import process_constraints
 
 
@@ -494,8 +495,6 @@ def post_replace_jacobian(post_replacements):
         array([[1., 0., 0.],
                [0., 1., 0.],
                [0., 1., 0.]])
-
-
 
     """
     dim = len(post_replacements)

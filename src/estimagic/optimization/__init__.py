@@ -1,18 +1,19 @@
 import inspect
 
-from estimagic.optimization import bhhh
-from estimagic.optimization import cyipopt_optimizers
-from estimagic.optimization import fides_optimizers
-from estimagic.optimization import nag_optimizers
-from estimagic.optimization import neldermead
-from estimagic.optimization import nlopt_optimizers
-from estimagic.optimization import pounders
-from estimagic.optimization import pygmo_optimizers
-from estimagic.optimization import scipy_optimizers
-from estimagic.optimization import simopt_optimizers
-from estimagic.optimization import tao_optimizers
+from estimagic.optimization import (
+    bhhh,
+    cyipopt_optimizers,
+    fides_optimizers,
+    nag_optimizers,
+    neldermead,
+    nlopt_optimizers,
+    pounders,
+    pygmo_optimizers,
+    scipy_optimizers,
+    simopt_optimizers,
+    tao_optimizers,
+)
 from estimagic.optimization.tranquilo import tranquilo
-
 
 MODULES = [
     cyipopt_optimizers,

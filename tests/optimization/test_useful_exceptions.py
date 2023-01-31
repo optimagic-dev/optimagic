@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.exceptions import InvalidFunctionError
-from estimagic.exceptions import InvalidKwargsError
-from estimagic.exceptions import UserFunctionRuntimeError
+from estimagic.exceptions import (
+    InvalidFunctionError,
+    InvalidKwargsError,
+    UserFunctionRuntimeError,
+)
 from estimagic.optimization.optimize import minimize
 
 

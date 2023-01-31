@@ -2,12 +2,12 @@ import inspect
 import warnings
 from functools import partial
 
-import estimagic as em
 import numpy as np
-from estimagic.optimization.tranquilo.options import Bounds
 from scipy.spatial.distance import pdist
-from scipy.special import gammainc
-from scipy.special import logsumexp
+from scipy.special import gammainc, logsumexp
+
+import estimagic as em
+from estimagic.optimization.tranquilo.options import Bounds
 
 
 def get_sampler(

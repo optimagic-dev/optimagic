@@ -1,9 +1,10 @@
 import numpy as np
+from numba import njit
+from scipy.linalg import qr_multiply
+
 from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.models import n_second_order_terms
 from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
-from numba import njit
-from scipy.linalg import qr_multiply
 
 
 def get_sample_filter(sample_filter="keep_all"):

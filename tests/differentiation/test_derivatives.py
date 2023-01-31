@@ -4,26 +4,28 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
-from estimagic.differentiation.derivatives import _convert_evaluation_data_to_frame
 from estimagic.differentiation.derivatives import (
+    Evals,
+    _consolidate_one_step_derivatives,
+    _convert_evaluation_data_to_frame,
     _convert_richardson_candidates_to_frame,
+    _is_scalar_nan,
+    _nan_skipping_batch_evaluator,
+    _reshape_cross_step_evals,
+    _reshape_one_step_evals,
+    _reshape_two_step_evals,
+    _select_minimizer_along_axis,
+    first_derivative,
+    second_derivative,
 )
-from estimagic.differentiation.derivatives import _is_scalar_nan
-from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
-from estimagic.differentiation.derivatives import _reshape_cross_step_evals
-from estimagic.differentiation.derivatives import _reshape_one_step_evals
-from estimagic.differentiation.derivatives import _reshape_two_step_evals
-from estimagic.differentiation.derivatives import _select_minimizer_along_axis
-from estimagic.differentiation.derivatives import Evals
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.differentiation.derivatives import second_derivative
 from estimagic.differentiation.generate_steps import Steps
-from estimagic.examples.numdiff_functions import logit_loglike
-from estimagic.examples.numdiff_functions import logit_loglike_gradient
-from estimagic.examples.numdiff_functions import logit_loglike_hessian
-from estimagic.examples.numdiff_functions import logit_loglikeobs
-from estimagic.examples.numdiff_functions import logit_loglikeobs_jacobian
+from estimagic.examples.numdiff_functions import (
+    logit_loglike,
+    logit_loglike_gradient,
+    logit_loglike_hessian,
+    logit_loglikeobs,
+    logit_loglikeobs_jacobian,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
@@ -196,13 +198,13 @@ def test_consolidate_one_step_derivatives():
 @pytest.fixture()
 def example_function_gradient_fixtures():
     def f(x):
-        """f:R^3 -> R"""
+        """F:R^3 -> R."""
         x1, x2, x3 = x[0], x[1], x[2]
         y1 = np.sin(x1) + np.cos(x2) + x3 - x3
         return y1
 
     def fprime(x):
-        """Gradient(f)(x):R^3 -> R^3"""
+        """Gradient(f)(x):R^3 -> R^3."""
         x1, x2, x3 = x[0], x[1], x[2]
         grad = np.array([np.cos(x1), -np.sin(x2), x3 - x3])
         return grad
@@ -213,7 +215,7 @@ def example_function_gradient_fixtures():
 @pytest.fixture()
 def example_function_jacobian_fixtures():
     def f(x):
-        """f:R^3 -> R^2"""
+        """F:R^3 -> R^2."""
         x1, x2, x3 = x[0], x[1], x[2]
         y1, y2 = np.sin(x1) + np.cos(x2), np.exp(x3)
         return np.array([y1, y2])

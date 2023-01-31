@@ -11,20 +11,14 @@ from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
-)
-from estimagic.optimization.pounders_auxiliary import create_initial_residual_model
-from estimagic.optimization.pounders_auxiliary import create_main_from_residual_model
-from estimagic.optimization.pounders_auxiliary import evaluate_residual_model
-from estimagic.optimization.pounders_auxiliary import find_affine_points
-from estimagic.optimization.pounders_auxiliary import fit_residual_model
-from estimagic.optimization.pounders_auxiliary import (
+    create_initial_residual_model,
+    create_main_from_residual_model,
+    evaluate_residual_model,
+    find_affine_points,
+    fit_residual_model,
     get_feature_matrices_residual_model,
-)
-from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
-)
-from estimagic.optimization.pounders_auxiliary import update_residual_model
-from estimagic.optimization.pounders_auxiliary import (
+    update_residual_model,
     update_residual_model_with_new_accepted_x,
 )
 from numpy.testing import assert_array_almost_equal as aaae

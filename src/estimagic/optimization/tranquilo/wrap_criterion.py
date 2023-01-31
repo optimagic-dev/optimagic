@@ -1,6 +1,7 @@
 import functools
 
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
 
 

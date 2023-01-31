@@ -3,9 +3,7 @@ import pandas as pd
 import pytest
 from estimagic.parameters.tree_registry import get_registry
 from pandas.testing import assert_frame_equal
-from pybaum import leaf_names
-from pybaum import tree_flatten
-from pybaum import tree_unflatten
+from pybaum import leaf_names, tree_flatten, tree_unflatten
 
 
 @pytest.fixture()

@@ -3,27 +3,31 @@ import warnings
 from pathlib import Path
 
 from estimagic.batch_evaluators import process_batch_evaluator
-from estimagic.exceptions import InvalidFunctionError
-from estimagic.exceptions import InvalidKwargsError
-from estimagic.logging.database_utilities import append_row
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import make_optimization_iteration_table
-from estimagic.logging.database_utilities import make_optimization_problem_table
-from estimagic.logging.database_utilities import make_steps_table
+from estimagic.exceptions import InvalidFunctionError, InvalidKwargsError
+from estimagic.logging.database_utilities import (
+    append_row,
+    load_database,
+    make_optimization_iteration_table,
+    make_optimization_problem_table,
+    make_steps_table,
+)
 from estimagic.optimization.check_arguments import check_optimize_kwargs
 from estimagic.optimization.error_penalty import get_error_penalty_function
-from estimagic.optimization.get_algorithm import get_final_algorithm
-from estimagic.optimization.get_algorithm import process_user_algorithm
+from estimagic.optimization.get_algorithm import (
+    get_final_algorithm,
+    process_user_algorithm,
+)
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.process_multistart_sample import process_multistart_sample
 from estimagic.optimization.process_results import process_internal_optimizer_result
-from estimagic.optimization.tiktak import run_multistart_optimization
-from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
-from estimagic.parameters.conversion import aggregate_func_output_to_value
-from estimagic.parameters.conversion import get_converter
+from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS, run_multistart_optimization
+from estimagic.parameters.conversion import (
+    aggregate_func_output_to_value,
+    get_converter,
+)
 from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from estimagic.process_user_function import process_func_of_params
 

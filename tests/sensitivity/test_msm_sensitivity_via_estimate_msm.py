@@ -136,7 +136,6 @@ def test_actual_sensitivity_to_removal(msm_res):
 
 
 def test_fundamental_sensitivity_to_removal(msm_res):
-
     calculated = msm_res.sensitivity(kind="removal_fundamental")
 
     expected = np.array(

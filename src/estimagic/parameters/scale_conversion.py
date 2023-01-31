@@ -2,6 +2,7 @@ from functools import partial
 from typing import NamedTuple
 
 import numpy as np
+
 from estimagic.parameters.space_conversion import InternalParams
 
 

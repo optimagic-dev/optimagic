@@ -4,10 +4,10 @@ import math
 import numpy as np
 import pytest
 from estimagic.optimization.subsolvers.linear_subsolvers import (
+    LinearModel,
     improve_geomtery_trsbox_linear,
+    minimize_trsbox_linear,
 )
-from estimagic.optimization.subsolvers.linear_subsolvers import LinearModel
-from estimagic.optimization.subsolvers.linear_subsolvers import minimize_trsbox_linear
 from numpy.testing import assert_array_almost_equal as aaae
 
 

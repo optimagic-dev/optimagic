@@ -84,6 +84,7 @@ def _get_bootstrap_samples_from_indices(data, bootstrap_indices):
 
     Returns:
         list: list of DataFrames
+
     """
     out = [data.iloc[idx] for idx in bootstrap_indices]
     return out

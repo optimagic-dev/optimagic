@@ -72,9 +72,10 @@ an introduction to its basic functionality, check out our tutorials.
 ```
 
 ```{toctree}
-:hidden: true
-:maxdepth: 1
-
+---
+hidden: true
+maxdepth: 1
+---
 optimization/index
 differentiation/index
 inference/index

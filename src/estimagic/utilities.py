@@ -4,8 +4,7 @@ from hashlib import sha1
 import cloudpickle
 import numpy as np
 import pandas as pd
-from scipy.linalg import ldl
-from scipy.linalg import qr
+from scipy.linalg import ldl, qr
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
@@ -205,8 +204,8 @@ def robust_inverse(matrix, msg=""):
 
 
 def _internal_robust_cholesky(matrix, threshold):
-    """Lower triangular cholesky factor of *matrix* using an LDL decomposition
-    and QR factorization.
+    """Lower triangular cholesky factor of *matrix* using an LDL decomposition and QR
+    factorization.
 
     Args:
         matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix

@@ -2,10 +2,10 @@
 from typing import NamedTuple
 
 import numpy as np
+
 from estimagic.parameters.process_selectors import process_selectors
 from estimagic.parameters.scale_conversion import get_scale_converter
-from estimagic.parameters.space_conversion import get_space_converter
-from estimagic.parameters.space_conversion import InternalParams
+from estimagic.parameters.space_conversion import InternalParams, get_space_converter
 from estimagic.parameters.tree_conversion import get_tree_converter
 
 

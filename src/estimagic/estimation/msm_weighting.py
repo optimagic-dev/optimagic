@@ -2,13 +2,13 @@ import functools
 
 import numpy as np
 import pandas as pd
-from estimagic.inference.bootstrap import bootstrap
-from estimagic.parameters.block_trees import block_tree_to_matrix
-from estimagic.parameters.block_trees import matrix_to_block_tree
-from estimagic.parameters.tree_registry import get_registry
-from estimagic.utilities import robust_inverse
 from pybaum import tree_just_flatten
 from scipy.linalg import block_diag
+
+from estimagic.inference.bootstrap import bootstrap
+from estimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from estimagic.parameters.tree_registry import get_registry
+from estimagic.utilities import robust_inverse
 
 
 def get_moments_cov(

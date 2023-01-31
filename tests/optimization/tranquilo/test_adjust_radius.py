@@ -10,7 +10,6 @@ def options():
 
 
 def test_increase(options):
-
     calculated = adjust_radius(
         radius=1,
         rho=1.5,

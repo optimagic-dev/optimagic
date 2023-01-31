@@ -39,6 +39,7 @@ class History:
                 parameter vectors.
             fvecs (np.ndarray or list): 1d or 2d array or list of 1d arrays with
                 least square fvecs.
+
         """
         xs = np.atleast_2d(xs)
 
@@ -95,6 +96,7 @@ class History:
 
         Returns:
             np.ndarray: 1d or 2d array with parameter vectors
+
         """
         out = self.xs[: self.n_fun]
         out = out[index] if index is not None else out
@@ -110,6 +112,7 @@ class History:
 
         Returns:
             np.ndarray: 1d or 2d array with fvecs.
+
         """
         out = self.fvecs[: self.n_fun]
         out = out[index] if index is not None else out
@@ -125,6 +128,7 @@ class History:
 
         Returns:
             np.ndarray: Float or 1d array with criterion values.
+
         """
         out = self.fvals[: self.n_fun]
         out = out[index] if index is not None else out

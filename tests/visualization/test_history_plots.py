@@ -3,13 +3,11 @@ import itertools
 import numpy as np
 import pytest
 from estimagic.optimization.optimize import minimize
-from estimagic.visualization.history_plots import criterion_plot
-from estimagic.visualization.history_plots import params_plot
+from estimagic.visualization.history_plots import criterion_plot, params_plot
 
 
 @pytest.fixture()
 def minimize_result():
-
     out = {}
     for multistart in [True, False]:
         res = []
@@ -97,7 +95,6 @@ def test_criterion_plot_wrong_results():
 
 
 def test_criterion_plot_different_input_types():
-
     # logged result
     minimize(
         criterion=lambda x: x @ x,
@@ -131,7 +128,6 @@ def test_criterion_plot_different_input_types():
 
 
 def test_criterion_plot_wrong_inputs():
-
     with pytest.raises(ValueError):
         criterion_plot("bla", names=[1, 2])
 

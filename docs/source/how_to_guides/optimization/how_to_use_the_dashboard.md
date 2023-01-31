@@ -60,38 +60,37 @@ For optimization problems with many parameters, you should group parameters such
 
 To do so, you can add a `"group"` column to your params DataFrame. Parameters that
 belong to the same group, are displayed in the same plot. Null values like `None`,
-`np.nan` and `False` in the group column mean that the parameter is not displayed
-in the dashboard.
+`np.nan` and `False` in the group column mean that the parameter is not displayed in the
+dashboard.
 
 (remote-server)=
 
 ## On a remote server
 
-Since `estimagic` is designed for long running optimizations, it is often run on
-large remote servers. Normally, these servers do not offer a GUI or browser.
+Since `estimagic` is designed for long running optimizations, it is often run on large
+remote servers. Normally, these servers do not offer a GUI or browser.
 
-Nevertheless, you can display the dashboard in your local browser. To do so, you have
-to create an ssh tunnel. All the steps are identical to tunneling a jupyter notebook
-via ssh.
+Nevertheless, you can display the dashboard in your local browser. To do so, you have to
+create an ssh tunnel. All the steps are identical to tunneling a jupyter notebook via
+ssh.
 
 For the following we assume that you have already started an optimization on the server
 (which can be terminated or still running) and the log was saved in `your.db`.
 
 1. Open Bash, Powershell, CMD or Terminal.
 
-2. Listen to a port on which the dashboard will send its data, e.g. 10101
+1. Listen to a port on which the dashboard will send its data, e.g. 10101
 
    ```bash
    ssh -N -f -L localhost:10101:localhost:10101 username@server-address
    ```
 
-   `-N` prevents to commands on the remote, `-f` hides the connection in the
-   background, so the console windows is not blocked, `-L` is used to bind your local
-   port to a remote port. At last, type your server user name and the server address
-   separated with an `@`. You are asked to enter your password to establish the
-   connection.
+   `-N` prevents to commands on the remote, `-f` hides the connection in the background,
+   so the console windows is not blocked, `-L` is used to bind your local port to a
+   remote port. At last, type your server user name and the server address separated
+   with an `@`. You are asked to enter your password to establish the connection.
 
-3. Now, log into the remote server with
+1. Now, log into the remote server with
 
    ```bash
    ssh username@server-address
@@ -99,8 +98,8 @@ For the following we assume that you have already started an optimization on the
 
    and enter your password.
 
-4. One the remote, launch the dashboard on the correct port and with the
-   `--no-browser` option
+1. One the remote, launch the dashboard on the correct port and with the `--no-browser`
+   option
 
    ```bash
    estimagic dashboard your.db --no-browser --port=10101
@@ -109,7 +108,8 @@ For the following we assume that you have already started an optimization on the
    Use a leading `&` in a Bash or Powershell v6 Terminal to hide the task in the
    background. If your terminal is blocked, open another one.
 
-5. On your local machine, open a web browser and enter the address `localhost:10101`.
+1. On your local machine, open a web browser and enter the address `localhost:10101`.
 
-6. That's it. For more information on `ssh` and how to configure your remote machine,
-   check out [Working remotely in shell environments](https://github.com/OpenSourceEconomics/ose-meetup/blob/master/material/2019_08_20/17_shell_remote.pdf).
+1. That's it. For more information on `ssh` and how to configure your remote machine,
+   check out
+   [Working remotely in shell environments](https://github.com/OpenSourceEconomics/ose-meetup/blob/master/material/2019_08_20/17_shell_remote.pdf).

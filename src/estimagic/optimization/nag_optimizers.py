@@ -12,41 +12,31 @@ The following arguments are not supported as ``algo_options``:
 import warnings
 
 import numpy as np
-from estimagic.config import IS_DFOLS_INSTALLED
-from estimagic.config import IS_PYBOBYQA_INSTALLED
+
+from estimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING
 from estimagic.optimization.algo_options import (
+    CLIP_CRITERION_IF_OVERFLOWING,
     CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
-)
-from estimagic.optimization.algo_options import (
     CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,
-)
-from estimagic.optimization.algo_options import CONVERGENCE_SLOW_PROGRESS
-from estimagic.optimization.algo_options import INITIAL_DIRECTIONS
-from estimagic.optimization.algo_options import INTERPOLATION_ROUNDING_ERROR
-from estimagic.optimization.algo_options import RANDOM_DIRECTIONS_ORTHOGONAL
-from estimagic.optimization.algo_options import RESET_OPTIONS
-from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
-from estimagic.optimization.algo_options import THRESHOLD_FOR_SAFETY_STEP
-from estimagic.optimization.algo_options import TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL
-from estimagic.optimization.algo_options import (
+    CONVERGENCE_SLOW_PROGRESS,
+    INITIAL_DIRECTIONS,
+    INTERPOLATION_ROUNDING_ERROR,
+    RANDOM_DIRECTIONS_ORTHOGONAL,
+    RESET_OPTIONS,
+    STOPPING_MAX_CRITERION_EVALUATIONS,
+    THRESHOLD_FOR_SAFETY_STEP,
+    TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,
-)
-from estimagic.optimization.algo_options import TRUSTREGION_FAST_START_OPTIONS
-from estimagic.optimization.algo_options import TRUSTREGION_PRECONDITION_INTERPOLATION
-from estimagic.optimization.algo_options import (
+    TRUSTREGION_FAST_START_OPTIONS,
+    TRUSTREGION_PRECONDITION_INTERPOLATION,
     TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-)
-from estimagic.optimization.algo_options import (
     TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,
-)
-from estimagic.optimization.algo_options import (
     TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS,
+    TRUSTREGION_THRESHOLD_SUCCESSFUL,
+    TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
 )
-from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_SUCCESSFUL
-from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
 from estimagic.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
@@ -382,6 +372,7 @@ def _process_nag_result(nag_result_obj, len_x):
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
+
     """
     processed = {
         "solution_criterion": nag_result_obj.f,
@@ -505,8 +496,7 @@ def _create_nag_advanced_options(
 
 
 def _change_evals_per_point_interface(func):
-    """Change the interface of the user supplied function to the one expected
-    by NAG.
+    """Change the interface of the user supplied function to the one expected by NAG.
 
     Args:
         func (callable or None): function mapping from our names to
@@ -515,6 +505,7 @@ def _change_evals_per_point_interface(func):
     Returns:
         adjusted_noise_n_evals_per_point (callable): function mapping from the
             argument names expected by pybobyqa and df-ols to noise_n_evals_per_point.
+
     """
     if func is not None:
 

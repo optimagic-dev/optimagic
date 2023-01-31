@@ -1,5 +1,6 @@
 """This module comprises all CLI capabilities of estimagic."""
 import click
+
 from estimagic.dashboard.run_dashboard import run_dashboard
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}

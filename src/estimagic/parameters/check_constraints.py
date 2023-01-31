@@ -1,15 +1,15 @@
 """Check compatibility of pc with each other and with bounds and fixes.
 
 See the module docstring of process_constraints for naming conventions.
+
 """
 from functools import partial
 
 import numpy as np
 import pandas as pd
-from estimagic.exceptions import InvalidConstraintError
-from estimagic.exceptions import InvalidParamsError
-from estimagic.utilities import cov_params_to_matrix
-from estimagic.utilities import sdcorr_params_to_matrix
+
+from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
+from estimagic.utilities import cov_params_to_matrix, sdcorr_params_to_matrix
 
 
 def check_constraints_are_satisfied(flat_constraints, param_values, param_names):
@@ -120,8 +120,6 @@ def check_types(constraints):
 
     Raises:
         TypeError if invalid constraint types are encountered
-
-
 
     """
     valid_types = {

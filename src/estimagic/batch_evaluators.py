@@ -4,9 +4,7 @@ All batch evaluators have the same interface and any function with the same inte
 can be used used as batch evaluator in estimagic.
 
 """
-from joblib import delayed
-from joblib import Parallel
-
+from joblib import Parallel, delayed
 
 try:
     from pathos.pools import ProcessPool
@@ -16,8 +14,7 @@ except ImportError:
     pathos_is_available = False
 
 from estimagic.config import DEFAULT_N_CORES as N_CORES
-from estimagic.decorators import catch
-from estimagic.decorators import unpack
+from estimagic.decorators import catch, unpack
 
 
 def pathos_mp_batch_evaluator(
@@ -28,7 +25,7 @@ def pathos_mp_batch_evaluator(
     error_handling="continue",
     unpack_symbol=None,
 ):
-    """Batch evaluator based on pathos.multiprocess.ProcessPool
+    """Batch evaluator based on pathos.multiprocess.ProcessPool.
 
     This uses a patched but older version of python multiprocessing that replaces
     pickling with dill and can thus handle decorated functions.

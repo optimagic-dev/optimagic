@@ -7,18 +7,14 @@ import pytest
 from estimagic.exceptions import InvalidConstraintError
 from estimagic.parameters.nonlinear_constraints import (
     _check_validity_and_return_evaluation,
-)
-from estimagic.parameters.nonlinear_constraints import _get_components
-from estimagic.parameters.nonlinear_constraints import _get_selection_indices
-from estimagic.parameters.nonlinear_constraints import _get_transformation
-from estimagic.parameters.nonlinear_constraints import _get_transformation_type
-from estimagic.parameters.nonlinear_constraints import _process_selector
-from estimagic.parameters.nonlinear_constraints import _vector_to_list_of_scalar
-from estimagic.parameters.nonlinear_constraints import (
+    _get_components,
+    _get_selection_indices,
+    _get_transformation,
+    _get_transformation_type,
+    _process_selector,
+    _vector_to_list_of_scalar,
     equality_as_inequality_constraints,
-)
-from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from estimagic.parameters.nonlinear_constraints import (
+    process_nonlinear_constraints,
     vector_as_list_of_scalar_constraints,
 )
 from estimagic.parameters.tree_registry import get_registry
@@ -85,7 +81,6 @@ def test_get_positivity_transform(lower_bounds, upper_bounds, case, expected):
 
 
 def test_get_selection_indices():
-
     params = {"a": [0, 1, 2], "b": [3, 4, 5]}
     selector = lambda p: p["a"]
 
@@ -223,7 +218,6 @@ def test_equality_as_inequality_constraints(constraints, expected):
 
 
 def test_process_nonlinear_constraints():
-
     nonlinear_constraints = [
         {"type": "nonlinear", "func": lambda x: np.dot(x, x), "value": 1},
         {

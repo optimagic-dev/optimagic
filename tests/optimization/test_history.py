@@ -4,7 +4,6 @@ import pytest
 from estimagic.optimization.history import LeastSquaresHistory
 from numpy.testing import assert_array_almost_equal as aaae
 
-
 ENTRIES = [
     (np.arange(3), [np.arange(5)]),
     ([np.arange(3)], list(range(5))),

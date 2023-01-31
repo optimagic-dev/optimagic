@@ -9,18 +9,18 @@ def _keep_line(line: str, flag: str) -> bool:
     >>> assert _keep_line("  - jax  # tests", "tests") is True
     >>> assert _keep_line("name: env", "tests") is True
     >>> assert _keep_line("  - jax  # run", "tests") is False
+
     """
     return flag in line or "#" not in line
 
 
 def main():
-
     lines = Path("environment.yml").read_text().splitlines()
 
     # create standard testing environments
 
     test_env = [line for line in lines if _keep_line(line, "tests")]
-    test_env.append("    - -e ../")  # add local installation
+    test_env.append("      - -e ../")  # add local installation
 
     # find index to insert additional dependencies
     _insert_idx = [i for i, line in enumerate(lines) if "dependencies:" in line][0] + 1
@@ -37,7 +37,7 @@ def main():
     # create docs testing environment
 
     docs_env = [line for line in lines if _keep_line(line, "docs")]
-    docs_env.append("    - -e ../")  # add local installation
+    docs_env.append("      - -e ../")  # add local installation
 
     # write environments
     for name, env in zip(

@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
-from estimagic.differentiation.generate_steps import _calculate_or_validate_base_steps
-from estimagic.differentiation.generate_steps import _fillna
-from estimagic.differentiation.generate_steps import _rescale_to_accomodate_bounds
-from estimagic.differentiation.generate_steps import _set_unused_side_to_nan
-from estimagic.differentiation.generate_steps import generate_steps
+from estimagic.differentiation.generate_steps import (
+    _calculate_or_validate_base_steps,
+    _fillna,
+    _rescale_to_accomodate_bounds,
+    _set_unused_side_to_nan,
+    generate_steps,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 

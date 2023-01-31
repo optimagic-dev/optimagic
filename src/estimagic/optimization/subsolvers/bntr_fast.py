@@ -83,6 +83,7 @@ def bntr_fast(
                 termination.
             - ``success`` (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
+
     """
 
     model_gradient = model.linear_terms
@@ -188,6 +189,7 @@ def _bntr_fast_jitted(
             termination.
         success (bool): Boolean indicating whether a solution has been found
             before reaching maxiter.
+
     """
 
     (
@@ -365,7 +367,6 @@ def _take_preliminary_gradient_descent_step_and_check_for_solution(
         x_candidate (np.ndarray): Candidate for solution vector of shape (n,).
         criterion_candidate (float): Candidate value for solution criterion.
         gradient_unprojected (np.ndarray):
-
 
     """
 
@@ -691,6 +692,7 @@ def _compute_predicted_reduction_from_conjugate_gradient_step(
     inactive_bounds,
 ):
     """Compute predicted reduction induced by the Conjugate Gradient step.
+
     Args:
         conjugate_gradient_step (np.ndarray): Conjugate gradient step,of lenght n, with
             bounds applied to it.
@@ -1128,6 +1130,7 @@ def _get_fischer_burmeister_scalar(a, b):
 
     Returns:
         float: Value of the Fischer-Burmeister function for inputs a and b.
+
     """
     if a + b <= 0:
         fischer_burmeister = np.sqrt(a**2 + b**2) - (a + b)
@@ -1154,5 +1157,6 @@ def _evaluate_model_criterion(
 
     Returns:
         float: Criterion value of the main model.
+
     """
     return gradient.T @ x + 0.5 * x.T @ hessian @ x

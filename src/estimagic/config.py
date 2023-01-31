@@ -2,7 +2,6 @@ from pathlib import Path
 
 import plotly.express as px
 
-
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
 EXAMPLE_DIR = Path(__file__).parent / "examples"

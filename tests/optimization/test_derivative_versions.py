@@ -11,16 +11,17 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.decorators import switch_sign
-from estimagic.examples.criterion_functions import sos_criterion_and_gradient
-from estimagic.examples.criterion_functions import sos_criterion_and_jacobian
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_dict_derivative
-from estimagic.examples.criterion_functions import sos_gradient
-from estimagic.examples.criterion_functions import sos_jacobian
-from estimagic.examples.criterion_functions import sos_pandas_gradient
-from estimagic.examples.criterion_functions import sos_pandas_jacobian
-from estimagic.optimization.optimize import maximize
-from estimagic.optimization.optimize import minimize
+from estimagic.examples.criterion_functions import (
+    sos_criterion_and_gradient,
+    sos_criterion_and_jacobian,
+    sos_dict_criterion,
+    sos_dict_derivative,
+    sos_gradient,
+    sos_jacobian,
+    sos_pandas_gradient,
+    sos_pandas_jacobian,
+)
+from estimagic.optimization.optimize import maximize, minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 algorithms = ["scipy_lbfgsb", "scipy_neldermead", "scipy_ls_dogbox"]
