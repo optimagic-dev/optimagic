@@ -1,18 +1,16 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.volume import _cube_radius
-from estimagic.optimization.tranquilo.volume import _cube_volume
-from estimagic.optimization.tranquilo.volume import _sphere_radius
-from estimagic.optimization.tranquilo.volume import _sphere_volume
-from estimagic.optimization.tranquilo.volume import get_radius
-from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
 from estimagic.optimization.tranquilo.volume import (
+    _cube_radius,
+    _cube_volume,
+    _sphere_radius,
+    _sphere_volume,
+    get_radius,
+    get_radius_after_volume_scaling,
     get_radius_of_cube_with_volume_of_sphere,
-)
-from estimagic.optimization.tranquilo.volume import (
     get_radius_of_sphere_with_volume_of_cube,
+    get_volume,
 )
-from estimagic.optimization.tranquilo.volume import get_volume
 
 dims = dims = [1, 2, 3, 4, 12, 13, 15]
 coeffs = [

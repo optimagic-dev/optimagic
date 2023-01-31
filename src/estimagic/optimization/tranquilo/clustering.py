@@ -1,7 +1,6 @@
 import numpy as np
 from numba import njit
-from scipy.spatial.distance import pdist
-from scipy.spatial.distance import squareform
+from scipy.spatial.distance import pdist, squareform
 
 
 def cluster(x, epsilon, shape="sphere"):
