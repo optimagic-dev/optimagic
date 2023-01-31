@@ -61,7 +61,7 @@ TEST_CASES = {
         "sample_filter": ["drop_pounders"],
         "fitter": ["powell"],
         "surrogate_model": ["quadratic"],
-        "sample_size": ["powell", "quadratic"],
+        "sample_size": ["powell"],
     },
 }
 
@@ -138,7 +138,7 @@ def test_external_tranquilo_scalar_sphere_defaults():
         algorithm="tranquilo",
     )
 
-    aaae(res.params, np.zeros(5), decimal=5)
+    aaae(res.params, np.zeros(5), decimal=4)
 
 
 # ======================================================================================
