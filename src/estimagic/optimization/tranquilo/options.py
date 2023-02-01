@@ -69,3 +69,12 @@ class HistorySearchOptions(NamedTuple):
     shape: str = "sphere"
     radius_type: str = "circumscribed"
     radius_factor: float = 1.5
+
+
+class NoiseOptions(NamedTuple):
+    fit_intercept: bool = True
+    fit_slope: bool = True
+    fit_square: bool = False
+    distribution: str = "normal"
+    acceptance_radius_factor: float = 0.01
+    acceptance_confidence: float = 0.9

@@ -21,6 +21,7 @@ from estimagic.optimization.tranquilo.options import (
     Bounds,
     ConvOptions,
     HistorySearchOptions,
+    NoiseOptions,
     RadiusFactors,
     RadiusOptions,
     TrustRegion,
@@ -61,7 +62,10 @@ def _tranquilo(
     silence_experimental_warning=False,
     infinity_handling="relative",
     history_search_options=None,
-    noisy=False,  # noqa: ARG001
+    noisy=False,
+    acceptance_sampler="ball",
+    acceptance_sampler_options=None,
+    noise_options=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -129,6 +133,7 @@ def _tranquilo(
     # set default values for optional arguments
     # ==================================================================================
     sampling_rng = np.random.default_rng(random_seed)
+    acceptance_rng = np.random.default_rng(random_seed + 1)
 
     if sample_filter is None:
         sample_filter = "clustering" if functype == "scalar" else "keep_all"
@@ -160,7 +165,7 @@ def _tranquilo(
         if subsolver is None:
             subsolver = "gqtpar_fast"
 
-    target_sample_size = _process_sample_size(
+    sampling_budget = _process_sample_size(
         user_sample_size=sample_size,
         model_info=model_info,
         x=x,
@@ -187,6 +192,17 @@ def _tranquilo(
         else:
             history_search_options = HistorySearchOptions()
 
+    if noise_options is None:
+        noise_options = NoiseOptions()
+
+    # ==================================================================================
+    # Hardcoded stuff for noise handling
+    # ==================================================================================
+
+    if noisy:
+        n_acceptance_samples = 5
+        sampling_budget = 3 * sampling_budget
+
     # ==================================================================================
     # initialize compoments for the solver
     # ==================================================================================
@@ -208,6 +224,12 @@ def _tranquilo(
         radius_factors=radius_factors,
         user_options=sampler_options,
     )
+    sample_acceptance_points = get_sampler(
+        acceptance_sampler,
+        bounds=bounds,
+        user_options=acceptance_sampler_options,
+    )
+
     filter_points = get_sample_filter(sample_filter, user_options=filter_options)
 
     aggregate_vector_model = get_aggregator(
@@ -271,7 +293,7 @@ def _tranquilo(
             xs=old_xs,
             indices=old_indices,
             state=state,
-            target_size=target_sample_size,
+            target_size=sampling_budget,
         )
 
         n_effective_points = count_points(filtered_xs, trustregion=state.trustregion)
@@ -279,7 +301,7 @@ def _tranquilo(
         # ==============================================================================
         # sample new points
         # ==============================================================================
-        n_to_sample = max(0, target_sample_size - n_effective_points)
+        n_to_sample = max(0, sampling_budget - n_effective_points)
 
         new_xs = sample_points(
             trustregion=state.trustregion,
@@ -321,7 +343,29 @@ def _tranquilo(
 
         candidate_x = sub_sol["x"]
 
-        _, candidate_fval, candidate_index = wrapped_criterion(candidate_x)
+        if noisy:
+            acceptance_region = TrustRegion(
+                center=candidate_x,
+                radius=state.trustregion.radius
+                * noise_options.acceptance_radius_factor,
+            )
+            acceptance_sample = sample_acceptance_points(
+                trustregion=acceptance_region,
+                n_points=n_acceptance_samples - 1,
+                rng=acceptance_rng,
+            )
+
+            acceptance_xs = np.vstack([candidate_x, acceptance_sample])
+
+            _, acceptance_fvals, acceptance_indices = wrapped_criterion(acceptance_xs)
+
+            candidate_fval = np.mean(acceptance_fvals)
+            candidate_index = acceptance_indices[0]
+
+        else:
+
+            _, candidate_fval, candidate_index = wrapped_criterion(candidate_x)
+
         actual_improvement = -(candidate_fval - state.fval)
 
         rho = _calculate_rho(
@@ -431,6 +475,9 @@ class State(NamedTuple):
     new_indices: np.ndarray
     old_indices_used: np.ndarray
     old_indices_discarded: np.ndarray
+
+    # information on acceptance sample
+    acceptance_indices: np.ndarray = None
 
 
 def _is_converged(states, options):
