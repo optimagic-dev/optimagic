@@ -26,7 +26,7 @@ def test_get_component(func_dict):
         user_options={"y": 2},
         redundant_option_handling="ignore",
         redundant_argument_handling="ignore",
-        mandatory_arguments=["x"],
+        mandatory_signature=["x"],
     )
 
     assert got() == 3

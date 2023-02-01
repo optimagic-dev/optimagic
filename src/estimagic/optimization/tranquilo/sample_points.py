@@ -77,7 +77,7 @@ def get_sampler(
         func_dict=built_in_samplers,
         default_options=default_options,
         user_options=user_options,
-        mandatory_arguments=mandatory_args,
+        mandatory_signature=mandatory_args,
     )
 
     return out

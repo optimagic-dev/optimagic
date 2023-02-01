@@ -60,7 +60,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
         func_dict=built_in_fitters,
         default_options=default_options,
         user_options=user_options,
-        mandatory_arguments=mandatory_arguments,
+        mandatory_signature=mandatory_arguments,
     )
 
     fitter = partial(

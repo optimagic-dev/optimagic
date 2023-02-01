@@ -14,9 +14,13 @@ def get_component(
     user_options=None,
     redundant_option_handling="ignore",
     redundant_argument_handling="ignore",
-    mandatory_arguments=None,
+    mandatory_signature=None,
 ):
     """Process a function that represents an interchangeable component of tranquilo.
+
+    The function is either a built in function or a user provided function. In all
+    cases we run some checks that the signature of the function is correct and then
+    partial all static options into the function.
 
     Args:
         name_or_func (str or callable): Name of a function or function.
@@ -32,8 +36,9 @@ def get_component(
         redundant_argument_handling (str): How to handle redundant arguments passed
             to the processed function at runtime. Can be "warn", "raise" or "ignore".
             Default "ignore".
-        mandatory_arguments (list): Tuple of arguments that must be in the function
-            signature of the raw function. Otherwise, a ValueError is raised.
+        mandatory_signature (list): List or tuple of arguments that must be in the
+            signature of all functions in `func_dict`. These can be options or
+            arguments. Otherwise, a ValueError is raised.
 
     Returns:
         callable: The processed function.
@@ -58,7 +63,7 @@ def get_component(
     )
 
     _fail_if_mandatory_argument_is_missing(
-        mandatory_arguments=mandatory_arguments,
+        mandatory_arguments=mandatory_signature,
         signature=_all_arguments,
         name=_name,
         component_name=component_name,
