@@ -3,11 +3,12 @@ from numba import njit
 from scipy.linalg import qr_multiply
 
 from estimagic.optimization.tranquilo.clustering import cluster
+from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.models import n_second_order_terms
 from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
 
 
-def get_sample_filter(sample_filter="keep_all"):
+def get_sample_filter(sample_filter="keep_all", user_options=None):
     """Get filter function with partialled options.
 
     The filter function is applied to points inside the current trustregion before
@@ -31,31 +32,31 @@ def get_sample_filter(sample_filter="keep_all"):
         "drop_pounders": drop_collinear_pounders,
     }
 
-    if isinstance(sample_filter, str) and sample_filter in built_in_filters:
-        out = built_in_filters[sample_filter]
-    elif callable(sample_filter):
-        out = sample_filter
-    else:
-        raise ValueError()
+    out = get_component(
+        name_or_func=sample_filter,
+        component_name="sample_filter",
+        func_dict=built_in_filters,
+        user_options=user_options,
+    )
 
     return out
 
 
-def discard_all(xs, indices, state, target_size):  # noqa: ARG001
+def discard_all(state):
     return state.x.reshape(1, -1), np.array([state.index])
 
 
-def keep_all(xs, indices, state, target_size):  # noqa: ARG001
+def keep_all(xs, indices):
     return xs, indices
 
 
-def keep_sphere(xs, indices, state, target_size):  # noqa: ARG001
+def keep_sphere(xs, indices, state):
     dists = np.linalg.norm(xs - state.trustregion.center, axis=1)
     keep = dists <= state.trustregion.radius
     return xs[keep], indices[keep]
 
 
-def drop_collinear_pounders(xs, indices, state, target_size):  # noqa: ARG001
+def drop_collinear_pounders(xs, indices, state):
     """Drop collinear points using pounders filtering."""
     if xs.shape[0] <= xs.shape[1] + 1:
         filtered_xs, filtered_indices = xs, indices

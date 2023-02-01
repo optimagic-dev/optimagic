@@ -43,6 +43,7 @@ def _tranquilo(
     random_seed=925408,
     sampler=None,
     sample_filter=None,
+    filter_options=None,
     fitter=None,
     subsolver=None,
     sample_size=None,
@@ -206,7 +207,7 @@ def _tranquilo(
         radius_factors=radius_factors,
         user_options=sampler_options,
     )
-    filter_points = get_sample_filter(sample_filter)
+    filter_points = get_sample_filter(sample_filter, user_options=filter_options)
 
     aggregate_vector_model = get_aggregator(
         aggregator=aggregator,

@@ -1,11 +1,10 @@
-import inspect
-import warnings
 from functools import partial
 
 import numpy as np
 from numba import njit
 from scipy.linalg import qr_multiply
 
+from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.models import (
     ModelInfo,
     VectorModel,
@@ -38,8 +37,6 @@ def get_fitter(fitter, user_options=None, model_info=None):
         callable: The partialled fit method that only depends on x and y.
 
     """
-    if user_options is None:
-        user_options = {}
     if model_info is None:
         model_info = ModelInfo()
 
@@ -49,57 +46,30 @@ def get_fitter(fitter, user_options=None, model_info=None):
         "powell": fit_powell,
     }
 
-    if isinstance(fitter, str) and fitter in built_in_fitters:
-        _fitter = built_in_fitters[fitter]
-        _fitter_name = fitter
-    elif callable(fitter):
-        _fitter = fitter
-        _fitter_name = getattr(fitter, "__name__", "your fitter")
-    else:
-        raise ValueError(
-            f"Invalid fitter: {fitter}. Must be one of {list(built_in_fitters)} or a "
-            "callable."
-        )
-
     default_options = {
         "l2_penalty_linear": 0,
         "l2_penalty_square": 0.1,
+        "model_info": model_info,
     }
 
-    all_options = {**default_options, **user_options}
+    mandatory_arguments = ["x", "y", "model_info"]
 
-    args = set(inspect.signature(_fitter).parameters)
-
-    if not {"x", "y", "model_info"}.issubset(args):
-        raise ValueError(
-            "fit method needs to take 'x', 'y' and 'model_info' as the first three "
-            "arguments."
-        )
-
-    not_options = {"x", "y", "model_info"}
-    if isinstance(_fitter, partial):
-        partialed_in = set(_fitter.args).union(set(_fitter.keywords))
-        not_options = not_options | partialed_in
-
-    valid_options = args - not_options
-
-    reduced = {key: val for key, val in all_options.items() if key in valid_options}
-
-    ignored = {
-        key: val for key, val in user_options.items() if key not in valid_options
-    }
-
-    if ignored:
-        warnings.warn(
-            "The following options were ignored because they are not compatible with "
-            f"{_fitter_name}:\n\n {ignored}"
-        )
-
-    out = partial(
-        _fitter_template, fitter=_fitter, model_info=model_info, options=reduced
+    _raw_fitter = get_component(
+        name_or_func=fitter,
+        component_name="fitter",
+        func_dict=built_in_fitters,
+        default_options=default_options,
+        user_options=user_options,
+        mandatory_signature=mandatory_arguments,
     )
 
-    return out
+    fitter = partial(
+        _fitter_template,
+        fitter=_raw_fitter,
+        model_info=model_info,
+    )
+
+    return fitter
 
 
 def _fitter_template(
@@ -108,7 +78,6 @@ def _fitter_template(
     weights=None,
     fitter=None,
     model_info=None,
-    options=None,
 ):
     """Fit a model to data.
 
@@ -122,7 +91,6 @@ def _fitter_template(
             ``x``, second ``y`` and third ``model_info``.
         model_info (ModelInfo): Information that describes the functional form of
             the model.
-        options (dict): Options for the fit method.
 
     Returns:
         VectorModel or ScalarModel: Results container.
@@ -138,7 +106,7 @@ def _fitter_template(
         y = y * _root_weights
         x = x * _root_weights
 
-    coef = fitter(x, y, model_info, **options)
+    coef = fitter(x, y)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)

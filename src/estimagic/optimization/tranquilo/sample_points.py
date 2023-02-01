@@ -1,5 +1,3 @@
-import inspect
-import warnings
 from functools import partial
 
 import numpy as np
@@ -7,6 +5,7 @@ from scipy.spatial.distance import pdist
 from scipy.special import gammainc, logsumexp
 
 import estimagic as em
+from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.options import Bounds
 
 
@@ -33,7 +32,6 @@ def get_sampler(
             existing_fvals, model_info and  and returns a new sample.
 
     """
-    user_options = {} if user_options is None else user_options
 
     built_in_samplers = {
         "box": _box_sampler,
@@ -46,19 +44,11 @@ def get_sampler(
         "optimal_sphere": partial(_optimal_hull_sampler, order=2),
     }
 
-    if isinstance(sampler, str) and sampler in built_in_samplers:
-        _sampler = built_in_samplers[sampler]
-        _sampler_name = sampler
-    elif callable(sampler):
-        _sampler = sampler
-        _sampler_name = getattr(sampler, "__name__", "your sampler")
-    else:
-        raise ValueError(
-            f"Invalid sampler: {sampler}. Must be one of {list(built_in_samplers)} "
-            "or a callable."
-        )
-
-    if "hull_sampler" in _sampler_name and "order" not in user_options:
+    if (
+        isinstance(sampler, str)
+        and "hull_sampler" in sampler
+        and "order" not in user_options
+    ):
         msg = (
             "The hull_sampler and optimal_hull_sampler require the argument 'order' to "
             "be prespecfied in the user_options dictionary. Order is a positive "
@@ -67,48 +57,27 @@ def get_sampler(
         )
         raise ValueError(msg)
 
-    args = set(inspect.signature(_sampler).parameters)
+    default_options = {
+        "bounds": bounds,
+        "model_info": model_info,
+        "radius_factors": radius_factors,
+    }
 
-    mandatory_args = {
+    mandatory_args = [
         "bounds",
         "trustregion",
         "n_points",
         "existing_xs",
         "rng",
-    }
+    ]
 
-    optional_kwargs = {
-        "model_info": model_info,
-        "radius_factors": radius_factors,
-    }
-
-    optional_kwargs = {k: v for k, v in optional_kwargs.items() if k in args}
-
-    problematic = mandatory_args - args
-    if problematic:
-        raise ValueError(
-            f"The following mandatory arguments are missing in {_sampler_name}: "
-            f"{problematic}"
-        )
-
-    valid_options = args - mandatory_args
-
-    reduced = {key: val for key, val in user_options.items() if key in valid_options}
-    ignored = {
-        key: val for key, val in user_options.items() if key not in valid_options
-    }
-
-    if ignored:
-        warnings.warn(
-            "The following options were ignored because they are not compatible "
-            f"with {_sampler_name}:\n\n {ignored}"
-        )
-
-    out = partial(
-        _sampler,
-        bounds=bounds,
-        **optional_kwargs,
-        **reduced,
+    out = get_component(
+        name_or_func=sampler,
+        component_name="sampler",
+        func_dict=built_in_samplers,
+        default_options=default_options,
+        user_options=user_options,
+        mandatory_signature=mandatory_args,
     )
 
     return out
