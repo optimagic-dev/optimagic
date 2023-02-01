@@ -61,6 +61,7 @@ def _tranquilo(
     silence_experimental_warning=False,
     infinity_handling="relative",
     history_search_options=None,
+    noisy=False,  # noqa: ARG001
 ):
     """Find the local minimum to a noisy optimization problem.
 
