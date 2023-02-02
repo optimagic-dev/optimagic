@@ -258,7 +258,9 @@ def test_process_surrogate_model_invalid(functype):
 def test_process_sample_size_none_linear(has_interactions, has_squares):
     model_info = ModelInfo(has_interactions=has_interactions, has_squares=has_squares)
     x = np.ones((3, 2))
-    got = _process_sample_size(None, model_info=model_info, x=x)
+    got = _process_sample_size(
+        None, model_info=model_info, x=x, sample_size_factor=None
+    )
     if has_interactions or has_squares:
         assert got == 7
     else:
@@ -281,22 +283,22 @@ STR_TEST_CASES = [  # assume len(x) = 3
 @pytest.mark.parametrize("user_sample_size, expected", STR_TEST_CASES)
 def test_process_sample_size_str(user_sample_size, expected):
     x = np.ones((3, 2))
-    got = _process_sample_size(user_sample_size, None, x=x)
+    got = _process_sample_size(user_sample_size, None, x=x, sample_size_factor=None)
     assert got == expected
 
 
 def test_process_sample_size_str_invalid():
     with pytest.raises(ValueError):
-        _process_sample_size("n**2", None, None)
+        _process_sample_size("n**2", None, None, None)
 
 
 @pytest.mark.parametrize("user_sample_size", [1, 10, -100, 10.5])
 def test_process_sample_size_number(user_sample_size):
-    got = _process_sample_size(user_sample_size, None, None)
+    got = _process_sample_size(user_sample_size, None, None, None)
     assert got == int(user_sample_size)
 
 
 def test_process_sample_size_invalid():
     x = np.ones((3, 2))
     with pytest.raises(TypeError):
-        _process_sample_size(np.zeros_like(x), None, x)
+        _process_sample_size(np.zeros_like(x), None, x, None)

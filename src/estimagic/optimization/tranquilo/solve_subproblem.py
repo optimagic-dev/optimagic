@@ -1,6 +1,7 @@
 import inspect
 import warnings
 from functools import partial
+from typing import NamedTuple
 
 import numpy as np
 
@@ -199,12 +200,12 @@ def _solve_subproblem_template(
     fval_at_center = evaluate_model(model, np.zeros_like(x))
     fval_candidate = evaluate_model(model, raw_result["x"])
 
-    result = {
-        "x": x,
-        "expected_improvement": -(fval_candidate - fval_at_center),
-        "n_iterations": raw_result["n_iterations"],
-        "success": raw_result["success"],
-    }
+    result = SubproblemResult(
+        x=x,
+        expected_improvement=-(fval_candidate - fval_at_center),
+        n_iterations=raw_result["n_iterations"],
+        success=raw_result["success"],
+    )
 
     return result
 
@@ -236,3 +237,12 @@ def _center_and_scale(vec, trustregion):
 
 def _uncenter_and_unscale(vec, trustregion):
     return vec * trustregion.radius + trustregion.center
+
+
+class SubproblemResult(NamedTuple):
+    """Result of the subproblem solver."""
+
+    x: np.ndarray
+    expected_improvement: float
+    n_iterations: int
+    success: bool

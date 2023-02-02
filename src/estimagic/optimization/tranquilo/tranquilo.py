@@ -6,6 +6,7 @@ from typing import NamedTuple
 import numpy as np
 
 from estimagic.decorators import mark_minimizer
+from estimagic.optimization.tranquilo.acceptance_decision import get_acceptance_decider
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.count_points import get_counter
@@ -18,6 +19,7 @@ from estimagic.optimization.tranquilo.models import (
     n_free_params,
 )
 from estimagic.optimization.tranquilo.options import (
+    AcceptanceOptions,
     Bounds,
     ConvOptions,
     HistorySearchOptions,
@@ -61,9 +63,10 @@ def _tranquilo(
     infinity_handling="relative",
     history_search_options=None,
     noisy=False,
-    acceptance_sampler="ball",
-    acceptance_sampler_options=None,
     noise_options=None,
+    sample_size_factor=None,
+    acceptance_decider=None,
+    acceptance_options=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -165,6 +168,7 @@ def _tranquilo(
         user_sample_size=sample_size,
         model_info=model_info,
         x=x,
+        sample_size_factor=sample_size_factor,
     )
 
     if fitter is None:
@@ -191,13 +195,11 @@ def _tranquilo(
     if noise_options is None:
         noise_options = NoiseOptions()
 
-    # ==================================================================================
-    # Hardcoded stuff for noise handling
-    # ==================================================================================
+    if acceptance_decider is None:
+        acceptance_decider = "naive_noisy" if noisy else "classic"
 
-    if noisy:
-        n_acceptance_samples = 5
-        sampling_budget = 3 * sampling_budget
+    if acceptance_options is None:
+        acceptance_options = AcceptanceOptions()
 
     # ==================================================================================
     # initialize compoments for the solver
@@ -218,11 +220,6 @@ def _tranquilo(
         bounds=bounds,
         model_info=model_info,
         user_options=sampler_options,
-    )
-    sample_acceptance_points = get_sampler(
-        acceptance_sampler,
-        bounds=bounds,
-        user_options=acceptance_sampler_options,
     )
 
     filter_points = get_sample_filter(sample_filter, user_options=filter_options)
@@ -250,6 +247,12 @@ def _tranquilo(
     calculate_weights = get_sample_weighter(weighter, bounds=bounds)
 
     clip_infinite_values = get_infinity_handler(infinity_handling)
+
+    acceptance_decider = get_acceptance_decider(
+        acceptance_decider=acceptance_decider,
+        acceptance_options=acceptance_options,
+        bounds=bounds,
+    )
 
     _, _first_fval, _first_indices = wrapped_criterion(x)
 
@@ -336,39 +339,12 @@ def _tranquilo(
         # acceptance decision
         # ==============================================================================
 
-        candidate_x = sub_sol["x"]
-
-        if noisy:
-            acceptance_region = TrustRegion(
-                center=candidate_x,
-                radius=state.trustregion.radius
-                * noise_options.acceptance_radius_factor,
-            )
-            acceptance_sample = sample_acceptance_points(
-                trustregion=acceptance_region,
-                n_points=n_acceptance_samples - 1,
-                rng=acceptance_rng,
-            )
-
-            acceptance_xs = np.vstack([candidate_x, acceptance_sample])
-
-            _, acceptance_fvals, acceptance_indices = wrapped_criterion(acceptance_xs)
-
-            candidate_fval = np.mean(acceptance_fvals)
-            candidate_index = acceptance_indices[0]
-
-        else:
-
-            _, candidate_fval, candidate_index = wrapped_criterion(candidate_x)
-
-        actual_improvement = -(candidate_fval - state.fval)
-
-        rho = _calculate_rho(
-            actual_improvement=actual_improvement,
-            expected_improvement=sub_sol["expected_improvement"],
+        acceptance_result = acceptance_decider(
+            subproblem_solution=sub_sol,
+            state=state,
+            wrapped_criterion=wrapped_criterion,
+            rng=acceptance_rng,
         )
-
-        is_accepted = actual_improvement > 0
 
         # ==============================================================================
         # update state with information on this iteration
@@ -377,19 +353,11 @@ def _tranquilo(
         state = state._replace(
             model_indices=model_indices,
             model=scalar_model,
-            rho=rho,
-            accepted=is_accepted,
             new_indices=new_indices,
             old_indices_used=filtered_indices,
             old_indices_discarded=np.setdiff1d(old_indices, filtered_indices),
+            **acceptance_result._asdict(),
         )
-
-        if is_accepted:
-            state = state._replace(
-                index=candidate_index,
-                x=candidate_x,
-                fval=candidate_fval,
-            )
 
         states.append(state)
 
@@ -399,17 +367,14 @@ def _tranquilo(
 
         new_radius = adjust_radius(
             radius=state.trustregion.radius,
-            rho=rho,
-            step=candidate_x - state.trustregion.center,
+            rho=acceptance_result.rho,
+            step_length=acceptance_result.step_length,
             options=radius_options,
         )
 
-        if is_accepted:
-            new_trustregion = state.trustregion._replace(
-                center=candidate_x, radius=new_radius
-            )
-        else:
-            new_trustregion = state.trustregion._replace(radius=new_radius)
+        new_trustregion = state.trustregion._replace(
+            center=acceptance_result.x, radius=new_radius
+        )
 
         state = state._replace(trustregion=new_trustregion)
 
@@ -417,7 +382,7 @@ def _tranquilo(
         # convergence check
         # ==============================================================================
 
-        if actual_improvement >= 0 and not disable_convergence:
+        if acceptance_result.accepted and not disable_convergence:
             converged, msg = _is_converged(states=states, options=conv_options)
             if converged:
                 break
@@ -474,6 +439,10 @@ class State(NamedTuple):
     # information on acceptance sample
     acceptance_indices: np.ndarray = None
 
+    # information on step length
+    step_length: float = None
+    relative_step_length: float = None
+
 
 def _is_converged(states, options):
     old, new = states[-2:]
@@ -529,7 +498,7 @@ def _process_surrogate_model(surrogate_model, functype):
     return out
 
 
-def _process_sample_size(user_sample_size, model_info, x):
+def _process_sample_size(user_sample_size, model_info, x, sample_size_factor):
     if user_sample_size is None:
         if model_info.has_squares or model_info.has_interactions:
             out = 2 * len(x) + 1
@@ -551,6 +520,10 @@ def _process_sample_size(user_sample_size, model_info, x):
         out = int(user_sample_size)
     else:
         raise TypeError(f"invalid sample size: {user_sample_size}")
+
+    if sample_size_factor is not None:
+        out = int(out * sample_size_factor)
+
     return out
 
 

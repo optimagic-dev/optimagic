@@ -78,3 +78,4 @@ class AcceptanceOptions(NamedTuple):
     n_initial: int = 5
     n_min: int = 5
     min_improvement: float = 0.0
+    sampler: str = "ball"
