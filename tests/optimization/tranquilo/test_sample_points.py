@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.options import Bounds, RadiusFactors, TrustRegion
+from estimagic.optimization.tranquilo.options import Bounds, TrustRegion
 from estimagic.optimization.tranquilo.sample_points import (
     _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
@@ -67,7 +67,6 @@ def test_optimization_ignores_existing_points(sampler):
         sampler=sampler,
         bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
         model_info=None,
-        radius_factors=RadiusFactors(),
     )
     calculated = sampler(
         trustregion=TrustRegion(center=np.zeros(3), radius=1),

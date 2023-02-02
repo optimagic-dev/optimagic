@@ -22,7 +22,6 @@ from estimagic.optimization.tranquilo.options import (
     ConvOptions,
     HistorySearchOptions,
     NoiseOptions,
-    RadiusFactors,
     RadiusOptions,
     TrustRegion,
 )
@@ -50,7 +49,6 @@ def _tranquilo(
     sample_size=None,
     surrogate_model=None,
     radius_options=None,
-    radius_factors=None,
     sampler_options=None,
     counter="count_all",
     weighter="no_weights",
@@ -140,8 +138,6 @@ def _tranquilo(
 
     if radius_options is None:
         radius_options = RadiusOptions()
-    if radius_factors is None:
-        radius_factors = RadiusFactors()
     if sampler_options is None:
         sampler_options = {}
     if fit_options is None:
@@ -221,7 +217,6 @@ def _tranquilo(
         sampler,
         bounds=bounds,
         model_info=model_info,
-        radius_factors=radius_factors,
         user_options=sampler_options,
     )
     sample_acceptance_points = get_sampler(

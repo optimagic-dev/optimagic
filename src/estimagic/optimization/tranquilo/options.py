@@ -58,13 +58,6 @@ class TrustRegion(NamedTuple):
     radius: float
 
 
-class RadiusFactors(NamedTuple):
-    accepatance: float = 0.02
-    centric: float = 0.1
-    outer: float = 0.6
-    neighborhood: float = 1.5
-
-
 class HistorySearchOptions(NamedTuple):
     shape: str = "sphere"
     radius_type: str = "circumscribed"
@@ -76,5 +69,12 @@ class NoiseOptions(NamedTuple):
     fit_slope: bool = True
     fit_square: bool = False
     distribution: str = "normal"
-    acceptance_radius_factor: float = 0.01
-    acceptance_confidence: float = 0.9
+
+
+class AcceptanceOptions(NamedTuple):
+    radius_factor: float = 0.01
+    confidence_level: float = 0.9
+    power_level: float = 0.8
+    n_initial: int = 5
+    n_min: int = 5
+    min_improvement: float = 0.0

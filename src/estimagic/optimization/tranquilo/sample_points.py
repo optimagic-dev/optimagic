@@ -9,9 +9,7 @@ from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.options import Bounds
 
 
-def get_sampler(
-    sampler, bounds, model_info=None, radius_factors=None, user_options=None
-):
+def get_sampler(sampler, bounds, model_info=None, user_options=None):
     """Get sampling function partialled options.
 
     Args:
@@ -60,7 +58,6 @@ def get_sampler(
     default_options = {
         "bounds": bounds,
         "model_info": model_info,
-        "radius_factors": radius_factors,
     }
 
     mandatory_args = [
@@ -199,8 +196,6 @@ def _optimal_hull_sampler(
     trustregion,
     n_points,
     rng,
-    model_info,  # noqa: ARG001
-    radius_factors,
     order,
     distribution=None,
     hardness=1,
@@ -279,7 +274,7 @@ def _optimal_hull_sampler(
 
         if criterion == "distance":
             dist_to_center = np.linalg.norm(existing_xs_unit, axis=1)
-            not_centric = dist_to_center >= radius_factors.centric
+            not_centric = dist_to_center >= 0.1
             if not_centric.any():
                 existing_xs_unit = existing_xs_unit[not_centric]
             else:
