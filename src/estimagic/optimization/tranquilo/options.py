@@ -64,15 +64,8 @@ class HistorySearchOptions(NamedTuple):
     radius_factor: float = 1.5
 
 
-class NoiseOptions(NamedTuple):
-    fit_intercept: bool = True
-    fit_slope: bool = True
-    fit_square: bool = False
-    distribution: str = "normal"
-
-
 class AcceptanceOptions(NamedTuple):
-    radius_factor: float = 0.01
+    radius_factor: float = 1e-5
     confidence_level: float = 0.9
     power_level: float = 0.8
     n_initial: int = 5

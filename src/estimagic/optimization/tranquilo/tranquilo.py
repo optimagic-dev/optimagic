@@ -10,6 +10,7 @@ from estimagic.optimization.tranquilo.acceptance_decision import get_acceptance_
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.count_points import get_counter
+from estimagic.optimization.tranquilo.estimate_variance import get_variance_estimator
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
@@ -23,7 +24,6 @@ from estimagic.optimization.tranquilo.options import (
     Bounds,
     ConvOptions,
     HistorySearchOptions,
-    NoiseOptions,
     RadiusOptions,
     TrustRegion,
 )
@@ -63,10 +63,11 @@ def _tranquilo(
     infinity_handling="relative",
     history_search_options=None,
     noisy=False,
-    noise_options=None,
     sample_size_factor=None,
     acceptance_decider=None,
     acceptance_options=None,
+    variance_estimator="unweighted",
+    variance_estimation_options=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -192,9 +193,6 @@ def _tranquilo(
         else:
             history_search_options = HistorySearchOptions()
 
-    if noise_options is None:
-        noise_options = NoiseOptions()
-
     if acceptance_decider is None:
         acceptance_decider = "naive_noisy" if noisy else "classic"
 
@@ -248,13 +246,45 @@ def _tranquilo(
 
     clip_infinite_values = get_infinity_handler(infinity_handling)
 
+    estimate_variance = get_variance_estimator(
+        fitter=variance_estimator,
+        user_options=variance_estimation_options,
+    )
+    # ==================================================================================
+    # initialize the optimizer state
+    # ==================================================================================
+
+    if noisy:
+        acceptance_sampler = get_sampler(
+            sampler=acceptance_options.sampler,
+            bounds=bounds,
+        )
+    else:
+        acceptance_sampler = None
+
     acceptance_decider = get_acceptance_decider(
         acceptance_decider=acceptance_decider,
         acceptance_options=acceptance_options,
-        bounds=bounds,
+        sampler=acceptance_sampler,
     )
 
-    _, _first_fval, _first_indices = wrapped_criterion(x)
+    if noisy:
+        _acceptance_region = TrustRegion(
+            center=x,
+            radius=radius_options.initial_radius * acceptance_options.radius_factor,
+        )
+        _acceptance_sample = acceptance_sampler(
+            trustregion=_acceptance_region,
+            n_points=acceptance_options.n_initial,
+            rng=acceptance_rng,
+        )
+
+        _first_xs = np.vstack([x, _acceptance_sample])
+        _, _first_fvals, _first_indices = wrapped_criterion(_first_xs)
+        _first_fval = np.mean(_first_fvals, axis=0)
+
+    else:
+        _, _first_fval, _first_indices = wrapped_criterion(x)
 
     state = State(
         safety=False,
@@ -269,6 +299,7 @@ def _tranquilo(
         new_indices=_first_indices,
         old_indices_discarded=_first_indices,
         old_indices_used=_first_indices,
+        acceptance_indices=_first_indices,
     )
 
     states = [state]
@@ -278,6 +309,19 @@ def _tranquilo(
     # ==================================================================================
     converged, msg = False, None
     for _ in range(stopping_max_iterations):
+        # ==============================================================================
+        # fit noise model based on previous acceptance samples
+        # ==============================================================================
+
+        if noisy:
+            estimate_variance(
+                history=history,
+                states=states,
+                model_type="scalar",
+            )
+        else:
+            pass
+
         # ==============================================================================
         # find, filter and count points
         # ==============================================================================

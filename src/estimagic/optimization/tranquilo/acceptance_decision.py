@@ -10,19 +10,13 @@ import numpy as np
 
 from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.options import TrustRegion
-from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
-def get_acceptance_decider(acceptance_decider, acceptance_options, bounds):
+def get_acceptance_decider(acceptance_decider, acceptance_options, sampler):
     func_dict = {
         "classic": accept_classic,
         "naive_noisy": accept_naive_noisy,
     }
-
-    sampler = get_sampler(
-        sampler=acceptance_options.sampler,
-        bounds=bounds,
-    )
 
     default_options = {
         "acceptance_options": acceptance_options,
@@ -127,7 +121,7 @@ def accept_naive_noisy(
         candidate_index=candidate_index,
         rho=rho,
         is_accepted=is_accepted,
-        acceptance_indices=np.array([candidate_index]),
+        acceptance_indices=acceptance_indices,
         old_state=state,
     )
 
