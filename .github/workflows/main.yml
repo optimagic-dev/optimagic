@@ -1,19 +1,14 @@
 ---
 name: main
-
 # Automatically cancel a previous run.
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
-
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - '*'
-
+    branches: ['*']
 jobs:
   run-tests-linux:
     name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
@@ -21,12 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-        python-version:
-          - '3.8'
-          - '3.9'
-          - '3.10'
+        os: [ubuntu-latest]
+        python-version: ['3.8', '3.9', '3.10']
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -47,20 +38,14 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
   run-tests-win-and-mac:
     name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-latest
-          - windows-latest
-        python-version:
-          - '3.8'
-          - '3.9'
-          - '3.10'
+        os: [macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10']
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -76,7 +61,6 @@ jobs:
         run: |
           micromamba activate estimagic
           pytest -m "not slow and not jax"
-
   check-links-in-documentation:
     name: Check links in documentation.
     runs-on: ubuntu-latest
@@ -95,7 +79,6 @@ jobs:
           micromamba activate estimagic
           cd docs/source
           sphinx-build -T -b linkcheck -d doctrees . linkcheck
-
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest

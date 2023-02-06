@@ -2,7 +2,6 @@
 codecov:
   notify:
     require_ci_to_pass: true
-
 coverage:
   precision: 2
   round: down
@@ -14,7 +13,6 @@ coverage:
     project:
       default:
         target: 90%
-
 ignore:
   - .tox/**/*
   - release.py

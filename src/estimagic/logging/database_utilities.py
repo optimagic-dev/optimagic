@@ -463,7 +463,9 @@ def _configure_engine(engine, fast_logging):
     """Configure the sqlite engine.
 
     The two functions that configure the emission of the begin statement are taken from
-    the sqlalchemy documentation the documentation: https://tinyurl.com/u9xea5z and are
+    the sqlalchemy documentation the documentation:
+    https://tinyurl.com/u9xea5z
+    and are
     the recommended way of working around a bug in the pysqlite driver.
 
     The other function speeds up the write process. If fast_logging is False, it does so
@@ -471,7 +473,6 @@ def _configure_engine(engine, fast_logging):
     unsafe optimizations.
 
     """
-
     @event.listens_for(engine, "connect")
     def do_connect(dbapi_connection, connection_record):  # noqa: ARG001
         # disable pysqlite's emitting of the BEGIN statement entirely.
@@ -500,7 +501,6 @@ def _configure_reflect():
     Code ist taken from the documentation: https://tinyurl.com/y7q287jr
 
     """
-
     @event.listens_for(Table, "column_reflect")
     def _setup_pickletype(inspector, table, column_info):  # noqa: ARG001
         if isinstance(column_info["type"], BLOB):

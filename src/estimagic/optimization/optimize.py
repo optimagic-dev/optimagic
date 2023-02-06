@@ -748,7 +748,6 @@ def _optimize(
     # Do actual optimization
     # ==================================================================================
     if not multistart:
-
         steps = [{"type": "optimization", "name": "optimization"}]
 
         step_ids = log_scheduled_steps_and_get_ids(
@@ -759,7 +758,6 @@ def _optimize(
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
-
         multistart_options = _fill_multistart_options_with_defaults(
             options=multistart_options,
             params=params,

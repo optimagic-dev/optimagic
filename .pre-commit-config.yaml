@@ -18,13 +18,11 @@ repos:
         language: python
         always_run: true
         require_serial: true
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: check-added-large-files
-        args:
-          - --maxkb=1300
+        args: [--maxkb=1300]
         exclude: tests/optimization/fixtures/
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -34,20 +32,15 @@ repos:
       - id: debug-statements
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
-        types:
-          - text
+        types: [text]
       - id: forbid-submodules
       - id: mixed-line-ending
-        args:
-          - --fix=lf
+        args: [--fix=lf]
         description: Forces to replace line ending by the UNIX 'lf' character.
       - id: name-tests-test
-        args:
-          - --pytest-test-first
+        args: [--pytest-test-first]
       - id: no-commit-to-branch
-        args:
-          - --branch
-          - main
+        args: [--branch, main]
       - id: trailing-whitespace
       - id: check-ast
       - id: check-docstring-first
@@ -100,23 +93,15 @@ repos:
     rev: 0.7.16
     hooks:
       - id: mdformat
-        additional_dependencies:
-          - mdformat-gfm
-          - mdformat-black
-        args:
-          - --wrap
-          - '88'
+        additional_dependencies: [mdformat-gfm, mdformat-black]
+        args: [--wrap, '88']
         files: (README\.md)
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.16
     hooks:
       - id: mdformat
-        additional_dependencies:
-          - mdformat-myst
-          - mdformat-black
-        args:
-          - --wrap
-          - '88'
+        additional_dependencies: [mdformat-myst, mdformat-black]
+        args: [--wrap, '88']
         files: (docs/.)
   - repo: https://github.com/asottile/setup-cfg-fmt
     rev: v2.2.0
@@ -126,11 +111,7 @@ repos:
     rev: '0.49'
     hooks:
       - id: check-manifest
-        args:
-          - --no-build-isolation
-        additional_dependencies:
-          - setuptools-scm
-          - toml
-
+        args: [--no-build-isolation]
+        additional_dependencies: [setuptools-scm, toml]
 ci:
   autoupdate_schedule: monthly

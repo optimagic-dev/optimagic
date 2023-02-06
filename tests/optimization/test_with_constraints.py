@@ -134,7 +134,6 @@ for crit_name in FUNC_INFO:
 def test_constrained_minimization(
     criterion_name, algorithm, derivative, constraint_name, params_type
 ):
-
     constraints = CONSTR_INFO[constraint_name]
     criterion = FUNC_INFO[criterion_name]["criterion"]
     if params_type == "pandas":

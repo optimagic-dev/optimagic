@@ -1,10 +1,6 @@
 ---
 name: estimagic
-
-channels:
-  - conda-forge
-  - nodefaults
-
+channels: [conda-forge, nodefaults]
 dependencies:
   - cyipopt
   - nlopt  # dev, tests
@@ -13,7 +9,6 @@ dependencies:
   - pytest-cov  # tests
   - pytest-xdist  # dev, tests
   - statsmodels  # dev, tests
-
   - bokeh<=2.4.3  # run, tests
   - click  # run, tests
   - cloudpickle  # run, tests
@@ -25,13 +20,11 @@ dependencies:
   - plotly  # run, tests
   - pybaum >= 0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
-  - sqlalchemy <2.0   # run, tests
-
-
+  - sqlalchemy <2.0  # run, tests
   - pip:  # dev, tests, docs
-      - DFO-LS    # dev, tests
-      - Py-BOBYQA    # dev, tests
-      - fides==0.7.4    # dev, tests
-      - kaleido    # dev, tests
-      - simoptlib==1.0.1    # dev, tests
+      - DFO-LS  # dev, tests
+      - Py-BOBYQA  # dev, tests
+      - fides==0.7.4  # dev, tests
+      - kaleido  # dev, tests
+      - simoptlib==1.0.1  # dev, tests
       - -e ../

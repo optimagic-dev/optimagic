@@ -48,7 +48,6 @@ def read_start_params(path_or_database):
 
 def _load_database(path_or_database):
     """Get an sqlalchemy.MetaDate object from path or database."""
-
     res = {"path": None, "metadata": None, "fast_logging": False}
     if isinstance(path_or_database, MetaData):
         res = path_or_database
@@ -188,7 +187,6 @@ def _read_optimization_iteration(database, iteration, params_treedef, registry):
 
 def _read_optimization_history(database, params_treedef, registry):
     """Read a histories out values, parameters and other information."""
-
     raw_res, _ = read_new_rows(
         database=database,
         table_name="optimization_iterations",

@@ -153,7 +153,6 @@ def _process_linear_weights(constraints):
     processed = []
     for constr in constraints:
         if constr["type"] == "linear":
-
             raw_weights = constr["weights"]
 
             if isinstance(raw_weights, (np.ndarray, list, tuple, pd.Series)):

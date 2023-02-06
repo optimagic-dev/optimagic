@@ -1,16 +1,11 @@
 ---
 name: estimagic-docs
-
-channels:
-  - conda-forge
-  - nodefaults
-
+channels: [conda-forge, nodefaults]
 dependencies:
   - python=3.9
   - pip
   - setuptools_scm
   - toml
-
   - black
   - sphinx
   - sphinxcontrib-bibtex
@@ -23,6 +18,4 @@ dependencies:
   - numba
   - pybaum
   - myst-parser
-
-  - pip:
-      - ../
+  - pip: [../]

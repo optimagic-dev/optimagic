@@ -26,7 +26,6 @@ def nlc_2d_example():
     See the example section in https://en.wikipedia.org/wiki/Nonlinear_programming.
 
     """
-
     def criterion(x):
         return np.sum(x)
 

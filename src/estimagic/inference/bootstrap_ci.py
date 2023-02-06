@@ -69,7 +69,6 @@ def _ci_percentile(estimates, alpha):
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
-
         q = _eqf(estimates[:, k])
         cis[k, :] = q(alpha / 2), q(1 - alpha / 2)
 
@@ -95,7 +94,6 @@ def _ci_bc(estimates, base_outcome, alpha):
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
-
         q = _eqf(estimates[:, k])
         params = estimates[:, k]
 
@@ -131,7 +129,6 @@ def _ci_t(estimates, base_outcome, alpha):
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
-
         params = estimates[:, k]
 
         theta_std = np.std(params)
@@ -164,7 +161,6 @@ def _ci_normal(estimates, base_outcome, alpha):
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
-
         params = estimates[:, k]
         theta_std = np.std(params)
         t = norm.ppf(alpha / 2)
@@ -193,7 +189,6 @@ def _ci_basic(estimates, base_outcome, alpha):
     cis = np.zeros((num_params, 2))
 
     for k in range(num_params):
-
         q = _eqf(estimates[:, k])
 
         cis[k, :] = (
@@ -214,7 +209,6 @@ def _eqf(sample):
         f (callable): Quantile function for given sample.
 
     """
-
     def f(x):
         return np.quantile(sample, x)
 

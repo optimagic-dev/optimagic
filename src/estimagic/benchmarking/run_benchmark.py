@@ -159,7 +159,6 @@ def _get_results(names, raw_results, kwargs_list):
     results = {}
 
     for name, result, inputs in zip(names, raw_results, kwargs_list):
-
         if isinstance(result, OptimizeResult):
             history = result.history
             params_history = pd.DataFrame(

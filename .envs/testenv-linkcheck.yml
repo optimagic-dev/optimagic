@@ -1,16 +1,10 @@
 ---
 name: estimagic
-
-channels:
-  - conda-forge
-  - nodefaults
-
+channels: [conda-forge, nodefaults]
 dependencies:
   - jupyterlab  # dev, docs
   - nb_black  # dev, docs
   - pip  # dev, tests, docs
-
-
   - pydata-sphinx-theme>=0.3.0  # docs
   - myst-parser  # docs
   - nbsphinx  # docs
@@ -18,6 +12,5 @@ dependencies:
   - sphinx-copybutton  # docs
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
-
   - pip:  # dev, tests, docs
       - -e ../
