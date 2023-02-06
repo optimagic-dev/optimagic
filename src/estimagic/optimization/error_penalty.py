@@ -1,8 +1,8 @@
 from functools import partial
 
 import numpy as np
-from estimagic.config import CRITERION_PENALTY_CONSTANT
-from estimagic.config import CRITERION_PENALTY_SLOPE
+
+from estimagic.config import CRITERION_PENALTY_CONSTANT, CRITERION_PENALTY_SLOPE
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 
 

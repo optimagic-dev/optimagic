@@ -3,15 +3,17 @@ import pickle
 import numpy as np
 import pytest
 import sqlalchemy
-from estimagic.logging.database_utilities import append_row
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import make_optimization_iteration_table
-from estimagic.logging.database_utilities import make_optimization_problem_table
-from estimagic.logging.database_utilities import make_steps_table
-from estimagic.logging.database_utilities import read_last_rows
-from estimagic.logging.database_utilities import read_new_rows
-from estimagic.logging.database_utilities import read_table
-from estimagic.logging.database_utilities import update_row
+from estimagic.logging.database_utilities import (
+    append_row,
+    load_database,
+    make_optimization_iteration_table,
+    make_optimization_problem_table,
+    make_steps_table,
+    read_last_rows,
+    read_new_rows,
+    read_table,
+    update_row,
+)
 from numpy.testing import assert_array_equal
 
 
@@ -48,7 +50,11 @@ def test_load_database_from_path(tmp_path):
 
 
 def test_load_database_after_pickling(tmp_path):
-    """Pickling unsets database.bind. Test that load_database sets it again."""
+    """Pickling unsets database.bind.
+
+    Test that load_database sets it again.
+
+    """
     path = tmp_path / "test.db"
     database = load_database(path=path)
     database = pickle.loads(pickle.dumps(database))

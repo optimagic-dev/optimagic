@@ -4,6 +4,7 @@ from functools import partial
 from typing import NamedTuple
 
 import numpy as np
+
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
@@ -11,14 +12,19 @@ from estimagic.optimization.tranquilo.count_points import get_counter
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
-from estimagic.optimization.tranquilo.models import ModelInfo
-from estimagic.optimization.tranquilo.models import n_free_params
-from estimagic.optimization.tranquilo.models import ScalarModel
-from estimagic.optimization.tranquilo.options import Bounds
-from estimagic.optimization.tranquilo.options import ConvOptions
-from estimagic.optimization.tranquilo.options import RadiusFactors
-from estimagic.optimization.tranquilo.options import RadiusOptions
-from estimagic.optimization.tranquilo.options import TrustRegion
+from estimagic.optimization.tranquilo.models import (
+    ModelInfo,
+    ScalarModel,
+    n_free_params,
+)
+from estimagic.optimization.tranquilo.options import (
+    Bounds,
+    ConvOptions,
+    HistorySearchOptions,
+    RadiusFactors,
+    RadiusOptions,
+    TrustRegion,
+)
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.tranquilo_history import History
@@ -35,10 +41,11 @@ def _tranquilo(
     disable_convergence=False,
     stopping_max_iterations=200,
     random_seed=925408,
-    sampler="sphere",
-    sample_filter="keep_all",
+    sampler=None,
+    sample_filter=None,
+    filter_options=None,
     fitter=None,
-    subsolver="bntr",
+    subsolver=None,
     sample_size=None,
     surrogate_model=None,
     radius_options=None,
@@ -53,6 +60,7 @@ def _tranquilo(
     n_cores=1,
     silence_experimental_warning=False,
     infinity_handling="relative",
+    history_search_options=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -121,6 +129,9 @@ def _tranquilo(
     # ==================================================================================
     sampling_rng = np.random.default_rng(random_seed)
 
+    if sample_filter is None:
+        sample_filter = "clustering" if functype == "scalar" else "keep_all"
+
     if radius_options is None:
         radius_options = RadiusOptions()
     if radius_factors is None:
@@ -137,6 +148,17 @@ def _tranquilo(
         functype=functype,
     )
 
+    if _has_bounds(lower_bounds, upper_bounds):
+        if sampler is None:
+            sampler = "optimal_cube"
+        if subsolver is None:
+            subsolver = "bntr_fast"
+    else:
+        if sampler is None:
+            sampler = "optimal_sphere"
+        if subsolver is None:
+            subsolver = "gqtpar_fast"
+
     target_sample_size = _process_sample_size(
         user_sample_size=sample_size,
         model_info=model_info,
@@ -144,10 +166,7 @@ def _tranquilo(
     )
 
     if fitter is None:
-        if functype == "scalar":
-            fitter = "powell"
-        else:
-            fitter = "ols"
+        fitter = "ols"
 
     if functype == "scalar":
         aggregator = "identity"
@@ -160,6 +179,12 @@ def _tranquilo(
 
     if conv_options is None:
         conv_options = ConvOptions()
+
+    if history_search_options is None:
+        if functype == "scalar":
+            history_search_options = HistorySearchOptions(radius_factor=1.0)
+        else:
+            history_search_options = HistorySearchOptions()
 
     # ==================================================================================
     # initialize compoments for the solver
@@ -182,7 +207,7 @@ def _tranquilo(
         radius_factors=radius_factors,
         user_options=sampler_options,
     )
-    filter_points = get_sample_filter(sample_filter)
+    filter_points = get_sample_filter(sample_filter, user_options=filter_options)
 
     aggregate_vector_model = get_aggregator(
         aggregator=aggregator,
@@ -220,6 +245,9 @@ def _tranquilo(
         fval=_first_fval,
         rho=np.nan,
         accepted=True,
+        new_indices=_first_indices,
+        old_indices_discarded=_first_indices,
+        old_indices_used=_first_indices,
     )
 
     states = [state]
@@ -232,13 +260,17 @@ def _tranquilo(
         # ==============================================================================
         # find, filter and count points
         # ==============================================================================
-        old_indices = history.get_indices_in_trustregion(state.trustregion)
+        old_indices = history.get_indices_in_trustregion(
+            state.trustregion,
+            search_options=history_search_options,
+        )
         old_xs = history.get_xs(old_indices)
 
         filtered_xs, filtered_indices = filter_points(
             xs=old_xs,
             indices=old_indices,
             state=state,
+            target_size=target_sample_size,
         )
 
         n_effective_points = count_points(filtered_xs, trustregion=state.trustregion)
@@ -307,11 +339,16 @@ def _tranquilo(
             model=scalar_model,
             rho=rho,
             accepted=is_accepted,
+            new_indices=new_indices,
+            old_indices_used=filtered_indices,
+            old_indices_discarded=np.setdiff1d(old_indices, filtered_indices),
         )
 
         if is_accepted:
             state = state._replace(
-                index=candidate_index, x=candidate_x, fval=candidate_fval
+                index=candidate_index,
+                x=candidate_x,
+                fval=candidate_fval,
             )
 
         states.append(state)
@@ -353,6 +390,7 @@ def _tranquilo(
         "solution_criterion": state.fval,
         "states": states,
         "message": msg,
+        "tranquilo_history": history,
     }
 
     return res
@@ -388,16 +426,21 @@ class State(NamedTuple):
     rho: float
     accepted: bool
 
+    # information on existing and new points
+    new_indices: np.ndarray
+    old_indices_used: np.ndarray
+    old_indices_discarded: np.ndarray
+
 
 def _is_converged(states, options):
     old, new = states[-2:]
 
     f_change_abs = np.abs(old.fval - new.fval)
-    f_change_rel = f_change_abs / max(np.abs(old.fval), 0.1)
+    f_change_rel = f_change_abs / max(np.abs(old.fval), 1)
     x_change_abs = np.linalg.norm(old.x - new.x)
-    x_change_rel = np.linalg.norm((old.x - new.x) / np.clip(np.abs(old.x), 0.1, np.inf))
+    x_change_rel = np.linalg.norm((old.x - new.x) / np.clip(np.abs(old.x), 1, np.inf))
     g_norm_abs = np.linalg.norm(new.model.linear_terms)
-    g_norm_rel = g_norm_abs / max(g_norm_abs, 0.1)
+    g_norm_rel = g_norm_abs / max(g_norm_abs, 1)
 
     converged = True
     if g_norm_rel <= options.gtol_rel:
@@ -420,7 +463,6 @@ def _is_converged(states, options):
 
 
 def _process_surrogate_model(surrogate_model, functype):
-
     if surrogate_model is None:
         if functype == "scalar":
             surrogate_model = "quadratic"
@@ -486,3 +528,12 @@ tranquilo_ls = mark_minimizer(
     is_available=True,
     is_global=False,
 )
+
+
+def _has_bounds(lb, ub):
+    out = False
+    if lb is not None and np.isfinite(lb).any():
+        out = True
+    if ub is not None and np.isfinite(ub).any():
+        out = True
+    return out

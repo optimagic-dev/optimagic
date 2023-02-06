@@ -1,15 +1,15 @@
 """Auxiliary functions for the pounders algorithm."""
-from typing import NamedTuple
-from typing import Union
+from typing import NamedTuple, Union
 
 import numpy as np
+from scipy.linalg import qr_multiply
+
 from estimagic.optimization.subsolvers.bntr import (
     bntr,
 )
 from estimagic.optimization.subsolvers.gqtpar import (
     gqtpar,
 )
-from scipy.linalg import qr_multiply
 
 
 class ResidualModel(NamedTuple):
@@ -38,6 +38,7 @@ def create_initial_residual_model(history, accepted_index, delta):
     Returns:
         ResidualModel: Residual model containing the initial parameters for
              ``linear_terms`` and ``square_terms``.
+
     """
     center_info = {
         "x": history.get_best_x(),
@@ -80,6 +81,7 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
     Returns:
         ResidualModel: Residual model containing the updated parameters
             ``linear_terms`` and ``square_terms``.
+
     """
     linear_terms_new = (
         coefficients_to_add["linear_terms"]
@@ -113,6 +115,7 @@ def create_main_from_residual_model(
     Returns:
         MainModel: Main model containing the updated parameters
             ``linear_terms`` and ``square terms``.
+
     """
     linear_terms_main_model = residual_model.linear_terms @ residual_model.intercepts
     square_terms_main_model = (
@@ -142,6 +145,7 @@ def update_main_model_with_new_accepted_x(main_model, x_candidate):
 
     Returns:
         MainModel: Main model containing the updated ``linear_terms``.
+
     """
     linear_terms_new = main_model.linear_terms + main_model.square_terms @ x_candidate
     main_model_updated = main_model._replace(linear_terms=linear_terms_new)
@@ -161,6 +165,7 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
     Returns:
         ResidualModel: Residual model containing the updated parameters
             `intercepts`` and ``linear_terms``.
+
     """
     intercepts_new = (
         residual_model.intercepts
@@ -249,6 +254,7 @@ def solve_subproblem(
             - "n_iterations" (int): Number of iterations performed before termination.
             - "success" (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
+
     """
     x0 = np.zeros_like(x_accepted)
 
@@ -350,6 +356,7 @@ def find_affine_points(
             decomposition of *model_improving_points* and multiply it
             with vector *x_projected*.
             Relevant for next call of *find_affine_points()*.
+
     """
     n_params = len(x_accepted)
 
@@ -426,6 +433,7 @@ def add_geomtery_points_to_make_main_model_fully_linear(
         - history (class): Class storing history of xs, residuals, and critvals.
         - model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the main model. Shape (2 * n_params + 1,).
+
     """
     n_params = len(x_accepted)
 
@@ -488,6 +496,7 @@ def evaluate_residual_model(
     Returns:
         np.ndarray: Observed minus predicted model evaluations,
             has shape (n_modelpoints, n_residuals).
+
     """
     n_residuals = centered_residuals.shape[1]
     n_modelpoints = centered_xs.shape[0]
@@ -543,6 +552,7 @@ def get_feature_matrices_residual_model(
         - n_z_mat (np.ndarray): Lower triangular matrix of xs that form
             the monomial basis. Shape(n_poly_features, n_modelpoints - n_params - 1).
         - n_modelpoints (int): Current number of model points.
+
     """
     n_params = len(x_accepted)
     n_poly_features = n_params * (n_params + 1) // 2
@@ -656,6 +666,7 @@ def fit_residual_model(
 
     Returns:
         dict: The coefficients of the residual model.
+
     """
     n_params = m_mat.shape[1] - 1
     n_residuals = y_residuals.shape[1]
@@ -766,6 +777,7 @@ def _get_monomial_basis(x):
 
     Returns:
         np.ndarray: Monomial basis of x of shape (n_params * (n_params + 1) / 2,).
+
     """
     n_params = len(x)
     monomial_basis = np.zeros(int(n_params * (n_params + 1) / 2))

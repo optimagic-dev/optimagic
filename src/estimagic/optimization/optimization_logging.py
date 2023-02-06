@@ -1,6 +1,4 @@
-from estimagic.logging.database_utilities import append_row
-from estimagic.logging.database_utilities import read_last_rows
-from estimagic.logging.database_utilities import update_row
+from estimagic.logging.database_utilities import append_row, read_last_rows, update_row
 
 
 def log_scheduled_steps_and_get_ids(steps, logging, db_kwargs):

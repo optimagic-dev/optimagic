@@ -4,12 +4,14 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.decorators import AlgoInfo
-from estimagic.examples.criterion_functions import sos_criterion_and_gradient
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_dict_criterion_with_pd_objects
-from estimagic.examples.criterion_functions import sos_gradient
-from estimagic.examples.criterion_functions import sos_pandas_gradient
-from estimagic.examples.criterion_functions import sos_scalar_criterion
+from estimagic.examples.criterion_functions import (
+    sos_criterion_and_gradient,
+    sos_dict_criterion,
+    sos_dict_criterion_with_pd_objects,
+    sos_gradient,
+    sos_pandas_gradient,
+    sos_scalar_criterion,
+)
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )

@@ -2,6 +2,7 @@ import warnings
 from functools import partial
 
 import numpy as np
+
 from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
@@ -18,6 +19,7 @@ def get_benchmark_problems(
     scaling=False,
     scaling_options=None,
     seed=None,
+    exclude=None,
 ):
     """Get a dictionary of test problems for a benchmark.
 
@@ -60,6 +62,8 @@ def get_benchmark_problems(
         seed (Union[None, int, numpy.random.Generator]): If seed is None or int the
             numpy.random.default_rng is used seeded with seed. If seed is already a
             Generator instance then that instance is used.
+        exclude (str or List): Problems to exclude.
+
 
     Returns:
         dict: Nested dictionary with benchmark problems of the structure:
@@ -69,8 +73,17 @@ def get_benchmark_problems(
             "value" and "info" might contain information about the test problem.
 
     """
+    if exclude is None:
+        exclude = {}
+    elif isinstance(exclude, str):
+        exclude = [exclude]
+    else:
+        exclude = set(exclude)
+
     rng = get_rng(seed)
     raw_problems = _get_raw_problems(name)
+
+    raw_problems = {k: v for k, v in raw_problems.items() if k not in exclude}
 
     if additive_noise:
         additive_options = _process_noise_options(additive_noise_options, False)

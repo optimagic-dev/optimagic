@@ -1,9 +1,12 @@
 # Inference
 
 ```{toctree}
-:maxdepth: 1
 
+---
+maxdepth: 1
+---
 how_to_calculate_likelihood_standard_errors
 how_to_calculate_msm_standard_errors
-how_to_do_bootstrap_inferences
+how_to_do_bootstrap_inference
+
 ```

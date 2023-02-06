@@ -3,40 +3,19 @@ import pandas as pd
 import pytest
 from estimagic.examples.criterion_functions import (
     rosenbrock_criterion_and_gradient,
-)
-from estimagic.examples.criterion_functions import (
     rosenbrock_dict_criterion,
-)
-from estimagic.examples.criterion_functions import (
     rosenbrock_gradient,
-)
-from estimagic.examples.criterion_functions import (
     rosenbrock_scalar_criterion,
-)
-from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_criterion_and_gradient,
-)
-from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_dict_criterion,
-)
-from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_gradient,
-)
-from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_scalar_criterion,
-)
-from estimagic.examples.criterion_functions import (
     trid_criterion_and_gradient,
-)
-from estimagic.examples.criterion_functions import (
     trid_dict_criterion,
-)
-from estimagic.examples.criterion_functions import trid_gradient
-from estimagic.examples.criterion_functions import (
+    trid_gradient,
     trid_scalar_criterion,
 )
-from numpy.testing import assert_allclose
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_allclose, assert_array_equal
 
 
 # Fix input params to test every criterion function

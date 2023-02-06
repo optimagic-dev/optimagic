@@ -29,12 +29,15 @@ specific cases we refer to posts on math.stackexchange.com.
 
 """
 import numpy as np
-from estimagic.utilities import chol_params_to_lower_triangular_matrix
-from estimagic.utilities import cov_matrix_to_sdcorr_params
-from estimagic.utilities import cov_params_to_matrix
-from estimagic.utilities import dimension_to_number_of_triangular_elements
-from estimagic.utilities import robust_cholesky
-from estimagic.utilities import sdcorr_params_to_matrix
+
+from estimagic.utilities import (
+    chol_params_to_lower_triangular_matrix,
+    cov_matrix_to_sdcorr_params,
+    cov_params_to_matrix,
+    dimension_to_number_of_triangular_elements,
+    robust_cholesky,
+    sdcorr_params_to_matrix,
+)
 
 
 def covariance_to_internal(external_values, constr):

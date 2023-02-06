@@ -3,9 +3,9 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
+from estimagic.optimization.tranquilo.options import HistorySearchOptions
 from estimagic.optimization.tranquilo.tranquilo_history import History
 from numpy.testing import assert_array_almost_equal as aaae
-
 
 ENTRIES = [
     (np.arange(3), [np.arange(5)]),
@@ -107,6 +107,8 @@ def test_get_indices_in_trustregion():
         radius=0.3,
     )
 
-    indices = history.get_indices_in_trustregion(trustregion)
+    search_options = HistorySearchOptions(radius_factor=1, radius_type="inscribed")
+
+    indices = history.get_indices_in_trustregion(trustregion, search_options)
 
     aaae(indices, np.array([0, 1, 3]))

@@ -6,9 +6,7 @@ from estimagic.parameters.process_selectors import process_selectors
 from estimagic.parameters.tree_conversion import TreeConverter
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_equal as aae
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
+from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 
 @pytest.mark.parametrize("constraints", [None, []])
@@ -191,7 +189,6 @@ def test_process_selectors_dataframe_queries(df_params, df_params_converter):
 
 @pytest.mark.parametrize("field", ["selectors", "queries", "query", "locs"])
 def test_process_selectors_numpy_array_invalid_fields(field, np_params_converter):
-
     with pytest.raises(InvalidConstraintError):
         process_selectors(
             constraints=[{"type": "equality", field: None}],

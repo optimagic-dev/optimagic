@@ -3,17 +3,16 @@ from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_PALETTE
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.logging.read_log import OptimizeLogReader
-from estimagic.logging.read_log import read_optimization_problem_table
+from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+
+from estimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from estimagic.logging.read_log import (
+    OptimizeLogReader,
+    read_optimization_problem_table,
+)
 from estimagic.optimization.history_tools import get_history_arrays
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import leaf_names
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def criterion_plot(

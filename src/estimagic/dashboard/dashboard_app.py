@@ -4,22 +4,17 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from bokeh.layouts import Column
-from bokeh.layouts import Row
-from bokeh.models import ColumnDataSource
-from bokeh.models import Div
-from bokeh.models import Toggle
+from bokeh.layouts import Column, Row
+from bokeh.models import ColumnDataSource, Div, Toggle
+from jinja2 import Environment, FileSystemLoader
+from pybaum import leaf_names, tree_just_flatten
+
 from estimagic.dashboard.callbacks import reset_and_start_convergence
 from estimagic.dashboard.plot_functions import plot_time_series
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import load_database, read_last_rows
 from estimagic.logging.read_log import read_start_params
 from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
 from estimagic.parameters.tree_registry import get_registry
-from jinja2 import Environment
-from jinja2 import FileSystemLoader
-from pybaum import leaf_names
-from pybaum import tree_just_flatten
 
 
 def dashboard_app(

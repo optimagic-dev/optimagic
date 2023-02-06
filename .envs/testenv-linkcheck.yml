@@ -1,3 +1,4 @@
+---
 name: estimagic
 
 channels:
@@ -18,4 +19,4 @@ dependencies:
   - sphinxcontrib-bibtex  # docs
 
   - pip:  # dev, tests, docs
-    - -e ../
+      - -e ../

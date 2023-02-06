@@ -2,15 +2,15 @@
 
 # Optimizers
 
-Check out {ref}`algorithms` to see how to select an algorithm and specify
-`algo_options` when using `maximize` or `minimize`.
+Check out {ref}`algorithms` to see how to select an algorithm and specify `algo_options`
+when using `maximize` or `minimize`.
 
 ## Optimizers from scipy
 
 (scipy-algorithms)=
 
-estimagic supports most `scipy` algorithms and scipy is automatically installed when
-you install estimagic.
+estimagic supports most `scipy` algorithms and scipy is automatically installed when you
+install estimagic.
 
 ```{eval-rst}
 .. dropdown::  scipy_lbfgsb
@@ -685,7 +685,6 @@ you install estimagic.
 
 ```
 
-
 ```{eval-rst}
 .. dropdown::  scipy_shgo
 
@@ -724,7 +723,6 @@ you install estimagic.
 
 ```
 
-
 ```{eval-rst}
 .. dropdown::  scipy_dual_annealing
 
@@ -755,7 +753,6 @@ you install estimagic.
 
 ```
 
-
 ```{eval-rst}
 .. dropdown::  scipy_direct
 
@@ -777,7 +774,6 @@ you install estimagic.
     - **length_hyperrectangle_tolerance** (float): Depending on locally_biased it can refer to normalized side (True) or diagonal (False) length of the hyperrectangle containing the lowest criterion value. Range is (0,1). Default is scipy's default, 1e-6.
 
 ```
-
 
 (own-algorithms)=
 
@@ -960,8 +956,8 @@ We implement a few algorithms from scratch. They are currently considered experi
 
 ## Optimizers from the Toolkit for Advanced Optimization (TAO)
 
-We wrap the pounders algorithm from the Toolkit of Advanced optimization. To use it
-you need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
+We wrap the pounders algorithm from the Toolkit of Advanced optimization. To use it you
+need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
 
 ```{eval-rst}
 .. dropdown::  tao_pounders
@@ -1310,9 +1306,8 @@ install each of them separately:
 
 ## PYGMO2 Optimizers
 
-Please cite {cite}`Biscani2020` in addition to estimagic when using pygmo.
-estimagic supports the following [pygmo2](https://esa.github.io/pygmo2)
-optimizers.
+Please cite {cite}`Biscani2020` in addition to estimagic when using pygmo. estimagic
+supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
 
 ```{eval-rst}
 .. dropdown::  pygmo_gaco
@@ -2040,11 +2035,12 @@ optimizers.
 
 estimagic's support for the Interior Point Optimizer ({cite}`Waechter2005`,
 {cite}`Waechter2005a`, {cite}`Waechter2005b`, {cite}`Nocedal2009`) is built on
-[cyipopt](https://cyipopt.readthedocs.io/en/latest/index.html), a Python wrapper
-for the [Ipopt optimization package](https://coin-or.github.io/Ipopt/index.html).
+[cyipopt](https://cyipopt.readthedocs.io/en/latest/index.html), a Python wrapper for the
+[Ipopt optimization package](https://coin-or.github.io/Ipopt/index.html).
 
-To use ipopt, you need to have [cyipopt installed](https://cyipopt.readthedocs.io/en/latest/index.html) (`conda install
-cyipopt`).
+To use ipopt, you need to have
+[cyipopt installed](https://cyipopt.readthedocs.io/en/latest/index.html)
+(`conda install cyipopt`).
 
 ```{eval-rst}
 .. dropdown:: ipopt
@@ -3241,9 +3237,10 @@ cyipopt`).
 
 ## The Fides Optimizer
 
-estimagic supports the [Fides Optimizer](https://fides-optimizer.readthedocs.io/en/latest). To use Fides, you need to have
-[the fides package](https://github.com/fides-dev/fides) installed (`pip install
-fides>=0.7.4`, make sure you have at least 0.7.1).
+estimagic supports the
+[Fides Optimizer](https://fides-optimizer.readthedocs.io/en/latest). To use Fides, you
+need to have [the fides package](https://github.com/fides-dev/fides) installed
+(`pip install fides>=0.7.4`, make sure you have at least 0.7.1).
 
 ```{eval-rst}
 .. dropdown:: fides
@@ -3351,8 +3348,10 @@ fides>=0.7.4`, make sure you have at least 0.7.1).
 ## The NLOPT Optimizers (nlopt)
 
 estimagic supports the following [NLOPT](https://nlopt.readthedocs.io/en/latest/)
-algorithms. Please add the [appropriate citations](https://nlopt.readthedocs.io/en/latest/Citing_NLopt/) in addition to estimagic when
-using an NLOPT algorithm. To install nlopt run `conda install nlopt`.
+algorithms. Please add the
+[appropriate citations](https://nlopt.readthedocs.io/en/latest/Citing_NLopt/) in
+addition to estimagic when using an NLOPT algorithm. To install nlopt run
+`conda install nlopt`.
 
 ```{eval-rst}
 .. dropdown:: nlopt_bobyqa
@@ -3898,9 +3897,9 @@ using an NLOPT algorithm. To install nlopt run `conda install nlopt`.
 ## The SimOpt Optimizers (simopt)
 
 estimagic supports the following [SimOpt](https://github.com/simopt-admin/simopt)
-algorithms. Please add the [appropriate
-citations](https://github.com/simopt-admin/simopt) in addition to estimagic when using a
-SimOpt algorithm. To install simopt run `pip install simoptlib==1.0.1`.
+algorithms. Please add the
+[appropriate citations](https://github.com/simopt-admin/simopt) in addition to estimagic
+when using a SimOpt algorithm. To install simopt run `pip install simoptlib==1.0.1`.
 
 ```{eval-rst}
 .. dropdown:: simopt_adam

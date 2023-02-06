@@ -1,13 +1,12 @@
-import inspect
-import warnings
 from functools import partial
 
-import estimagic as em
 import numpy as np
-from estimagic.optimization.tranquilo.options import Bounds
 from scipy.spatial.distance import pdist
-from scipy.special import gammainc
-from scipy.special import logsumexp
+from scipy.special import gammainc, logsumexp
+
+import estimagic as em
+from estimagic.optimization.tranquilo.get_component import get_component
+from estimagic.optimization.tranquilo.options import Bounds
 
 
 def get_sampler(
@@ -33,7 +32,6 @@ def get_sampler(
             existing_fvals, model_info and  and returns a new sample.
 
     """
-    user_options = {} if user_options is None else user_options
 
     built_in_samplers = {
         "box": _box_sampler,
@@ -46,19 +44,11 @@ def get_sampler(
         "optimal_sphere": partial(_optimal_hull_sampler, order=2),
     }
 
-    if isinstance(sampler, str) and sampler in built_in_samplers:
-        _sampler = built_in_samplers[sampler]
-        _sampler_name = sampler
-    elif callable(sampler):
-        _sampler = sampler
-        _sampler_name = getattr(sampler, "__name__", "your sampler")
-    else:
-        raise ValueError(
-            f"Invalid sampler: {sampler}. Must be one of {list(built_in_samplers)} "
-            "or a callable."
-        )
-
-    if "hull_sampler" in _sampler_name and "order" not in user_options:
+    if (
+        isinstance(sampler, str)
+        and "hull_sampler" in sampler
+        and "order" not in user_options
+    ):
         msg = (
             "The hull_sampler and optimal_hull_sampler require the argument 'order' to "
             "be prespecfied in the user_options dictionary. Order is a positive "
@@ -67,48 +57,27 @@ def get_sampler(
         )
         raise ValueError(msg)
 
-    args = set(inspect.signature(_sampler).parameters)
+    default_options = {
+        "bounds": bounds,
+        "model_info": model_info,
+        "radius_factors": radius_factors,
+    }
 
-    mandatory_args = {
+    mandatory_args = [
         "bounds",
         "trustregion",
         "n_points",
         "existing_xs",
         "rng",
-    }
+    ]
 
-    optional_kwargs = {
-        "model_info": model_info,
-        "radius_factors": radius_factors,
-    }
-
-    optional_kwargs = {k: v for k, v in optional_kwargs.items() if k in args}
-
-    problematic = mandatory_args - args
-    if problematic:
-        raise ValueError(
-            f"The following mandatory arguments are missing in {_sampler_name}: "
-            f"{problematic}"
-        )
-
-    valid_options = args - mandatory_args
-
-    reduced = {key: val for key, val in user_options.items() if key in valid_options}
-    ignored = {
-        key: val for key, val in user_options.items() if key not in valid_options
-    }
-
-    if ignored:
-        warnings.warn(
-            "The following options were ignored because they are not compatible "
-            f"with {_sampler_name}:\n\n {ignored}"
-        )
-
-    out = partial(
-        _sampler,
-        bounds=bounds,
-        **optional_kwargs,
-        **reduced,
+    out = get_component(
+        name_or_func=sampler,
+        component_name="sampler",
+        func_dict=built_in_samplers,
+        default_options=default_options,
+        user_options=user_options,
+        mandatory_signature=mandatory_args,
     )
 
     return out
@@ -300,7 +269,7 @@ def _optimal_hull_sampler(
 
     algo_options = {} if algo_options is None else algo_options
     if "stopping_max_iterations" not in algo_options:
-        algo_options["stopping_max_iterations"] = 2 * n_params + 1
+        algo_options["stopping_max_iterations"] = 2 * n_params + 5
 
     effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
@@ -332,31 +301,40 @@ def _optimal_hull_sampler(
         opt_params = x0
     else:
 
-        func_dict = {
-            "determinant": _determinant_on_hull,
-            "distance": _minimal_pairwise_distance_on_hull,
-        }
-
         criterion_kwargs = {
             "existing_xs": existing_xs_unit,
             "order": order,
             "n_params": n_params,
         }
 
-        if criterion == "distance":
-            criterion_kwargs["hardness"] = hardness
+        func_dict = {
+            "determinant": partial(_determinant_on_hull, **criterion_kwargs),
+            "distance": partial(
+                _minimal_pairwise_distance_on_hull,
+                **criterion_kwargs,
+                hardness=hardness,
+            ),
+        }
 
         res = em.maximize(
             criterion=func_dict[criterion],
             params=x0,
             algorithm=algorithm,
-            criterion_kwargs=criterion_kwargs,
             lower_bounds=-np.ones_like(x0),
             upper_bounds=np.ones_like(x0),
             algo_options=algo_options,
         )
 
         opt_params = res.params
+
+    # Make sure the optimal sampling is actually better than the initial one with
+    # respect to the fekete criterion. This could be violated if the surrogate
+    # criterion is not a good approximation or if the optimization fails.
+    start_fekete = func_dict["determinant"](x0)
+    end_fekete = func_dict["determinant"](opt_params)
+
+    if start_fekete >= end_fekete:
+        opt_params = x0
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)

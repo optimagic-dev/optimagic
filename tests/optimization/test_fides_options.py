@@ -6,9 +6,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_FIDES_INSTALLED:
     from estimagic.optimization.fides_optimizers import fides
-    from fides.hessian_approximation import Broyden
-    from fides.hessian_approximation import FX
-    from fides.hessian_approximation import SR1
+    from fides.hessian_approximation import FX, SR1, Broyden
 else:
     FX = lambda: None
     SR1 = lambda: None

@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
 from estimagic import first_derivative
-from estimagic.parameters.space_conversion import _multiply_from_left
-from estimagic.parameters.space_conversion import _multiply_from_right
-from estimagic.parameters.space_conversion import get_space_converter
-from estimagic.parameters.space_conversion import InternalParams
+from estimagic.parameters.space_conversion import (
+    InternalParams,
+    _multiply_from_left,
+    _multiply_from_right,
+    get_space_converter,
+)
 from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 

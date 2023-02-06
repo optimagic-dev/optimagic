@@ -5,8 +5,8 @@ from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_JAX_INSTALLED:
-    import jax.numpy as jnp
     import jax
+    import jax.numpy as jnp
 
 
 @pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")

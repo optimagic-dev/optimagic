@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.poisedness import _get_minimize_options
-from estimagic.optimization.tranquilo.poisedness import _lagrange_poly_matrix
-from estimagic.optimization.tranquilo.poisedness import _reshape_coef_to_square_terms
-from estimagic.optimization.tranquilo.poisedness import get_poisedness_constant
-from estimagic.optimization.tranquilo.poisedness import improve_poisedness
+from estimagic.optimization.tranquilo.poisedness import (
+    _get_minimize_options,
+    _lagrange_poly_matrix,
+    _reshape_coef_to_square_terms,
+    get_poisedness_constant,
+    improve_poisedness,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -111,7 +113,6 @@ TEST_CASES = [
 
 @pytest.mark.parametrize("sample, shape, maxiter, expected", TEST_CASES)
 def test_improve_poisedness(sample, shape, maxiter, expected):
-
     _, got_lambdas = improve_poisedness(sample=sample, shape=shape, maxiter=maxiter)
     aaae(got_lambdas[-5:], expected[-5:], decimal=2)
 
@@ -190,7 +191,11 @@ TEST_CASES = [
 
 @pytest.mark.parametrize("sample, expected", TEST_CASES)
 def test_poisedness_constant_scaled(sample, expected):
-    """Test cases are modified versions from :cite:`Conn2009` p. 99."""
+    """Test cases are modified versions from :cite:`Conn2009` p.
+
+    99.
+
+    """
 
     got, *_ = get_poisedness_constant(sample, shape="sphere")
     assert np.allclose(got, expected)
@@ -241,7 +246,11 @@ TEST_CASES = [
 
 @pytest.mark.parametrize("sample, expected", TEST_CASES)
 def test_poisedness_constant_textbook_scaled(sample, expected):
-    """Test cases are taken from :cite:`Conn2009` p. 99."""
+    """Test cases are taken from :cite:`Conn2009` p.
+
+    99.
+
+    """
 
     got, *_ = get_poisedness_constant(sample, shape="sphere")
     assert np.allclose(got, expected, rtol=1e-3)
@@ -266,7 +275,11 @@ TEST_CASES = [
 
 @pytest.mark.parametrize("sample, expected", TEST_CASES)
 def test_poisedness_constant_textbook_unscaled(sample, expected):
-    """This test case is taken from :cite:`Conn2009` p. 45."""
+    """This test case is taken from :cite:`Conn2009` p.
+
+    45.
+
+    """
     n_params = sample.shape[1]
 
     radius = 0.5
@@ -356,7 +369,11 @@ TEST_CASES = [
 
 @pytest.mark.parametrize("sample, expected_lagrange_mat, expected_critval", TEST_CASES)
 def test_lagrange_poly_matrix(sample, expected_lagrange_mat, expected_critval):
-    """This test case is taken from :cite:`Conn2009` p. 62."""
+    """This test case is taken from :cite:`Conn2009` p.
+
+    62.
+
+    """
     sample = np.array([[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [0.5, 0.5]])
     n_params = sample.shape[1]
 

@@ -1,23 +1,25 @@
 """Helper functions for the dashboard."""
-from bokeh.models import HoverTool
-from bokeh.models import Legend
+from bokeh.models import HoverTool, Legend
 from bokeh.plotting import figure
-from estimagic.config import GRID_VISIBLE
-from estimagic.config import LEGEND_LABEL_TEXT_FONT_SIZE
-from estimagic.config import LEGEND_SPACING
-from estimagic.config import MAJOR_TICK_IN
-from estimagic.config import MAJOR_TICK_OUT
-from estimagic.config import MIN_BORDER_BOTTOM
-from estimagic.config import MIN_BORDER_LEFT
-from estimagic.config import MIN_BORDER_RIGHT
-from estimagic.config import MIN_BORDER_TOP
-from estimagic.config import MINOR_TICK_LINE_COLOR
-from estimagic.config import OUTLINE_LINE_WIDTH
-from estimagic.config import PLOT_HEIGHT
-from estimagic.config import PLOT_WIDTH
-from estimagic.config import TOOLBAR_LOCATION
-from estimagic.config import Y_RANGE_PADDING
-from estimagic.config import Y_RANGE_PADDING_UNITS
+
+from estimagic.config import (
+    GRID_VISIBLE,
+    LEGEND_LABEL_TEXT_FONT_SIZE,
+    LEGEND_SPACING,
+    MAJOR_TICK_IN,
+    MAJOR_TICK_OUT,
+    MIN_BORDER_BOTTOM,
+    MIN_BORDER_LEFT,
+    MIN_BORDER_RIGHT,
+    MIN_BORDER_TOP,
+    MINOR_TICK_LINE_COLOR,
+    OUTLINE_LINE_WIDTH,
+    PLOT_HEIGHT,
+    PLOT_WIDTH,
+    TOOLBAR_LOCATION,
+    Y_RANGE_PADDING,
+    Y_RANGE_PADDING_UNITS,
+)
 from estimagic.dashboard.colors import get_colors
 
 

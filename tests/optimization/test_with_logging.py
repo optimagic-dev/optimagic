@@ -9,8 +9,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_dict_derivative
+from estimagic.examples.criterion_functions import (
+    sos_dict_criterion,
+    sos_dict_derivative,
+)
 from estimagic.exceptions import TableExistsError
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.tree_registry import get_registry

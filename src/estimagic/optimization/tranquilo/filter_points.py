@@ -1,10 +1,14 @@
 import numpy as np
-from estimagic.optimization.tranquilo.models import n_second_order_terms
 from numba import njit
 from scipy.linalg import qr_multiply
 
+from estimagic.optimization.tranquilo.clustering import cluster
+from estimagic.optimization.tranquilo.get_component import get_component
+from estimagic.optimization.tranquilo.models import n_second_order_terms
+from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
 
-def get_sample_filter(sample_filter="keep_all"):
+
+def get_sample_filter(sample_filter="keep_all", user_options=None):
     """Get filter function with partialled options.
 
     The filter function is applied to points inside the current trustregion before
@@ -23,26 +27,26 @@ def get_sample_filter(sample_filter="keep_all"):
     built_in_filters = {
         "discard_all": discard_all,
         "keep_all": keep_all,
+        "clustering": keep_cluster_centers,
         "keep_sphere": keep_sphere,
-        "drop_collinear": drop_collinear,
         "drop_pounders": drop_collinear_pounders,
     }
 
-    if isinstance(sample_filter, str) and sample_filter in built_in_filters:
-        out = built_in_filters[sample_filter]
-    elif callable(sample_filter):
-        out = sample_filter
-    else:
-        raise ValueError()
+    out = get_component(
+        name_or_func=sample_filter,
+        component_name="sample_filter",
+        func_dict=built_in_filters,
+        user_options=user_options,
+    )
 
     return out
 
 
-def discard_all(xs, indices, state):  # noqa: ARG001
+def discard_all(state):
     return state.x.reshape(1, -1), np.array([state.index])
 
 
-def keep_all(xs, indices, state):  # noqa: ARG001
+def keep_all(xs, indices):
     return xs, indices
 
 
@@ -50,11 +54,6 @@ def keep_sphere(xs, indices, state):
     dists = np.linalg.norm(xs - state.trustregion.center, axis=1)
     keep = dists <= state.trustregion.radius
     return xs[keep], indices[keep]
-
-
-def drop_collinear(xs, indices, state):  # noqa: ARG001
-    """Make sure that the points that are kept are linearly independent."""
-    raise NotImplementedError()
 
 
 def drop_collinear_pounders(xs, indices, state):
@@ -65,6 +64,23 @@ def drop_collinear_pounders(xs, indices, state):
         filtered_xs, filtered_indices = _drop_collinear_pounders(xs, indices, state)
 
     return filtered_xs, filtered_indices
+
+
+def keep_cluster_centers(
+    xs, indices, state, target_size, strictness=1e-10, shape="sphere"
+):
+    dim = xs.shape[1]
+    scaling_factor = strictness / target_size
+    cluster_radius = get_radius_after_volume_scaling(
+        radius=state.trustregion.radius,
+        dim=dim,
+        scaling_factor=scaling_factor,
+    )
+    _, centers = cluster(x=xs, epsilon=cluster_radius, shape=shape)
+
+    # do I need to make sure trustregion center is in there?
+    out = xs[centers], indices[centers]
+    return out
 
 
 def _drop_collinear_pounders(xs, indices, state):

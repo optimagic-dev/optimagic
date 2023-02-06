@@ -18,10 +18,10 @@
 
 ## Abstract
 
-This EEP explains how we will use pytrees to allow for more flexible specification
-of parameters for optimization or differentiation, more convenient ways of writing
-moment functions for msm estimation and more. The actual code to work with pytrees
-is implemented in [Pybaum], developed by {ghuser}`janosg` and {ghuser}`tobiasraabe`.
+This EEP explains how we will use pytrees to allow for more flexible specification of
+parameters for optimization or differentiation, more convenient ways of writing moment
+functions for msm estimation and more. The actual code to work with pytrees is
+implemented in [Pybaum], developed by {ghuser}`janosg` and {ghuser}`tobiasraabe`.
 
 ## Backwards compatibility
 
@@ -37,10 +37,10 @@ are:
 - functions that calculate simulated moments
 - functions that calculate bootstrap statistics
 
-In all cases, there are some restrictions on possible inputs and outputs of the
-user written functions. For example, parameters for numerical optimization need to
-be provided as pandas.DataFrame with a `"value"` column. Simulated moments and
-bootstrap statistics need to be returned as a pandas.Series, etc.
+In all cases, there are some restrictions on possible inputs and outputs of the user
+written functions. For example, parameters for numerical optimization need to be
+provided as pandas.DataFrame with a `"value"` column. Simulated moments and bootstrap
+statistics need to be returned as a pandas.Series, etc.
 
 Pytrees allow to relax many of those restrictions on interfaces of user provided
 functions. This is not only more convenient for users, but sometimes also allows to
@@ -93,41 +93,42 @@ examples above would have five leafs. The flattened versions would look as follo
 [0, 1, 2, 3, 4]
 ```
 
-Needless to say, it is possible to register anything as container. For example, we
-would add pandas.Series and pandas.DataFrame (with varying definitions, depending on the
+Needless to say, it is possible to register anything as container. For example, we would
+add pandas.Series and pandas.DataFrame (with varying definitions, depending on the
 application).
 
 ## Difference between pytrees in JAX and estimagic
 
-Most JAX functions [only work with Pytrees of arrays](https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions) and
-scalars, i.e. pytrees where container types are dicts, lists and tuples and all leaves
-are arrays or scalars. We will just call them pytrees of arrays because scalars are
-converted to arrays by JAX.
+Most JAX functions
+[only work with Pytrees of arrays](https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions)
+and scalars, i.e. pytrees where container types are dicts, lists and tuples and all
+leaves are arrays or scalars. We will just call them pytrees of arrays because scalars
+are converted to arrays by JAX.
 
 There are two ways to look at such pytrees:
 
 1. As pytree of arrays -> `tree_flatten` produces a list of arrays
-2. As pytree of numbers -> `tree_flatten` produces a list of numbers
+1. As pytree of numbers -> `tree_flatten` produces a list of numbers
 
 The only difference between the two perspectives is that for the second one, arrays have
-been registered as container types that can be flattened. In JAX the term
-`ravel` instead of `flatten` is sometimes used to make clear that the second
-perspective is meant.
+been registered as container types that can be flattened. In JAX the term `ravel`
+instead of `flatten` is sometimes used to make clear that the second perspective is
+meant.
 
-Estimagic functions work with slightly more general pytrees. On top of arrays, they
-can also contain scalars, pandas.Series and pandas.DataFrames.
+Estimagic functions work with slightly more general pytrees. On top of arrays, they can
+also contain scalars, pandas.Series and pandas.DataFrames.
 
 Again, there are two possible ways to look at such pytrees:
 
-1. As pytree of arrays, numbers, Series and DataFrames -> `tree_flatten` produces a
-   list of arrays numbers, Series and DataFrames.
-2. As pytree of numbers -> `tree_flatten` produces a list of numbers
+1. As pytree of arrays, numbers, Series and DataFrames -> `tree_flatten` produces a list
+   of arrays numbers, Series and DataFrames.
+1. As pytree of numbers -> `tree_flatten` produces a list of numbers
 
 Again, the difference between the two is which objects are registered as container types
 and the rules to flatten and unflatten them are defined.
 
-While numpy arrays, scalars and pandas.Series have only one natural way of defining
-the flattening rules, this becomes more complex for DataFrames due to the way `params`
+While numpy arrays, scalars and pandas.Series have only one natural way of defining the
+flattening rules, this becomes more complex for DataFrames due to the way `params`
 DataFrames were used in estimagic before.
 
 We define the following rules: If a DataFrame contains a column called `"value"`, we
@@ -147,9 +148,9 @@ estimagic-pytree.
 In this section we look at possible ways to specify optimizations when parameters and
 some outputs of criterion functions can be estimagic-pytrees.
 
-As an example we use a hypothetical criterion function with pytree inputs and outputs
-to describe how a user can optimize it. We also give a rough intuition what happens
-behind the scenes.
+As an example we use a hypothetical criterion function with pytree inputs and outputs to
+describe how a user can optimize it. We also give a rough intuition what happens behind
+the scenes.
 
 ### The criterion function
 
@@ -188,13 +189,13 @@ minimize(
 ```
 
 The internal optimizer (in this case the lbfgsb algorithm from scipy) will see a wrapped
-version of `crit`. That version takes a 1d numpy array as its only argument and
-returns a scalar float (the `"value"` entry of the result of `crit`). Numerical
-derivatives are also taken on that function.
+version of `crit`. That version takes a 1d numpy array as its only argument and returns
+a scalar float (the `"value"` entry of the result of `crit`). Numerical derivatives are
+also taken on that function.
 
-If instead a derivative based least squares optimizer like `"scipy_ls_dogbox"` had
-been used, the internal optimizer would see a modified version of `crit` that takes
-a 1d numpy array and returns a 1d numpy array (the flattened version of the
+If instead a derivative based least squares optimizer like `"scipy_ls_dogbox"` had been
+used, the internal optimizer would see a modified version of `crit` that takes a 1d
+numpy array and returns a 1d numpy array (the flattened version of the
 `"root_contributions"` entry of the result of `crit`).
 
 ### The optimization output
@@ -205,12 +206,10 @@ The following entries of the output of minimize are affected by the change:
 - `"solution_criterion"`: The output dictionary of `crit` evaluated solution params
 - `solution_derivative`: Maybe we should not even have this entry.
 
-:::{danger}
-We need to discuss if and in which form we want to have a solution
-derivative entry. In it's current form it is useless if constraints are used.
-This gets worse when we allow for pytrees and translating this into a meaningful
-shape might be very difficult.
-:::
+:::\{danger} We need to discuss if and in which form we want to have a solution
+derivative entry. In it's current form it is useless if constraints are used. This gets
+worse when we allow for pytrees and translating this into a meaningful shape might be
+very difficult. :::
 
 ### Add bounds
 
@@ -218,8 +217,8 @@ Bounds on parameters that are inside a DataFrame with `"value"` column can simpl
 specified as before. For all others, there are separate `lower_bounds` and
 `upper_bounds` arguments in `maximize` and `minimize`.
 
-`lower_bounds` and `upper_bounds` are pytrees of the same structure as `params` or
-a subtree that preserves enough structure to match all bounds. For example:
+`lower_bounds` and `upper_bounds` are pytrees of the same structure as `params` or a
+subtree that preserves enough structure to match all bounds. For example:
 
 ```python
 minimize(
@@ -267,9 +266,9 @@ minimize(
 ```
 
 The required changes to support this are relatively simple. This is because most
-functions that deal with constraints already work with a 1d array of parameters and
-the `"loc"` and `"query"` entries of constraints are internally translated to
-positions in that array very early on.
+functions that deal with constraints already work with a 1d array of parameters and the
+`"loc"` and `"query"` entries of constraints are internally translated to positions in
+that array very early on.
 
 ### Derivatives during optimization
 
@@ -277,8 +276,8 @@ If numerical derivatives are used, they are already taken on a modified function
 maps from 1d numpy array to scalars or 1d numpy arrays. Allowing for estimagic-pytrees
 in parameters and criterion outputs will not pose any difficulties here.
 
-Closed form derivatives need to have the following interface: They expect `params`
-in the exact same format as the criterion function as first argument. They return a
+Closed form derivatives need to have the following interface: They expect `params` in
+the exact same format as the criterion function as first argument. They return a
 derivative in the same format as our numerical derivative functions or JAXs autodiff
 functions when applied to the criterion function.
 
@@ -287,14 +286,14 @@ functions when applied to the criterion function.
 ### Problem: Higher dimensional extensions of pytrees
 
 The derivative of a function that maps from a 1d array to a 1d array (usually called
-Jacobian) is a 2d matrix. If the 1d arrays are replaced by pytrees, we need a
-two dimensional extension of the pytrees. Below we will look at how JAX does this
-and why we cannot simply copy that solution.
+Jacobian) is a 2d matrix. If the 1d arrays are replaced by pytrees, we need a two
+dimensional extension of the pytrees. Below we will look at how JAX does this and why we
+cannot simply copy that solution.
 
 ### The JAX solution
 
-Let's look at an example. We first define a function in terms of 1d arrays and then
-in terms of pytrees and look at a JAX calculated jacobian in both cases:
+Let's look at an example. We first define a function in terms of 1d arrays and then in
+terms of pytrees and look at a JAX calculated jacobian in both cases:
 
 ```python
 def square(x):
@@ -348,21 +347,21 @@ and array shapes:
 ```
 
 The outputs for hessians have even deeper nesting and three dimensional arrays inside
-the nested dictionary. Similarly, we would get higher dimensional arrays if one of
-the original pytrees had already contained a 2d array.
+the nested dictionary. Similarly, we would get higher dimensional arrays if one of the
+original pytrees had already contained a 2d array.
 
 ### Extending the JAX solution to estimagic-pytrees
 
 JAX pytrees can only contain arrays, whereas estimagic-pytrees may contain scalars,
 pandas.Series and pandas.DataFrames (with or without `"value"` column). Unfortunately,
-this poses non-trivial challenges for numerical derivatives
-because those data types have no natural extension in arbtirary dimensions.
+this poses non-trivial challenges for numerical derivatives because those data types
+have no natural extension in arbtirary dimensions.
 
 Our solution needs to fulfill two requirements:
 
 1\. Compatible with JAX in the sense than whenever a derivative can be calculated with
-JAX it can also be calculated with estimagic and the result has the same structure.
-2\. Compatible with the rest of estimagic in the sense that any function that can be
+JAX it can also be calculated with estimagic and the result has the same structure. 2.
+Compatible with the rest of estimagic in the sense that any function that can be
 optimized can also be differentiated. In the special case of differentiating with
 respect to a DataFrame it also needs to be backwards compatible.
 
@@ -370,9 +369,9 @@ A solution that achieves this is to treat Series and DataFrames with `"value"` c
 as 1d arrays and other DataFrames as 2d arrays, then proceed as in JAX and finally try
 to preserve as much index and column information as possible.
 
-This leads to very natural results in the typical usecases with flat dicts of Series
-or params DataFrames both as inputs and outputs and is backwards compatible with
-everything that is supported already.
+This leads to very natural results in the typical usecases with flat dicts of Series or
+params DataFrames both as inputs and outputs and is backwards compatible with everything
+that is supported already.
 
 However, similar to JAX, not everything that is supported will also be a good idea.
 Predicting where a pandas Object is preserved and where it will be replaced by an array
@@ -384,7 +383,7 @@ To see this in action, let's look at an example. We repeat the example from the 
 interface above with the following changes:
 
 1. The 1d numpy array in x\["a"\] is replaced by a DataFrame with `"value"` column
-2. The "d" entry in the output becomes a Series instead of a 1d numpy array.
+1. The "d" entry in the output becomes a Series instead of a 1d numpy array.
 
 ```python
 def pd_tree_square(x):
@@ -419,8 +418,8 @@ pd_tree_square(pd_tree_x)
 }
 ```
 
-The resulting shapes of the jacobian will be the same as before. For all arrays
-with only two dimensions we can preserve some information from the Series and DataFrame
+The resulting shapes of the jacobian will be the same as before. For all arrays with
+only two dimensions we can preserve some information from the Series and DataFrame
 indices. On the higher dimensional ones, this will be lost.
 
 ```python
@@ -461,9 +460,9 @@ very first jacobian:
 
 The indices \["j", "k", "l", "m"\] unfortunately never made it into the result because
 they were only applied to elements that already came from a 2d array and thus always
-have a 3d Jacobian, i.e. the result entry `["c"][b"]` is a reshaped version of the
-upper right 2 by 4 array and the result entry `["d"]["b"]` is a reshaped version of
-the lower right 4 by 4 array.
+have a 3d Jacobian, i.e. the result entry `["c"][b"]` is a reshaped version of the upper
+right 2 by 4 array and the result entry `["d"]["b"]` is a reshaped version of the lower
+right 4 by 4 array.
 
 ### Implementation
 
@@ -481,14 +480,13 @@ following steps:
 
 - Create a modified function that maps from 1d array to 1d array
 - Calculate flat_derivative by taking numerical derivatives just as before
-- Calculate the shapes of all arrays in derivative_tree by concatenating the shapes
-  of the cartesian product of flattend output_tree and input_tree
+- Calculate the shapes of all arrays in derivative_tree by concatenating the shapes of
+  the cartesian product of flattend output_tree and input_tree
 - Calculate the 2d versions of those arrays by taking the product over elements in the
   shape tuple before concatenating.
 - Create a list of lists containing all arrays that will be in derivative_tree. The
   values are taken from flat_derivative, using the previously calculated shapes.
-- call `tree_unflatten` on the inner lists with the treedef corresponding to
-  input_tree.
+- call `tree_unflatten` on the inner lists with the treedef corresponding to input_tree.
 - call `tree_unflatten` on the result of that with the treedef corresponding to
   output_tree.
 
@@ -500,19 +498,18 @@ but have a bit more preparation and post-processing to do.
 ### Estimation summaries
 
 Currently, estimation summaries are DataFrames. The estimated parameters are in the
-`"value"` column. There are other columns with standard errors, p-values,
-significance stars and confidence intervals.
+`"value"` column. There are other columns with standard errors, p-values, significance
+stars and confidence intervals.
 
 This is another form of higher dimensional extension of pytrees, where we need to add
-additional columns. There are two ways in which estimation summaries could be
-presented. I suggest we offer both. The first is more geared towards generating
-estimation tables and serving as actual summary to be looked at in a jupyter notebook.
-It is also backwards compatible and should thus be the default.
-The second is more geared towards further calculations. There will be utility functions
-to convert between the two.
+additional columns. There are two ways in which estimation summaries could be presented.
+I suggest we offer both. The first is more geared towards generating estimation tables
+and serving as actual summary to be looked at in a jupyter notebook. It is also
+backwards compatible and should thus be the default. The second is more geared towards
+further calculations. There will be utility functions to convert between the two.
 
-Both formats will be explained using the `params` pytree from the optimization
-example (reproduced here for convenience):
+Both formats will be explained using the `params` pytree from the optimization example
+(reproduced here for convenience):
 
 #### Format 1: Everything becomes a DataFrame
 
@@ -520,20 +517,20 @@ In this approach we do the following conversions:
 
 1. numpy arrays are flattened and converted to DataFrames with one column called
    `"value"`. The index contains the original positions of elements.
-2. pandas.Series are converted to DataFrames. The index remains unchanged. The
-   column is called `"value"`.
-3. scalars become DataFrames with one row with index 0 and one column called `"value"`.
-4. DataFrames without `"value"` column are stacked into a DataFrame with just one
-   column called `"value"`.
-5. DataFrames with `"value"` column are reduced to that column.
+1. pandas.Series are converted to DataFrames. The index remains unchanged. The column is
+   called `"value"`.
+1. scalars become DataFrames with one row with index 0 and one column called `"value"`.
+1. DataFrames without `"value"` column are stacked into a DataFrame with just one column
+   called `"value"`.
+1. DataFrames with `"value"` column are reduced to that column.
 
-After these transformations, all numbers of the original pytree are stored in
-DataFrames with `"value"` column. Additional columns with standard errors and the like
-can then simply be assigned as before.
+After these transformations, all numbers of the original pytree are stored in DataFrames
+with `"value"` column. Additional columns with standard errors and the like can then
+simply be assigned as before.
 
-For more intuition, let's see how this would look in an example. For simplicity we
-only add a column with stars and ommit standard errors, p-values and confidence
-intervals. We use the same example as in the optimization section:
+For more intuition, let's see how this would look in an example. For simplicity we only
+add a column with stars and ommit standard errors, p-values and confidence intervals. We
+use the same example as in the optimization section:
 
 ```python
 params = {
@@ -583,15 +580,14 @@ arrays (as the Jacobian example does).
 We thus propose to have two possible formats in which covariance matrices can be
 returned:
 
-1. The pytree variant described in the above Jacobian example. This will be useful
-   to look at sub-matrices of the full covariance matrix as long as the `params`
-   pytree only contains one dimensional arrays, Series and DataFrames with `"value"`
-   columns.
-2. A DataFrame containing the covariance matrix of the flattened parameter vector. The
-   index and columns of the DataFrames can be constructed from the `leaf_names`
-   function in `pybaum`. We could also triviall add a function there that constructs
-   an index that is easier to work with for selecting elements and let the user choose
-   between the two versions.
+1. The pytree variant described in the above Jacobian example. This will be useful to
+   look at sub-matrices of the full covariance matrix as long as the `params` pytree
+   only contains one dimensional arrays, Series and DataFrames with `"value"` columns.
+1. A DataFrame containing the covariance matrix of the flattened parameter vector. The
+   index and columns of the DataFrames can be constructed from the `leaf_names` function
+   in `pybaum`. We could also triviall add a function there that constructs an index
+   that is easier to work with for selecting elements and let the user choose between
+   the two versions.
 
 The function that maps from the flat version (which would be calculated internally) to
 the pytree version is the same as we need for numerical derivatives. The inverse of that
@@ -600,9 +596,8 @@ derivatives.
 
 ### params
 
-Everything that can be used as `params` in optimization and differentiation can
-also be used as `params` in estimation. The registries used in pytree functions
-are identical.
+Everything that can be used as `params` in optimization and differentiation can also be
+used as `params` in estimation. The registries used in pytree functions are identical.
 
 ## ML specific aspects of pytrees
 
@@ -631,25 +626,25 @@ structure. We will raise an error if the trees do not have the same structure.
 
 This is a generalization of an interface that has already proven useful in
 [respy](https://github.com/OpenSourceEconomics/respy),
-[sid](https://github.com/covid-19-impact-lab/sid) and other applications. In the
-future, the project specific implementations of flatten and unflatten functions
-could simply be deleted.
+[sid](https://github.com/covid-19-impact-lab/sid) and other applications. In the future,
+the project specific implementations of flatten and unflatten functions could simply be
+deleted.
 
 ### Representation of the weighting matrix and moments_cov
 
-The weighting matrix for MSM estimation is represented as a DataFrame in the same
-way as the flat representation of the covariance matrices. Of course, the conversion
-functions that work for covariance matrices would also work here, but it is highly
-unlikely that a different representation of a weighting matrix is ever needed.
+The weighting matrix for MSM estimation is represented as a DataFrame in the same way as
+the flat representation of the covariance matrices. Of course, the conversion functions
+that work for covariance matrices would also work here, but it is highly unlikely that a
+different representation of a weighting matrix is ever needed.
 
-Note that the user does not have to construct this weighting matrix manually. They
-can generate them using `get_moments_cov` and `get_weighting_matrix`, so they
-do not need any knowledge of how the flattening works.
+Note that the user does not have to construct this weighting matrix manually. They can
+generate them using `get_moments_cov` and `get_weighting_matrix`, so they do not need
+any knowledge of how the flattening works.
 
 ### Pepresentation of sensitivity measures
 
-Sensitivity measures are similar to covariance matrices in the sense that they require
-a two dimensional extension of pytrees. The only difference is that for covariance
+Sensitivity measures are similar to covariance matrices in the sense that they require a
+two dimensional extension of pytrees. The only difference is that for covariance
 matrices the two pytrees the same (namely the `params`) and for sensitivity measures
 they are different (one is `params`, the other `moments`).
 
@@ -678,8 +673,8 @@ simply raise errors and provide tutorials to work around the limitations.
 ## Compatibility with Dashboard
 
 The main challenge for the dashboard is that pytrees have no natural multi-column
-extension and thus it becomes harder to specify a group or name column. However,
-these features have not been used very much anyways.
+extension and thus it becomes harder to specify a group or name column. However, these
+features have not been used very much anyways.
 
 We propose to write a better automatic grouping and naming function for pytrees. That
 way it is simply not necessary to provide group and name columns and most of the users
@@ -689,50 +684,50 @@ Rules of thumb for both should be:
 
 1. Only parameters where the start values have a similar magnitude can be in the same
    group, i.e. displayed in one lineplot.
-2. Parameters that are close to each other in the tree (i.e. have a common beginning
-   in their leaf_name should be in the same group.
-3. The plot title should subsume the commen parts of the tree-structure (i.e. name
-   we get from `pybaum.leaf_names`.
-4. Most line plots should have approximately 5 lines, none should have more than 8.
+1. Parameters that are close to each other in the tree (i.e. have a common beginning in
+   their leaf_name should be in the same group.
+1. The plot title should subsume the commen parts of the tree-structure (i.e. name we
+   get from `pybaum.leaf_names`.
+1. Most line plots should have approximately 5 lines, none should have more than 8.
 
 ## Advanced options for functions that work with pytrees
 
-There are two argument to `tree_flatten` and other pytree functions that determine
-which entries in a pytree are considered a leaf and which a container as well as how
-containers are flattened. 1. `registry` and 2. `is_leaf`. See the documentation
-of `pybaum` for details.
+There are two argument to `tree_flatten` and other pytree functions that determine which
+entries in a pytree are considered a leaf and which a container as well as how
+containers are flattened. 1. `registry` and 2. `is_leaf`. See the documentation of
+`pybaum` for details.
 
-To allow for absolute flexibility, each function that works with pytrees needs to
-allow a user to pass in a `registry` and an `is_leaf` argument. If a function
-works with multiple pytrees (e.g. in `estimate_msm` the `params` are a
-pytree and `emprirical_moments` are a pytree) it needs to allow users to pass in
-multiple registries and is_leaf functions (e.g. `params_registry`,
-`params_is_leaf` and `moments_registry`, `moments_is_leaf`.
+To allow for absolute flexibility, each function that works with pytrees needs to allow
+a user to pass in a `registry` and an `is_leaf` argument. If a function works with
+multiple pytrees (e.g. in `estimate_msm` the `params` are a pytree and
+`emprirical_moments` are a pytree) it needs to allow users to pass in multiple
+registries and is_leaf functions (e.g. `params_registry`, `params_is_leaf` and
+`moments_registry`, `moments_is_leaf`.
 
 However, we need only as many registries as there are different pytrees. For example
-since `simulated_moments` and `empirical_moments` always need to be pytrees with
-the same structure, they do not need separate registries and is_leaf functions.
+since `simulated_moments` and `empirical_moments` always need to be pytrees with the
+same structure, they do not need separate registries and is_leaf functions.
 
 ## Pytree related reasons for a switch to result objects
 
-There will be an other EEP that proposes to replace the result dictionaries we
-currently use everywhere in estimagic by result objects. While this in not completely
-related to pytrees, the switch to pytrees provides a few additional reasons:
+There will be an other EEP that proposes to replace the result dictionaries we currently
+use everywhere in estimagic by result objects. While this in not completely related to
+pytrees, the switch to pytrees provides a few additional reasons:
 
-1. Since we sometimes provide provide results in several formats (e.g. summaries as
-   dict of pytrees and as pytree of DataFrames), the result dictionary would become
-   too large and confusing. Having result objects that just calculate specific formats
-   on demand can alleviate this.
-2. The result object can serve as a simplfied wrapper to pytree functions and pytree
-   conversion functions between pytree formats that abstracts from registry, is_leaf
-   and treedefs.
-3. Results objects allow to define a `__repr__` which becomes really useful as soon as
+1. Since we sometimes provide provide results in several formats (e.g. summaries as dict
+   of pytrees and as pytree of DataFrames), the result dictionary would become too large
+   and confusing. Having result objects that just calculate specific formats on demand
+   can alleviate this.
+1. The result object can serve as a simplfied wrapper to pytree functions and pytree
+   conversion functions between pytree formats that abstracts from registry, is_leaf and
+   treedefs.
+1. Results objects allow to define a `__repr__` which becomes really useful as soon as
    parameters are not just one DataFrame but for example, a dict of DataFrames.
 
 ## Compatibility with JAX autodiff
 
-While we allow for pytrees of arrays, numbers and DataFrames, JAX only allows pytrees
-of arrays and numbers for automatic differentiation.
+While we allow for pytrees of arrays, numbers and DataFrames, JAX only allows pytrees of
+arrays and numbers for automatic differentiation.
 
 If you want to use automatic differentiation with estimagic you will thus have to
 restrict yourself in the way you specify parameters.

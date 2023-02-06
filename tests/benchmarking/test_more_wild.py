@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
-from estimagic.benchmarking.more_wild import get_start_points_mancino
-from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
+from estimagic.benchmarking.more_wild import (
+    MORE_WILD_PROBLEMS,
+    get_start_points_mancino,
+)
 
 
 @pytest.mark.parametrize("name, specification", list(MORE_WILD_PROBLEMS.items()))

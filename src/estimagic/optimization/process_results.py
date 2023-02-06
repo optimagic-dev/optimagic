@@ -1,4 +1,5 @@
 import numpy as np
+
 from estimagic.optimization.convergence_report import get_convergence_report
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.conversion import aggregate_func_output_to_value
@@ -15,7 +16,6 @@ def process_internal_optimizer_result(
 
     Args:
         res (dict): Results dictionary of an internal optimizer or multistart optimizer.
-
 
     """
     is_multistart = "multistart_info" in res
@@ -50,7 +50,7 @@ def process_internal_optimizer_result(
             res.convergence_report = conv_report
 
             res.algorithm = f"multistart_{res.algorithm}"
-            res.n_iterations = res.n_iterations = _sum_or_none(
+            res.n_iterations = _sum_or_none(
                 [opt.n_iterations for opt in info["local_optima"]]
             )
 
@@ -118,7 +118,6 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
 
 
 def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_checks):
-
     direction = fixed_kwargs["direction"]
 
     starts = [converter.params_from_internal(x) for x in info["start_parameters"]]

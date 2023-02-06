@@ -1,10 +1,10 @@
 """Functions to convert between array and block-tree representations of a matrix."""
 import numpy as np
 import pandas as pd
-from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten
+from pybaum import tree_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
-from pybaum import tree_unflatten
+
+from estimagic.parameters.tree_registry import get_registry
 
 
 def matrix_to_block_tree(matrix, outer_tree, inner_tree):

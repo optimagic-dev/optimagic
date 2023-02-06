@@ -1,16 +1,13 @@
-"""
-Implementation of parallelosation of Nelder-Mead algorithm
-"""
+"""Implementation of parallelosation of Nelder-Mead algorithm."""
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-)
-from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
 )
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 
 
 @mark_minimizer(
@@ -32,10 +29,9 @@ def neldermead_parallel(
     convergence_absolute_params_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,  # noqa: E501
     batch_evaluator="joblib",
 ):
-    """
-    Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
-    implementation of the simplex function minimization routine,
-    Computational Economics, 2007.
+    """Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
+    implementation of the simplex function minimization routine, Computational
+    Economics, 2007.
 
     Parameters
     ----------
@@ -113,7 +109,6 @@ def neldermead_parallel(
 
     # parallelized function
     def func_parallel(args):
-
         criterion, s_j, s_j_r, f_s_0, f_s_j, f_s_j_1, m = args  # read arguments
 
         f_s_j_r = criterion(
@@ -281,7 +276,6 @@ def neldermead_parallel(
 # Nelder-Mead siplex algorithm with adaptive parameters, Computational Optimization
 # and Applications, 2012
 def _init_algo_params(adaptive, j):
-
     if adaptive:
         # algorithem parameters alla Gao-Han (adaptive)
         return (
@@ -302,7 +296,6 @@ def _init_algo_params(adaptive, j):
 
 # initial structure of the simplex
 def _init_simplex(x):
-
     s = np.vstack(
         [
             x,
@@ -315,7 +308,6 @@ def _init_simplex(x):
 
 # initilize due to L. Pfeffer at Standford (Matlab fminsearch and SciPy default option)
 def _pfeffer(x):
-
     s = _init_simplex(x)
 
     # method parameters
@@ -331,7 +323,6 @@ def _pfeffer(x):
 # see Nash, J.C.: Compact numerical methods for computers: linear algebra and
 # function minimisation, 2nd edn. Adam Hilger Ltd., Bristol (1990) for details
 def _nash(x):
-
     s = _init_simplex(x)
 
     # method parameters
@@ -345,7 +336,6 @@ def _nash(x):
 # adopted from Gao F., Han L., Implementing the
 # Nelder-Mead siplex algorithm with adaptive parameters, Computational Optimizatio
 def _gao_han(x):
-
     s = _init_simplex(x)
 
     # method parameters
@@ -371,7 +361,6 @@ def _gao_han(x):
 # see Varadhan, R., Borchers, H.W.: Dfoptim: derivative-free optimization (2016).
 # https://CRAN.R-project. org/package=dfoptim. R package version 2016.7-1 for details
 def _varadhan_borchers(x):
-
     s = _init_simplex(x)
 
     # method parameters

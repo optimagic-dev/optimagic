@@ -32,6 +32,7 @@ def get_bootstrap_outcomes(
 
     Returns:
         estimates (list):  List of pytrees of estimated bootstrap outcomes.
+
     """
     check_inputs(data=data, cluster_by=cluster_by)
     batch_evaluator = process_batch_evaluator(batch_evaluator)

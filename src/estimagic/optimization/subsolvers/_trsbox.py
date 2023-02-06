@@ -44,6 +44,7 @@ def minimize_trust_trsbox(
     Returns:
         np.ndarray: Solution vector for the quadratic trust-region subproblem
             of shape (n,).
+
     """
     n = len(model_gradient)
     x_center = np.zeros(n)
@@ -517,9 +518,10 @@ def _calc_greatest_criterion_reduction(
 ):
     """Calculate the greatest feasible reduction in the criterion function.
 
-    The largest reduction is found by looking at a range of equally spaced values
-    of ``tangent`` in the interval [0, ``bound_on_tangent``], where ``tangent`` is
-    the tangent of half the angle to the trust-region boundary.
+    The largest reduction is found by looking at a range of equally spaced values of
+    ``tangent`` in the interval [0, ``bound_on_tangent``], where ``tangent`` is the
+    tangent of half the angle to the trust-region boundary.
+
     """
     previous_reduction = None
     next_reduction = None
@@ -567,8 +569,9 @@ def _update_candidate_vectors_and_reduction_alt_step(
 ):
     """Update candidate vectors and the associated criterion reduction.
 
-    If the angle of the alternative iteration is restricted by a bound on a
-    free variable, that variable is fixed at the bound.
+    If the angle of the alternative iteration is restricted by a bound on a free
+    variable, that variable is fixed at the bound.
+
     """
     gradient_candidate_new = (
         gradient_candidate + (cosine - 1.0) * hessian_reduced + sine * hess_s

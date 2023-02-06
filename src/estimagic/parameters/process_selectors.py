@@ -3,9 +3,10 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
+from pybaum import tree_just_flatten
+
 from estimagic.exceptions import InvalidConstraintError
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten
 
 
 def process_selectors(constraints, params, tree_converter, param_names):

@@ -1,10 +1,10 @@
 # How supported optimization algorithms are tested
 
 estimagic provides a unified interface that supports a large number of optimization
-algorithms from different libraries. Additionally, it allows putting constraints on
-the optimization problem.
-To test the external interface of all supported algorithms, we consider different criterion
-(benchmark) functions and test each algorithm with every type of constraint.
+algorithms from different libraries. Additionally, it allows putting constraints on the
+optimization problem. To test the external interface of all supported algorithms, we
+consider different criterion (benchmark) functions and test each algorithm with every
+type of constraint.
 
 ## Benchmark functions for testing
 
@@ -26,31 +26,29 @@ To test the external interface of all supported algorithms, we consider differen
 
 ## How testcases are implemented
 
-We consider different implementations of each criterion and its gradient. All
-algorithms accept criterion functions specified in a dictionary, while a subset
-also accepts the criterion specified in scalar form. Likewise, if specified, the
-gradient of a criterion can be an np.ndarray or a pandas object. We test for all
-possible cases.
-For instance, for rotated hyper ellipsoid, we implement the following functions:
+We consider different implementations of each criterion and its gradient. All algorithms
+accept criterion functions specified in a dictionary, while a subset also accepts the
+criterion specified in scalar form. Likewise, if specified, the gradient of a criterion
+can be an np.ndarray or a pandas object. We test for all possible cases. For instance,
+for rotated hyper ellipsoid, we implement the following functions:
 
 - rotated_hyper_ellipsoid_scalar_criterion
 - rotated_hyper_ellipsoid_dict_criterion: This provides a dictionary wherein the
-  `contributions` and `root_contributions` keys present the criterion as a least
-  squares problem, relevant when we are testing a least squares algorithm.
+  `contributions` and `root_contributions` keys present the criterion as a least squares
+  problem, relevant when we are testing a least squares algorithm.
 - rotated_hyper_ellipsoid_gradient
 - rotated_hyper_ellipsoid_pandas_gradient: Computes the gradient of the rotated hyper
   ellipsoid function, as a pandas object.
 - rotated_hyper_ellipsoid_criterion_and_gradient
 
-These criterion functions are specified in the `examples` directory. For an overview
-of all constraints supported in estimagic, please see
-[this how-to guide].
+These criterion functions are specified in the `examples` directory. For an overview of
+all constraints supported in estimagic, please see [this how-to guide].
 
-We write several test functions, each corresponding to the case of one constraint.
-Given the constraint, the test function considers all possible
-combinations of the algorithm, whether to maximize or to minimize, criterion function
-implementation, gradient implementation for that criterion (if provided),
-and whether `criterion_and_derivative` has been provided or not.
+We write several test functions, each corresponding to the case of one constraint. Given
+the constraint, the test function considers all possible combinations of the algorithm,
+whether to maximize or to minimize, criterion function implementation, gradient
+implementation for that criterion (if provided), and whether `criterion_and_derivative`
+has been provided or not.
 
 Below, we show the calculations behind the true values, for each testcase (one criterion
 and one constraint).
