@@ -47,7 +47,7 @@ def base_inputs():
         "error_handling": "raise",
         "numdiff_options": {},
         "logging": False,
-        "db_kwargs": {"database": False, "fast_logging": False, "path": "logging.db"},
+        "database": None,
         "error_penalty_func": None,
         "fixed_log_data": {"stage": "optimization", "substage": 0},
     }

@@ -12,86 +12,115 @@ Therefore, users who simply want to read the database should use the functions i
 import io
 import traceback
 import warnings
-from pathlib import Path
 
 import cloudpickle
 import pandas as pd
-from sqlalchemy import (
-    BLOB,
-    Boolean,
-    Column,
-    Float,
-    Integer,
-    MetaData,
-    PickleType,
-    String,
-    Table,
-    and_,
-    create_engine,
-    event,
-    update,
-)
+import sqlalchemy as sql
 
 from estimagic.exceptions import TableExistsError, get_traceback
 
 
-def load_database(metadata=None, path=None, fast_logging=False):
-    """Return a bound sqlalchemy.MetaData object for the database stored in ``path``.
+class DataBase:
+    """Class containing everything to work with a logging database.
 
-    This is the only acceptable way of creating or loading databases in estimagic!
-
-    If metadata is a bound MetaData object, it is just returned. If metadata is given
-    but not bound, we bind it to an engine that connects to the database stored under
-    ``path``. If only the path is provided, we generate an appropriate MetaData object
-    and bind it to the database.
-
-    For speed reasons we do not make any checks that MetaData is compatible with the
-    database stored under path.
-
-    Args:
-        metadata (sqlalchemy.MetaData): MetaData object that might or might not be
-            bound to the database under path. In any case it needs to be compatible
-            with the database stored under ``path``. For speed reasons, this is not
-            checked.
-        path (str or pathlib.Path): location of the database file. If the file does
-            not exist, it will be created.
-
-    Returns:
-        metadata (sqlalchemy.MetaData). MetaData object that is bound to the database
-        under ``path``.
+    Importantly, the class is pickle-serializable which is important to share it across
+    multiple processes.
 
     """
-    path = Path(path) if isinstance(path, str) else path
 
-    if isinstance(metadata, MetaData):
-        if metadata.bind is None:
-            assert (
-                path is not None
-            ), "If metadata is not bound, you need to provide a path."
-            engine = create_engine(f"sqlite:///{path}")
-            _configure_engine(engine, fast_logging)
-            metadata.bind = engine
-    elif metadata is None:
-        assert path is not None, "If metadata is None you need to provide a path."
-        path_existed = path.exists()
-        engine = create_engine(f"sqlite:///{path}")
-        _configure_engine(engine, fast_logging)
-        metadata = MetaData()
-        metadata.bind = engine
-        if path_existed:
-            _configure_reflect()
-            metadata.reflect()
+    def __init__(self, metadata, path, fast_logging, engine=None):
+        self.metadata = metadata
+        self.path = path
+        self.fast_logging = fast_logging
+        if isinstance(engine, sql.Engine):
+            self.engine = engine
+        else:
+            self.engine = _create_engine(path, fast_logging)
+
+    def __reduce__(self):
+        return (DataBase, (self.metadata, self.path, self.fast_logging))
+
+
+def load_database(path_or_database, fast_logging=False):
+    """Load or create a database from a path and configure it for our needs.
+
+    This is the only acceptable way of loading or creating a database in estimagic!
+
+    Args:
+        path (str or pathlib.Path): Path to the database.
+        fast_logging (bool): If True, use unsafe optimizations to speed up the logging.
+            If False, only use ultra safe optimizations.
+
+    Returns:
+        database (Database): Object containing everything to work with the
+            database.
+
+    """
+    if isinstance(path_or_database, DataBase):
+        out = path_or_database
     else:
-        raise ValueError("metadata must be sqlalchemy.MetaData or None.")
+        engine = _create_engine(path_or_database, fast_logging)
+        metadata = sql.MetaData()
+        _configure_reflect()
+        metadata.reflect(engine)
 
-    return metadata
+        out = DataBase(
+            metadata=metadata,
+            path=path_or_database,
+            fast_logging=fast_logging,
+            engine=engine,
+        )
+    return out
+
+
+def _create_engine(path, fast_logging):
+    engine = sql.create_engine(f"sqlite:///{path}")
+    _configure_engine(engine, fast_logging)
+    return engine
+
+
+def _configure_engine(engine, fast_logging):
+    """Configure the sqlite engine.
+
+    The two functions that configure the emission of the begin statement are taken from
+    the sqlalchemy documentation the documentation: https://tinyurl.com/u9xea5z and are
+    the recommended way of working around a bug in the pysqlite driver.
+
+    The other function speeds up the write process. If fast_logging is False, it does so
+    using only completely safe optimizations. Of fast_logging is True, it also uses
+    unsafe optimizations.
+
+    """
+
+    @sql.event.listens_for(engine, "connect")
+    def do_connect(dbapi_connection, connection_record):  # noqa: ARG001
+        # disable pysqlite's emitting of the BEGIN statement entirely.
+        # also stops it from emitting COMMIT before absolutely necessary.
+        dbapi_connection.isolation_level = None
+
+    @sql.event.listens_for(engine, "begin")
+    def do_begin(conn):
+        # emit our own BEGIN
+        conn.exec_driver_sql("BEGIN DEFERRED")
+
+    @sql.event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):  # noqa: ARG001
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode = WAL")
+        if fast_logging:
+            cursor.execute("PRAGMA synchronous = OFF")
+        else:
+            cursor.execute("PRAGMA synchronous = NORMAL")
+        cursor.close()
 
 
 def make_optimization_iteration_table(database, if_exists="extend"):
     """Generate a table for information that is generated with each function evaluation.
 
     Args:
-        database (sqlalchemy.MetaData): Bound metadata object.
+        database (DataBase): Bound metadata object.
+        if_exists (str): What to do if the table already exists. Can be "extend",
+            "replace" or "raise".
 
     Returns:
         database (sqlalchemy.MetaData):Bound metadata object with added table.
@@ -101,39 +130,117 @@ def make_optimization_iteration_table(database, if_exists="extend"):
     _handle_existing_table(database, "optimization_iterations", if_exists)
 
     columns = [
-        Column("rowid", Integer, primary_key=True),
-        Column("params", PickleType(pickler=RobustPickler)),
-        Column("internal_derivative", PickleType(pickler=RobustPickler)),
-        Column("timestamp", Float),
-        Column("exceptions", String),
-        Column("valid", Boolean),
-        Column("hash", String),
-        Column("value", Float),
-        Column("step", Integer),
-        Column("criterion_eval", PickleType(pickler=RobustPickler)),
+        sql.Column("rowid", sql.Integer, primary_key=True),
+        sql.Column("params", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("internal_derivative", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("timestamp", sql.Float),
+        sql.Column("exceptions", sql.String),
+        sql.Column("valid", sql.Boolean),
+        sql.Column("hash", sql.String),
+        sql.Column("value", sql.Float),
+        sql.Column("step", sql.Integer),
+        sql.Column("criterion_eval", sql.PickleType(pickler=RobustPickler)),
     ]
 
-    Table(
-        table_name, database, *columns, sqlite_autoincrement=True, extend_existing=True
+    sql.Table(
+        table_name,
+        database.metadata,
+        *columns,
+        sqlite_autoincrement=True,
+        extend_existing=True,
     )
 
-    database.create_all(database.bind)
+    database.metadata.create_all(database.engine)
+
+
+def _handle_existing_table(database, table_name, if_exists):
+    assert if_exists in ["replace", "extend", "raise"]
+
+    if table_name in database.metadata.tables:
+        if if_exists == "replace":
+            database.metadata.tables[table_name].drop(database.engine)
+        elif if_exists == "raise":
+            raise TableExistsError(f"The table {table_name} already exists.")
+
+
+def _configure_reflect():
+    """Mark all BLOB dtypes as PickleType with our custom pickle reader.
+
+    Code ist taken from the documentation: https://tinyurl.com/y7q287jr
+
+    """
+
+    @sql.event.listens_for(sql.Table, "column_reflect")
+    def _setup_pickletype(inspector, table, column_info):  # noqa: ARG001
+        if isinstance(column_info["type"], sql.BLOB):
+            column_info["type"] = sql.PickleType(pickler=RobustPickler)
+
+
+class RobustPickler:
+    @staticmethod
+    def loads(
+        data,
+        fix_imports=True,  # noqa: ARG004
+        encoding="ASCII",  # noqa: ARG004
+        errors="strict",  # noqa: ARG004
+        buffers=None,  # noqa: ARG004
+    ):
+        """Robust pickle loading.
+
+        We first try to unpickle the object with pd.read_pickle. This makes no
+        difference for non-pandas objects but makes the de-serialization
+        of pandas objects more robust across pandas versions. If that fails, we use
+        cloudpickle. If that fails, we return None but do not raise an error.
+
+        See: https://github.com/pandas-dev/pandas/issues/16474
+
+        """
+        try:
+            res = pd.read_pickle(io.BytesIO(data), compression=None)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            try:
+                res = cloudpickle.loads(data)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception:
+                res = None
+                tb = get_traceback()
+                warnings.warn(
+                    f"Unable to read PickleType column from database:\n{tb}\n "
+                    "The entry was replaced by None."
+                )
+
+        return res
+
+    @staticmethod
+    def dumps(
+        obj, protocol=None, *, fix_imports=True, buffer_callback=None  # noqa: ARG004
+    ):
+        return cloudpickle.dumps(obj, protocol=protocol)
 
 
 def make_steps_table(database, if_exists="extend"):
     table_name = "steps"
     _handle_existing_table(database, table_name, if_exists)
     columns = [
-        Column("rowid", Integer, primary_key=True),
-        Column("type", String),  # e.g. optimization
-        Column("status", String),  # e.g. running
-        Column("n_iterations", Integer),  # optional
-        Column("name", String),  # e.g. "optimization-1", "exploration", not unique
+        sql.Column("rowid", sql.Integer, primary_key=True),
+        sql.Column("type", sql.String),  # e.g. optimization
+        sql.Column("status", sql.String),  # e.g. running
+        sql.Column("n_iterations", sql.Integer),  # optional
+        sql.Column(
+            "name", sql.String
+        ),  # e.g. "optimization-1", "exploration", not unique
     ]
-    Table(
-        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True
+    sql.Table(
+        table_name,
+        database.metadata,
+        *columns,
+        extend_existing=True,
+        sqlite_autoincrement=True,
     )
-    database.create_all(database.bind)
+    database.metadata.create_all(database.engine)
 
 
 def make_optimization_problem_table(database, if_exists="extend"):
@@ -141,73 +248,60 @@ def make_optimization_problem_table(database, if_exists="extend"):
     _handle_existing_table(database, table_name, if_exists)
 
     columns = [
-        Column("rowid", Integer, primary_key=True),
-        Column("direction", String),
-        Column("params", PickleType(pickler=RobustPickler)),
-        Column("algorithm", PickleType(pickler=RobustPickler)),
-        Column("algo_options", PickleType(pickler=RobustPickler)),
-        Column("numdiff_options", PickleType(pickler=RobustPickler)),
-        Column("log_options", PickleType(pickler=RobustPickler)),
-        Column("error_handling", String),
-        Column("error_penalty", PickleType(pickler=RobustPickler)),
-        Column("constraints", PickleType(pickler=RobustPickler)),
-        Column("free_mask", PickleType(pickler=RobustPickler)),
+        sql.Column("rowid", sql.Integer, primary_key=True),
+        sql.Column("direction", sql.String),
+        sql.Column("params", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("algorithm", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("algo_options", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("numdiff_options", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("log_options", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("error_handling", sql.String),
+        sql.Column("error_penalty", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("constraints", sql.PickleType(pickler=RobustPickler)),
+        sql.Column("free_mask", sql.PickleType(pickler=RobustPickler)),
     ]
 
-    Table(
-        table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True
+    sql.Table(
+        table_name,
+        database.metadata,
+        *columns,
+        extend_existing=True,
+        sqlite_autoincrement=True,
     )
 
-    database.create_all(database.bind)
+    database.metadata.create_all(database.engine)
 
 
-def _handle_existing_table(database, table_name, if_exists):
-    assert if_exists in ["replace", "extend", "raise"]
-
-    if table_name in database.tables:
-        if if_exists == "replace":
-            database.tables[table_name].drop(database.bind)
-        elif if_exists == "raise":
-            raise TableExistsError(f"The table {table_name} already exists.")
+# ======================================================================================
 
 
-def update_row(data, rowid, table_name, database, path, fast_logging):
-    database = load_database(database, path, fast_logging)
+def update_row(data, rowid, table_name, database):
+    table = database.metadata.tables[table_name]
+    stmt = sql.update(table).where(table.c.rowid == rowid).values(**data)
 
-    table = database.tables[table_name]
-    stmt = update(table).where(table.c.rowid == rowid).values(**data)
-
-    _execute_write_statement(stmt, database, path, table_name, data)
+    _execute_write_statement(stmt, database)
 
 
-def append_row(data, table_name, database, path, fast_logging):
+def append_row(data, table_name, database):
     """
 
     Args:
         data (dict): The keys correspond to columns in the database table.
         table_name (str): Name of the database table to which the row is added.
-        database (sqlalchemy.MetaData): Sqlachlemy metadata object of the database.
-        path (str or pathlib.Path): Path to the database file. Using a path is much
-            slower than a MetaData object and we advise to only use it as a fallback.
-        fast_logging (bool)
+        database (DataBase): The database to which the row is added.
 
     """
-    # this is necessary because database.bind gets lost when the database is pickled.
-    # it has no cost when database.bind is set.
-    database = load_database(database, path, fast_logging)
 
-    stmt = database.tables[table_name].insert().values(**data)
+    stmt = database.metadata.tables[table_name].insert().values(**data)
 
-    _execute_write_statement(stmt, database, path, table_name, data)
+    _execute_write_statement(stmt, database)
 
 
-def _execute_write_statement(
-    statement, database, path, table_name, data  # noqa: ARG001
-):
+def _execute_write_statement(statement, database):
     try:
         # this will automatically roll back the transaction if any exception is raised
         # and then raise the exception
-        with database.bind.begin() as connection:
+        with database.engine.begin() as connection:
             connection.execute(statement)
     except (KeyboardInterrupt, SystemExit):
         raise
@@ -223,8 +317,6 @@ def read_new_rows(
     table_name,
     last_retrieved,
     return_type,
-    path=None,
-    fast_logging=False,
     limit=None,
     stride=1,
     step=None,
@@ -232,7 +324,7 @@ def read_new_rows(
     """Read all iterations after last_retrieved up to a limit.
 
     Args:
-        database (sqlalchemy.MetaData)
+        database (DataBase)
         table_name (str): name of the table to retrieve.
         last_retrieved (int): The last iteration that was retrieved.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
@@ -250,11 +342,10 @@ def read_new_rows(
         int: The new last_retrieved value.
 
     """
-    database = load_database(database, path, fast_logging)
     last_retrieved = int(last_retrieved)
     limit = int(limit) if limit is not None else limit
 
-    table = database.tables[table_name]
+    table = database.metadata.tables[table_name]
     stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
     conditions = [table.c.rowid > last_retrieved]
 
@@ -264,7 +355,7 @@ def read_new_rows(
     if step is not None:
         conditions.append(table.c.step == int(step))
 
-    stmt = table.select().where(and_(*conditions)).limit(limit)
+    stmt = table.select().where(sql.and_(*conditions)).limit(limit)
 
     data = _execute_read_statement(database, table_name, stmt, return_type)
 
@@ -281,8 +372,6 @@ def read_last_rows(
     table_name,
     n_rows,
     return_type,
-    path=None,
-    fast_logging=False,
     stride=1,
     step=None,
 ):
@@ -291,14 +380,10 @@ def read_last_rows(
     If a table has less than n_rows rows, the whole table is returned.
 
     Args:
-        database (sqlalchemy.MetaData)
+        database (DataBase)
         table_name (str): name of the table to retrieve.
         n_rows (int): number of rows to retrieve.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
-        path (str or pathlib.Path): location of the database file. If the file does
-            not exist, it will be created. Using a path is much slower than a
-            MetaData object and we advise to only use it as a fallback.
-        fast_logging (bool)
         stride (int): Only return every n-th row. Default is every row (stride=1).
         step (int): Only return rows that belong to step.
 
@@ -306,10 +391,9 @@ def read_last_rows(
         result (return_type): the last rows of the `table_name` table as `return_type`.
 
     """
-    database = load_database(database, path, fast_logging)
     n_rows = int(n_rows)
 
-    table = database.tables[table_name]
+    table = database.metadata.tables[table_name]
 
     conditions = []
 
@@ -323,7 +407,7 @@ def read_last_rows(
         stmt = (
             table.select()
             .order_by(table.c.rowid.desc())
-            .where(and_(*conditions))
+            .where(sql.and_(*conditions))
             .limit(n_rows)
         )
     else:
@@ -338,9 +422,7 @@ def read_last_rows(
     return out
 
 
-def read_specific_row(
-    database, table_name, rowid, return_type, path=None, fast_logging=False
-):
+def read_specific_row(database, table_name, rowid, return_type):
     """Read a specific row from a table.
 
     Args:
@@ -348,26 +430,20 @@ def read_specific_row(
         table_name (str): name of the table to retrieve.
         n_rows (int): number of rows to retrieve.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
-        path (str or pathlib.Path): location of the database file.
-            Using a path is much slower than a MetaData object and we
-            advise to only use it as a fallback.
-        fast_logging (bool)
 
     Returns:
         dict or list: The requested row from the database.
 
     """
-    database = load_database(database, path, fast_logging)
     rowid = int(rowid)
-    table = database.tables[table_name]
+    table = database.metadata.tables[table_name]
     stmt = table.select().where(table.c.rowid == rowid)
     data = _execute_read_statement(database, table_name, stmt, return_type)
     return data
 
 
-def read_table(database, table_name, return_type, path=None, fast_logging=False):
-    database = load_database(database, path, fast_logging)
-    table = database.tables[table_name]
+def read_table(database, table_name, return_type):
+    table = database.metadata.tables[table_name]
     stmt = table.select()
     data = _execute_read_statement(database, table_name, stmt, return_type)
     return data
@@ -375,7 +451,7 @@ def read_table(database, table_name, return_type, path=None, fast_logging=False)
 
 def _execute_read_statement(database, table_name, statement, return_type):
     try:
-        with database.bind.begin() as connection:
+        with database.engine.begin() as connection:
             raw_result = list(connection.execute(statement))
     except (KeyboardInterrupt, SystemExit):
         raise
@@ -388,7 +464,7 @@ def _execute_read_statement(database, table_name, statement, return_type):
         # if we only want to warn we must provide a raw_result to be processed below.
         raw_result = []
 
-    columns = database.tables[table_name].columns.keys()
+    columns = database.metadata.tables[table_name].columns.keys()
 
     if return_type == "list_of_dicts":
         result = [dict(zip(columns, row)) for row in raw_result]
@@ -405,6 +481,9 @@ def _execute_read_statement(database, table_name, statement, return_type):
         )
 
     return result
+
+
+# ======================================================================================
 
 
 def transpose_nested_list(nested_list):
@@ -457,96 +536,3 @@ def dict_of_lists_to_list_of_dicts(dict_of_lists):
 
     """
     return [dict(zip(dict_of_lists, t)) for t in zip(*dict_of_lists.values())]
-
-
-def _configure_engine(engine, fast_logging):
-    """Configure the sqlite engine.
-
-    The two functions that configure the emission of the begin statement are taken from
-    the sqlalchemy documentation the documentation: https://tinyurl.com/u9xea5z and are
-    the recommended way of working around a bug in the pysqlite driver.
-
-    The other function speeds up the write process. If fast_logging is False, it does so
-    using only completely safe optimizations. Of fast_logging is True, it also uses
-    unsafe optimizations.
-
-    """
-
-    @event.listens_for(engine, "connect")
-    def do_connect(dbapi_connection, connection_record):  # noqa: ARG001
-        # disable pysqlite's emitting of the BEGIN statement entirely.
-        # also stops it from emitting COMMIT before absolutely necessary.
-        dbapi_connection.isolation_level = None
-
-    @event.listens_for(engine, "begin")
-    def do_begin(conn):
-        # emit our own BEGIN
-        conn.execute("BEGIN DEFERRED")
-
-    @event.listens_for(engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):  # noqa: ARG001
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode = WAL")
-        if fast_logging:
-            cursor.execute("PRAGMA synchronous = OFF")
-        else:
-            cursor.execute("PRAGMA synchronous = NORMAL")
-        cursor.close()
-
-
-def _configure_reflect():
-    """Mark all BLOB dtypes as PickleType with our custom pickle reader.
-
-    Code ist taken from the documentation: https://tinyurl.com/y7q287jr
-
-    """
-
-    @event.listens_for(Table, "column_reflect")
-    def _setup_pickletype(inspector, table, column_info):  # noqa: ARG001
-        if isinstance(column_info["type"], BLOB):
-            column_info["type"] = PickleType(pickler=RobustPickler)
-
-
-class RobustPickler:
-    @staticmethod
-    def loads(
-        data,
-        fix_imports=True,  # noqa: ARG004
-        encoding="ASCII",  # noqa: ARG004
-        errors="strict",  # noqa: ARG004
-        buffers=None,  # noqa: ARG004
-    ):
-        """Robust pickle loading.
-
-        We first try to unpickle the object with pd.read_pickle. This makes no
-        difference for non-pandas objects but makes the de-serialization
-        of pandas objects more robust across pandas versions. If that fails, we use
-        cloudpickle. If that fails, we return None but do not raise an error.
-
-        See: https://github.com/pandas-dev/pandas/issues/16474
-
-        """
-        try:
-            res = pd.read_pickle(io.BytesIO(data), compression=None)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            try:
-                res = cloudpickle.loads(data)
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except Exception:
-                res = None
-                tb = get_traceback()
-                warnings.warn(
-                    f"Unable to read PickleType column from database:\n{tb}\n "
-                    "The entry was replaced by None."
-                )
-
-        return res
-
-    @staticmethod
-    def dumps(
-        obj, protocol=None, *, fix_imports=True, buffer_callback=None  # noqa: ARG004
-    ):
-        return cloudpickle.dumps(obj, protocol=protocol)

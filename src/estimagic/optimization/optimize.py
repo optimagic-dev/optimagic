@@ -655,13 +655,8 @@ def _optimize(
     if logging:
         problem_data["free_mask"] = internal_params.free_mask
         database = _create_and_initialize_database(logging, log_options, problem_data)
-        db_kwargs = {
-            "database": database,
-            "path": logging,
-            "fast_logging": log_options.get("fast_logging", False),
-        }
     else:
-        db_kwargs = {"database": None, "path": None, "fast_logging": False}
+        database = None
 
     # ==================================================================================
     # Do some things that require internal parameters or bounds
@@ -711,7 +706,7 @@ def _optimize(
         nonlinear_constraints=internal_constraints,
         algo_options=algo_options,
         logging=logging,
-        db_kwargs=db_kwargs,
+        database=database,
         collect_history=collect_history,
     )
     # ==================================================================================
@@ -725,7 +720,7 @@ def _optimize(
         "criterion_and_derivative": criterion_and_derivative,
         "numdiff_options": numdiff_options,
         "logging": logging,
-        "db_kwargs": db_kwargs,
+        "database": database,
         "algo_info": algo_info,
         "error_handling": error_handling,
         "error_penalty_func": error_penalty_func,
@@ -754,7 +749,7 @@ def _optimize(
         step_ids = log_scheduled_steps_and_get_ids(
             steps=steps,
             logging=logging,
-            db_kwargs=db_kwargs,
+            database=database,
         )
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
@@ -776,7 +771,7 @@ def _optimize(
             upper_sampling_bounds=internal_params.soft_upper_bounds,
             options=multistart_options,
             logging=logging,
-            db_kwargs=db_kwargs,
+            database=database,
             error_handling=error_handling,
         )
 
@@ -827,7 +822,7 @@ def _create_and_initialize_database(logging, log_options, problem_data):
         elif if_database_exists == "replace":
             logging.unlink()
 
-    database = load_database(path=path, fast_logging=fast_logging)
+    database = load_database(path_or_database=path, fast_logging=fast_logging)
 
     # create the optimization_iterations table
     make_optimization_iteration_table(
@@ -854,7 +849,7 @@ def _create_and_initialize_database(logging, log_options, problem_data):
         key: val for key, val in problem_data.items() if key not in not_saved
     }
 
-    append_row(problem_data, "optimization_problem", database, path, fast_logging)
+    append_row(problem_data, "optimization_problem", database=database)
 
     return database
 

@@ -19,7 +19,7 @@ def internal_criterion_and_derivative_template(
     criterion_and_derivative,
     numdiff_options,
     logging,
-    db_kwargs,
+    database,
     error_handling,
     error_penalty_func,
     fixed_log_data,
@@ -68,7 +68,7 @@ def internal_criterion_and_derivative_template(
             derivatives. See :ref:`first_derivative` for details. Note that the default
             method is changed to "forward" for speed reasons.
         logging (bool): Whether logging is used.
-        db_kwargs (dict): Dictionary with entries "database", "path" and "fast_logging".
+        database (DataBase): Database to which the logs are written.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -233,7 +233,7 @@ def internal_criterion_and_derivative_template(
             new_derivative=new_derivative,
             external_x=external_x,
             caught_exceptions=caught_exceptions,
-            db_kwargs=db_kwargs,
+            database=database,
             fixed_log_data=fixed_log_data,
             scalar_value=scalar_critval,
             now=now,
@@ -312,7 +312,7 @@ def _log_new_evaluations(
     new_derivative,
     external_x,
     caught_exceptions,
-    db_kwargs,
+    database,
     fixed_log_data,
     scalar_value,
     now,
@@ -343,7 +343,7 @@ def _log_new_evaluations(
 
     name = "optimization_iterations"
 
-    append_row(data, name, **db_kwargs)
+    append_row(data, name, database=database)
 
 
 def _get_output_for_optimizer(

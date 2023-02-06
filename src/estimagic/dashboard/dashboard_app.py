@@ -42,7 +42,7 @@ def dashboard_app(
     doc.template = env.get_template("index.html")
 
     # process inputs
-    database = load_database(path=session_data["database_path"])
+    database = load_database(path_or_database=session_data["database_path"])
     start_point = _calculate_start_point(database, updating_options)
     session_data["last_retrieved"] = start_point
 

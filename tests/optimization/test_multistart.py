@@ -127,7 +127,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
         logging="logging.db",
     )
 
-    database = load_database(path="logging.db")
+    database = load_database(path_or_database="logging.db")
     iterations, _ = read_new_rows(
         database=database,
         table_name="optimization_iterations",
