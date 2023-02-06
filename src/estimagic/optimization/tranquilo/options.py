@@ -70,5 +70,6 @@ class AcceptanceOptions(NamedTuple):
     power_level: float = 0.8
     n_initial: int = 5
     n_min: int = 5
+    n_max: int = 100
     min_improvement: float = 0.0
     sampler: str = "ball"
