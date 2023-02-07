@@ -3,7 +3,7 @@ import warnings
 
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import UserFunctionRuntimeError, get_traceback
-from estimagic.logging.database_utilities import append_row
+from estimagic.logging.write_to_database import append_row
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 
 
@@ -19,7 +19,7 @@ def internal_criterion_and_derivative_template(
     criterion_and_derivative,
     numdiff_options,
     logging,
-    db_kwargs,
+    database,
     error_handling,
     error_penalty_func,
     fixed_log_data,
@@ -68,7 +68,7 @@ def internal_criterion_and_derivative_template(
             derivatives. See :ref:`first_derivative` for details. Note that the default
             method is changed to "forward" for speed reasons.
         logging (bool): Whether logging is used.
-        db_kwargs (dict): Dictionary with entries "database", "path" and "fast_logging".
+        database (DataBase): Database to which the logs are written.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -131,7 +131,6 @@ def internal_criterion_and_derivative_template(
                 )
                 raise UserFunctionRuntimeError(msg) from e
             else:
-
                 msg = (
                     "The following exception was caught when evaluating criterion to "
                     f"calculate a numerical derivative during optimization:\n\n{tb}"
@@ -155,7 +154,6 @@ def internal_criterion_and_derivative_template(
                 )
                 raise UserFunctionRuntimeError(msg) from e
             else:
-
                 msg = (
                     "The following exception was caught when evaluating "
                     f"criterion_and_derivative during optimization:\n\n{tb}"
@@ -178,7 +176,6 @@ def internal_criterion_and_derivative_template(
                     )
                     raise UserFunctionRuntimeError(msg) from e
                 else:
-
                     msg = (
                         "The following exception was caught when evaluating "
                         f"criterion during optimization:\n\n{tb}"
@@ -200,7 +197,6 @@ def internal_criterion_and_derivative_template(
                     )
                     raise UserFunctionRuntimeError(msg) from e
                 else:
-
                     msg = (
                         "The following exception was caught when evaluating "
                         f"derivative during optimization:\n\n{tb}"
@@ -227,13 +223,12 @@ def internal_criterion_and_derivative_template(
         scalar_critval = None
 
     if (new_criterion is not None or new_derivative is not None) and logging:
-
         _log_new_evaluations(
             new_criterion=new_external_criterion,
             new_derivative=new_derivative,
             external_x=external_x,
             caught_exceptions=caught_exceptions,
-            db_kwargs=db_kwargs,
+            database=database,
             fixed_log_data=fixed_log_data,
             scalar_value=scalar_critval,
             now=now,
@@ -312,7 +307,7 @@ def _log_new_evaluations(
     new_derivative,
     external_x,
     caught_exceptions,
-    db_kwargs,
+    database,
     fixed_log_data,
     scalar_value,
     now,
@@ -343,7 +338,7 @@ def _log_new_evaluations(
 
     name = "optimization_iterations"
 
-    append_row(data, name, **db_kwargs)
+    append_row(data, name, database=database)
 
 
 def _get_output_for_optimizer(
@@ -352,7 +347,6 @@ def _get_output_for_optimizer(
     task,
     direction,
 ):
-
     if "criterion" in task and direction == "maximize":
         new_criterion = -new_criterion
 

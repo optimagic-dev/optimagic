@@ -2,18 +2,18 @@ import pickle
 
 import numpy as np
 import pytest
-import sqlalchemy
-from estimagic.logging.database_utilities import (
-    append_row,
-    load_database,
+from estimagic.logging.create_tables import (
     make_optimization_iteration_table,
     make_optimization_problem_table,
     make_steps_table,
+)
+from estimagic.logging.load_database import DataBase, load_database
+from estimagic.logging.read_from_database import (
     read_last_rows,
     read_new_rows,
     read_table,
-    update_row,
 )
+from estimagic.logging.write_to_database import append_row, update_row
 from numpy.testing import assert_array_equal
 
 
@@ -44,9 +44,10 @@ def problem_data():
 def test_load_database_from_path(tmp_path):
     """Test that database is generated because it does not exist."""
     path = tmp_path / "test.db"
-    database = load_database(path=path)
-    assert isinstance(database, sqlalchemy.MetaData)
-    assert database.bind is not None
+    database = load_database(path_or_database=path, fast_logging=False)
+    assert isinstance(database, DataBase)
+    assert database.path is not None
+    assert database.fast_logging is False
 
 
 def test_load_database_after_pickling(tmp_path):
@@ -56,25 +57,16 @@ def test_load_database_after_pickling(tmp_path):
 
     """
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path, fast_logging=False)
     database = pickle.loads(pickle.dumps(database))
-    database = load_database(metadata=database, path=path)
-    assert database.bind is not None
-
-
-def test_load_database_with_bound_metadata(tmp_path):
-    """Test that nothing happens when load_database is called with bound MetaData."""
-    path = tmp_path / "test.db"
-    database = load_database(path=path)
-    new_database = load_database(metadata=database)
-    assert new_database is database
+    assert hasattr(database.engine, "connect")
 
 
 def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_iteration_table(database)
-    append_row(iteration_data, "optimization_iterations", database, path, False)
+    append_row(iteration_data, "optimization_iterations", database)
     res = read_last_rows(database, "optimization_iterations", 1, "list_of_dicts")
     assert isinstance(res, list)
     assert isinstance(res[0], dict)
@@ -88,7 +80,7 @@ def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
 
 def test_steps_table(tmp_path):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_steps_table(database)
     for status in ["scheduled", "running", "completed"]:
         append_row(
@@ -100,8 +92,6 @@ def test_steps_table(tmp_path):
             },
             "steps",
             database,
-            path,
-            False,
         )
 
     res, _ = read_new_rows(database, "steps", 1, "dict_of_lists")
@@ -118,9 +108,9 @@ def test_steps_table(tmp_path):
 
 def test_optimization_problem_table(tmp_path, problem_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_problem_table(database)
-    append_row(problem_data, "optimization_problem", database, path, False)
+    append_row(problem_data, "optimization_problem", database)
     res = read_last_rows(database, "optimization_problem", 1, "list_of_dicts")[0]
     assert res["rowid"] == 1
     for key, expected in problem_data.items():
@@ -134,11 +124,11 @@ def test_optimization_problem_table(tmp_path, problem_data):
 
 def test_read_new_rows_stride(tmp_path, iteration_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
-        append_row(iteration_data, "optimization_iterations", database, path, False)
+        append_row(iteration_data, "optimization_iterations", database)
 
     res = read_new_rows(
         database=database,
@@ -154,13 +144,13 @@ def test_read_new_rows_stride(tmp_path, iteration_data):
 
 def test_update_row(tmp_path, iteration_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
-        append_row(iteration_data, "optimization_iterations", database, path, False)
+        append_row(iteration_data, "optimization_iterations", database)
 
-    update_row({"value": 20}, 8, "optimization_iterations", database, path, False)
+    update_row({"value": 20}, 8, "optimization_iterations", database)
 
     res = read_new_rows(
         database=database,
@@ -175,11 +165,11 @@ def test_update_row(tmp_path, iteration_data):
 
 def test_read_last_rows_stride(tmp_path, iteration_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
-        append_row(iteration_data, "optimization_iterations", database, path, False)
+        append_row(iteration_data, "optimization_iterations", database)
 
     res = read_last_rows(
         database=database,
@@ -195,12 +185,12 @@ def test_read_last_rows_stride(tmp_path, iteration_data):
 
 def test_read_new_rows_with_step(tmp_path, iteration_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         iteration_data["step"] = i % 2
-        append_row(iteration_data, "optimization_iterations", database, path, False)
+        append_row(iteration_data, "optimization_iterations", database)
 
     res, _ = read_new_rows(
         database=database,
@@ -216,12 +206,12 @@ def test_read_new_rows_with_step(tmp_path, iteration_data):
 
 def test_read_last_rows_with_step(tmp_path, iteration_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         iteration_data["step"] = i % 2
-        append_row(iteration_data, "optimization_iterations", database, path, False)
+        append_row(iteration_data, "optimization_iterations", database)
 
     res = read_last_rows(
         database=database,
@@ -237,12 +227,12 @@ def test_read_last_rows_with_step(tmp_path, iteration_data):
 
 def test_read_table(tmp_path, iteration_data):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
+    database = load_database(path_or_database=path)
     make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         iteration_data["step"] = i % 2
-        append_row(iteration_data, "optimization_iterations", database, path, False)
+        append_row(iteration_data, "optimization_iterations", database)
 
     table = read_table(
         database=database,

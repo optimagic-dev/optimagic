@@ -207,7 +207,6 @@ def block_tree_to_hessian(block_hessian, f_tree, params_tree):
 
     inner_matrices = []
     for outer_block_dim, list_inner_blocks in zip(size_f, outer_blocks):
-
         block_rows_raw = [
             list_inner_blocks[n_blocks_p * i : n_blocks_p * (i + 1)]
             for i in range(n_blocks_p)

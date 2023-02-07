@@ -3,7 +3,6 @@
 
 def check_optimization_options(options, usage, algorithm_mandatory=True):
     """Check optimize_options or maximize_options for usage in estimation functions."""
-
     options = {} if options is None else options
 
     if algorithm_mandatory:
@@ -49,7 +48,6 @@ def check_optimization_options(options, usage, algorithm_mandatory=True):
 
 def check_numdiff_options(numdiff_options, usage):
     """Check numdiff_options for usage in estimation and optimization functions."""
-
     numdiff_options = {} if numdiff_options is None else numdiff_options
 
     internal_options = {

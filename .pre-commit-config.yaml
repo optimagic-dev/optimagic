@@ -6,7 +6,7 @@ repos:
       - id: check-useless-excludes
         # - id: identity  # Prints all files passed to pre-commits. Debugging.
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.2.0
+    rev: 1.8.0
     hooks:
       - id: yamlfix
         exclude: tests/optimization/fixtures
@@ -18,7 +18,6 @@ repos:
         language: python
         always_run: true
         require_serial: true
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -53,12 +52,12 @@ repos:
       - id: check-docstring-first
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.28.0
+    rev: v1.29.0
     hooks:
       - id: yamllint
         exclude: tests/optimization/fixtures
   - repo: https://github.com/psf/black
-    rev: 22.12.0
+    rev: 23.1.0
     hooks:
       - id: black
         language_version: python3.10
@@ -79,7 +78,7 @@ repos:
           - '88'
           - --blank
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.230
+    rev: v0.0.241
     hooks:
       - id: ruff
       #   args:
@@ -131,6 +130,5 @@ repos:
         additional_dependencies:
           - setuptools-scm
           - toml
-
 ci:
   autoupdate_schedule: monthly

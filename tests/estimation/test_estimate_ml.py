@@ -197,7 +197,6 @@ def test_estimate_ml_with_logit_no_constraints(
     aaae(got.params, exp.params, decimal=4)
 
     for method in methods:
-
         # compare estimated standard errors
         exp_se = getattr(exp, f"bse{statsmodels_suffix_map[method]}")
         got_se = got.se(method=method)
@@ -300,7 +299,6 @@ def test_estimate_ml_with_logit_constraints(
     aaae(got.params, exp.params, decimal=3)
 
     for method in methods:
-
         # compare estimated standard errors
         exp_se = getattr(exp, f"bse{statsmodels_suffix_map[method]}")
         got_se = got.se(method=method, seed=seed)
@@ -329,7 +327,6 @@ def test_estimate_ml_with_logit_constraints(
 
 def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_np_inputs):
     """Test that estimate_ml computes correct covariances given correct params."""
-
     kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
 
     params = pd.DataFrame({"value": fitted_logit_model.params})

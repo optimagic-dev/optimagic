@@ -99,7 +99,7 @@ def get_benchmark_problems(
 
     if scaling:
         scaling_options = scaling_options if scaling_options is not None else {}
-        scaling_options = {**{"min_scale": 0.1, "max_scale": 10}, **scaling_options}
+        scaling_options = {"min_scale": 0.1, "max_scale": 10, **scaling_options}
     else:
         scaling_options = None
 

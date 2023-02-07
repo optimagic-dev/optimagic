@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy as np
 
-from estimagic.logging.database_utilities import read_new_rows, transpose_nested_list
+from estimagic.logging.read_from_database import read_new_rows, transpose_nested_list
 
 
 def reset_and_start_convergence(

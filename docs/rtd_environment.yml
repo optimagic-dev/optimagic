@@ -1,16 +1,13 @@
 ---
 name: estimagic-docs
-
 channels:
   - conda-forge
   - nodefaults
-
 dependencies:
   - python=3.9
   - pip
   - setuptools_scm
   - toml
-
   - black
   - sphinx
   - sphinxcontrib-bibtex
@@ -18,11 +15,21 @@ dependencies:
   - sphinx-panels
   - ipython
   - ipython_genutils
-  - nbsphinx
+  - myst-nb
   - pydata-sphinx-theme>=0.3.0
   - numba
   - pybaum
-  - myst-parser
-
+  - matplotlib
+  - seaborn
+  - numpy
+  - pandas
+  - scipy
+  - patsy
+  - joblib
+  - plotly
+  - ipython
   - pip:
       - ../
+      - kaleido
+      - Py-BOBYQA
+      - DFO-LS

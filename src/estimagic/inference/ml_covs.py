@@ -215,7 +215,6 @@ def _clustering(jac, design_info):
             the likelihood equation (Pg.557, 14-10, Greene 7th edition)
 
     """
-
     list_of_clusters = design_info["psu"].unique()
     meat = np.zeros([len(jac[0, :]), len(jac[0, :])])
     for psu in list_of_clusters:

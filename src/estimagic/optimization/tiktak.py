@@ -2,11 +2,23 @@
 
 TikTak (`Arnoud, Guvenen, and Kleineberg
 <https://www.nber.org/system/files/working_papers/w26340/w26340.pdf>`_)
+
+
+
+
+
+
+
+
+
+
+
 is an algorithm for solving global optimization problems. It performs local
 searches from a set of carefully-selected points in the parameter space.
 
 First implemented in Python by Alisdair McKay
-(`GitHub Repository <https://github.com/amckay/TikTak>`_)
+(
+`GitHub Repository <https://github.com/amckay/TikTak>`_)
 
 """
 import warnings
@@ -34,7 +46,7 @@ def run_multistart_optimization(
     upper_sampling_bounds,
     options,
     logging,
-    db_kwargs,
+    database,
     error_handling,
 ):
     steps = determine_steps(options["n_samples"], options["n_optimizations"])
@@ -42,7 +54,7 @@ def run_multistart_optimization(
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
         logging=logging,
-        db_kwargs=db_kwargs,
+        database=database,
     )
 
     if options["sample"] is not None:
@@ -65,7 +77,7 @@ def run_multistart_optimization(
         update_step_status(
             step=scheduled_steps[0],
             new_status="running",
-            db_kwargs=db_kwargs,
+            database=database,
         )
 
     if "criterion" in problem_functions:
@@ -87,7 +99,7 @@ def run_multistart_optimization(
         update_step_status(
             step=scheduled_steps[0],
             new_status="complete",
-            db_kwargs=db_kwargs,
+            database=database,
         )
 
     scheduled_steps = scheduled_steps[1:]
@@ -112,7 +124,7 @@ def run_multistart_optimization(
                 update_step_status(
                     step=step,
                     new_status="skipped",
-                    db_kwargs=db_kwargs,
+                    database=database,
                 )
 
     batched_sample = get_batched_optimization_sample(
@@ -151,7 +163,6 @@ def run_multistart_optimization(
 
     opt_counter = 0
     for batch in batched_sample:
-
         weight = weight_func(opt_counter, n_optimizations)
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
@@ -183,7 +194,7 @@ def run_multistart_optimization(
                     update_step_status(
                         step=step,
                         new_status="skipped",
-                        db_kwargs=db_kwargs,
+                        database=database,
                     )
             break
 

@@ -196,7 +196,6 @@ def test_poisedness_constant_scaled(sample, expected):
     99.
 
     """
-
     got, *_ = get_poisedness_constant(sample, shape="sphere")
     assert np.allclose(got, expected)
 
@@ -251,7 +250,6 @@ def test_poisedness_constant_textbook_scaled(sample, expected):
     99.
 
     """
-
     got, *_ = get_poisedness_constant(sample, shape="sphere")
     assert np.allclose(got, expected, rtol=1e-3)
 

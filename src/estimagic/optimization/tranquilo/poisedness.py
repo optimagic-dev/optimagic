@@ -55,7 +55,6 @@ def get_poisedness_constant(sample, shape="sphere"):
     idx_max = None
 
     for idx, poly in enumerate(lagrange_mat):
-
         intercept = poly[0]
         linear_terms = poly[1 : n_params + 1]
         _coef_square_terms = poly[n_params + 1 :]
@@ -109,7 +108,6 @@ def improve_poisedness(sample, shape="sphere", maxiter=5):
     lambdas = []
 
     for _ in range(maxiter):
-
         lambda_, argmax, idx_max = get_poisedness_constant(
             sample=sample_improved, shape=shape
         )
@@ -189,7 +187,6 @@ def _reshape_coef_to_square_terms(coef, n_params):
 
 def _get_minimize_options(shape, n_params):
     """Get the minimizer options."""
-
     if shape == "sphere":
         nonlinear_constraint = NonlinearConstraint(lambda x: np.linalg.norm(x), 0, 1)
         options = {"method": "trust-constr", "constraints": [nonlinear_constraint]}
