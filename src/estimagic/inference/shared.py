@@ -177,7 +177,6 @@ def calculate_estimation_summary(
     # index for the resulting leaf.
     summary_flat = []
     for index_leaf, params_leaf in zip(indices_flat, estimates_flat):
-
         if np.isscalar(params_leaf):
             loc = [index_leaf]
             index = [0]

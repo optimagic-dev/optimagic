@@ -99,7 +99,6 @@ def minimize_trust_trsbox_fast(
             gradient_sumsq * np.array([delta_sq]) <= 1.0e-6 * total_reduction**2
             and gradient_sumsq * np.array([delta_sq]) <= 1.0e-18
         ):
-
             need_alt_trust_step = False
             break
 

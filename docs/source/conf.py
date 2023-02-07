@@ -44,11 +44,10 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
-    "nbsphinx",
+    "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
     "sphinx_copybutton",
-    "myst_parser",
 ]
 
 myst_enable_extensions = [
@@ -103,7 +102,7 @@ html_static_path = ["_static"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = [".rst", ".md"]
+source_suffix = [".rst", ".ipynb", ".md"]
 
 # The master toctree document.
 master_doc = "index"
@@ -142,18 +141,21 @@ else:
     todo_include_todos = True
     todo_emit_warnings = True
 
-# -- Options for nbsphinx  ----------------------------------------
-# Execute notebooks before conversion: 'always', 'never', 'auto' (default)
-nbsphinx_execute = "never"
-nbsphinx_prolog = r"""
-{% set docname = 'docs/source/' + env.doc2path(env.docname, base=None) %}
+# -- Options for myst-nb  ----------------------------------------
+nb_execution_mode = "force"
+nb_execution_allow_errors = False
+nb_merge_streams = True
 
-.. only:: html
+# Notebook cell execution timeout; defaults to 30.
+nb_execution_timeout = 1000
 
-    .. nbinfo::
-        Download the notebook :download:`here
-        <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/main/{{ docname }}>` # noqa: E501
-"""
+# List of notebooks that will not be executed.
+nb_execution_excludepatterns = [
+    # Problem with latex rendering
+    "how_to_generate_publication_quality_tables.ipynb",
+    # too long runtime
+    "bootstrap_montecarlo_comparison.ipynb",
+]
 
 # -- Options for HTML output ----------------------------------------------
 

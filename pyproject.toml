@@ -40,6 +40,8 @@ extend-ignore = [
     "S324", # Probable use of insecure hash function.
     "COM812", # trailing comma missing, but black takes care of that
     "PT007", # wrong type in parametrize, gave false positives
+    "EXE001", # Shebang is present but file is not executable
+    "PIE804", # unnecessary dict kwargs
 
 
     # Things we are not sure we want
@@ -58,7 +60,12 @@ extend-ignore = [
     "C901",  # function too complex
     "PT011", # pytest raises without match statement
     "INP001", # implicit namespace packages without init.
-    "TRY300", # consider moving this statement to an else block
+    "TRY",
+    "PLR",
+    "TCH",
+    "RSE",
+    "SLF",
+    "PTH123",
     # ======================================
 ]
 
@@ -99,7 +106,6 @@ filterwarnings = [
     "ignore:Widget._widget_types is deprecated",
     "ignore:Widget.widget_types is deprecated",
     "ignore:Widget.widgets is deprecated",
-    "ignore:Deprecated API features detected",
 ]
 addopts = ["--doctest-modules"]
 markers = [
@@ -112,5 +118,5 @@ norecursedirs = ["docs", ".envs"]
 
 [tool.yamlfix]
 line_length = 88
-flow_style_sequence = false
+sequence_style = "block_style"
 none_representation = "null"

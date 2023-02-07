@@ -94,12 +94,12 @@ def nlc_2d_example():
     }
 
     kwargs = {
-        "flat": {**_kwargs, **{"constraints": constraints_flat}},
-        "long": {**_kwargs, **{"constraints": constraints_long}},
-        "equality": {**_kwargs, **{"constraints": constraints_equality}},
+        "flat": {**_kwargs, "constraints": constraints_flat},
+        "long": {**_kwargs, "constraints": constraints_long},
+        "equality": {**_kwargs, "constraints": constraints_equality},
         "equality_and_inequality": {
             **_kwargs,
-            **{"constraints": constraints_equality_and_inequality},
+            "constraints": constraints_equality_and_inequality,
         },
     }
 

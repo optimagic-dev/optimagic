@@ -32,10 +32,10 @@ class DataBase:
         self.metadata = metadata
         self.path = path
         self.fast_logging = fast_logging
-        if isinstance(engine, sql.Engine):
-            self.engine = engine
-        else:
+        if engine is None:
             self.engine = _create_engine(path, fast_logging)
+        else:
+            self.engine = engine
 
     def __reduce__(self):
         return (DataBase, (self.metadata, self.path, self.fast_logging))

@@ -76,7 +76,7 @@ def derivative_plot(
     g_list = []
 
     # creating data traces for plotting faceted/individual plots
-    for (row, col) in itertools.product(dim_x, dim_f):
+    for row, col in itertools.product(dim_x, dim_f):
         g_ind = []  # container for data for traces in individual plot
 
         # initial values and x grid

@@ -179,7 +179,6 @@ def _read_optimization_iteration(database, iteration, params_treedef, registry):
 
 def _read_optimization_history(database, params_treedef, registry):
     """Read a histories out values, parameters and other information."""
-
     raw_res, _ = read_new_rows(
         database=database,
         table_name="optimization_iterations",

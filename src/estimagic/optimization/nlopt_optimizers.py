@@ -41,7 +41,6 @@ def nlopt_bobyqa(
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-
     """Minimize a scalar function using the BOBYQA algorithm.
 
     For details see :ref:`list_of_nlopt_algorithms`.
@@ -373,7 +372,6 @@ def nlopt_ccsaq(
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-
     """Minimize a scalar function using CCSAQ algorithm.
 
     For details see :ref:`list_of_nlopt_algorithms`.
@@ -416,7 +414,6 @@ def nlopt_mma(
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-
     """Minimize a scalar function using the method of moving asymptotes (MMA).
 
     For details see :ref:`list_of_nlopt_algorithms`.
@@ -463,7 +460,6 @@ def nlopt_var(
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     rank_1_update=True,
 ):
-
     """Minimize a scalar function limited memory switching variable-metric method.
 
     For details see :ref:`list_of_nlopt_algorithms`.

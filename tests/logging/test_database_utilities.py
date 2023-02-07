@@ -2,7 +2,6 @@ import pickle
 
 import numpy as np
 import pytest
-import sqlalchemy as sql
 from estimagic.logging.database_utilities import (
     DataBase,
     append_row,
@@ -60,7 +59,7 @@ def test_load_database_after_pickling(tmp_path):
     path = tmp_path / "test.db"
     database = load_database(path_or_database=path, fast_logging=False)
     database = pickle.loads(pickle.dumps(database))
-    assert isinstance(database.engine, sql.Engine)
+    assert hasattr(database.engine, "connect")
 
 
 def test_optimization_iteration_table_scalar(tmp_path, iteration_data):

@@ -90,7 +90,6 @@ def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     converged = False
 
     for _niter in range(maxiter):
-
         if hessian_info.already_factorized:
             hessian_info = hessian_info._replace(already_factorized=False)
         else:
@@ -386,7 +385,6 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
         float: New candidate for the damping factor lambda.
 
     """
-
     lambda_new_candidate = max(
         np.sqrt(np.clip(lower_bound * upper_bound, 0, np.inf)),
         lower_bound + 0.01 * (upper_bound - lower_bound),

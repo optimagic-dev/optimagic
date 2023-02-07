@@ -79,7 +79,6 @@ def gqtpar_fast(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     converged = False
 
     for _niter in range(maxiter):
-
         if hessian_already_factorized:
             hessian_already_factorized = False
         else:
@@ -227,7 +226,6 @@ def _add_lambda_and_factorize_hessian(model_hessian, lambda_candidate):
         factorization_info (int): success flag returned by scipy.dpotrf
 
     """
-
     hessian_plus_lambda = model_hessian + lambda_candidate * _identity(
         model_hessian.shape[0]
     )
@@ -404,7 +402,6 @@ def _compute_gershgorin_bounds(model_hessian):
         upper_gershgorin (float): Upper Gregoshgorin bound.
 
     """
-
     hessian_diag = np.diag(model_hessian)
     hessian_diag_abs = np.abs(hessian_diag)
     hessian_row_sums = np.sum(np.abs(model_hessian), axis=1)
