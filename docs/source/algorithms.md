@@ -586,7 +586,7 @@ install estimagic.
     The algorithm supports the following options:
 
     - **local_algorithm** (str/callable): Any scipy local minimizer: valid options are.
-    "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
+      "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
     "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov".
     or a custom function for local minimization, default is "L-BFGS-B".
     - **n_local_optimizations**: (int) The number local optimizations. Default is 100 as in scipy's default.

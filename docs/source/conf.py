@@ -152,7 +152,9 @@ nb_execution_timeout = 1000
 # List of notebooks that will not be executed.
 nb_execution_excludepatterns = [
     # Problem with latex rendering
-    "/how_to_guides/miscellaneous/how_to_generate_publication_quality_tables",
+    "how_to_generate_publication_quality_tables.ipynb",
+    # too long runtime
+    "bootstrap_montecarlo_comparison.ipynb",
 ]
 
 # -- Options for HTML output ----------------------------------------------
