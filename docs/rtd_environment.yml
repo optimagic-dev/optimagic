@@ -18,11 +18,22 @@ dependencies:
   - sphinx-panels
   - ipython
   - ipython_genutils
-  - nbsphinx
+  - myst-nb
   - pydata-sphinx-theme>=0.3.0
   - numba
   - pybaum
-  - myst-parser
+  - matplotlib
+  - seaborn
+  - numpy
+  - pandas
+  - scipy
+  - patsy
+  - joblib
+  - plotly
+  - ipython
 
   - pip:
       - ../
+      - kaleido
+      - Py-BOBYQA
+      - DFO-LS

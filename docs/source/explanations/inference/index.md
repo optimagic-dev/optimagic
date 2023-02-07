@@ -5,6 +5,6 @@
 maxdepth: 1
 ---
 bootstrap_ci
-bootstrap_montecarlo_comparison.ipynb
+bootstrap_montecarlo_comparison
 cluster_robust_likelihood_inference.md
 ```

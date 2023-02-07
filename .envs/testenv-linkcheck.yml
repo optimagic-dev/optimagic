@@ -12,8 +12,7 @@ dependencies:
 
 
   - pydata-sphinx-theme>=0.3.0  # docs
-  - myst-parser  # docs
-  - nbsphinx  # docs
+  - myst-nb  # docs
   - sphinx  # docs
   - sphinx-copybutton  # docs
   - sphinx-panels  # docs

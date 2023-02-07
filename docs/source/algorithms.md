@@ -144,7 +144,7 @@ install estimagic.
 
     The criterion function need not be differentiable.
 
-    Powell's method is a conjugate direction method, minimising the function by a
+    Powell's method is a conjugate direction method, minimizing the function by a
     bi-directional search in each parameter's dimension.
 
     The argument ``direc``, which is the initial set of direction vectors and which
@@ -188,7 +188,7 @@ install estimagic.
     - **stopping.max_iterations** (int): If the maximum number of iterations is reached, the optimization stops,
       but we do not count this as convergence.
     - **norm** (float): Order of the vector norm that is used to calculate the gradient's "score" that
-      is compared to the gradient tolerance to determine convergence. Defaut is infinite which means that
+      is compared to the gradient tolerance to determine convergence. Default is infinite which means that
       the largest entry of the gradient vector is compared to the gradient tolerance.
 
 ```
@@ -286,7 +286,7 @@ install estimagic.
   Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
   COBYLA stands for Constrained Optimization By Linear Approximation.
-  It is deriviative-free and supports nonlinear inequality and equality constraints.
+  It is derivative-free and supports nonlinear inequality and equality constraints.
 
   .. note::
       Cobyla's general nonlinear constraints is not supported yet by estimagic.
@@ -398,12 +398,12 @@ install estimagic.
     .. note::
         Its general nonlinear constraints' handling is not supported yet by estimagic.
 
-    It swiches between two implementations depending on the problem definition.
+    It switches between two implementations depending on the problem definition.
     It is the most versatile constrained minimization algorithm
     implemented in SciPy and the most appropriate for large-scale problems.
     For equality constrained problems it is an implementation of Byrd-Omojokun
     Trust-Region SQP method described in :cite:`Lalee1998` and in :cite:`Conn2000`,
-    p. 549. When inequality constraints  are imposed as well, it swiches to the
+    p. 549. When inequality constraints  are imposed as well, it switches to the
     trust-region interior point method described in :cite:`Byrd1999`.
     This interior point algorithm in turn, solves inequality constraints by
     introducing slack variables and solving a sequence of equality-constrained
@@ -586,7 +586,7 @@ install estimagic.
     The algorithm supports the following options:
 
     - **local_algorithm** (str/callable): Any scipy local minimizer: valid options are.
-    "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
+      "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
     "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov".
     or a custom function for local minimization, default is "L-BFGS-B".
     - **n_local_optimizations**: (int) The number local optimizations. Default is 100 as in scipy's default.
@@ -742,7 +742,7 @@ install estimagic.
     - **local_algo_options**: (dict) Additional keyword arguments for the local
       minimizer. Check the documentation of the local scipy algorithms for details on
       what is supported.
-    - **initial_temperature** (float): The temparature algorithm starts with. The higer values lead to a wider search space. The range is (0.01, 5.e4] and defalt is 5230.0.
+    - **initial_temperature** (float): The temparature algorithm starts with. The higher values lead to a wider search space. The range is (0.01, 5.e4] and default is 5230.0.
     - **restart_temperature_ratio** (float): Reanneling starts when the algorithm is decreased to initial_temperature * restart_temperature_ratio. Default is 2e-05.
     - **visit** (float): Specify the thickness of visiting distribution's tails. Range is (1, 3] and default is scipy's default, 2.62.
     - **accept** (float): Controls the probability of acceptance. Range is (-1e4, -5] and default is scipy's default, -5.0. Smaller values lead to lower acceptance probability.
