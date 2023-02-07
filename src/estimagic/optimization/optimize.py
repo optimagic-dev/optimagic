@@ -4,11 +4,13 @@ from pathlib import Path
 
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.exceptions import InvalidFunctionError, InvalidKwargsError
-from estimagic.logging.database_utilities import (
-    append_row,
+from estimagic.logging.create_tables import (
     make_optimization_iteration_table,
     make_optimization_problem_table,
     make_steps_table,
+)
+from estimagic.logging.database_utilities import (
+    append_row,
 )
 from estimagic.logging.load_database import load_database
 from estimagic.optimization.check_arguments import check_optimize_kwargs

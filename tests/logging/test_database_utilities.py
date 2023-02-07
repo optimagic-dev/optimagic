@@ -2,11 +2,13 @@ import pickle
 
 import numpy as np
 import pytest
-from estimagic.logging.database_utilities import (
-    append_row,
+from estimagic.logging.create_tables import (
     make_optimization_iteration_table,
     make_optimization_problem_table,
     make_steps_table,
+)
+from estimagic.logging.database_utilities import (
+    append_row,
     read_last_rows,
     read_new_rows,
     read_table,
