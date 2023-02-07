@@ -1,6 +1,8 @@
 ---
 name: estimagic
-channels: [conda-forge, nodefaults]
+channels:
+  - conda-forge
+  - nodefaults
 dependencies:
   - python=3.10  # dev
   - cyipopt  # dev

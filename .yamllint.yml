@@ -1,5 +1,8 @@
 ---
-yaml-files: ['*.yaml', '*.yml', .yamllint]
+yaml-files:
+  - '*.yaml'
+  - '*.yml'
+  - .yamllint
 rules:
   braces: enable
   brackets: enable

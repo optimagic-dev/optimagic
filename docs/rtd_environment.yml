@@ -1,6 +1,8 @@
 ---
 name: estimagic-docs
-channels: [conda-forge, nodefaults]
+channels:
+  - conda-forge
+  - nodefaults
 dependencies:
   - python=3.9
   - pip
@@ -26,4 +28,8 @@ dependencies:
   - joblib
   - plotly
   - ipython
-  - pip: [../, kaleido, Py-BOBYQA, DFO-LS]
+  - pip:
+      - ../
+      - kaleido
+      - Py-BOBYQA
+      - DFO-LS
