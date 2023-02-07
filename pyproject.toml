@@ -119,5 +119,5 @@ norecursedirs = ["docs", ".envs"]
 
 [tool.yamlfix]
 line_length = 88
-flow_style_sequence = false
+sequence_style = "block_style"
 none_representation = "null"
