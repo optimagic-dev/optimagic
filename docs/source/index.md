@@ -165,6 +165,6 @@ development/index
 algorithms
 ```
 
-[how to do multistart]: how_to_guides/optimization/how_to_do_multistart_optimizations.ipynb
-[how to use logging]: how_to_guides/optimization/how_to_use_logging.ipynb
-[msm tutorial]: getting_started/estimation/first_msm_estimation_with_estimagic.ipynb
+[how to do multistart]: how_to_guides/optimization/how_to_do_multistart_optimizations
+[how to use logging]: how_to_guides/optimization/how_to_use_logging
+[msm tutorial]: getting_started/estimation/first_msm_estimation_with_estimagic
