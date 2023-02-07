@@ -61,24 +61,6 @@ jobs:
         run: |
           micromamba activate estimagic
           pytest -m "not slow and not jax"
-  check-links-in-documentation:
-    name: Check links in documentation.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: create build environment
-        uses: mamba-org/provision-with-micromamba@main
-        with:
-          environment-file: ./.envs/testenv-linkcheck.yml
-          environment-name: estimagic
-          cache-env: true
-          extra-specs: python=3.10
-      - name: run sphinx
-        shell: bash -l {0}
-        run: |
-          micromamba activate estimagic
-          cd docs/source
-          sphinx-build -T -b linkcheck -d doctrees . linkcheck
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest

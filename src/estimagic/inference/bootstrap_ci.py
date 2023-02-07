@@ -209,6 +209,7 @@ def _eqf(sample):
         f (callable): Quantile function for given sample.
 
     """
+
     def f(x):
         return np.quantile(sample, x)
 

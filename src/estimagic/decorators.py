@@ -5,6 +5,16 @@ three nested functions. The former are decorators without and the latter with ar
 
 For more information on decorators, see this `guide
 `_ on https://realpython.com
+
+
+
+
+
+
+
+
+
+
 which
 provides a comprehensive overview.
 
@@ -120,6 +130,7 @@ def unpack(func=None, symbol=None):
 
 def switch_sign(func):
     """Switch sign of all outputs of a function."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         unswitched = func(*args, **kwargs)

@@ -211,6 +211,7 @@ def _add_redundant_argument_handling(func, signature, warn):
         callable: The wrapped function.
 
     """
+
     @functools.wraps(func)
     def _wrapper_add_redundant_argument_handling(*args, **kwargs):
         _kwargs = {**dict(zip(signature[: len(args)], args)), **kwargs}

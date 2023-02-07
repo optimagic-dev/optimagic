@@ -112,6 +112,7 @@ def get_final_algorithm(
 
 def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
     """Add logging of status to the algorithm."""
+
     def decorator_add_logging_to_algorithm(algorithm):
         @functools.wraps(algorithm)
         def wrapper_add_logging_algorithm(**kwargs):
@@ -155,6 +156,7 @@ def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
 
 def _add_history_collection_via_criterion(algorithm):
     """Partial a history container into all functions that define the optimization."""
+
     @functools.wraps(algorithm)
     def wrapper_add_history_collection_via_criterion(**kwargs):
         func_names = {"criterion", "derivative", "criterion_and_derivative"}
@@ -178,6 +180,7 @@ def _add_history_collection_via_criterion(algorithm):
 
 def _add_history_collection_via_batch_evaluator(algorithm):
     """Wrap the batch_evaluator argument such that histories are collected."""
+
     @functools.wraps(algorithm)
     def wrapper_add_history_collection_via_batch_evaluator(**kwargs):
         raw_be = kwargs.get("batch_evaluator", "joblib")

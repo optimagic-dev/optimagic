@@ -106,6 +106,7 @@ def logit_np_inputs():
 @pytest.fixture()
 def fitted_logit_model(logit_object):
     """We need to use a generic model class to access all standard errors etc."""
+
     class GenericLogit(GenericLikelihoodModel):
         def nloglikeobs(self, params, *args, **kwargs):
             return -logit_object.loglikeobs(params, *args, **kwargs)

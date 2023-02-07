@@ -473,6 +473,7 @@ def _configure_engine(engine, fast_logging):
     unsafe optimizations.
 
     """
+
     @event.listens_for(engine, "connect")
     def do_connect(dbapi_connection, connection_record):  # noqa: ARG001
         # disable pysqlite's emitting of the BEGIN statement entirely.
@@ -501,6 +502,7 @@ def _configure_reflect():
     Code ist taken from the documentation: https://tinyurl.com/y7q287jr
 
     """
+
     @event.listens_for(Table, "column_reflect")
     def _setup_pickletype(inspector, table, column_info):  # noqa: ARG001
         if isinstance(column_info["type"], BLOB):
