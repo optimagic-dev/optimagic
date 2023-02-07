@@ -77,7 +77,7 @@ hidden: true
 maxdepth: 1
 ---
 installation
-first_optimization_with_estimagic.ipynb
+first_optimization_with_estimagic
 estimation/index
-first_derivative_with_estimagic.ipynb
+first_derivative_with_estimagic
 ```
