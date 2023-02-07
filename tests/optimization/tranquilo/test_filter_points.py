@@ -58,6 +58,8 @@ def basic_case():
         new_indices=None,
         old_indices_discarded=None,
         old_indices_used=None,
+        candidate_index=None,
+        candidate_x=None,
     )
 
     expected_indices = np.array([20, 19, 18, 17, 16, 15, 13, 12, 8, 5, 4, 3, 2, 1, 0])

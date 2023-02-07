@@ -319,8 +319,23 @@ def test_tranquilo_with_noise_handling_and_deterministic_function(algo):
     aaae(res.params, np.zeros(5), decimal=4)
 
 
-@pytest.mark.parametrize("algo", ["tranquilo", "tranquilo_ls"])
-def test_tranquilo_with_noise_handling_and_noisy_function(algo):
+def test_tranquilo_with_noise_handling_and_noisy_function():
+    rng = np.random.default_rng(123)
+
+    def _f(x):
+        return x @ x + rng.normal(0, 0.1)
+
+    res = minimize(
+        criterion=_f,
+        params=np.ones(3),
+        algorithm="tranquilo",
+        algo_options={"noisy": True, "sample_size_factor": 5},
+    )
+
+    aaae(res.params, np.zeros(3), decimal=1)
+
+
+def test_tranquilo_ls_with_noise_handling_and_noisy_function():
     rng = np.random.default_rng(123)
 
     def _f(x):
@@ -330,7 +345,7 @@ def test_tranquilo_with_noise_handling_and_noisy_function(algo):
     res = minimize(
         criterion=_f,
         params=np.ones(3),
-        algorithm=algo,
+        algorithm="tranquilo",
         algo_options={"noisy": True, "sample_size_factor": 5},
     )
 

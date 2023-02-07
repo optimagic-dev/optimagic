@@ -249,6 +249,7 @@ def _tranquilo(
     estimate_variance = get_variance_estimator(
         fitter=variance_estimator,
         user_options=variance_estimation_options,
+        acceptance_options=acceptance_options,
     )
     # ==================================================================================
     # initialize the optimizer state
@@ -300,6 +301,8 @@ def _tranquilo(
         old_indices_discarded=_first_indices,
         old_indices_used=_first_indices,
         acceptance_indices=_first_indices,
+        candidate_index=0,
+        candidate_x=x,
     )
 
     states = [state]
@@ -474,6 +477,10 @@ class State(NamedTuple):
     index: int
     x: np.ndarray
     fval: np.ndarray  # this is an estimate for noisy functions
+
+    # candidate information
+    candidate_index: int
+    candidate_x: np.ndarray
 
     # success Information
     rho: float

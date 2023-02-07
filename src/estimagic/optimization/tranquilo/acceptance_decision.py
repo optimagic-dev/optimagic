@@ -137,6 +137,8 @@ class AcceptanceResult(NamedTuple):
     step_length: float
     relative_step_length: float
     acceptance_indices: np.ndarray
+    candidate_index: int
+    candidate_x: np.ndarray
 
 
 def _get_acceptance_result(
@@ -162,6 +164,8 @@ def _get_acceptance_result(
         step_length=step_length,
         relative_step_length=relative_step_length,
         acceptance_indices=acceptance_indices,
+        candidate_index=candidate_index,
+        candidate_x=candidate_x,
     )
     return out
 
