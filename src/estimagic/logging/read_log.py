@@ -16,11 +16,11 @@ import pandas as pd
 from pybaum import tree_flatten, tree_unflatten
 
 from estimagic.logging.database_utilities import (
-    load_database,
     read_last_rows,
     read_new_rows,
     read_specific_row,
 )
+from estimagic.logging.load_database import load_database
 from estimagic.parameters.tree_registry import get_registry
 
 

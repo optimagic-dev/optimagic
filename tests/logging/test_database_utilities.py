@@ -3,9 +3,7 @@ import pickle
 import numpy as np
 import pytest
 from estimagic.logging.database_utilities import (
-    DataBase,
     append_row,
-    load_database,
     make_optimization_iteration_table,
     make_optimization_problem_table,
     make_steps_table,
@@ -14,6 +12,7 @@ from estimagic.logging.database_utilities import (
     read_table,
     update_row,
 )
+from estimagic.logging.load_database import DataBase, load_database
 from numpy.testing import assert_array_equal
 
 
