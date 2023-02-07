@@ -12,7 +12,8 @@ class DataBase:
     """Class containing everything to work with a logging database.
 
     Importantly, the class is pickle-serializable which is important to share it across
-    multiple processes.
+    multiple processes. Upon unpickling, it will automatically re-create an engine to
+    connect to the database.
 
     """
 
@@ -35,7 +36,7 @@ def load_database(path_or_database, fast_logging=False):
     This is the only acceptable way of loading or creating a database in estimagic!
 
     Args:
-        path (str or pathlib.Path): Path to the database.
+        path_or_database (str or pathlib.Path): Path to the database or DataBase.
         fast_logging (bool): If True, use unsafe optimizations to speed up the logging.
             If False, only use ultra safe optimizations.
 

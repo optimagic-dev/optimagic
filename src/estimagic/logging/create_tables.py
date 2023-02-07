@@ -8,7 +8,7 @@ def make_optimization_iteration_table(database, if_exists="extend"):
     """Generate a table for information that is generated with each function evaluation.
 
     Args:
-        database (DataBase): Bound metadata object.
+        database (DataBase): DataBase object containing the engine and metadata.
         if_exists (str): What to do if the table already exists. Can be "extend",
             "replace" or "raise".
 
@@ -41,16 +41,6 @@ def make_optimization_iteration_table(database, if_exists="extend"):
     )
 
     database.metadata.create_all(database.engine)
-
-
-def _handle_existing_table(database, table_name, if_exists):
-    assert if_exists in ["replace", "extend", "raise"]
-
-    if table_name in database.metadata.tables:
-        if if_exists == "replace":
-            database.metadata.tables[table_name].drop(database.engine)
-        elif if_exists == "raise":
-            raise TableExistsError(f"The table {table_name} already exists.")
 
 
 def make_steps_table(database, if_exists="extend"):
@@ -102,3 +92,13 @@ def make_optimization_problem_table(database, if_exists="extend"):
     )
 
     database.metadata.create_all(database.engine)
+
+
+def _handle_existing_table(database, table_name, if_exists):
+    assert if_exists in ["replace", "extend", "raise"]
+
+    if table_name in database.metadata.tables:
+        if if_exists == "replace":
+            database.metadata.tables[table_name].drop(database.engine)
+        elif if_exists == "raise":
+            raise TableExistsError(f"The table {table_name} already exists.")

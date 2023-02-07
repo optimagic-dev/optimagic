@@ -27,14 +27,10 @@ def read_new_rows(
     """Read all iterations after last_retrieved up to a limit.
 
     Args:
-        database (DataBase)
+        database (DataBase): Object containing everything to work with the database.
         table_name (str): name of the table to retrieve.
         last_retrieved (int): The last iteration that was retrieved.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
-        path (str or pathlib.Path): location of the database file. If the file does
-            not exist, it will be created. Using a path is much slower than a
-            MetaData object and we advise to only use it as a fallback.
-        fast_logging (bool)
         limit (int): maximum number of rows to extract from the table.
         stride (int): Only return every n-th row. Default is every row (stride=1).
         step (int): Only return iterations that belong to step.
@@ -184,9 +180,6 @@ def _execute_read_statement(database, table_name, statement, return_type):
         )
 
     return result
-
-
-# ======================================================================================
 
 
 def transpose_nested_list(nested_list):
