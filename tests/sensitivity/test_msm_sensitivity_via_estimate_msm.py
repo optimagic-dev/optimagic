@@ -9,7 +9,6 @@ from scipy import stats
 
 def simulate_aggregated_moments(params, x, y):
     """Calculate aggregated moments for example from Honore, DePaula, Jorgensen."""
-
     mom_value = simulate_moment_contributions(params, x, y)
     moments = mom_value.mean(axis=1)
 
@@ -18,7 +17,6 @@ def simulate_aggregated_moments(params, x, y):
 
 def simulate_moment_contributions(params, x, y):
     """Calculate moment contributions for example from Honore, DePaula, Jorgensen."""
-
     y_estimated = x.to_numpy() @ (params["value"].to_numpy())
 
     x_np = x.T.to_numpy()

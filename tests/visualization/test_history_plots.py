@@ -73,7 +73,6 @@ TEST_CASES = list(itertools.product([True, False], repeat=4))
 def test_criterion_plot_list_input(
     minimize_result, multistart, monotone, stack_multistart, exploration
 ):
-
     res = minimize_result[multistart]
 
     criterion_plot(

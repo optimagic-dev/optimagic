@@ -597,7 +597,6 @@ def _build_estimation_table_body(
     number_format,
     add_trailing_zeros,
 ):
-
     """Create body bloc significance stars and inference values.
 
     Applies number formatting to parameters. Concatinates inference values
@@ -771,7 +770,6 @@ def _get_cols_to_format(show_inference, confidence_intervals):
 
 def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_zeros):
     """Apply string formatter to specific columns of a list of DataFrames."""
-
     raw_formatted = [_apply_number_format(df[columns], number_format) for df in dfs]
     max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
     if add_trailing_zeros:
@@ -1046,7 +1044,6 @@ def _combine_series(value_sr, inference_sr):
         series: combined string series of param and inference values
 
     """
-
     value_df = value_sr.to_frame(name="")
     original_cols = value_df.columns
     value_df.reset_index(drop=False, inplace=True)

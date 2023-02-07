@@ -295,7 +295,6 @@ def _optimal_hull_sampler(
     if existing_xs_unit is None and n_points == 1:
         opt_params = x0
     else:
-
         criterion_kwargs = {
             "existing_xs": existing_xs_unit,
             "order": order,

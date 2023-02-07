@@ -148,12 +148,10 @@ def convergence_plot(
     # creating data traces for plotting faceted/individual plots
     # dropping usage of palette for algoritms, but use the built in pallete
     for prob_name in remaining_problems:
-
         g_ind = []  # container for data for traces in individual plot
         to_plot = df[df["problem"] == prob_name]
 
         for i, alg in enumerate(to_plot["algorithm"].unique()):
-
             temp = to_plot[to_plot["algorithm"] == alg]
             trace_1 = go.Scatter(
                 x=temp[runtime_measure],
@@ -207,7 +205,6 @@ def convergence_plot(
 
     # Dictionary for individual plots
     else:
-
         ind_dict = create_ind_dict(
             **common_dependencies,
             kws={"height": 320, "width": 500, "title_x": 0.5, **common_layout},

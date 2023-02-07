@@ -40,9 +40,7 @@ def main():
     docs_env.append("      - -e ../")  # add local installation
 
     # write environments
-    for name, env in zip(
-        ["linux", "others", "linkcheck"], [test_env_linux, test_env_others, docs_env]
-    ):
+    for name, env in zip(["linux", "others"], [test_env_linux, test_env_others]):
         Path(f".envs/testenv-{name}.yml").write_text("\n".join(env) + "\n")
 
 

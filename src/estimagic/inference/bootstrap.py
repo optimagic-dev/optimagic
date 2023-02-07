@@ -59,7 +59,6 @@ def bootstrap(
 
     """
     if callable(outcome):
-
         check_inputs(data=data, cluster_by=cluster_by)
 
         if outcome_kwargs is not None:

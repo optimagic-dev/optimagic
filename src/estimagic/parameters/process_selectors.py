@@ -96,7 +96,6 @@ def process_selectors(constraints, params, tree_converter, param_names):
 
 def _get_selection_field(constraint, selector_case, params_case):
     """Get the relevant selection field of a constraint."""
-
     selector_case = _get_selector_case(constraint)
 
     valid = {
