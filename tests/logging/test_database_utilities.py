@@ -8,13 +8,12 @@ from estimagic.logging.create_tables import (
     make_steps_table,
 )
 from estimagic.logging.database_utilities import (
-    append_row,
     read_last_rows,
     read_new_rows,
     read_table,
-    update_row,
 )
 from estimagic.logging.load_database import DataBase, load_database
+from estimagic.logging.write_to_database import append_row, update_row
 from numpy.testing import assert_array_equal
 
 

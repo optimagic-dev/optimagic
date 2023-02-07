@@ -3,7 +3,7 @@ import warnings
 
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import UserFunctionRuntimeError, get_traceback
-from estimagic.logging.database_utilities import append_row
+from estimagic.logging.write_to_database import append_row
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 
 

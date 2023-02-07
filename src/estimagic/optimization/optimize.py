@@ -9,10 +9,8 @@ from estimagic.logging.create_tables import (
     make_optimization_problem_table,
     make_steps_table,
 )
-from estimagic.logging.database_utilities import (
-    append_row,
-)
 from estimagic.logging.load_database import load_database
+from estimagic.logging.write_to_database import append_row
 from estimagic.optimization.check_arguments import check_optimize_kwargs
 from estimagic.optimization.error_penalty import get_error_penalty_function
 from estimagic.optimization.get_algorithm import (
