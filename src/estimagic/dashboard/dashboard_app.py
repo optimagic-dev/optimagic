@@ -11,7 +11,8 @@ from pybaum import leaf_names, tree_just_flatten
 
 from estimagic.dashboard.callbacks import reset_and_start_convergence
 from estimagic.dashboard.plot_functions import plot_time_series
-from estimagic.logging.database_utilities import load_database, read_last_rows
+from estimagic.logging.load_database import load_database
+from estimagic.logging.read_from_database import read_last_rows
 from estimagic.logging.read_log import read_start_params
 from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
 from estimagic.parameters.tree_registry import get_registry
@@ -42,7 +43,7 @@ def dashboard_app(
     doc.template = env.get_template("index.html")
 
     # process inputs
-    database = load_database(path=session_data["database_path"])
+    database = load_database(path_or_database=session_data["database_path"])
     start_point = _calculate_start_point(database, updating_options)
     session_data["last_retrieved"] = start_point
 

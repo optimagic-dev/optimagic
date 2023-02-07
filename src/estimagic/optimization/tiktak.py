@@ -46,7 +46,7 @@ def run_multistart_optimization(
     upper_sampling_bounds,
     options,
     logging,
-    db_kwargs,
+    database,
     error_handling,
 ):
     steps = determine_steps(options["n_samples"], options["n_optimizations"])
@@ -54,7 +54,7 @@ def run_multistart_optimization(
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
         logging=logging,
-        db_kwargs=db_kwargs,
+        database=database,
     )
 
     if options["sample"] is not None:
@@ -77,7 +77,7 @@ def run_multistart_optimization(
         update_step_status(
             step=scheduled_steps[0],
             new_status="running",
-            db_kwargs=db_kwargs,
+            database=database,
         )
 
     if "criterion" in problem_functions:
@@ -99,7 +99,7 @@ def run_multistart_optimization(
         update_step_status(
             step=scheduled_steps[0],
             new_status="complete",
-            db_kwargs=db_kwargs,
+            database=database,
         )
 
     scheduled_steps = scheduled_steps[1:]
@@ -124,7 +124,7 @@ def run_multistart_optimization(
                 update_step_status(
                     step=step,
                     new_status="skipped",
-                    db_kwargs=db_kwargs,
+                    database=database,
                 )
 
     batched_sample = get_batched_optimization_sample(
@@ -194,7 +194,7 @@ def run_multistart_optimization(
                     update_step_status(
                         step=step,
                         new_status="skipped",
-                        db_kwargs=db_kwargs,
+                        database=database,
                     )
             break
 

@@ -8,7 +8,7 @@ import numpy as np
 
 from estimagic.config import IS_SIMOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
-from estimagic.logging.database_utilities import list_of_dicts_to_dict_of_lists
+from estimagic.logging.read_from_database import list_of_dicts_to_dict_of_lists
 from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
