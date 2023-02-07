@@ -302,3 +302,36 @@ def test_process_sample_size_invalid():
     x = np.ones((3, 2))
     with pytest.raises(TypeError):
         _process_sample_size(np.zeros_like(x), None, x, None)
+
+
+@pytest.mark.parametrize("algo", ["tranquilo", "tranquilo_ls"])
+def test_tranquilo_with_noise_handling_and_deterministic_function(algo):
+    def _f(x):
+        return {"root_contributions": x, "value": x @ x}
+
+    res = minimize(
+        criterion=_f,
+        params=np.arange(5),
+        algorithm=algo,
+        algo_options={"noisy": True},
+    )
+
+    aaae(res.params, np.zeros(5), decimal=4)
+
+
+@pytest.mark.parametrize("algo", ["tranquilo", "tranquilo_ls"])
+def test_tranquilo_with_noise_handling_and_noisy_function(algo):
+    rng = np.random.default_rng(123)
+
+    def _f(x):
+        x_n = x + rng.normal(0, 0.1, size=x.shape)
+        return {"root_contributions": x_n, "value": x_n @ x_n}
+
+    res = minimize(
+        criterion=_f,
+        params=np.ones(3),
+        algorithm=algo,
+        algo_options={"noisy": True, "sample_size_factor": 5},
+    )
+
+    aaae(res.params, np.zeros(3), decimal=1)
