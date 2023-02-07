@@ -139,7 +139,6 @@ def create_grid_plot(
     x_min=None,
     x_max=None,
 ):
-
     """Create a dictionary for a grid plot from a list of traces.
 
     Args:

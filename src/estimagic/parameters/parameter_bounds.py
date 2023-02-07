@@ -93,7 +93,6 @@ def _update_bounds_and_flatten(nan_tree, bounds, direction):
     flat_nan_tree = tree_leaves(nan_tree, registry=registry)
 
     if bounds is not None:
-
         registry = get_registry(extended=True)
         flat_bounds = tree_leaves(bounds, registry=registry)
 
@@ -105,7 +104,6 @@ def _update_bounds_and_flatten(nan_tree, bounds, direction):
 
         invalid = {"names": [], "bounds": []}
         for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds):
-
             # if a bounds leaf is None we treat it as saying the the corresponding
             # subtree of params has no bounds.
             if bounds_leaf is not None:

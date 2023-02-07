@@ -197,7 +197,6 @@ def _add_history_collection_via_batch_evaluator(algorithm):
 
             # find out if func is our internal criterion function
             if isinstance(func, partial) and "history_container" in func.keywords:
-
                 # partial in None as history container to disable history collection via
                 # criterion function, which would not work with parallelization anyways
                 _func = partial(func, history_container=None, return_history_entry=True)

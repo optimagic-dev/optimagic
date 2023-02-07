@@ -913,7 +913,6 @@ class MomentsResult:
                 params_cov=params_cov,
             )
         elif kind == "removal_fundamental":
-
             raw = calculate_fundamental_sensitivity_to_removal(
                 jac=jac,
                 moments_cov=moments_cov,
@@ -921,7 +920,6 @@ class MomentsResult:
             )
 
         elif kind == "weighting":
-
             raw = calculate_sensitivity_to_weighting(
                 jac=jac,
                 weights=weights,
@@ -977,7 +975,6 @@ def _calculate_free_cov_msm(
     bounds_handling,
     seed,
 ):
-
     if method == "optimal":
         internal_cov = cov_optimal(internal_jacobian, internal_weights)
     else:

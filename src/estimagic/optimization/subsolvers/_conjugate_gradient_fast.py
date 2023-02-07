@@ -40,7 +40,6 @@ def minimize_trust_cg_fast(
     stop_tol = max(gtol_abs, gtol_rel * gradient_norm)
 
     for _ in range(max_iter):
-
         if gradient_norm <= stop_tol:
             break
 

@@ -29,7 +29,6 @@ def process_func_of_params(func, kwargs, name="your function", skip_checks=False
     out = partial(func, **kept)
 
     if not skip_checks:
-
         unpartialled_args = get_unpartialled_arguments(out)
         no_default_args = get_arguments_without_default(out)
 

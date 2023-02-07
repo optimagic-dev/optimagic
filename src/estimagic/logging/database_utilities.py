@@ -463,7 +463,9 @@ def _configure_engine(engine, fast_logging):
     """Configure the sqlite engine.
 
     The two functions that configure the emission of the begin statement are taken from
-    the sqlalchemy documentation the documentation: https://tinyurl.com/u9xea5z and are
+    the sqlalchemy documentation the documentation:
+    https://tinyurl.com/u9xea5z
+    and are
     the recommended way of working around a bug in the pysqlite driver.
 
     The other function speeds up the write process. If fast_logging is False, it does so

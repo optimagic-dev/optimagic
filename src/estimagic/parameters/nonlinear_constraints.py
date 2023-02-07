@@ -45,13 +45,11 @@ def process_nonlinear_constraints(
     # do checks first to fail fast
     constraint_evals = []
     for _constraint in nonlinear_constraints:
-
         _eval = _check_validity_and_return_evaluation(_constraint, params, skip_checks)
         constraint_evals.append(_eval)
 
     processed = []
     for _constraint, _eval in zip(nonlinear_constraints, constraint_evals):
-
         _processed_constraint = _process_nonlinear_constraint(
             _constraint,
             constraint_eval=_eval,
@@ -137,7 +135,6 @@ def _process_nonlinear_constraint(
     _type = "eq" if "value" in c else "ineq"
 
     if _type == "eq":
-
         # ==============================================================================
         # Equality constraints
         #
@@ -156,7 +153,6 @@ def _process_nonlinear_constraint(
         n_constr = _n_constr
 
     else:
-
         # ==============================================================================
         # Inequality constraints
         #
@@ -493,7 +489,6 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
     constraint_eval = None
 
     if not skip_checks:
-
         selector = _process_selector(c)
 
         try:

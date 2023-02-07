@@ -131,7 +131,6 @@ def internal_criterion_and_derivative_template(
                 )
                 raise UserFunctionRuntimeError(msg) from e
             else:
-
                 msg = (
                     "The following exception was caught when evaluating criterion to "
                     f"calculate a numerical derivative during optimization:\n\n{tb}"
@@ -155,7 +154,6 @@ def internal_criterion_and_derivative_template(
                 )
                 raise UserFunctionRuntimeError(msg) from e
             else:
-
                 msg = (
                     "The following exception was caught when evaluating "
                     f"criterion_and_derivative during optimization:\n\n{tb}"
@@ -178,7 +176,6 @@ def internal_criterion_and_derivative_template(
                     )
                     raise UserFunctionRuntimeError(msg) from e
                 else:
-
                     msg = (
                         "The following exception was caught when evaluating "
                         f"criterion during optimization:\n\n{tb}"
@@ -200,7 +197,6 @@ def internal_criterion_and_derivative_template(
                     )
                     raise UserFunctionRuntimeError(msg) from e
                 else:
-
                     msg = (
                         "The following exception was caught when evaluating "
                         f"derivative during optimization:\n\n{tb}"
@@ -227,7 +223,6 @@ def internal_criterion_and_derivative_template(
         scalar_critval = None
 
     if (new_criterion is not None or new_derivative is not None) and logging:
-
         _log_new_evaluations(
             new_criterion=new_external_criterion,
             new_derivative=new_derivative,
@@ -352,7 +347,6 @@ def _get_output_for_optimizer(
     task,
     direction,
 ):
-
     if "criterion" in task and direction == "maximize":
         new_criterion = -new_criterion
 

@@ -1,11 +1,9 @@
 ---
 name: main
-
 # Automatically cancel a previous run.
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
-
 on:
   push:
     branches:
@@ -13,7 +11,6 @@ on:
   pull_request:
     branches:
       - '*'
-
 jobs:
   run-tests-linux:
     name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
@@ -47,7 +44,6 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
   run-tests-win-and-mac:
     name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
@@ -76,7 +72,6 @@ jobs:
         run: |
           micromamba activate estimagic
           pytest -m "not slow and not jax"
-
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest

@@ -82,7 +82,6 @@ def criterion_plot(
 
     data = []
     for name, res in results.items():
-
         if isinstance(res, OptimizeResult):
             _data = _extract_plotting_data_from_results_object(
                 res, stack_multistart, show_exploration, plot_name="criterion_plot"
@@ -113,14 +112,12 @@ def criterion_plot(
     # Plot multistart paths
 
     if plot_multistart:
-
         scatter_kws = {
             "connectgaps": True,
             "showlegend": False,
         }
 
         for i, local_history in enumerate(data[0]["local_histories"]):
-
             history = get_history_arrays(local_history, data[0]["direction"])[key]
 
             if max_evaluations is not None and len(history) > max_evaluations:
@@ -140,7 +137,6 @@ def criterion_plot(
     # Plot main optimization objects
 
     for _data in data:
-
         if stack_multistart and _data["stacked_local_histories"] is not None:
             _history = _data["stacked_local_histories"]
         else:
@@ -357,7 +353,6 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         are stacked into a single one.
 
     """
-
     reader = OptimizeLogReader(res)
     _problem_table = read_optimization_problem_table(res)
 
