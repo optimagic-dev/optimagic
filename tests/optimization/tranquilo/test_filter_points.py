@@ -4,7 +4,7 @@ from estimagic.optimization.tranquilo.filter_points import (
     _scaled_square_features,
     drop_collinear_pounders,
 )
-from estimagic.optimization.tranquilo.options import HistorySearchOptions, TrustRegion
+from estimagic.optimization.tranquilo.options import TrustRegion
 from estimagic.optimization.tranquilo.tranquilo import State
 from estimagic.optimization.tranquilo.tranquilo_history import History
 from numpy.testing import assert_array_almost_equal as aaae
@@ -200,9 +200,7 @@ def test_indices_in_trust_region(basic_case):
     trustregion = TrustRegion(center=x_accepted, radius=radius)
     history.add_entries(xs, np.zeros(xs.shape[0]))
 
-    search_options = HistorySearchOptions(radius_factor=1, radius_type="inscribed")
-
-    indices_in_tr = history.get_indices_in_trustregion(trustregion, search_options)
+    indices_in_tr = history.get_indices_in_region(trustregion)
 
     expected_indices = np.array([0, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
     assert_equal(indices_in_tr, expected_indices)

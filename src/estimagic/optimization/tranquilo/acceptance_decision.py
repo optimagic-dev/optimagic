@@ -128,14 +128,6 @@ def accept_naive_noisy(
     return out
 
 
-def accept_noisy(
-    subproblem_solution,
-    state,
-    history,
-    rng,
-):
-
-
 class AcceptanceResult(NamedTuple):
     x: np.ndarray
     fval: float

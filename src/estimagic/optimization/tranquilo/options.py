@@ -56,10 +56,10 @@ class RadiusOptions(NamedTuple):
 class TrustRegion(NamedTuple):
     center: np.ndarray
     radius: float
+    shape: str = "sphere"
 
 
 class HistorySearchOptions(NamedTuple):
-    shape: str = "sphere"
     radius_type: str = "circumscribed"
     radius_factor: float = 1.5
 

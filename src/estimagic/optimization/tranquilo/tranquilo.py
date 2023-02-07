@@ -325,10 +325,14 @@ def _tranquilo(
         # ==============================================================================
         # find, filter and count points
         # ==============================================================================
-        old_indices = history.get_indices_in_trustregion(
-            state.trustregion,
+
+        search_region = _get_search_region(
+            trustregion=state.trustregion,
             search_options=history_search_options,
         )
+
+        old_indices = history.get_indices_in_region(search_region)
+
         old_xs = history.get_xs(old_indices)
 
         filtered_xs, filtered_indices = filter_points(
@@ -597,3 +601,22 @@ def _has_bounds(lb, ub):
     if ub is not None and np.isfinite(ub).any():
         out = True
     return out
+
+
+def _get_search_region(trustregion, search_options):
+    shape = trustregion.shape
+    dim = len(trustregion.center)
+
+    if shape == "sphere" and search_options.radius_type == "circumscribed":
+        radius_factor = np.sqrt(dim) * search_options.radius_factor
+    else:
+        radius_factor = search_options.radius_factor
+
+    search_radius = radius_factor * trustregion.radius
+
+    return trustregion._replace(radius=search_radius)
+
+
+def _get_acceptance_region(trustregion, acceptance_options):
+    acceptance_radius = trustregion.radius * acceptance_options.radius_factor
+    return trustregion._replace(radius=acceptance_radius)
