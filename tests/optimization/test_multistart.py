@@ -8,8 +8,8 @@ from estimagic.examples.criterion_functions import (
     sos_dict_criterion,
     sos_scalar_criterion,
 )
-from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.load_database import load_database
+from estimagic.logging.read_from_database import read_new_rows
 from estimagic.logging.read_log import read_steps_table
 from estimagic.optimization.optimize import maximize, minimize
 from estimagic.optimization.optimize_result import OptimizeResult

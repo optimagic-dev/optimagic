@@ -11,8 +11,8 @@ from pybaum import leaf_names, tree_just_flatten
 
 from estimagic.dashboard.callbacks import reset_and_start_convergence
 from estimagic.dashboard.plot_functions import plot_time_series
-from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.load_database import load_database
+from estimagic.logging.read_from_database import read_last_rows
 from estimagic.logging.read_log import read_start_params
 from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
 from estimagic.parameters.tree_registry import get_registry

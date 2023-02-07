@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 
 from estimagic.batch_evaluators import process_batch_evaluator
-from estimagic.logging.database_utilities import (
+from estimagic.logging.read_from_database import (
     list_of_dicts_to_dict_of_lists,
 )
 from estimagic.logging.write_to_database import update_row

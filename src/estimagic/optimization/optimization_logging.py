@@ -1,4 +1,4 @@
-from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.read_from_database import read_last_rows
 from estimagic.logging.write_to_database import append_row, update_row
 
 
