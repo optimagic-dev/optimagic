@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy as np
 
-from estimagic.optimization.tranquilo.options import TrustRegion
+from estimagic.optimization.tranquilo.options import Region
 from estimagic.optimization.tranquilo.sample_points import (
     _get_effective_bounds,
     _map_from_feasible_trustregion,
@@ -75,7 +75,7 @@ def log_d_cutoff_simulator(
 
     """
     _sampler = get_sampler(reference_sampler, bounds)
-    trustregion = TrustRegion(center=np.zeros(n_params), radius=1)
+    trustregion = Region(center=np.zeros(n_params), radius=1)
     sampler = partial(_sampler, trustregion=trustregion)
     raw = []
     for _ in range(n_simulations):

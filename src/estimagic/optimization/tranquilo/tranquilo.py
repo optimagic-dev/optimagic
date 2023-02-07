@@ -25,7 +25,7 @@ from estimagic.optimization.tranquilo.options import (
     ConvOptions,
     HistorySearchOptions,
     RadiusOptions,
-    TrustRegion,
+    Region,
 )
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
@@ -269,7 +269,7 @@ def _tranquilo(
     )
 
     if noisy:
-        _acceptance_region = TrustRegion(
+        _acceptance_region = Region(
             center=x,
             radius=radius_options.initial_radius * acceptance_options.radius_factor,
         )
@@ -288,7 +288,7 @@ def _tranquilo(
 
     state = State(
         safety=False,
-        trustregion=TrustRegion(center=x, radius=radius_options.initial_radius),
+        trustregion=Region(center=x, radius=radius_options.initial_radius),
         model_indices=_first_indices,
         model=None,
         index=0,
@@ -464,7 +464,7 @@ class State(NamedTuple):
     safety: bool
 
     # the trustregion at the beginning of the iteration
-    trustregion: TrustRegion
+    trustregion: Region
 
     # Information about the model used to make the acceptance decision in the iteration
     model_indices: np.ndarray

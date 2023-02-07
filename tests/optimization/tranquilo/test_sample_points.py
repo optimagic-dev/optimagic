@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.options import Bounds, TrustRegion
+from estimagic.optimization.tranquilo.options import Bounds, Region
 from estimagic.optimization.tranquilo.sample_points import (
     _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
@@ -18,7 +18,7 @@ def test_bounds_are_satisfied(sampler):
     bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
     sampler = get_sampler(sampler, bounds)
     sample = sampler(
-        trustregion=TrustRegion(center=np.zeros(2), radius=1),
+        trustregion=Region(center=np.zeros(2), radius=1),
         n_points=5,
         rng=np.random.default_rng(1234),
     )
@@ -33,7 +33,7 @@ def test_bounds_are_satisfied_general_hull_sampler(order):
     bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
     sampler = get_sampler("hull_sampler", bounds, user_options={"order": order})
     sample = sampler(
-        trustregion=TrustRegion(center=np.zeros(2), radius=1),
+        trustregion=Region(center=np.zeros(2), radius=1),
         n_points=5,
         rng=np.random.default_rng(1234),
     )
@@ -51,7 +51,7 @@ def test_enough_existing_points(sampler):
         bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
     )
     calculated = sampler(
-        trustregion=TrustRegion(center=np.zeros(3), radius=1),
+        trustregion=Region(center=np.zeros(3), radius=1),
         n_points=0,
         existing_xs=np.empty((5, 3)),
         rng=np.random.default_rng(1234),
@@ -69,7 +69,7 @@ def test_optimization_ignores_existing_points(sampler):
         model_info=None,
     )
     calculated = sampler(
-        trustregion=TrustRegion(center=np.zeros(3), radius=1),
+        trustregion=Region(center=np.zeros(3), radius=1),
         n_points=3,
         existing_xs=np.ones((2, 3)),  # same point implies min distance of zero always
         rng=np.random.default_rng(1234),
@@ -93,7 +93,7 @@ def test_optimality(sampler):
     distances = []
     for sampler in [standard_sampler, optimal_sampler]:
         sample = sampler(
-            trustregion=TrustRegion(center=np.zeros(3), radius=1),
+            trustregion=Region(center=np.zeros(3), radius=1),
             n_points=5,
             rng=np.random.default_rng(1234),
         )

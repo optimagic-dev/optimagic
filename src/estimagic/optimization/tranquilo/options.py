@@ -53,7 +53,7 @@ class RadiusOptions(NamedTuple):
     max_radius_to_step_ratio: float = np.inf
 
 
-class TrustRegion(NamedTuple):
+class Region(NamedTuple):
     center: np.ndarray
     radius: float
     shape: str = "sphere"

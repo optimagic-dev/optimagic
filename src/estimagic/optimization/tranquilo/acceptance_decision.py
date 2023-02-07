@@ -9,7 +9,7 @@ from typing import NamedTuple
 import numpy as np
 
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import TrustRegion
+from estimagic.optimization.tranquilo.options import Region
 
 
 def get_acceptance_decider(acceptance_decider, acceptance_options, sampler):
@@ -89,7 +89,7 @@ def accept_naive_noisy(
 ):
     """Do a naive noisy acceptance step, averaging over a fixed number of points."""
     candidate_x = subproblem_solution.x
-    acceptance_region = TrustRegion(
+    acceptance_region = Region(
         center=candidate_x,
         radius=state.trustregion.radius * acceptance_options.radius_factor,
     )
