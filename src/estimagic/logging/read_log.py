@@ -14,15 +14,22 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from pybaum import tree_flatten, tree_unflatten
-from sqlalchemy import MetaData
 
-from estimagic.logging.database_utilities import (
-    load_database,
+from estimagic.logging.load_database import load_database
+from estimagic.logging.read_from_database import (
     read_last_rows,
     read_new_rows,
     read_specific_row,
 )
 from estimagic.parameters.tree_registry import get_registry
+
+
+def load_existing_database(path_or_database):
+    if isinstance(path_or_database, (Path, str)):
+        path = Path(path_or_database)
+        if not path.exists():
+            raise FileNotFoundError(f"Database {path} does not exist.")
+    return load_database(path_or_database)
 
 
 def read_start_params(path_or_database):
@@ -35,7 +42,7 @@ def read_start_params(path_or_database):
         params (pd.DataFrame): see :ref:`params`.
 
     """
-    database = _load_database(path_or_database)
+    database = load_existing_database(path_or_database)
     optimization_problem = read_last_rows(
         database=database,
         table_name="optimization_problem",
@@ -44,21 +51,6 @@ def read_start_params(path_or_database):
     )
     start_params = optimization_problem["params"][0]
     return start_params
-
-
-def _load_database(path_or_database):
-    """Get an sqlalchemy.MetaDate object from path or database."""
-    res = {"path": None, "metadata": None, "fast_logging": False}
-    if isinstance(path_or_database, MetaData):
-        res = path_or_database
-    elif isinstance(path_or_database, (Path, str)):
-        path = Path(path_or_database)
-        if not path.exists():
-            raise FileNotFoundError(f"No such database file: {path}")
-        res = load_database(path=path)
-    else:
-        raise TypeError("path_or_database must be a path or sqlalchemy.MetaData object")
-    return res
 
 
 def read_steps_table(path_or_database):
@@ -71,7 +63,7 @@ def read_steps_table(path_or_database):
         steps_df (pandas.DataFrame)
 
     """
-    database = _load_database(path_or_database)
+    database = load_existing_database(path_or_database)
     steps_table, _ = read_new_rows(
         database=database,
         table_name="steps",
@@ -93,7 +85,7 @@ def read_optimization_problem_table(path_or_database):
         params (pd.DataFrame): see :ref:`params`.
 
     """
-    database = _load_database(path_or_database)
+    database = load_existing_database(path_or_database)
     steps_table, _ = read_new_rows(
         database=database,
         table_name="optimization_problem",
@@ -112,7 +104,7 @@ class OptimizeLogReader:
     path: Union[str, Path]
 
     def __post_init__(self):
-        _database = _load_database(self.path)
+        _database = load_existing_database(self.path)
         _start_params = read_start_params(_database)
         _registry = get_registry(extended=True)
         _, _treedef = tree_flatten(_start_params, registry=_registry)

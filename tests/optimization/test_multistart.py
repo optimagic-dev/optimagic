@@ -8,7 +8,8 @@ from estimagic.examples.criterion_functions import (
     sos_dict_criterion,
     sos_scalar_criterion,
 )
-from estimagic.logging.database_utilities import load_database, read_new_rows
+from estimagic.logging.load_database import load_database
+from estimagic.logging.read_from_database import read_new_rows
 from estimagic.logging.read_log import read_steps_table
 from estimagic.optimization.optimize import maximize, minimize
 from estimagic.optimization.optimize_result import OptimizeResult
@@ -127,7 +128,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
         logging="logging.db",
     )
 
-    database = load_database(path="logging.db")
+    database = load_database(path_or_database="logging.db")
     iterations, _ = read_new_rows(
         database=database,
         table_name="optimization_iterations",

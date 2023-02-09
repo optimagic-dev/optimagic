@@ -106,7 +106,6 @@ filterwarnings = [
     "ignore:Widget._widget_types is deprecated",
     "ignore:Widget.widget_types is deprecated",
     "ignore:Widget.widgets is deprecated",
-    "ignore:Deprecated API features detected",
 ]
 addopts = ["--doctest-modules"]
 markers = [
