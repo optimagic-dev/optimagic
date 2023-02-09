@@ -24,6 +24,188 @@ from estimagic.benchmarking.more_wild import (
 )
 
 
+# =====================================================================================
+def luksan11(x):
+    dim_in = len(x)
+
+    fvec = np.zeros(2 * (dim_in - 1))
+    fvec[::2] = 20 * x[:-1] / (1 + x[:-1] ** 2) - 10 * x[1:]
+    fvec[1::2] = x[:-1] - 1
+
+    return fvec
+
+
+def luksan12(x):
+    dim_in = len(x)
+    n = (dim_in - 2) // 3
+    fvec = np.zeros(2 * (dim_in - 2))
+
+    fvec[: 6 * n : 6] = 10 * (x[:n] ** 2 - x[1 : n + 1])
+    fvec[1 : 6 * n : 6] = x[2 : 3 * n + 2 : 3] - 1
+    fvec[2 : 6 * n : 6] = (x[3 : 3 * n + 3 : 3] - 1) ** 2
+    fvec[3 : 6 * n : 6] = (x[4 : 3 * n + 4 : 3] - 1) ** 3
+    fvec[4 : 6 * n : 6] = (
+        x[:n] ** 2 * x[3 : 3 * n + 3 : 3]
+        + np.sin(x[3 : 3 * n + 3 : 3] - x[4 : 3 * n + 4 : 3])
+        - 10
+    )
+    fvec[5 : 6 * n : 6] = (
+        x[1 : n + 1] + (x[2 : 3 * n + 2 : 3] ** 4) * (x[3 : 3 * n + 3 : 3] ** 2) - 20
+    )
+
+    return fvec
+
+
+def luksan13(x):
+    dim_in = len(x)
+    n = (dim_in - 2) // 3
+    fvec = np.zeros(n * 7)
+
+    i = np.arange(n)
+    k = i * 7
+    fvec[k] = 10 * (x[3 * i] ** 2 - x[3 * i + 1])
+    fvec[k + 1] = 10 * (x[3 * i + 1] ** 2 - x[3 * i + 2])
+    fvec[k + 2] = (x[3 * i + 2] - x[3 * i + 3]) ** 2
+    fvec[k + 3] = (x[3 * i + 3] - x[3 * i + 4]) ** 3
+    fvec[k + 4] = x[3 * i] + x[3 * i + 1] ** 2 + x[3 * i + 2] - 30
+    fvec[k + 5] = x[3 * i + 1] - x[3 * i + 2] ** 2 + x[3 * i + 3] - 10
+    fvec[k + 6] = x[3 * i + 1] * x[3 * i + 4] - 10
+
+    return fvec
+
+
+def luksan14(x):
+    dim_in = len(x)
+    dim_out = 7 * (dim_in - 2) // 3
+    fvec = np.zeros(dim_out)
+
+    for i in range(0, dim_in - 2, 3):
+        k = (i // 3) * 7
+        fvec[k : k + 7] = [
+            10 * (x[i] ** 2 - x[i + 1]),
+            x[i + 1] + x[i + 2] - 2,
+            x[i + 3] - 1,
+            x[i + 4] - 1,
+            x[i] + 3 * x[i + 1],
+            x[i + 2] + x[i + 3] - 2 * x[i + 4],
+            10 * (x[i + 1] ** 2 - x[i + 4]),
+        ]
+
+    return fvec
+
+
+def luksan15(x):
+    dim_in = len(x)
+    dim_out = (dim_in - 2) * 2
+    temp = np.zeros((dim_out, 3))
+    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
+
+    for p in range(1, 4):
+        k = 0
+        for i in range(0, dim_in - 2, 2):
+            for j in range(1, 5):
+                temp[k, p - 1] = (p**2 / j) * np.abs(
+                    x[i] * (x[i + 1] ** 2) * (x[i + 2] ** 3) * (x[i + 3] ** 4)
+                ) ** (1 / (p * j))
+
+                k += 1
+
+    fvec = y - np.sum(temp, axis=1)
+
+    return fvec
+
+
+def luksan16(x):
+    dim_in = len(x)
+    dim_out = (dim_in - 2) * 2
+    temp = np.zeros((dim_out, 3))
+    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
+
+    for p in range(1, 4):
+        k = 0
+        for i in range(0, dim_in - 2, 2):
+            for j in range(1, 5):
+                temp[k, p - 1] = (p**2 / j) * np.exp(
+                    (x[i] + 2 * x[i + 1] + 3 * x[i + 2] + 4 * x[i + 3]) * (1 / (p * j))
+                )
+                k += 1
+
+    fvec = y - np.sum(temp, axis=1)
+
+    return fvec
+
+
+def luksan17(x):
+    dim_in = len(x)
+    dim_out = (dim_in - 2) * 2
+    temp = np.zeros((dim_out, 4))
+    y = np.tile([30.6, 72.2, 124.4, 187.4], dim_out // 4)
+
+    for q in range(1, 5):
+        k = 0
+        for i in range(-1, dim_in - 4, 2):
+            for j in range(1, 5):
+                temp[k, q - 1] += -j * q**2 * np.sin(x[i + q]) + j**2 * q * np.cos(
+                    x[i + q]
+                )
+                k += 1
+
+    fvec = y - np.sum(temp, axis=1)
+
+    return fvec
+
+
+def luksan21(x):
+    dim_out = len(x)
+    h = 1 / (dim_out + 1)
+    fvec = np.zeros(dim_out)
+
+    fvec[0] = 2 * x[0] + 0.5 * h**2 * (x[0] + h + 1) ** 3 - x[1] + 1
+    for i in range(1, dim_out - 1):
+        fvec[i] = (
+            2 * x[i]
+            + 0.5 * h**2 * (x[i] + h * (i + 1) + 1) ** 3
+            - x[i - 1]
+            - x[i + 1]
+            + 1
+        )
+    fvec[-1] = 2 * x[-1] + 0.5 * h**2 * (x[-1] + h * dim_out + 1) ** 3 - x[-2] + 1
+
+    return fvec
+
+
+def luksan22(x):
+    dim_out = 2 * len(x) - 2
+    fvec = np.zeros(dim_out)
+
+    fvec[0] = x[0] - 1
+    fvec[1:-1:2] = 10 * (x[:-2] ** 2 - x[1:-1])
+    fvec[2:-1:2] = 2 * np.exp(-((x[:-2] - x[1:-1]) ** 2)) + np.exp(
+        -2 * (x[1:-1] - x[2:]) ** 2
+    )
+    fvec[-1] = -10 * (x[-2] ** 2)
+
+    return fvec
+
+
+def morebvne(x):
+    dim_in = len(x)
+    h = 1 / (dim_in + 1)
+    i = np.arange(1, dim_in + 1)
+    fvec = np.zeros(dim_in)
+
+    fvec[0] = 2 * x[0] - x[1] + h**2 / 2 * (x[0] + i[0] * h + 1) ** 3
+    fvec[1:-1] = (
+        2 * x[1:-1] - x[:-2] - x[2:] + h**2 / 2 * (x[1:-1] + i[1:-1] * h + 1) ** 3
+    )
+    fvec[-1] = 2 * x[-2] - x[-2] + h**2 / 2 * (x[-1] + i[-1] * h + 1) ** 3
+
+    return fvec
+
+
+# =====================================================================================
+
+
 def argtrig(x):
     dim_in = len(x)
     fvec = (
@@ -2212,5 +2394,75 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": solution_x_arglble,
         "start_criterion": 5.460944e14,
         "solution_criterion": 99.62547,
+    },
+    "luksan11": {
+        "criterion": luksan11,
+        "start_x": [-0.8] * 100,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 626.0640,
+        "solution_criterion": 0,
+    },
+    "luksan12": {
+        "criterion": luksan12,
+        "start_x": [-1] * 98,
+        "solution_x": [np.nan] * 98,
+        "start_criterion": 3.2160e4,
+        "solution_criterion": 4292.197,
+    },
+    "luksan13": {
+        "criterion": luksan13,
+        "start_x": [-1] * 98,
+        "solution_x": [np.nan] * 98,
+        "start_criterion": 6.4352e4,
+        "solution_criterion": 2.51886e4,
+    },
+    "luksan14": {
+        "criterion": luksan14,
+        "start_x": [-1] * 98,
+        "solution_x": [np.nan] * 98,
+        "start_criterion": 2.6880e4,
+        "solution_criterion": 123.9235,
+    },
+    "luksan15": {
+        "criterion": luksan15,
+        "start_x": [-0.8] * 100,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 2.701585e4,
+        "solution_criterion": 3.569697,
+    },
+    "luksan16": {
+        "criterion": luksan16,
+        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 1.306848e10,
+        "solution_criterion": 3.569697,
+    },
+    "luksan17": {
+        "criterion": luksan17,
+        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 1.687370e6,
+        "solution_criterion": 0.4931613,
+    },
+    "luksan21": {
+        "criterion": luksan21,
+        "start_x": [ih * (ih - 1) for ih in np.arange(1, 101) * (1 / 101)],
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 99.98751,
+        "solution_criterion": 0,
+    },
+    "luksan22": {
+        "criterion": luksan21,
+        "start_x": [-1.2 if i % 2 == 0 else 1 for i in range(100)],
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 2.487686e4,
+        "solution_criterion": 872.9230,
+    },
+    "morebvne": {
+        "criterion": morebvne,
+        "start_x": [t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 3.633100e4,
+        "solution_criterion": 0,
     },
 }
