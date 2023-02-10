@@ -2425,7 +2425,7 @@ CARTIS_ROBERTS_PROBLEMS = {
     },
     "luksan15": {
         "criterion": luksan15,
-        "start_x": [-0.8] * 100,
+        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
         "solution_x": [np.nan] * 100,
         "start_criterion": 2.701585e4,
         "solution_criterion": 3.569697,
@@ -2434,7 +2434,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "criterion": luksan16,
         "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
         "solution_x": [np.nan] * 100,
-        "start_criterion": 1.306848e10,
+        "start_criterion": 1.306848e4,
         "solution_criterion": 3.569697,
     },
     "luksan17": {
@@ -2452,7 +2452,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "luksan22": {
-        "criterion": luksan21,
+        "criterion": luksan22,
         "start_x": [-1.2 if i % 2 == 0 else 1 for i in range(100)],
         "solution_x": [np.nan] * 100,
         "start_criterion": 2.487686e4,
@@ -2462,7 +2462,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "criterion": morebvne,
         "start_x": [t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
         "solution_x": [np.nan] * 100,
-        "start_criterion": 3.633100e4,
+        "start_criterion": 3.633100e-4,
         "solution_criterion": 0,
     },
 }
