@@ -205,6 +205,8 @@ def _tranquilo(
 
     history = History(functype=functype)
 
+    acceptance_indices = {}
+
     wrapped_criterion = get_wrapped_criterion(
         criterion=criterion,
         batch_evaluator=batch_evaluator,
@@ -249,7 +251,6 @@ def _tranquilo(
     estimate_variance = get_variance_estimator(
         fitter=variance_estimator,
         user_options=variance_estimation_options,
-        acceptance_options=acceptance_options,
     )
     # ==================================================================================
     # initialize the optimizer state
@@ -284,8 +285,11 @@ def _tranquilo(
         _, _first_fvals, _first_indices = wrapped_criterion(_first_xs)
         _first_fval = np.mean(_first_fvals, axis=0)
 
+        acceptance_indices[0] = list(_first_indices)
+
     else:
         _, _first_fval, _first_indices = wrapped_criterion(x)
+        acceptance_indices[0] = [0]
 
     state = State(
         safety=False,
@@ -300,7 +304,6 @@ def _tranquilo(
         new_indices=_first_indices,
         old_indices_discarded=_first_indices,
         old_indices_used=_first_indices,
-        acceptance_indices=_first_indices,
         candidate_index=0,
         candidate_x=x,
     )
@@ -321,6 +324,7 @@ def _tranquilo(
                 history=history,
                 states=states,
                 model_type="scalar",
+                acceptance_indices=acceptance_indices,
             )
         else:
             pass
@@ -390,11 +394,12 @@ def _tranquilo(
         # acceptance decision
         # ==============================================================================
 
-        acceptance_result = acceptance_decider(
+        acceptance_result, acceptance_indices = acceptance_decider(
             subproblem_solution=sub_sol,
             state=state,
             wrapped_criterion=wrapped_criterion,
             rng=acceptance_rng,
+            acceptance_indices=acceptance_indices,
         )
 
         # ==============================================================================
@@ -452,16 +457,6 @@ def _tranquilo(
     return res
 
 
-def _calculate_rho(actual_improvement, expected_improvement):
-    if expected_improvement == 0 and actual_improvement > 0:
-        rho = np.inf
-    elif expected_improvement == 0:
-        rho = -np.inf
-    else:
-        rho = actual_improvement / expected_improvement
-    return rho
-
-
 class State(NamedTuple):
     # Whether this is a safety iteration
     safety: bool
@@ -490,9 +485,6 @@ class State(NamedTuple):
     new_indices: np.ndarray
     old_indices_used: np.ndarray
     old_indices_discarded: np.ndarray
-
-    # information on acceptance sample
-    acceptance_indices: np.ndarray = None
 
     # information on step length
     step_length: float = None

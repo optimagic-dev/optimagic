@@ -3,17 +3,16 @@
 import numpy as np
 
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import Region
 
 
-def get_variance_estimator(fitter, user_options, acceptance_options):
+def get_variance_estimator(fitter, user_options):
     func_dict = {
         "unweighted": _estimate_variance_unweighted,
     }
 
     default_options = {
-        "max_n_states": 3,
-        "acceptance_options": acceptance_options,
+        "max_distance_factor": 2,
+        "max_n_states": 10,
     }
 
     out = get_component(
@@ -28,82 +27,59 @@ def get_variance_estimator(fitter, user_options, acceptance_options):
 
 
 def _estimate_variance_unweighted(
-    history, states, model_type, max_n_states, acceptance_options
+    history,
+    states,
+    model_type,
+    acceptance_indices,
+    max_n_states,
+    max_distance_factor,
 ):
-    max_n_states = min(max_n_states, len(states))
+    center_indices = _get_admissible_center_indices(
+        states=states,
+        history=history,
+        max_n_states=max_n_states,
+        max_distance_factor=max_distance_factor,
+    )
+
+    sample = []
+    for center_index in center_indices:
+        indices = acceptance_indices[center_index]
+        if model_type == "scalar":
+            raw = history.get_fvals(indices)
+            demeaned = raw - raw.mean()
+        else:
+            raw = history.get_fvecs(indices)
+            demeaned = raw - raw.mean(axis=0)
+
+        sample += demeaned.tolist()
+
     if model_type == "scalar":
-        out = _unweighted_scalar(history, states[-max_n_states:], acceptance_options)
-    elif model_type == "vector":
-        out = _unweighted_vector(history, states[-max_n_states:], acceptance_options)
+        sigma = np.var(sample, ddof=1)
     else:
-        raise ValueError("model_type must be scalar or vector.")
-
-    return out
-
-
-def _unweighted_scalar(history, states, acceptance_options):
-    regions = _get_search_regions(states=states, acceptance_options=acceptance_options)
-
-    sample = []
-    for region in regions:
-        indices = history.get_indices_in_region(region)
-        raw = history.get_fvals(indices)
-        demeaned = raw - raw.mean()
-        sample += demeaned.tolist()
-
-    sigma = np.var(sample, ddof=1)
+        sigma = np.cov(sample, rowvar=False, ddof=1)
 
     return sigma
 
 
-def _unweighted_vector(history, states, acceptance_options):
-    regions = _get_search_regions(states=states, acceptance_options=acceptance_options)
+def _get_admissible_center_indices(states, history, max_n_states, max_distance_factor):
+    max_n_states = min(max_n_states, len(states))
+    states = states[-max_n_states:]
 
-    sample = []
-    for region in regions:
-        indices = history.get_indices_in_region(region)
-        raw = history.get_fvecs(indices)
-        demeaned = raw - raw.mean(axis=0)
-        sample += demeaned.tolist()
+    candidate_indices = {state.index for state in states} | {
+        state.candidate_index for state in states
+    }
+    candidate_indices = np.array(sorted(candidate_indices))
 
-    sigma = np.cov(sample, rowvar=False, ddof=1)
+    xs = history.get_xs(candidate_indices)
 
-    return sigma
+    order = None if states[-1].trustregion.shape == "sphere" else np.inf
 
+    dists = np.linalg.norm(xs - states[-1].x, axis=1, ord=order)
 
-def _get_search_regions(states, acceptance_options):
-    regions = {}
+    cutoff = max_distance_factor * states[-1].trustregion.radius
 
-    for state in reversed(states):
-        # ==============================================================================
-        # from accepted indices
-        # ==============================================================================
-        radius = state.trustregion.radius * acceptance_options.radius_factor
-        if state.index in regions:
-            radius = max(radius, regions[state.index].radius)
+    mask = dists < cutoff
 
-        region = Region(
-            center=state.x,
-            radius=radius,
-            shape="cube",
-        )
+    admissible = list(candidate_indices[mask])
 
-        regions[state.index] = region
-
-        # ==============================================================================
-        # from rejected indices
-        # ==============================================================================
-
-        radius = state.trustregion.radius * acceptance_options.radius_factor
-        if state.candidate_index in regions:
-            radius = max(radius, regions[state.index].radius)
-
-        region = Region(
-            center=state.candidate_x,
-            radius=radius,
-            shape="cube",
-        )
-
-        regions[state.candidate_index] = region
-
-    return list(regions.values())
+    return admissible

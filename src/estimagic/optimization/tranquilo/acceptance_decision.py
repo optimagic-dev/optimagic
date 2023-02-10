@@ -36,6 +36,7 @@ def get_acceptance_decider(acceptance_decider, acceptance_options, sampler):
 def accept_classic(
     subproblem_solution,
     state,
+    acceptance_indices,
     *,
     wrapped_criterion,
     acceptance_options,
@@ -58,6 +59,8 @@ def accept_classic(
     _, candidate_fval, candidate_index = wrapped_criterion(candidate_x)
     actual_improvement = -(candidate_fval - state.fval)
 
+    acceptance_indices[candidate_index] = [candidate_index]
+
     rho = _calculate_rho(
         actual_improvement=actual_improvement,
         expected_improvement=subproblem_solution.expected_improvement,
@@ -65,23 +68,23 @@ def accept_classic(
 
     is_accepted = actual_improvement >= acceptance_options.min_improvement
 
-    out = _get_acceptance_result(
+    res = _get_acceptance_result(
         candidate_x=candidate_x,
         candidate_fval=candidate_fval,
         candidate_index=candidate_index,
         rho=rho,
         is_accepted=is_accepted,
-        acceptance_indices=np.array([candidate_index]),
         old_state=state,
     )
 
-    return out
+    return res, acceptance_indices
 
 
 def accept_naive_noisy(
     subproblem_solution,
     state,
     rng,
+    acceptance_indices,
     *,
     sampler,
     wrapped_criterion,
@@ -101,10 +104,12 @@ def accept_naive_noisy(
 
     xs = np.vstack([candidate_x, sample])
 
-    _, acceptance_fvals, acceptance_indices = wrapped_criterion(xs)
+    _, _fvals, _indices = wrapped_criterion(xs)
 
-    candidate_fval = np.mean(acceptance_fvals)
-    candidate_index = acceptance_indices[0]
+    candidate_fval = np.mean(_fvals)
+    candidate_index = _indices[0]
+
+    acceptance_indices[candidate_index] = list(_indices)
 
     actual_improvement = -(candidate_fval - state.fval)
 
@@ -115,17 +120,16 @@ def accept_naive_noisy(
 
     is_accepted = actual_improvement >= acceptance_options.min_improvement
 
-    out = _get_acceptance_result(
+    res = _get_acceptance_result(
         candidate_x=candidate_x,
         candidate_fval=candidate_fval,
         candidate_index=candidate_index,
         rho=rho,
         is_accepted=is_accepted,
-        acceptance_indices=acceptance_indices,
         old_state=state,
     )
 
-    return out
+    return res, acceptance_indices
 
 
 class AcceptanceResult(NamedTuple):
@@ -136,7 +140,6 @@ class AcceptanceResult(NamedTuple):
     accepted: bool
     step_length: float
     relative_step_length: float
-    acceptance_indices: np.ndarray
     candidate_index: int
     candidate_x: np.ndarray
 
@@ -147,7 +150,6 @@ def _get_acceptance_result(
     candidate_index,
     rho,
     is_accepted,
-    acceptance_indices,
     old_state,
 ):
     x = candidate_x if is_accepted else old_state.x
@@ -163,7 +165,6 @@ def _get_acceptance_result(
         accepted=is_accepted,
         step_length=step_length,
         relative_step_length=relative_step_length,
-        acceptance_indices=acceptance_indices,
         candidate_index=candidate_index,
         candidate_x=candidate_x,
     )
