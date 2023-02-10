@@ -1,7 +1,7 @@
 import pytest
 from estimagic.optimization.tranquilo.acceptance_sample_size import (
     _compute_factor,
-    get_optimal_sample_sizes,
+    _get_optimal_sample_sizes,
 )
 from scipy.stats import norm
 
@@ -30,7 +30,7 @@ def test_factor(minimal_effect_size, power_level, significance_level, expected_f
 @pytest.mark.parametrize("significance_level", [0.01, 0.05, 0.1, 0.2])
 def test_bounds(minimal_effect_size, power_level, significance_level):
     res = [
-        get_optimal_sample_sizes(
+        _get_optimal_sample_sizes(
             sd_1=1,
             sd_2=1,
             existing_n1=_n1,
@@ -48,7 +48,7 @@ def test_bounds(minimal_effect_size, power_level, significance_level):
 
 
 def test_standard_deviation_influence():
-    n1, n2 = get_optimal_sample_sizes(
+    n1, n2 = _get_optimal_sample_sizes(
         sd_1=1,
         sd_2=3,
         existing_n1=0,
@@ -61,7 +61,7 @@ def test_standard_deviation_influence():
 
 def test_inequality():
     # Test that the inequality condition is satisfied
-    n1, n2 = get_optimal_sample_sizes(
+    n1, n2 = _get_optimal_sample_sizes(
         sd_1=1,
         sd_2=2,
         existing_n1=0,
@@ -75,7 +75,7 @@ def test_inequality():
 
 
 def test_first_group_is_not_sampled():
-    n1, _ = get_optimal_sample_sizes(
+    n1, _ = _get_optimal_sample_sizes(
         sd_1=1,
         sd_2=1,
         existing_n1=10,

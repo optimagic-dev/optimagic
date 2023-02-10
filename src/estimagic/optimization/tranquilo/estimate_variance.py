@@ -54,11 +54,11 @@ def _estimate_variance_unweighted(
         sample += demeaned.tolist()
 
     if model_type == "scalar":
-        sigma = np.var(sample, ddof=1)
+        out = np.var(sample, ddof=1)
     else:
-        sigma = np.cov(sample, rowvar=False, ddof=1)
+        out = np.cov(sample, rowvar=False, ddof=1)
 
-    return sigma
+    return out
 
 
 def _get_admissible_center_indices(states, history, max_n_states, max_distance_factor):

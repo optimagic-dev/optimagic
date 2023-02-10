@@ -1,39 +1,14 @@
 import numpy as np
 from scipy.stats import norm
 
-from estimagic.optimization.tranquilo.get_component import get_component
 
-
-def get_acceptance_sample_size_calculator(size_calculator, acceptance_options):
-    func_dict = {
-        "naive": get_naive_n_acceptance_points,
-        "asymptotic": get_asymptotic_n_acceptance_points,
-    }
-
-    default_options = {
-        "acceptance_options": acceptance_options,
-    }
-
-    out = get_component(
-        name_or_func=size_calculator,
-        func_dict=func_dict,
-        default_options=default_options,
-    )
-
-    return out
-
-
-def get_naive_n_acceptance_points():
-    return 0, 5
-
-
-def get_asymptotic_n_acceptance_points(
+def get_acceptance_sample_sizes(
     sigma,
     existing_n1,
     expected_improvement,
     acceptance_options,
 ):
-    n1, n2 = get_optimal_sample_sizes(
+    n1_raw, n2_raw = _get_optimal_sample_sizes(
         sd_1=sigma,
         sd_2=sigma,
         existing_n1=existing_n1,
@@ -42,12 +17,16 @@ def get_asymptotic_n_acceptance_points(
         significance_level=1 - acceptance_options.confidence_level,
     )
 
-    n1 = int(np.clip(n1, 0, acceptance_options.n_max - existing_n1))
-    n2 = int(np.clip(n2, acceptance_options.n_min, acceptance_options.n_max))
+    n1 = int(
+        np.ceil(np.clip(n1_raw, 0, max(0, acceptance_options.n_max - existing_n1)))
+    )
+    n2 = int(
+        np.ceil(np.clip(n2_raw, acceptance_options.n_min, acceptance_options.n_max))
+    )
     return n1, n2
 
 
-def get_optimal_sample_sizes(
+def _get_optimal_sample_sizes(
     sd_1, sd_2, existing_n1, minimal_effect_size, power_level, significance_level
 ):
     """Return missing sample sizes.
@@ -76,14 +55,16 @@ def get_optimal_sample_sizes(
         n1 = 0
         n2 = sd_2**2 * (factor ** (-1) - sd_1**2 / existing_n1) ** (-1)
 
-    n1 = int(np.ceil(n1))
-    n2 = int(np.ceil(n2))
-
     return n1, n2
 
 
 def _compute_factor(minimal_effect_size, power_level, significance_level):
-    factor = (
-        (norm.ppf(1 - significance_level) + norm.ppf(power_level)) / minimal_effect_size
-    ) ** 2
+    # avoid division by zero warning; will be clipped later
+    if minimal_effect_size == 0:
+        factor = np.inf
+    else:
+        factor = (
+            (norm.ppf(1 - significance_level) + norm.ppf(power_level))
+            / minimal_effect_size
+        ) ** 2
     return factor

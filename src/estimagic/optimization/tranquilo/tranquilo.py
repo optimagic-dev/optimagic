@@ -194,7 +194,7 @@ def _tranquilo(
             history_search_options = HistorySearchOptions()
 
     if acceptance_decider is None:
-        acceptance_decider = "naive_noisy" if noisy else "classic"
+        acceptance_decider = "noisy" if noisy else "classic"
 
     if acceptance_options is None:
         acceptance_options = AcceptanceOptions()
@@ -316,20 +316,6 @@ def _tranquilo(
     converged, msg = False, None
     for _ in range(stopping_max_iterations):
         # ==============================================================================
-        # fit noise model based on previous acceptance samples
-        # ==============================================================================
-
-        if noisy:
-            estimate_variance(
-                history=history,
-                states=states,
-                model_type="scalar",
-                acceptance_indices=acceptance_indices,
-            )
-        else:
-            pass
-
-        # ==============================================================================
         # find, filter and count points
         # ==============================================================================
 
@@ -391,6 +377,20 @@ def _tranquilo(
         sub_sol = solve_subproblem(model=scalar_model, trustregion=state.trustregion)
 
         # ==============================================================================
+        # fit noise model based on previous acceptance samples
+        # ==============================================================================
+
+        if noisy:
+            scalar_noise_variance = estimate_variance(
+                history=history,
+                states=states,
+                model_type="scalar",
+                acceptance_indices=acceptance_indices,
+            )
+        else:
+            scalar_noise_variance = None
+
+        # ==============================================================================
         # acceptance decision
         # ==============================================================================
 
@@ -400,6 +400,8 @@ def _tranquilo(
             wrapped_criterion=wrapped_criterion,
             rng=acceptance_rng,
             acceptance_indices=acceptance_indices,
+            noise_variance=scalar_noise_variance,
+            history=history,
         )
 
         # ==============================================================================
@@ -614,8 +616,3 @@ def _get_search_region(trustregion, search_options):
     search_radius = radius_factor * trustregion.radius
 
     return trustregion._replace(radius=search_radius)
-
-
-def _get_acceptance_region(trustregion, acceptance_options):
-    acceptance_radius = trustregion.radius * acceptance_options.radius_factor
-    return trustregion._replace(radius=acceptance_radius)

@@ -66,7 +66,7 @@ class HistorySearchOptions(NamedTuple):
 
 class AcceptanceOptions(NamedTuple):
     radius_factor: float = 1e-5
-    confidence_level: float = 0.9
+    confidence_level: float = 0.8
     power_level: float = 0.8
     n_initial: int = 5
     n_min: int = 5
