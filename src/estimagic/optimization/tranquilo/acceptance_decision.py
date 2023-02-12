@@ -65,7 +65,7 @@ def accept_classic(
 
     acceptance_indices[candidate_index] = [candidate_index]
 
-    rho = _calculate_rho(
+    rho = calculate_rho(
         actual_improvement=actual_improvement,
         expected_improvement=subproblem_solution.expected_improvement,
     )
@@ -117,7 +117,7 @@ def accept_naive_noisy(
 
     actual_improvement = -(candidate_fval - state.fval)
 
-    rho = _calculate_rho(
+    rho = calculate_rho(
         actual_improvement=actual_improvement,
         expected_improvement=subproblem_solution.expected_improvement,
     )
@@ -202,7 +202,7 @@ def accept_noisy(
 
     actual_improvement = -(candidate_fval - current_fval)
 
-    rho = _calculate_rho(
+    rho = calculate_rho(
         actual_improvement=actual_improvement,
         expected_improvement=subproblem_solution.expected_improvement,
     )
@@ -260,7 +260,7 @@ def _get_acceptance_result(
     return out
 
 
-def _calculate_rho(actual_improvement, expected_improvement):
+def calculate_rho(actual_improvement, expected_improvement):
     if expected_improvement == 0 and actual_improvement > 0:
         rho = np.inf
     elif expected_improvement == 0:
