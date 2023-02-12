@@ -2,7 +2,6 @@ import numpy as np
 from scipy.optimize import Bounds, minimize
 
 from estimagic.optimization.tiktak import draw_exploration_sample
-from estimagic.optimization.tranquilo.models import evaluate_model
 
 
 def solve_thorough(model, lower_bounds, upper_bounds):
@@ -18,7 +17,7 @@ def solve_thorough(model, lower_bounds, upper_bounds):
     )
 
     def crit(x):
-        return evaluate_model(model, x)
+        return model.predict(x)
 
     bounds = Bounds(lower_bounds, upper_bounds)
 

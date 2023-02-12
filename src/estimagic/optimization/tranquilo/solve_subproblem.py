@@ -15,7 +15,6 @@ from estimagic.optimization.subsolvers.gqtpar import (
     gqtpar,
 )
 from estimagic.optimization.subsolvers.gqtpar_fast import gqtpar_fast
-from estimagic.optimization.tranquilo.models import evaluate_model
 from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
 
 
@@ -197,8 +196,8 @@ def _solve_subproblem_template(
     # make sure expected improvement is calculated accurately in case of clipping and
     # does not depend on whether the subsolver ignores intercepts or not.
 
-    fval_at_center = evaluate_model(model, np.zeros_like(x))
-    fval_candidate = evaluate_model(model, raw_result["x"])
+    fval_at_center = model.predict(np.zeros_like(x))
+    fval_candidate = model.predict(raw_result["x"])
 
     result = SubproblemResult(
         x=x,

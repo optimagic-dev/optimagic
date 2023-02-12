@@ -1,21 +1,30 @@
+from dataclasses import dataclass
 from typing import NamedTuple, Union
 
 import numpy as np
 from numba import njit
 
 
-class VectorModel(NamedTuple):
+@dataclass
+class VectorModel:
     intercepts: np.ndarray  # shape (n_residuals,)
     linear_terms: np.ndarray  # shape (n_residuals, n_params)
     square_terms: Union[
         np.ndarray, None
     ] = None  # shape (n_residuals, n_params, n_params)
 
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        return _predict_vector(self, x)
 
-class ScalarModel(NamedTuple):
+
+@dataclass
+class ScalarModel:
     intercept: float
     linear_terms: np.ndarray  # shape (n_params,)
     square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        return _predict_scalar(self, x)
 
 
 class ModelInfo(NamedTuple):
@@ -23,7 +32,39 @@ class ModelInfo(NamedTuple):
     has_interactions: bool = True
 
 
-def evaluate_model(scalar_model, centered_x):
+def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
+    """Evaluate a VectorModel at centered_x.
+
+    We utilize that a quadratic model can be written in the form:
+
+    Equation 1:     f(x) = a + x.T @ g + 0.5 * x.T @ H @ x,
+
+    with symmetric H. Note that H = f''(x), while g = f'(x) - H @ x. If we consider a
+    polynomial expansion around x = 0, we therefore get g = f'(x). Hence, g, H can be
+    thought of as the gradient and Hessian.
+
+    Args:
+        scalar_model (ScalarModel): The aggregated model. Has entries:
+            - 'intercept': corresponds to 'a' in the above equation
+            - 'linear_terms': corresponds to 'g' in the above equation
+            - 'square_terms': corresponds to 'H' in the above equation
+        x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
+
+    Returns:
+        np.ndarray: Model evaluations, has shape (n_samples,)
+
+    """
+    x = np.atleast_2d(centered_x)
+
+    y = model.linear_terms @ x.T + model.intercepts.reshape(-1, 1)
+
+    if model.square_terms is not None:
+        y += np.sum((x @ model.square_terms) * x, axis=2) / 2
+
+    return np.squeeze(y)
+
+
+def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
     """Evaluate a ScalarModel at centered_x.
 
     We utilize that a quadratic model can be written in the form:
@@ -32,27 +73,27 @@ def evaluate_model(scalar_model, centered_x):
 
     with symmetric H. Note that H = f''(x), while g = f'(x) - H @ x. If we consider a
     polynomial expansion around x = 0, we therefore get g = f'(x). Hence, g, H can be
-    though of as the gradient and Hessian.
+    thought of as the gradient and Hessian.
 
     Args:
         scalar_model (ScalarModel): The aggregated model. Has entries:
             - 'intercept': corresponds to 'a' in the above equation
             - 'linear_terms': corresponds to 'g' in the above equation
             - 'square_terms': corresponds to 'H' in the above equation
-        centered_x (np.ndarray): New data. Has length n_params
+        x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
 
     Returns:
         np.ndarray: Model evaluations, has shape (n_samples,)
 
     """
-    x = centered_x
+    x = np.atleast_2d(centered_x)
 
-    y = x @ scalar_model.linear_terms + scalar_model.intercept
+    y = x @ model.linear_terms + model.intercept
 
-    if scalar_model.square_terms is not None:
-        y += x.T @ scalar_model.square_terms @ x / 2
+    if model.square_terms is not None:
+        y += np.sum((x @ model.square_terms) * x, axis=1) / 2
 
-    return y
+    return np.squeeze(y)
 
 
 def n_free_params(dim, info_or_name):

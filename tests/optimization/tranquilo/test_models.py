@@ -3,11 +3,45 @@ import pytest
 from estimagic.optimization.tranquilo.models import (
     ModelInfo,
     ScalarModel,
+    VectorModel,
+    _predict_scalar,
+    _predict_vector,
     is_second_order_model,
     n_free_params,
     n_interactions,
     n_second_order_terms,
 )
+from numpy.testing import assert_array_equal
+
+
+def test_predict_scalar():
+    model = ScalarModel(
+        intercept=1.0,
+        linear_terms=np.arange(2),
+        square_terms=(np.arange(4) + 1).reshape(2, 2),
+    )
+    x = np.array([[0, 0], [0, 1], [1, 0], [1, 2]])
+    exp = np.array([1, 4, 1.5, 16.5])
+    got = _predict_scalar(model, x)
+    assert_array_equal(exp, got)
+
+
+def test_predict_vector():
+    model = VectorModel(
+        intercepts=1 + np.arange(3),
+        linear_terms=np.arange(6).reshape(3, 2),
+        square_terms=(np.arange(3 * 2 * 2) + 1).reshape(3, 2, 2),
+    )
+    x = np.array([[0, 0], [0, 1], [1, 0], [1, 2]], dtype=float)
+    exp = np.array(
+        [
+            [1, 4, 1.5, 16.5],
+            [2, 9, 6.5, 41.5],
+            [3, 14, 11.5, 66.5],
+        ]
+    )
+    got = _predict_vector(model, x)
+    assert_array_equal(exp, got)
 
 
 def test_n_free_params_name_quadratic():

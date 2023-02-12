@@ -1,9 +1,6 @@
 import numpy as np
 
 from estimagic.optimization.tranquilo.acceptance_decision import calculate_rho
-from estimagic.optimization.tranquilo.models import (
-    evaluate_model as evaluate_scalar_model,
-)
 
 
 def simulate_rho_noise(
@@ -42,7 +39,7 @@ def simulate_rho_noise(
 
     true_scalar_model = model_aggregator(vector_model=vector_model)
 
-    true_current_fval = evaluate_scalar_model(true_scalar_model, np.zeros(n_params))
+    true_current_fval = true_scalar_model.predict(np.zeros(n_params))
 
     if ignore_corelation:
         noise_cov = np.diag(np.diag(noise_cov))
@@ -60,7 +57,7 @@ def simulate_rho_noise(
 
         sim_candidate_x = sim_sub_sol.x
 
-        sim_candidate_fval = evaluate_scalar_model(true_scalar_model, sim_candidate_x)
+        sim_candidate_fval = true_scalar_model.predict(sim_candidate_x)
         sim_actual_improvement = -(sim_candidate_fval - true_current_fval)
 
         sim_rho = calculate_rho(
