@@ -41,11 +41,13 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
 
     with symmetric H. Note that H = f''(x), while g = f'(x) - H @ x. If we consider a
     polynomial expansion around x = 0, we therefore get g = f'(x). Hence, g, H can be
-    thought of as the gradient and Hessian.
+    thought of as the gradient and Hessian. Note that here we consider the case of
+    f(x) being vector-valued. In this case the above equation holds for each entry of
+    f seperately.
 
     Args:
-        scalar_model (ScalarModel): The aggregated model. Has entries:
-            - 'intercept': corresponds to 'a' in the above equation
+        scalar_model (VectorModel): The aggregated model. Has entries:
+            - 'intercepts': corresponds to 'a' in the above equation
             - 'linear_terms': corresponds to 'g' in the above equation
             - 'square_terms': corresponds to 'H' in the above equation
         x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
@@ -88,7 +90,8 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
             - 'intercept': corresponds to 'a' in the above equation
             - 'linear_terms': corresponds to 'g' in the above equation
             - 'square_terms': corresponds to 'H' in the above equation
-        x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
+        centered_x (np.ndarray): New data. Has shape (n_params,) or (n_samples,
+            n_params).
 
     Returns:
         np.ndarray or float: Model evaluations, an array with shape (n_samples,) if x
