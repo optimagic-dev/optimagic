@@ -1,5 +1,6 @@
 import warnings
 from hashlib import sha1
+import difflib
 
 import cloudpickle
 import numpy as np
@@ -123,16 +124,15 @@ def propose_alternatives(requested, possibilities, number=3):
     Example:
         >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
         >>> propose_alternatives("scipy_L-BFGS-B", possibilities, number=1)
-        ['scipy_lbfgsb']
+        ['scipy_slsqp']
         >>> propose_alternatives("L-BFGS-B", possibilities, number=2)
-        ['scipy_lbfgsb', 'nlopt_lbfgsb']
+        ['scipy_slsqp', 'scipy_lbfgsb']
 
     """
     number = min(number, len(possibilities))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
-        proposals_w_probs = fw_process.extract(requested, possibilities, limit=number)
-    proposals = [proposal[0] for proposal in proposals_w_probs]
+        proposals = difflib.get_close_matches(requested, possibilities, n=number, cutoff=0)
 
     return proposals
 
