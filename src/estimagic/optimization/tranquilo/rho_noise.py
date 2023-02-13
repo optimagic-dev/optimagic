@@ -35,7 +35,7 @@ def simulate_rho_noise(
 
     centered_xs = (model_xs - trustregion.center) / trustregion.radius
 
-    true_fvecs = _evaluate_vector_model(vector_model, centered_xs)
+    true_fvecs = vector_model.predict(centered_xs)
 
     true_scalar_model = model_aggregator(vector_model=vector_model)
 
@@ -68,19 +68,3 @@ def simulate_rho_noise(
         rhos.append(sim_rho)
 
     return np.array(rhos)
-
-
-def _evaluate_vector_model(vector_model, centered_xs):
-    n_residuals = len(vector_model.linear_terms)
-    n_samples = len(centered_xs)
-
-    out = np.empty((n_samples, n_residuals))
-
-    for i, x in centered_xs:
-        for j in range(n_residuals):
-            y = x @ vector_model.linear_terms[j] + vector_model.intercepts[j]
-            if vector_model.square_terms is not None:
-                y += x.T @ vector_model.square_terms[j] @ x / 2
-            out[i, j] = y
-
-    return out
