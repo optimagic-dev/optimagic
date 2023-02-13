@@ -204,6 +204,7 @@ def _solve_subproblem_template(
         expected_improvement=-(fval_candidate - fval_at_center),
         n_iterations=raw_result["n_iterations"],
         success=raw_result["success"],
+        centered_x=raw_result["x"],
     )
 
     return result
@@ -245,3 +246,4 @@ class SubproblemResult(NamedTuple):
     expected_improvement: float
     n_iterations: int
     success: bool
+    centered_x: np.ndarray

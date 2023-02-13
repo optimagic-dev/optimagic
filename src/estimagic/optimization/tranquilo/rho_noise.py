@@ -19,6 +19,10 @@ def simulate_rho_noise(
 
     This can be used to adjust the sample size in the presence of noise.
 
+    Throughout this function the prefix true refers to what is considered as ground
+    truth for the purpose of the simulation. The prefix sim refers to the simulated
+    quantities.
+
     Args:
         model_xs (np.ndarray): Array of points that was used to fit the model.
         model (ScalarModel): A scalar surrogate model that is taken as true model
@@ -35,7 +39,7 @@ def simulate_rho_noise(
 
     centered_xs = (model_xs - trustregion.center) / trustregion.radius
 
-    true_fvecs = _evaluate_vector_model(vector_model, centered_xs)
+    true_fvecs = vector_model.predict(centered_xs)
 
     true_scalar_model = model_aggregator(vector_model=vector_model)
 
@@ -55,9 +59,7 @@ def simulate_rho_noise(
         sim_scalar_model = model_aggregator(vector_model=sim_vector_model)
         sim_sub_sol = subsolver(sim_scalar_model, trustregion)
 
-        sim_candidate_x = sim_sub_sol.x
-
-        sim_candidate_fval = true_scalar_model.predict(sim_candidate_x)
+        sim_candidate_fval = true_scalar_model.predict(sim_sub_sol.centered_x)
         sim_actual_improvement = -(sim_candidate_fval - true_current_fval)
 
         sim_rho = calculate_rho(
@@ -68,19 +70,3 @@ def simulate_rho_noise(
         rhos.append(sim_rho)
 
     return np.array(rhos)
-
-
-def _evaluate_vector_model(vector_model, centered_xs):
-    n_residuals = len(vector_model.linear_terms)
-    n_samples = len(centered_xs)
-
-    out = np.empty((n_samples, n_residuals))
-
-    for i, x in centered_xs:
-        for j in range(n_residuals):
-            y = x @ vector_model.linear_terms[j] + vector_model.intercepts[j]
-            if vector_model.square_terms is not None:
-                y += x.T @ vector_model.square_terms[j] @ x / 2
-            out[i, j] = y
-
-    return out
