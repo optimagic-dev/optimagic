@@ -51,9 +51,12 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
         x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
 
     Returns:
-        np.ndarray: Model evaluations, has shape (n_samples,)
+        np.ndarray: Model evaluations, has shape (n_samples, n_residuals) if x is 2d
+            and (n_residuals,) if x is 1d.
 
     """
+    is_flat_x = centered_x.ndim == 1
+
     x = np.atleast_2d(centered_x)
 
     y = model.linear_terms @ x.T + model.intercepts.reshape(-1, 1)
@@ -61,7 +64,12 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
     if model.square_terms is not None:
         y += np.sum((x @ model.square_terms) * x, axis=2) / 2
 
-    return np.squeeze(y)
+    if is_flat_x:
+        out = y.flatten()
+    else:
+        out = y.T.reshape(len(centered_x), -1)
+
+    return out
 
 
 def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
@@ -83,9 +91,12 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
         x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
 
     Returns:
-        np.ndarray: Model evaluations, has shape (n_samples,)
+        np.ndarray or float: Model evaluations, an array with shape (n_samples,) if x
+            is 2d and a float otherwise.
 
     """
+    is_flat_x = centered_x.ndim == 1
+
     x = np.atleast_2d(centered_x)
 
     y = x @ model.linear_terms + model.intercept
@@ -93,7 +104,12 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
     if model.square_terms is not None:
         y += np.sum((x @ model.square_terms) * x, axis=1) / 2
 
-    return np.squeeze(y)
+    if is_flat_x:
+        out = y.flatten()[0]
+    else:
+        out = y.flatten()
+
+    return out
 
 
 def n_free_params(dim, info_or_name):

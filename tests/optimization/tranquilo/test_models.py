@@ -39,7 +39,7 @@ def test_predict_vector():
             [2, 9, 6.5, 41.5],
             [3, 14, 11.5, 66.5],
         ]
-    )
+    ).T
     got = _predict_vector(model, x)
     assert_array_equal(exp, got)
 
