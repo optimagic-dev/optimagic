@@ -51,9 +51,9 @@ def accept_classic(
         subproblem_solution (SubproblemResult): Result of the subproblem solution.
         state (State): Namedtuple containing the trustregion, criterion value of
             previously accepted point, indices of model points, etc.
-        criterion (callable): The criterion function.
+        acceptance_indices (dict): TODO.
+        wrapped_criterion (callable): The criterion function.
         acceptance_options (dict): Options for the acceptance step.
-        batch_size (int): The batch size.
 
     Returns:
         AcceptanceResult
@@ -243,13 +243,14 @@ def _get_acceptance_result(
 ):
     x = candidate_x if is_accepted else old_state.x
     fval = candidate_fval if is_accepted else old_state.fval
-    step_length = np.linalg.norm(x - old_state.x)
+    index = candidate_index if is_accepted else old_state.index
+    step_length = np.linalg.norm(x - old_state.x, ord=2)
     relative_step_length = step_length / old_state.trustregion.radius
 
     out = AcceptanceResult(
         x=x,
         fval=fval,
-        index=candidate_index if is_accepted else old_state.index,
+        index=index,
         rho=rho,
         accepted=is_accepted,
         step_length=step_length,
