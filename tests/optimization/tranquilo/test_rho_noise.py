@@ -61,7 +61,7 @@ def test_convergence_to_one_if_nois_is_tiny(functype):
     rng = np.random.default_rng(123)
 
     got = simulate_rho_noise(
-        model_xs=xs,
+        xs=xs,
         vector_model=vector_model,
         trustregion=trustregion,
         noise_cov=noise_cov,

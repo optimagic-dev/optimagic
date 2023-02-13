@@ -4,7 +4,7 @@ from estimagic.optimization.tranquilo.acceptance_decision import calculate_rho
 
 
 def simulate_rho_noise(
-    model_xs,
+    xs,
     vector_model,
     trustregion,
     noise_cov,
@@ -24,20 +24,29 @@ def simulate_rho_noise(
     quantities.
 
     Args:
-        model_xs (np.ndarray): Array of points that was used to fit the model.
-        model (ScalarModel): A scalar surrogate model that is taken as true model
-            for the simulation.
-        noise_model (NoiseModel): A model of the standard deviation of noise over
-            the parameter space.
+        xs (np.ndarray): Sample of points on which surrogate models will be
+            fitted during the simulation. This sample is not scaled to the trustregion.
+        vector_model (VectorModel): A vector surrogate model that is taken as true model
+            for the simulation. In many cases this model was fitted on xs but this is
+            not a requirement.
+        trustregion (Region): The trustregion in which the optimization is performed.
+        noise_cov(np.ndarray): Covariance matrix of the noise. The noise is assumed to
+            be drawn from a multivariate normal distribution with mean zero and this
+            covariance matrix.
         model_fitter (callable): A function that fits a model.
-        subsolver (Subsolver): Subsolver object.
+        model_aggregator (callable): A function that aggregates a vector model to a
+            scalar model.
+        subsolver (callable): A function that solves the subproblem.
+        rng (np.random.Generator): Random number generator.
         n_draws (int): Number of draws used to estimate the rho noise.
+        ignore_corelation (bool): If True, the noise is assumed to be uncorrelated and
+            only the diagonal entries of the covariance matrix are used.
 
     """
-    n_samples, n_params = model_xs.shape
+    n_samples, n_params = xs.shape
     n_residuals = len(noise_cov)
 
-    centered_xs = (model_xs - trustregion.center) / trustregion.radius
+    centered_xs = (xs - trustregion.center) / trustregion.radius
 
     true_fvecs = vector_model.predict(centered_xs)
 
