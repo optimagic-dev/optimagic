@@ -1,16 +1,14 @@
+import difflib
 import warnings
 from hashlib import sha1
-import difflib
 
 import cloudpickle
 import numpy as np
 import pandas as pd
 from scipy.linalg import ldl, qr
-import difflib
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
-    from fuzzywuzzy import process as fw_process
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -133,7 +131,9 @@ def propose_alternatives(requested, possibilities, number=3):
     number = min(number, len(possibilities))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
-        proposals = difflib.get_close_matches(requested, possibilities, n=number, cutoff=0)
+        proposals = difflib.get_close_matches(
+            requested, possibilities, n=number, cutoff=0
+        )
 
     return proposals
 
