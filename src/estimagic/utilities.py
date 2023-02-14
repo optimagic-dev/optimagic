@@ -6,6 +6,7 @@ import cloudpickle
 import numpy as np
 import pandas as pd
 from scipy.linalg import ldl, qr
+import difflib
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
