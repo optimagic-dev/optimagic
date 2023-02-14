@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import partial
 
 import numpy as np
 import pytest
@@ -46,10 +47,16 @@ def acceptance_options():
 
 @pytest.fixture()
 def wrapped_criterion():
-    def _wrapped_criterion(x):
+    def _wrapped_criterion(x, stochastic=False):
+        rng = np.random.default_rng(0)
         out = (None, 0.5, 2)  # (_, candidate_fval, candidate_index)
         if x.ndim > 1:
-            out = (None, len(x) * [out[1]], len(x) * [out[2]])
+            candidate_fval = []
+            for _ in x:
+                noise = rng.normal(scale=0.01) if stochastic else 0
+                candidate_fval.append(out[1] + noise)
+            candidate_index = len(x) * [out[2]]
+            out = (None, candidate_fval, candidate_index)
         return out
 
     return _wrapped_criterion
@@ -67,79 +74,116 @@ def sampler():
 
 trustregion = Region(center=np.zeros(2), radius=2.0)
 State = namedtuple("State", "x trustregion fval index")
-states = [
+states = [  # we will parametrize over `states`
     State(np.arange(2.0), trustregion, 0.25, 0),  # better than candidate
     State(np.arange(2.0), trustregion, 1, 0),  # worse than candidate
 ]
 
 
+@pytest.mark.parametrize("state", states)
 def test_accept_classic(
-    subproblem_solution, acceptance_indices, wrapped_criterion, acceptance_options
+    state,
+    subproblem_solution,
+    acceptance_indices,
+    wrapped_criterion,
+    acceptance_options,
 ):
-    for state in states:
-        res_got, acceptance_indices_got = accept_classic(
-            subproblem_solution=subproblem_solution,
-            state=state,
-            acceptance_indices=acceptance_indices,
-            wrapped_criterion=wrapped_criterion,
-            acceptance_options=acceptance_options,
-        )
+    res_got, acceptance_indices_got = accept_classic(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        acceptance_indices=acceptance_indices,
+        wrapped_criterion=wrapped_criterion,
+        acceptance_options=acceptance_options,
+    )
 
-        accept_candidate = state.fval > 0.5
+    accept_candidate = state.fval > 0.5
 
-        assert acceptance_indices_got == {0: [0], 2: [2]}
-        assert res_got.accepted == accept_candidate
-        assert res_got.rho == -(0.5 - state.fval)
-        assert res_got.fval == (0.5 if accept_candidate else state.fval)
-        assert res_got.index == (2 if accept_candidate else state.index)
-        assert res_got.candidate_index == 2
-        assert_array_equal(
-            res_got.x, subproblem_solution.x if accept_candidate else state.x
-        )
-        assert_array_equal(res_got.candidate_x, 1.0 + np.arange(2))
+    assert acceptance_indices_got == {0: [0], 2: [2]}
+    assert res_got.accepted == accept_candidate
+    assert res_got.rho == -(0.5 - state.fval)
+    assert res_got.fval == (0.5 if accept_candidate else state.fval)
+    assert res_got.index == (2 if accept_candidate else state.index)
+    assert res_got.candidate_index == 2
+    assert_array_equal(
+        res_got.x, subproblem_solution.x if accept_candidate else state.x
+    )
+    assert_array_equal(res_got.candidate_x, 1.0 + np.arange(2))
 
 
+@pytest.mark.parametrize("state", states)
 def test_accept_naive_noisy_deterministic(
+    state,
     subproblem_solution,
     acceptance_indices,
     wrapped_criterion,
     acceptance_options,
     sampler,
 ):
-    for state in states:
-        res_got, acceptance_indices_got = accept_naive_noisy(
-            subproblem_solution=subproblem_solution,
-            state=state,
-            rng=np.random.default_rng(0),
-            acceptance_indices=acceptance_indices,
-            sampler=sampler,
-            wrapped_criterion=wrapped_criterion,
-            acceptance_options=acceptance_options,
-        )
+    res_got, acceptance_indices_got = accept_naive_noisy(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        rng=np.random.default_rng(0),
+        acceptance_indices=acceptance_indices,
+        sampler=sampler,
+        wrapped_criterion=wrapped_criterion,
+        acceptance_options=acceptance_options,
+    )
 
-        accept_candidate = state.fval > 0.5
+    accept_candidate = state.fval > 0.5
 
-        assert acceptance_indices_got == {
-            0: [0],
-            2: (acceptance_options.n_initial + 1) * [2],
-        }
-        assert res_got.accepted == accept_candidate
-        assert res_got.rho == -(0.5 - state.fval)
-        assert res_got.fval == (0.5 if accept_candidate else state.fval)
-        assert res_got.index == (2 if accept_candidate else state.index)
-        assert res_got.candidate_index == 2
-        assert_array_equal(
-            res_got.x, subproblem_solution.x if accept_candidate else state.x
-        )
-        assert_array_equal(res_got.candidate_x, 1.0 + np.arange(2))
-
-
-@pytest.mark.xfail(reason="Not implemented yet.")
-def test_accept_naive_noisy_stochastic():
-    pass
+    assert acceptance_indices_got == {
+        0: [0],
+        2: (acceptance_options.n_initial + 1) * [2],
+    }
+    assert res_got.accepted == accept_candidate
+    assert res_got.rho == -(0.5 - state.fval)
+    assert res_got.fval == (0.5 if accept_candidate else state.fval)
+    assert res_got.index == (2 if accept_candidate else state.index)
+    assert res_got.candidate_index == 2
+    assert_array_equal(
+        res_got.x, subproblem_solution.x if accept_candidate else state.x
+    )
+    assert_array_equal(res_got.candidate_x, 1.0 + np.arange(2))
 
 
-@pytest.mark.xfail(reason="Not implemented yet.")
+@pytest.mark.parametrize("state", states)
+def test_accept_naive_noisy_stochastic(
+    state,
+    subproblem_solution,
+    acceptance_indices,
+    wrapped_criterion,
+    acceptance_options,
+    sampler,
+):
+    res_got, acceptance_indices_got = accept_naive_noisy(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        rng=np.random.default_rng(0),
+        acceptance_indices=acceptance_indices,
+        sampler=sampler,
+        wrapped_criterion=partial(wrapped_criterion, stochastic=True),
+        acceptance_options=acceptance_options,
+    )
+
+    accept_candidate = state.fval > 0.5
+
+    assert acceptance_indices_got == {
+        0: [0],
+        2: (acceptance_options.n_initial + 1) * [2],
+    }
+    assert res_got.accepted == accept_candidate
+    # test relative difference because of stochastic criterion
+    assert abs(res_got.rho + (0.5 - state.fval)) < 0.01
+    assert abs(res_got.fval - (0.5 if accept_candidate else state.fval)) < 0.01
+    assert res_got.index == (2 if accept_candidate else state.index)
+    assert res_got.candidate_index == 2
+    assert_array_equal(
+        res_got.x, subproblem_solution.x if accept_candidate else state.x
+    )
+    assert_array_equal(res_got.candidate_x, 1.0 + np.arange(2))
+
+
+@pytest.mark.xfail(reason="not implemented yet")
 def test_accept_noisy():
     pass
 
