@@ -460,37 +460,86 @@ def _tranquilo(
 
 
 class State(NamedTuple):
-    # Whether this is a safety iteration
     safety: bool
+    """Whether this is a safety iteration."""
 
-    # the trustregion at the beginning of the iteration
     trustregion: Region
+    """The trustregion at the beginning of the iteration."""
 
     # Information about the model used to make the acceptance decision in the iteration
     model_indices: np.ndarray
-    model: ScalarModel
+    """The indices of points used to build the current surrogate model `State.model`.
 
-    # accepted parameters and function values at the end of the iteration
-    index: int
-    x: np.ndarray
-    fval: np.ndarray  # this is an estimate for noisy functions
+    The points can be retrieved through calling `history.get_xs(model_indices)`.
+
+    """
+
+    model: ScalarModel
+    """The current surrogate model.
+
+    The solution to the subproblem with this model as the criterion is stored as
+    `State.candidate_x`.
+
+    """
 
     # candidate information
     candidate_index: int
-    candidate_x: np.ndarray
+    """The index of the candidate point in the history.
 
-    # success Information
+    This corresponds to the index of the point in the history that solved the
+    subproblem.
+
+    """
+
+    candidate_x: np.ndarray
+    """The candidate point.
+
+    Is the same as `history.get_xs(candidate_index)`.
+
+    """
+
+    # accepted parameters and function values at the end of the iteration
+    index: int
+    """The index of the accepted point in the history."""
+
+    x: np.ndarray
+    """The accepted point.
+
+    Is the same as  `history.get_xs(index)`.
+
+    """
+
+    fval: np.ndarray  # this is an estimate for noisy functions
+    """The function value at the accepted point.
+
+    If `noisy=False` this is the same as `history.get_fval(index)`. Otherwise, this is
+    an average.
+
+    """
+
+    # success information
     rho: float
+    """The calculated rho in the current iteration."""
+
     accepted: bool
+    """Whether the candidate point was accepted."""
 
     # information on existing and new points
     new_indices: np.ndarray
+    """The indices of new points generated for the model fitting in this iteration."""
+
     old_indices_used: np.ndarray
+    """The indices of existing points used to build the model in this iteration."""
+
     old_indices_discarded: np.ndarray
+    """The indices of existing points not used to build the model in this iteration."""
 
     # information on step length
     step_length: float = None
+    """The euclidian distance between `State.x` and `State.trustregion.center`."""
+
     relative_step_length: float = None
+    """The step_length divided by the radius of the trustregion."""
 
 
 def _is_converged(states, options):

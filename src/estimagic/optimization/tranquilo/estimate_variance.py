@@ -1,8 +1,11 @@
 """Estimate the variance or covariance matrix of the noise in the objective function."""
 
+from typing import Any, Dict, List
+
 import numpy as np
 
 from estimagic.optimization.tranquilo.get_component import get_component
+from estimagic.optimization.tranquilo.tranquilo_history import History
 
 
 def get_variance_estimator(fitter, user_options):
@@ -27,12 +30,12 @@ def get_variance_estimator(fitter, user_options):
 
 
 def _estimate_variance_unweighted(
-    history,
-    states,
-    model_type,
-    acceptance_indices,
-    max_n_states,
-    max_distance_factor,
+    history: History,
+    states: List[Any],
+    model_type: str,
+    acceptance_indices: Dict[int, List[int]],
+    max_n_states: int,
+    max_distance_factor: float,
 ):
     center_indices = _get_admissible_center_indices(
         states=states,
@@ -61,10 +64,18 @@ def _estimate_variance_unweighted(
     return out
 
 
-def _get_admissible_center_indices(states, history, max_n_states, max_distance_factor):
+def _get_admissible_center_indices(
+    states: List[Any], history: History, max_n_states: int, max_distance_factor: float
+):
+    # ==================================================================================
+    # Select most recent states that should be used for the estimation
+    # ==================================================================================
     max_n_states = min(max_n_states, len(states))
     states = states[-max_n_states:]
 
+    # ==================================================================================
+    # Get xs corresponding to candidate indices
+    # ==================================================================================
     candidate_indices = {state.index for state in states} | {
         state.candidate_index for state in states
     }
@@ -72,7 +83,10 @@ def _get_admissible_center_indices(states, history, max_n_states, max_distance_f
 
     xs = history.get_xs(candidate_indices)
 
-    order = None if states[-1].trustregion.shape == "sphere" else np.inf
+    # ==================================================================================
+    # Select indices where distance of xs to last state is smaller than cutoff
+    # ==================================================================================
+    order = 2 if states[-1].trustregion.shape == "sphere" else np.inf
 
     dists = np.linalg.norm(xs - states[-1].x, axis=1, ord=order)
 
