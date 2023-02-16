@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.options import Bounds, Region
 from estimagic.optimization.tranquilo.sample_points import (
+    _determinant_on_hull,
     _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
     _project_onto_unit_hull,
@@ -100,6 +101,46 @@ def test_optimality(sampler):
         distances.append(pdist(sample).min())
 
     assert distances[1] > distances[0]
+
+
+@pytest.mark.parametrize("sampler", ["sphere", "cube"])
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+def test_multistart(sampler):
+    # test that multistart versions of hull samplers produce better fekete value
+
+    _sampler = get_sampler(
+        sampler="optimal_" + sampler,
+        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
+    )
+
+    # optimal sampling without multistart
+    sample = _sampler(
+        trustregion=Region(center=np.zeros(3), radius=1),
+        n_points=5,
+        rng=np.random.default_rng(1234),
+    )
+
+    # optimal sampling with multistart
+    sample_multistart = _sampler(
+        trustregion=Region(center=np.zeros(3), radius=1),
+        n_points=5,
+        rng=np.random.default_rng(1234),
+        multistart=True,
+        multistart_options={"n_samples": 2, "share_optimizations": 0.5},
+    )
+
+    criterion_kwargs = {
+        "existing_xs": None,
+        "order": 2 if sampler == "sphere" else np.inf,
+        "n_params": 3,
+    }
+
+    distances = [
+        _determinant_on_hull(_sample, **criterion_kwargs)
+        for _sample in [sample, sample_multistart]
+    ]
+
+    assert distances[1] >= distances[0]
 
 
 @pytest.mark.parametrize("order", [2, np.inf])

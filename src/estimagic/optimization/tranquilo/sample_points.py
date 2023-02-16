@@ -204,6 +204,8 @@ def _optimal_hull_sampler(
     algorithm="scipy_lbfgsb",
     algo_options=None,
     criterion=None,
+    multistart=False,
+    multistart_options=None,
 ):
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
@@ -246,6 +248,8 @@ def _optimal_hull_sampler(
               optimize. Thus the practical performance can be bad.
             - None: Use the "determinant" criterion if only one point is added and the
               "distance" criterion if multiple points are added.
+        multistart (bool): Whether to use multistart optimization. Default is False.
+        multistart_options (dict): Options to configure the multistart optimization.
 
     Returns:
         np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
@@ -317,18 +321,27 @@ def _optimal_hull_sampler(
             lower_bounds=-np.ones_like(x0),
             upper_bounds=np.ones_like(x0),
             algo_options=algo_options,
+            multistart=multistart,
+            multistart_options=multistart_options,
         )
 
         opt_params = res.params
 
+    if multistart:
+        start_params = res.multistart_info["start_parameters"]
+    else:
+        start_params = [x0]
+
     # Make sure the optimal sampling is actually better than the initial one with
     # respect to the fekete criterion. This could be violated if the surrogate
     # criterion is not a good approximation or if the optimization fails.
-    start_fekete = func_dict["determinant"](x0)
+    start_fekete = [func_dict["determinant"](_x) for _x in start_params]
     end_fekete = func_dict["determinant"](opt_params)
 
-    if start_fekete >= end_fekete:
-        opt_params = x0
+    argmax_start_fekete = np.argmax(start_fekete)
+
+    if start_fekete[argmax_start_fekete] >= end_fekete:
+        opt_params = start_params[argmax_start_fekete]
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
