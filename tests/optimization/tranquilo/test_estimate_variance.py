@@ -8,6 +8,7 @@ from estimagic.optimization.tranquilo.estimate_variance import (
 )
 from estimagic.optimization.tranquilo.tranquilo import Region
 from estimagic.optimization.tranquilo.tranquilo_history import History
+from numpy.testing import assert_equal
 
 # ======================================================================================
 # Fixtures
@@ -16,40 +17,48 @@ from estimagic.optimization.tranquilo.tranquilo_history import History
 
 @pytest.fixture()
 def criterion():
-    return lambda x: (x**2, np.sum(x**2))
+    return lambda x: (-(x**2), -np.sum(x**2))
 
 
 @pytest.fixture()
 def states_and_histories(criterion):
-    """Create list of two states and two histories with scalar and least_squares
-    func."""
-    # ==================================================================================
-    # States
-    # ==================================================================================
-    tr0 = Region(center=np.zeros(2), radius=0.5)
-    tr1 = Region(center=np.ones(2), radius=0.5)
+    """Return states and histories.
 
+    Creates scenario of two states, each with three samples. Histories are created for
+    the scalar and least_squares criterion.
+
+    """
     State = namedtuple("State", "x trustregion index candidate_index")
 
-    states = [
-        State(x=np.zeros(2), trustregion=tr0, index=1, candidate_index=2),
-        State(x=np.ones(2), trustregion=tr1, index=5, candidate_index=5),
-    ]
+    # Iteration 1
     # ==================================================================================
-    # Histories
+
+    # trustregion
+    tr0 = Region(center=np.zeros(2), radius=np.sqrt(2))
+    # samples
+    x0 = np.array([[-1, 1], [0, 0], [1, 1]])
+    # state
+    state0 = State(x=np.ones(2), trustregion=tr0, index=2, candidate_index=2)
+
+    # Iteration 2
     # ==================================================================================
-    x0 = np.array([[-0.5, -0.5], [0.0, 0.0], [0.5, 0.5]])
-    x1 = np.array([[0.4, 0.4], [1.0, 1.0], [1.6, 1.6]])
 
-    _history_scalar = History(functype="scalar")
-    _history_least_squares = History(functype="least_squares")
-    histories = {"scalar": _history_scalar, "least_squares": _history_least_squares}
-    for x in np.vstack((x0, x1)):
-        fvec, fval = criterion(x)
-        histories["scalar"].add_entries(x, fval)
-        histories["least_squares"].add_entries(x, fvec)
+    tr1 = Region(center=np.ones(2), radius=1)
+    x1 = np.array([[0, 1], [1, 0], [2, 1]])
+    state1 = State(x=np.array([2, 1]), trustregion=tr1, index=5, candidate_index=5)
 
-    return states, histories
+    # History
+    # ==================================================================================
+    histories = {
+        functype: History(functype=functype) for functype in ("scalar", "least_squares")
+    }
+
+    for _x in np.vstack((x0, x1)):
+        fvec, fval = criterion(_x)
+        histories["scalar"].add_entries(_x, fval)
+        histories["least_squares"].add_entries(_x, fvec)
+
+    return [state0, state1], histories
 
 
 # ======================================================================================
@@ -58,10 +67,10 @@ def states_and_histories(criterion):
 
 
 TEST_CASES = [
-    (1, 2, [5]),
-    (2, 2.5, [2, 5]),
-    (2, 3, [1, 2, 5]),
-    (2, 2.5, [2, 5]),
+    (1, 0, []),
+    (1, 1e9, [5]),
+    (2, 1 + 1e9, [2, 5]),
+    (2, 1, [5]),
     (2, 0, []),
 ]
 
@@ -74,8 +83,8 @@ def test_get_admissible_center_indices(
     states, histories = states_and_histories
     history = histories[functype]
     admissible = _get_admissible_center_indices(
-        states,
-        history,
+        states=states,
+        history=history,
         max_n_states=max_n_states,
         max_distance_factor=max_distance_factor,
     )
@@ -88,15 +97,39 @@ def test_get_admissible_center_indices(
 
 
 TEST_CASES = [
-    (1, 2, "scalar", np.nan),
-    (2, 2.5, "scalar", 0.0081),
-    (2, 3, "scalar", 0.0353),
-    (2, 2.5, "scalar", 0.0081),
+    (1, 0, "scalar", np.nan),
+    (1, 1e9, "scalar", np.var([-2, 2], ddof=1)),
+    (2, 1 + 1e9, "scalar", np.var([-1, 1, -2, 2], ddof=1)),
+    (2, 1, "scalar", np.var([-2, 2], ddof=1)),
     (2, 0, "scalar", np.nan),
+    (1, 0, "least_squares", np.nan),
+    (
+        1,
+        1e9,
+        "least_squares",
+        np.cov([[3 / 2, 1 / 2], [-3 / 2, -1 / 2]], rowvar=False, ddof=1),
+    ),
+    (
+        2,
+        1 + 1e9,
+        "least_squares",
+        np.cov(
+            [[3 / 2, 1 / 2], [-3 / 2, -1 / 2], [1 / 2, 1 / 2], [-1 / 2, -1 / 2]],
+            rowvar=False,
+            ddof=1,
+        ),
+    ),
+    (
+        2,
+        1,
+        "least_squares",
+        np.cov([[3 / 2, 1 / 2], [-3 / 2, -1 / 2]], rowvar=False, ddof=1),
+    ),
     (2, 0, "least_squares", np.nan),
 ]
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")  # caused by undefined variances
 @pytest.mark.parametrize(
     "max_n_states, max_distance_factor, functype, expected", TEST_CASES
 )
@@ -111,9 +144,8 @@ def test_estimate_variance_unweighted(
     history = histories[functype]
 
     acceptance_indices = {
-        1: [0, 1],
-        2: [2, 3],
-        5: [5],
+        2: [1, 2],
+        5: [4, 5],
     }
 
     estimate = _estimate_variance_unweighted(
@@ -125,50 +157,4 @@ def test_estimate_variance_unweighted(
         max_distance_factor=max_distance_factor,
     )
 
-    if np.isnan(expected):
-        assert np.isnan(estimate)
-    else:
-        assert abs(expected - estimate) < 1e-10
-
-
-TEST_CASES = [
-    (1, 2, "least_squares", np.nan),
-    (2, 2.5, "least_squares", 0.0081),
-    (2, 3, "scalar", 0.0353),
-    (2, 2.5, "scalar", 0.0081),
-]
-
-
-@pytest.mark.xfail(reason="least squares part not implemented yet.")
-@pytest.mark.parametrize(
-    "max_n_states, max_distance_factor, functype, expected", TEST_CASES
-)
-def test_estimate_variance_unweighted_xfail(
-    max_n_states,
-    max_distance_factor,
-    functype,
-    expected,
-    states_and_histories,
-):
-    states, histories = states_and_histories
-    history = histories[functype]
-
-    acceptance_indices = {
-        1: [0, 1],
-        2: [2, 3],
-        5: [5],
-    }
-
-    estimate = _estimate_variance_unweighted(
-        history=history,
-        states=states,
-        model_type=functype,
-        acceptance_indices=acceptance_indices,
-        max_n_states=max_n_states,
-        max_distance_factor=max_distance_factor,
-    )
-
-    if np.isnan(expected):
-        assert np.isnan(estimate)
-    else:
-        assert abs(expected - estimate) < 1e-10
+    assert_equal(expected, estimate)
