@@ -5,6 +5,16 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
 
 
+## 0.4.4
+
+- {gh}`437` removes fuzzywuzzy as dependency ({ghuser}`aidatak97`)
+- {gh}`432` makes logging compatible with sqlalchemy 2.x ({ghuser}`janosg`)
+- {gh}`430` refactors the getter functions in Tranquilo ({ghuser}`janosg`)
+- {gh}`427` improves pre-commit setup ({ghuser}`timmens` and {ghuser}`hmgaudecker`)
+- {gh}`425` improves handling of notebooks in documentation ({ghuser}`baharcos`)
+- {gh}`423` and {gh}`399` add code to calculate poisdeness constants ({ghuser}`segsell`)
+- {gh}`420` improve CI infrastructure ({ghuser}`hmgaudecker`, {ghuser}`janosg`)
+- {gh}`407` adds global optimizers from scipy ({ghuser}`baharcos`)
 
 ## 0.4.3
 
