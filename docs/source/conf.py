@@ -66,7 +66,6 @@ autodoc_mock_imports = [
     "cloudpickle",
     "cyipopt",
     "fides",
-    "fuzzywuzzy",
     "joblib",
     "nlopt",
     "pandas",
