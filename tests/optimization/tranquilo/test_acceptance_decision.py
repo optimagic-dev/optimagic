@@ -183,11 +183,6 @@ def test_accept_naive_noisy_stochastic(
     assert_array_equal(res_got.candidate_x, 1.0 + np.arange(2))
 
 
-@pytest.mark.xfail(reason="not implemented yet")
-def test_accept_noisy():
-    pass
-
-
 # ======================================================================================
 # Test _get_acceptance_result
 # ======================================================================================

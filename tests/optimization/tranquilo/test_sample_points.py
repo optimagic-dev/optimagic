@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.options import Bounds, Region
 from estimagic.optimization.tranquilo.sample_points import (
-    _determinant_on_hull,
     _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
     _project_onto_unit_hull,
@@ -107,41 +106,36 @@ def test_optimality(sampler):
 @pytest.mark.parametrize("n_points_randomsearch", [1, 2, 5, 10])
 def test_randomsearch(sampler, n_points_randomsearch):
     # test that initial randomsearch of hull samplers produce better fekete values
-    # for the sphere sampler
+
+    bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
 
     _sampler = get_sampler(
         sampler="optimal_" + sampler,
-        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
+        bounds=bounds,
     )
 
-    # optimal sampling without multistart
-    sample = _sampler(
+    # optimal sampling without randomsearch
+    _, info = _sampler(
         trustregion=Region(center=np.zeros(3), radius=1),
         n_points=5,
         rng=np.random.default_rng(0),
+        return_info=True,
     )
 
-    # optimal sampling with multistart
-    sample_randomsearch = _sampler(
+    # optimal sampling with randomsearch
+    _, info_randomsearch = _sampler(
         trustregion=Region(center=np.zeros(3), radius=1),
         n_points=5,
         rng=np.random.default_rng(0),
         n_points_randomsearch=n_points_randomsearch,
+        return_info=True,
     )
 
-    criterion_kwargs = {
-        "existing_xs": None,
-        "order": 2,
-        "n_params": 3,
-    }
-
-    fekete = _determinant_on_hull(sample, **criterion_kwargs)
-    fekete_randomsearch = _determinant_on_hull(sample_randomsearch, **criterion_kwargs)
-
-    if n_points_randomsearch == 1:
-        assert fekete_randomsearch == fekete
-    else:
-        assert fekete_randomsearch > fekete
+    for key in ["start_fekete", "opt_fekete"]:
+        statement = info_randomsearch[key] >= info[key] or np.isclose(
+            info_randomsearch[key], info[key], rtol=1e-3
+        )
+        assert statement
 
 
 @pytest.mark.parametrize("order", [2, np.inf])

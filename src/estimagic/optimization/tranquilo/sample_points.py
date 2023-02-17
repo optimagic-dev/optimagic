@@ -205,6 +205,7 @@ def _optimal_hull_sampler(
     algo_options=None,
     criterion=None,
     n_points_randomsearch=1,
+    return_info=False,
 ):
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
@@ -252,7 +253,9 @@ def _optimal_hull_sampler(
             Default is 1.
 
     Returns:
-        np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
+        - np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
+        - dict: Information about the optimization. Only returned if ``return_info`` is
+        True.
 
     """
     n_params = len(trustregion.center)
@@ -346,7 +349,17 @@ def _optimal_hull_sampler(
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
-    return points
+
+    # Collect additional information. Mostly used for testing.
+    info = {
+        "start_params": x0,
+        "opt_params": opt_params,
+        "start_fekete": start_fekete,
+        "opt_fekete": end_fekete,
+    }
+
+    out = (points, info) if return_info else points
+    return out
 
 
 # ======================================================================================
