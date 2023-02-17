@@ -14,6 +14,7 @@ from estimagic.utilities import (
     hash_array,
     isscalar,
     number_of_triangular_elements_to_dimension,
+    propose_alternatives,
     read_pickle,
     robust_cholesky,
     robust_inverse,
@@ -239,3 +240,11 @@ TEST_CASES = [0.1, "a", object(), lambda x: x**2]
 def test_get_rng_wrong_input(seed):
     with pytest.raises(TypeError):
         get_rng(seed)
+
+
+def test_propose_alternatives():
+    possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
+    inputs = [["scipy_L-BFGS-B", 1], ["L-BFGS-B", 2]]
+    expected = [["scipy_slsqp"], ["scipy_slsqp", "scipy_lbfgsb"]]
+    for inp, exp in zip(inputs, expected):
+        assert propose_alternatives(inp[0], possibilities, number=inp[1]) == exp

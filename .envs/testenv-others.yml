@@ -14,7 +14,6 @@ dependencies:
   - bokeh<=2.4.3  # run, tests
   - click  # run, tests
   - cloudpickle  # run, tests
-  - fuzzywuzzy  # run, tests
   - joblib  # run, tests
   - numba  # run, tests
   - numpy>=1.17.0  # run, tests
