@@ -203,6 +203,119 @@ def morebvne(x):
     return fvec
 
 
+def flosp2(x, const, ra=1.0e7, dim_in=2):
+    n = dim_in * 2 + 1
+    xvec = np.ones((3, n, n))
+    xvec[0] = x[: n**2].reshape(n, n)
+    xvec[1] = x[n**2 : 2 * n**2].reshape(n, n)
+    xvec[2, 1:-1, 1:-1] = x[2 * n**2 :].reshape(n - 2, n - 2)
+
+    a = const[0]
+    b = const[1]
+    f = np.array([1, 0, 0])
+    g = np.array([1, 0, 0])
+
+    h = 1 / dim_in
+    ax = 1
+    axx = ax**2
+    theta = 0.5 * np.pi
+    pi1 = -0.5 * ax * ra * np.cos(theta)
+    pi2 = 0.5 * ax * ra * np.sin(theta)
+
+    fvec = np.zeros((3, 3, 3))
+    for j in range(1, n - 1):
+        for i in range(1, n - 1):
+            fvec[0, i - 1, j - 1] = (
+                xvec[0, i, j] * -2 * (1 / h) ** 2
+                + xvec[0, i + 1, j] * (1 / h) ** 2
+                + xvec[0, i - 1, j] * (1 / h) ** 2
+                + xvec[0, i, j] * -2 * axx * (1 / h) ** 2
+                + xvec[0, i, j + 1] * axx * (1 / h) ** 2
+                + xvec[0, i, j - 1] * ax * (1 / h) ** 2
+                + xvec[1, i + 1, j] * -pi1 / (2 * h)
+                + xvec[1, i - 1, j] * pi1 / (2 * h)
+                + xvec[1, i, j + 1] * -pi2 / (2 * h)
+                + xvec[1, i, j - 1] * pi2 / (2 * h)
+            )
+            fvec[1, i - 1, j - 1] = (
+                xvec[2, i, j] * -2 * (1 / h) ** 2
+                + xvec[2, i + 1, j] * (1 / h) ** 2
+                + xvec[2, i - 1, j] * (1 / h) ** 2
+                + xvec[2, i, j] * -2 * axx * (1 / h) ** 2
+                + xvec[2, i, j + 1] * axx * (1 / h) ** 2
+                + xvec[2, i, j - 1] * axx * (1 / h) ** 2
+                + xvec[0, i, j] * axx * 0.25
+            )
+            fvec[2, i - 1, j - 1] = (
+                xvec[1, i, j] * -2 * (1 / h) ** 2
+                + xvec[1, i + 1, j] * (1 / h) ** 2
+                + xvec[1, i - 1, j] * (1 / h) ** 2
+                + xvec[1, i, j] * -2 * axx * (1 / h) ** 2
+                + xvec[1, i, j + 1] * axx * (1 / h) ** 2
+                + xvec[1, i, j - 1] * axx * (1 / h) ** 2
+                - 0.25
+                * ax
+                * (1 / h) ** 2
+                * (xvec[2, i, j + 1] - xvec[2, i, j - 1])
+                * (xvec[1, i + 1, j] - xvec[1, i - 1, j])
+                + 0.25
+                * ax
+                * (1 / h) ** 2
+                * (xvec[2, i + 1, j] - xvec[2, i - 1, j])
+                * (xvec[1, i, j + 1] - xvec[1, i, j - 1])
+            )
+
+    temp = np.zeros((n, n))
+    temp[:, -1] = a[2]
+    temp[:, 0] = b[2]
+    temp[-1, 1:] = f[2]
+    temp[0, :] = g[2]
+    for k in range(n):
+        temp[k, -1] += (
+            xvec[1, k, -1] * 2 * a[0] * (1 / h)
+            + xvec[1, k, -2] * -2 * a[0] * (1 / h)
+            + xvec[1, k, -1] * a[1]
+        )
+        temp[k, 0] += (
+            xvec[1, k, 1] * 2 * b[0] * (1 / h)
+            + xvec[1, k, 0] * -2 * b[0] * (1 / h)
+            + xvec[1, k, 0] * b[1]
+        )
+        temp[-1, k] += (
+            xvec[1, -1, k] * 2 * f[0] * (1 / (ax * h))
+            + xvec[1, -2, k] * -2 * f[0] * (1 / (ax * h))
+            + xvec[1, -1, k] * f[1]
+        )
+        temp[0, k] += (
+            xvec[1, 1, k] * 2 * g[0] * (1 / (ax * h))
+            + xvec[1, 0, k] * -2 * g[0] * (1 / (ax * h))
+            + xvec[1, 0, k] * g[1]
+        )
+
+    fvec = np.concatenate(
+        [
+            fvec.flatten(),
+            np.concatenate((temp[0, :], temp[-1, :], temp[1:-1, 0], temp[1:-1, -1])),
+        ]
+    )
+
+    temp = np.zeros((n, n))
+    for k in range(n):
+        temp[k, -1] += xvec[2, k, -1] * -2 * (1 / h) + xvec[2, k, -2] * 2 * (1 / h)
+        temp[k, 0] += xvec[2, k, 1] * 2 * (1 / h) + xvec[2, k, 0] * -2 * (1 / h)
+        temp[-1, k] += xvec[2, -1, k] * -2 * (1 / (ax * h)) + xvec[2, -2, k] * 2 * (
+            1 / (ax * h)
+        )
+        temp[0, k] += xvec[2, 1, k] * 2 * (1 / (ax * h)) + xvec[2, 0, k] * -2 * (
+            1 / (ax * h)
+        )
+    fvec = np.concatenate(
+        [fvec, np.concatenate((temp[0, :], temp[-1, :], temp[1:-1, 0], temp[1:-1, -1]))]
+    )
+
+    return fvec
+
+
 # =====================================================================================
 
 
@@ -2463,6 +2576,48 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_x": [t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
         "solution_x": [np.nan] * 100,
         "start_criterion": 3.633100e-4,
+        "solution_criterion": 0,
+    },
+    "flosp2hh": {
+        "criterion": partial(flosp2, const=[[1, 0, -1], [1, 0, -1]], ra=1e7, dim_in=2),
+        "start_x": [0] * 59,
+        "solution_x": [np.nan] * 59,
+        "start_criterion": 519,
+        "solution_criterion": 1 / 3,
+    },
+    "flosp2hl": {
+        "criterion": partial(flosp2, const=[[1, 0, -1], [1, 0, -1]], ra=1e3, dim_in=2),
+        "start_x": [0] * 59,
+        "solution_x": [np.nan] * 59,
+        "start_criterion": 519,
+        "solution_criterion": 1 / 3,
+    },
+    "flosp2hm": {
+        "criterion": partial(flosp2, const=[[1, 0, -1], [1, 0, -1]], ra=1e5, dim_in=2),
+        "start_x": [0] * 59,
+        "solution_x": [np.nan] * 59,
+        "start_criterion": 519,
+        "solution_criterion": 1 / 3,
+    },
+    "flosp2th": {
+        "criterion": partial(flosp2, const=[[0, 1, 0], [0, 1, 1]], ra=1e7, dim_in=2),
+        "start_x": [0] * 59,
+        "solution_x": [np.nan] * 59,
+        "start_criterion": 516,
+        "solution_criterion": 0,
+    },
+    "flosp2tl": {
+        "criterion": partial(flosp2, const=[[0, 1, 0], [0, 1, 1]], ra=1e3, dim_in=2),
+        "start_x": [0] * 59,
+        "solution_x": [np.nan] * 59,
+        "start_criterion": 516,
+        "solution_criterion": 0,
+    },
+    "flosp2tm": {
+        "criterion": partial(flosp2, const=[[0, 1, 0], [0, 1, 1]], ra=1e5, dim_in=2),
+        "start_x": [0] * 59,
+        "solution_x": [np.nan] * 59,
+        "start_criterion": 516,
         "solution_criterion": 0,
     },
 }
