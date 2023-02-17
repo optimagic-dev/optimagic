@@ -204,8 +204,7 @@ def _optimal_hull_sampler(
     algorithm="scipy_lbfgsb",
     algo_options=None,
     criterion=None,
-    multistart=False,
-    multistart_options=None,
+    n_points_randomsearch=1,
 ):
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
@@ -248,8 +247,9 @@ def _optimal_hull_sampler(
               optimize. Thus the practical performance can be bad.
             - None: Use the "determinant" criterion if only one point is added and the
               "distance" criterion if multiple points are added.
-        multistart (bool): Whether to use multistart optimization. Default is False.
-        multistart_options (dict): Options to configure the multistart optimization.
+        n_points_randomsearch (int): Number of random points to from which to select
+            the best in terms of the Fekete criterion before starting the optimization.
+            Default is 1.
 
     Returns:
         np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
@@ -287,11 +287,37 @@ def _optimal_hull_sampler(
     else:
         existing_xs_unit = None
 
-    # start params
+    # Define criterion functions. "determinant" is the Fekete criterion and "distance"
+    # corresponds to an approximation of the Fekete criterion.
+    criterion_kwargs = {
+        "existing_xs": existing_xs_unit,
+        "order": order,
+        "n_params": n_params,
+    }
+
+    func_dict = {
+        "determinant": partial(_determinant_on_hull, **criterion_kwargs),
+        "distance": partial(
+            _minimal_pairwise_distance_on_hull,
+            **criterion_kwargs,
+            hardness=hardness,
+        ),
+    }
+
+    # Select start params through random search
     if distribution is None:
         distribution = "normal" if order <= 3 else "uniform"
-    x0 = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
-    x0 = _project_onto_unit_hull(x0, order=order)
+    candidates = _draw_from_distribution(
+        distribution, rng=rng, size=(n_points_randomsearch, n_points, n_params)
+    )
+    candidates = [_project_onto_unit_hull(_x, order=order) for _x in candidates]
+
+    if n_points_randomsearch == 1:
+        x0 = candidates[0]
+    else:
+        _fekete_criterion = [func_dict["determinant"](_x) for _x in candidates]
+        x0 = candidates[np.argmax(_fekete_criterion)]
+
     x0 = x0.flatten()  # flatten so that em.maximize uses fast path
 
     # This would raise an error because there are zero pairs to calculate the
@@ -299,21 +325,6 @@ def _optimal_hull_sampler(
     if existing_xs_unit is None and n_points == 1:
         opt_params = x0
     else:
-        criterion_kwargs = {
-            "existing_xs": existing_xs_unit,
-            "order": order,
-            "n_params": n_params,
-        }
-
-        func_dict = {
-            "determinant": partial(_determinant_on_hull, **criterion_kwargs),
-            "distance": partial(
-                _minimal_pairwise_distance_on_hull,
-                **criterion_kwargs,
-                hardness=hardness,
-            ),
-        }
-
         res = em.maximize(
             criterion=func_dict[criterion],
             params=x0,
@@ -321,27 +332,17 @@ def _optimal_hull_sampler(
             lower_bounds=-np.ones_like(x0),
             upper_bounds=np.ones_like(x0),
             algo_options=algo_options,
-            multistart=multistart,
-            multistart_options=multistart_options,
         )
-
         opt_params = res.params
-
-    if multistart:
-        start_params = res.multistart_info["start_parameters"]
-    else:
-        start_params = [x0]
 
     # Make sure the optimal sampling is actually better than the initial one with
     # respect to the fekete criterion. This could be violated if the surrogate
     # criterion is not a good approximation or if the optimization fails.
-    start_fekete = [func_dict["determinant"](_x) for _x in start_params]
+    start_fekete = func_dict["determinant"](x0)
     end_fekete = func_dict["determinant"](opt_params)
 
-    argmax_start_fekete = np.argmax(start_fekete)
-
-    if start_fekete[argmax_start_fekete] >= end_fekete:
-        opt_params = start_params[argmax_start_fekete]
+    if start_fekete >= end_fekete:
+        opt_params = x0
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)

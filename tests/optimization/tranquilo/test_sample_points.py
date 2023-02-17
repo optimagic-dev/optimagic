@@ -104,9 +104,10 @@ def test_optimality(sampler):
 
 
 @pytest.mark.parametrize("sampler", ["sphere", "cube"])
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_multistart(sampler):
-    # test that multistart versions of hull samplers produce better fekete value
+@pytest.mark.parametrize("n_points_randomsearch", [1, 2, 5, 10])
+def test_randomsearch(sampler, n_points_randomsearch):
+    # test that initial randomsearch of hull samplers produce better fekete values
+    # for the sphere sampler
 
     _sampler = get_sampler(
         sampler="optimal_" + sampler,
@@ -117,30 +118,30 @@ def test_multistart(sampler):
     sample = _sampler(
         trustregion=Region(center=np.zeros(3), radius=1),
         n_points=5,
-        rng=np.random.default_rng(1234),
+        rng=np.random.default_rng(0),
     )
 
     # optimal sampling with multistart
-    sample_multistart = _sampler(
+    sample_randomsearch = _sampler(
         trustregion=Region(center=np.zeros(3), radius=1),
         n_points=5,
-        rng=np.random.default_rng(1234),
-        multistart=True,
-        multistart_options={"n_samples": 2, "share_optimizations": 0.5},
+        rng=np.random.default_rng(0),
+        n_points_randomsearch=n_points_randomsearch,
     )
 
     criterion_kwargs = {
         "existing_xs": None,
-        "order": 2 if sampler == "sphere" else np.inf,
+        "order": 2,
         "n_params": 3,
     }
 
-    distances = [
-        _determinant_on_hull(_sample, **criterion_kwargs)
-        for _sample in [sample, sample_multistart]
-    ]
+    fekete = _determinant_on_hull(sample, **criterion_kwargs)
+    fekete_randomsearch = _determinant_on_hull(sample_randomsearch, **criterion_kwargs)
 
-    assert distances[1] >= distances[0]
+    if n_points_randomsearch == 1:
+        assert fekete_randomsearch == fekete
+    else:
+        assert fekete_randomsearch > fekete
 
 
 @pytest.mark.parametrize("order", [2, np.inf])
