@@ -212,8 +212,8 @@ def flosp2(x, const, ra=1.0e7, dim_in=2):
 
     a = const[0]
     b = const[1]
-    f = np.array([1, 0, 0])
-    g = np.array([1, 0, 0])
+    f = [1, 0, 0]
+    g = [1, 0, 0]
 
     h = 1 / dim_in
     ax = 1
@@ -222,7 +222,7 @@ def flosp2(x, const, ra=1.0e7, dim_in=2):
     pi1 = -0.5 * ax * ra * np.cos(theta)
     pi2 = 0.5 * ax * ra * np.sin(theta)
 
-    fvec = np.zeros((3, 3, 3))
+    fvec = np.zeros((n - 2, n - 2, n - 2))
     for j in range(1, n - 1):
         for i in range(1, n - 1):
             fvec[0, i - 1, j - 1] = (
@@ -314,6 +314,95 @@ def flosp2(x, const, ra=1.0e7, dim_in=2):
     )
 
     return fvec
+
+
+def oscigrne(x):
+    dim_in = len(x)
+    rho = 500
+
+    fvec = np.zeros(dim_in)
+    fvec[0] = 0.5 * x[0] - 0.5 - 4 * rho * (x[1] - 2.0 * x[0] ** 2 + 1.0) * x[0]
+    fvec[1:-1] = (
+        2 * rho * (x[1:-1] - 2.0 * x[:-2] ** 2 + 1.0)
+        - 4 * rho * (x[2:] - 2.0 * x[:-2] ** 2 + 1.0) * x[1:-1]
+    )
+    fvec[-1] = 2 * rho * (x[-1] - 2.0 * x[-2] ** 2 + 1.0)
+
+    return fvec
+
+
+def spmsqrt(x):
+    m = (len(x) + 2) // 3
+    xmat = np.diag(x[2:-1:3], -1) + np.diag(x[::3], 0) + np.diag(x[1:-2:3], 1)
+
+    b = np.zeros((m, m))
+    b[0, 0] = np.sin(1)
+    b[0, 1] = np.sin(4)
+    k = 2
+    for i in range(1, m - 1):
+        k += 1
+        b[i, i - 1] = np.sin(k**2)
+        k += 1
+        b[i, i] = np.sin(k**2)
+        k += 1
+        b[i, i + 1] = np.sin(k**2)
+    k += 1
+    b[-1, -2] = np.sin(k**2)
+    k += 1
+    b[-1, -1] = np.sin(k**2)
+
+    fmat = np.zeros((m, m))
+    fmat[0, 0] = xmat[0, 0] ** 2 + xmat[0, 1] * xmat[1, 0]
+    fmat[0, 1] = xmat[0, 0] * xmat[0, 1] + xmat[0, 1] * xmat[1, 1]
+    fmat[0, 2] = xmat[0, 1] * xmat[1, 2]
+
+    fmat[1, 0] = xmat[1, 0] * xmat[0, 0] + xmat[1, 1] * xmat[1, 0]
+    fmat[1, 1] = xmat[1, 0] * xmat[0, 1] + xmat[1, 1] ** 2 + xmat[1, 2] * xmat[2, 1]
+    fmat[1, 2] = xmat[1, 1] * xmat[1, 2] + xmat[1, 2] * xmat[2, 2]
+    fmat[1, 3] = xmat[1, 2] * xmat[2, 3]
+
+    for i in range(2, m - 2):
+        fmat[i, i - 2] = xmat[i, i - 1] * xmat[i - 1, i - 2]
+        fmat[i, i - 1] = (
+            xmat[i, i - 1] * xmat[i - 1, i - 1] + xmat[i, i] * xmat[i, i - 1]
+        )
+        fmat[i, i] = (
+            xmat[i, i - 1] * xmat[i - 1, i]
+            + xmat[i, i] ** 2
+            + xmat[i, i + 1] * xmat[i + 1, i]
+        )
+        fmat[i, i + 1] = (
+            xmat[i, i] * xmat[i, i + 1] + xmat[i, i + 1] * xmat[i + 1, i + 1]
+        )
+        fmat[i, i + 2] = xmat[i, i + 1] * xmat[i + 1, i + 2]
+
+    fmat[-2, -4] = xmat[-2, -3] * xmat[-3, -4]
+    fmat[-2, -3] = xmat[-2, -3] * xmat[-3, -3] + xmat[-2, -2] * xmat[-2, -3]
+    fmat[-2, -2] = (
+        xmat[-2, -3] * xmat[-3, -2] + xmat[-2, -2] ** 2 + xmat[-2, -1] * xmat[-1, -2]
+    )
+    fmat[-2, -1] = xmat[-2, -2] * xmat[-2, -1] + xmat[-2, -1] * xmat[-1, -1]
+
+    fmat[-1, -3] = xmat[-1, -2] * xmat[-2, -3]
+    fmat[-1, -2] = xmat[-1, -2] * xmat[-2, -2] + xmat[-1, -1] * xmat[-1, -2]
+    fmat[-1, -1] = xmat[-1, -2] * xmat[-2, -1] + xmat[-1, -1] ** 2
+
+    fmat[0, 0] -= b[0, 0] ** 2 + b[0, 1] * b[1, 0]
+    for i in range(1, m - 1):
+        fmat[i, i] -= (
+            b[i, i] ** 2 + b[i - 1, i] * b[i, i - 1] + b[i + 1, i] * b[i, i + 1]
+        )
+    fmat[-1, -1] -= b[-1, -1] ** 2 + b[-2, -1] * b[-1, -2]
+    for i in range(m - 1):
+        fmat[i + 1, i] -= b[i + 1, i] * b[i, i] + b[i + 1, i + 1] * b[i + 1, i]
+    for i in range(1, m):
+        fmat[i - 1, i] -= b[i - 1, i] * b[i, i] + b[i - 1, i - 1] * b[i - 1, i]
+    for i in range(1, m - 1):
+        fmat[i + 1, i - 1] -= b[i + 1, i] * b[i, i - 1]
+    for i in range(1, m - 1):
+        fmat[i - 1, i + 1] -= b[i - 1, i] * b[i, i + 1]
+
+    return fmat.flatten()
 
 
 # =====================================================================================
@@ -809,6 +898,35 @@ def get_start_points_bdvalues(n, a=1):
     for i in range(n):
         x[i] = (i + 1) * h * ((i + 1) * h - 1)
     return (x * a).tolist()
+
+
+def get_start_points_spmsqrt(m):
+    b = np.zeros((m, m))
+    b[0, 0] = np.sin(1)
+    b[0, 1] = np.sin(4)
+    k = 2
+    for i in range(1, m - 1):
+        k += 1
+        b[i, i - 1] = np.sin(k**2)
+        k += 1
+        b[i, i] = np.sin(k**2)
+        k += 1
+        b[i, i + 1] = np.sin(k**2)
+    k += 1
+    b[-1, -2] = np.sin(k**2)
+    k += 1
+    b[-1, -1] = np.sin(k**2)
+
+    x = np.zeros((m, m))
+    x[:, :2] = 0.2 * b[:, :2]
+    x[1:-1, :-2] = 0.2 * b[1:-1, :-2]
+    x[1:-1, 1:-1] = 0.2 * b[1:-1, 1:-1]
+    x[1:-1, 2:] = 0.2 * b[1:-1, 2:]
+    x[-1, -2:] = 0.2 * b[-1, -2:]
+
+    x_out = x[x != 0]
+
+    return x_out.tolist()
 
 
 solution_x_bdvalues = [
@@ -2618,6 +2736,20 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_x": [0] * 59,
         "solution_x": [np.nan] * 59,
         "start_criterion": 516,
+        "solution_criterion": 0,
+    },
+    "oscigrne": {
+        "criterion": oscigrne,
+        "start_x": [-2] + [1] * 99,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 6.120720e8,
+        "solution_criterion": 0,
+    },
+    "spmsqrt": {
+        "criterion": spmsqrt,
+        "start_x": get_start_points_spmsqrt(34),
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 74.33542,
         "solution_criterion": 0,
     },
 }
