@@ -405,6 +405,52 @@ def spmsqrt(x):
     return fmat.flatten()
 
 
+def semicon2(x):
+    n = len(x) // 1
+    ln = 9 * n // 10
+
+    lambda_ = 0.2
+    a = -0.00009
+    b = 0.00001
+    ua = 0.0
+    ub = 700.0
+    ca = 1e12
+    cb = 1e13
+    beta = 40.0
+
+    h = (b - a) / (n + 1)
+    lb = lambda_ * beta
+    lua = lambda_ * ua
+    lub = lambda_ * ub
+
+    xvec = np.zeros(n + 2)
+    xvec[0] = lua
+    xvec[1:-1] = x
+    xvec[-1] = lub
+
+    fvec = np.zeros(n)
+    for i in range(1, ln + 1):
+        fvec[i - 1] = (
+            xvec[i - 1]
+            - 2 * xvec[i]
+            + xvec[i + 1]
+            + lambda_ * (h**2) * ca * np.exp(-lb * (xvec[i] - lua))
+            - lambda_ * (h**2) * cb * np.exp(lb * (xvec[i] - lub))
+            - lambda_ * (h**2) * ca
+        )
+    for i in range(ln + 1, n + 1):
+        fvec[i - 1] = (
+            xvec[i - 1]
+            - 2 * xvec[i]
+            + xvec[i + 1]
+            - lambda_ * (h**2) * cb * np.exp(lb * (xvec[i] - lub))
+            + lambda_ * (h**2) * ca * np.exp(-lb * (xvec[i] - lua))
+            + lambda_ * (h**2) * cb
+        )
+
+    return fvec
+
+
 # =====================================================================================
 
 
@@ -2751,5 +2797,21 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": [np.nan] * 100,
         "start_criterion": 74.33542,
         "solution_criterion": 0,
+    },
+    "semicn2u": {
+        "criterion": semicon2,
+        "start_x": [0] * 100,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 2.025037e4,
+        "solution_criterion": 0,
+    },
+    "semicon2": {
+        "criterion": semicon2,
+        "start_x": [0] * 100,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 2.025037e4,
+        "solution_criterion": 0,
+        "lower_bounds": -5 * np.ones(100),
+        "upper_bounds": 0.2 * 700 * np.ones(100),
     },
 }
