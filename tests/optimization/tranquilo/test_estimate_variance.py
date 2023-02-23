@@ -34,7 +34,7 @@ def states_and_histories(criterion):
     # ==================================================================================
 
     # trustregion
-    tr0 = Region(center=np.zeros(2), radius=np.sqrt(2))
+    tr0 = Region(center=np.zeros(2), radius=np.sqrt(2), shape="sphere")
     # samples
     x0 = np.array([[-1, 1], [0, 0], [1, 1]])
     # state
@@ -43,7 +43,7 @@ def states_and_histories(criterion):
     # Iteration 2
     # ==================================================================================
 
-    tr1 = Region(center=np.ones(2), radius=1)
+    tr1 = Region(center=np.ones(2), radius=1, shape="sphere")
     x1 = np.array([[0, 1], [1, 0], [2, 1]])
     state1 = State(x=np.array([2, 1]), trustregion=tr1, index=5, candidate_index=5)
 

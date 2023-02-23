@@ -56,7 +56,7 @@ class RadiusOptions(NamedTuple):
 class Region(NamedTuple):
     center: np.ndarray
     radius: float
-    shape: str = "sphere"
+    shape: str
 
 
 class HistorySearchOptions(NamedTuple):

@@ -42,6 +42,7 @@ def _tranquilo(
     upper_bounds=None,
     disable_convergence=False,
     stopping_max_iterations=200,
+    stopping_max_criterion_evaluations=2_000,
     random_seed=925408,
     sampler=None,
     sample_filter=None,
@@ -68,6 +69,7 @@ def _tranquilo(
     acceptance_options=None,
     variance_estimator="unweighted",
     variance_estimation_options=None,
+    trustregion_shape=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -134,6 +136,7 @@ def _tranquilo(
     # ==================================================================================
     # set default values for optional arguments
     # ==================================================================================
+
     sampling_rng = np.random.default_rng(random_seed)
     acceptance_rng = np.random.default_rng(random_seed + 1)
 
@@ -154,16 +157,16 @@ def _tranquilo(
         functype=functype,
     )
 
-    if _has_bounds(lower_bounds, upper_bounds):
-        if sampler is None:
-            sampler = "optimal_cube"
-        if subsolver is None:
-            subsolver = "bntr_fast"
-    else:
-        if sampler is None:
-            sampler = "optimal_sphere"
-        if subsolver is None:
-            subsolver = "gqtpar_fast"
+    _has_bounds = _check_if_there_are_bounds(lower_bounds, upper_bounds)
+
+    if trustregion_shape is None:
+        trustregion_shape = "sphere" if not _has_bounds else "cube"
+
+    if sampler is None:
+        sampler = f"optimal_{trustregion_shape}"
+
+    if subsolver is None:
+        subsolver = "bntr_fast" if trustregion_shape == "cube" else "gqtpar_fast"
 
     sampling_budget = _process_sample_size(
         user_sample_size=sample_size,
@@ -274,6 +277,7 @@ def _tranquilo(
         _acceptance_region = Region(
             center=x,
             radius=radius_options.initial_radius * acceptance_options.radius_factor,
+            shape=trustregion_shape,
         )
         _acceptance_sample = acceptance_sampler(
             trustregion=_acceptance_region,
@@ -293,7 +297,9 @@ def _tranquilo(
 
     state = State(
         safety=False,
-        trustregion=Region(center=x, radius=radius_options.initial_radius),
+        trustregion=Region(
+            center=x, radius=radius_options.initial_radius, shape=trustregion_shape
+        ),
         model_indices=_first_indices,
         model=None,
         index=0,
@@ -444,6 +450,11 @@ def _tranquilo(
             converged, msg = _is_converged(states=states, options=conv_options)
             if converged:
                 break
+
+        if history.get_n_fun() >= stopping_max_criterion_evaluations:
+            converged = False
+            msg = "Maximum number of criterion evaluations reached."
+            break
 
     # ==================================================================================
     # results processing
@@ -644,7 +655,7 @@ tranquilo_ls = mark_minimizer(
 )
 
 
-def _has_bounds(lb, ub):
+def _check_if_there_are_bounds(lb, ub):
     out = False
     if lb is not None and np.isfinite(lb).any():
         out = True

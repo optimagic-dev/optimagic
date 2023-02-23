@@ -12,10 +12,10 @@ from estimagic.optimization.tranquilo.acceptance_decision import (
 from estimagic.optimization.tranquilo.options import (
     AcceptanceOptions,
     Bounds,
+    Region,
 )
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import SubproblemResult
-from estimagic.optimization.tranquilo.tranquilo import Region
 from numpy.testing import assert_array_equal
 
 # ======================================================================================
@@ -72,7 +72,7 @@ def sampler():
 # ======================================================================================
 
 
-trustregion = Region(center=np.zeros(2), radius=2.0)
+trustregion = Region(center=np.zeros(2), radius=2.0, shape="sphere")
 State = namedtuple("State", "x trustregion fval index")
 states = [  # we will parametrize over `states`
     State(np.arange(2.0), trustregion, 0.25, 0),  # better than candidate
@@ -193,7 +193,7 @@ def test_get_acceptance_result():
     candidate_fval = 0
     candidate_index = 0
     rho = 1
-    tr = Region(center=np.zeros(2), radius=2.0)
+    tr = Region(center=np.zeros(2), radius=2.0, shape="sphere")
     old_state = namedtuple("State", "x fval index trustregion")(np.arange(2), 1, 1, tr)
 
     ar_when_accepted = _get_acceptance_result(

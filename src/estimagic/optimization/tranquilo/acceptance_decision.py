@@ -99,6 +99,7 @@ def accept_naive_noisy(
     acceptance_region = Region(
         center=candidate_x,
         radius=state.trustregion.radius * acceptance_options.radius_factor,
+        shape=state.trustregion.shape,
     )
     sample = sampler(
         trustregion=acceptance_region,
