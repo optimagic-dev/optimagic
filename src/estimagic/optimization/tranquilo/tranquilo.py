@@ -26,6 +26,7 @@ from estimagic.optimization.tranquilo.options import (
     HistorySearchOptions,
     RadiusOptions,
     Region,
+    StagnationOptions,
 )
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
@@ -70,6 +71,7 @@ def _tranquilo(
     variance_estimator="unweighted",
     variance_estimation_options=None,
     trustregion_shape=None,
+    stagnation_options=None,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -201,6 +203,9 @@ def _tranquilo(
 
     if acceptance_options is None:
         acceptance_options = AcceptanceOptions()
+
+    if stagnation_options is None:
+        stagnation_options = StagnationOptions()
 
     # ==================================================================================
     # initialize compoments for the solver
@@ -334,53 +339,76 @@ def _tranquilo(
 
         old_xs = history.get_xs(old_indices)
 
-        filtered_xs, filtered_indices = filter_points(
+        model_xs, model_indices = filter_points(
             xs=old_xs,
             indices=old_indices,
             state=state,
             target_size=sampling_budget,
         )
 
-        n_effective_points = count_points(filtered_xs, trustregion=state.trustregion)
+        n_effective_points = count_points(model_xs, trustregion=state.trustregion)
 
         # ==============================================================================
-        # sample new points
-        # ==============================================================================
-        n_to_sample = max(0, sampling_budget - n_effective_points)
-
-        new_xs = sample_points(
-            trustregion=state.trustregion,
-            n_points=n_to_sample,
-            existing_xs=filtered_xs,
-            rng=sampling_rng,
-        )
-
-        # ==============================================================================
-        # criterion evaluations
+        # Improve the sample until we are satisfied with the model
         # ==============================================================================
 
-        _, _, new_indices = wrapped_criterion(new_xs)
-        model_indices = np.hstack([filtered_indices, new_indices])
-        model_xs = history.get_xs(model_indices)
-        model_fvecs = history.get_fvecs(model_indices)
+        for sampling_counter in range(stagnation_options.max_trials):
+            # ==============================================================================
+            # sample new points
+            # ==============================================================================
+            if sampling_counter == 0:
+                n_to_sample = max(0, sampling_budget - n_effective_points)
+            else:
+                n_to_sample = stagnation_options.sample_increment
 
-        # ==============================================================================
-        # build surrogate and optimize it
-        # ==============================================================================
+            new_xs = sample_points(
+                trustregion=state.trustregion,
+                n_points=n_to_sample,
+                existing_xs=model_xs,
+                rng=sampling_rng,
+            )
 
-        weights = calculate_weights(model_xs, trustregion=state.trustregion)
+            # ==============================================================================
+            # criterion evaluations
+            # ==============================================================================
 
-        centered_xs = (model_xs - state.trustregion.center) / state.trustregion.radius
+            _, _, new_indices = wrapped_criterion(new_xs)
+            model_indices = np.hstack([model_indices, new_indices])
+            model_xs = history.get_xs(model_indices)
+            model_fvecs = history.get_fvecs(model_indices)
 
-        clipped_fvecs = clip_infinite_values(model_fvecs)
+            # ==============================================================================
+            # build surrogate and optimize it
+            # ==============================================================================
 
-        vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
+            weights = calculate_weights(model_xs, trustregion=state.trustregion)
 
-        scalar_model = aggregate_vector_model(
-            vector_model=vector_model,
-        )
+            centered_xs = (
+                model_xs - state.trustregion.center
+            ) / state.trustregion.radius
 
-        sub_sol = solve_subproblem(model=scalar_model, trustregion=state.trustregion)
+            clipped_fvecs = clip_infinite_values(model_fvecs)
+
+            vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
+
+            scalar_model = aggregate_vector_model(
+                vector_model=vector_model,
+            )
+
+            sub_sol = solve_subproblem(
+                model=scalar_model, trustregion=state.trustregion
+            )
+
+            # ==========================================================================
+            # check if model needs to be improved
+            # ==========================================================================
+
+            _relative_step_length = (
+                np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
+            )
+
+            if _relative_step_length >= stagnation_options.min_relative_step:
+                break
 
         # ==============================================================================
         # fit noise model based on previous acceptance samples
@@ -417,9 +445,9 @@ def _tranquilo(
         state = state._replace(
             model_indices=model_indices,
             model=scalar_model,
-            new_indices=new_indices,
-            old_indices_used=filtered_indices,
-            old_indices_discarded=np.setdiff1d(old_indices, filtered_indices),
+            new_indices=np.setdiff1d(model_indices, old_indices),
+            old_indices_used=np.intersect1d(model_indices, old_indices),
+            old_indices_discarded=np.setdiff1d(old_indices, model_indices),
             **acceptance_result._asdict(),
         )
 

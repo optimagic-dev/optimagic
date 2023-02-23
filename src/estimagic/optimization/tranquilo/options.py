@@ -73,3 +73,9 @@ class AcceptanceOptions(NamedTuple):
     n_max: int = 100
     min_improvement: float = 0.0
     sampler: str = "ball"
+
+
+class StagnationOptions(NamedTuple):
+    min_relative_step: float = 0.0
+    sample_increment: int = 1
+    max_trials: int = 5
