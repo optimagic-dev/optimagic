@@ -44,12 +44,16 @@ def get_fitter(fitter, user_options=None, model_info=None):
         "ols": fit_ols,
         "ridge": fit_ridge,
         "powell": fit_powell,
+        "tranquilo": fit_tranquilo,
     }
 
     default_options = {
         "l2_penalty_linear": 0,
         "l2_penalty_square": 0.1,
         "model_info": model_info,
+        "p_intercept": 1,
+        "p_linear": 1,
+        "p_square": 0.9,
     }
 
     mandatory_arguments = ["x", "y", "model_info"]
@@ -156,6 +160,43 @@ def _fit_ols(x, y):
     """
     coef, *_ = np.linalg.lstsq(x, y, rcond=None)
     coef = coef.T
+
+    return coef
+
+
+def fit_tranquilo(x, y, weights, model_info, p_intercept, p_linear, p_square):
+    """Fit a linear model using ordinary least squares.
+
+    The difference to fit_ols is that the linear terms are penalized less strongly
+    when the system is underdetermined.
+
+    Args:
+        x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
+            rescaled such that the trust region becomes a hypercube from -1 to 1.
+        y (np.ndarray): Array of shape (n_samples, n_residuals) with function
+            evaluations that have been centered around the function value at the
+            trust region center.
+        model_info (ModelInfo): Information that describes the functional form of the
+            model.
+
+    Returns:
+        np.ndarray: The model coefficients.
+
+    """
+    features = _build_feature_matrix(x, model_info)
+    features_w, y_w = _add_weighting(features, y, weights)
+
+    n_params = x.shape[1]
+    n_features = features.shape[1]
+
+    factor = np.array(
+        [1 / p_intercept]
+        + [1 / p_linear] * n_params
+        + [1 / p_square] * (n_features - 1 - n_params)
+    )
+
+    coef_raw = _fit_ols(features_w * factor, y_w)
+    coef = coef_raw * factor
 
     return coef
 
