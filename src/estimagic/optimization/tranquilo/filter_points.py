@@ -30,6 +30,7 @@ def get_sample_filter(sample_filter="keep_all", user_options=None):
         "clustering": keep_cluster_centers,
         "keep_sphere": keep_sphere,
         "drop_pounders": drop_collinear_pounders,
+        "keep_inside": keep_points_in_trustregion,
     }
 
     out = get_component(
@@ -64,6 +65,22 @@ def drop_collinear_pounders(xs, indices, state):
         filtered_xs, filtered_indices = _drop_collinear_pounders(xs, indices, state)
 
     return filtered_xs, filtered_indices
+
+
+def keep_points_in_trustregion(xs, indices, state, target_size):
+    if len(xs) <= target_size:
+        return xs, indices
+
+    order = 2 if state.trustregion.shape == "sphere" else np.inf
+
+    dists = np.linalg.norm(xs - state.trustregion.center, axis=1, ord=order)
+    while len(xs) > target_size and (dists > state.trustregion.radius).any():
+        drop_index = np.argmax(dists)
+        xs = np.delete(xs, drop_index, axis=0)
+        indices = np.delete(indices, drop_index)
+        dists = np.delete(dists, drop_index, axis=0)
+
+    return xs, indices
 
 
 def keep_cluster_centers(
