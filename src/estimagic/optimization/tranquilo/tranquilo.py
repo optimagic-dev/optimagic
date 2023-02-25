@@ -352,7 +352,7 @@ def _tranquilo(
         # Improve the sample until we are satisfied with the model
         # ==============================================================================
 
-        for sampling_counter in range(stagnation_options.max_trials):
+        for sampling_counter in range(stagnation_options.max_trials + 1):
             # ==============================================================================
             # sample new points
             # ==============================================================================

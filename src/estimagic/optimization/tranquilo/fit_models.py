@@ -96,17 +96,10 @@ def _fitter_template(
         VectorModel or ScalarModel: Results container.
 
     """
-    n_samples, n_params = x.shape
+    _, n_params = x.shape
     n_residuals = y.shape[1]
 
-    # weight the data in order to get weighted fitting from fitters that do not support
-    # weights. Inspired by: https://stackoverflow.com/a/52452833
-    if weights is not None:
-        _root_weights = np.sqrt(weights).reshape(n_samples, 1)
-        y = y * _root_weights
-        x = x * _root_weights
-
-    coef = fitter(x, y)
+    coef = fitter(x=x, y=y, weights=weights)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)
@@ -127,7 +120,7 @@ def _fitter_template(
     return results
 
 
-def fit_ols(x, y, model_info):
+def fit_ols(x, y, weights, model_info):
     """Fit a linear model using ordinary least squares.
 
     Args:
@@ -144,7 +137,8 @@ def fit_ols(x, y, model_info):
 
     """
     features = _build_feature_matrix(x, model_info)
-    coef = _fit_ols(features, y)
+    features_w, y_w = _add_weighting(features, y, weights)
+    coef = _fit_ols(features_w, y_w)
 
     return coef
 
@@ -169,6 +163,7 @@ def _fit_ols(x, y):
 def fit_ridge(
     x,
     y,
+    weights,
     model_info,
     l2_penalty_linear,
     l2_penalty_square,
@@ -193,6 +188,8 @@ def fit_ridge(
     """
     features = _build_feature_matrix(x, model_info)
 
+    features_w, y_w = _add_weighting(features, y, weights)
+
     # create penalty array
     n_params = x.shape[1]
     cutoffs = (1, n_params + 1)
@@ -202,7 +199,7 @@ def fit_ridge(
     penalty[cutoffs[0] : cutoffs[1]] = l2_penalty_linear
     penalty[cutoffs[1] :] = l2_penalty_square
 
-    coef = _fit_ridge(features, y, penalty)
+    coef = _fit_ridge(features_w, y_w, penalty)
 
     return coef
 
@@ -263,12 +260,12 @@ def fit_powell(x, y, model_info):
 
     if _switch_to_linear:
         model_info = model_info._replace(has_squares=False, has_interactions=False)
-        coef = fit_ols(x, y, model_info)
+        coef = fit_ols(x, y, weights=None, model_info=model_info)
         n_resid, n_present = coef.shape
         padding = np.zeros((n_resid, _n_just_identified - n_present))
         coef = np.hstack([coef, padding])
     elif n_samples >= _n_just_identified:
-        coef = fit_ols(x, y, model_info)
+        coef = fit_ols(x, y, weights=None, model_info=model_info)
     else:
         coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_info)
 
@@ -448,3 +445,14 @@ def _polynomial_features(x, has_squares):
     out = np.concatenate((intercept, xt, poly_terms), axis=0)
 
     return out.T
+
+
+def _add_weighting(x, y, weights=None):
+    # weight the data in order to get weighted fitting from fitters that do not support
+    # weights. Inspired by: https://stackoverflow.com/a/52452833
+    n_samples = len(x)
+    if weights is not None:
+        _root_weights = np.sqrt(weights).reshape(n_samples, 1)
+        y = y * _root_weights
+        x = x * _root_weights
+    return x, y
