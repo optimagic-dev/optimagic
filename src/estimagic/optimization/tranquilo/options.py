@@ -3,12 +3,8 @@ from typing import NamedTuple
 import numpy as np
 
 from estimagic.optimization.algo_options import (
-    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
     CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
-    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
 )
 
 
@@ -30,13 +26,13 @@ class StopOptions(NamedTuple):
 class ConvOptions(NamedTuple):
     """Criteria for successful convergence."""
 
-    ftol_abs: float = CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
+    ftol_abs: float = 0.0
     gtol_abs: float = 0.0
-    xtol_abs: float = CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
+    xtol_abs: float = 0.0
     ftol_rel: float = CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
     gtol_rel: float = CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-    xtol_rel: float = CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
-    min_radius: float = CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE
+    xtol_rel: float = 1e-8
+    min_radius: float = 0.0
 
 
 class RadiusOptions(NamedTuple):
@@ -60,8 +56,8 @@ class Region(NamedTuple):
 
 
 class HistorySearchOptions(NamedTuple):
-    radius_type: str = "circumscribed"
-    radius_factor: float = 1.5
+    radius_type: str = "inscribed"
+    radius_factor: float = 5
 
 
 class AcceptanceOptions(NamedTuple):
@@ -76,8 +72,8 @@ class AcceptanceOptions(NamedTuple):
 
 
 class StagnationOptions(NamedTuple):
-    min_relative_step_keep: float = 0.05
+    min_relative_step_keep: float = 0.1
     min_relative_step: float = 0.025
     sample_increment: int = 1
-    max_trials: int = 1
-    drop: bool = False
+    max_trials: int = 3
+    drop: bool = True

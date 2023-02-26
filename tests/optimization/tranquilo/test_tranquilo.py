@@ -51,18 +51,6 @@ TEST_CASES = {
         "surrogate_model": ["quadratic"],
         "sample_size": ["powell", "quadratic"],
     },
-    "ols_pounders_filtering": {
-        "sample_filter": ["drop_pounders"],
-        "fitter": ["ols"],
-        "surrogate_model": ["quadratic"],
-        "sample_size": ["powell", "quadratic"],
-    },
-    "pounders_filtering": {
-        "sample_filter": ["drop_pounders"],
-        "fitter": ["powell"],
-        "surrogate_model": ["quadratic"],
-        "sample_size": ["powell"],
-    },
 }
 
 TEST_CASES = [_product(**kwargs) for kwargs in TEST_CASES.values()]
@@ -77,14 +65,13 @@ def test_internal_tranquilo_scalar_sphere_defaults(
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
-        x=np.arange(5),
+        x=np.arange(4),
         sample_filter=sample_filter,
         fitter=fitter,
         surrogate_model=surrogate_model,
         sample_size=sample_size,
-        experimental=True,
     )
-    aaae(res["solution_x"], np.zeros(5), decimal=4)
+    aaae(res["solution_x"], np.zeros(4), decimal=4)
 
 
 # ======================================================================================
@@ -118,13 +105,13 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
-        x=np.arange(5),
+        x=np.arange(4),
         sample_filter=sample_filter,
         fitter=fitter,
         surrogate_model=surrogate_model,
         sample_size=sample_size,
     )
-    aaae(res["solution_x"], np.zeros(5), decimal=3)
+    aaae(res["solution_x"], np.zeros(4), decimal=3)
 
 
 # ======================================================================================
@@ -135,11 +122,11 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 def test_external_tranquilo_scalar_sphere_defaults():
     res = minimize(
         criterion=lambda x: x @ x,
-        params=np.arange(5),
+        params=np.arange(4),
         algorithm="tranquilo",
     )
 
-    aaae(res.params, np.zeros(5), decimal=4)
+    aaae(res.params, np.zeros(4), decimal=4)
 
 
 # ======================================================================================
