@@ -82,6 +82,7 @@ def test_internal_tranquilo_scalar_sphere_defaults(
         fitter=fitter,
         surrogate_model=surrogate_model,
         sample_size=sample_size,
+        experimental=True,
     )
     aaae(res["solution_x"], np.zeros(5), decimal=4)
 

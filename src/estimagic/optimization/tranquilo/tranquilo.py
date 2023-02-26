@@ -33,6 +33,7 @@ from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.tranquilo_history import History
 from estimagic.optimization.tranquilo.weighting import get_sample_weighter
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
+from estimagic.optimization.tranquilo.filter_points import drop_worst_points
 
 
 def _tranquilo(
@@ -340,56 +341,116 @@ def _tranquilo(
 
         old_xs = history.get_xs(old_indices)
 
-        model_xs, model_indices = filter_points(
-            xs=old_xs,
-            indices=old_indices,
-            state=state,
-            target_size=sampling_budget,
-        )
-
-        n_effective_points = count_points(model_xs, trustregion=state.trustregion)
 
         # ==============================================================================
         # Improve the sample until we are satisfied with the model
         # ==============================================================================
 
         if experimental:
-            sampling_counter = 0
-            while True:
-                # ==============================================================================
-                # sample new points
-                # ==============================================================================
-                if sampling_counter == 0:
-                    n_to_sample = max(0, sampling_budget - n_effective_points)
-                else:
-                    n_to_sample = stagnation_options.sample_increment
+            model_xs, model_indices = old_xs, old_indices
 
-                if sampling_counter >= 1 and stagnation_options.drop:
-                    dists = np.linalg.norm(model_xs - state.x, axis=1)
-                    if (dists >= state.trustregion.radius).any():
-                        drop_index = np.argmax(dists)
-                        model_xs = np.delete(model_xs, drop_index, axis=0)
-                        model_indices = np.delete(model_indices, drop_index)
-
-                new_xs = sample_points(
+            # ==========================================================================
+            # sample points if necessary and do naive iteration
+            # ==========================================================================
+            new_xs = sample_points(
                     trustregion=state.trustregion,
-                    n_points=n_to_sample,
+                    n_points=max(0, sampling_budget - len(model_xs)),
                     existing_xs=model_xs,
                     rng=sampling_rng,
                 )
 
-                # ==============================================================================
-                # criterion evaluations
-                # ==============================================================================
+            _, _, new_indices = wrapped_criterion(new_xs)
+            model_indices = np.hstack([model_indices, new_indices])
+            model_xs = history.get_xs(model_indices)
+            model_fvecs = history.get_fvecs(model_indices)
+
+            weights = calculate_weights(model_xs, trustregion=state.trustregion)
+
+            centered_xs = (
+                model_xs - state.trustregion.center
+            ) / state.trustregion.radius
+
+            clipped_fvecs = clip_infinite_values(model_fvecs)
+
+            vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
+
+            scalar_model = aggregate_vector_model(
+                vector_model=vector_model,
+            )
+
+            sub_sol = solve_subproblem(
+                model=scalar_model, trustregion=state.trustregion
+            )
+
+            _relative_step_length = (
+                np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
+            )
+
+            # ==========================================================================
+            # If we have enough points, drop points until the relative step length
+            # becomes large enough
+            # ==========================================================================
+
+
+            if len(model_xs) > sampling_budget:
+                small_step = _relative_step_length < stagnation_options.min_relative_step_keep
+
+                while small_step and len(model_xs) > sampling_budget:
+                    model_xs, model_indices = drop_worst_points(
+                        xs=model_xs,
+                        indices=model_indices,
+                        state=state,
+                        n_to_drop=1,
+                    )
+
+                    model_fvecs = history.get_fvecs(model_indices)
+
+                    centered_xs = (
+                        model_xs - state.trustregion.center
+                    ) / state.trustregion.radius
+
+                    clipped_fvecs = clip_infinite_values(model_fvecs)
+
+                    vector_model = fit_model(
+                        centered_xs, clipped_fvecs, weights=weights
+                    )
+
+                    scalar_model = aggregate_vector_model(
+                        vector_model=vector_model,
+                    )
+
+                    sub_sol = solve_subproblem(
+                        model=scalar_model, trustregion=state.trustregion
+                    )
+
+                    _relative_step_length = (
+                        np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
+                    )
+
+            # ==========================================================================
+            # If step length is still too small, replace the worst point with a new one
+            # ==========================================================================
+
+            sample_counter = 0
+            while _relative_step_length < stagnation_options.min_relative_step:
+                model_xs, model_indices = drop_worst_points(
+                        xs=model_xs,
+                        indices=model_indices,
+                        state=state,
+                        n_to_drop=stagnation_options.sample_increment,
+                    )
+
+                new_xs = sample_points(
+                    trustregion=state.trustregion,
+                    n_points=stagnation_options.sample_increment,
+                    existing_xs=model_xs,
+                    rng=sampling_rng,
+                )
 
                 _, _, new_indices = wrapped_criterion(new_xs)
                 model_indices = np.hstack([model_indices, new_indices])
                 model_xs = history.get_xs(model_indices)
                 model_fvecs = history.get_fvecs(model_indices)
-
-                # ==============================================================================
-                # build surrogate and optimize it
-                # ==============================================================================
 
                 weights = calculate_weights(model_xs, trustregion=state.trustregion)
 
@@ -409,26 +470,24 @@ def _tranquilo(
                     model=scalar_model, trustregion=state.trustregion
                 )
 
-                # ==========================================================================
-                # check if model needs to be improved
-                # ==========================================================================
-
                 _relative_step_length = (
                     np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
                 )
 
-                if _relative_step_length >= stagnation_options.min_relative_step:
+                sample_counter += 1
+                if sample_counter >= stagnation_options.max_trials:
                     break
-
-                if sampling_counter >= stagnation_options.max_trials + 1 and not (dists >= state.trustregion.radius).any():
-                    break
-
-                if sampling_counter >= sampling_budget:
-                    break
-
-                sampling_counter += 1
 
         else:
+
+            model_xs, model_indices = filter_points(
+                xs=old_xs,
+                indices=old_indices,
+                state=state,
+                target_size=sampling_budget,
+            )
+
+            n_effective_points = count_points(model_xs, trustregion=state.trustregion)
 
             for sampling_counter in range(stagnation_options.max_trials + 1):
                 # ==============================================================================
