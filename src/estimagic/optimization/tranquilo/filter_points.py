@@ -1,7 +1,8 @@
 import numpy as np
+import scipy
 from numba import njit
 from scipy.linalg import qr_multiply
-import scipy
+
 from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.models import n_second_order_terms
@@ -96,7 +97,6 @@ def drop_worst_points(xs, indices, state, n_to_drop):
     n_dropped = 0
 
     if n_dropped < n_to_drop:
-
         order = 2 if state.trustregion.shape == "sphere" else np.inf
         dists = np.linalg.norm(xs - state.trustregion.center, axis=1, ord=order)
 
@@ -146,10 +146,6 @@ def keep_cluster_centers(
     # do I need to make sure trustregion center is in there?
     out = xs[centers], indices[centers]
     return out
-
-
-
-
 
 
 def _drop_collinear_pounders(xs, indices, state):
