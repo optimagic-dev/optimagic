@@ -11,7 +11,6 @@ profile_options = [
     {"distance_measure": "criterion"},
     {"monotone": True},
     {"monotone": False},
-    {"runtime_measure": "walltime"},
     {"stopping_criterion": None},
     {"stopping_criterion": "x"},
     {"stopping_criterion": "x_and_y"},

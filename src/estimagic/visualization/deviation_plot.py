@@ -13,7 +13,6 @@ def deviation_plot(
     *,
     distance_measure="criterion",
     monotone=True,
-    runtime_measure="n_evaluations",
     stopping_criterion="y",
     x_precision=1e-4,
     y_precision=1e-4,
@@ -48,7 +47,6 @@ def deviation_plot(
             between the start value and the optimal value, i.e. 1 means the algorithm
             is as far from the solution as the start value and 0 means the algorithm
             has reached the solution value.
-        runtime_measure (str): "n_evaluations" or "walltime".
         normalize_runtime (bool): If True the runtime each algorithm needed for each
             problem is scaled by the time the fastest algorithm needed. If True, the
             resulting plot is what Moré and Wild (2009) called data profiles.
@@ -80,28 +78,25 @@ def deviation_plot(
 
     outcome = f"{'monotone_' if monotone else ''}" + distance_measure + "_normalized"
     deviations = (
-        df.set_index(["problem", "algorithm", runtime_measure])[outcome]
+        df.set_index(["problem", "algorithm", "n_evaluations"])[outcome]
         .reindex(
             pd.MultiIndex.from_product(
                 [
                     df["problem"].unique(),
                     df["algorithm"].unique(),
-                    range(df[runtime_measure].min(), df[runtime_measure].max() + 1),
+                    range(df["n_evaluations"].min(), df["n_evaluations"].max() + 1),
                 ],
-                names=["problem", "algorithm", runtime_measure],
+                names=["problem", "algorithm", "n_evaluations"],
             )
         )
         .fillna(method="ffill")
         .reset_index()
     )
     average_deviations = (
-        deviations.groupby(["algorithm", runtime_measure]).mean()[outcome].reset_index()
+        deviations.groupby(["algorithm", "n_evaluations"]).mean()[outcome].reset_index()
     )
-    fig = px.line(average_deviations, x=runtime_measure, y=outcome, color="algorithm")
-    xlabels = {
-        "n_evaluations": "Number of Function Evaluations",
-        "walltime": "Wall Time Needed to Solve the Problem",
-    }
+    fig = px.line(average_deviations, x="n_evaluations", y=outcome, color="algorithm")
+
     y_labels = {
         "criterion_normalized": "Share of Function Distance to Optimum<br>"
         "Missing From Current Criterion Value",
@@ -113,7 +108,7 @@ def deviation_plot(
         "to Optimum<br> Missing From the Best Parameters So Far",
     }
     fig.update_layout(
-        xaxis_title=xlabels[runtime_measure],
+        xaxis_title="Number of Function Evaluations",
         yaxis_title=y_labels[outcome],
         title=None,
         height=300,
