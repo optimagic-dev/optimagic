@@ -80,7 +80,7 @@ def deviation_plot(
 
     outcome = f"{'monotone_' if monotone else ''}" + distance_measure + "_normalized"
     df_balanced = (
-        df.set_index(["problem", "algorithm", runtime_measure])
+        df.set_index(["problem", "algorithm", runtime_measure])[outcome]
         .reindex(
             pd.MultiIndex.from_product(
                 [
