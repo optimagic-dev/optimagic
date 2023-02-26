@@ -91,7 +91,6 @@ def profile_plot(
         runtime_measure=runtime_measure,
         converged_info=converged_info,
     )
-
     if normalize_runtime:
         solution_times = solution_times.divide(solution_times.min(axis=1), axis=0)
         solution_times[~converged_info] = np.inf
@@ -102,16 +101,18 @@ def profile_plot(
         names=["alpha"],
     )
     performance_profiles = for_each_alpha.groupby("alpha").mean().stack().reset_index()
-
     fig = px.line(performance_profiles, x="alpha", y=0, color="algorithm")
 
     xlabels = {
-        ("n_evaluations", True): "Multiple of Minimal Number of Function Evaluations\n"
+        (
+            "n_evaluations",
+            True,
+        ): "Multiple of Minimal Number of Function Evaluations<br>"
         "Needed to Solve the Problem",
         (
             "walltime",
             True,
-        ): "Multiple of Minimal Wall Time\nNeeded to Solve the Problem",
+        ): "Multiple of Minimal Wall Time<br>Needed to Solve the Problem",
         ("n_evaluations", False): "Number of Function Evaluations",
         ("walltime", False): "Wall Time Needed to Solve the Problem",
     }
