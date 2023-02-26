@@ -79,7 +79,7 @@ def deviation_plot(
     )
 
     outcome = f"{'monotone_' if monotone else ''}" + distance_measure + "_normalized"
-    df_balanced = (
+    deviations = (
         df.set_index(["problem", "algorithm", runtime_measure])[outcome]
         .reindex(
             pd.MultiIndex.from_product(
@@ -95,9 +95,7 @@ def deviation_plot(
         .reset_index()
     )
     average_deviations = (
-        df_balanced.groupby(["algorithm", runtime_measure])
-        .mean()[outcome]
-        .reset_index()
+        deviations.groupby(["algorithm", runtime_measure]).mean()[outcome].reset_index()
     )
     fig = px.line(average_deviations, x=runtime_measure, y=outcome, color="algorithm")
     xlabels = {
