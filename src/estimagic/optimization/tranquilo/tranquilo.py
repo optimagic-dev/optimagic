@@ -433,7 +433,8 @@ def _tranquilo(
 
             sample_counter = 0
             while _relative_step_length < stagnation_options.min_relative_step:
-                model_xs, model_indices = drop_worst_points(
+                if stagnation_options.drop:
+                    model_xs, model_indices = drop_worst_points(
                         xs=model_xs,
                         indices=model_indices,
                         state=state,
