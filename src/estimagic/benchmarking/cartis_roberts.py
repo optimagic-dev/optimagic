@@ -451,6 +451,92 @@ def semicon2(x):
     return fvec
 
 
+def qr3d(x, m=5):
+    q = x[: m**2].reshape(m, m)
+    r = x[m**2 :].reshape(m, m)
+
+    a = np.zeros((m, m))
+    a[0, 0] = 2 / m
+    a[0, 1] = 0
+    for i in range(1, m - 1):
+        a[i, i - 1] = (1 - (i + 1)) / m
+        a[i, i] = 2 * (i + 1) / m
+        a[i, i + 1] = (1 - (i + 1)) / m
+    a[-1, -2] = (1 - m) / m
+    a[-1, -1] = 2 * m
+
+    omat = np.zeros((m, m))  # triu
+    fmat = np.zeros((m, m))
+
+    for i in range(m):
+        for j in range(i, m):
+            for k in range(m):
+                omat[i, j] += q[i, k] * q[j, k]
+
+    for i in range(m):
+        for j in range(m):
+            for k in range(j + 1):
+                fmat[i, j] += q[i, k] * r[k, j]
+
+    for i in range(m):
+        omat[i, i] -= 1
+    fmat[0, 0] -= a[0, 0]
+    fmat[0, 1] -= a[0, 1]
+    for i in range(1, m - 1):
+        fmat[i, i - 1] -= a[i, i - 1]
+        fmat[i, i] -= a[i, i]
+        fmat[i, i + 1] -= a[i, i + 1]
+    fmat[-1, -2] -= a[-1, -2]
+    fmat[-1, -1] -= a[-1, -1]
+
+    fvec = np.concatenate([omat.flatten(), fmat.flatten()])
+    return fvec
+
+
+def qr3dbd(x, m=5):
+    q = x[: m**2].reshape(m, m)
+    r = x[m**2 :].reshape(m, m)
+
+    a = np.zeros((m, m))
+    a[0, 0] = 2 / m
+    a[0, 1] = 0
+    for i in range(1, m - 1):
+        a[i, i - 1] = (1 - (i + 1)) / m
+        a[i, i] = 2 * (i + 1) / m
+        a[i, i + 1] = (1 - (i + 1)) / m
+    a[-1, -2] = (1 - m) / m
+    a[-1, -1] = 2 * m
+
+    omat = np.zeros((m, m))  # triu
+    fmat = np.zeros((m, m))
+
+    for i in range(m):
+        for j in range(i, m):
+            for k in range(m):
+                omat[i, j] += q[i, k] * q[j, k]
+
+    for i in range(m):
+        fmat[i, 0] += q[i, 0] * r[0, 0]
+        fmat[i, 1] += q[i, 0] * r[0, 1] + q[i, 1] * r[1, 1]
+        for j in range(2, m):
+            for k in range(j - 2, j + 1):
+                fmat[i, j] += q[i, k] * r[k, j]
+
+    for i in range(m):
+        omat[i, i] -= 1
+    fmat[0, 0] -= a[0, 0]
+    fmat[0, 1] -= a[0, 1]
+    for i in range(1, m - 1):
+        fmat[i, i - 1] -= a[i, i - 1]
+        fmat[i, i] -= a[i, i]
+        fmat[i, i + 1] -= a[i, i + 1]
+    fmat[-1, -2] -= a[-1, -2]
+    fmat[-1, -1] -= a[-1, -1]
+
+    fvec = np.concatenate([omat.flatten(), fmat.flatten()])
+    return fvec
+
+
 # =====================================================================================
 
 
@@ -973,6 +1059,22 @@ def get_start_points_spmsqrt(m):
     x_out = x[x != 0]
 
     return x_out.tolist()
+
+
+def get_start_points_qr3d(m):
+    a = np.zeros((m, m))
+    a[0, 0] = 2 / m
+    a[0, 1] = 0
+    for i in range(1, m - 1):
+        a[i, i - 1] = (1 - (i + 1)) / m
+        a[i, i] = 2 * (i + 1) / m
+        a[i, i + 1] = (1 - (i + 1)) / m
+    a[-1, -2] = (1 - m) / m
+    a[-1, -1] = 2 * m
+
+    return np.eye(m).ravel().tolist() + [
+        a[i, j] if i == j or j == i + 1 else 0 for i in range(m) for j in range(m)
+    ]
 
 
 solution_x_bdvalues = [
@@ -2813,5 +2915,23 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
         "lower_bounds": -5 * np.ones(100),
         "upper_bounds": 0.2 * 700 * np.ones(100),
+    },
+    "qr3d": {
+        "criterion": partial(qr3d, m=5),
+        "start_x": get_start_points_qr3d(5),
+        "solution_x": [np.nan] * 50,
+        "start_criterion": 1.2,
+        "solution_criterion": 0,
+        "lower_bounds": [-np.inf] * 25
+        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
+    },
+    "qr3dbd": {
+        "criterion": partial(qr3dbd, m=5),
+        "start_x": get_start_points_qr3d(5),
+        "solution_x": [np.nan] * 50,
+        "start_criterion": 1.2,
+        "solution_criterion": 0,
+        "lower_bounds": [-np.inf] * 25
+        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
     },
 }
