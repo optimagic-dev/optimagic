@@ -317,7 +317,7 @@ def test_tranquilo_with_noise_handling_and_noisy_function():
         criterion=_f,
         params=np.ones(3),
         algorithm="tranquilo",
-        algo_options={"noisy": True, "sample_size_factor": 5},
+        algo_options={"noisy": True, "n_evals_per_point": 5},
     )
 
     aaae(res.params, np.zeros(3), decimal=1)
@@ -334,7 +334,7 @@ def test_tranquilo_ls_with_noise_handling_and_noisy_function():
         criterion=_f,
         params=np.ones(3),
         algorithm="tranquilo",
-        algo_options={"noisy": True, "sample_size_factor": 5},
+        algo_options={"noisy": True, "n_evals_per_point": 5},
     )
 
     aaae(res.params, np.zeros(3), decimal=1)

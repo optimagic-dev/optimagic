@@ -12,7 +12,7 @@ def get_acceptance_sample_sizes(
         sd_1=sigma,
         sd_2=sigma,
         existing_n1=existing_n1,
-        minimal_effect_size=expected_improvement,
+        minimal_effect_size=np.clip(expected_improvement, 1e-8, np.inf),
         power_level=acceptance_options.power_level,
         significance_level=1 - acceptance_options.confidence_level,
     )

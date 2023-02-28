@@ -12,19 +12,17 @@ from estimagic.optimization.tranquilo.acceptance_sample_size import (
     get_acceptance_sample_sizes,
 )
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import Region
 
 
-def get_acceptance_decider(acceptance_decider, acceptance_options, sampler):
+def get_acceptance_decider(acceptance_decider, acceptance_options):
     func_dict = {
-        "classic": accept_classic,
+        "classic": _accept_classic,
         "naive_noisy": accept_naive_noisy,
         "noisy": accept_noisy,
     }
 
     default_options = {
         "acceptance_options": acceptance_options,
-        "sampler": sampler,
     }
 
     out = get_component(
@@ -37,10 +35,10 @@ def get_acceptance_decider(acceptance_decider, acceptance_options, sampler):
     return out
 
 
-def accept_classic(
+def _accept_classic(
     subproblem_solution,
     state,
-    acceptance_indices,
+    history,
     *,
     wrapped_criterion,
     acceptance_options,
@@ -51,70 +49,75 @@ def accept_classic(
         subproblem_solution (SubproblemResult): Result of the subproblem solution.
         state (State): Namedtuple containing the trustregion, criterion value of
             previously accepted point, indices of model points, etc.
-        acceptance_indices (dict): TODO.
         wrapped_criterion (callable): The criterion function.
-        acceptance_options (dict): Options for the acceptance step.
+        acceptance_options (AcceptanceOptions): Namedtuple containing the acceptance
+            options.
+
+    Returns:
+        AcceptanceResult
+
+    """
+    out = _accept_simple(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        history=history,
+        wrapped_criterion=wrapped_criterion,
+        acceptance_options=acceptance_options,
+        n_evals=1,
+    )
+    return out
+
+
+def accept_naive_noisy(
+    subproblem_solution,
+    state,
+    history,
+    *,
+    wrapped_criterion,
+    acceptance_options,
+):
+    """Do a naive noisy acceptance step, averaging over a fixed number of points."""
+    out = _accept_simple(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        history=history,
+        wrapped_criterion=wrapped_criterion,
+        acceptance_options=acceptance_options,
+        n_evals=acceptance_options.n_initial,
+    )
+    return out
+
+
+def _accept_simple(
+    subproblem_solution,
+    state,
+    history,
+    *,
+    wrapped_criterion,
+    acceptance_options,
+    n_evals,
+):
+    """Do a classic acceptance step for a trustregion algorithm.
+
+    Args:
+        subproblem_solution (SubproblemResult): Result of the subproblem solution.
+        state (State): Namedtuple containing the trustregion, criterion value of
+            previously accepted point, indices of model points, etc.
+        wrapped_criterion (callable): The criterion function.
+        acceptance_options (AcceptanceOptions): Namedtuple containing the acceptance
+            options.
 
     Returns:
         AcceptanceResult
 
     """
     candidate_x = subproblem_solution.x
-    _, candidate_fval, candidate_index = wrapped_criterion(candidate_x)
-    actual_improvement = -(candidate_fval - state.fval)
 
-    acceptance_indices[candidate_index] = [candidate_index]
+    candidate_index = history.add_xs(candidate_x)
 
-    rho = calculate_rho(
-        actual_improvement=actual_improvement,
-        expected_improvement=subproblem_solution.expected_improvement,
-    )
+    wrapped_criterion({candidate_index: n_evals})
 
-    is_accepted = actual_improvement >= acceptance_options.min_improvement
-
-    res = _get_acceptance_result(
-        candidate_x=candidate_x,
-        candidate_fval=candidate_fval,
-        candidate_index=candidate_index,
-        rho=rho,
-        is_accepted=is_accepted,
-        old_state=state,
-    )
-
-    return res, acceptance_indices
-
-
-def accept_naive_noisy(
-    subproblem_solution,
-    state,
-    rng,
-    acceptance_indices,
-    *,
-    sampler,
-    wrapped_criterion,
-    acceptance_options,
-):
-    """Do a naive noisy acceptance step, averaging over a fixed number of points."""
-    candidate_x = subproblem_solution.x
-    acceptance_region = Region(
-        center=candidate_x,
-        radius=state.trustregion.radius * acceptance_options.radius_factor,
-        shape=state.trustregion.shape,
-    )
-    sample = sampler(
-        trustregion=acceptance_region,
-        n_points=acceptance_options.n_initial,
-        rng=rng,
-    )
-
-    xs = np.vstack([candidate_x, sample])
-
-    _, _fvals, _indices = wrapped_criterion(xs)
-
-    candidate_fval = np.mean(_fvals)
-    candidate_index = _indices[0]
-
-    acceptance_indices[candidate_index] = list(_indices)
+    candidate_fval = np.mean(history.get_fvals(candidate_index))
 
     actual_improvement = -(candidate_fval - state.fval)
 
@@ -134,72 +137,38 @@ def accept_naive_noisy(
         old_state=state,
     )
 
-    return res, acceptance_indices
+    return res
 
 
 def accept_noisy(
     subproblem_solution,
     state,
-    rng,
-    acceptance_indices,
     noise_variance,
     history,
     *,
-    sampler,
     wrapped_criterion,
     acceptance_options,
 ):
-    # ==================================================================================
-    # Get additional sample sizes at currently accepted and candidate point
-    # ==================================================================================
+    candidate_x = subproblem_solution.x
+    candidate_index = history.add_xs(candidate_x)
+    existing_n1 = len(history.get_fvals(state.index))
+
     n_1, n_2 = get_acceptance_sample_sizes(
         sigma=np.sqrt(noise_variance),
-        existing_n1=len(acceptance_indices[state.index]),
+        existing_n1=existing_n1,
         expected_improvement=subproblem_solution.expected_improvement,
         acceptance_options=acceptance_options,
     )
 
-    acceptance_radius = state.trustregion.radius * acceptance_options.radius_factor
+    eval_info = {
+        state.index: n_1,
+        candidate_index: n_2,
+    }
 
-    # ==================================================================================
-    # Sample at currently accepted point if necessary
-    # ==================================================================================
-    if n_1 > 0:
-        sample_1 = sampler(
-            trustregion=state.trustregion._replace(radius=acceptance_radius),
-            n_points=n_1,
-            rng=rng,
-        )
-        _, _, _indices_1 = wrapped_criterion(sample_1)
+    wrapped_criterion(eval_info)
 
-        acceptance_indices[state.index] += list(_indices_1)
-
-    # ==================================================================================
-    # Sample at candidate point
-    # ==================================================================================
-    candidate_x = subproblem_solution.x
-    sample_2 = sampler(
-        trustregion=state.trustregion._replace(
-            center=candidate_x, radius=acceptance_radius
-        ),
-        n_points=n_2 - 1,
-        rng=rng,
-    )
-
-    xs = np.vstack([candidate_x, sample_2])
-
-    _, _, _indices_2 = wrapped_criterion(xs)
-
-    candidate_index = _indices_2[0]
-
-    acceptance_indices[candidate_index] = list(_indices_2)
-
-    # ==================================================================================
-    # Actual acceptance decision
-    # ==================================================================================
-
-    current_fval = history.get_fvals(acceptance_indices[state.index]).mean()
-    candidate_fval = history.get_fvals(acceptance_indices[candidate_index]).mean()
+    current_fval = history.get_fvals(state.index).mean()
+    candidate_fval = history.get_fvals(candidate_index).mean()
 
     actual_improvement = -(candidate_fval - current_fval)
 
@@ -219,7 +188,7 @@ def accept_noisy(
         old_state=state,
     )
 
-    return res, acceptance_indices
+    return res
 
 
 class AcceptanceResult(NamedTuple):

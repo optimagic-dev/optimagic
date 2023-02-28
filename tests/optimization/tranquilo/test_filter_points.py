@@ -46,7 +46,6 @@ def basic_case():
     trustregion = Region(radius=radius, center=x_accepted, shape="sphere")
 
     state = State(
-        safety=False,
         trustregion=trustregion,
         model_indices=None,
         model=None,

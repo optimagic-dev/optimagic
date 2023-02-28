@@ -44,12 +44,14 @@ class History:
             np.ndarray: 1d array with indices of the added xs.
 
         """
+        is_single = np.ndim(xs) == 1
+
         xs = np.atleast_2d(xs)
 
         n_new_points = len(xs) if xs.size != 0 else 0
 
         if n_new_points == 0:
-            return
+            return []
 
         self.xs = _add_entries_to_array(self.xs, xs, self.n_xs)
 
@@ -59,6 +61,9 @@ class History:
             self.index_mapper[x_index] = []
 
         self.n_xs += n_new_points
+
+        if is_single:
+            x_indices = x_indices[0]
 
         return x_indices
 
@@ -117,7 +122,10 @@ class History:
             np.ndarray: 1d or 2d array with parameter vectors
 
         """
-        out = self.xs[: self.n_fun]
+        if isinstance(x_indices, np.ndarray):
+            x_indices = x_indices.astype(int)
+
+        out = self.xs[: self.n_xs]
         out = out[x_indices] if x_indices is not None else out
 
         return out
@@ -289,6 +297,9 @@ def _extract_from_indices(arr, mapper, x_indices, n_xs):
             returned.
 
     """
+    if isinstance(x_indices, np.ndarray):
+        x_indices = x_indices.astype(int)
+
     is_single = np.isscalar(x_indices)
     if is_single:
         x_indices = [x_indices]
@@ -298,6 +309,6 @@ def _extract_from_indices(arr, mapper, x_indices, n_xs):
     out = {i: arr[mapper[i]] for i in indices}
 
     if is_single:
-        out = out[0]
+        out = out[x_indices[0]]
 
     return out

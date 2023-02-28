@@ -21,6 +21,7 @@ from estimagic.optimization.tranquilo.models import (
     ScalarModel,
     n_free_params,
 )
+from estimagic.optimization.tranquilo.new_history import History
 from estimagic.optimization.tranquilo.options import (
     AcceptanceOptions,
     Bounds,
@@ -32,8 +33,6 @@ from estimagic.optimization.tranquilo.options import (
 )
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
-from estimagic.optimization.tranquilo.tranquilo_history import History
-from estimagic.optimization.tranquilo.weighting import get_sample_weighter
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 
 
@@ -56,7 +55,6 @@ def _tranquilo(
     surrogate_model=None,
     radius_options=None,
     sampler_options=None,
-    weighter="no_weights",
     fit_options=None,
     solver_options=None,
     conv_options=None,
@@ -69,10 +67,11 @@ def _tranquilo(
     sample_size_factor=None,
     acceptance_decider=None,
     acceptance_options=None,
-    variance_estimator="unweighted",
+    variance_estimator="classic",
     variance_estimation_options=None,
     trustregion_shape=None,
     stagnation_options=None,
+    n_evals_per_point=1,
 ):
     """Find the local minimum to a noisy optimization problem.
 
@@ -141,7 +140,6 @@ def _tranquilo(
     # ==================================================================================
 
     sampling_rng = np.random.default_rng(random_seed)
-    acceptance_rng = np.random.default_rng(random_seed + 1)
 
     if radius_options is None:
         radius_options = RadiusOptions()
@@ -168,7 +166,7 @@ def _tranquilo(
     if subsolver is None:
         subsolver = "bntr_fast" if trustregion_shape == "cube" else "gqtpar_fast"
 
-    sampling_budget = _process_sample_size(
+    target_sample_size = _process_sample_size(
         user_sample_size=sample_size,
         model_info=model_info,
         x=x,
@@ -210,10 +208,9 @@ def _tranquilo(
     # ==================================================================================
 
     history = History(functype=functype)
+    history.add_xs(x)
 
-    acceptance_indices = {}
-
-    wrapped_criterion = get_wrapped_criterion(
+    evaluate_criterion = get_wrapped_criterion(
         criterion=criterion,
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
@@ -248,8 +245,6 @@ def _tranquilo(
         bounds=bounds,
     )
 
-    calculate_weights = get_sample_weighter(weighter, bounds=bounds)
-
     clip_infinite_values = get_infinity_handler(infinity_handling)
 
     estimate_variance = get_variance_estimator(
@@ -260,57 +255,29 @@ def _tranquilo(
     # initialize the optimizer state
     # ==================================================================================
 
-    if noisy:
-        acceptance_sampler = get_sampler(
-            sampler=acceptance_options.sampler,
-            bounds=bounds,
-        )
-    else:
-        acceptance_sampler = None
-
     acceptance_decider = get_acceptance_decider(
         acceptance_decider=acceptance_decider,
         acceptance_options=acceptance_options,
-        sampler=acceptance_sampler,
     )
 
-    if noisy:
-        _acceptance_region = Region(
-            center=x,
-            radius=radius_options.initial_radius * acceptance_options.radius_factor,
-            shape=trustregion_shape,
-        )
-        _acceptance_sample = acceptance_sampler(
-            trustregion=_acceptance_region,
-            n_points=acceptance_options.n_initial,
-            rng=acceptance_rng,
-        )
+    eval_info = {0: acceptance_options.n_initial} if noisy else {0: n_evals_per_point}
 
-        _first_xs = np.vstack([x, _acceptance_sample])
-        _, _first_fvals, _first_indices = wrapped_criterion(_first_xs)
-        _first_fval = np.mean(_first_fvals, axis=0)
-
-        acceptance_indices[0] = list(_first_indices)
-
-    else:
-        _, _first_fval, _first_indices = wrapped_criterion(x)
-        acceptance_indices[0] = [0]
+    evaluate_criterion(eval_info)
 
     state = State(
-        safety=False,
         trustregion=Region(
             center=x, radius=radius_options.initial_radius, shape=trustregion_shape
         ),
-        model_indices=_first_indices,
+        model_indices=[0],
         model=None,
         index=0,
         x=x,
-        fval=_first_fval,
+        fval=np.mean(history.get_fvals(0)),
         rho=np.nan,
         accepted=True,
-        new_indices=_first_indices,
-        old_indices_discarded=_first_indices,
-        old_indices_used=_first_indices,
+        new_indices=[0],
+        old_indices_discarded=[],
+        old_indices_used=[],
         candidate_index=0,
         candidate_x=x,
     )
@@ -331,7 +298,7 @@ def _tranquilo(
             search_options=history_search_options,
         )
 
-        old_indices = history.get_indices_in_region(search_region)
+        old_indices = history.get_x_indices_in_region(search_region)
 
         old_xs = history.get_xs(old_indices)
 
@@ -339,31 +306,38 @@ def _tranquilo(
             xs=old_xs,
             indices=old_indices,
             state=state,
-            target_size=sampling_budget,
+            target_size=target_sample_size,
         )
 
         # ==========================================================================
-        # sample points if necessary and do naive iteration
+        # sample points if necessary and do simple iteration
         # ==========================================================================
         new_xs = sample_points(
             trustregion=state.trustregion,
-            n_points=max(0, sampling_budget - len(model_xs)),
+            n_points=max(0, target_sample_size - len(model_xs)),
             existing_xs=model_xs,
             rng=sampling_rng,
         )
 
-        _, _, new_indices = wrapped_criterion(new_xs)
-        model_indices = np.hstack([model_indices, new_indices])
+        new_indices = history.add_xs(new_xs)
+
+        eval_info = {i: n_evals_per_point for i in new_indices}
+
+        evaluate_criterion(eval_info)
+
+        model_indices = _concatenate_indices(model_indices, new_indices)
+
         model_xs = history.get_xs(model_indices)
-        model_fvecs = history.get_fvecs(model_indices)
-
-        weights = calculate_weights(model_xs, trustregion=state.trustregion)
-
-        centered_xs = (model_xs - state.trustregion.center) / state.trustregion.radius
+        centered_xs, model_fvecs = history.get_model_data(
+            x_indices=model_indices,
+            region=state.trustregion,
+            scale=True,
+            average=True,
+        )
 
         clipped_fvecs = clip_infinite_values(model_fvecs)
 
-        vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
+        vector_model = fit_model(centered_xs, clipped_fvecs, weights=None)
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,
@@ -380,12 +354,12 @@ def _tranquilo(
         # becomes large enough
         # ==========================================================================
 
-        if len(model_xs) > sampling_budget:
+        if len(model_xs) > target_sample_size:
             small_step = (
                 _relative_step_length < stagnation_options.min_relative_step_keep
             )
 
-            while small_step and len(model_xs) > sampling_budget:
+            while small_step and len(model_xs) > target_sample_size:
                 model_xs, model_indices = drop_worst_points(
                     xs=model_xs,
                     indices=model_indices,
@@ -393,15 +367,16 @@ def _tranquilo(
                     n_to_drop=1,
                 )
 
-                model_fvecs = history.get_fvecs(model_indices)
-
-                centered_xs = (
-                    model_xs - state.trustregion.center
-                ) / state.trustregion.radius
+                centered_xs, model_fvecs = history.get_model_data(
+                    x_indices=model_indices,
+                    region=state.trustregion,
+                    scale=True,
+                    average=True,
+                )
 
                 clipped_fvecs = clip_infinite_values(model_fvecs)
 
-                vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
+                vector_model = fit_model(centered_xs, clipped_fvecs, weights=None)
 
                 scalar_model = aggregate_vector_model(
                     vector_model=vector_model,
@@ -436,20 +411,24 @@ def _tranquilo(
                 rng=sampling_rng,
             )
 
-            _, _, new_indices = wrapped_criterion(new_xs)
-            model_indices = np.hstack([model_indices, new_indices])
+            new_indices = history.add_xs(new_xs)
+
+            eval_info = {i: n_evals_per_point for i in new_indices}
+
+            evaluate_criterion(eval_info)
+
+            model_indices = _concatenate_indices(model_indices, new_indices)
             model_xs = history.get_xs(model_indices)
-            model_fvecs = history.get_fvecs(model_indices)
-
-            weights = calculate_weights(model_xs, trustregion=state.trustregion)
-
-            centered_xs = (
-                model_xs - state.trustregion.center
-            ) / state.trustregion.radius
+            centered_xs, model_fvecs = history.get_model_data(
+                x_indices=model_indices,
+                region=state.trustregion,
+                scale=True,
+                average=True,
+            )
 
             clipped_fvecs = clip_infinite_values(model_fvecs)
 
-            vector_model = fit_model(centered_xs, clipped_fvecs, weights=weights)
+            vector_model = fit_model(centered_xs, clipped_fvecs, weights=None)
 
             scalar_model = aggregate_vector_model(
                 vector_model=vector_model,
@@ -473,10 +452,9 @@ def _tranquilo(
 
         if noisy:
             scalar_noise_variance = estimate_variance(
+                trustregion=state.trustregion,
                 history=history,
-                states=states,
                 model_type="scalar",
-                acceptance_indices=acceptance_indices,
             )
         else:
             scalar_noise_variance = None
@@ -485,12 +463,10 @@ def _tranquilo(
         # acceptance decision
         # ==============================================================================
 
-        acceptance_result, acceptance_indices = acceptance_decider(
+        acceptance_result = acceptance_decider(
             subproblem_solution=sub_sol,
             state=state,
-            wrapped_criterion=wrapped_criterion,
-            rng=acceptance_rng,
-            acceptance_indices=acceptance_indices,
+            wrapped_criterion=evaluate_criterion,
             noise_variance=scalar_noise_variance,
             history=history,
         )
@@ -556,9 +532,6 @@ def _tranquilo(
 
 
 class State(NamedTuple):
-    safety: bool
-    """Whether this is a safety iteration."""
-
     trustregion: Region
     """The trustregion at the beginning of the iteration."""
 
@@ -761,3 +734,9 @@ def _get_search_region(trustregion, search_options):
     search_radius = radius_factor * trustregion.radius
 
     return trustregion._replace(radius=search_radius)
+
+
+def _concatenate_indices(first, second):
+    first = np.atleast_1d(first).astype(int)
+    second = np.atleast_1d(second).astype(int)
+    return np.hstack((first, second))
