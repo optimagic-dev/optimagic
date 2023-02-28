@@ -541,11 +541,19 @@ def eigen(x, param):
     dim_in = int(np.sqrt(len(x) + 0.25))
     dvec = x[:dim_in]
     qmat = x[dim_in:].reshape(dim_in, dim_in)
-
     emat = qmat @ np.diag(dvec) @ qmat - param
     omat = qmat @ qmat - np.eye(dim_in)
-
     return np.concatenate([emat.flatten(), omat.flatten()])
+
+
+def powell_singular(x):
+    dim_in = len(x)
+    fvec = np.zeros(dim_in)
+    fvec[::4] = x[::4] + 10 * x[1::4]
+    fvec[1::4] = 5 * (x[2::4] - x[3::4])
+    fvec[2::4] = (x[1::4] - 2 * x[2::4]) ** 2
+    fvec[3::4] = 10 * (x[0::4] - x[3::4]) ** 2
+    return fvec
 
 
 # =====================================================================================
@@ -2960,6 +2968,13 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
         "solution_x": [np.nan] * 110,
         "start_criterion": 19,
+        "solution_criterion": 0,
+    },
+    "powellse": {
+        "criterion": powell_singular,
+        "start_x": [3.0, -1.0, 0.0, 1] * 25,
+        "solution_x": [np.nan] * 100,
+        "start_criterion": 41875,
         "solution_criterion": 0,
     },
 }
