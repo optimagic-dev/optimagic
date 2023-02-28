@@ -537,6 +537,17 @@ def qr3dbd(x, m=5):
     return fvec
 
 
+def eigen(x, param):
+    dim_in = int(np.sqrt(len(x) + 0.25))
+    dvec = x[:dim_in]
+    qmat = x[dim_in:].reshape(dim_in, dim_in)
+
+    emat = qmat @ np.diag(dvec) @ qmat - param
+    omat = qmat @ qmat - np.eye(dim_in)
+
+    return np.concatenate([emat.flatten(), omat.flatten()])
+
+
 # =====================================================================================
 
 
@@ -2933,5 +2944,22 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
         "lower_bounds": [-np.inf] * 25
         + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
+    },
+    "eigena": {
+        "criterion": partial(eigen, param=np.diag(np.arange(1, 11))),
+        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
+        "solution_x": [np.nan] * 110,
+        "start_criterion": 285,
+        "solution_criterion": 0,
+        "lower_bounds": np.zeros(110),
+    },
+    "eigenb": {
+        "criterion": partial(
+            eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)
+        ),
+        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
+        "solution_x": [np.nan] * 110,
+        "start_criterion": 19,
+        "solution_criterion": 0,
     },
 }
