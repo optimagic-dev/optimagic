@@ -556,6 +556,184 @@ def powell_singular(x):
     return fvec
 
 
+def hydcar(
+    x_in,
+    n,
+    m,
+    k,
+    avec,
+    bvec,
+    cvec,
+    al,
+    al_,
+    al__,
+    be,
+    be_,
+    be__,
+    fl,
+    fv,
+    tf,
+    b,
+    d,
+    q,
+    pi,
+):
+    x = x_in[: (n * m)].reshape((n, m))
+    t = x_in[(n * m) : 4 * n]
+    v = x_in[4 * n :]
+
+    invpi = 1 / pi
+
+    fvec1 = np.zeros(m)
+    fvec3 = np.zeros(m)
+    fvec2 = np.zeros((n - 2, m))
+    fvec7 = np.zeros(n)
+    fvec8 = 0
+    fvec9 = np.zeros(n - 2)
+
+    # 1. linear elements
+    for j in range(m):
+        fvec1[j] += x[0, j] * b
+        fvec3[j] += -x[n - 1, j]
+
+    # 2. add non-linear elements
+    for j in range(m):
+        fvec1[j] += -1 * x[1, j] * (v[0] + b)  # e11
+        fvec1[j] += (
+            v[0] * x[0, j] * invpi[0] * np.exp(avec[j] + (bvec[j] / (t[0] + cvec[j])))
+        )  # e12
+        fvec3[j] += (
+            x[n - 2, j]
+            * invpi[n - 2]
+            * np.exp(avec[j] + (bvec[j] / (t[n - 2] + cvec[j])))  # e31
+        )
+
+        fvec8 += (
+            (
+                v[0]
+                * x[0, j]
+                * invpi[0]
+                * np.exp(avec[j] + (bvec[j] / (t[0] + cvec[j])))
+                * (be[j] + be_[j] * t[0] + be__[j] * t[0] * t[0])
+            )
+            + b * x[0, j] * (al[j] + al_[j] * t[0] + al__[j] * t[0] * t[0])
+            - x[1, j] * (b + v[0]) * (al[j] + al_[j] * t[1] + al__[j] * t[1] * t[1])
+        )
+
+        for i in range(1, n - 1):
+            fvec2[i - 1, j] += (
+                v[i - 1]
+                * x[i - 1, j]
+                * (-1)
+                * invpi[i - 1]
+                * np.exp(avec[j] + (bvec[j] / (t[i - 1] + cvec[j])))
+            )  # e22
+            fvec2[i - 1, j] += (
+                v[i]
+                * x[i, j]
+                * 1
+                * invpi[i]
+                * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
+            )  # e24
+
+            fvec9[i - 1] += (
+                v[i]
+                * x[i, j]
+                * 1
+                * invpi[i]
+                * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
+                * (be[j] + be_[j] * t[i] + be__[j] * t[i] * t[i])
+            )  # e91
+            fvec9[i - 1] += (
+                v[i - 1]
+                * x[i - 1, j]
+                * (-1)
+                * invpi[i - 1]
+                * np.exp(avec[j] + (bvec[j] / (t[i - 1] + cvec[j])))
+                * (be[j] + be_[j] * t[i - 1] + be__[j] * t[i - 1] * t[i - 1])
+            )  # e93
+
+        for i in range(n):
+            fvec7[i] += (
+                x[i, j] * 1 * invpi[i] * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
+            )
+
+    for j in range(m):
+        for i in range(1, k):
+            fvec2[i - 1, j] += -1 * x[i + 1, j] * (v[i] + b)  # e21
+            fvec2[i - 1, j] += x[i, j] * (v[i - 1] + b)  # e23
+
+        fvec2[k - 1, j] += -1 * x[k + 1, j] * (v[k] - d)  # e21
+        fvec2[k - 1, j] += x[k, j] * (v[k - 1] + b)  # e23
+
+        for i in range(k + 1, n - 1):
+            fvec2[i - 1, j] += -1 * x[i + 1, j] * (v[i] - d)  # e21
+            fvec2[i - 1, j] += x[i, j] * (v[i - 1] - d)  # e23
+
+    #
+    for j in range(m):
+        for i in range(1, k):
+            fvec9[i - 1] += (
+                1
+                * x[i, j]
+                * (v[i - 1] + b)
+                * (al[j] + al_[j] * t[i] + al__[j] * t[i] * t[i])
+            )  # e92
+            fvec9[i - 1] += (
+                (-1)
+                * x[i + 1, j]
+                * (v[i] + b)
+                * (al[j] + al_[j] * t[i + 1] + al__[j] * t[i + 1] * t[i + 1])
+            )  # e94
+
+        fvec9[k - 1] += (
+            1
+            * x[k, j]
+            * (v[k - 1] + b)
+            * (al[j] + al_[j] * t[i] + al__[j] * t[k] * t[k])
+        )  # e92
+        fvec9[k - 1] += (
+            (-1)
+            * x[k + 1, j]
+            * (v[k] - d)
+            * (al[j] + al_[j] * t[k + 1] + al__[j] * t[k + 1] * t[k + 1])
+        )  # e94
+
+        for i in range(k + 1, n - 1):
+            fvec9[i - 1] += (
+                1
+                * x[i, j]
+                * (v[i - 1] - d)
+                * (al[j] + al_[j] * t[i] + al__[j] * t[i] * t[i])
+            )  # e92
+            fvec9[i - 1] += (
+                (-1)
+                * x[i + 1, j]
+                * (v[i] - d)
+                * (al[j] + al_[j] * t[i + 1] + al__[j] * t[i + 1] * t[i + 1])
+            )  # e94
+
+    smallhf = 0
+    bighf = 0
+    for j in range(m):
+        fvec2[k - 1, j] -= fl[j]
+        fvec2[k, j] -= fv[j]
+        smallhf += (tf * tf * al__[j] + tf * al_[j] + al[j]) * fl[j]
+        bighf += (tf * tf * be__[j] + tf * be_[j] + be[j]) * fv[j]
+    fvec7 -= 1
+    fvec8 -= q
+    fvec9[k - 1] -= smallhf
+    fvec9[k] -= bighf
+
+    fvec1 *= 1e-2
+    fvec2 *= 1e-2
+
+    fvec8 *= 1e-5
+    fvec9 *= 1e-5
+
+    return np.concatenate([fvec1, fvec3, fvec2.flatten(), fvec7, [fvec8], fvec9])
+
+
 # =====================================================================================
 
 
@@ -1094,6 +1272,210 @@ def get_start_points_qr3d(m):
     return np.eye(m).ravel().tolist() + [
         a[i, j] if i == j or j == i + 1 else 0 for i in range(m) for j in range(m)
     ]
+
+
+def get_start_points_hydcar20():
+    x = [
+        0.0,
+        0.3,
+        0.1,
+        0.0,
+        0.3,
+        0.9,
+        0.01,
+        0.3,
+        0.9,
+        0.02,
+        0.4,
+        0.8,
+        0.05,
+        0.4,
+        0.8,
+        0.07,
+        0.45,
+        0.8,
+        0.09,
+        0.5,
+        0.7,
+        0.1,
+        0.5,
+        0.7,
+        0.15,
+        0.5,
+        0.6,
+        0.2,
+        0.5,
+        0.6,
+        0.25,
+        0.6,
+        0.5,
+        0.3,
+        0.6,
+        0.5,
+        0.35,
+        0.6,
+        0.5,
+        0.4,
+        0.6,
+        0.4,
+        0.4,
+        0.7,
+        0.4,
+        0.42,
+        0.7,
+        0.3,
+        0.45,
+        0.75,
+        0.3,
+        0.45,
+        0.75,
+        0.2,
+        0.5,
+        0.8,
+        0.1,
+        0.5,
+        0.8,
+        0.0,
+    ]
+    return x + [100] * 20 + [300] * 19
+
+
+def get_start_points_hydcar6():
+    x = [
+        0.0,
+        0.2,
+        0.9,
+        0.0,
+        0.2,
+        0.8,
+        0.05,
+        0.3,
+        0.8,
+        0.1,
+        0.3,
+        0.6,
+        0.3,
+        0.5,
+        0.3,
+        0.6,
+        0.6,
+        0.0,
+    ]
+    return x + [100] * 6 + [300] * 5
+
+
+def get_start_points_methanb8():
+    return [
+        0.09203,
+        0.908,
+        0.1819,
+        0.8181,
+        0.284,
+        0.716,
+        0.3051,
+        0.6949,
+        0.3566,
+        0.6434,
+        0.468,
+        0.532,
+        0.6579,
+        0.3421,
+        0.8763,
+        0.1237,
+        107.47,
+        102.4,
+        97.44,
+        96.3,
+        93.99,
+        89.72,
+        83.71,
+        78.31,
+        886.37,
+        910.01,
+        922.52,
+        926.46,
+        935.56,
+        952.83,
+        975.73,
+    ]
+
+
+def get_start_points_methanl8():
+    return [
+        0.09203,
+        0.908,
+        0.1819,
+        0.8181,
+        0.284,
+        0.716,
+        0.3051,
+        0.6949,
+        0.3566,
+        0.6434,
+        0.468,
+        0.532,
+        0.6579,
+        0.3421,
+        0.8763,
+        0.1237,
+        120.0,
+        110.0,
+        100.0,
+        88.0,
+        86.0,
+        84.0,
+        80.0,
+        76.0,
+        886.37,
+        910.01,
+        922.52,
+        926.46,
+        935.56,
+        952.83,
+        975.73,
+    ]
+
+
+def get_constants_hydcar(n):
+    return {
+        "avec": [9.647, 9.953, 9.466],
+        "bvec": [-2998, -3448.10, -3347.25],
+        "cvec": [230.66, 235.88, 215.31],
+        "al": [0, 0, 0],
+        "al_": [37.6, 48.2, 45.4],
+        "al__": [0, 0, 0],
+        "be": [8425, 9395, 10466],
+        "be_": [24.2, 35.6, 31.9],
+        "be__": [0, 0, 0],
+        "fl": [30, 30, 40],
+        "fv": [0, 0, 0],
+        "tf": 100,
+        "b": 40,
+        "d": 60,
+        "q": 2500000,
+        "pi": np.ones(n),
+    }
+
+
+def get_constants_methane():
+    return {
+        "avec": [18.5751, 18.3443],
+        "bvec": [-3632.649, -3841.2203],
+        "cvec": [239.2, 228],
+        "al": [0, 0],
+        "al_": [15.97, 18.1],
+        "al__": [0.0422, 0],
+        "be": [9566.67, 10834.67],
+        "be_": [-1.59, 8.74],
+        "be__": [0.0422, 0],
+        "fl": [451.25, 684.25],
+        "fv": [0, 0],
+        "tf": 89,
+        "b": 693.37,
+        "d": 442.13,
+        "q": 28386200,
+        "pi": np.array([1210, 1200, 1190, 1180, 1170, 1160, 1150, 1140]),
+    }
 
 
 solution_x_bdvalues = [
@@ -2975,6 +3357,20 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_x": [3.0, -1.0, 0.0, 1] * 25,
         "solution_x": [np.nan] * 100,
         "start_criterion": 41875,
+        "solution_criterion": 0,
+    },
+    "hydcar20": {
+        "criterion": partial(hydcar, n=20, m=3, k=9, **get_constants_hydcar(20)),
+        "start_x": get_start_points_hydcar20(),
+        "solution_x": [np.nan] * 99,
+        "start_criterion": 1341.663,
+        "solution_criterion": 0,
+    },
+    "hydcar6": {
+        "criterion": partial(hydcar, n=6, m=3, k=2, **get_constants_hydcar(6)),
+        "start_x": get_start_points_hydcar6(),
+        "solution_x": [np.nan] * 99,
+        "start_criterion": 704.1073,
         "solution_criterion": 0,
     },
 }
