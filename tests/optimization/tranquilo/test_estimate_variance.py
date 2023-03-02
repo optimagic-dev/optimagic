@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from estimagic.optimization.tranquilo.estimate_variance import (
     _estimate_variance_classic,
 )
@@ -7,7 +8,8 @@ from estimagic.optimization.tranquilo.tranquilo import Region
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-def test_estimate_variance_classic():
+@pytest.mark.parametrize("model_type", ["scalar", "vector"])
+def test_estimate_variance_classic(model_type):
     xs = np.array(
         [
             [0.0, 0.0],  # center with multiple evaluations
@@ -29,11 +31,14 @@ def test_estimate_variance_classic():
     got = _estimate_variance_classic(
         trustregion=Region(center=np.array([0.0, 0.0]), radius=1.0, shape="sphere"),
         history=history,
-        model_type="scalar",
+        model_type=model_type,
         max_distance_factor=1.0,
         min_n_evals=4,
     )
 
-    expected = np.var(evals[:5], ddof=1)
+    if model_type == "scalar":
+        expected = np.var(evals[:5], ddof=1)
+    else:
+        expected = np.var(evals[:5], ddof=1).reshape(1, 1)
 
     aaae(got, expected)

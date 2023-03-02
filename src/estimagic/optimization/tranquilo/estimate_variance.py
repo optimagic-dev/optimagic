@@ -49,17 +49,17 @@ def _estimate_variance_classic(
     weights = np.array([n_ for idx, n_ in n_evals.items() if idx in valid_indices])
     weights = weights / weights.sum()
 
-    samples = list(history.get_fvecs(valid_indices).values())
-
-    dim = samples[0].shape[1]
-
-    cov = np.zeros((dim, dim))
-    for weight, sample in zip(weights, samples):
-        cov += weight * np.cov(sample, rowvar=False, ddof=1)
-
     if model_type == "scalar":
-        out = cov[0, 0]
+        samples = list(history.get_fvals(valid_indices).values())
+        out = 0.0
+        for weight, sample in zip(weights, samples):
+            out += weight * np.var(sample, ddof=1)
     else:
-        out = cov
+        samples = list(history.get_fvecs(valid_indices).values())
+
+        dim = samples[0].shape[1]
+        out = np.zeros((dim, dim))
+        for weight, sample in zip(weights, samples):
+            out += weight * np.cov(sample, rowvar=False, ddof=1)
 
     return out
