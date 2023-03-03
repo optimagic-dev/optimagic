@@ -24,6 +24,7 @@ def test_predict_scalar():
         intercept=1.0,
         linear_terms=np.arange(2),
         square_terms=(np.arange(4) + 1).reshape(2, 2),
+        region=None,
     )
     x = np.array([[0, 0], [0, 1], [1, 0], [1, 2]])
     exp = np.array([1, 4, 1.5, 16.5])
@@ -36,6 +37,7 @@ def test_predict_vector():
         intercepts=1 + np.arange(3),
         linear_terms=np.arange(6).reshape(3, 2),
         square_terms=(np.arange(3 * 2 * 2) + 1).reshape(3, 2, 2),
+        region=None,
     )
     x = np.array([[0, 0], [0, 1], [1, 0], [1, 2]], dtype=float)
     exp = np.array(

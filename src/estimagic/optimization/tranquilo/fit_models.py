@@ -79,6 +79,8 @@ def get_fitter(fitter, user_options=None, model_info=None):
 def _fitter_template(
     x,
     y,
+    region,  # noqa: ARG001
+    old_model,  # noqa: ARG001
     weights=None,
     fitter=None,
     model_info=None,

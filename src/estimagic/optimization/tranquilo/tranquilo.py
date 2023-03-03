@@ -337,7 +337,13 @@ def _tranquilo(
 
         clipped_fvecs = clip_infinite_values(model_fvecs)
 
-        vector_model = fit_model(centered_xs, clipped_fvecs, weights=None)
+        vector_model = fit_model(
+            centered_xs,
+            clipped_fvecs,
+            region=state.trustregion,
+            old_model=state.model,
+            weights=None,
+        )
 
         scalar_model = aggregate_vector_model(
             vector_model=vector_model,
@@ -376,7 +382,13 @@ def _tranquilo(
 
                 clipped_fvecs = clip_infinite_values(model_fvecs)
 
-                vector_model = fit_model(centered_xs, clipped_fvecs, weights=None)
+                vector_model = fit_model(
+                    centered_xs,
+                    clipped_fvecs,
+                    region=state.trustregion,
+                    old_model=state.model,
+                    weights=None,
+                )
 
                 scalar_model = aggregate_vector_model(
                     vector_model=vector_model,
@@ -428,7 +440,13 @@ def _tranquilo(
 
             clipped_fvecs = clip_infinite_values(model_fvecs)
 
-            vector_model = fit_model(centered_xs, clipped_fvecs, weights=None)
+            vector_model = fit_model(
+                centered_xs,
+                clipped_fvecs,
+                region=state.trustregion,
+                old_model=state.model,
+                weights=None,
+            )
 
             scalar_model = aggregate_vector_model(
                 vector_model=vector_model,
