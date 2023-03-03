@@ -146,7 +146,10 @@ def _tranquilo(
     if sampler_options is None:
         sampler_options = {}
     if fit_options is None:
-        fit_options = {}
+        if functype == "scalar":
+            fit_options = {"residualize": True}
+        else:
+            fit_options = {}
     if solver_options is None:
         solver_options = {}
 
@@ -174,7 +177,10 @@ def _tranquilo(
     )
 
     if fitter is None:
-        fitter = "ols"
+        if functype == "scalar":
+            fitter = "tranquilo"
+        else:
+            fitter = "ols"
 
     if functype == "scalar":
         aggregator = "identity"
