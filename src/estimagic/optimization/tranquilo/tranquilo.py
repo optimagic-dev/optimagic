@@ -326,16 +326,14 @@ def _tranquilo(
         model_indices = _concatenate_indices(model_indices, new_indices)
 
         model_xs = history.get_xs(model_indices)
-        centered_xs, model_fvecs = history.get_model_data(
+        model_data = history.get_model_data(
             x_indices=model_indices,
             region=state.trustregion,
-            scale=True,
             average=True,
         )
 
         vector_model = fit_model(
-            centered_xs,
-            model_fvecs,
+            *model_data,
             region=state.trustregion,
             old_model=state.model,
             weights=None,
@@ -369,16 +367,14 @@ def _tranquilo(
                     n_to_drop=1,
                 )
 
-                centered_xs, model_fvecs = history.get_model_data(
+                model_data = history.get_model_data(
                     x_indices=model_indices,
                     region=state.trustregion,
-                    scale=True,
                     average=True,
                 )
 
                 vector_model = fit_model(
-                    centered_xs,
-                    model_fvecs,
+                    *model_data,
                     region=state.trustregion,
                     old_model=state.model,
                     weights=None,
@@ -425,16 +421,14 @@ def _tranquilo(
 
             model_indices = _concatenate_indices(model_indices, new_indices)
             model_xs = history.get_xs(model_indices)
-            centered_xs, model_fvecs = history.get_model_data(
+            model_data = history.get_model_data(
                 x_indices=model_indices,
                 region=state.trustregion,
-                scale=True,
                 average=True,
             )
 
             vector_model = fit_model(
-                centered_xs,
-                model_fvecs,
+                *model_data,
                 region=state.trustregion,
                 old_model=state.model,
                 weights=None,

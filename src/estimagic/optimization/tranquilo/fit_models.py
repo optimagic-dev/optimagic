@@ -85,7 +85,7 @@ def get_fitter(
 def _fitter_template(
     x,
     y,
-    region,  # noqa: ARG001
+    region,
     old_model,  # noqa: ARG001
     weights=None,
     fitter=None,
@@ -113,8 +113,9 @@ def _fitter_template(
     n_residuals = y.shape[1]
 
     y_clipped = clip_infinite_values(y)
+    x_centered = (x - region.center) / region.radius
 
-    coef = fitter(x=x, y=y_clipped, weights=weights)
+    coef = fitter(x=x_centered, y=y_clipped, weights=weights)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)

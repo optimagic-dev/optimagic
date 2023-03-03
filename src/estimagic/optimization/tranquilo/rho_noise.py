@@ -65,7 +65,7 @@ def simulate_rho_noise(
     for draw in noise:
         sim_fvecs = true_fvecs + draw
         sim_vector_model = model_fitter(
-            centered_xs,
+            xs,
             sim_fvecs,
             weights=None,
             region=trustregion,
