@@ -18,6 +18,7 @@ from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import (
     ModelInfo,
     ScalarModel,
+    VectorModel,
     n_free_params,
 )
 from estimagic.optimization.tranquilo.new_history import History
@@ -262,12 +263,24 @@ def _tranquilo(
 
     evaluate_criterion(eval_info)
 
+    _init_fvec = history.get_fvecs(0).mean(axis=0)
+    _init_radius = radius_options.initial_radius * np.max(np.abs(x))
+    _init_region = Region(center=x, radius=_init_radius, shape=trustregion_shape)
+
+    _init_vector_model = VectorModel(
+        intercepts=_init_fvec,
+        linear_terms=np.zeros((len(_init_fvec), len(x))),
+        square_terms=np.zeros((len(_init_fvec), len(x), len(x))),
+        region=_init_region,
+    )
+
+    _init_model = aggregate_vector_model(_init_vector_model)
+
     state = State(
-        trustregion=Region(
-            center=x, radius=radius_options.initial_radius, shape=trustregion_shape
-        ),
+        trustregion=_init_region,
         model_indices=[0],
-        model=None,
+        model=_init_model,
+        vector_model=_init_vector_model,
         index=0,
         x=x,
         fval=np.mean(history.get_fvals(0)),
@@ -334,7 +347,7 @@ def _tranquilo(
         vector_model = fit_model(
             *model_data,
             region=state.trustregion,
-            old_model=state.model,
+            old_model=state.vector_model,
             weights=None,
         )
 
@@ -374,7 +387,7 @@ def _tranquilo(
                 vector_model = fit_model(
                     *model_data,
                     region=state.trustregion,
-                    old_model=state.model,
+                    old_model=state.vector_model,
                     weights=None,
                 )
 
@@ -427,7 +440,7 @@ def _tranquilo(
             vector_model = fit_model(
                 *model_data,
                 region=state.trustregion,
-                old_model=state.model,
+                old_model=state.vector_model,
                 weights=None,
             )
 
@@ -551,6 +564,8 @@ class State(NamedTuple):
     `State.candidate_x`.
 
     """
+
+    vector_model: VectorModel
 
     # candidate information
     candidate_index: int

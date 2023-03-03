@@ -9,6 +9,8 @@ from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handle
 from estimagic.optimization.tranquilo.models import (
     ModelInfo,
     VectorModel,
+    add_models,
+    move_model,
     n_interactions,
     n_second_order_terms,
 )
@@ -43,6 +45,8 @@ def get_fitter(
     if model_info is None:
         model_info = ModelInfo()
 
+    fitter_options = {} if fitter_options is None else fitter_options
+
     built_in_fitters = {
         "ols": fit_ols,
         "ridge": fit_ridge,
@@ -54,9 +58,9 @@ def get_fitter(
         "l2_penalty_linear": 0,
         "l2_penalty_square": 0.1,
         "model_info": model_info,
-        "p_intercept": 1,
-        "p_linear": 1,
-        "p_square": 0.9,
+        "p_intercept": 0.1,
+        "p_linear": 0.5,
+        "p_square": 1,
     }
 
     mandatory_arguments = ["x", "y", "model_info"]
@@ -77,6 +81,7 @@ def get_fitter(
         fitter=_raw_fitter,
         model_info=model_info,
         clip_infinite_values=clip_infinite_values,
+        residualize=fitter_options.get("residualize", False),
     )
 
     return fitter
@@ -86,11 +91,12 @@ def _fitter_template(
     x,
     y,
     region,
-    old_model,  # noqa: ARG001
+    old_model,
     weights=None,
     fitter=None,
     model_info=None,
     clip_infinite_values=None,
+    residualize=False,
 ):
     """Fit a model to data.
 
@@ -115,6 +121,12 @@ def _fitter_template(
     y_clipped = clip_infinite_values(y)
     x_centered = (x - region.center) / region.radius
 
+    if residualize:
+        old_model_moved = move_model(old_model, region)
+        y_clipped = y_clipped - old_model_moved.predict(x_centered).reshape(
+            y_clipped.shape
+        )
+
     coef = fitter(x=x_centered, y=y_clipped, weights=weights)
 
     # results processing
@@ -131,7 +143,10 @@ def _fitter_template(
     else:
         square_terms = None
 
-    results = VectorModel(intercepts, linear_terms, square_terms)
+    results = VectorModel(intercepts, linear_terms, square_terms, region=region)
+
+    if residualize:
+        results = add_models(results, old_model_moved)
 
     return results
 
