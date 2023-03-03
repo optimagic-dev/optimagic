@@ -58,9 +58,9 @@ def get_fitter(
         "l2_penalty_linear": 0,
         "l2_penalty_square": 0.1,
         "model_info": model_info,
-        "p_intercept": 0.1,
-        "p_linear": 0.5,
-        "p_square": 1,
+        "p_intercept": 0.05,
+        "p_linear": 0.4,
+        "p_square": 1.0,
     }
 
     mandatory_arguments = ["x", "y", "model_info"]
