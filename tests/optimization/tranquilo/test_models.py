@@ -7,10 +7,13 @@ from estimagic.optimization.tranquilo.models import (
     _predict_scalar,
     _predict_vector,
     is_second_order_model,
+    move_model,
     n_free_params,
     n_interactions,
     n_second_order_terms,
 )
+from estimagic.optimization.tranquilo.options import Region
+from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
 
 
@@ -112,3 +115,63 @@ def test_is_second_order_model_invalid():
     model = np.linalg.lstsq
     with pytest.raises(TypeError):
         is_second_order_model(model)
+
+
+def test_move_scalar_model():
+    old_region = Region(center=np.array([0.2, 0.3]), radius=0.6, shape="sphere")
+
+    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45, shape="sphere")
+
+    old_model = ScalarModel(
+        intercept=0.5,
+        linear_terms=np.array([-0.3, 0.3]),
+        square_terms=np.array([[0.8, 0.2], [0.2, 0.7]]),
+        region=old_region,
+    )
+
+    x_unscaled = np.array([[0.5, 0.5]])
+    x_old = (x_unscaled - old_region.center) / old_region.radius
+    x_new = (x_unscaled - new_region.center) / new_region.radius
+
+    new_model = move_model(old_model, new_region)
+
+    old_prediction = old_model.predict(x_old)
+    new_prediction = new_model.predict(x_new)
+
+    assert new_model.region.radius == new_region.radius
+    aaae(new_model.region.center, new_region.center)
+
+    assert np.allclose(old_prediction, new_prediction)
+
+
+def test_move_vector_model():
+    old_region = Region(center=np.array([0.2, 0.3]), radius=6, shape="sphere")
+
+    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45, shape="sphere")
+
+    old_model = VectorModel(
+        intercepts=np.array([0.5, 0.4, 0.3]),
+        linear_terms=np.array([[-0.3, 0.3], [-0.2, 0.1], [-0.2, 0.1]]),
+        square_terms=np.array(
+            [
+                [[0.8, 0.2], [0.2, 0.7]],
+                [[0.6, 0.2], [0.2, 0.5]],
+                [[0.8, 0.2], [0.2, 0.7]],
+            ]
+        ),
+        region=old_region,
+    )
+
+    x_unscaled = np.array([[0.5, 0.5]])
+    x_old = (x_unscaled - old_region.center) / old_region.radius
+    x_new = (x_unscaled - new_region.center) / new_region.radius
+
+    new_model = move_model(old_model, new_region)
+
+    old_prediction = old_model.predict(x_old)
+    new_prediction = new_model.predict(x_new)
+
+    assert new_model.region.radius == new_region.radius
+    aaae(new_model.region.center, new_region.center)
+
+    assert np.allclose(old_prediction, new_prediction)
