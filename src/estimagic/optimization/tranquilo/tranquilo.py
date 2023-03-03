@@ -328,7 +328,6 @@ def _tranquilo(
         model_xs = history.get_xs(model_indices)
         model_data = history.get_model_data(
             x_indices=model_indices,
-            region=state.trustregion,
             average=True,
         )
 
@@ -369,7 +368,6 @@ def _tranquilo(
 
                 model_data = history.get_model_data(
                     x_indices=model_indices,
-                    region=state.trustregion,
                     average=True,
                 )
 
@@ -423,7 +421,6 @@ def _tranquilo(
             model_xs = history.get_xs(model_indices)
             model_data = history.get_model_data(
                 x_indices=model_indices,
-                region=state.trustregion,
                 average=True,
             )
 

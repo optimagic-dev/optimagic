@@ -174,7 +174,7 @@ class History:
         )
         return out
 
-    def get_model_data(self, x_indices, region=None, scale=False, average=True):
+    def get_model_data(self, x_indices, average=True):
         if np.isscalar(x_indices):
             x_indices = [x_indices]
 
@@ -188,11 +188,6 @@ class History:
             fvecs = np.vstack(list(raw_fvecs.values()))
             n_obs = np.array([len(fvec) for fvec in raw_fvecs.values()])
             xs = np.repeat(raw_xs, n_obs, axis=0)
-
-        if scale:
-            if region is None:
-                raise ValueError("You need to provide a region to scale the data.")
-            xs = (xs - region.center) / region.radius
 
         return xs, fvecs
 

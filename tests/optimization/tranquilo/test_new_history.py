@@ -4,7 +4,6 @@ from collections import namedtuple
 import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.new_history import History
-from estimagic.optimization.tranquilo.options import Region
 from numpy.testing import assert_array_almost_equal as aaae
 
 XS = [
@@ -189,8 +188,6 @@ def test_get_fvals_with_indices(history):
 def test_get_model_data_trivial_averaging(history, average):
     got_xs, got_fvecs = history.get_model_data(
         x_indices=[0, 1],
-        region=None,
-        scale=False,
         average=average,
     )
 
@@ -198,17 +195,9 @@ def test_get_model_data_trivial_averaging(history, average):
     aaae(got_fvecs, np.arange(10).reshape(2, 5))
 
 
-@pytest.mark.parametrize("scale", [True, False])
-def test_get_model_data_trivial_scaling(history, scale):
-    got_xs, got_fvecs = history.get_model_data(
-        x_indices=[0, 1],
-        region=Region(center=np.zeros(3) + 0.5, radius=0.5, shape="sphere"),
-        scale=scale,
-    )
-    if scale:
-        aaae(got_xs, (np.arange(6).reshape(2, 3) - 0.5) * 2)
-    else:
-        aaae(got_xs, np.arange(6).reshape(2, 3))
+def test_get_model_data_no_averaging(history):
+    got_xs, got_fvecs = history.get_model_data(x_indices=[0, 1])
+    aaae(got_xs, np.arange(6).reshape(2, 3))
     aaae(got_fvecs, np.arange(10).reshape(2, 5))
 
 
@@ -225,8 +214,6 @@ def noisy_history():
 def test_get_model_data_with_repeated_evaluations(noisy_history, average):
     got_xs, got_fvecs = noisy_history.get_model_data(
         x_indices=[0, 1],
-        region=None,
-        scale=False,
         average=average,
     )
 
