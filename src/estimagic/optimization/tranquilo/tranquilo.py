@@ -15,7 +15,6 @@ from estimagic.optimization.tranquilo.filter_points import (
     get_sample_filter,
 )
 from estimagic.optimization.tranquilo.fit_models import get_fitter
-from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
 from estimagic.optimization.tranquilo.models import (
     ModelInfo,
     ScalarModel,
@@ -235,8 +234,9 @@ def _tranquilo(
 
     fit_model = get_fitter(
         fitter=fitter,
-        user_options=fit_options,
+        fitter_options=fit_options,
         model_info=model_info,
+        infinity_handling=infinity_handling,
     )
 
     solve_subproblem = get_subsolver(
@@ -244,8 +244,6 @@ def _tranquilo(
         user_options=solver_options,
         bounds=bounds,
     )
-
-    clip_infinite_values = get_infinity_handler(infinity_handling)
 
     estimate_variance = get_variance_estimator(
         fitter=variance_estimator,
@@ -335,11 +333,9 @@ def _tranquilo(
             average=True,
         )
 
-        clipped_fvecs = clip_infinite_values(model_fvecs)
-
         vector_model = fit_model(
             centered_xs,
-            clipped_fvecs,
+            model_fvecs,
             region=state.trustregion,
             old_model=state.model,
             weights=None,
@@ -380,11 +376,9 @@ def _tranquilo(
                     average=True,
                 )
 
-                clipped_fvecs = clip_infinite_values(model_fvecs)
-
                 vector_model = fit_model(
                     centered_xs,
-                    clipped_fvecs,
+                    model_fvecs,
                     region=state.trustregion,
                     old_model=state.model,
                     weights=None,
@@ -438,11 +432,9 @@ def _tranquilo(
                 average=True,
             )
 
-            clipped_fvecs = clip_infinite_values(model_fvecs)
-
             vector_model = fit_model(
                 centered_xs,
-                clipped_fvecs,
+                model_fvecs,
                 region=state.trustregion,
                 old_model=state.model,
                 weights=None,

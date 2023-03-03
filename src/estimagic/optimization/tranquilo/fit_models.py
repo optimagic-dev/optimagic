@@ -5,6 +5,7 @@ from numba import njit
 from scipy.linalg import qr_multiply
 
 from estimagic.optimization.tranquilo.get_component import get_component
+from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
 from estimagic.optimization.tranquilo.models import (
     ModelInfo,
     VectorModel,
@@ -13,7 +14,9 @@ from estimagic.optimization.tranquilo.models import (
 )
 
 
-def get_fitter(fitter, user_options=None, model_info=None):
+def get_fitter(
+    fitter, fitter_options=None, model_info=None, infinity_handling="relative"
+):
     """Get a fit-function with partialled options.
 
     Args:
@@ -63,14 +66,17 @@ def get_fitter(fitter, user_options=None, model_info=None):
         component_name="fitter",
         func_dict=built_in_fitters,
         default_options=default_options,
-        user_options=user_options,
+        user_options=fitter_options,
         mandatory_signature=mandatory_arguments,
     )
+
+    clip_infinite_values = get_infinity_handler(infinity_handling)
 
     fitter = partial(
         _fitter_template,
         fitter=_raw_fitter,
         model_info=model_info,
+        clip_infinite_values=clip_infinite_values,
     )
 
     return fitter
@@ -84,6 +90,7 @@ def _fitter_template(
     weights=None,
     fitter=None,
     model_info=None,
+    clip_infinite_values=None,
 ):
     """Fit a model to data.
 
@@ -105,7 +112,9 @@ def _fitter_template(
     _, n_params = x.shape
     n_residuals = y.shape[1]
 
-    coef = fitter(x=x, y=y, weights=weights)
+    y_clipped = clip_infinite_values(y)
+
+    coef = fitter(x=x, y=y_clipped, weights=weights)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)
