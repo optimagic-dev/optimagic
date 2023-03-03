@@ -88,6 +88,78 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
     return out
 
 
+def add_models(model1, model2):
+    """Add two models.
+
+    Args:
+        model1 (Union[ScalarModel, VectorModel]): The first model.
+        model2 (Union[ScalarModel, VectorModel]): The second model.
+
+    Returns:
+        Union[ScalarModel, VectorModel]: The sum of the two models.
+
+    """
+    if type(model1) != type(model2):
+        raise TypeError("Models must be of the same type.")
+
+    if not np.allclose(model1.region.center, model2.region.center):
+        raise ValueError("Models must have the same center.")
+
+    if not np.allclose(model1.region.radius, model2.region.radius):
+        raise ValueError("Models must have the same radius.")
+
+    new = {}
+    if isinstance(model1, ScalarModel):
+        new["intercept"] = model1.intercept + model2.intercept
+    else:
+        new["intercepts"] = model1.intercepts + model2.intercepts
+
+    new["linear_terms"] = model1.linear_terms + model2.linear_terms
+
+    if model1.square_terms is not None:
+        assert model2.square_terms is not None
+        new["square_terms"] = model1.square_terms + model2.square_terms
+
+    out = replace(model1, **new)
+    return out
+
+
+def subtract_models(model1, model2):
+    """Subtract two models.
+
+    Args:
+        model1 (Union[ScalarModel, VectorModel]): The first model.
+        model2 (Union[ScalarModel, VectorModel]): The second model.
+
+    Returns:
+        Union[ScalarModel, VectorModel]: The difference of the two models.
+
+    """
+    if type(model1) != type(model2):
+        raise TypeError("Models must be of the same type.")
+
+    if not np.allclose(model1.region.center, model2.region.center):
+        raise ValueError("Models must have the same center.")
+
+    if not np.allclose(model1.region.radius, model2.region.radius):
+        raise ValueError("Models must have the same radius.")
+
+    new = {}
+    if isinstance(model1, ScalarModel):
+        new["intercept"] = model1.intercept - model2.intercept
+    else:
+        new["intercepts"] = model1.intercepts - model2.intercepts
+
+    new["linear_terms"] = model1.linear_terms - model2.linear_terms
+
+    if model1.square_terms is not None:
+        assert model2.square_terms is not None
+        new["square_terms"] = model1.square_terms - model2.square_terms
+
+    out = replace(model1, **new)
+    return out
+
+
 def move_model(model, new_region):
     """Move a model to a new region.
 
