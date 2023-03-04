@@ -373,11 +373,10 @@ def _tranquilo(
         # ==========================================================================
 
         if len(model_xs) > target_sample_size:
-            small_step = (
+            while (
                 _relative_step_length < stagnation_options.min_relative_step_keep
-            )
-
-            while small_step and len(model_xs) > target_sample_size:
+                and len(model_xs) > target_sample_size
+            ):
                 model_xs, model_indices = drop_worst_points(
                     xs=model_xs,
                     indices=model_indices,

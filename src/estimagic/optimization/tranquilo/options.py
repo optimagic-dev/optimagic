@@ -71,7 +71,7 @@ class AcceptanceOptions(NamedTuple):
 
 
 class StagnationOptions(NamedTuple):
-    min_relative_step_keep: float = 0.1
+    min_relative_step_keep: float = 0.125
     min_relative_step: float = 0.05
     sample_increment: int = 1
     max_trials: int = 1
