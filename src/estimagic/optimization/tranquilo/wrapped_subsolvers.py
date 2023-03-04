@@ -60,11 +60,6 @@ def slsqp_sphere(model, x0=None, lower_bounds=None, upper_bounds=None):  # noqa:
         constraints=constraints,
     )
 
-    if model.predict(x0) < model.predict(res.x):
-        pass
-    else:
-        pass
-
     return {
         "x": res.x,
         "success": res.success,
