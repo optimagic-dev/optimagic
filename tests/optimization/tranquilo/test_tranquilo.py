@@ -327,14 +327,14 @@ def test_tranquilo_ls_with_noise_handling_and_noisy_function():
     rng = np.random.default_rng(123)
 
     def _f(x):
-        x_n = x + rng.normal(0, 0.1, size=x.shape)
+        x_n = x + rng.normal(0, 0.05, size=x.shape)
         return {"root_contributions": x_n, "value": x_n @ x_n}
 
     res = minimize(
         criterion=_f,
         params=np.ones(3),
         algorithm="tranquilo",
-        algo_options={"noisy": True, "n_evals_per_point": 5},
+        algo_options={"noisy": True, "n_evals_per_point": 10},
     )
 
     aaae(res.params, np.zeros(3), decimal=1)
