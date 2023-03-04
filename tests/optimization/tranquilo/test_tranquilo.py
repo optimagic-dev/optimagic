@@ -323,6 +323,7 @@ def test_tranquilo_with_noise_handling_and_noisy_function():
     aaae(res.params, np.zeros(3), decimal=1)
 
 
+@pytest.mark.slow()
 def test_tranquilo_ls_with_noise_handling_and_noisy_function():
     rng = np.random.default_rng(123)
 
