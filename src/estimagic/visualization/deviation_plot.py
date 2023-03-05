@@ -22,9 +22,10 @@ def deviation_plot(
     faster the algorithm improved on average.
 
     The x axis is the runtime_measure, which can be walltime or number of evaluations.
+    The y axis is the average over the convergence measures of the problems in the set.
     Convergence can be measured by the criterion value of the particular
-    time/evaluation. The convergence can be made monotone by always taking the best
-    value.
+    time/evaluation. The convergence can be made monotone by always taking the
+    best  value.
 
     Args:
         problems (dict): estimagic benchmarking problems dictionary. Keys are the
