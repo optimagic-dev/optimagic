@@ -9,9 +9,7 @@ from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.options import Bounds
 
 
-def get_sampler(
-    sampler, bounds, model_info=None, radius_factors=None, user_options=None
-):
+def get_sampler(sampler, bounds, model_info=None, user_options=None):
     """Get sampling function partialled options.
 
     Args:
@@ -60,7 +58,6 @@ def get_sampler(
     default_options = {
         "bounds": bounds,
         "model_info": model_info,
-        "radius_factors": radius_factors,
     }
 
     mandatory_args = [
@@ -199,8 +196,6 @@ def _optimal_hull_sampler(
     trustregion,
     n_points,
     rng,
-    model_info,  # noqa: ARG001
-    radius_factors,
     order,
     distribution=None,
     hardness=1,
@@ -209,6 +204,8 @@ def _optimal_hull_sampler(
     algorithm="scipy_lbfgsb",
     algo_options=None,
     criterion=None,
+    n_points_randomsearch=1,
+    return_info=False,
 ):
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
@@ -251,9 +248,14 @@ def _optimal_hull_sampler(
               optimize. Thus the practical performance can be bad.
             - None: Use the "determinant" criterion if only one point is added and the
               "distance" criterion if multiple points are added.
+        n_points_randomsearch (int): Number of random points to from which to select
+            the best in terms of the Fekete criterion before starting the optimization.
+            Default is 1.
 
     Returns:
-        np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
+        - np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).
+        - dict: Information about the optimization. Only returned if ``return_info`` is
+        True.
 
     """
     n_params = len(trustregion.center)
@@ -279,7 +281,7 @@ def _optimal_hull_sampler(
 
         if criterion == "distance":
             dist_to_center = np.linalg.norm(existing_xs_unit, axis=1)
-            not_centric = dist_to_center >= radius_factors.centric
+            not_centric = dist_to_center >= 0.1
             if not_centric.any():
                 existing_xs_unit = existing_xs_unit[not_centric]
             else:
@@ -288,11 +290,37 @@ def _optimal_hull_sampler(
     else:
         existing_xs_unit = None
 
-    # start params
+    # Define criterion functions. "determinant" is the Fekete criterion and "distance"
+    # corresponds to an approximation of the Fekete criterion.
+    criterion_kwargs = {
+        "existing_xs": existing_xs_unit,
+        "order": order,
+        "n_params": n_params,
+    }
+
+    func_dict = {
+        "determinant": partial(_determinant_on_hull, **criterion_kwargs),
+        "distance": partial(
+            _minimal_pairwise_distance_on_hull,
+            **criterion_kwargs,
+            hardness=hardness,
+        ),
+    }
+
+    # Select start params through random search
     if distribution is None:
         distribution = "normal" if order <= 3 else "uniform"
-    x0 = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
-    x0 = _project_onto_unit_hull(x0, order=order)
+    candidates = _draw_from_distribution(
+        distribution, rng=rng, size=(n_points_randomsearch, n_points, n_params)
+    )
+    candidates = [_project_onto_unit_hull(_x, order=order) for _x in candidates]
+
+    if n_points_randomsearch == 1:
+        x0 = candidates[0]
+    else:
+        _fekete_criterion = [func_dict["determinant"](_x) for _x in candidates]
+        x0 = candidates[np.argmax(_fekete_criterion)]
+
     x0 = x0.flatten()  # flatten so that em.maximize uses fast path
 
     # This would raise an error because there are zero pairs to calculate the
@@ -300,21 +328,6 @@ def _optimal_hull_sampler(
     if existing_xs_unit is None and n_points == 1:
         opt_params = x0
     else:
-        criterion_kwargs = {
-            "existing_xs": existing_xs_unit,
-            "order": order,
-            "n_params": n_params,
-        }
-
-        func_dict = {
-            "determinant": partial(_determinant_on_hull, **criterion_kwargs),
-            "distance": partial(
-                _minimal_pairwise_distance_on_hull,
-                **criterion_kwargs,
-                hardness=hardness,
-            ),
-        }
-
         res = em.maximize(
             criterion=func_dict[criterion],
             params=x0,
@@ -323,7 +336,6 @@ def _optimal_hull_sampler(
             upper_bounds=np.ones_like(x0),
             algo_options=algo_options,
         )
-
         opt_params = res.params
 
     # Make sure the optimal sampling is actually better than the initial one with
@@ -337,7 +349,17 @@ def _optimal_hull_sampler(
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
     points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
-    return points
+
+    # Collect additional information. Mostly used for testing.
+    info = {
+        "start_params": x0,
+        "opt_params": opt_params,
+        "start_fekete": start_fekete,
+        "opt_fekete": end_fekete,
+    }
+
+    out = (points, info) if return_info else points
+    return out
 
 
 # ======================================================================================

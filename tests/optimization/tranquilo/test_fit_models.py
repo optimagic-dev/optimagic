@@ -5,6 +5,7 @@ from estimagic import first_derivative, second_derivative
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.tranquilo.fit_models import _polynomial_features, get_fitter
 from estimagic.optimization.tranquilo.models import ModelInfo
+from estimagic.optimization.tranquilo.options import Region
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 
@@ -180,7 +181,12 @@ def data_get_feature_matrices_pounders():
 
 def test_fit_ols_against_truth(quadratic_case):
     fit_ols = get_fitter("ols")
-    got = fit_ols(quadratic_case["x"], quadratic_case["y"])
+    got = fit_ols(
+        x=quadratic_case["x"],
+        y=quadratic_case["y"],
+        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        old_model=None,
+    )
 
     aaae(got.linear_terms.squeeze(), quadratic_case["linear_terms_expected"])
     aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
@@ -192,7 +198,12 @@ def test_fit_powell_against_truth(scenario, request):
 
     model_info = ModelInfo(has_squares=True, has_interactions=True)
     fit_pounders = get_fitter("powell", model_info=model_info)
-    got = fit_pounders(test_case["x"], test_case["y"])
+    got = fit_pounders(
+        test_case["x"],
+        test_case["y"],
+        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        old_model=None,
+    )
 
     aaae(got.linear_terms.squeeze(), test_case["linear_terms_expected"])
     aaae(got.square_terms.squeeze(), test_case["square_terms_expected"])
@@ -206,7 +217,12 @@ def test_fit_ols_against_gradient(model, quadratic_case):
         options = None
 
     fit_ols = get_fitter(model, options)
-    got = fit_ols(quadratic_case["x"], quadratic_case["y"])
+    got = fit_ols(
+        quadratic_case["x"],
+        quadratic_case["y"],
+        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        old_model=None,
+    )
 
     a = got.linear_terms.squeeze()
     hess = got.square_terms.squeeze()
@@ -222,7 +238,12 @@ def test_fit_ols_against_gradient(model, quadratic_case):
 )
 def test_fit_ols_against_hessian(model, options, quadratic_case):
     fit_ols = get_fitter(model, options)
-    got = fit_ols(quadratic_case["x"], quadratic_case["y"])
+    got = fit_ols(
+        quadratic_case["x"],
+        quadratic_case["y"],
+        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        old_model=None,
+    )
     hessian = second_derivative(quadratic_case["func"], quadratic_case["x0"])
     hess = got.square_terms.squeeze()
     aaae(hessian["derivative"], hess, case="hessian")

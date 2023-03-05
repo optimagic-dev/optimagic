@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def adjust_radius(radius, rho, step, options):
+def adjust_radius(radius, rho, step_length, options):
     """Adjust the trustregion radius based on relative improvement and stepsize.
 
     This is just a slight generalization of the pounders radius adjustment. With default
@@ -21,7 +21,6 @@ def adjust_radius(radius, rho, step, options):
         float: The updated radius.
 
     """
-    step_length = np.linalg.norm(step)
     is_large_step = step_length / radius >= options.large_step
 
     if rho >= options.rho_increase and is_large_step:

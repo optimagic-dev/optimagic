@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.options import Bounds, RadiusFactors, TrustRegion
+from estimagic.optimization.tranquilo.options import Bounds, Region
 from estimagic.optimization.tranquilo.sample_points import (
     _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
@@ -18,7 +18,7 @@ def test_bounds_are_satisfied(sampler):
     bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
     sampler = get_sampler(sampler, bounds)
     sample = sampler(
-        trustregion=TrustRegion(center=np.zeros(2), radius=1),
+        trustregion=Region(center=np.zeros(2), radius=1, shape="sphere"),
         n_points=5,
         rng=np.random.default_rng(1234),
     )
@@ -33,7 +33,7 @@ def test_bounds_are_satisfied_general_hull_sampler(order):
     bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
     sampler = get_sampler("hull_sampler", bounds, user_options={"order": order})
     sample = sampler(
-        trustregion=TrustRegion(center=np.zeros(2), radius=1),
+        trustregion=Region(center=np.zeros(2), radius=1, shape="sphere"),
         n_points=5,
         rng=np.random.default_rng(1234),
     )
@@ -51,7 +51,7 @@ def test_enough_existing_points(sampler):
         bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
     )
     calculated = sampler(
-        trustregion=TrustRegion(center=np.zeros(3), radius=1),
+        trustregion=Region(center=np.zeros(3), radius=1, shape="sphere"),
         n_points=0,
         existing_xs=np.empty((5, 3)),
         rng=np.random.default_rng(1234),
@@ -67,10 +67,9 @@ def test_optimization_ignores_existing_points(sampler):
         sampler=sampler,
         bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
         model_info=None,
-        radius_factors=RadiusFactors(),
     )
     calculated = sampler(
-        trustregion=TrustRegion(center=np.zeros(3), radius=1),
+        trustregion=Region(center=np.zeros(3), radius=1, shape="sphere"),
         n_points=3,
         existing_xs=np.ones((2, 3)),  # same point implies min distance of zero always
         rng=np.random.default_rng(1234),
@@ -94,13 +93,49 @@ def test_optimality(sampler):
     distances = []
     for sampler in [standard_sampler, optimal_sampler]:
         sample = sampler(
-            trustregion=TrustRegion(center=np.zeros(3), radius=1),
+            trustregion=Region(center=np.zeros(3), radius=1, shape="sphere"),
             n_points=5,
             rng=np.random.default_rng(1234),
         )
         distances.append(pdist(sample).min())
 
     assert distances[1] > distances[0]
+
+
+@pytest.mark.parametrize("sampler", ["sphere", "cube"])
+@pytest.mark.parametrize("n_points_randomsearch", [1, 2, 5, 10])
+def test_randomsearch(sampler, n_points_randomsearch):
+    # test that initial randomsearch of hull samplers produce better fekete values
+
+    bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
+
+    _sampler = get_sampler(
+        sampler="optimal_" + sampler,
+        bounds=bounds,
+    )
+
+    # optimal sampling without randomsearch
+    _, info = _sampler(
+        trustregion=Region(center=np.zeros(3), radius=1, shape=sampler),
+        n_points=5,
+        rng=np.random.default_rng(0),
+        return_info=True,
+    )
+
+    # optimal sampling with randomsearch
+    _, info_randomsearch = _sampler(
+        trustregion=Region(center=np.zeros(3), radius=1, shape=sampler),
+        n_points=5,
+        rng=np.random.default_rng(0),
+        n_points_randomsearch=n_points_randomsearch,
+        return_info=True,
+    )
+
+    for key in ["start_fekete", "opt_fekete"]:
+        statement = info_randomsearch[key] >= info[key] or np.isclose(
+            info_randomsearch[key], info[key], rtol=1e-3
+        )
+        assert statement
 
 
 @pytest.mark.parametrize("order", [2, np.inf])

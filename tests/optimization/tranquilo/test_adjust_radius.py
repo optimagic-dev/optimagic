@@ -13,7 +13,7 @@ def test_increase(options):
     calculated = adjust_radius(
         radius=1,
         rho=1.5,
-        step=np.ones(2),
+        step_length=np.linalg.norm(np.ones(2)),
         options=options,
     )
 
@@ -26,7 +26,7 @@ def test_increase_blocked_by_small_step(options):
     calculated = adjust_radius(
         radius=1,
         rho=1.5,
-        step=np.array([0.1, 0.1]),
+        step_length=np.linalg.norm(np.array([0.1, 0.1])),
         options=options,
     )
 
@@ -39,7 +39,7 @@ def test_decrease(options):
     calculated = adjust_radius(
         radius=1,
         rho=0.05,
-        step=np.ones(2),
+        step_length=np.linalg.norm(np.ones(2)),
         options=options,
     )
 
@@ -52,7 +52,7 @@ def test_max_radius_is_not_violated(options):
     calculated = adjust_radius(
         radius=750_000,
         rho=1.5,
-        step=np.array([750_000]),
+        step_length=np.linalg.norm(np.array([750_000])),
         options=options,
     )
 
@@ -65,11 +65,11 @@ def test_min_radius_is_not_violated(options):
     calculated = adjust_radius(
         radius=1e-09,
         rho=0.05,
-        step=np.ones(2),
+        step_length=np.linalg.norm(np.ones(2)),
         options=options,
     )
 
-    expected = 1e-08
+    expected = 1e-06
 
     assert calculated == expected
 
@@ -80,7 +80,7 @@ def test_constant_radius():
     calculated = adjust_radius(
         radius=1,
         rho=1.5,
-        step=np.ones(2),
+        step_length=np.linalg.norm(np.ones(2)),
         options=options,
     )
 
@@ -95,7 +95,7 @@ def test_max_radius_to_step_ratio_is_not_violated():
     calculated = adjust_radius(
         radius=1,
         rho=1.5,
-        step=np.array([0.75]),
+        step_length=np.linalg.norm(np.array([0.75])),
         options=options,
     )
 

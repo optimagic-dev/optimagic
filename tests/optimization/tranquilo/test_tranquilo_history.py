@@ -3,7 +3,6 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.options import HistorySearchOptions
 from estimagic.optimization.tranquilo.tranquilo_history import History
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -102,13 +101,12 @@ def test_get_indices_in_trustregion():
     fvecs = np.zeros((4, 3))
     history.add_entries(xs, fvecs)
 
-    trustregion = namedtuple("TrustRegion", ["center", "radius"])(
+    trustregion = namedtuple("TrustRegion", ["center", "radius", "shape"])(
         center=np.ones(2),
         radius=0.3,
+        shape="sphere",
     )
 
-    search_options = HistorySearchOptions(radius_factor=1, radius_type="inscribed")
-
-    indices = history.get_indices_in_trustregion(trustregion, search_options)
+    indices = history.get_indices_in_region(trustregion)
 
     aaae(indices, np.array([0, 1, 3]))

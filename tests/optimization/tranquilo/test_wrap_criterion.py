@@ -2,7 +2,7 @@ import itertools
 
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.tranquilo_history import History
+from estimagic.optimization.tranquilo.new_history import History
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -23,11 +23,11 @@ def test_wrapped_criterion(functype, n_evals):
     # set up history
     history = History(functype=functype)
     for params in [np.zeros(3), np.ones(3)]:
-        history.add_entries(params, criterion(params))
+        idxs = history.add_xs(params)
+        history.add_evals(idxs, criterion(params))
 
     assert history.get_n_fun() == 2
 
-    # set up wrapped params
     wrapped_criterion = get_wrapped_criterion(
         criterion=criterion, batch_evaluator="joblib", n_cores=1, history=history
     )
@@ -35,18 +35,27 @@ def test_wrapped_criterion(functype, n_evals):
     # set up params and expected results
     if n_evals == 1:
         params = np.arange(3)
+        history.add_xs(params)
         expected_fvecs = criterion(params)
         expected_fvals = params @ params
         expected_indices = 2
+        eval_info = {2: 1}
     else:
         params = np.arange(3 * n_evals).reshape(n_evals, 3)
+        history.add_xs(params)
         expected_fvecs = np.array([criterion(x) for x in params]).reshape(2, -1)
         expected_fvals = np.array([x @ x for x in params])
         expected_indices = np.arange(2, 2 + n_evals)
+        eval_info = {idx: 1 for idx in expected_indices}
 
     # use wrapped_criterion
-    got_fvecs, got_fvals, got_indices = wrapped_criterion(params)
+    wrapped_criterion(eval_info)
 
+    assert history.get_n_fun() == 2 + n_evals
+    assert history.get_n_xs() == 2 + n_evals
+
+    got_fvecs = history.fvecs[expected_indices]
     aaae(got_fvecs, expected_fvecs)
+
+    got_fvals = history.fvals[expected_indices]
     aaae(got_fvals, expected_fvals)
-    aaae(got_indices, expected_indices)

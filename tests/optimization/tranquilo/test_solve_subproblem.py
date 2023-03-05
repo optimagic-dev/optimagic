@@ -45,4 +45,4 @@ def test_without_bounds(solver_name):
         trustregion=trustregion,
     )
 
-    aaae(calculated["x"], expected_x)
+    aaae(calculated.x, expected_x)

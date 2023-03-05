@@ -1,6 +1,7 @@
 import inspect
 import warnings
 from functools import partial
+from typing import NamedTuple
 
 import numpy as np
 
@@ -14,8 +15,10 @@ from estimagic.optimization.subsolvers.gqtpar import (
     gqtpar,
 )
 from estimagic.optimization.subsolvers.gqtpar_fast import gqtpar_fast
-from estimagic.optimization.tranquilo.models import evaluate_model
-from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
+from estimagic.optimization.tranquilo.wrapped_subsolvers import (
+    slsqp_sphere,
+    solve_multistart,
+)
 
 
 def get_subsolver(solver, user_options=None, bounds=None):
@@ -66,7 +69,8 @@ def get_subsolver(solver, user_options=None, bounds=None):
         "bntr_fast": bntr_fast,
         "gqtpar": gqtpar,
         "gqtpar_fast": gqtpar_fast,
-        "thorough": solve_thorough,
+        "multistart": solve_multistart,
+        "slsqp_sphere": slsqp_sphere,
     }
 
     if isinstance(solver, str) and solver in built_in_solvers:
@@ -195,16 +199,18 @@ def _solve_subproblem_template(
 
     # make sure expected improvement is calculated accurately in case of clipping and
     # does not depend on whether the subsolver ignores intercepts or not.
+    fval_at_center = model.predict(np.zeros_like(x))
+    fval_candidate = model.predict(raw_result["x"])
 
-    fval_at_center = evaluate_model(model, np.zeros_like(x))
-    fval_candidate = evaluate_model(model, raw_result["x"])
+    expected_improvement = -(fval_candidate - fval_at_center)
 
-    result = {
-        "x": x,
-        "expected_improvement": -(fval_candidate - fval_at_center),
-        "n_iterations": raw_result["n_iterations"],
-        "success": raw_result["success"],
-    }
+    result = SubproblemResult(
+        x=x,
+        expected_improvement=expected_improvement,
+        n_iterations=raw_result["n_iterations"],
+        success=raw_result["success"],
+        centered_x=raw_result["x"],
+    )
 
     return result
 
@@ -236,3 +242,13 @@ def _center_and_scale(vec, trustregion):
 
 def _uncenter_and_unscale(vec, trustregion):
     return vec * trustregion.radius + trustregion.center
+
+
+class SubproblemResult(NamedTuple):
+    """Result of the subproblem solver."""
+
+    x: np.ndarray
+    expected_improvement: float
+    n_iterations: int
+    success: bool
+    centered_x: np.ndarray
