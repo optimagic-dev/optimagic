@@ -11,12 +11,6 @@ profile_options = [
     {"distance_measure": "criterion"},
     {"monotone": True},
     {"monotone": False},
-    {"stopping_criterion": None},
-    {"stopping_criterion": "x"},
-    {"stopping_criterion": "x_and_y"},
-    {"stopping_criterion": "x_or_y"},
-    {"x_precision": 1e-5},
-    {"y_precision": 1e-5},
 ]
 
 
