@@ -13,23 +13,18 @@ def deviation_plot(
     *,
     distance_measure="criterion",
     monotone=True,
-    stopping_criterion="y",
-    x_precision=1e-4,
-    y_precision=1e-4,
     template=PLOTLY_TEMPLATE,
 ):
-    """Plot convergence of optimizers for a set of problems.
+    """Plot average convergence of optimizers for a set of problems.
 
-    This creates a grid of plots, showing the convergence of the different
-    algorithms on each problem. The faster a line falls, the faster the algorithm
-    improved on the problem. The algorithm converged where its line reaches 0
-    (if normalize_distance is True) or the horizontal blue line labeled "true solution".
+    Returns aggregated version convergence plot, showing the convergence of the
+    different algorithms, averaged over a problem set. The faster a line falls, the
+    faster the algorithm improved on average.
 
-    Each plot shows on the x axis the runtime_measure, which can be walltime or number
-    of evaluations. Each algorithm's convergence is a line in the plot. Convergence can
-    be measured by the criterion value of the particular time/evaluation. The
-    convergence can be made monotone (i.e. always taking the bast value so far) or
-    normalized such that the distance from the start to the true solution is one.
+    The x axis is the runtime_measure, which can be walltime or number of evaluations.
+    Convergence can be measured by the criterion value of the particular
+    time/evaluation. The convergence can be made monotone by always taking the best
+    value.
 
     Args:
         problems (dict): estimagic benchmarking problems dictionary. Keys are the
@@ -39,28 +34,9 @@ def deviation_plot(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
-
         distance_measure (str): One of "criterion", "parameter_distance".
         monotone (bool): If True the best found criterion value so far is plotted.
             If False the particular criterion evaluation of that time is used.
-        normalize_distance (bool): If True the progress is scaled by the total distance
-            between the start value and the optimal value, i.e. 1 means the algorithm
-            is as far from the solution as the start value and 0 means the algorithm
-            has reached the solution value.
-        normalize_runtime (bool): If True the runtime each algorithm needed for each
-            problem is scaled by the time the fastest algorithm needed. If True, the
-            resulting plot is what Moré and Wild (2009) called data profiles.
-        stopping_criterion (str): "x_and_y", "x_or_y", "x", "y" or None. If None, no
-            clipping is done.
-        x_precision (float or None): how close an algorithm must have gotten to the
-            true parameter values (as percent of the Euclidean distance between start
-            and solution parameters) before the criterion for clipping and convergence
-            is fulfilled.
-        y_precision (float or None): how close an algorithm must have gotten to the
-            true criterion values (as percent of the distance between start
-            and solution criterion value) before the criterion for clipping and
-            convergence is fulfilled.
-
         template (str): The template for the figure. Default is "plotly_white".
 
     Returns:
@@ -71,9 +47,9 @@ def deviation_plot(
     df, _ = create_convergence_histories(
         problems=problems,
         results=results,
-        stopping_criterion=stopping_criterion,
-        x_precision=x_precision,
-        y_precision=y_precision,
+        stopping_criterion="y",
+        x_precision=1e-6,
+        y_precision=1e-6,
     )
 
     outcome = f"{'monotone_' if monotone else ''}" + distance_measure + "_normalized"
