@@ -327,7 +327,7 @@ def fit_powell(x, y, model_type):
     elif n_samples >= _n_just_identified:
         coef = fit_ols(x, y, weights=None, model_type=model_type)
     else:
-        coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_type)
+        coef = _fit_minimal_frobenius_norm_of_hessian(x, y)
 
     return coef
 
