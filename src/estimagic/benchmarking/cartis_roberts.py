@@ -559,11 +559,11 @@ def hydcar(
     bvec = [-2998, -3448.10, -3347.25]
     cvec = [230.66, 235.88, 215.31]
     al = [0, 0, 0]
-    al_ = [37.6, 48.2, 45.4]
-    al__ = [0, 0, 0]
+    alp = [37.6, 48.2, 45.4]
+    alpp = [0, 0, 0]
     be = [8425, 9395, 10466]
-    be_ = [24.2, 35.6, 31.9]
-    be__ = [0, 0, 0]
+    bep = [24.2, 35.6, 31.9]
+    bepp = [0, 0, 0]
     fl = [30, 30, 40]
     fv = [0, 0, 0]
     tf = 100
@@ -588,14 +588,14 @@ def hydcar(
 
     # 2. add non-linear elements
     for j in range(m):
-        fvec1[j] += -1 * x[1, j] * (v[0] + b)  # e11
+        fvec1[j] += -1 * x[1, j] * (v[0] + b)
         fvec1[j] += (
             v[0] * x[0, j] * invpi[0] * np.exp(avec[j] + (bvec[j] / (t[0] + cvec[j])))
-        )  # e12
+        )
         fvec3[j] += (
             x[n - 2, j]
             * invpi[n - 2]
-            * np.exp(avec[j] + (bvec[j] / (t[n - 2] + cvec[j])))  # e31
+            * np.exp(avec[j] + (bvec[j] / (t[n - 2] + cvec[j])))
         )
 
         fvec8 += (
@@ -604,10 +604,10 @@ def hydcar(
                 * x[0, j]
                 * invpi[0]
                 * np.exp(avec[j] + (bvec[j] / (t[0] + cvec[j])))
-                * (be[j] + be_[j] * t[0] + be__[j] * t[0] * t[0])
+                * (be[j] + bep[j] * t[0] + bepp[j] * t[0] * t[0])
             )
-            + b * x[0, j] * (al[j] + al_[j] * t[0] + al__[j] * t[0] * t[0])
-            - x[1, j] * (b + v[0]) * (al[j] + al_[j] * t[1] + al__[j] * t[1] * t[1])
+            + b * x[0, j] * (al[j] + alp[j] * t[0] + alpp[j] * t[0] * t[0])
+            - x[1, j] * (b + v[0]) * (al[j] + alp[j] * t[1] + alpp[j] * t[1] * t[1])
         )
 
         for i in range(1, n - 1):
@@ -617,14 +617,14 @@ def hydcar(
                 * (-1)
                 * invpi[i - 1]
                 * np.exp(avec[j] + (bvec[j] / (t[i - 1] + cvec[j])))
-            )  # e22
+            )
             fvec2[i - 1, j] += (
                 v[i]
                 * x[i, j]
                 * 1
                 * invpi[i]
                 * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
-            )  # e24
+            )
 
             fvec9[i - 1] += (
                 v[i]
@@ -632,16 +632,16 @@ def hydcar(
                 * 1
                 * invpi[i]
                 * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
-                * (be[j] + be_[j] * t[i] + be__[j] * t[i] * t[i])
-            )  # e91
+                * (be[j] + bep[j] * t[i] + bepp[j] * t[i] * t[i])
+            )
             fvec9[i - 1] += (
                 v[i - 1]
                 * x[i - 1, j]
                 * (-1)
                 * invpi[i - 1]
                 * np.exp(avec[j] + (bvec[j] / (t[i - 1] + cvec[j])))
-                * (be[j] + be_[j] * t[i - 1] + be__[j] * t[i - 1] * t[i - 1])
-            )  # e93
+                * (be[j] + bep[j] * t[i - 1] + bepp[j] * t[i - 1] * t[i - 1])
+            )
 
         for i in range(n):
             fvec7[i] += (
@@ -650,66 +650,65 @@ def hydcar(
 
     for j in range(m):
         for i in range(1, k):
-            fvec2[i - 1, j] += -1 * x[i + 1, j] * (v[i] + b)  # e21
-            fvec2[i - 1, j] += x[i, j] * (v[i - 1] + b)  # e23
+            fvec2[i - 1, j] += -1 * x[i + 1, j] * (v[i] + b)
+            fvec2[i - 1, j] += x[i, j] * (v[i - 1] + b)
 
-        fvec2[k - 1, j] += -1 * x[k + 1, j] * (v[k] - d)  # e21
-        fvec2[k - 1, j] += x[k, j] * (v[k - 1] + b)  # e23
+        fvec2[k - 1, j] += -1 * x[k + 1, j] * (v[k] - d)
+        fvec2[k - 1, j] += x[k, j] * (v[k - 1] + b)
 
         for i in range(k + 1, n - 1):
-            fvec2[i - 1, j] += -1 * x[i + 1, j] * (v[i] - d)  # e21
-            fvec2[i - 1, j] += x[i, j] * (v[i - 1] - d)  # e23
+            fvec2[i - 1, j] += -1 * x[i + 1, j] * (v[i] - d)
+            fvec2[i - 1, j] += x[i, j] * (v[i - 1] - d)
 
-    #
     for j in range(m):
         for i in range(1, k):
             fvec9[i - 1] += (
                 1
                 * x[i, j]
                 * (v[i - 1] + b)
-                * (al[j] + al_[j] * t[i] + al__[j] * t[i] * t[i])
-            )  # e92
+                * (al[j] + alp[j] * t[i] + alpp[j] * t[i] * t[i])
+            )
             fvec9[i - 1] += (
                 (-1)
                 * x[i + 1, j]
                 * (v[i] + b)
-                * (al[j] + al_[j] * t[i + 1] + al__[j] * t[i + 1] * t[i + 1])
-            )  # e94
+                * (al[j] + alp[j] * t[i + 1] + alpp[j] * t[i + 1] * t[i + 1])
+            )
 
         fvec9[k - 1] += (
             1
             * x[k, j]
             * (v[k - 1] + b)
-            * (al[j] + al_[j] * t[i] + al__[j] * t[k] * t[k])
-        )  # e92
+            * (al[j] + alp[j] * t[i] + alpp[j] * t[k] * t[k])
+        )
         fvec9[k - 1] += (
             (-1)
             * x[k + 1, j]
             * (v[k] - d)
-            * (al[j] + al_[j] * t[k + 1] + al__[j] * t[k + 1] * t[k + 1])
-        )  # e94
+            * (al[j] + alp[j] * t[k + 1] + alpp[j] * t[k + 1] * t[k + 1])
+        )
 
         for i in range(k + 1, n - 1):
             fvec9[i - 1] += (
                 1
                 * x[i, j]
                 * (v[i - 1] - d)
-                * (al[j] + al_[j] * t[i] + al__[j] * t[i] * t[i])
-            )  # e92
+                * (al[j] + alp[j] * t[i] + alpp[j] * t[i] * t[i])
+            )
             fvec9[i - 1] += (
                 (-1)
                 * x[i + 1, j]
                 * (v[i] - d)
-                * (al[j] + al_[j] * t[i + 1] + al__[j] * t[i + 1] * t[i + 1])
-            )  # e94
+                * (al[j] + alp[j] * t[i + 1] + alpp[j] * t[i + 1] * t[i + 1])
+            )
 
     smallhf = 0
     bighf = 0
     for j in range(m):
         fvec2[k - 1, j] -= fl[j]
         fvec2[k, j] -= fv[j]
-        smallhf += (tf * tf * al__[j] + tf * al_[j] + al[j]) * fl[j]
-        bighf += (tf * tf * be__[j] + tf * be_[j] + be[j]) * fv[j]
+        smallhf += (tf * tf * alpp[j] + tf * alp[j] + al[j]) * fl[j]
+        bighf += (tf * tf * bepp[j] + tf * bep[j] + be[j]) * fv[j]
     fvec7 -= 1
     fvec8 -= q
     fvec9[k - 1] -= smallhf
@@ -4882,7 +4881,6 @@ solution_x_methane = [
     975.0192103423753,
 ]
 
-# ====================================================================================
 
 CARTIS_ROBERTS_PROBLEMS = {
     "argtrig": {
@@ -5120,7 +5118,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 3.2160e4,
         "solution_criterion": 1651.836643884236
         # we found a lower minimum than Cartis and Roberts (2019);
-        # according to table 3in their paper minimum is at 4292.197,
+        # according to table 3 in their paper, the minimum is at 4292.197,
     },
     "luksan13": {
         "criterion": luksan13,
@@ -5129,7 +5127,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 6.4352e4,
         "solution_criterion": 24949.67040503685711883,
         # we found a lower minimum than Cartis and Roberts (2019);
-        # according to table in their paper minimum is at 25188.86
+        # according to table 3 in their paper, the minimum is at 25188.86
     },
     "luksan14": {
         "criterion": luksan14,
@@ -5287,7 +5285,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 19,
         "solution_criterion": 1.55654284,
         # we suspect a typo in Cartis and Roberts (2019);
-        # according to table in their paperr, the minimum is at 0.
+        # according to table 3 in their paper, the minimum is at 0.
     },
     "powellse": {
         "criterion": powell_singular,
