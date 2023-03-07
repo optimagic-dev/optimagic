@@ -5114,11 +5114,13 @@ CARTIS_ROBERTS_PROBLEMS = {
     "luksan12": {
         "criterion": luksan12,
         "start_x": [-1] * 98,
-        "solution_x": solution_x_luksan12,
+        "solution_x": None,
         "start_criterion": 3.2160e4,
-        "solution_criterion": 1651.836643884236
-        # we found a lower minimum than Cartis and Roberts (2019);
-        # according to table 3 in their paper, the minimum is at 4292.197,
+        "solution_criterion": None
+        # we found a lower minimum than Cartis and Roberts (2019) at 1651.837;
+        # according to table 3 in their paper, the minimum is at 4292.197.
+        # We suspect, however, that the true optimum is even lower.
+        # That is why we disable the test function for the time being.
     },
     "luksan13": {
         "criterion": luksan13,
