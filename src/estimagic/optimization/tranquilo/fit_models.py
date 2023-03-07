@@ -5,15 +5,20 @@ from numba import njit
 from scipy.linalg import qr_multiply
 
 from estimagic.optimization.tranquilo.get_component import get_component
+from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
 from estimagic.optimization.tranquilo.models import (
     ModelInfo,
     VectorModel,
+    add_models,
+    move_model,
     n_interactions,
     n_second_order_terms,
 )
 
 
-def get_fitter(fitter, user_options=None, model_info=None):
+def get_fitter(
+    fitter, fitter_options=None, model_info=None, infinity_handling="relative"
+):
     """Get a fit-function with partialled options.
 
     Args:
@@ -40,16 +45,22 @@ def get_fitter(fitter, user_options=None, model_info=None):
     if model_info is None:
         model_info = ModelInfo()
 
+    fitter_options = {} if fitter_options is None else fitter_options
+
     built_in_fitters = {
         "ols": fit_ols,
         "ridge": fit_ridge,
         "powell": fit_powell,
+        "tranquilo": fit_tranquilo,
     }
 
     default_options = {
         "l2_penalty_linear": 0,
         "l2_penalty_square": 0.1,
         "model_info": model_info,
+        "p_intercept": 0.05,
+        "p_linear": 0.4,
+        "p_square": 1.0,
     }
 
     mandatory_arguments = ["x", "y", "model_info"]
@@ -59,14 +70,18 @@ def get_fitter(fitter, user_options=None, model_info=None):
         component_name="fitter",
         func_dict=built_in_fitters,
         default_options=default_options,
-        user_options=user_options,
+        user_options=fitter_options,
         mandatory_signature=mandatory_arguments,
     )
+
+    clip_infinite_values = get_infinity_handler(infinity_handling)
 
     fitter = partial(
         _fitter_template,
         fitter=_raw_fitter,
         model_info=model_info,
+        clip_infinite_values=clip_infinite_values,
+        residualize=fitter_options.get("residualize", False),
     )
 
     return fitter
@@ -75,9 +90,13 @@ def get_fitter(fitter, user_options=None, model_info=None):
 def _fitter_template(
     x,
     y,
+    region,
+    old_model,
     weights=None,
     fitter=None,
     model_info=None,
+    clip_infinite_values=None,
+    residualize=False,
 ):
     """Fit a model to data.
 
@@ -96,17 +115,19 @@ def _fitter_template(
         VectorModel or ScalarModel: Results container.
 
     """
-    n_samples, n_params = x.shape
+    _, n_params = x.shape
     n_residuals = y.shape[1]
 
-    # weight the data in order to get weighted fitting from fitters that do not support
-    # weights. Inspired by: https://stackoverflow.com/a/52452833
-    if weights is not None:
-        _root_weights = np.sqrt(weights).reshape(n_samples, 1)
-        y = y * _root_weights
-        x = x * _root_weights
+    y_clipped = clip_infinite_values(y)
+    x_centered = (x - region.center) / region.radius
 
-    coef = fitter(x, y)
+    if residualize:
+        old_model_moved = move_model(old_model, region)
+        y_clipped = y_clipped - old_model_moved.predict(x_centered).reshape(
+            y_clipped.shape
+        )
+
+    coef = fitter(x=x_centered, y=y_clipped, weights=weights)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)
@@ -122,12 +143,15 @@ def _fitter_template(
     else:
         square_terms = None
 
-    results = VectorModel(intercepts, linear_terms, square_terms)
+    results = VectorModel(intercepts, linear_terms, square_terms, region=region)
+
+    if residualize:
+        results = add_models(results, old_model_moved)
 
     return results
 
 
-def fit_ols(x, y, model_info):
+def fit_ols(x, y, weights, model_info):
     """Fit a linear model using ordinary least squares.
 
     Args:
@@ -144,7 +168,8 @@ def fit_ols(x, y, model_info):
 
     """
     features = _build_feature_matrix(x, model_info)
-    coef = _fit_ols(features, y)
+    features_w, y_w = _add_weighting(features, y, weights)
+    coef = _fit_ols(features_w, y_w)
 
     return coef
 
@@ -166,9 +191,47 @@ def _fit_ols(x, y):
     return coef
 
 
+def fit_tranquilo(x, y, weights, model_info, p_intercept, p_linear, p_square):
+    """Fit a linear model using ordinary least squares.
+
+    The difference to fit_ols is that the linear terms are penalized less strongly
+    when the system is underdetermined.
+
+    Args:
+        x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
+            rescaled such that the trust region becomes a hypercube from -1 to 1.
+        y (np.ndarray): Array of shape (n_samples, n_residuals) with function
+            evaluations that have been centered around the function value at the
+            trust region center.
+        model_info (ModelInfo): Information that describes the functional form of the
+            model.
+
+    Returns:
+        np.ndarray: The model coefficients.
+
+    """
+    features = _build_feature_matrix(x, model_info)
+    features_w, y_w = _add_weighting(features, y, weights)
+
+    n_params = x.shape[1]
+    n_features = features.shape[1]
+
+    factor = np.array(
+        [1 / p_intercept]
+        + [1 / p_linear] * n_params
+        + [1 / p_square] * (n_features - 1 - n_params)
+    )
+
+    coef_raw = _fit_ols(features_w * factor, y_w)
+    coef = coef_raw * factor
+
+    return coef
+
+
 def fit_ridge(
     x,
     y,
+    weights,
     model_info,
     l2_penalty_linear,
     l2_penalty_square,
@@ -193,6 +256,8 @@ def fit_ridge(
     """
     features = _build_feature_matrix(x, model_info)
 
+    features_w, y_w = _add_weighting(features, y, weights)
+
     # create penalty array
     n_params = x.shape[1]
     cutoffs = (1, n_params + 1)
@@ -202,7 +267,7 @@ def fit_ridge(
     penalty[cutoffs[0] : cutoffs[1]] = l2_penalty_linear
     penalty[cutoffs[1] :] = l2_penalty_square
 
-    coef = _fit_ridge(features, y, penalty)
+    coef = _fit_ridge(features_w, y_w, penalty)
 
     return coef
 
@@ -263,12 +328,12 @@ def fit_powell(x, y, model_info):
 
     if _switch_to_linear:
         model_info = model_info._replace(has_squares=False, has_interactions=False)
-        coef = fit_ols(x, y, model_info)
+        coef = fit_ols(x, y, weights=None, model_info=model_info)
         n_resid, n_present = coef.shape
         padding = np.zeros((n_resid, _n_just_identified - n_present))
         coef = np.hstack([coef, padding])
     elif n_samples >= _n_just_identified:
-        coef = fit_ols(x, y, model_info)
+        coef = fit_ols(x, y, weights=None, model_info=model_info)
     else:
         coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_info)
 
@@ -448,3 +513,14 @@ def _polynomial_features(x, has_squares):
     out = np.concatenate((intercept, xt, poly_terms), axis=0)
 
     return out.T
+
+
+def _add_weighting(x, y, weights=None):
+    # weight the data in order to get weighted fitting from fitters that do not support
+    # weights. Inspired by: https://stackoverflow.com/a/52452833
+    n_samples = len(x)
+    if weights is not None:
+        _root_weights = np.sqrt(weights).reshape(n_samples, 1)
+        y = y * _root_weights
+        x = x * _root_weights
+    return x, y

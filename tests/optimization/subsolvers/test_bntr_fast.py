@@ -489,7 +489,8 @@ def test_update_trustregion_radius_and_gradient_descent():
 
 @pytest.mark.slow()
 def test_minimize_bntr():
-    model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
+    model_data = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
+    model = ScalarModel(**model_data)
     lower_bounds = -np.ones(len(model.linear_terms))
     upper_bounds = np.ones(len(model.linear_terms))
     options = {
@@ -514,7 +515,8 @@ def test_minimize_bntr():
 
 @pytest.mark.slow()
 def test_minimize_bntr_break_loop_early():
-    model = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
+    model_data = pd.read_pickle(TEST_FIXTURES_DIR / "scalar_model.pkl")
+    model = ScalarModel(**model_data)
     lower_bounds = -np.ones(len(model.linear_terms))
     upper_bounds = np.ones(len(model.linear_terms))
     options = {

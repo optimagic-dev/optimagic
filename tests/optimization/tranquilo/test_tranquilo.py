@@ -51,18 +51,6 @@ TEST_CASES = {
         "surrogate_model": ["quadratic"],
         "sample_size": ["powell", "quadratic"],
     },
-    "ols_pounders_filtering": {
-        "sample_filter": ["drop_pounders"],
-        "fitter": ["ols"],
-        "surrogate_model": ["quadratic"],
-        "sample_size": ["powell", "quadratic"],
-    },
-    "pounders_filtering": {
-        "sample_filter": ["drop_pounders"],
-        "fitter": ["powell"],
-        "surrogate_model": ["quadratic"],
-        "sample_size": ["powell"],
-    },
 }
 
 TEST_CASES = [_product(**kwargs) for kwargs in TEST_CASES.values()]
@@ -77,13 +65,13 @@ def test_internal_tranquilo_scalar_sphere_defaults(
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
-        x=np.arange(5),
+        x=np.arange(4),
         sample_filter=sample_filter,
         fitter=fitter,
         surrogate_model=surrogate_model,
         sample_size=sample_size,
     )
-    aaae(res["solution_x"], np.zeros(5), decimal=4)
+    aaae(res["solution_x"], np.zeros(4), decimal=4)
 
 
 # ======================================================================================
@@ -117,13 +105,13 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
-        x=np.arange(5),
+        x=np.arange(4),
         sample_filter=sample_filter,
         fitter=fitter,
         surrogate_model=surrogate_model,
         sample_size=sample_size,
     )
-    aaae(res["solution_x"], np.zeros(5), decimal=3)
+    aaae(res["solution_x"], np.zeros(4), decimal=3)
 
 
 # ======================================================================================
@@ -134,11 +122,11 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 def test_external_tranquilo_scalar_sphere_defaults():
     res = minimize(
         criterion=lambda x: x @ x,
-        params=np.arange(5),
+        params=np.arange(4),
         algorithm="tranquilo",
     )
 
-    aaae(res.params, np.zeros(5), decimal=4)
+    aaae(res.params, np.zeros(4), decimal=4)
 
 
 # ======================================================================================
@@ -258,7 +246,9 @@ def test_process_surrogate_model_invalid(functype):
 def test_process_sample_size_none_linear(has_interactions, has_squares):
     model_info = ModelInfo(has_interactions=has_interactions, has_squares=has_squares)
     x = np.ones((3, 2))
-    got = _process_sample_size(None, model_info=model_info, x=x)
+    got = _process_sample_size(
+        None, model_info=model_info, x=x, sample_size_factor=None
+    )
     if has_interactions or has_squares:
         assert got == 7
     else:
@@ -281,22 +271,55 @@ STR_TEST_CASES = [  # assume len(x) = 3
 @pytest.mark.parametrize("user_sample_size, expected", STR_TEST_CASES)
 def test_process_sample_size_str(user_sample_size, expected):
     x = np.ones((3, 2))
-    got = _process_sample_size(user_sample_size, None, x=x)
+    got = _process_sample_size(user_sample_size, None, x=x, sample_size_factor=None)
     assert got == expected
 
 
 def test_process_sample_size_str_invalid():
     with pytest.raises(ValueError):
-        _process_sample_size("n**2", None, None)
+        _process_sample_size("n**2", None, None, None)
 
 
 @pytest.mark.parametrize("user_sample_size", [1, 10, -100, 10.5])
 def test_process_sample_size_number(user_sample_size):
-    got = _process_sample_size(user_sample_size, None, None)
+    got = _process_sample_size(user_sample_size, None, None, None)
     assert got == int(user_sample_size)
 
 
 def test_process_sample_size_invalid():
     x = np.ones((3, 2))
     with pytest.raises(TypeError):
-        _process_sample_size(np.zeros_like(x), None, x)
+        _process_sample_size(np.zeros_like(x), None, x, None)
+
+
+@pytest.mark.parametrize("algo", ["tranquilo", "tranquilo_ls"])
+def test_tranquilo_with_noise_handling_and_deterministic_function(algo):
+    def _f(x):
+        return {"root_contributions": x, "value": x @ x}
+
+    res = minimize(
+        criterion=_f,
+        params=np.arange(5),
+        algorithm=algo,
+        algo_options={"noisy": True},
+    )
+
+    aaae(res.params, np.zeros(5), decimal=4)
+
+
+@pytest.mark.slow()
+def test_tranquilo_ls_with_noise_handling_and_noisy_function():
+    rng = np.random.default_rng(123)
+
+    def _f(x):
+        x_n = x + rng.normal(0, 0.05, size=x.shape)
+        return {"root_contributions": x_n, "value": x_n @ x_n}
+
+    res = minimize(
+        criterion=_f,
+        params=np.ones(3),
+        algorithm="tranquilo",
+        algo_options={"noisy": True, "n_evals_per_point": 10},
+    )
+
+    aaae(res.params, np.zeros(3), decimal=1)

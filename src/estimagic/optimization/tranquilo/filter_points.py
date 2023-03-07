@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from numba import njit
 from scipy.linalg import qr_multiply
 
@@ -30,6 +31,7 @@ def get_sample_filter(sample_filter="keep_all", user_options=None):
         "clustering": keep_cluster_centers,
         "keep_sphere": keep_sphere,
         "drop_pounders": drop_collinear_pounders,
+        "drop_excess": drop_excess,
     }
 
     out = get_component(
@@ -64,6 +66,69 @@ def drop_collinear_pounders(xs, indices, state):
         filtered_xs, filtered_indices = _drop_collinear_pounders(xs, indices, state)
 
     return filtered_xs, filtered_indices
+
+
+def drop_excess(xs, indices, state, target_size):
+    n_to_drop = max(0, len(xs) - target_size)
+
+    if n_to_drop:
+        xs, indices = drop_worst_points(xs, indices, state, n_to_drop)
+
+    return xs, indices
+
+
+def drop_worst_points(xs, indices, state, n_to_drop):
+    """Drop the worst points from xs and indices.
+
+    As long as there are points outside the trustregion, drop the point that is furthest
+    away from the trustregion center.
+
+    If all points are inside the trustregion, find the two points that are closest to
+    each other. If one of them is the center, drop the other one. If none is the center,
+    drop the one that is closer to the center.
+
+    This reflects that we want to have points as far out as possible as
+    long as they are inside the trustregion.
+
+    The control flow is a bit complicated to avoid unnecessary or repeated
+    computations of distances and pairwise distances.
+
+    """
+    n_dropped = 0
+
+    if n_dropped < n_to_drop:
+        order = 2 if state.trustregion.shape == "sphere" else np.inf
+        dists = np.linalg.norm(xs - state.trustregion.center, axis=1, ord=order)
+
+        while n_dropped < n_to_drop and (dists > state.trustregion.radius).any():
+            drop_index = np.argmax(dists)
+            xs = np.delete(xs, drop_index, axis=0)
+            indices = np.delete(indices, drop_index)
+            dists = np.delete(dists, drop_index, axis=0)
+            n_dropped += 1
+
+    if n_dropped < n_to_drop:
+        pdists = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(xs))
+        pdists[np.diag_indices_from(pdists)] = np.inf
+
+        while n_dropped < n_to_drop:
+            i, j = np.unravel_index(np.argmin(pdists), pdists.shape)
+
+            if indices[i] == state.index:
+                drop_index = j
+            elif indices[j] == state.index:
+                drop_index = i
+            else:
+                drop_index = i if dists[i] < dists[j] else j
+
+            xs = np.delete(xs, drop_index, axis=0)
+            indices = np.delete(indices, drop_index)
+            dists = np.delete(dists, drop_index, axis=0)
+            pdists = np.delete(pdists, drop_index, axis=0)
+            pdists = np.delete(pdists, drop_index, axis=1)
+            n_dropped += 1
+
+    return xs, indices
 
 
 def keep_cluster_centers(

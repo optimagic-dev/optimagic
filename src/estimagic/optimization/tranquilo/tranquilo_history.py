@@ -138,28 +138,24 @@ class History:
     def get_n_fun(self):
         return self.n_fun
 
-    def get_indices_in_trustregion(self, trustregion, search_options):
+    def get_indices_in_region(self, region):
         # early return if there are no entries
         if self.get_n_fun() == 0:
             return np.array([])
 
-        shape = search_options.shape
-        dim = len(trustregion.center)
-        if shape == "sphere" and search_options.radius_type == "circumscribed":
-            radius_factor = np.sqrt(dim) * search_options.radius_factor
-        else:
-            radius_factor = search_options.radius_factor
+        center = region.center
+        shape = region.shape
+        radius = region.radius
 
-        search_radius = radius_factor * trustregion.radius
+        if isinstance(center, int):
+            center = self.get_xs(index=center)
 
         xs = self.get_xs()
 
-        out = _find_indices_in_trust_region(
-            xs, center=trustregion.center, radius=search_radius
-        )
+        out = _find_indices_in_trust_region(xs, center=center, radius=radius)
 
         if shape == "sphere":
-            mask = np.linalg.norm(xs[out] - trustregion.center, axis=1) <= search_radius
+            mask = np.linalg.norm(xs[out] - region.center, axis=1) <= radius
             out = out[mask]
 
         return out

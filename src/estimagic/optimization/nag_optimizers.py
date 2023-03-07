@@ -381,8 +381,16 @@ def _process_nag_result(nag_result_obj, len_x):
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,
         "diagnostic_info": nag_result_obj.diagnostic_info,
-        "n_iterations": nag_result_obj.diagnostic_info["iters_total"].iloc[-1],
     }
+    try:
+        processed["n_iterations"] = nag_result_obj.diagnostic_info["iters_total"].iloc[
+            -1
+        ]
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception:
+        processed["n_iterations"] = None
+
     if hasattr(nag_result_obj, "states"):
         processed.update({"states": nag_result_obj.states})
     if hasattr(nag_result_obj, "history_params"):

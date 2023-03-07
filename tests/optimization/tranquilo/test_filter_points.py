@@ -4,7 +4,7 @@ from estimagic.optimization.tranquilo.filter_points import (
     _scaled_square_features,
     drop_collinear_pounders,
 )
-from estimagic.optimization.tranquilo.options import HistorySearchOptions, TrustRegion
+from estimagic.optimization.tranquilo.options import Region
 from estimagic.optimization.tranquilo.tranquilo import State
 from estimagic.optimization.tranquilo.tranquilo_history import History
 from numpy.testing import assert_array_almost_equal as aaae
@@ -43,10 +43,9 @@ def basic_case():
     )
     indices = np.arange(len(xs))
 
-    trustregion = TrustRegion(radius=radius, center=x_accepted)
+    trustregion = Region(radius=radius, center=x_accepted, shape="sphere")
 
     state = State(
-        safety=False,
         trustregion=trustregion,
         model_indices=None,
         model=None,
@@ -58,6 +57,9 @@ def basic_case():
         new_indices=None,
         old_indices_discarded=None,
         old_indices_used=None,
+        candidate_index=None,
+        candidate_x=None,
+        vector_model=None,
     )
 
     expected_indices = np.array([20, 19, 18, 17, 16, 15, 13, 12, 8, 5, 4, 3, 2, 1, 0])
@@ -197,12 +199,10 @@ def test_indices_in_trust_region(basic_case):
     x_accepted = np.array([0.16004745, 0.00572722, 0.01158929])
     radius = 0.0125
 
-    trustregion = TrustRegion(center=x_accepted, radius=radius)
+    trustregion = Region(center=x_accepted, radius=radius, shape="sphere")
     history.add_entries(xs, np.zeros(xs.shape[0]))
 
-    search_options = HistorySearchOptions(radius_factor=1, radius_type="inscribed")
-
-    indices_in_tr = history.get_indices_in_trustregion(trustregion, search_options)
+    indices_in_tr = history.get_indices_in_region(trustregion)
 
     expected_indices = np.array([0, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
     assert_equal(indices_in_tr, expected_indices)
