@@ -60,11 +60,6 @@ class Region(NamedTuple):
     shape: str
 
 
-class HistorySearchOptions(NamedTuple):
-    radius_type: str = "inscribed"
-    radius_factor: float = 5
-
-
 class AcceptanceOptions(NamedTuple):
     confidence_level: float = 0.8
     power_level: float = 0.8

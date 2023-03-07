@@ -26,7 +26,6 @@ from estimagic.optimization.tranquilo.options import (
     AcceptanceOptions,
     Bounds,
     ConvOptions,
-    HistorySearchOptions,
     RadiusOptions,
     Region,
     StagnationOptions,
@@ -62,7 +61,7 @@ def _tranquilo(
     n_cores=1,
     silence_experimental_warning=False,
     infinity_handling="relative",
-    history_search_options=None,
+    search_radius_factor=None,
     noisy=False,
     sample_size_factor=None,
     acceptance_decider=None,
@@ -104,7 +103,7 @@ def _tranquilo(
             - "quadratic: 0.5 * n * (n + 1) + n + 1
         surrogate_model (str): Type of surrogate model to fit. Both a "linear" and
             "quadratic" surrogate model are supported.
-        radius_options (NemdTuple or NoneType): Options for trust-region radius
+        radius_options (NamedTuple or NoneType): Options for trust-region radius
             management.
         sampler_options (dict or NoneType): Additional keyword arguments passed to the
             sampler function.
@@ -169,6 +168,9 @@ def _tranquilo(
     if subsolver is None:
         subsolver = "bntr_fast" if trustregion_shape == "cube" else "gqtpar_fast"
 
+    if search_radius_factor is None:
+        search_radius_factor = 4.25 if functype == "scalar" else 5.0
+
     target_sample_size = _process_sample_size(
         user_sample_size=sample_size,
         model_info=model_info,
@@ -193,12 +195,6 @@ def _tranquilo(
 
     if conv_options is None:
         conv_options = ConvOptions()
-
-    if history_search_options is None:
-        if functype == "scalar":
-            history_search_options = HistorySearchOptions(radius_factor=4.25)
-        else:
-            history_search_options = HistorySearchOptions()
 
     if acceptance_decider is None:
         acceptance_decider = "noisy" if noisy else "classic"
@@ -309,9 +305,8 @@ def _tranquilo(
         # find, filter and count points
         # ==============================================================================
 
-        search_region = _get_search_region(
-            trustregion=state.trustregion,
-            search_options=history_search_options,
+        search_region = state.trustregion._replace(
+            radius=search_radius_factor * state.trustregion.radius
         )
 
         old_indices = history.get_x_indices_in_region(search_region)
@@ -731,20 +726,6 @@ tranquilo_ls = mark_minimizer(
     is_available=True,
     is_global=False,
 )
-
-
-def _get_search_region(trustregion, search_options):
-    shape = trustregion.shape
-    dim = len(trustregion.center)
-
-    if shape == "sphere" and search_options.radius_type == "circumscribed":
-        radius_factor = np.sqrt(dim) * search_options.radius_factor
-    else:
-        radius_factor = search_options.radius_factor
-
-    search_radius = radius_factor * trustregion.radius
-
-    return trustregion._replace(radius=search_radius)
 
 
 def _concatenate_indices(first, second):
