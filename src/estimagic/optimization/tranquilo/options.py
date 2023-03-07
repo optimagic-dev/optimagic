@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import NamedTuple
 
 import numpy as np
@@ -8,11 +9,15 @@ from estimagic.optimization.algo_options import (
 )
 
 
-class Bounds(NamedTuple):
+@dataclass
+class Bounds:
     """Stopping criteria."""
 
     lower: np.ndarray
     upper: np.ndarray
+
+    def __post_init__(self):
+        self.has_any = _check_if_there_are_bounds(self.lower, self.upper)
 
 
 class StopOptions(NamedTuple):
@@ -76,3 +81,12 @@ class StagnationOptions(NamedTuple):
     sample_increment: int = 1
     max_trials: int = 1
     drop: bool = True
+
+
+def _check_if_there_are_bounds(lb, ub):
+    out = False
+    if lb is not None and np.isfinite(lb).any():
+        out = True
+    if ub is not None and np.isfinite(ub).any():
+        out = True
+    return out

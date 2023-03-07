@@ -158,10 +158,10 @@ def _tranquilo(
         functype=functype,
     )
 
-    _has_bounds = _check_if_there_are_bounds(lower_bounds, upper_bounds)
+    bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
 
     if trustregion_shape is None:
-        trustregion_shape = "sphere" if not _has_bounds else "cube"
+        trustregion_shape = "sphere" if not bounds.has_any else "cube"
 
     if sampler is None:
         sampler = f"optimal_{trustregion_shape}"
@@ -223,7 +223,6 @@ def _tranquilo(
         history=history,
     )
 
-    bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
     sample_points = get_sampler(
         sampler,
         bounds=bounds,
@@ -732,15 +731,6 @@ tranquilo_ls = mark_minimizer(
     is_available=True,
     is_global=False,
 )
-
-
-def _check_if_there_are_bounds(lb, ub):
-    out = False
-    if lb is not None and np.isfinite(lb).any():
-        out = True
-    if ub is not None and np.isfinite(ub).any():
-        out = True
-    return out
 
 
 def _get_search_region(trustregion, search_options):
