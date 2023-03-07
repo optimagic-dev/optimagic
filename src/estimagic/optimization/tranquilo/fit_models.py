@@ -7,44 +7,36 @@ from scipy.linalg import qr_multiply
 from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
 from estimagic.optimization.tranquilo.models import (
-    ModelInfo,
     VectorModel,
     add_models,
     move_model,
-    n_interactions,
     n_second_order_terms,
 )
 
 
 def get_fitter(
-    fitter, fitter_options=None, model_info=None, infinity_handling="relative"
+    fitter, fitter_options=None, model_type=None, infinity_handling="relative"
 ):
     """Get a fit-function with partialled options.
 
     Args:
         fitter (str or callable): Name of a fit method or a fit method. The first
             argument of any fit method needs to be ``x``, second ``y`` and third
-            ``model_info``.
+            ``model_type``.
 
         user_options (dict): Options for the fit method. The following are supported:
             - l2_penalty_linear (float): Penalty that is applied to all linear terms.
             - l2_penalty_square (float): Penalty that is applied to all square terms,
             that is the quadratic and interaction terms.
 
-        model_info (ModelInfo): Information that describes the functional form of
-            the model. Has entries:
-            - has_squares (bool): Whether to use quadratic terms as features in the
-            regression.
-            - has_interactions (bool): Whether to use interaction terms as features
-            in the regression.
+        model_type (str): Type of the model that is fitted. The following are supported:
+            - "linear": Only linear effects and intercept.
+            - "quadratic": Fully quadratic model.
 
     Returns:
         callable: The partialled fit method that only depends on x and y.
 
     """
-    if model_info is None:
-        model_info = ModelInfo()
-
     fitter_options = {} if fitter_options is None else fitter_options
 
     built_in_fitters = {
@@ -57,13 +49,13 @@ def get_fitter(
     default_options = {
         "l2_penalty_linear": 0,
         "l2_penalty_square": 0.1,
-        "model_info": model_info,
+        "model_type": model_type,
         "p_intercept": 0.05,
         "p_linear": 0.4,
         "p_square": 1.0,
     }
 
-    mandatory_arguments = ["x", "y", "model_info"]
+    mandatory_arguments = ["x", "y", "model_type"]
 
     _raw_fitter = get_component(
         name_or_func=fitter,
@@ -79,7 +71,7 @@ def get_fitter(
     fitter = partial(
         _fitter_template,
         fitter=_raw_fitter,
-        model_info=model_info,
+        model_type=model_type,
         clip_infinite_values=clip_infinite_values,
         residualize=fitter_options.get("residualize", False),
     )
@@ -94,7 +86,7 @@ def _fitter_template(
     old_model,
     weights=None,
     fitter=None,
-    model_info=None,
+    model_type=None,
     clip_infinite_values=None,
     residualize=False,
 ):
@@ -107,9 +99,10 @@ def _fitter_template(
             evaluations that have been centered around the function value at the
             trust region center.
         fitter (callable): Fit method. The first argument of any fit method needs to be
-            ``x``, second ``y`` and third ``model_info``.
-        model_info (ModelInfo): Information that describes the functional form of
-            the model.
+            ``x``, second ``y`` and third ``model_type``.
+        model_type (str): Type of the model that is fitted. The following are supported:
+            - "linear": Only linear effects and intercept.
+            - "quadratic": Fully quadratic model.
 
     Returns:
         VectorModel or ScalarModel: Results container.
@@ -134,12 +127,10 @@ def _fitter_template(
     intercepts = intercepts.flatten()
 
     # construct final square terms
-    if model_info.has_interactions:
+    if model_type == "quadratic":
         square_terms = _reshape_square_terms_to_hess(
-            square_terms, n_params, n_residuals, model_info.has_squares
+            square_terms, n_params, n_residuals
         )
-    elif model_info.has_squares:
-        square_terms = 2 * np.stack([np.diag(a) for a in square_terms])
     else:
         square_terms = None
 
@@ -151,7 +142,7 @@ def _fitter_template(
     return results
 
 
-def fit_ols(x, y, weights, model_info):
+def fit_ols(x, y, weights, model_type):
     """Fit a linear model using ordinary least squares.
 
     Args:
@@ -160,14 +151,15 @@ def fit_ols(x, y, weights, model_info):
         y (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the
             trust region center.
-        model_info (ModelInfo): Information that describes the functional form of the
-            model.
+        model_type (str): Type of the model that is fitted. The following are supported:
+            - "linear": Only linear effects and intercept.
+            - "quadratic": Fully quadratic model.
 
     Returns:
         np.ndarray: The model coefficients.
 
     """
-    features = _build_feature_matrix(x, model_info)
+    features = _build_feature_matrix(x, model_type)
     features_w, y_w = _add_weighting(features, y, weights)
     coef = _fit_ols(features_w, y_w)
 
@@ -191,7 +183,7 @@ def _fit_ols(x, y):
     return coef
 
 
-def fit_tranquilo(x, y, weights, model_info, p_intercept, p_linear, p_square):
+def fit_tranquilo(x, y, weights, model_type, p_intercept, p_linear, p_square):
     """Fit a linear model using ordinary least squares.
 
     The difference to fit_ols is that the linear terms are penalized less strongly
@@ -203,14 +195,15 @@ def fit_tranquilo(x, y, weights, model_info, p_intercept, p_linear, p_square):
         y (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the
             trust region center.
-        model_info (ModelInfo): Information that describes the functional form of the
-            model.
+        model_type (str): Type of the model that is fitted. The following are supported:
+            - "linear": Only linear effects and intercept.
+            - "quadratic": Fully quadratic model.
 
     Returns:
         np.ndarray: The model coefficients.
 
     """
-    features = _build_feature_matrix(x, model_info)
+    features = _build_feature_matrix(x, model_type)
     features_w, y_w = _add_weighting(features, y, weights)
 
     n_params = x.shape[1]
@@ -232,7 +225,7 @@ def fit_ridge(
     x,
     y,
     weights,
-    model_info,
+    model_type,
     l2_penalty_linear,
     l2_penalty_square,
 ):
@@ -244,8 +237,9 @@ def fit_ridge(
         y (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the trust
             region center.
-        model_info (ModelInfo): Information that describes the functional form of the
-            model.
+        model_type (str): Type of the model that is fitted. The following are supported:
+            - "linear": Only linear effects and intercept.
+            - "quadratic": Fully quadratic model.
         l2_penalty_linear (float): Penalty that is applied to all linear terms.
         l2_penalty_square (float): Penalty that is applied to all square terms, that is
             the quadratic and interaction terms.
@@ -254,7 +248,7 @@ def fit_ridge(
         np.ndarray: The model coefficients.
 
     """
-    features = _build_feature_matrix(x, model_info)
+    features = _build_feature_matrix(x, model_type)
 
     features_w, y_w = _add_weighting(features, y, weights)
 
@@ -293,7 +287,7 @@ def _fit_ridge(x, y, penalty):
     return coef
 
 
-def fit_powell(x, y, model_info):
+def fit_powell(x, y, model_type):
     """Fit a model, switching between penalized and unpenalized fitting.
 
     For:
@@ -309,8 +303,9 @@ def fit_powell(x, y, model_info):
         y (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the
             trust region center.
-        model_info (ModelInfo): Information that describes the functional form of the
-            model.
+        model_type (str): Type of the model that is fitted. The following are supported:
+            - "linear": Only linear effects and intercept.
+            - "quadratic": Fully quadratic model.
 
     Returns:
         np.ndarray: The model coefficients.
@@ -321,26 +316,23 @@ def fit_powell(x, y, model_info):
     _switch_to_linear = n_samples <= n_params + 1
 
     _n_just_identified = n_params + 1
-    if model_info.has_squares:
-        _n_just_identified += n_params
-    if model_info.has_interactions:
-        _n_just_identified += int(0.5 * n_params * (n_params - 1))
+    if model_type == "quadratic":
+        _n_just_identified += n_second_order_terms(n_params)
 
     if _switch_to_linear:
-        model_info = model_info._replace(has_squares=False, has_interactions=False)
-        coef = fit_ols(x, y, weights=None, model_info=model_info)
+        coef = fit_ols(x, y, weights=None, model_type="linear")
         n_resid, n_present = coef.shape
         padding = np.zeros((n_resid, _n_just_identified - n_present))
         coef = np.hstack([coef, padding])
     elif n_samples >= _n_just_identified:
-        coef = fit_ols(x, y, weights=None, model_info=model_info)
+        coef = fit_ols(x, y, weights=None, model_type=model_type)
     else:
-        coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_info)
+        coef = _fit_minimal_frobenius_norm_of_hessian(x, y, model_type)
 
     return coef
 
 
-def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
+def _fit_minimal_frobenius_norm_of_hessian(x, y):
     """Fit a quadraitc model using the powell fitting method.
 
     The solution represents the quadratic whose Hessian matrix is of
@@ -360,8 +352,6 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
         y (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the
             trust region center.
-        model_info (ModelInfo): Information that describes the functional form of the
-            model.
 
     Returns:
         np.ndarray: The model coefficients.
@@ -377,19 +367,14 @@ def _fit_minimal_frobenius_norm_of_hessian(x, y, model_info):
     if n_samples >= _n_too_many:
         raise ValueError("Too may points for minimum frobenius fitting")
 
-    has_squares = model_info.has_squares
-
-    if has_squares:
-        n_poly_features = n_params * (n_params + 1) // 2
-    else:
-        n_poly_features = n_params * (n_params - 1) // 2
+    n_poly_features = n_second_order_terms(n_params)
 
     (
         m_mat,
         n_mat,
         z_mat,
         n_z_mat,
-    ) = _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info)
+    ) = _get_feature_matrices_minimal_frobenius_norm_of_hessian(x)
 
     coef = _get_current_fit_minimal_frobenius_norm_of_hessian(
         y=y,
@@ -441,11 +426,11 @@ def _get_current_fit_minimal_frobenius_norm_of_hessian(
     return np.atleast_2d(coef)
 
 
-def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
+def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x):
     n_samples, n_params = x.shape
-    has_squares = model_info.has_squares
 
-    features = _polynomial_features(x, has_squares)
+    intercept = np.ones((n_samples, 1))
+    features = np.concatenate((intercept, _quadratic_features(x)), axis=1)
     m_mat, n_mat = np.split(features, (n_params + 1,), axis=1)
 
     m_mat_pad = np.zeros((n_samples, n_samples))
@@ -469,20 +454,15 @@ def _get_feature_matrices_minimal_frobenius_norm_of_hessian(x, model_info):
     )
 
 
-def _build_feature_matrix(x, model_info):
-    if model_info.has_interactions:
-        features = _polynomial_features(x, model_info.has_squares)
-    else:
-        data = (np.ones(len(x)), x)
-        data = (*data, x**2) if model_info.has_squares else data
-        features = np.column_stack(data)
-
+def _build_feature_matrix(x, model_type):
+    raw = x if model_type == "linear" else _quadratic_features(x)
+    intercept = np.ones((len(x), 1))
+    features = np.concatenate((intercept, raw), axis=1)
     return features
 
 
-def _reshape_square_terms_to_hess(square_terms, n_params, n_residuals, has_squares):
-    offset = 0 if has_squares else 1
-    idx1, idx2 = np.triu_indices(n_params, k=offset)
+def _reshape_square_terms_to_hess(square_terms, n_params, n_residuals):
+    idx1, idx2 = np.triu_indices(n_params)
     hess = np.zeros((n_residuals, n_params, n_params), dtype=np.float64)
     hess[:, idx1, idx2] = square_terms
     hess = hess + np.triu(hess).transpose(0, 2, 1)
@@ -491,27 +471,21 @@ def _reshape_square_terms_to_hess(square_terms, n_params, n_residuals, has_squar
 
 
 @njit
-def _polynomial_features(x, has_squares):
+def _quadratic_features(x):
+    # Create fully quadratic features without intercept
     n_samples, n_params = x.shape
-
-    if has_squares:
-        n_poly_terms = n_second_order_terms(n_params)
-    else:
-        n_poly_terms = n_interactions(n_params)
+    n_poly_terms = n_second_order_terms(n_params)
 
     poly_terms = np.empty((n_poly_terms, n_samples), np.float64)
     xt = x.T
 
     idx = 0
     for i in range(n_params):
-        j_start = i if has_squares else i + 1
+        j_start = i
         for j in range(j_start, n_params):
             poly_terms[idx] = xt[i] * xt[j]
             idx += 1
-
-    intercept = np.ones((1, n_samples), x.dtype)
-    out = np.concatenate((intercept, xt, poly_terms), axis=0)
-
+    out = np.concatenate((xt, poly_terms), axis=0)
     return out.T
 
 

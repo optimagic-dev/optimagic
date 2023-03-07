@@ -16,7 +16,6 @@ from estimagic.optimization.tranquilo.filter_points import (
 )
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import (
-    ModelInfo,
     ScalarModel,
     VectorModel,
     n_free_params,
@@ -152,7 +151,7 @@ def _tranquilo(
     if solver_options is None:
         solver_options = {}
 
-    model_info = _process_surrogate_model(
+    model_type = _process_surrogate_model(
         surrogate_model=surrogate_model,
         functype=functype,
     )
@@ -173,7 +172,7 @@ def _tranquilo(
 
     target_sample_size = _process_sample_size(
         user_sample_size=sample_size,
-        model_info=model_info,
+        model_type=model_type,
         x=x,
         sample_size_factor=sample_size_factor,
     )
@@ -222,7 +221,7 @@ def _tranquilo(
     sample_points = get_sampler(
         sampler,
         bounds=bounds,
-        model_info=model_info,
+        model_info=model_type,
         user_options=sampler_options,
     )
 
@@ -231,13 +230,13 @@ def _tranquilo(
     aggregate_vector_model = get_aggregator(
         aggregator=aggregator,
         functype=functype,
-        model_info=model_info,
+        model_type=model_type,
     )
 
     fit_model = get_fitter(
         fitter=fitter,
         fitter_options=fit_options,
-        model_info=model_info,
+        model_type=model_type,
         infinity_handling=infinity_handling,
     )
 
@@ -663,26 +662,21 @@ def _process_surrogate_model(surrogate_model, functype):
         else:
             surrogate_model = "linear"
 
-    if isinstance(surrogate_model, ModelInfo):
-        out = surrogate_model
-    elif isinstance(surrogate_model, str):
-        if surrogate_model == "linear":
-            out = ModelInfo(has_squares=False, has_interactions=False)
-        elif surrogate_model == "diagonal":
-            out = ModelInfo(has_squares=True, has_interactions=False)
-        elif surrogate_model == "quadratic":
-            out = ModelInfo(has_squares=True, has_interactions=True)
-        else:
-            raise ValueError(f"Invalid surrogate model: {surrogate_model}")
-
+    if isinstance(surrogate_model, str):
+        if surrogate_model not in ("linear", "quadratic"):
+            raise ValueError(
+                f"Invalid surrogate model: {surrogate_model} must be in ('linear', "
+                "'quadratic')"
+            )
     else:
         raise TypeError(f"Invalid surrogate model: {surrogate_model}")
-    return out
+
+    return surrogate_model
 
 
-def _process_sample_size(user_sample_size, model_info, x, sample_size_factor):
+def _process_sample_size(user_sample_size, model_type, x, sample_size_factor):
     if user_sample_size is None:
-        if model_info.has_squares or model_info.has_interactions:
+        if model_type == "quadratic":
             out = 2 * len(x) + 1
         else:
             out = len(x) + 1
@@ -690,11 +684,11 @@ def _process_sample_size(user_sample_size, model_info, x, sample_size_factor):
     elif isinstance(user_sample_size, str):
         user_sample_size = user_sample_size.replace(" ", "")
         if user_sample_size in ["linear", "n+1"]:
-            out = n_free_params(dim=len(x), info_or_name="linear")
+            out = n_free_params(dim=len(x), model_type="linear")
         elif user_sample_size in ["powell", "2n+1", "2*n+1"]:
             out = 2 * len(x) + 1
         elif user_sample_size == "quadratic":
-            out = n_free_params(dim=len(x), info_or_name="quadratic")
+            out = n_free_params(dim=len(x), model_type="quadratic")
         else:
             raise ValueError(f"Invalid sample size: {user_sample_size}")
 
