@@ -6,10 +6,9 @@ from scipy.special import gammainc, logsumexp
 
 import estimagic as em
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import Bounds
 
 
-def get_sampler(sampler, bounds, model_info=None, user_options=None):
+def get_sampler(sampler, model_info=None, user_options=None):
     """Get sampling function partialled options.
 
     Args:
@@ -19,7 +18,6 @@ def get_sampler(sampler, bounds, model_info=None, user_options=None):
             Sampling functions need to return a dictionary with the entry "points"
             (and arbitrary additional information). See ``reference_sampler`` for
             details.
-        bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``
         user_options (dict): Additional keyword arguments for the sampler. Options that
             are not used by the sampler are ignored with a warning. If sampler is
             'hull_sampler' or 'optimal_hull_sampler' the user options must contain the
@@ -56,12 +54,10 @@ def get_sampler(sampler, bounds, model_info=None, user_options=None):
         raise ValueError(msg)
 
     default_options = {
-        "bounds": bounds,
         "model_info": model_info,
     }
 
     mandatory_args = [
-        "bounds",
         "trustregion",
         "n_points",
         "existing_xs",
@@ -85,7 +81,6 @@ def _box_sampler(
     n_points,
     rng,
     existing_xs=None,  # noqa: ARG001
-    bounds=None,
 ):
     """Naive random generation of trustregion points inside a box.
 
@@ -100,28 +95,29 @@ def _box_sampler(
     outside of the sampler.
 
     Args:
-        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        trustregion (Region): Trustregion. See module region.py.
         n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
-        bounds (Bounds or None): NamedTuple.
 
     """
     n_params = len(trustregion.center)
-    effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
     points = rng.uniform(
-        low=effective_bounds.lower,
-        high=effective_bounds.upper,
+        low=trustregion.effective_bounds.lower,
+        high=trustregion.effective_bounds.upper,
         size=(n_points, n_params),
     )
     return points
 
 
 def _ball_sampler(
-    trustregion, n_points, rng, existing_xs=None, bounds=None  # noqa: ARG001
+    trustregion,
+    n_points,
+    rng,
+    existing_xs=None,  # noqa: ARG001
 ):
     """Naive random generation of trustregion points inside a ball.
 
@@ -131,24 +127,22 @@ def _ball_sampler(
     Code is adapted from https://tinyurl.com/y3p2dz6b.
 
     Args:
-        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        trustregion (Region): Trustregion. See module region.py.
         n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
-        bounds (Bounds or None): NamedTuple.
 
     """
     n_params = len(trustregion.center)
-    effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
     raw = rng.normal(size=(n_points, n_params))
     norm = np.linalg.norm(raw, axis=1, ord=2)
     scale = gammainc(n_params / 2, norm**2 / 2) ** (1 / n_params) / norm
     points = raw * scale.reshape(-1, 1)
 
-    out = _map_into_feasible_trustregion(points, bounds=effective_bounds)
+    out = _map_into_feasible_trustregion(points, bounds=trustregion.effective_bounds)
     return out
 
 
@@ -159,7 +153,6 @@ def _hull_sampler(
     order,
     distribution=None,
     existing_xs=None,  # noqa: ARG001
-    bounds=None,
 ):
     """Random generation of trustregion points on the hull of general sphere / cube.
 
@@ -168,7 +161,7 @@ def _hull_sampler(
     defined by the intersection of the trustregion and the bounds.
 
     Args:
-        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        trustregion (Region): Trustregion. See module region.py.
         n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         order (int): Type of norm to use when scaling the sampled points. For 2 it will
@@ -178,17 +171,15 @@ def _hull_sampler(
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
-        bounds (Bounds or None): NamedTuple.
 
     """
     n_params = len(trustregion.center)
-    effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
 
     if distribution is None:
         distribution = "normal" if order <= 3 else "uniform"
     points = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
     points = _project_onto_unit_hull(points, order=order)
-    points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
+    points = _map_into_feasible_trustregion(points, bounds=trustregion.effective_bounds)
     return points
 
 
@@ -200,7 +191,6 @@ def _optimal_hull_sampler(
     distribution=None,
     hardness=1,
     existing_xs=None,
-    bounds=None,
     algorithm="scipy_lbfgsb",
     algo_options=None,
     criterion=None,
@@ -218,7 +208,7 @@ def _optimal_hull_sampler(
     seek: https://tinyurl.com/mrythbk4.
 
     Args:
-        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        trustregion (Region): Trustregion. See module region.py.
         n_points (int): how many new points to sample
         rng (numpy.random.Generator): Random number generator.
         order (int): Type of norm to use when scaling the sampled points. For 2 it will
@@ -231,7 +221,6 @@ def _optimal_hull_sampler(
         existing_xs (np.ndarray or None): 2d numpy array in which each row is an
             x vector at which the criterion function has already been evaluated, that
             satisfies lower_bounds <= existing_xs <= upper_bounds.
-        bounds (Bounds or None): NamedTuple.
         algorithm (str): Optimization algorithm.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm. Default
@@ -273,11 +262,11 @@ def _optimal_hull_sampler(
     if "stopping_max_iterations" not in algo_options:
         algo_options["stopping_max_iterations"] = 2 * n_params + 5
 
-    effective_bounds = _get_effective_bounds(trustregion, bounds=bounds)
-
     if existing_xs is not None:
         # map existing points into unit space for easier optimization
-        existing_xs_unit = _map_from_feasible_trustregion(existing_xs, effective_bounds)
+        existing_xs_unit = _map_from_feasible_trustregion(
+            existing_xs, trustregion.effective_bounds
+        )
 
         if criterion == "distance":
             dist_to_center = np.linalg.norm(existing_xs_unit, axis=1)
@@ -348,7 +337,7 @@ def _optimal_hull_sampler(
         opt_params = x0
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
-    points = _map_into_feasible_trustregion(points, bounds=effective_bounds)
+    points = _map_into_feasible_trustregion(points, bounds=trustregion.effective_bounds)
 
     # Collect additional information. Mostly used for testing.
     info = {
@@ -520,16 +509,3 @@ def _project_onto_unit_hull(x, order):
     norm = np.linalg.norm(x, axis=1, ord=order).reshape(-1, 1)
     projected = x / norm
     return projected
-
-
-def _get_effective_bounds(trustregion, bounds):
-    lower_bounds = trustregion.center - trustregion.radius
-    upper_bounds = trustregion.center + trustregion.radius
-
-    if bounds is not None and bounds.lower is not None:
-        lower_bounds = np.clip(lower_bounds, bounds.lower, np.inf)
-
-    if bounds is not None and bounds.upper is not None:
-        upper_bounds = np.clip(upper_bounds, -np.inf, bounds.upper)
-
-    return Bounds(lower=lower_bounds, upper=upper_bounds)

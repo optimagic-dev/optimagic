@@ -9,6 +9,7 @@ from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.acceptance_decision import get_acceptance_decider
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
+from estimagic.optimization.tranquilo.bounds import Bounds
 from estimagic.optimization.tranquilo.estimate_variance import get_variance_estimator
 from estimagic.optimization.tranquilo.filter_points import (
     drop_worst_points,
@@ -23,12 +24,11 @@ from estimagic.optimization.tranquilo.models import (
 from estimagic.optimization.tranquilo.new_history import History
 from estimagic.optimization.tranquilo.options import (
     AcceptanceOptions,
-    Bounds,
     ConvOptions,
     RadiusOptions,
-    Region,
     StagnationOptions,
 )
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
@@ -216,7 +216,6 @@ def _tranquilo(
 
     sample_points = get_sampler(
         sampler,
-        bounds=bounds,
         model_info=model_type,
         user_options=sampler_options,
     )

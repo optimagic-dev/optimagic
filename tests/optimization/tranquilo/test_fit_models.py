@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from estimagic import first_derivative, second_derivative
 from estimagic.optimization.tranquilo.fit_models import _quadratic_features, get_fitter
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 

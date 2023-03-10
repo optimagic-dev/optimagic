@@ -1,12 +1,12 @@
 import numpy as np
 from estimagic.optimization.tranquilo.geometry import get_geometry_checker_pair
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
 def test_geometry_checker():
     rng = np.random.default_rng()
-    sampler = get_sampler("sphere", bounds=None)
+    sampler = get_sampler("sphere")
     trustregion = Region(center=np.zeros(2), sphere_radius=1)
 
     x = sampler(trustregion, n_points=10, rng=rng)
@@ -27,7 +27,7 @@ def test_geometry_checker():
 
 def test_geometry_checker_scale_invariance():
     rng = np.random.default_rng()
-    sampler = get_sampler("sphere", bounds=None)
+    sampler = get_sampler("sphere")
 
     trustregion = Region(center=np.zeros(2), sphere_radius=1)
     trustregion_scaled = Region(center=np.ones(2), sphere_radius=2)

@@ -4,7 +4,7 @@ from estimagic.optimization.tranquilo.filter_points import (
     _scaled_square_features,
     drop_collinear_pounders,
 )
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.tranquilo import State
 from estimagic.optimization.tranquilo.tranquilo_history import History
 from numpy.testing import assert_array_almost_equal as aaae

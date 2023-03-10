@@ -5,8 +5,8 @@ from scipy.spatial.distance import pdist
 from scipy.special import gammainc, logsumexp
 
 import estimagic as em
+from estimagic.optimization.tranquilo.bounds import Bounds
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import Bounds
 
 
 def get_sampler(sampler, bounds, model_info=None, user_options=None):

@@ -13,7 +13,7 @@ from estimagic.optimization.tranquilo.models import (
     n_second_order_terms,
     subtract_models,
 )
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
 

@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy as np
 
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import (
     _map_from_feasible_trustregion,
     get_sampler,
@@ -73,8 +73,8 @@ def log_d_cutoff_simulator(
         float: The simulated mean logarithm of the d-optimality criterion.
 
     """
-    _sampler = get_sampler(reference_sampler, bounds)
-    trustregion = Region(center=np.zeros(n_params), sphere_radius=1)
+    _sampler = get_sampler(reference_sampler)
+    trustregion = Region(center=np.zeros(n_params), sphere_radius=1, bounds=bounds)
     sampler = partial(_sampler, trustregion=trustregion)
     raw = []
     for _ in range(n_simulations):
