@@ -25,7 +25,7 @@ def get_geometry_checker_pair(
             samples drawn inside a box or a ball, respectively.
         n_params (int): Number of parameters.
         n_simulations (int): Number of simulations for the mean calculation.
-        bounds (Bounds): The parameter bounds.
+        bounds (Bounds): The parameter bounds. See module bounds.py.
 
     Returns:
         callable: The sample quality calculator.
@@ -65,7 +65,7 @@ def log_d_cutoff_simulator(
         rng (np.random.Generator): The random number generator.
         reference_sampler (str): Either "box" or "ball", corresponding to comparison
             samples drawn inside a box or a ball, respectively.
-        bounds (Bounds): The parameter bounds.
+        bounds (Bounds): The parameter bounds. See module bounds.py.
         n_params (int): Dimensionality of the sample.
         n_simulations (int): Number of simulations for the mean calculation.
 
@@ -93,7 +93,7 @@ def log_d_quality_calculator(sample, trustregion):
 
     Args:
         sample (np.ndarray): The data sample, shape = (n, p).
-        trustregion (TrustRegion): NamedTuple with attributes center and radius.
+        trustregion (Region): Trustregion. See module region.py.
 
     Returns:
         np.ndarray: The criterion values, shape = (n, ).

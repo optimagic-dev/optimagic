@@ -469,6 +469,7 @@ def _map_into_feasible_trustregion(points, bounds):
         points (np.ndarray): 2d array of points to be mapped. Each value is in [-1, 1].
         bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``, where
             lower and upper define the rectangle that is the feasible trustregion.
+            See module bounds.py.
 
     Returns:
         np.ndarray: Points in trustregion.
@@ -485,6 +486,7 @@ def _map_from_feasible_trustregion(points, bounds):
         points (np.ndarray): 2d array of points to be mapped. Each value is in [-1, 1].
         bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``, where
             lower and upper define the rectangle that is the feasible trustregion.
+            See module bounds.py.
 
     Returns:
         np.ndarray: Points in unit space.
