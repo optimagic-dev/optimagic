@@ -112,7 +112,7 @@ def scalar_model():
         intercept=0.5,
         linear_terms=np.array([-0.3, 0.3]),
         square_terms=np.array([[0.8, 0.2], [0.2, 0.7]]),
-        region=Region(center=np.array([0.2, 0.3]), radius=0.6, shape="sphere"),
+        region=Region(center=np.array([0.2, 0.3]), sphere_radius=0.6),
     )
     return out
 
@@ -129,14 +129,14 @@ def vector_model():
                 [[0.8, 0.2], [0.2, 0.7]],
             ]
         ),
-        region=Region(center=np.array([0.2, 0.3]), radius=0.6, shape="sphere"),
+        region=Region(center=np.array([0.2, 0.3]), sphere_radius=0.6),
     )
     return out
 
 
 def test_move_scalar_model(scalar_model):
     old_region = scalar_model.region
-    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45, shape="sphere")
+    new_region = Region(center=np.array([-0.1, 0.1]), sphere_radius=0.45)
 
     old_model = scalar_model
     x_unscaled = np.array([[0.5, 0.5]])
@@ -156,7 +156,7 @@ def test_move_scalar_model(scalar_model):
 
 def test_move_vector_model(vector_model):
     old_region = vector_model.region
-    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45, shape="sphere")
+    new_region = Region(center=np.array([-0.1, 0.1]), sphere_radius=0.45)
 
     old_model = vector_model
 

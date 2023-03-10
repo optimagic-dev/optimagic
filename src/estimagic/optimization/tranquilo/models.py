@@ -200,7 +200,7 @@ def _scale_model(model, old_radius, new_radius):
     out = model._replace(
         linear_terms=new_g,
         square_terms=new_h,
-        region=model.region._replace(radius=new_radius),
+        region=model.region._replace(sphere_radius=new_radius),
     )
     return out
 

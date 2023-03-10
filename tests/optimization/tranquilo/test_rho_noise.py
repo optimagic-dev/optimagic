@@ -49,7 +49,7 @@ def test_convergence_to_one_if_noise_is_tiny(functype):
 
     noise_cov = np.eye(n_residuals) * 1e-12
 
-    trustregion = Region(center=np.ones(2) * 0.5, radius=1, shape="sphere")
+    trustregion = Region(center=np.ones(2) * 0.5, sphere_radius=1)
     model_fitter = get_fitter(fitter="ols", model_type=model_type)
 
     vector_model = model_fitter(

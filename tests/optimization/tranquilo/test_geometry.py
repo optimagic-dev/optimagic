@@ -7,7 +7,7 @@ from estimagic.optimization.tranquilo.sample_points import get_sampler
 def test_geometry_checker():
     rng = np.random.default_rng()
     sampler = get_sampler("sphere", bounds=None)
-    trustregion = Region(center=np.zeros(2), radius=1, shape="sphere")
+    trustregion = Region(center=np.zeros(2), sphere_radius=1)
 
     x = sampler(trustregion, n_points=10, rng=rng)
     x_scaled = x * 0.5
@@ -16,8 +16,8 @@ def test_geometry_checker():
         "d_optimality", reference_sampler="ball", n_params=2, bounds=None
     )
 
-    x_quality = quality_calculator(x, trustregion, bounds=None)
-    x_scaled_quality = quality_calculator(x_scaled, trustregion, bounds=None)
+    x_quality = quality_calculator(x, trustregion)
+    x_scaled_quality = quality_calculator(x_scaled, trustregion)
 
     cutoff = cutoff_simulator(n_samples=10, rng=rng, n_simulations=1_000)
 
@@ -29,8 +29,8 @@ def test_geometry_checker_scale_invariance():
     rng = np.random.default_rng()
     sampler = get_sampler("sphere", bounds=None)
 
-    trustregion = Region(center=np.zeros(2), radius=1, shape="sphere")
-    trustregion_scaled = Region(center=np.ones(2), radius=2, shape="sphere")
+    trustregion = Region(center=np.zeros(2), sphere_radius=1)
+    trustregion_scaled = Region(center=np.ones(2), sphere_radius=2)
 
     x = sampler(trustregion, n_points=10, rng=rng)
     x_scaled = 1 + 2 * x
@@ -39,7 +39,7 @@ def test_geometry_checker_scale_invariance():
         "d_optimality", reference_sampler="ball", n_params=2, bounds=None
     )
 
-    x_quality = quality_calculator(x, trustregion, bounds=None)
-    x_scaled_quality = quality_calculator(x_scaled, trustregion_scaled, bounds=None)
+    x_quality = quality_calculator(x, trustregion)
+    x_scaled_quality = quality_calculator(x_scaled, trustregion_scaled)
 
     assert x_quality == x_scaled_quality

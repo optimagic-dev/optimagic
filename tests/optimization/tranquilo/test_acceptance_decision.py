@@ -42,7 +42,7 @@ def acceptance_options():
 # ======================================================================================
 
 
-trustregion = Region(center=np.zeros(2), radius=2.0, shape="sphere")
+trustregion = Region(center=np.zeros(2), sphere_radius=2.0)
 State = namedtuple("State", "x trustregion fval index")
 states = [  # we will parametrize over `states`
     State(np.arange(2.0), trustregion, 0.25, 0),  # better than candidate
@@ -92,7 +92,7 @@ def test_get_acceptance_result():
     candidate_fval = 0
     candidate_index = 0
     rho = 1
-    tr = Region(center=np.zeros(2), radius=2.0, shape="sphere")
+    tr = Region(center=np.zeros(2), sphere_radius=2.0)
     old_state = namedtuple("State", "x fval index trustregion")(np.arange(2), 1, 1, tr)
 
     ar_when_accepted = _get_acceptance_result(

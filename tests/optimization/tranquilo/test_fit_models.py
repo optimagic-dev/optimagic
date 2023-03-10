@@ -67,7 +67,7 @@ def test_fit_ols_against_truth(quadratic_case):
     got = fit_ols(
         x=quadratic_case["x"],
         y=quadratic_case["y"],
-        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        region=Region(center=np.zeros(4), sphere_radius=1.0),
         old_model=None,
     )
 
@@ -80,7 +80,7 @@ def test_fit_powell_against_truth_quadratic(quadratic_case):
     got = fit_pounders(
         quadratic_case["x"],
         quadratic_case["y"],
-        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        region=Region(center=np.zeros(4), sphere_radius=1.0),
         old_model=None,
     )
 
@@ -99,7 +99,7 @@ def test_fit_ols_against_gradient(model, quadratic_case):
     got = fit_ols(
         quadratic_case["x"],
         quadratic_case["y"],
-        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        region=Region(center=np.zeros(4), sphere_radius=1.0),
         old_model=None,
     )
 
@@ -120,7 +120,7 @@ def test_fit_ols_against_hessian(model, options, quadratic_case):
     got = fit_ols(
         quadratic_case["x"],
         quadratic_case["y"],
-        region=Region(center=np.zeros(4), radius=1.0, shape="sphere"),
+        region=Region(center=np.zeros(4), sphere_radius=1.0),
         old_model=None,
     )
     hessian = second_derivative(quadratic_case["func"], quadratic_case["x0"])

@@ -43,7 +43,7 @@ def basic_case():
     )
     indices = np.arange(len(xs))
 
-    trustregion = Region(radius=radius, center=x_accepted, shape="sphere")
+    trustregion = Region(center=x_accepted, sphere_radius=radius)
 
     state = State(
         trustregion=trustregion,
@@ -199,7 +199,7 @@ def test_indices_in_trust_region(basic_case):
     x_accepted = np.array([0.16004745, 0.00572722, 0.01158929])
     radius = 0.0125
 
-    trustregion = Region(center=x_accepted, radius=radius, shape="sphere")
+    trustregion = Region(center=x_accepted, sphere_radius=radius)
     history.add_entries(xs, np.zeros(xs.shape[0]))
 
     indices_in_tr = history.get_indices_in_region(trustregion)

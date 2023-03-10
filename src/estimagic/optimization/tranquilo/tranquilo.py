@@ -67,7 +67,6 @@ def _tranquilo(
     acceptance_options=None,
     variance_estimator="classic",
     variance_estimation_options=None,
-    trustregion_shape=None,
     stagnation_options=None,
     n_evals_per_point=1,
 ):
@@ -158,14 +157,11 @@ def _tranquilo(
 
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
 
-    if trustregion_shape is None:
-        trustregion_shape = "sphere" if not bounds.has_any else "cube"
-
     if sampler is None:
-        sampler = f"optimal_{trustregion_shape}"
+        sampler = "optimal_sphere"
 
     if subsolver is None:
-        subsolver = "bntr_fast" if trustregion_shape == "cube" else "gqtpar_fast"
+        subsolver = "gqtpar_fast"
 
     if search_radius_factor is None:
         search_radius_factor = 4.25 if functype == "scalar" else 5.0
@@ -265,7 +261,7 @@ def _tranquilo(
 
     _init_fvec = history.get_fvecs(0).mean(axis=0)
     _init_radius = radius_options.initial_radius * np.max(np.abs(x))
-    _init_region = Region(center=x, radius=_init_radius, shape=trustregion_shape)
+    _init_region = Region(center=x, sphere_radius=_init_radius, bounds=bounds)
 
     _init_vector_model = VectorModel(
         intercepts=_init_fvec,
@@ -305,7 +301,7 @@ def _tranquilo(
         # ==============================================================================
 
         search_region = state.trustregion._replace(
-            radius=search_radius_factor * state.trustregion.radius
+            sphere_radius=search_radius_factor * state.trustregion.sphere_radius
         )
 
         old_indices = history.get_x_indices_in_region(search_region)
@@ -357,7 +353,7 @@ def _tranquilo(
         sub_sol = solve_subproblem(model=scalar_model, trustregion=state.trustregion)
 
         _relative_step_length = (
-            np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
+            np.linalg.norm(sub_sol.x - state.x) / state.trustregion.sphere_radius
         )
 
         # ==========================================================================
@@ -398,7 +394,8 @@ def _tranquilo(
                 )
 
                 _relative_step_length = (
-                    np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
+                    np.linalg.norm(sub_sol.x - state.x)
+                    / state.trustregion.sphere_radius
                 )
 
         # ==========================================================================
@@ -451,7 +448,7 @@ def _tranquilo(
             )
 
             _relative_step_length = (
-                np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
+                np.linalg.norm(sub_sol.x - state.x) / state.trustregion.sphere_radius
             )
 
             sample_counter += 1
@@ -503,14 +500,14 @@ def _tranquilo(
         # ==============================================================================
 
         new_radius = adjust_radius(
-            radius=state.trustregion.radius,
+            radius=state.trustregion.sphere_radius,
             rho=acceptance_result.rho,
             step_length=acceptance_result.step_length,
             options=radius_options,
         )
 
         new_trustregion = state.trustregion._replace(
-            center=acceptance_result.x, radius=new_radius
+            center=acceptance_result.x, sphere_radius=new_radius
         )
 
         state = state._replace(trustregion=new_trustregion)

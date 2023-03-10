@@ -29,7 +29,7 @@ def test_estimate_variance_classic(model_type):
     history.add_evals(idxs.repeat(repetitions), evals)
 
     got = _estimate_variance_classic(
-        trustregion=Region(center=np.array([0.0, 0.0]), radius=1.0, shape="sphere"),
+        trustregion=Region(center=np.array([0.0, 0.0]), sphere_radius=1.0),
         history=history,
         model_type=model_type,
         max_distance_factor=1.0,
