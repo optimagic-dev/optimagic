@@ -9,7 +9,7 @@ from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.acceptance_decision import get_acceptance_decider
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
-from estimagic.optimization.tranquilo.bounds import Bounds
+from estimagic.optimization.tranquilo.bounds import Bounds, _any_finite
 from estimagic.optimization.tranquilo.estimate_variance import get_variance_estimator
 from estimagic.optimization.tranquilo.filter_points import (
     drop_worst_points,
@@ -161,7 +161,10 @@ def _tranquilo(
         sampler = "optimal_sphere"
 
     if subsolver is None:
-        subsolver = "gqtpar_fast"
+        if _any_finite(bounds.lower, bounds.upper):
+            subsolver = "gqtpar_fast"
+        else:
+            subsolver = "bntr_fast"
 
     if search_radius_factor is None:
         search_radius_factor = 4.25 if functype == "scalar" else 5.0
