@@ -162,9 +162,9 @@ def _tranquilo(
 
     if subsolver is None:
         if _any_finite(bounds.lower, bounds.upper):
-            subsolver = "gqtpar_fast"
-        else:
             subsolver = "bntr_fast"
+        else:
+            subsolver = "gqtpar_fast"
 
     if search_radius_factor is None:
         search_radius_factor = 4.25 if functype == "scalar" else 5.0

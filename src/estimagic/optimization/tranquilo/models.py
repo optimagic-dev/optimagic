@@ -167,7 +167,7 @@ def move_model(model, new_region):
 
     """
     old_region = model.region
-    out = _scale_model(model, old_radius=old_region.radius, new_radius=1.0)
+    out = _scale_model(model, old_radius=old_region.sphere_radius, new_radius=1.0)
     if isinstance(model, ScalarModel):
         out = _shift_scalar_model(
             out, old_center=old_region.center, new_center=new_region.center
@@ -176,7 +176,7 @@ def move_model(model, new_region):
         out = _shift_vector_model(
             out, old_center=old_region.center, new_center=new_region.center
         )
-    out = _scale_model(out, old_radius=1.0, new_radius=new_region.radius)
+    out = _scale_model(out, old_radius=1.0, new_radius=new_region.sphere_radius)
     return out
 
 
