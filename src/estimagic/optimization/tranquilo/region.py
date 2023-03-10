@@ -60,7 +60,9 @@ def _get_effective_bounds(center, radius, bounds):
 def _any_bounds_binding(bounds, center, sphere_radius):
     out = False
     if bounds is not None and bounds.has_any:
-        lower_binding = np.min(center - bounds.lower) <= sphere_radius
-        upper_binding = np.min(bounds.upper - center) <= sphere_radius
+        if bounds.lower is not None:
+            lower_binding = np.min(center - bounds.lower) <= sphere_radius
+        if bounds.upper is not None:
+            upper_binding = np.min(bounds.upper - center) <= sphere_radius
         out = lower_binding or upper_binding
     return out
