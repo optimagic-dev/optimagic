@@ -37,7 +37,7 @@ def _estimate_variance_classic(
     min_n_evals: int,
 ):
     all_indices = history.get_x_indices_in_region(
-        trustregion._replace(sphere_radius=trustregion.radius * max_distance_factor)
+        trustregion._replace(radius=trustregion.radius * max_distance_factor)
     )
 
     n_evals = {idx: len(history.get_fvals(idx)) for idx in all_indices}

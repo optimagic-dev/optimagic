@@ -3,10 +3,7 @@ from functools import partial
 import numpy as np
 
 from estimagic.optimization.tranquilo.region import Region
-from estimagic.optimization.tranquilo.sample_points import (
-    _map_from_feasible_trustregion,
-    get_sampler,
-)
+from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
 def get_geometry_checker_pair(
@@ -74,7 +71,7 @@ def log_d_cutoff_simulator(
 
     """
     _sampler = get_sampler(reference_sampler)
-    trustregion = Region(center=np.zeros(n_params), sphere_radius=1, bounds=bounds)
+    trustregion = Region(center=np.zeros(n_params), radius=1, bounds=bounds)
     sampler = partial(_sampler, trustregion=trustregion)
     raw = []
     for _ in range(n_simulations):
@@ -99,7 +96,7 @@ def log_d_quality_calculator(sample, trustregion):
         np.ndarray: The criterion values, shape = (n, ).
 
     """
-    points = _map_from_feasible_trustregion(sample, trustregion.effective_bounds)
+    points = trustregion.map_to_unit(sample)
     n_samples, n_params = points.shape
     xtx = points.T @ points
     det = np.linalg.det(xtx / n_samples)

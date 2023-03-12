@@ -263,7 +263,7 @@ def _tranquilo(
 
     _init_fvec = history.get_fvecs(0).mean(axis=0)
     _init_radius = radius_options.initial_radius * np.max(np.abs(x))
-    _init_region = Region(center=x, sphere_radius=_init_radius, bounds=bounds)
+    _init_region = Region(center=x, radius=_init_radius, bounds=bounds)
 
     _init_vector_model = VectorModel(
         intercepts=_init_fvec,
@@ -303,7 +303,7 @@ def _tranquilo(
         # ==============================================================================
 
         search_region = state.trustregion._replace(
-            sphere_radius=search_radius_factor * state.trustregion.sphere_radius
+            radius=search_radius_factor * state.trustregion.radius
         )
 
         old_indices = history.get_x_indices_in_region(search_region)
@@ -355,7 +355,7 @@ def _tranquilo(
         sub_sol = solve_subproblem(model=scalar_model, trustregion=state.trustregion)
 
         _relative_step_length = (
-            np.linalg.norm(sub_sol.x - state.x) / state.trustregion.sphere_radius
+            np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
         )
 
         # ==========================================================================
@@ -396,8 +396,7 @@ def _tranquilo(
                 )
 
                 _relative_step_length = (
-                    np.linalg.norm(sub_sol.x - state.x)
-                    / state.trustregion.sphere_radius
+                    np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
                 )
 
         # ==========================================================================
@@ -450,7 +449,7 @@ def _tranquilo(
             )
 
             _relative_step_length = (
-                np.linalg.norm(sub_sol.x - state.x) / state.trustregion.sphere_radius
+                np.linalg.norm(sub_sol.x - state.x) / state.trustregion.radius
             )
 
             sample_counter += 1
@@ -502,14 +501,14 @@ def _tranquilo(
         # ==============================================================================
 
         new_radius = adjust_radius(
-            radius=state.trustregion.sphere_radius,
+            radius=state.trustregion.radius,
             rho=acceptance_result.rho,
             step_length=acceptance_result.step_length,
             options=radius_options,
         )
 
         new_trustregion = state.trustregion._replace(
-            center=acceptance_result.x, sphere_radius=new_radius
+            center=acceptance_result.x, radius=new_radius
         )
 
         state = state._replace(trustregion=new_trustregion)

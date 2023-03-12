@@ -106,8 +106,8 @@ def _box_sampler(
     n_params = len(trustregion.center)
 
     points = rng.uniform(
-        low=trustregion.effective_bounds.lower,
-        high=trustregion.effective_bounds.upper,
+        low=trustregion.cube_bounds.lower,
+        high=trustregion.cube_bounds.upper,
         size=(n_points, n_params),
     )
     return points
@@ -141,8 +141,7 @@ def _ball_sampler(
     norm = np.linalg.norm(raw, axis=1, ord=2)
     scale = gammainc(n_params / 2, norm**2 / 2) ** (1 / n_params) / norm
     points = raw * scale.reshape(-1, 1)
-
-    out = _map_into_feasible_trustregion(points, bounds=trustregion.effective_bounds)
+    out = trustregion.map_from_unit(points)
     return out
 
 
@@ -177,10 +176,10 @@ def _hull_sampler(
 
     if distribution is None:
         distribution = "normal" if order <= 3 else "uniform"
-    points = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
-    points = _project_onto_unit_hull(points, order=order)
-    points = _map_into_feasible_trustregion(points, bounds=trustregion.effective_bounds)
-    return points
+    raw = _draw_from_distribution(distribution, rng=rng, size=(n_points, n_params))
+    points = _project_onto_unit_hull(raw, order=order)
+    out = trustregion.map_from_unit(points)
+    return out
 
 
 def _optimal_hull_sampler(
@@ -264,9 +263,8 @@ def _optimal_hull_sampler(
 
     if existing_xs is not None:
         # map existing points into unit space for easier optimization
-        existing_xs_unit = _map_from_feasible_trustregion(
-            existing_xs, trustregion.effective_bounds
-        )
+
+        existing_xs_unit = trustregion.map_to_unit(existing_xs)
 
         if criterion == "distance":
             dist_to_center = np.linalg.norm(existing_xs_unit, axis=1)
@@ -337,7 +335,7 @@ def _optimal_hull_sampler(
         opt_params = x0
 
     points = _project_onto_unit_hull(opt_params.reshape(-1, n_params), order=order)
-    points = _map_into_feasible_trustregion(points, bounds=trustregion.effective_bounds)
+    points = trustregion.map_from_unit(points)
 
     # Collect additional information. Mostly used for testing.
     info = {
@@ -460,40 +458,6 @@ def _draw_from_distribution(distribution, rng, size):
             f"distribution is {distribution}, but needs to be in ('normal', 'uniform')."
         )
     return draw
-
-
-def _map_into_feasible_trustregion(points, bounds):
-    """Map points from the unit space into trustregion defined by bounds.
-
-    Args:
-        points (np.ndarray): 2d array of points to be mapped. Each value is in [-1, 1].
-        bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``, where
-            lower and upper define the rectangle that is the feasible trustregion.
-            See module bounds.py.
-
-    Returns:
-        np.ndarray: Points in trustregion.
-
-    """
-    out = (bounds.upper - bounds.lower) * (points + 1) / 2 + bounds.lower
-    return out
-
-
-def _map_from_feasible_trustregion(points, bounds):
-    """Map points from a feasible trustregion definde by bounds into unit space.
-
-    Args:
-        points (np.ndarray): 2d array of points to be mapped. Each value is in [-1, 1].
-        bounds (Bounds): A NamedTuple with attributes ``lower`` and ``upper``, where
-            lower and upper define the rectangle that is the feasible trustregion.
-            See module bounds.py.
-
-    Returns:
-        np.ndarray: Points in unit space.
-
-    """
-    out = 2 * (points - bounds.lower) / (bounds.upper - bounds.lower) - 1
-    return out
 
 
 def _project_onto_unit_hull(x, order):
