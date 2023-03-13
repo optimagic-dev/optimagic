@@ -71,7 +71,7 @@ def log_d_cutoff_simulator(
 
     """
     _sampler = get_sampler(reference_sampler)
-    trustregion = Region(center=np.zeros(n_params), radius=1, bounds=bounds)
+    trustregion = Region(center=np.zeros(n_params), radius=1.0, bounds=bounds)
     sampler = partial(_sampler, trustregion=trustregion)
     raw = []
     for _ in range(n_simulations):

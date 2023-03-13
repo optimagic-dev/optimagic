@@ -5,9 +5,9 @@ from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
 def test_geometry_checker():
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(12345)
     sampler = get_sampler("sphere")
-    trustregion = Region(center=np.zeros(2), radius=1)
+    trustregion = Region(center=np.zeros(2), radius=1.0)
 
     x = sampler(trustregion, n_points=10, rng=rng)
     x_scaled = x * 0.5
@@ -26,11 +26,11 @@ def test_geometry_checker():
 
 
 def test_geometry_checker_scale_invariance():
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(12345)
     sampler = get_sampler("sphere")
 
-    trustregion = Region(center=np.zeros(2), radius=1)
-    trustregion_scaled = Region(center=np.ones(2), radius=2)
+    trustregion = Region(center=np.zeros(2), radius=1.0)
+    trustregion_scaled = Region(center=np.ones(2), radius=2.0)
 
     x = sampler(trustregion, n_points=10, rng=rng)
     x_scaled = 1 + 2 * x
@@ -42,4 +42,4 @@ def test_geometry_checker_scale_invariance():
     x_quality = quality_calculator(x, trustregion)
     x_scaled_quality = quality_calculator(x_scaled, trustregion_scaled)
 
-    assert np.abs(x_quality - x_scaled_quality) < 1e-12
+    assert x_quality == x_scaled_quality
