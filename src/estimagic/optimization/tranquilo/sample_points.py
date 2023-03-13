@@ -105,9 +105,11 @@ def _box_sampler(
     """
     n_params = len(trustregion.center)
 
+    bounds = trustregion.cube_bounds
+
     points = rng.uniform(
-        low=trustregion.cube_bounds.lower,
-        high=trustregion.cube_bounds.upper,
+        low=bounds.lower,
+        high=bounds.upper,
         size=(n_points, n_params),
     )
     return points

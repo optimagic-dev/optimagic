@@ -26,47 +26,67 @@ class Region:
     @property
     def cube_bounds(self) -> Bounds:
         if self.shape == "sphere":
-            radius = self.radius
-        else:
-            radius = get_radius_of_cube_with_volume_of_sphere(
-                self.radius, len(self.center), scaling_factor=1.0
+            raise AttributeError(
+                "The trustregion is a sphere, and thus has no cube bounds."
             )
-        cube_bounds = _get_cube_bounds(
-            center=self.center, radius=radius, bounds=self.bounds
+        radius = get_radius_of_cube_with_volume_of_sphere(
+            self.radius, len(self.center), scaling_factor=1.0
         )
-        return cube_bounds
+        bounds = _get_cube_bounds(center=self.center, radius=radius, bounds=self.bounds)
+        return bounds
 
     @property
     def cube_center(self) -> np.ndarray:
         if self.shape == "sphere":
-            _center = self.center
-        else:
-            cube_bounds = self.cube_bounds
-            _center = (cube_bounds.lower + cube_bounds.upper) / 2
-        return _center
+            raise AttributeError(
+                "The trustregion is a sphere, and thus has no cube center."
+            )
+        cube_bounds = self.cube_bounds
+        center = (cube_bounds.lower + cube_bounds.upper) / 2
+        return center
 
     def map_to_unit(self, x: np.ndarray) -> np.ndarray:
-        """Map points inside the trustregion to the unit sphere or cube."""
-        return _map_to_unit(self.cube_bounds, x=x)
+        """Map points from the trustregion to the unit sphere or cube."""
+        if self.shape == "sphere":
+            out = _map_to_unit_sphere(x, center=self.center, radius=self.radius)
+        else:
+            out = _map_to_unit_cube(x, cube_bounds=self.cube_bounds)
+        return out
 
     def map_from_unit(self, x: np.ndarray) -> np.ndarray:
-        """Map points inside the unit sphere or cube to the trustregion."""
-        return _map_from_unit(self.cube_bounds, x=x)
+        """Map points from the unit sphere or cube to the trustregion."""
+        if self.shape == "sphere":
+            out = _map_from_unit_sphere(x, center=self.center, radius=self.radius)
+        else:
+            out = _map_from_unit_cube(x, cube_bounds=self.cube_bounds)
+        return out
 
     # make it behave like a NamedTuple
     def _replace(self, **kwargs):
         return replace(self, **kwargs)
 
 
-def _map_to_unit(cube_bounds, x):
-    """Map points inside the trustregion to the unit sphere or cube."""
+def _map_to_unit_cube(x, cube_bounds):
+    """Map points from the trustregion to the unit cube."""
     out = 2 * (x - cube_bounds.lower) / (cube_bounds.upper - cube_bounds.lower) - 1
     return out
 
 
-def _map_from_unit(cube_bounds, x):
-    """Map points inside the unit sphere or cube to the trustregion."""
+def _map_to_unit_sphere(x, center, radius):
+    """Map points from the trustregion to the unit sphere."""
+    out = (x - center) / radius
+    return out
+
+
+def _map_from_unit_cube(x, cube_bounds):
+    """Map points from the unit cube to the trustregion."""
     out = (cube_bounds.upper - cube_bounds.lower) * (x + 1) / 2 + cube_bounds.lower
+    return out
+
+
+def _map_from_unit_sphere(x, center, radius):
+    """Map points from the unit sphere to the trustregion."""
+    out = x * radius + center
     return out
 
 

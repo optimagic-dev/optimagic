@@ -70,7 +70,9 @@ def deviation_plot(
         .reset_index()
     )
     average_deviations = (
-        deviations.groupby(["algorithm", "n_evaluations"]).mean()[outcome].reset_index()
+        deviations.groupby(["algorithm", "n_evaluations"])
+        .mean(numeric_only=True)[outcome]
+        .reset_index()
     )
     fig = px.line(average_deviations, x="n_evaluations", y=outcome, color="algorithm")
 

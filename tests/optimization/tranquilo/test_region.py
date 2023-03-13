@@ -1,24 +1,37 @@
 import numpy as np
+import pytest
 from estimagic.optimization.tranquilo.bounds import Bounds
 from estimagic.optimization.tranquilo.region import (
     Region,
     _any_bounds_binding,
     _get_cube_bounds,
-    _map_from_unit,
-    _map_to_unit,
+    _map_from_unit_cube,
+    _map_from_unit_sphere,
+    _map_to_unit_cube,
+    _map_to_unit_sphere,
 )
 from numpy.testing import assert_array_equal
 
 
-def test_map_to_unit():
+def test_map_to_unit_sphere():
+    got = _map_to_unit_sphere(np.ones(2), center=2 * np.ones(1), radius=2)
+    assert_array_equal(got, -0.5 * np.ones(2))
+
+
+def test_map_to_unit_cube():
     bounds = Bounds(lower=np.zeros(2), upper=2 * np.ones(2))
-    got = _map_to_unit(bounds, np.ones(2))
+    got = _map_to_unit_cube(np.ones(2), cube_bounds=bounds)
     assert_array_equal(got, np.zeros(2))
 
 
-def test_map_from_unit():
+def test_map_from_unit_sphere():
+    got = _map_from_unit_sphere(-0.5 * np.ones(2), center=2 * np.ones(1), radius=2)
+    assert_array_equal(got, np.ones(2))
+
+
+def test_map_from_unit_cube():
     bounds = Bounds(lower=np.zeros(2), upper=2 * np.ones(2))
-    got = _map_from_unit(bounds, np.zeros(2))
+    got = _map_from_unit_cube(np.zeros(2), cube_bounds=bounds)
     assert_array_equal(got, np.ones(2))
 
 
@@ -60,8 +73,10 @@ def test_region_non_binding_bounds():
     assert region.shape == "sphere"
     assert region.radius == 1
     assert region.bounds is None
-    assert_array_equal(region.cube_bounds.lower, -np.ones(2))
-    assert_array_equal(region.cube_bounds.upper, np.ones(2))
+    with pytest.raises(AttributeError):
+        region.cube_bounds
+    with pytest.raises(AttributeError):
+        region.cube_center
 
 
 def test_region_binding_bounds():
