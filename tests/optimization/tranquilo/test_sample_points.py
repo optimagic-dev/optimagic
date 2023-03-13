@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.options import Bounds, Region
+from estimagic.optimization.tranquilo.bounds import Bounds
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import (
     _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
@@ -15,10 +16,11 @@ SAMPLERS = ["box", "ball", "cube", "sphere", "optimal_cube", "optimal_sphere"]
 
 @pytest.mark.parametrize("sampler", SAMPLERS)
 def test_bounds_are_satisfied(sampler):
-    bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
-    sampler = get_sampler(sampler, bounds)
-    sample = sampler(
-        trustregion=Region(center=np.zeros(2), radius=1, shape="sphere"),
+    bounds = Bounds(lower=np.array([-2.0, -2.0]), upper=np.array([0.25, 0.5]))
+    _sampler = get_sampler(sampler)
+    trustregion = Region(center=np.array([0.0, 0]), radius=1.5, bounds=bounds)
+    sample = _sampler(
+        trustregion=trustregion,
         n_points=5,
         rng=np.random.default_rng(1234),
     )
@@ -30,10 +32,11 @@ def test_bounds_are_satisfied(sampler):
 
 @pytest.mark.parametrize("order", [3, 10, 100])
 def test_bounds_are_satisfied_general_hull_sampler(order):
-    bounds = Bounds(lower=-2 * np.ones(2), upper=np.array([0.25, 0.5]))
-    sampler = get_sampler("hull_sampler", bounds, user_options={"order": order})
+    bounds = Bounds(lower=np.array([-2.0, -2]), upper=np.array([0.25, 0.5]))
+    sampler = get_sampler("hull_sampler", user_options={"order": order})
+    trustregion = Region(center=np.array([0.0, 0]), radius=1.5, bounds=bounds)
     sample = sampler(
-        trustregion=Region(center=np.zeros(2), radius=1, shape="sphere"),
+        trustregion=trustregion,
         n_points=5,
         rng=np.random.default_rng(1234),
     )
@@ -46,12 +49,10 @@ def test_bounds_are_satisfied_general_hull_sampler(order):
 @pytest.mark.parametrize("sampler", SAMPLERS)
 def test_enough_existing_points(sampler):
     # test that if enough existing points exist an empty array is returned
-    sampler = get_sampler(
-        sampler=sampler,
-        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
-    )
+    sampler = get_sampler(sampler=sampler)
+    bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
     calculated = sampler(
-        trustregion=Region(center=np.zeros(3), radius=1, shape="sphere"),
+        trustregion=Region(center=np.zeros(3), radius=1, bounds=bounds),
         n_points=0,
         existing_xs=np.empty((5, 3)),
         rng=np.random.default_rng(1234),
@@ -65,11 +66,10 @@ def test_optimization_ignores_existing_points(sampler):
     # test that existing points behave as constants in the optimal sampling
     sampler = get_sampler(
         sampler=sampler,
-        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
-        model_info=None,
     )
+    bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
     calculated = sampler(
-        trustregion=Region(center=np.zeros(3), radius=1, shape="sphere"),
+        trustregion=Region(center=np.zeros(3), radius=1, bounds=bounds),
         n_points=3,
         existing_xs=np.ones((2, 3)),  # same point implies min distance of zero always
         rng=np.random.default_rng(1234),
@@ -83,17 +83,15 @@ def test_optimality(sampler):
     # test that optimal versions of hull samplers produce better criterion value
     standard_sampler = get_sampler(
         sampler=sampler,
-        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
     )
     optimal_sampler = get_sampler(
         sampler="optimal_" + sampler,
-        bounds=Bounds(lower=-np.ones(3), upper=np.ones(3)),
     )
-
+    bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
     distances = []
     for sampler in [standard_sampler, optimal_sampler]:
         sample = sampler(
-            trustregion=Region(center=np.zeros(3), radius=1, shape="sphere"),
+            trustregion=Region(center=np.zeros(3), radius=1, bounds=bounds),
             n_points=5,
             rng=np.random.default_rng(1234),
         )
@@ -111,12 +109,11 @@ def test_randomsearch(sampler, n_points_randomsearch):
 
     _sampler = get_sampler(
         sampler="optimal_" + sampler,
-        bounds=bounds,
     )
 
     # optimal sampling without randomsearch
     _, info = _sampler(
-        trustregion=Region(center=np.zeros(3), radius=1, shape=sampler),
+        trustregion=Region(center=np.zeros(3), radius=1, bounds=bounds),
         n_points=5,
         rng=np.random.default_rng(0),
         return_info=True,
@@ -124,7 +121,7 @@ def test_randomsearch(sampler, n_points_randomsearch):
 
     # optimal sampling with randomsearch
     _, info_randomsearch = _sampler(
-        trustregion=Region(center=np.zeros(3), radius=1, shape=sampler),
+        trustregion=Region(center=np.zeros(3), radius=1, bounds=bounds),
         n_points=5,
         rng=np.random.default_rng(0),
         n_points_randomsearch=n_points_randomsearch,

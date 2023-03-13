@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from numba import njit
 
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 
 
 @dataclass

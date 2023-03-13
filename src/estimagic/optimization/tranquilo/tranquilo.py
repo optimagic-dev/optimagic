@@ -9,6 +9,7 @@ from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.acceptance_decision import get_acceptance_decider
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
+from estimagic.optimization.tranquilo.bounds import Bounds
 from estimagic.optimization.tranquilo.estimate_variance import get_variance_estimator
 from estimagic.optimization.tranquilo.filter_points import (
     drop_worst_points,
@@ -23,12 +24,11 @@ from estimagic.optimization.tranquilo.models import (
 from estimagic.optimization.tranquilo.new_history import History
 from estimagic.optimization.tranquilo.options import (
     AcceptanceOptions,
-    Bounds,
     ConvOptions,
     RadiusOptions,
-    Region,
     StagnationOptions,
 )
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
@@ -67,7 +67,6 @@ def _tranquilo(
     acceptance_options=None,
     variance_estimator="classic",
     variance_estimation_options=None,
-    trustregion_shape=None,
     stagnation_options=None,
     n_evals_per_point=1,
 ):
@@ -158,14 +157,14 @@ def _tranquilo(
 
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
 
-    if trustregion_shape is None:
-        trustregion_shape = "sphere" if not bounds.has_any else "cube"
-
     if sampler is None:
-        sampler = f"optimal_{trustregion_shape}"
+        sampler = "optimal_cube" if bounds.has_any else "optimal_sphere"
 
     if subsolver is None:
-        subsolver = "bntr_fast" if trustregion_shape == "cube" else "gqtpar_fast"
+        if bounds.has_any:
+            subsolver = "bntr_fast"
+        else:
+            subsolver = "gqtpar_fast"
 
     if search_radius_factor is None:
         search_radius_factor = 4.25 if functype == "scalar" else 5.0
@@ -220,7 +219,6 @@ def _tranquilo(
 
     sample_points = get_sampler(
         sampler,
-        bounds=bounds,
         model_info=model_type,
         user_options=sampler_options,
     )
@@ -265,7 +263,7 @@ def _tranquilo(
 
     _init_fvec = history.get_fvecs(0).mean(axis=0)
     _init_radius = radius_options.initial_radius * np.max(np.abs(x))
-    _init_region = Region(center=x, radius=_init_radius, shape=trustregion_shape)
+    _init_region = Region(center=x, radius=_init_radius, bounds=bounds)
 
     _init_vector_model = VectorModel(
         intercepts=_init_fvec,
