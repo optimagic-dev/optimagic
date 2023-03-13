@@ -158,7 +158,7 @@ def _tranquilo(
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
 
     if sampler is None:
-        sampler = "optimal_sphere"
+        sampler = "optimal_cube" if bounds.has_any else "optimal_sphere"
 
     if subsolver is None:
         if bounds.has_any:
