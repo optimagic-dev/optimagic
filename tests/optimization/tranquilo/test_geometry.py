@@ -42,4 +42,4 @@ def test_geometry_checker_scale_invariance():
     x_quality = quality_calculator(x, trustregion)
     x_scaled_quality = quality_calculator(x_scaled, trustregion_scaled)
 
-    assert x_quality == x_scaled_quality
+    assert np.abs(x_quality - x_scaled_quality) < 1e-12
