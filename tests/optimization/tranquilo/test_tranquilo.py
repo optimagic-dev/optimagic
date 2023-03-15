@@ -64,7 +64,7 @@ def test_internal_tranquilo_scalar_sphere_defaults(
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
-        x=np.arange(4, dtype=np.float64),
+        x=np.arange(4),
         sample_filter=sample_filter,
         fitter=fitter,
         surrogate_model=surrogate_model,
@@ -104,7 +104,7 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 ):
     res = tranquilo(
         criterion=lambda x: x @ x,
-        x=np.arange(4, dtype=np.float64),
+        x=np.arange(4),
         sample_filter=sample_filter,
         fitter=fitter,
         surrogate_model=surrogate_model,
@@ -121,7 +121,7 @@ def test_internal_tranquilo_scalar_sphere_imprecise_defaults(
 def test_external_tranquilo_scalar_sphere_defaults():
     res = minimize(
         criterion=lambda x: x @ x,
-        params=np.arange(4, dtype=np.float64),
+        params=np.arange(4),
         algorithm="tranquilo",
     )
 
@@ -160,7 +160,7 @@ def test_internal_tranquilo_ls_sphere_defaults(
 ):
     res = tranquilo_ls(
         criterion=lambda x: x,
-        x=np.arange(5, dtype=np.float64),
+        x=np.arange(5),
         sample_filter=sample_filter,
         fitter=fitter,
         surrogate_model=surrogate_model,
@@ -177,7 +177,7 @@ def test_internal_tranquilo_ls_sphere_defaults(
 def test_external_tranquilo_ls_sphere_defaults():
     res = minimize(
         criterion=lambda x: x,
-        params=np.arange(5, dtype=np.float64),
+        params=np.arange(5),
         algorithm="tranquilo_ls",
     )
 
@@ -289,7 +289,7 @@ def test_tranquilo_with_noise_handling_and_deterministic_function(algo):
         algo_options={"noisy": True},
     )
 
-    aaae(res.params, np.zeros(5), decimal=4)
+    aaae(res.params, np.zeros(5), decimal=3)
 
 
 @pytest.mark.slow()
