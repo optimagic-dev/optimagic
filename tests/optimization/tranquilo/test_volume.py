@@ -44,6 +44,18 @@ def test_get_radius_of_cube_with_volume_of_sphere(dim):
     assert np.allclose(got, expected)
 
 
+def test_get_radius_of_sphere_with_volume_of_cube_no_scaling():
+    v1 = get_radius_of_sphere_with_volume_of_cube(2.0, 2, None)
+    v2 = get_radius_of_sphere_with_volume_of_cube(2.0, 2, 1.0)
+    assert v1 == v2
+
+
+def test_get_radius_of_cube_with_volume_of_sphere_no_scaling():
+    v1 = get_radius_of_cube_with_volume_of_sphere(2.0, 2, None)
+    v2 = get_radius_of_cube_with_volume_of_sphere(2.0, 2, 1.0)
+    assert v1 == v2
+
+
 @pytest.mark.parametrize("dim", dims)
 def test_radius_after_volume_rescaling_scaling_factor_sphere(dim):
     radius = 0.6

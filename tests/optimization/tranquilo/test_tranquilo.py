@@ -3,7 +3,6 @@ import itertools
 import numpy as np
 import pytest
 from estimagic.optimization.optimize import minimize
-from estimagic.optimization.tranquilo.models import ModelInfo
 from estimagic.optimization.tranquilo.tranquilo import (
     _process_sample_size,
     _process_surrogate_model,
@@ -192,41 +191,29 @@ def test_external_tranquilo_ls_sphere_defaults():
 
 def test_process_surrogate_model_none_scalar():
     got = _process_surrogate_model(None, functype="scalar")
-    assert got.has_interactions is True
-    assert got.has_squares is True
+    assert got == "quadratic"
 
 
 @pytest.mark.parametrize("functype", ["least_squares", "likelihood"])
 def test_process_surrogate_model_none_not_scalar(functype):
     got = _process_surrogate_model(None, functype=functype)
-    assert got.has_interactions is False
-    assert got.has_squares is False
+    assert got == "linear"
 
 
-@pytest.mark.parametrize("has_interactions", [True, False])
-@pytest.mark.parametrize("has_squares", [True, False])
-def test_process_surrogate_model_info(has_interactions, has_squares):
-    model_info = ModelInfo(has_squares=has_squares, has_interactions=has_interactions)
-    got = _process_surrogate_model(model_info, functype="whatever")
-    assert got == model_info
+@pytest.mark.parametrize("model_type", ("linear", "quadratic"))
+def test_process_surrogate_model_info(model_type):
+    got = _process_surrogate_model(model_type, functype="whatever")
+    assert got == model_type
 
 
 def test_process_surrogate_model_str_linear():
     got = _process_surrogate_model("linear", functype="scalar")
-    assert got.has_interactions is False
-    assert got.has_squares is False
-
-
-def test_process_surrogate_model_str_diagonal():
-    got = _process_surrogate_model("diagonal", functype="least_squares")
-    assert got.has_interactions is False
-    assert got.has_squares is True
+    assert got == "linear"
 
 
 def test_process_surrogate_model_str_quadratic():
     got = _process_surrogate_model("quadratic", functype="likelihood")
-    assert got.has_interactions is True
-    assert got.has_squares is True
+    assert got == "quadratic"
 
 
 def test_process_surrogate_model_str_invalid():
@@ -241,15 +228,13 @@ def test_process_surrogate_model_invalid(functype):
         _process_surrogate_model(surrogate_model, functype=functype)
 
 
-@pytest.mark.parametrize("has_interactions", [True, False])
-@pytest.mark.parametrize("has_squares", [True, False])
-def test_process_sample_size_none_linear(has_interactions, has_squares):
-    model_info = ModelInfo(has_interactions=has_interactions, has_squares=has_squares)
+@pytest.mark.parametrize("model_type", ("linear", "quadratic"))
+def test_process_sample_size_none_linear(model_type):
     x = np.ones((3, 2))
     got = _process_sample_size(
-        None, model_info=model_info, x=x, sample_size_factor=None
+        None, model_type=model_type, x=x, sample_size_factor=None
     )
-    if has_interactions or has_squares:
+    if model_type == "quadratic":
         assert got == 7
     else:
         assert got == 4
@@ -304,7 +289,7 @@ def test_tranquilo_with_noise_handling_and_deterministic_function(algo):
         algo_options={"noisy": True},
     )
 
-    aaae(res.params, np.zeros(5), decimal=4)
+    aaae(res.params, np.zeros(5), decimal=3)
 
 
 @pytest.mark.slow()

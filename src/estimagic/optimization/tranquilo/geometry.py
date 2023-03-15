@@ -2,12 +2,8 @@ from functools import partial
 
 import numpy as np
 
-from estimagic.optimization.tranquilo.options import Region
-from estimagic.optimization.tranquilo.sample_points import (
-    _get_effective_bounds,
-    _map_from_feasible_trustregion,
-    get_sampler,
-)
+from estimagic.optimization.tranquilo.region import Region
+from estimagic.optimization.tranquilo.sample_points import get_sampler
 
 
 def get_geometry_checker_pair(
@@ -26,7 +22,7 @@ def get_geometry_checker_pair(
             samples drawn inside a box or a ball, respectively.
         n_params (int): Number of parameters.
         n_simulations (int): Number of simulations for the mean calculation.
-        bounds (Bounds): The parameter bounds.
+        bounds (Bounds): The parameter bounds. See module bounds.py.
 
     Returns:
         callable: The sample quality calculator.
@@ -45,7 +41,7 @@ def get_geometry_checker_pair(
 
     _checker = built_in_checker[checker]
 
-    quality_calculator = partial(_checker["quality_calculator"], bounds=bounds)
+    quality_calculator = _checker["quality_calculator"]
     cutoff_simulator = partial(
         _checker["cutoff_simulator"],
         reference_sampler=reference_sampler,
@@ -66,7 +62,7 @@ def log_d_cutoff_simulator(
         rng (np.random.Generator): The random number generator.
         reference_sampler (str): Either "box" or "ball", corresponding to comparison
             samples drawn inside a box or a ball, respectively.
-        bounds (Bounds): The parameter bounds.
+        bounds (Bounds): The parameter bounds. See module bounds.py.
         n_params (int): Dimensionality of the sample.
         n_simulations (int): Number of simulations for the mean calculation.
 
@@ -74,18 +70,18 @@ def log_d_cutoff_simulator(
         float: The simulated mean logarithm of the d-optimality criterion.
 
     """
-    _sampler = get_sampler(reference_sampler, bounds)
-    trustregion = Region(center=np.zeros(n_params), radius=1, shape=None)
+    _sampler = get_sampler(reference_sampler)
+    trustregion = Region(center=np.zeros(n_params), radius=1.0, bounds=bounds)
     sampler = partial(_sampler, trustregion=trustregion)
     raw = []
     for _ in range(n_simulations):
         x = sampler(n_points=n_samples, rng=rng)
-        raw.append(log_d_quality_calculator(x, trustregion, bounds))
+        raw.append(log_d_quality_calculator(x, trustregion))
     out = np.nanmean(raw)
     return out
 
 
-def log_d_quality_calculator(sample, trustregion, bounds):
+def log_d_quality_calculator(sample, trustregion):
     """Logarithm of the d-optimality criterion.
 
     For a data sample x the log_d_criterion is defined as log(det(x.T @ x)). If the
@@ -94,15 +90,13 @@ def log_d_quality_calculator(sample, trustregion, bounds):
 
     Args:
         sample (np.ndarray): The data sample, shape = (n, p).
-        trustregion (TrustRegion): NamedTuple with attributes center and radius.
-        bounds (Bounds): The parameter bounds.
+        trustregion (Region): Trustregion. See module region.py.
 
     Returns:
         np.ndarray: The criterion values, shape = (n, ).
 
     """
-    effective_bounds = _get_effective_bounds(trustregion, bounds)
-    points = _map_from_feasible_trustregion(sample, effective_bounds)
+    points = trustregion.map_to_unit(sample)
     n_samples, n_params = points.shape
     xtx = points.T @ points
     det = np.linalg.det(xtx / n_samples)

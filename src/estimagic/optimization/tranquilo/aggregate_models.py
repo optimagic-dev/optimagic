@@ -5,7 +5,7 @@ import numpy as np
 from estimagic.optimization.tranquilo.models import ScalarModel
 
 
-def get_aggregator(aggregator, functype, model_info):
+def get_aggregator(aggregator, functype, model_type):
     """Get a function that aggregates a VectorModel into a ScalarModel.
 
     Args:
@@ -13,8 +13,9 @@ def get_aggregator(aggregator, functype, model_info):
             The function must take as argument:
             - vector_model (VectorModel): A fitted vector model.
         functype (str): One of "scalar", "least_squares" and "likelihood".
-        model_info (ModelInfo): Information that describes the functional form of
-            the model.
+        model_type (str): Type of the model that is fitted. The following are supported:
+            - "linear": Only linear effects and intercept.
+            - "quadratic": Fully quadratic model.
 
     Returns:
         callable: The partialled aggregator that only depends on vector_model.
@@ -37,11 +38,11 @@ def get_aggregator(aggregator, functype, model_info):
         _using_built_in_aggregator = False
     else:
         raise ValueError(
-            "Invalid aggregator: {aggregator}. Must be one of "
+            "Invalid aggregator:  {aggregator}. Must be one of "
             f"{list(built_in_aggregators)} or a callable."
         )
 
-    # determine if aggregator is compatible with functype and model_info
+    # determine if aggregator is compatible with functype and model_type
     aggregator_compatible_with_functype = {
         "scalar": ("identity", "sum"),
         "least_squares": ("least_squares_linear",),
@@ -51,17 +52,9 @@ def get_aggregator(aggregator, functype, model_info):
         ),
     }
 
-    aggregator_compatible_with_model_info = {
-        # keys are names of aggregators and values are functions of model_info that
-        # return False in case of incompatibility
-        "identity": lambda x: True,  # noqa: ARG005
-        "sum": _is_second_order_model,
-        "information_equality_linear": lambda model_info: not _is_second_order_model(
-            model_info
-        ),
-        "least_squares_linear": lambda model_info: not _is_second_order_model(
-            model_info
-        ),
+    aggregator_compatible_with_model_type = {
+        "linear": {"information_equality_linear", "least_squares_linear"},
+        "quadratic": {"identity", "sum"},
     }
 
     if _using_built_in_aggregator:
@@ -71,12 +64,12 @@ def get_aggregator(aggregator, functype, model_info):
                 f"Aggregator {_aggregator_name} is not compatible with functype "
                 f"{functype}. It would not produce a quadratic main model."
             )
-        if not aggregator_compatible_with_model_info[_aggregator_name](model_info):
+        if _aggregator_name not in aggregator_compatible_with_model_type[model_type]:
             raise ValueError(
-                f"ModelInfo {model_info} is not compatible with aggregator "
-                f"{_aggregator_name}. Depending on the aggregator this may be because "
-                "it would not produce a quadratic main model or that the aggregator "
-                "requires a different residual model for theoretical reasons."
+                f"Aggregator {_aggregator_name} is not compatible with model_type "
+                f"{model_type}. This is because the combination would not produce a "
+                "quadratic main model or that the aggregator requires a different "
+                "residual model."
             )
 
     # create aggregator
@@ -114,7 +107,7 @@ def aggregator_identity(vector_model):
     Assumptions
     -----------
     1. functype: scalar
-    2. ModelInfo: has squares or interactions
+    2. model_type: quadratic
 
     """
     intercept = float(vector_model.intercepts)
@@ -137,7 +130,7 @@ def aggregator_sum(vector_model):
     Assumptions
     -----------
     1. functype: likelihood
-    2. ModelInfo: has squares or interactions
+    2. model_type: quadratic
 
     """
     vm_intercepts = vector_model.intercepts
@@ -157,7 +150,7 @@ def aggregator_least_squares_linear(vector_model):
     Assumptions
     -----------
     1. functype: least_squares
-    2. ModelInfo: has intercept but no squares and no interaction
+    2. model_type: linear
 
     References
     ----------
@@ -185,7 +178,7 @@ def aggregator_information_equality_linear(vector_model):
     Assumptions
     -----------
     1. functype: likelihood
-    2. ModelInfo: has no squares and no interaction
+    2. model_type: linear
 
     """
     vm_linear_terms = vector_model.linear_terms
@@ -198,7 +191,3 @@ def aggregator_information_equality_linear(vector_model):
     square_terms = -fisher_information / 2
 
     return intercept, linear_terms, square_terms
-
-
-def _is_second_order_model(model_info):
-    return model_info.has_squares or model_info.has_interactions

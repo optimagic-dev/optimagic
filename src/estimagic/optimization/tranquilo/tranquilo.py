@@ -9,6 +9,7 @@ from estimagic.decorators import mark_minimizer
 from estimagic.optimization.tranquilo.acceptance_decision import get_acceptance_decider
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
+from estimagic.optimization.tranquilo.bounds import Bounds
 from estimagic.optimization.tranquilo.estimate_variance import get_variance_estimator
 from estimagic.optimization.tranquilo.filter_points import (
     drop_worst_points,
@@ -16,7 +17,6 @@ from estimagic.optimization.tranquilo.filter_points import (
 )
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import (
-    ModelInfo,
     ScalarModel,
     VectorModel,
     n_free_params,
@@ -24,13 +24,11 @@ from estimagic.optimization.tranquilo.models import (
 from estimagic.optimization.tranquilo.new_history import History
 from estimagic.optimization.tranquilo.options import (
     AcceptanceOptions,
-    Bounds,
     ConvOptions,
-    HistorySearchOptions,
     RadiusOptions,
-    Region,
     StagnationOptions,
 )
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
@@ -62,14 +60,13 @@ def _tranquilo(
     n_cores=1,
     silence_experimental_warning=False,
     infinity_handling="relative",
-    history_search_options=None,
+    search_radius_factor=None,
     noisy=False,
     sample_size_factor=None,
     acceptance_decider=None,
     acceptance_options=None,
     variance_estimator="classic",
     variance_estimation_options=None,
-    trustregion_shape=None,
     stagnation_options=None,
     n_evals_per_point=1,
 ):
@@ -104,7 +101,7 @@ def _tranquilo(
             - "quadratic: 0.5 * n * (n + 1) + n + 1
         surrogate_model (str): Type of surrogate model to fit. Both a "linear" and
             "quadratic" surrogate model are supported.
-        radius_options (NemdTuple or NoneType): Options for trust-region radius
+        radius_options (NamedTuple or NoneType): Options for trust-region radius
             management.
         sampler_options (dict or NoneType): Additional keyword arguments passed to the
             sampler function.
@@ -153,25 +150,28 @@ def _tranquilo(
     if solver_options is None:
         solver_options = {}
 
-    model_info = _process_surrogate_model(
+    model_type = _process_surrogate_model(
         surrogate_model=surrogate_model,
         functype=functype,
     )
 
-    _has_bounds = _check_if_there_are_bounds(lower_bounds, upper_bounds)
-
-    if trustregion_shape is None:
-        trustregion_shape = "sphere" if not _has_bounds else "cube"
+    bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
 
     if sampler is None:
-        sampler = f"optimal_{trustregion_shape}"
+        sampler = "optimal_cube" if bounds.has_any else "optimal_sphere"
 
     if subsolver is None:
-        subsolver = "bntr_fast" if trustregion_shape == "cube" else "gqtpar_fast"
+        if bounds.has_any:
+            subsolver = "bntr_fast"
+        else:
+            subsolver = "gqtpar_fast"
+
+    if search_radius_factor is None:
+        search_radius_factor = 4.25 if functype == "scalar" else 5.0
 
     target_sample_size = _process_sample_size(
         user_sample_size=sample_size,
-        model_info=model_info,
+        model_type=model_type,
         x=x,
         sample_size_factor=sample_size_factor,
     )
@@ -193,12 +193,6 @@ def _tranquilo(
 
     if conv_options is None:
         conv_options = ConvOptions()
-
-    if history_search_options is None:
-        if functype == "scalar":
-            history_search_options = HistorySearchOptions(radius_factor=4.25)
-        else:
-            history_search_options = HistorySearchOptions()
 
     if acceptance_decider is None:
         acceptance_decider = "noisy" if noisy else "classic"
@@ -223,11 +217,9 @@ def _tranquilo(
         history=history,
     )
 
-    bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
     sample_points = get_sampler(
         sampler,
-        bounds=bounds,
-        model_info=model_info,
+        model_info=model_type,
         user_options=sampler_options,
     )
 
@@ -236,13 +228,13 @@ def _tranquilo(
     aggregate_vector_model = get_aggregator(
         aggregator=aggregator,
         functype=functype,
-        model_info=model_info,
+        model_type=model_type,
     )
 
     fit_model = get_fitter(
         fitter=fitter,
         fitter_options=fit_options,
-        model_info=model_info,
+        model_type=model_type,
         infinity_handling=infinity_handling,
     )
 
@@ -271,7 +263,7 @@ def _tranquilo(
 
     _init_fvec = history.get_fvecs(0).mean(axis=0)
     _init_radius = radius_options.initial_radius * np.max(np.abs(x))
-    _init_region = Region(center=x, radius=_init_radius, shape=trustregion_shape)
+    _init_region = Region(center=x, radius=_init_radius, bounds=bounds)
 
     _init_vector_model = VectorModel(
         intercepts=_init_fvec,
@@ -310,9 +302,8 @@ def _tranquilo(
         # find, filter and count points
         # ==============================================================================
 
-        search_region = _get_search_region(
-            trustregion=state.trustregion,
-            search_options=history_search_options,
+        search_region = state.trustregion._replace(
+            radius=search_radius_factor * state.trustregion.radius
         )
 
         old_indices = history.get_x_indices_in_region(search_region)
@@ -669,26 +660,21 @@ def _process_surrogate_model(surrogate_model, functype):
         else:
             surrogate_model = "linear"
 
-    if isinstance(surrogate_model, ModelInfo):
-        out = surrogate_model
-    elif isinstance(surrogate_model, str):
-        if surrogate_model == "linear":
-            out = ModelInfo(has_squares=False, has_interactions=False)
-        elif surrogate_model == "diagonal":
-            out = ModelInfo(has_squares=True, has_interactions=False)
-        elif surrogate_model == "quadratic":
-            out = ModelInfo(has_squares=True, has_interactions=True)
-        else:
-            raise ValueError(f"Invalid surrogate model: {surrogate_model}")
-
+    if isinstance(surrogate_model, str):
+        if surrogate_model not in ("linear", "quadratic"):
+            raise ValueError(
+                f"Invalid surrogate model: {surrogate_model} must be in ('linear', "
+                "'quadratic')"
+            )
     else:
         raise TypeError(f"Invalid surrogate model: {surrogate_model}")
-    return out
+
+    return surrogate_model
 
 
-def _process_sample_size(user_sample_size, model_info, x, sample_size_factor):
+def _process_sample_size(user_sample_size, model_type, x, sample_size_factor):
     if user_sample_size is None:
-        if model_info.has_squares or model_info.has_interactions:
+        if model_type == "quadratic":
             out = 2 * len(x) + 1
         else:
             out = len(x) + 1
@@ -696,11 +682,11 @@ def _process_sample_size(user_sample_size, model_info, x, sample_size_factor):
     elif isinstance(user_sample_size, str):
         user_sample_size = user_sample_size.replace(" ", "")
         if user_sample_size in ["linear", "n+1"]:
-            out = n_free_params(dim=len(x), info_or_name="linear")
+            out = n_free_params(dim=len(x), model_type="linear")
         elif user_sample_size in ["powell", "2n+1", "2*n+1"]:
             out = 2 * len(x) + 1
         elif user_sample_size == "quadratic":
-            out = n_free_params(dim=len(x), info_or_name="quadratic")
+            out = n_free_params(dim=len(x), model_type="quadratic")
         else:
             raise ValueError(f"Invalid sample size: {user_sample_size}")
 
@@ -732,29 +718,6 @@ tranquilo_ls = mark_minimizer(
     is_available=True,
     is_global=False,
 )
-
-
-def _check_if_there_are_bounds(lb, ub):
-    out = False
-    if lb is not None and np.isfinite(lb).any():
-        out = True
-    if ub is not None and np.isfinite(ub).any():
-        out = True
-    return out
-
-
-def _get_search_region(trustregion, search_options):
-    shape = trustregion.shape
-    dim = len(trustregion.center)
-
-    if shape == "sphere" and search_options.radius_type == "circumscribed":
-        radius_factor = np.sqrt(dim) * search_options.radius_factor
-    else:
-        radius_factor = search_options.radius_factor
-
-    search_radius = radius_factor * trustregion.radius
-
-    return trustregion._replace(radius=search_radius)
 
 
 def _concatenate_indices(first, second):
