@@ -5,6 +5,7 @@ from estimagic.optimization.tranquilo.region import (
     Region,
     _any_bounds_binding,
     _get_cube_bounds,
+    _get_cube_center,
     _map_from_unit_cube,
     _map_from_unit_sphere,
     _map_to_unit_cube,
@@ -66,6 +67,12 @@ def test_get_cube_bounds_updated_upper_bounds():
     out = _get_cube_bounds(center=np.zeros(2), radius=1, bounds=bounds)
     assert_array_equal(out.lower, -np.ones(2))
     assert_array_equal(out.upper, 0.5 * np.ones(2))
+
+
+def test_get_cube_center():
+    bounds = Bounds(lower=np.array([0, 0.5]), upper=np.array([1, 10]))
+    out = _get_cube_center(bounds)
+    assert_array_equal(out, np.array([0.5, 5.25]))
 
 
 def test_region_non_binding_bounds():

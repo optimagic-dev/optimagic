@@ -8,7 +8,7 @@ from estimagic.optimization.tranquilo.volume import (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class Region:
     """Trust region."""
 
@@ -29,9 +29,7 @@ class Region:
             raise AttributeError(
                 "The trustregion is a sphere, and thus has no cube bounds."
             )
-        radius = get_radius_of_cube_with_volume_of_sphere(
-            self.radius, len(self.center), scaling_factor=1.0
-        )
+        radius = get_radius_of_cube_with_volume_of_sphere(self.radius, len(self.center))
         bounds = _get_cube_bounds(center=self.center, radius=radius, bounds=self.bounds)
         return bounds
 
@@ -41,8 +39,7 @@ class Region:
             raise AttributeError(
                 "The trustregion is a sphere, and thus has no cube center."
             )
-        cube_bounds = self.cube_bounds
-        center = (cube_bounds.lower + cube_bounds.upper) / 2
+        center = _get_cube_center(bounds=self.cube_bounds)
         return center
 
     def map_to_unit(self, x: np.ndarray) -> np.ndarray:
@@ -102,6 +99,12 @@ def _get_cube_bounds(center, radius, bounds):
         upper_bounds = np.clip(upper_bounds, -np.inf, bounds.upper)
 
     return Bounds(lower=lower_bounds, upper=upper_bounds)
+
+
+def _get_cube_center(bounds):
+    """Get center of region defined by bounds."""
+    center = (bounds.lower + bounds.upper) / 2
+    return center
 
 
 def _any_bounds_binding(bounds, center, radius):

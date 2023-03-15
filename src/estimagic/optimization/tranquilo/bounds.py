@@ -3,7 +3,7 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 
-@dataclass
+@dataclass(frozen=True)
 class Bounds:
     """Parameter bounds."""
 
@@ -11,7 +11,8 @@ class Bounds:
     upper: np.ndarray
 
     def __post_init__(self):
-        self.has_any = _any_finite(self.lower, self.upper)
+        # cannot use standard __setattr__ because it is frozen
+        super().__setattr__("has_any", _any_finite(self.lower, self.upper))
 
     # make it behave like a NamedTuple
     def _replace(self, **kwargs):
