@@ -157,8 +157,7 @@ def _tranquilo(
 
     bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
 
-    if sampler is None:
-        sampler = "optimal_cube" if bounds.has_any else "optimal_sphere"
+    sampler = "optimal_hull" if sampler is None else sampler
 
     if subsolver is None:
         if bounds.has_any:
@@ -217,11 +216,7 @@ def _tranquilo(
         history=history,
     )
 
-    sample_points = get_sampler(
-        sampler,
-        model_info=model_type,
-        user_options=sampler_options,
-    )
+    sample_points = get_sampler(sampler, user_options=sampler_options)
 
     filter_points = get_sample_filter(sample_filter, user_options=filter_options)
 

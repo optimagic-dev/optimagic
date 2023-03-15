@@ -71,8 +71,9 @@ def test_fit_ols_against_truth(quadratic_case):
         old_model=None,
     )
 
-    aaae(got.linear_terms.squeeze(), quadratic_case["linear_terms_expected"])
-    aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
+    n_p = got.linear_terms.size
+    aaae(got.linear_terms.flatten(), quadratic_case["linear_terms_expected"])
+    aaae(got.square_terms.reshape(n_p, n_p), quadratic_case["square_terms_expected"])
 
 
 def test_fit_powell_against_truth_quadratic(quadratic_case):
@@ -84,8 +85,8 @@ def test_fit_powell_against_truth_quadratic(quadratic_case):
         old_model=None,
     )
 
-    aaae(got.linear_terms.squeeze(), quadratic_case["linear_terms_expected"])
-    aaae(got.square_terms.squeeze(), quadratic_case["square_terms_expected"])
+    aaae(got.linear_terms.flatten(), quadratic_case["linear_terms_expected"])
+    aaae(got.square_terms.reshape((4, 4)), quadratic_case["square_terms_expected"])
 
 
 @pytest.mark.parametrize("model", ["ols", "ridge"])
@@ -103,8 +104,8 @@ def test_fit_ols_against_gradient(model, quadratic_case):
         old_model=None,
     )
 
-    a = got.linear_terms.squeeze()
-    hess = got.square_terms.squeeze()
+    a = got.linear_terms.flatten()
+    hess = got.square_terms.reshape((4, 4))
     grad = a + hess @ quadratic_case["x0"]
 
     gradient = first_derivative(quadratic_case["func"], quadratic_case["x0"])
@@ -124,7 +125,7 @@ def test_fit_ols_against_hessian(model, options, quadratic_case):
         old_model=None,
     )
     hessian = second_derivative(quadratic_case["func"], quadratic_case["x0"])
-    hess = got.square_terms.squeeze()
+    hess = got.square_terms.reshape((4, 4))
     aaae(hessian["derivative"], hess, case="hessian")
 
 

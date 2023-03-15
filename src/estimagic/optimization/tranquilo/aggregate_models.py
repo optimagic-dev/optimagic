@@ -112,7 +112,7 @@ def aggregator_identity(vector_model):
     """
     n_params = vector_model.linear_terms.size
     intercept = float(vector_model.intercepts)
-    linear_terms = vector_model.linear_terms.reshape(n_params)
+    linear_terms = vector_model.linear_terms.flatten()
     if vector_model.square_terms is None:
         square_terms = np.zeros((n_params, n_params))
     else:

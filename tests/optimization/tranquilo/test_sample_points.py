@@ -11,7 +11,7 @@ from estimagic.optimization.tranquilo.sample_points import (
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy.spatial.distance import pdist
 
-SAMPLERS = ["box", "ball", "cube", "sphere", "optimal_cube", "optimal_sphere"]
+SAMPLERS = ["random_interior", "random_hull", "optimal_hull"]
 
 
 @pytest.mark.parametrize("sampler", SAMPLERS)
@@ -20,22 +20,6 @@ def test_bounds_are_satisfied(sampler):
     _sampler = get_sampler(sampler)
     trustregion = Region(center=np.array([0.0, 0]), radius=1.5, bounds=bounds)
     sample = _sampler(
-        trustregion=trustregion,
-        n_points=5,
-        rng=np.random.default_rng(1234),
-    )
-    lower = np.full_like(sample, bounds.lower)
-    upper = np.full_like(sample, bounds.upper)
-    assert np.all(lower <= sample)
-    assert np.all(sample <= upper)
-
-
-@pytest.mark.parametrize("order", [3, 10, 100])
-def test_bounds_are_satisfied_general_hull_sampler(order):
-    bounds = Bounds(lower=np.array([-2.0, -2]), upper=np.array([0.25, 0.5]))
-    sampler = get_sampler("hull_sampler", user_options={"order": order})
-    trustregion = Region(center=np.array([0.0, 0]), radius=1.5, bounds=bounds)
-    sample = sampler(
         trustregion=trustregion,
         n_points=5,
         rng=np.random.default_rng(1234),
@@ -61,12 +45,9 @@ def test_enough_existing_points(sampler):
     assert calculated.size == 0
 
 
-@pytest.mark.parametrize("sampler", ["optimal_cube", "optimal_sphere"])
-def test_optimization_ignores_existing_points(sampler):
+def test_optimization_ignores_existing_points():
     # test that existing points behave as constants in the optimal sampling
-    sampler = get_sampler(
-        sampler=sampler,
-    )
+    sampler = get_sampler(sampler="optimal_hull")
     bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
     calculated = sampler(
         trustregion=Region(center=np.zeros(3), radius=1, bounds=bounds),
@@ -78,15 +59,10 @@ def test_optimization_ignores_existing_points(sampler):
     assert pdist(calculated).min() > 0
 
 
-@pytest.mark.parametrize("sampler", ["sphere", "cube"])
-def test_optimality(sampler):
+def test_optimality():
     # test that optimal versions of hull samplers produce better criterion value
-    standard_sampler = get_sampler(
-        sampler=sampler,
-    )
-    optimal_sampler = get_sampler(
-        sampler="optimal_" + sampler,
-    )
+    standard_sampler = get_sampler(sampler="random_hull")
+    optimal_sampler = get_sampler(sampler="optimal_hull")
     bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
     distances = []
     for sampler in [standard_sampler, optimal_sampler]:
@@ -100,16 +76,13 @@ def test_optimality(sampler):
     assert distances[1] > distances[0]
 
 
-@pytest.mark.parametrize("sampler", ["sphere", "cube"])
 @pytest.mark.parametrize("n_points_randomsearch", [1, 2, 5, 10])
-def test_randomsearch(sampler, n_points_randomsearch):
+def test_randomsearch(n_points_randomsearch):
     # test that initial randomsearch of hull samplers produce better fekete values
 
     bounds = Bounds(lower=-np.ones(3), upper=np.ones(3))
 
-    _sampler = get_sampler(
-        sampler="optimal_" + sampler,
-    )
+    _sampler = get_sampler("optimal_hull")
 
     # optimal sampling without randomsearch
     _, info = _sampler(
@@ -135,26 +108,36 @@ def test_randomsearch(sampler, n_points_randomsearch):
         assert statement
 
 
-@pytest.mark.parametrize("order", [2, np.inf])
-def test_pairwise_distance_on_hull(order):
+@pytest.mark.parametrize("trustregion_shape", ("sphere", "cube"))
+def test_pairwise_distance_on_hull(trustregion_shape):
     # equal points imply zero distance
     value = _minimal_pairwise_distance_on_hull(
-        x=np.ones(4), existing_xs=None, hardness=1, order=order, n_params=2
+        x=np.ones(4),
+        existing_xs=None,
+        hardness=1,
+        trustregion_shape=trustregion_shape,
+        n_params=2,
     )
     assert value == 0
 
     # non-equal points imply positive distance
     value = _minimal_pairwise_distance_on_hull(
-        x=np.arange(4), existing_xs=None, hardness=1, order=order, n_params=2
+        x=np.arange(4),
+        existing_xs=None,
+        hardness=1,
+        trustregion_shape=trustregion_shape,
+        n_params=2,
     )
     assert value > 0
 
 
-@pytest.mark.parametrize("order", [2, np.inf])
-def test_project_onto_unit_hull(order):
+@pytest.mark.parametrize("trustregion_shape", ("sphere", "cube"))
+def test_project_onto_unit_hull(trustregion_shape):
     rng = np.random.default_rng(1234)
     old = rng.uniform(-1, 1, size=10).reshape(5, 2)
-    new = _project_onto_unit_hull(old, order)
+    new = _project_onto_unit_hull(old, trustregion_shape=trustregion_shape)
+
+    order = 2 if trustregion_shape == "sphere" else np.inf
 
     norm = np.linalg.norm(old, axis=1, ord=order)
     with pytest.raises(AssertionError):
