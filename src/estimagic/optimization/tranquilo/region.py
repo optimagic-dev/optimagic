@@ -55,7 +55,10 @@ class Region:
         if self.shape == "sphere":
             out = _map_from_unit_sphere(x, center=self.center, radius=self.radius)
         else:
-            out = _map_from_unit_cube(x, cube_bounds=self.cube_bounds)
+            cube_bounds = self.cube_bounds
+            out = _map_from_unit_cube(x, cube_bounds=cube_bounds)
+            # Bounds may not be satisfied exactly due to numerical inaccuracies.
+            out = np.clip(out, cube_bounds.lower, cube_bounds.upper)
         return out
 
     # make it behave like a NamedTuple
