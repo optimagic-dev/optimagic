@@ -369,7 +369,8 @@ def normal_inputs():
         "mean": 1.0,
         "sd": 1.0,
     }
-    y = np.random.normal(loc=true["mean"], scale=true["sd"], size=10_000)
+    rng = np.random.default_rng(12345)
+    y = rng.normal(loc=true["mean"], scale=true["sd"], size=10_000)
     return {"true": true, "y": y}
 
 

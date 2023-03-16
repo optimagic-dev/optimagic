@@ -52,9 +52,8 @@ def quadratic_case():
     x0 = np.ones(n_params)
 
     # random data
-    x = np.array(
-        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)]
-    )
+    rng = np.random.default_rng(12345)
+    x = np.array([x0 + rng.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)])
     y = np.array([func(_x) for _x in list(x)]).reshape(-1, 1)
 
     out = {
@@ -89,9 +88,8 @@ def just_identified_case():
     x0 = np.ones(n_params)
 
     # random data
-    x = np.array(
-        [x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)]
-    )
+    rng = np.random.default_rng(12345)
+    x = np.array([x0 + rng.uniform(-0.01 * x0, 0.01 * x0) for _ in range(n_samples)])
     y = np.array([func(_x) for _x in list(x)]).reshape(-1, 1)
 
     out = {
