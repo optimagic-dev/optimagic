@@ -682,7 +682,7 @@ def _convert_evaluation_data_to_frame(steps, evals):
             var_name="dim_f",
             value_name="eval",
         )
-        df_evals = df_evals.assign(**{"sign": direction})
+        df_evals = df_evals.assign(sign=direction)
         df_evals = df_evals.set_index(["sign", "step_number", "dim_x", "dim_f"])
         df_evals = df_evals.sort_index()
 

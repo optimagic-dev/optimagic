@@ -47,7 +47,7 @@ def derivative_plot(
 
     # remove index from main data for plotting
     df = func_evals.reset_index()
-    df = df.assign(**{"step": df.step * df.sign})
+    df = df.assign(step=df.step * df.sign)
     func_evals = df.set_index(["sign", "step_number", "dim_x", "dim_f"])
 
     # prepare derivative data

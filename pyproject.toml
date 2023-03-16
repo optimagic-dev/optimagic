@@ -9,64 +9,50 @@ write_to = "src/estimagic/_version.py"
 
 [tool.ruff]
 target-version = "py37"
-select = ["ALL"]
-fix = true
+fix = false
+
+select = [
+  # pyflakes
+  "F",
+  # pycodestyle
+  "E",
+  "W",
+  # flake8-2020
+  "YTT",
+  # flake8-bugbear
+  "B",
+  # flake8-quotes
+  "Q",
+  # pylint
+  "PLE", "PLR", "PLW",
+  # misc lints
+  "PIE",
+  # tidy imports
+  "TID",
+  # implicit string concatenation
+  "ISC",
+]
+
 extend-ignore = [
-    # Docstrings
-    "D103", # missing docstring in public function
-    "D107",
-    "D203",
-    "D212",
-    "D213",
-    "D402",
-    "D413",
-    "D415",
-    "D416",
-    "D417",
-    # Others.
-    "D404",  # Do not start module docstring with "This".
-    "RET504",  # unnecessary variable assignment before return.
-    "S101",  # raise errors for asserts.
-    "B905",  # strict parameter for zip that was implemented in py310.
 
-    "ANN101",  # type annotating self
-    "ANN102",  # type annotating cls
-    "FBT",  # flake8-boolean-trap
-    "EM",  # flake8-errmsg
-    "ANN401",  # flake8-annotate typing.Any
-    "PD",  # pandas-vet
-    "E731",  # do not assign a lambda expression, use a def
-    "RET", # unnecessary elif or else statements after return, rais, continue, ...
-    "S324", # Probable use of insecure hash function.
-    "COM812", # trailing comma missing, but black takes care of that
-    "PT007", # wrong type in parametrize, gave false positives
-    "EXE001", # Shebang is present but file is not executable
-    "PIE804", # unnecessary dict kwargs
-
-
-    # Things we are not sure we want
-    # ==============================
-    "SIM102", # Use single if statement instead of nested if statements
-    "SIM108", # Use ternary operator instead of if-else block
-    "SIM117", # do not use nested with statements
-    "BLE001", # Do not catch blind exceptions (even after handling some specific ones)
-    "PLR2004", # Magic values used in comparison
-    "PT006", # Allows only lists of tuples in parametrize, even if single argument
-
-    # Things ignored during transition phase
-    # ======================================
-    "D",  # docstrings
-    "ANN",  # missing annotations
-    "C901",  # function too complex
-    "PT011", # pytest raises without match statement
-    "INP001", # implicit namespace packages without init.
-    "TRY",
-    "PLR",
-    "TCH",
-    "RSE",
-    "SLF",
-    "PTH123",
-    # ======================================
+  # allow module import not at top of file, important for notebooks
+  "E402",
+  # do not assign a lambda expression, use a def
+  "E731",
+  # Too many arguments to function call
+  "PLR0913",
+  # Too many returns
+  "PLR0911",
+  # Too many branches
+  "PLR0912",
+  # Too many statements
+  "PLR0915",
+  # Magic number
+  "PLR2004",
+  # Outer loop variable overwritten by inner assignment
+  "PLW2901",
+  # Consider `elif` instead of `else` then `if` to remove indentation level
+  "PLR5501",
 ]
 
 [tool.ruff.per-file-ignores]
