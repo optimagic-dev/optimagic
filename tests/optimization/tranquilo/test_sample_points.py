@@ -15,6 +15,20 @@ SAMPLERS = ["random_interior", "random_hull", "optimal_hull"]
 
 
 @pytest.mark.parametrize("sampler", SAMPLERS)
+def test_samplers(sampler):
+    _sampler = get_sampler(sampler)
+    trustregion = Region(center=np.array([0.0, 0]), radius=1.5, bounds=None)
+    sample = _sampler(
+        trustregion=trustregion,
+        n_points=5,
+        rng=np.random.default_rng(1234),
+    )
+    assert len(sample) == 5
+    assert np.all(-1.5 <= sample)
+    assert np.all(sample <= 1.5)
+
+
+@pytest.mark.parametrize("sampler", SAMPLERS)
 def test_bounds_are_satisfied(sampler):
     bounds = Bounds(lower=np.array([-2.0, -2.0]), upper=np.array([0.25, 0.5]))
     _sampler = get_sampler(sampler)
