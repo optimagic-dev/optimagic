@@ -5120,7 +5120,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         # we found a lower minimum than Cartis and Roberts (2019) at 1651.837;
         # according to table 3 in their paper, the minimum is at 4292.197.
         # We suspect, however, that the true optimum is even lower.
-        # That is why we disable the test function for the time being.
+        # That is why we disable this test function for the time being.
     },
     "luksan13": {
         "criterion": luksan13,

@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 
 import numpy as np
@@ -128,10 +127,6 @@ def _get_raw_problems(name):
     if name == "more_wild":
         raw_problems = MORE_WILD_PROBLEMS
     elif name == "cartis_roberts":
-        warnings.warn(
-            "Only a subset of the cartis_roberts benchmark suite is currently "
-            "implemented. Do not use this for any published work."
-        )
         raw_problems = CARTIS_ROBERTS_PROBLEMS
     elif name == "example":
         subset = {
