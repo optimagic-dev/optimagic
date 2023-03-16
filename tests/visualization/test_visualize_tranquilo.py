@@ -4,14 +4,14 @@ from estimagic.visualization.visualize_tranquilo import visualize_tranquilo
 
 cases = []
 algo_options = {
-    "sphere": {
-        "sampler": "sphere",
+    "random_hull": {
+        "sampler": "random_hull",
         "subsolver": "gqtpar_fast",
         "sample_filter": "drop_pounders",
         "stopping.max_iterations": 10,
     },
-    "optimal_sphere": {
-        "sampler": "optimal_sphere",
+    "optimal_hull": {
+        "sampler": "optimal_hull",
         "subsolver": "gqtpar_fast",
         "sample_filter": "drop_pounders",
         "stopping.max_iterations": 10,

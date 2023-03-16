@@ -1,10 +1,10 @@
 from dataclasses import dataclass, replace
-from typing import NamedTuple, Union
+from typing import Union
 
 import numpy as np
 from numba import njit
 
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 
 
 @dataclass
@@ -39,11 +39,6 @@ class ScalarModel:
     # make it behave like a NamedTuple
     def _replace(self, **kwargs):
         return replace(self, **kwargs)
-
-
-class ModelInfo(NamedTuple):
-    has_squares: bool = True
-    has_interactions: bool = True
 
 
 def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
@@ -308,25 +303,12 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
     return out
 
 
-def n_free_params(dim, info_or_name):
+def n_free_params(dim, model_type):
     """Number of free parameters in a model specified by name or model_info."""
     out = dim + 1
-    if isinstance(info_or_name, ModelInfo):
-        info = info_or_name
-        if info.has_squares:
-            out += dim
-        if info.has_interactions:
-            out += n_interactions(dim)
-    elif isinstance(info_or_name, str) and info_or_name in (
-        "linear",
-        "quadratic",
-        "diagonal",
-    ):
-        name = info_or_name
-        if name == "quadratic":
+    if model_type in ("linear", "quadratic"):
+        if model_type == "quadratic":
             out += n_second_order_terms(dim)
-        elif name == "diagonal":
-            out += dim
     else:
         raise ValueError()
     return out
@@ -346,12 +328,10 @@ def n_interactions(dim):
 
 def is_second_order_model(model_or_info):
     """Check if a model has any second order terms."""
-    if isinstance(model_or_info, ModelInfo):
-        model_info = model_or_info
-        out = model_info.has_interactions or model_info.has_squares
+    if isinstance(model_or_info, str):
+        out = model_or_info == "quadratic"
     elif isinstance(model_or_info, (ScalarModel, VectorModel)):
-        model = model_or_info
-        out = model.square_terms is not None
+        out = model_or_info.square_terms is not None
     else:
         raise TypeError()
     return out

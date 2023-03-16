@@ -11,7 +11,6 @@ from plotly.subplots import make_subplots
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.geometry import log_d_quality_calculator
-from estimagic.optimization.tranquilo.options import Bounds
 from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
 
 
@@ -424,13 +423,11 @@ def _plot_distances_from_center(history, state, fig, col, rows):
 def _get_fekete_criterion(res):
     states = res.algorithm_output["states"][1:]
     history = np.array(res.history["params"])
-    bounds = Bounds(lower=-np.inf, upper=np.inf)
 
     out = [np.nan] + [
         log_d_quality_calculator(
             sample=history[state.model_indices],
             trustregion=state.trustregion,
-            bounds=bounds,
         )
         for state in states
     ]

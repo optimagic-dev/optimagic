@@ -6,7 +6,7 @@ def get_sample_weighter(weighter, bounds):
 
     The resulting function takes the following arguments:
     - xs (np.ndarray): A 2d numpy array containing a sample.
-    - trustregion (TrustRegion): The current trustregion.
+    - trustregion (Region): Trustregion. See module region.py.
 
     Args:
         weighter (str)

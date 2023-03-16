@@ -8,13 +8,6 @@ from estimagic.optimization.algo_options import (
 )
 
 
-class Bounds(NamedTuple):
-    """Stopping criteria."""
-
-    lower: np.ndarray
-    upper: np.ndarray
-
-
 class StopOptions(NamedTuple):
     """Criteria for stopping without successful convergence."""
 
@@ -47,17 +40,6 @@ class RadiusOptions(NamedTuple):
     expansion_factor: float = 2.0
     large_step: float = 0.5
     max_radius_to_step_ratio: float = np.inf
-
-
-class Region(NamedTuple):
-    center: np.ndarray
-    radius: float
-    shape: str
-
-
-class HistorySearchOptions(NamedTuple):
-    radius_type: str = "inscribed"
-    radius_factor: float = 5
 
 
 class AcceptanceOptions(NamedTuple):
