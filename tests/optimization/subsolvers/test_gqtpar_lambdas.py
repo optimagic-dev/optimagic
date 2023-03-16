@@ -9,7 +9,7 @@ def test_gqtpar_lambdas():
         "silence_experimental_warning": True,
         "sample_filter": "keep_all",
         "subsolver": "gqtpar",
-        "sampler": "sphere",
+        "sampler": "random_hull",
         "solver_options": {"k_hard": 0.001, "k_easy": 0.001},
     }
     problem_info = get_benchmark_problems("more_wild")["freudenstein_roth_good_start"]

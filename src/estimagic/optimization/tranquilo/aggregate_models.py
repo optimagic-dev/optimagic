@@ -110,12 +110,13 @@ def aggregator_identity(vector_model):
     2. model_type: quadratic
 
     """
+    n_params = vector_model.linear_terms.size
     intercept = float(vector_model.intercepts)
-    linear_terms = np.squeeze(vector_model.linear_terms)
+    linear_terms = vector_model.linear_terms.flatten()
     if vector_model.square_terms is None:
-        square_terms = np.zeros((len(linear_terms), len(linear_terms)))
+        square_terms = np.zeros((n_params, n_params))
     else:
-        square_terms = np.squeeze(vector_model.square_terms)
+        square_terms = vector_model.square_terms.reshape(n_params, n_params)
     return intercept, linear_terms, square_terms
 
 
