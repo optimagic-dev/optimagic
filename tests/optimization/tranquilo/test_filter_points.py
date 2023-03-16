@@ -4,7 +4,7 @@ from estimagic.optimization.tranquilo.filter_points import (
     _scaled_square_features,
     drop_collinear_pounders,
 )
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.tranquilo import State
 from estimagic.optimization.tranquilo.tranquilo_history import History
 from numpy.testing import assert_array_almost_equal as aaae
@@ -43,7 +43,7 @@ def basic_case():
     )
     indices = np.arange(len(xs))
 
-    trustregion = Region(radius=radius, center=x_accepted, shape="sphere")
+    trustregion = Region(center=x_accepted, radius=radius)
 
     state = State(
         trustregion=trustregion,
@@ -199,7 +199,7 @@ def test_indices_in_trust_region(basic_case):
     x_accepted = np.array([0.16004745, 0.00572722, 0.01158929])
     radius = 0.0125
 
-    trustregion = Region(center=x_accepted, radius=radius, shape="sphere")
+    trustregion = Region(center=x_accepted, radius=radius)
     history.add_entries(xs, np.zeros(xs.shape[0]))
 
     indices_in_tr = history.get_indices_in_region(trustregion)

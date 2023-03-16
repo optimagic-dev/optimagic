@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.models import (
-    ModelInfo,
     ScalarModel,
     VectorModel,
     _predict_scalar,
@@ -14,7 +13,7 @@ from estimagic.optimization.tranquilo.models import (
     n_second_order_terms,
     subtract_models,
 )
-from estimagic.optimization.tranquilo.options import Region
+from estimagic.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
 
@@ -52,44 +51,32 @@ def test_predict_vector():
 
 
 def test_n_free_params_name_quadratic():
-    assert n_free_params(dim=2, info_or_name="quadratic") == 1 + 2 + 3
-    assert n_free_params(dim=3, info_or_name="quadratic") == 1 + 3 + 6
-    assert n_free_params(dim=9, info_or_name="quadratic") == 1 + 9 + 45
-
-
-def test_n_free_params_name_diagonal():
-    assert n_free_params(dim=2, info_or_name="diagonal") == 1 + 2 + 2
-    assert n_free_params(dim=3, info_or_name="diagonal") == 1 + 3 + 3
-    assert n_free_params(dim=9, info_or_name="diagonal") == 1 + 9 + 9
+    assert n_free_params(dim=2, model_type="quadratic") == 1 + 2 + 3
+    assert n_free_params(dim=3, model_type="quadratic") == 1 + 3 + 6
+    assert n_free_params(dim=9, model_type="quadratic") == 1 + 9 + 45
 
 
 def test_n_free_params_name_invalid():
     with pytest.raises(ValueError):
-        assert n_free_params(dim=3, info_or_name="invalid")
+        assert n_free_params(dim=3, model_type="invalid")
 
 
 @pytest.mark.parametrize("dim", [2, 3, 9])
 def test_n_free_params_info_linear(dim):
-    info = ModelInfo(has_squares=False, has_interactions=False)
-    assert n_free_params(dim, info) == 1 + dim
-
-
-@pytest.mark.parametrize("dim", [2, 3, 9])
-def test_n_free_params_info_diagonal(dim):
-    info = ModelInfo(has_squares=True, has_interactions=False)
-    assert n_free_params(dim, info) == 1 + dim + dim
+    assert n_free_params(dim, model_type="linear") == 1 + dim
 
 
 @pytest.mark.parametrize("dim", [2, 3, 9])
 def test_n_free_params_info_quadratic(dim):
-    info = ModelInfo(has_squares=True, has_interactions=True)
-    assert n_free_params(dim, info) == 1 + dim + dim + (dim * (dim - 1) // 2)
+    assert n_free_params(dim, model_type="quadratic") == 1 + dim + n_second_order_terms(
+        dim
+    )
 
 
 def test_n_free_params_invalid():
     model = ScalarModel(intercept=1.0, linear_terms=np.ones(1), square_terms=np.ones(1))
     with pytest.raises(ValueError):
-        n_free_params(dim=1, info_or_name=model)
+        n_free_params(dim=1, model_type=model)
 
 
 def test_n_second_order_terms():
@@ -100,11 +87,9 @@ def test_n_interactions():
     assert n_interactions(3) == 3
 
 
-@pytest.mark.parametrize("has_squares", [True, False])
-@pytest.mark.parametrize("has_interactions", [True, False])
-def test_is_second_order_model_info(has_squares, has_interactions):
-    model_info = ModelInfo(has_squares=has_squares, has_interactions=has_interactions)
-    assert is_second_order_model(model_info) == has_squares or has_interactions
+@pytest.mark.parametrize("model_type", ("linear", "quadratic"))
+def test_is_second_order_model_type(model_type):
+    assert is_second_order_model(model_type) == (model_type == "quadratic")
 
 
 def test_is_second_order_model_model():
@@ -127,7 +112,7 @@ def scalar_model():
         intercept=0.5,
         linear_terms=np.array([-0.3, 0.3]),
         square_terms=np.array([[0.8, 0.2], [0.2, 0.7]]),
-        region=Region(center=np.array([0.2, 0.3]), radius=0.6, shape="sphere"),
+        region=Region(center=np.array([0.2, 0.3]), radius=0.6),
     )
     return out
 
@@ -144,14 +129,14 @@ def vector_model():
                 [[0.8, 0.2], [0.2, 0.7]],
             ]
         ),
-        region=Region(center=np.array([0.2, 0.3]), radius=0.6, shape="sphere"),
+        region=Region(center=np.array([0.2, 0.3]), radius=0.6),
     )
     return out
 
 
 def test_move_scalar_model(scalar_model):
     old_region = scalar_model.region
-    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45, shape="sphere")
+    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45)
 
     old_model = scalar_model
     x_unscaled = np.array([[0.5, 0.5]])
@@ -171,7 +156,7 @@ def test_move_scalar_model(scalar_model):
 
 def test_move_vector_model(vector_model):
     old_region = vector_model.region
-    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45, shape="sphere")
+    new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45)
 
     old_model = vector_model
 
