@@ -59,6 +59,10 @@ def get_default_aggregator(functype, model_type):
     return aggregator
 
 
+def get_default_n_evals_at_start(noisy):
+    return 5 if noisy else 1
+
+
 class StopOptions(NamedTuple):
     """Criteria for stopping without successful convergence."""
 

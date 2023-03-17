@@ -83,7 +83,7 @@ def accept_naive_noisy(
         history=history,
         wrapped_criterion=wrapped_criterion,
         acceptance_options=acceptance_options,
-        n_evals=acceptance_options.n_initial,
+        n_evals=5,
     )
     return out
 

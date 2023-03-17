@@ -55,6 +55,7 @@ def _internal_tranquilo(
     stagnation_options,  # noqa: ARG001
     search_radius_factor,  # noqa: ARG001
     n_evals_per_point,  # noqa: ARG001
+    n_evals_at_start,  # noqa: ARG001
     trustregion,  # noqa: ARG001
     sampling_rng,  # noqa: ARG001
     history,  # noqa: ARG001
@@ -103,11 +104,12 @@ def _tranquilo(
     stagnation_options=None,
     n_evals_per_point=1,
     disable_convergence=False,
+    n_evals_at_start=None,
 ):
     # ==================================================================================
     # set default values for optional arguments
     # ==================================================================================
-
+    n_evals_at_start = 5 if noisy else 1
     sampling_rng = np.random.default_rng(random_seed)
 
     if radius_options is None:
@@ -230,7 +232,7 @@ def _tranquilo(
         acceptance_options=acceptance_options,
     )
 
-    eval_info = {0: acceptance_options.n_initial} if noisy else {0: n_evals_per_point}
+    eval_info = {0: n_evals_at_start}
 
     evaluate_criterion(eval_info)
 
