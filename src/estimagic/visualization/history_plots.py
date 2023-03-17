@@ -250,11 +250,13 @@ def params_plot(
 
     for name, data in zip(names, hist_arr):
         if max_evaluations is not None and len(data) > max_evaluations:
-            data = data[:max_evaluations]
+            plot_data = data[:max_evaluations]
+        else:
+            plot_data = data
 
         trace = go.Scatter(
-            x=np.arange(len(data)),
-            y=data,
+            x=np.arange(len(plot_data)),
+            y=plot_data,
             mode="lines",
             name=name,
         )

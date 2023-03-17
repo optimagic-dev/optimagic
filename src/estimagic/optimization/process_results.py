@@ -174,7 +174,7 @@ def switch_sign(critval):
 
 
 def _sum_or_none(summands):
-    if any([s is None for s in summands]):
+    if any(s is None for s in summands):
         out = None
     else:
         out = int(np.sum(summands))

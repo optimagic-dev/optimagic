@@ -64,16 +64,16 @@ def transform_covariance(
             size=n_samples,
         )
         transformed_free = []
-        for params_vec in sample:
+        for params in sample:
             if bounds_handling == "clip":
-                params_vec = np.clip(params_vec, a_min=lower_bounds, a_max=upper_bounds)
+                x = np.clip(params, a_min=lower_bounds, a_max=upper_bounds)
             elif bounds_handling == "raise":
-                if (params_vec < lower_bounds).any() or (
-                    params_vec > upper_bounds
-                ).any():
+                if (params < lower_bounds).any() or (params > upper_bounds).any():
                     raise ValueError()
+            else:
+                x = params
 
-            transformed = _from_internal(x=params_vec, return_type="flat")
+            transformed = _from_internal(x=x, return_type="flat")
             transformed_free.append(transformed[is_free])
 
         free_cov = np.cov(
