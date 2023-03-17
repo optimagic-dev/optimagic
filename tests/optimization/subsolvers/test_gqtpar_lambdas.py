@@ -6,7 +6,6 @@ def test_gqtpar_lambdas():
     algo_options = {
         "disable_convergence": True,
         "stopping.max_iterations": 30,
-        "silence_experimental_warning": True,
         "sample_filter": "keep_all",
         "subsolver": "gqtpar",
         "sampler": "random_hull",

@@ -109,7 +109,7 @@ def process_arguments(
     n_cores = _process_n_cores(n_cores)
     stagnation_options = update_option_bundle(StagnationOptions(), stagnation_options)
     n_evals_per_point = int(n_evals_per_point)
-    rng = _process_seed(seed)
+    sampling_rng = _process_seed(seed)
 
     # process options that depend on arguments with static defaults
     search_radius_factor = _process_search_radius_factor(search_radius_factor, functype)
@@ -184,23 +184,23 @@ def process_arguments(
 
     # put everything in a dict
     out = {
-        "stop_options": stop_options,
-        "conv_options": conv_options,
-        "noisy": noisy,
+        "evaluate_criterion": evaluate_criterion,
         "x": x,
+        "noisy": noisy,
+        "conv_options": conv_options,
+        "stop_options": stop_options,
         "radius_options": radius_options,
         "batch_size": batch_size,
-        "history": history,
-        "evaluate_criterion": evaluate_criterion,
         "target_sample_size": target_sample_size,
         "stagnation_options": stagnation_options,
         "search_radius_factor": search_radius_factor,
         "n_evals_per_point": n_evals_per_point,
         "trustregion": trustregion,
+        "sampling_rng": sampling_rng,
+        "history": history,
         "sample_points": sample_points,
         "solve_subproblem": solve_subproblem,
         "filter_points": filter_points,
-        "rng": rng,
         "fit_model": fit_model,
         "aggregate_model": aggregate_model,
         "estimate_variance": estimate_variance,

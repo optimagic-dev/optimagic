@@ -1,6 +1,5 @@
 import functools
 import numbers
-import warnings
 from functools import partial
 from typing import NamedTuple
 
@@ -28,6 +27,7 @@ from estimagic.optimization.tranquilo.options import (
     ConvOptions,
     RadiusOptions,
     StagnationOptions,
+    StopOptions,
 )
 from estimagic.optimization.tranquilo.process_arguments import process_arguments
 from estimagic.optimization.tranquilo.region import Region
@@ -44,23 +44,25 @@ def _new_tranquilo(*args, **kwargs):
 
 
 def _internal_tranquilo(
-    history,  # noqa: ARG001
-    trustregion,  # noqa: ARG001
-    n_evals_per_point,  # noqa: ARG001
-    stop_options,  # noqa: ARG001
-    conv_options,  # noqa: ARG001
-    radius_options,  # noqa: ARG001
-    stagnation_options,  # noqa: ARG001
-    noisy,  # noqa: ARG001
-    batch_size,  # noqa: ARG001
-    search_radius_factor,  # noqa: ARG001
-    target_sample_size,  # noqa: ARG001
     evaluate_criterion,  # noqa: ARG001
+    x,  # noqa: ARG001
+    noisy,  # noqa: ARG001
+    conv_options,  # noqa: ARG001
+    stop_options,  # noqa: ARG001
+    radius_options,  # noqa: ARG001
+    batch_size,  # noqa: ARG001
+    target_sample_size,  # noqa: ARG001
+    stagnation_options,  # noqa: ARG001
+    search_radius_factor,  # noqa: ARG001
+    n_evals_per_point,  # noqa: ARG001
+    trustregion,  # noqa: ARG001
+    sampling_rng,  # noqa: ARG001
+    history,  # noqa: ARG001
     sample_points,  # noqa: ARG001
+    solve_subproblem,  # noqa: ARG001
     filter_points,  # noqa: ARG001
     fit_model,  # noqa: ARG001
     aggregate_model,  # noqa: ARG001
-    solve_subproblem,  # noqa: ARG001
     estimate_variance,  # noqa: ARG001
     accept_candidate,  # noqa: ARG001
 ):
@@ -73,7 +75,6 @@ def _tranquilo(
     functype,
     lower_bounds=None,
     upper_bounds=None,
-    disable_convergence=False,
     stopping_max_iterations=200,
     stopping_max_criterion_evaluations=2_000,
     random_seed=925408,
@@ -91,7 +92,6 @@ def _tranquilo(
     conv_options=None,
     batch_evaluator="joblib",
     n_cores=1,
-    silence_experimental_warning=False,
     infinity_handling="relative",
     search_radius_factor=None,
     noisy=False,
@@ -102,69 +102,8 @@ def _tranquilo(
     variance_estimation_options=None,
     stagnation_options=None,
     n_evals_per_point=1,
+    disable_convergence=False,
 ):
-    """Find the local minimum to a noisy optimization problem.
-
-    Args:
-        criterion (callable): Function that return values of the objective function.
-        x (np.ndarray): Initial guess for the parameter vector.
-        functype (str): String indicating whether the criterion is a scalar, a
-            likelihood function or a least-square type of function. Valid arguments
-            are:
-            - "scalar"
-            - "likelihood"
-            - "least_squares"
-        lower_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with lower bounds
-            for the parameter vector x.
-        upper_bounds (np.ndarray or NoneTeyp): 1d array of shape (n,) with upper bounds
-            for the parameter vector x.
-        disable_convergence (bool): If True, check for convergence criterion and stop
-            the iterations.
-        stopping_max_iterations (int): Maximum number of iterations to run.
-        random_seed (int): The seed used in random number generation.
-        sample_filter (str): The method used to filter points in the current trust
-            region.
-        sampler (str): The sampling method used to sample points from the current
-            trust region.
-        fitter (str): The method used to fit the surrogate model.
-        subsolver (str): The algorithm used for solving the nested surrogate model.
-        sample_size (str): Target sample size. One of:
-            - "linear": n + 1
-            - "powell": 2 * n + 1
-            - "quadratic: 0.5 * n * (n + 1) + n + 1
-        surrogate_model (str): Type of surrogate model to fit. Both a "linear" and
-            "quadratic" surrogate model are supported.
-        radius_options (NamedTuple or NoneType): Options for trust-region radius
-            management.
-        sampler_options (dict or NoneType): Additional keyword arguments passed to the
-            sampler function.
-        fit_options (dict or NoneType): Additional keyword arguments passed to the
-            fitter function.
-        solver_options (dict or NoneType): Additional keyword arguments passed to the
-            sub-solver function.
-        conv_options (NamedTuple or NoneType): Criteria for successful convergence.
-        batch_evaluator (str or callabler)
-        n_cores (int): Number of cores.
-
-    Returns:
-        (dict): Results dictionary with the following items:
-            - solution_x (np.ndarray): Solution vector of shape (n,).
-            - solution_criterion (np.ndarray): Values of the criterion function at the
-                solution vector. Shape (n_obs,).
-            - states (list): The history of optimization as a list of the State objects.
-            - message (str or NoneType): Message stating which convergence criterion,
-                if any has been reached at the end of optimization
-
-    """
-    # ==================================================================================
-    # experimental warning
-    # ==================================================================================
-    if not silence_experimental_warning:
-        warnings.warn(
-            "Tranquilo is extremely experimental. algo_options and results will change "
-            "frequently and without notice. Do not use."
-        )
-
     # ==================================================================================
     # set default values for optional arguments
     # ==================================================================================
@@ -235,6 +174,12 @@ def _tranquilo(
     if stagnation_options is None:
         stagnation_options = StagnationOptions()
 
+    stop_options = StopOptions(
+        max_iter=stopping_max_iterations,
+        max_eval=stopping_max_criterion_evaluations,
+        max_time=np.inf,
+    )
+
     # ==================================================================================
     # initialize compoments for the solver
     # ==================================================================================
@@ -253,7 +198,7 @@ def _tranquilo(
 
     filter_points = get_sample_filter(sample_filter, user_options=filter_options)
 
-    aggregate_vector_model = get_aggregator(
+    aggregate_model = get_aggregator(
         aggregator=aggregator,
         functype=functype,
         model_type=model_type,
@@ -280,7 +225,7 @@ def _tranquilo(
     # initialize the optimizer state
     # ==================================================================================
 
-    acceptance_decider = get_acceptance_decider(
+    accept_candidate = get_acceptance_decider(
         acceptance_decider=acceptance_decider,
         acceptance_options=acceptance_options,
     )
@@ -291,19 +236,19 @@ def _tranquilo(
 
     _init_fvec = history.get_fvecs(0).mean(axis=0)
     _init_radius = radius_options.initial_radius * np.max(np.abs(x))
-    _init_region = Region(center=x, radius=_init_radius, bounds=bounds)
+    trustregion = Region(center=x, radius=_init_radius, bounds=bounds)
 
     _init_vector_model = VectorModel(
         intercepts=_init_fvec,
         linear_terms=np.zeros((len(_init_fvec), len(x))),
         square_terms=np.zeros((len(_init_fvec), len(x), len(x))),
-        region=_init_region,
+        region=trustregion,
     )
 
-    _init_model = aggregate_vector_model(_init_vector_model)
+    _init_model = aggregate_model(_init_vector_model)
 
     state = State(
-        trustregion=_init_region,
+        trustregion=trustregion,
         model_indices=[0],
         model=_init_model,
         vector_model=_init_vector_model,
@@ -325,7 +270,7 @@ def _tranquilo(
     # main optimization loop
     # ==================================================================================
     converged, msg = False, None
-    for _ in range(stopping_max_iterations):
+    for _ in range(stop_options.max_iter):
         # ==============================================================================
         # find, filter and count points
         # ==============================================================================
@@ -376,7 +321,7 @@ def _tranquilo(
             weights=None,
         )
 
-        scalar_model = aggregate_vector_model(
+        scalar_model = aggregate_model(
             vector_model=vector_model,
         )
 
@@ -415,7 +360,7 @@ def _tranquilo(
                     weights=None,
                 )
 
-                scalar_model = aggregate_vector_model(
+                scalar_model = aggregate_model(
                     vector_model=vector_model,
                 )
 
@@ -468,7 +413,7 @@ def _tranquilo(
                 weights=None,
             )
 
-            scalar_model = aggregate_vector_model(
+            scalar_model = aggregate_model(
                 vector_model=vector_model,
             )
 
@@ -501,7 +446,7 @@ def _tranquilo(
         # acceptance decision
         # ==============================================================================
 
-        acceptance_result = acceptance_decider(
+        acceptance_result = accept_candidate(
             subproblem_solution=sub_sol,
             state=state,
             wrapped_criterion=evaluate_criterion,
@@ -550,7 +495,7 @@ def _tranquilo(
             if converged:
                 break
 
-        if history.get_n_fun() >= stopping_max_criterion_evaluations:
+        if history.get_n_fun() >= stop_options.max_eval:
             converged = False
             msg = "Maximum number of criterion evaluations reached."
             break
