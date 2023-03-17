@@ -1,3 +1,4 @@
+import functools
 import numbers
 import warnings
 from functools import partial
@@ -28,10 +29,42 @@ from estimagic.optimization.tranquilo.options import (
     RadiusOptions,
     StagnationOptions,
 )
+from estimagic.optimization.tranquilo.process_arguments import process_arguments
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import get_sampler
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
+
+
+# wrapping gives us the signature and docstring of process arguments
+@functools.wraps(process_arguments)
+def _new_tranquilo(*args, **kwargs):
+    internal_kwargs = process_arguments(*args, **kwargs)
+    return _internal_tranquilo(**internal_kwargs)
+
+
+def _internal_tranquilo(
+    history,  # noqa: ARG001
+    trustregion,  # noqa: ARG001
+    n_evals_per_point,  # noqa: ARG001
+    stop_options,  # noqa: ARG001
+    conv_options,  # noqa: ARG001
+    radius_options,  # noqa: ARG001
+    stagnation_options,  # noqa: ARG001
+    noisy,  # noqa: ARG001
+    batch_size,  # noqa: ARG001
+    search_radius_factor,  # noqa: ARG001
+    target_sample_size,  # noqa: ARG001
+    evaluate_criterion,  # noqa: ARG001
+    sample_points,  # noqa: ARG001
+    filter_points,  # noqa: ARG001
+    fit_model,  # noqa: ARG001
+    aggregate_model,  # noqa: ARG001
+    solve_subproblem,  # noqa: ARG001
+    estimate_variance,  # noqa: ARG001
+    accept_candidate,  # noqa: ARG001
+):
+    pass
 
 
 def _tranquilo(

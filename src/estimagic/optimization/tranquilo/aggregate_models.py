@@ -38,7 +38,7 @@ def get_aggregator(aggregator, functype, model_type):
         _using_built_in_aggregator = False
     else:
         raise ValueError(
-            "Invalid aggregator:  {aggregator}. Must be one of "
+            f"Invalid aggregator:  {aggregator}. Must be one of "
             f"{list(built_in_aggregators)} or a callable."
         )
 
