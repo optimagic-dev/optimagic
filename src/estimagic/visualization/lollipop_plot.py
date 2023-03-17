@@ -141,8 +141,8 @@ def _harmonize_data(data):
         data = [data]
 
     to_concat = []
-    for i, df in enumerate(data):
-        df = df.copy()
+    for i, _df in enumerate(data):
+        df = _df.copy()
         df.columns = _make_string_index(df.columns)
         df.index = _make_string_index(df.index)
         df["__name__"] = df.index

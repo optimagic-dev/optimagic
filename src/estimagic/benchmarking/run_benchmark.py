@@ -108,11 +108,11 @@ def _process_optimize_options(raw_options, max_evals, disable_convergence):
         default_algo_options["convergence.relative_gradient_tolerance"] = 1e-14
 
     out_options = {}
-    for name, option in dict_options.items():
-        if not isinstance(option, dict):
-            option = {"algorithm": option}
+    for name, _option in dict_options.items():
+        if not isinstance(_option, dict):
+            option = {"algorithm": _option}
         else:
-            option = option.copy()
+            option = _option.copy()
 
         algo_options = {**default_algo_options, **option.get("algo_options", {})}
         algo_options = {k.replace(".", "_"): v for k, v in algo_options.items()}
