@@ -675,14 +675,14 @@ def _convert_evaluation_data_to_frame(steps, evals):
         df_steps = df_steps.reset_index(drop=True)
         df_steps = df_steps.apply(lambda col: col.abs() if col.name == "step" else col)
 
-        eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
-        df_evals = pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
+        reshaped_eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
+        df_evals = pd.concat((df_steps, pd.DataFrame(reshaped_eval_arr)), axis=1)
         df_evals = df_evals.melt(
             id_vars=["step_number", "dim_x", "step"],
             var_name="dim_f",
             value_name="eval",
         )
-        df_evals = df_evals.assign(**{"sign": direction})
+        df_evals = df_evals.assign(sign=direction)
         df_evals = df_evals.set_index(["sign", "step_number", "dim_x", "dim_f"])
         df_evals = df_evals.sort_index()
 
