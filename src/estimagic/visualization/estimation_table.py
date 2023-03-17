@@ -348,8 +348,7 @@ def render_latex(
     latex_str = latex_str.split("\\bottomrule")[0]
     if show_footer:
         footer = footer.copy(deep=True)
-        for _, r in footer.iterrows():
-            r = _center_align_integers(r)
+        footer = footer.apply(_center_align_integers, axis=1)
         footer_styler = footer.style
         stats_str = footer_styler.to_latex(**default_options)
         if "\\midrule" in stats_str:
@@ -719,8 +718,7 @@ def _build_estimation_table_footer(
         for mod in models
     ]
     stats = pd.concat(to_concat, axis=1)
-    for _, r in stats.iterrows():
-        r = _unformat_integers(r)
+    stats = stats.apply(_unformat_integers, axis=1)
     return stats
 
 
@@ -1428,7 +1426,16 @@ def _get_digits_after_decimal(df):
 
 
 def _center_align_integers(sr):
-    """Align integer numbers at the center of model column."""
+    """Align integer numbers at the center of model column.
+
+    Args:
+        sr (pandas.Series): Series.
+
+    Returns:
+        pandas.Series: Series with numbers aligned at the center.
+
+    """
+    sr = sr.copy()
     for i in sr.index:
         res_numeric = re.findall(
             r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
@@ -1442,7 +1449,16 @@ def _center_align_integers(sr):
 
 
 def _unformat_integers(sr):
-    """Remove trailing zeros from integer numbers."""
+    """Remove trailing zeros from integer numbers.
+
+    Args:
+        sr (pandas.Series): Series.
+
+    Returns:
+        pandas.Series: Series with trailing zeros removed.
+
+    """
+    sr = sr.copy()
     for i in sr.index:
         res_numeric = re.findall(
             r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]

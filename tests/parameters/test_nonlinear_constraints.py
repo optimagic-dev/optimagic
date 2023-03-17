@@ -250,8 +250,8 @@ def test_process_nonlinear_constraints():
     for g, e in zip(got, expected):
         assert g["type"] == e["type"]
         assert g["n_constr"] == e["n_constr"]
-        for x in [0.1, 0.2, 1.2, -2.0]:
-            x = np.array([x])
+        for value in [0.1, 0.2, 1.2, -2.0]:
+            x = np.array([value])
             assert_array_equal(g["fun"](x), e["fun"](x))
         assert "jac" in g
         assert "tol" in g
