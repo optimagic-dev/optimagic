@@ -1,244 +1,58 @@
 import functools
-import numbers
 from functools import partial
 from typing import NamedTuple
 
 import numpy as np
 
 from estimagic.decorators import mark_minimizer
-from estimagic.optimization.tranquilo.acceptance_decision import get_acceptance_decider
 from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
-from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
-from estimagic.optimization.tranquilo.bounds import Bounds
-from estimagic.optimization.tranquilo.estimate_variance import get_variance_estimator
 from estimagic.optimization.tranquilo.filter_points import (
     drop_worst_points,
-    get_sample_filter,
 )
-from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.models import (
     ScalarModel,
     VectorModel,
-    n_free_params,
-)
-from estimagic.optimization.tranquilo.new_history import History
-from estimagic.optimization.tranquilo.options import (
-    AcceptanceOptions,
-    ConvOptions,
-    RadiusOptions,
-    StagnationOptions,
-    StopOptions,
 )
 from estimagic.optimization.tranquilo.process_arguments import process_arguments
 from estimagic.optimization.tranquilo.region import Region
-from estimagic.optimization.tranquilo.sample_points import get_sampler
-from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
-from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 
 
 # wrapping gives us the signature and docstring of process arguments
 @functools.wraps(process_arguments)
-def _new_tranquilo(*args, **kwargs):
+def _tranquilo(*args, **kwargs):
     internal_kwargs = process_arguments(*args, **kwargs)
     return _internal_tranquilo(**internal_kwargs)
 
 
 def _internal_tranquilo(
-    evaluate_criterion,  # noqa: ARG001
-    x,  # noqa: ARG001
-    noisy,  # noqa: ARG001
-    conv_options,  # noqa: ARG001
-    stop_options,  # noqa: ARG001
-    radius_options,  # noqa: ARG001
-    batch_size,  # noqa: ARG001
-    target_sample_size,  # noqa: ARG001
-    stagnation_options,  # noqa: ARG001
-    search_radius_factor,  # noqa: ARG001
-    n_evals_per_point,  # noqa: ARG001
-    n_evals_at_start,  # noqa: ARG001
-    trustregion,  # noqa: ARG001
-    sampling_rng,  # noqa: ARG001
-    history,  # noqa: ARG001
-    sample_points,  # noqa: ARG001
-    solve_subproblem,  # noqa: ARG001
-    filter_points,  # noqa: ARG001
-    fit_model,  # noqa: ARG001
-    aggregate_model,  # noqa: ARG001
-    estimate_variance,  # noqa: ARG001
-    accept_candidate,  # noqa: ARG001
-):
-    pass
-
-
-def _tranquilo(
-    criterion,
+    evaluate_criterion,
     x,
-    functype,
-    lower_bounds=None,
-    upper_bounds=None,
-    stopping_max_iterations=200,
-    stopping_max_criterion_evaluations=2_000,
-    random_seed=925408,
-    sampler=None,
-    sample_filter="keep_all",
-    filter_options=None,
-    fitter=None,
-    subsolver=None,
-    sample_size=None,
-    surrogate_model=None,
-    radius_options=None,
-    sampler_options=None,
-    fit_options=None,
-    solver_options=None,
-    conv_options=None,
-    batch_evaluator="joblib",
-    n_cores=1,
-    infinity_handling="relative",
-    search_radius_factor=None,
-    noisy=False,
-    sample_size_factor=None,
-    acceptance_decider=None,
-    acceptance_options=None,
-    variance_estimator="classic",
-    variance_estimation_options=None,
-    stagnation_options=None,
-    n_evals_per_point=1,
-    disable_convergence=False,
-    n_evals_at_start=None,
+    noisy,
+    conv_options,
+    stop_options,
+    radius_options,
+    batch_size,
+    target_sample_size,
+    stagnation_options,
+    search_radius_factor,
+    n_evals_per_point,
+    n_evals_at_start,
+    trustregion,
+    sampling_rng,
+    history,
+    sample_points,
+    solve_subproblem,
+    filter_points,
+    fit_model,
+    aggregate_model,
+    estimate_variance,
+    accept_candidate,
 ):
-    # ==================================================================================
-    # set default values for optional arguments
-    # ==================================================================================
-    n_evals_at_start = 5 if noisy else 1
-    sampling_rng = np.random.default_rng(random_seed)
-
-    if radius_options is None:
-        radius_options = RadiusOptions()
-    if sampler_options is None:
-        sampler_options = {}
-    if fit_options is None:
-        if functype == "scalar":
-            fit_options = {"residualize": True}
-        else:
-            fit_options = {}
-    if solver_options is None:
-        solver_options = {}
-
-    model_type = _process_surrogate_model(
-        surrogate_model=surrogate_model,
-        functype=functype,
-    )
-
-    bounds = Bounds(lower=lower_bounds, upper=upper_bounds)
-
-    sampler = "optimal_hull" if sampler is None else sampler
-
-    if subsolver is None:
-        if bounds.has_any:
-            subsolver = "bntr_fast"
-        else:
-            subsolver = "gqtpar_fast"
-
-    if search_radius_factor is None:
-        search_radius_factor = 4.25 if functype == "scalar" else 5.0
-
-    target_sample_size = _process_sample_size(
-        user_sample_size=sample_size,
-        model_type=model_type,
-        x=x,
-        sample_size_factor=sample_size_factor,
-    )
-
-    if fitter is None:
-        if functype == "scalar":
-            fitter = "tranquilo"
-        else:
-            fitter = "ols"
-
-    if functype == "scalar":
-        aggregator = "identity"
-    elif functype == "likelihood":
-        aggregator = "information_equality_linear"
-    elif functype == "least_squares":
-        aggregator = "least_squares_linear"
-    else:
-        raise ValueError(f"Invalid functype: {functype}")
-
-    if conv_options is None:
-        conv_options = ConvOptions()
-
-    if acceptance_decider is None:
-        acceptance_decider = "noisy" if noisy else "classic"
-
-    if acceptance_options is None:
-        acceptance_options = AcceptanceOptions()
-
-    if stagnation_options is None:
-        stagnation_options = StagnationOptions()
-
-    stop_options = StopOptions(
-        max_iter=stopping_max_iterations,
-        max_eval=stopping_max_criterion_evaluations,
-        max_time=np.inf,
-    )
-
-    # ==================================================================================
-    # initialize compoments for the solver
-    # ==================================================================================
-
-    history = History(functype=functype)
-    history.add_xs(x)
-
-    evaluate_criterion = get_wrapped_criterion(
-        criterion=criterion,
-        batch_evaluator=batch_evaluator,
-        n_cores=n_cores,
-        history=history,
-    )
-
-    sample_points = get_sampler(sampler, user_options=sampler_options)
-
-    filter_points = get_sample_filter(sample_filter, user_options=filter_options)
-
-    aggregate_model = get_aggregator(
-        aggregator=aggregator,
-        functype=functype,
-        model_type=model_type,
-    )
-
-    fit_model = get_fitter(
-        fitter=fitter,
-        fitter_options=fit_options,
-        model_type=model_type,
-        infinity_handling=infinity_handling,
-    )
-
-    solve_subproblem = get_subsolver(
-        solver=subsolver,
-        user_options=solver_options,
-        bounds=bounds,
-    )
-
-    estimate_variance = get_variance_estimator(
-        fitter=variance_estimator,
-        user_options=variance_estimation_options,
-    )
-    # ==================================================================================
-    # initialize the optimizer state
-    # ==================================================================================
-
-    accept_candidate = get_acceptance_decider(
-        acceptance_decider=acceptance_decider,
-        acceptance_options=acceptance_options,
-    )
-
     eval_info = {0: n_evals_at_start}
 
     evaluate_criterion(eval_info)
 
     _init_fvec = history.get_fvecs(0).mean(axis=0)
-    _init_radius = radius_options.initial_radius * np.max(np.abs(x))
-    trustregion = Region(center=x, radius=_init_radius, bounds=bounds)
 
     _init_vector_model = VectorModel(
         intercepts=_init_fvec,
@@ -492,7 +306,7 @@ def _tranquilo(
         # convergence check
         # ==============================================================================
 
-        if acceptance_result.accepted and not disable_convergence:
+        if acceptance_result.accepted and not conv_options.disable:
             converged, msg = _is_converged(states=states, options=conv_options)
             if converged:
                 break
@@ -626,54 +440,6 @@ def _is_converged(states, options):
         msg = None
 
     return converged, msg
-
-
-def _process_surrogate_model(surrogate_model, functype):
-    if surrogate_model is None:
-        if functype == "scalar":
-            surrogate_model = "quadratic"
-        else:
-            surrogate_model = "linear"
-
-    if isinstance(surrogate_model, str):
-        if surrogate_model not in ("linear", "quadratic"):
-            raise ValueError(
-                f"Invalid surrogate model: {surrogate_model} must be in ('linear', "
-                "'quadratic')"
-            )
-    else:
-        raise TypeError(f"Invalid surrogate model: {surrogate_model}")
-
-    return surrogate_model
-
-
-def _process_sample_size(user_sample_size, model_type, x, sample_size_factor):
-    if user_sample_size is None:
-        if model_type == "quadratic":
-            out = 2 * len(x) + 1
-        else:
-            out = len(x) + 1
-
-    elif isinstance(user_sample_size, str):
-        user_sample_size = user_sample_size.replace(" ", "")
-        if user_sample_size in ["linear", "n+1"]:
-            out = n_free_params(dim=len(x), model_type="linear")
-        elif user_sample_size in ["powell", "2n+1", "2*n+1"]:
-            out = 2 * len(x) + 1
-        elif user_sample_size == "quadratic":
-            out = n_free_params(dim=len(x), model_type="quadratic")
-        else:
-            raise ValueError(f"Invalid sample size: {user_sample_size}")
-
-    elif isinstance(user_sample_size, numbers.Number):
-        out = int(user_sample_size)
-    else:
-        raise TypeError(f"invalid sample size: {user_sample_size}")
-
-    if sample_size_factor is not None:
-        out = int(out * sample_size_factor)
-
-    return out
 
 
 tranquilo = mark_minimizer(
