@@ -2,11 +2,6 @@ from typing import NamedTuple
 
 import numpy as np
 
-from estimagic.optimization.algo_options import (
-    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
-)
-
 
 def get_default_radius_options(x):
     return RadiusOptions(initial_radius=0.1 * np.max(np.abs(x)))
@@ -74,14 +69,14 @@ class StopOptions(NamedTuple):
 class ConvOptions(NamedTuple):
     """Criteria for successful convergence."""
 
-    disable: bool = False
-    ftol_abs: float = 0.0
-    gtol_abs: float = 0.0
-    xtol_abs: float = 0.0
-    ftol_rel: float = CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-    gtol_rel: float = CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-    xtol_rel: float = 1e-8
-    min_radius: float = 0.0
+    disable: bool
+    ftol_abs: float
+    gtol_abs: float
+    xtol_abs: float
+    ftol_rel: float
+    gtol_rel: float
+    xtol_rel: float
+    min_radius: float
 
 
 class RadiusOptions(NamedTuple):
