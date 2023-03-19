@@ -7,13 +7,16 @@ derivative free least squares solvers (e.g. POUNDERS, DFOGN, DFOLS).
 The parameter dimensions are of medium scale, varying between 25 and 100.
 
 The benchmark set is based on Table 3 in Cartis and Roberts (2019).
-Implementation is based on the original SIF files, on sources cited in the
-SIF files or, where available, on AMPL implementaions available here:
+Implementation is based on
+- the original SIF files: https://bitbucket.org/optrove/sif/src/master/
+- on sources cited in the SIF files or,
+- where available, on AMPL implementaions available here:
 - https://vanderbei.princeton.edu/ampl/nlmodels/cute/index.html
 
 """
 from functools import partial
 
+from numba import njit
 import numpy as np
 
 from estimagic.benchmarking.more_wild import (
@@ -63,10 +66,11 @@ def luksan13(x):
     return fvec
 
 
+@njit
 def luksan14(x):
     dim_in = len(x)
     dim_out = 7 * (dim_in - 2) // 3
-    fvec = np.zeros(dim_out)
+    fvec = np.zeros(dim_out, dtype=np.float64)
 
     for i in range(0, dim_in - 2, 3):
         k = (i // 3) * 7
@@ -83,11 +87,17 @@ def luksan14(x):
     return fvec
 
 
+@njit
 def luksan15(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
-    temp = np.zeros((dim_out, 3))
-    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
+    temp = np.zeros((dim_out, 3), dtype=np.float64)
+    y = (
+        np.array([35.8, 11.2, 6.2, 4.4])
+        .repeat(dim_out // 4)
+        .reshape((-1, dim_out // 4))
+        .T.flatten()
+    )  # workaround: numba does not support np.tile
 
     for p in range(1, 4):
         k = 0
@@ -104,11 +114,17 @@ def luksan15(x):
     return fvec
 
 
+@njit
 def luksan16(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
-    temp = np.zeros((dim_out, 3))
-    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
+    temp = np.zeros((dim_out, 3), dtype=np.float64)
+    y = (
+        np.array([35.8, 11.2, 6.2, 4.4])
+        .repeat(dim_out // 4)
+        .reshape((-1, dim_out // 4))
+        .T.flatten()
+    )  # workaround: numba does not support np.tile
 
     for p in range(1, 4):
         k = 0
@@ -124,11 +140,17 @@ def luksan16(x):
     return fvec
 
 
+@njit
 def luksan17(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
-    temp = np.zeros((dim_out, 4))
-    y = np.tile([30.6, 72.2, 124.4, 187.4], dim_out // 4)
+    temp = np.zeros((dim_out, 4), dtype=np.float64)
+    y = (
+        np.array([30.6, 72.2, 124.4, 187.4])
+        .repeat(dim_out // 4)
+        .reshape((-1, dim_out // 4))
+        .T.flatten()
+    )  # workaround: numba does not support np.tile
 
     for q in range(1, 5):
         k = 0
@@ -144,10 +166,11 @@ def luksan17(x):
     return fvec
 
 
+@njit
 def luksan21(x):
     dim_out = len(x)
     h = 1 / (dim_out + 1)
-    fvec = np.zeros(dim_out)
+    fvec = np.zeros(dim_out, dtype=np.float64)
 
     fvec[0] = 2 * x[0] + 0.5 * h**2 * (x[0] + h + 1) ** 3 - x[1] + 1
     for i in range(1, dim_out - 1):
@@ -190,17 +213,16 @@ def morebvne(x):
     return fvec
 
 
-def flosp2(x, const, ra=1.0e7, dim_in=2):
+@njit
+def flosp2(x, a, b, ra=1.0e7, dim_in=2):
     n = dim_in * 2 + 1
-    xvec = np.ones((3, n, n))
+    xvec = np.ones((3, n, n), dtype=np.float64)
     xvec[0] = x[: n**2].reshape(n, n)
     xvec[1] = x[n**2 : 2 * n**2].reshape(n, n)
     xvec[2, 1:-1, 1:-1] = x[2 * n**2 :].reshape(n - 2, n - 2)
 
-    a = const[0]
-    b = const[1]
-    f = [1, 0, 0]
-    g = [1, 0, 0]
+    f = np.array([1, 0, 0], dtype=np.int64)
+    g = np.array([1, 0, 0], dtype=np.int64)
 
     h = 1 / dim_in
     ax = 1
@@ -209,7 +231,7 @@ def flosp2(x, const, ra=1.0e7, dim_in=2):
     pi1 = -0.5 * ax * ra * np.cos(theta)
     pi2 = 0.5 * ax * ra * np.sin(theta)
 
-    fvec = np.zeros((n - 2, n - 2, n - 2))
+    fvec = np.zeros((n - 2, n - 2, n - 2), dtype=np.float64)
     for j in range(1, n - 1):
         for i in range(1, n - 1):
             fvec[0, i - 1, j - 1] = (
@@ -252,7 +274,7 @@ def flosp2(x, const, ra=1.0e7, dim_in=2):
                 * (xvec[1, i, j + 1] - xvec[1, i, j - 1])
             )
 
-    temp = np.zeros((n, n))
+    temp = np.zeros((n, n), dtype=np.float64)
     temp[:, -1] = a[2]
     temp[:, 0] = b[2]
     temp[-1, 1:] = f[2]
@@ -280,13 +302,13 @@ def flosp2(x, const, ra=1.0e7, dim_in=2):
         )
 
     fvec = np.concatenate(
-        [
+        (
             fvec.flatten(),
             np.concatenate((temp[0, :], temp[-1, :], temp[1:-1, 0], temp[1:-1, -1])),
-        ]
+        )
     )
 
-    temp = np.zeros((n, n))
+    temp = np.zeros((n, n), dtype=np.float64)
     for k in range(n):
         temp[k, -1] += xvec[2, k, -1] * -2 * (1 / h) + xvec[2, k, -2] * 2 * (1 / h)
         temp[k, 0] += xvec[2, k, 1] * 2 * (1 / h) + xvec[2, k, 0] * -2 * (1 / h)
@@ -297,7 +319,10 @@ def flosp2(x, const, ra=1.0e7, dim_in=2):
             1 / (ax * h)
         )
     fvec = np.concatenate(
-        [fvec, np.concatenate((temp[0, :], temp[-1, :], temp[1:-1, 0], temp[1:-1, -1]))]
+        (
+            fvec,
+            np.concatenate((temp[0, :], temp[-1, :], temp[1:-1, 0], temp[1:-1, -1])),
+        )
     )
 
     return fvec
@@ -392,6 +417,7 @@ def spmsqrt(x):
     return fmat.flatten()
 
 
+@njit
 def semicon2(x):
     n = len(x) // 1
     ln = 9 * n // 10
@@ -410,12 +436,12 @@ def semicon2(x):
     lua = lambda_ * ua
     lub = lambda_ * ub
 
-    xvec = np.zeros(n + 2)
+    xvec = np.zeros(n + 2, dtype=np.float64)
     xvec[0] = lua
     xvec[1:-1] = x
     xvec[-1] = lub
 
-    fvec = np.zeros(n)
+    fvec = np.zeros(n, dtype=np.float64)
     for i in range(1, ln + 1):
         fvec[i - 1] = (
             xvec[i - 1]
@@ -440,7 +466,7 @@ def semicon2(x):
 
 def qr3d(x, m=5):
     q = x[: m**2].reshape(m, m)
-    r = np.zeros((m, m))
+    r = np.zeros((m, m), dtype=np.float64)
     r[np.triu_indices_from(r)] = x[m**2 :]
 
     a = (
@@ -452,8 +478,8 @@ def qr3d(x, m=5):
     a[-1, -2] = (1 - m) / m
     a[-1, -1] = 2 * m
 
-    omat = np.zeros((m, m))  # triu
-    fmat = np.zeros((m, m))
+    omat = np.zeros((m, m), dtype=np.float64)  # triu
+    fmat = np.zeros((m, m), dtype=np.float64)
 
     for i in range(m):
         for j in range(i, m):
@@ -476,12 +502,12 @@ def qr3d(x, m=5):
     fmat[-1, -2] -= a[-1, -2]
     fmat[-1, -1] -= a[-1, -1]
 
-    return np.concatenate([omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()])
+    return np.concatenate((omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()))
 
 
 def qr3dbd(x, m=5):
     q = x[: m**2].reshape(m, m)
-    r = np.zeros((m, m))
+    r = np.zeros((m, m), dtype=np.float64)
     r[0, :-2] = x[m**2 : -9]
     r[1, 1:-1] = x[-9:-6]
     r[2, 2:] = x[-6:-3]
@@ -497,8 +523,8 @@ def qr3dbd(x, m=5):
     a[-1, -2] = (1 - m) / m
     a[-1, -1] = 2 * m
 
-    omat = np.zeros((m, m))  # triu
-    fmat = np.zeros((m, m))
+    omat = np.zeros((m, m), dtype=np.float64)  # triu
+    fmat = np.zeros((m, m), dtype=np.float64)
 
     for i in range(m):
         for j in range(i, m):
@@ -523,7 +549,7 @@ def qr3dbd(x, m=5):
     fmat[-1, -2] -= a[-1, -2]
     fmat[-1, -1] -= a[-1, -1]
 
-    return np.concatenate([omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()])
+    return np.concatenate((omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()))
 
 
 def eigen(x, param):
@@ -532,7 +558,7 @@ def eigen(x, param):
     qmat = x[dim_in:].reshape(dim_in, dim_in)
     emat = qmat @ np.diag(dvec) @ qmat - param
     omat = qmat @ qmat - np.eye(dim_in)
-    return np.concatenate([emat.flatten(), omat.flatten()])
+    return np.concatenate((emat.flatten(), omat.flatten()))
 
 
 def powell_singular(x):
@@ -545,6 +571,7 @@ def powell_singular(x):
     return fvec
 
 
+@njit
 def hydcar(
     x_in,
     n,
@@ -570,16 +597,16 @@ def hydcar(
     b = 40
     d = 60
     q = 2500000
-    pi = np.ones(n)
+    pi = np.ones(n, dtype=np.int64)
 
     invpi = 1 / pi
 
-    fvec1 = np.zeros(m)
-    fvec3 = np.zeros(m)
-    fvec2 = np.zeros((n - 2, m))
-    fvec7 = np.zeros(n)
+    fvec1 = np.zeros(m, dtype=np.float64)
+    fvec3 = np.zeros(m, dtype=np.float64)
+    fvec2 = np.zeros((n - 2, m), dtype=np.float64)
+    fvec7 = np.zeros(n, dtype=np.float64)
+    fvec9 = np.zeros(n - 2, dtype=np.float64)
     fvec8 = 0
-    fvec9 = np.zeros(n - 2)
 
     # 1. linear elements
     for j in range(m):
@@ -716,15 +743,17 @@ def hydcar(
 
     fvec1 *= 1e-2
     fvec2 *= 1e-2
-
     fvec8 *= 1e-5
     fvec9 *= 1e-5
 
-    return np.concatenate([fvec1, fvec3, fvec2.flatten(), fvec7, [fvec8], fvec9])
+    return np.concatenate(
+        (fvec1, fvec3, fvec2.flatten(), fvec7, np.array([fvec8]), fvec9)
+    )
 
 
+@njit
 def methane(x):
-    fvec = np.zeros(31)
+    fvec = np.zeros(31, dtype=np.float64)
     fvec[0] = 0.01 * (
         0.000826446280991736
         * x[24]
@@ -1115,10 +1144,11 @@ def argtrig(x):
     return fvec
 
 
+@njit
 def artif(x):
     dim_in = len(x)
-    xvec = np.concatenate([[0], x, [0]])
-    fvec = np.zeros(dim_in)
+    xvec = np.concatenate((np.array([0]), x, np.array([0])))
+    fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(dim_in):
         fvec[i] = -0.05 * (xvec[i + 1] + xvec[i + 2] + xvec[i]) + np.arctan(
             np.sin(np.mod(i + 1, 100) * xvec[i + 1])
@@ -1134,11 +1164,13 @@ def arwhdne(x):
     return fvec
 
 
+@njit
 def bdvalues(x):
     dim_in = len(x)
     h = 1 / (dim_in + 1)
-    xvec = np.concatenate([[0], x, [0]])
-    fvec = np.zeros(dim_in)
+    # xvec = np.concatenate([[0], x, [0]])
+    xvec = np.concatenate((np.array([0]), x, np.array([0])))
+    fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(2, dim_in + 2):
         fvec[i - 2] = (
             -xvec[i - 2]
@@ -1207,13 +1239,14 @@ def broydn_3d(x):
     return fvec
 
 
+@njit
 def broydn_bd(x):
     dim_in = len(x)
-    fvec = np.zeros(dim_in)
+    fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(1, 1 + dim_in):
         ji = []
-        lb = np.max([1, i - 5])
-        ub = np.min([dim_in, i + 1])
+        lb = max(1, i - 5)
+        ub = min(dim_in, i + 1)
         for j in range(lb, ub + 1):
             if j != i:
                 ji.append(j)
@@ -1266,11 +1299,12 @@ def chandheq(x):
     return fvec
 
 
+@njit
 def chemrcta(x):
     dim_in = int(len(x) / 2)
     x = x.reshape((2, dim_in))
     # define the out vector
-    fvec = np.zeros(2 * dim_in)
+    fvec = np.zeros(2 * dim_in, dtype=np.float64)
     # define some auxuliary params
     pem = 1
     peh = 5.0
@@ -1306,10 +1340,11 @@ def chemrcta(x):
     return fvec
 
 
+@njit
 def chemrctb(x):
     dim_in = int(len(x))
     # define the out vector
-    fvec = np.zeros(dim_in)
+    fvec = np.zeros(dim_in, dtype=np.float64)
     # define some auxuliary params
     pe = 5.0
     d = 0.135
@@ -1393,15 +1428,16 @@ def chnrsbne(x):
     return fvec
 
 
+@njit
 def drcavty(x, r):
     m = int(np.sqrt(len(x)))
     x = x.reshape((m, m))
     h = 1 / (m + 2)
-    xvec = np.zeros((m + 4, m + 4))
+    xvec = np.zeros((m + 4, m + 4), dtype=np.float64)
     xvec[2 : m + 2, 2 : m + 2] = x
     xvec[-2, :] = -h / 2
     xvec[-1, :] = h / 2
-    fvec = np.zeros(x.shape)
+    fvec = np.zeros(x.shape, dtype=np.float64)
     for i in range(m):
         for j in range(m):
             fvec[i, j] = (
@@ -1466,11 +1502,12 @@ def hatfldg(x):
     return fvec
 
 
+@njit
 def integreq(x):
     dim_in = len(x)
     h = 1 / (dim_in + 1)
     t = np.arange(1, dim_in + 1) * h
-    xvec = np.concatenate([[0], x, [0]])
+    xvec = np.concatenate((np.array([0]), x, np.array([0])))
     fvec = np.zeros_like(x)
     for i in range(1, dim_in):
         fvec[i - 1] = (
@@ -1494,11 +1531,12 @@ def integreq(x):
     return fvec
 
 
+@njit
 def msqrta(x):
     dim_in = int(np.sqrt(len(x)))
     xmat = x.reshape((dim_in, dim_in))
     bmat = 5 * xmat
-    amat = np.zeros((dim_in, dim_in))
+    amat = np.zeros((dim_in, dim_in), dtype=np.float64)
     for i in range(1, dim_in + 1):
         for j in range(1, dim_in + 1):
             amat[i - 1, j - 1] = (bmat[i - 1, :] * bmat[:, j - 1]).sum()
@@ -1539,12 +1577,13 @@ def vardimne(x):
     return fvec
 
 
+@njit
 def yatpsq_1(x, dim_in):
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
     yvec = x[dim_in**2 : dim_in**2 + dim_in]
     zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
-    fvec = np.zeros((dim_in, dim_in))
+    fvec = np.zeros((dim_in, dim_in), dtype=np.float64)
     for i in range(dim_in):
         for j in range(dim_in):
             fvec[i, j] = (
@@ -1555,26 +1594,27 @@ def yatpsq_1(x, dim_in):
             )
     fvec = fvec.flatten()
     temp = (np.sin(xvec) / xvec).sum(axis=0) - 1
-    fvec = np.concatenate([fvec, temp])
+    fvec = np.concatenate((fvec, temp))
     temp = (np.sin(xvec) / xvec).sum(axis=1) - 1
-    fvec = np.concatenate([fvec, temp])
+    fvec = np.concatenate((fvec, temp))
     return fvec
 
 
+@njit
 def yatpsq_2(x, dim_in):
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
     yvec = x[dim_in**2 : dim_in**2 + dim_in]
     zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
-    fvec = np.zeros((dim_in, dim_in))
+    fvec = np.zeros((dim_in, dim_in), dtype=np.float64)
     for i in range(dim_in):
         for j in range(dim_in):
             fvec[i, j] = xvec[i, j] - (yvec[i] + zvec[j]) * (1 + np.cos(xvec[i, j])) - 1
     fvec = fvec.flatten()
     temp = (np.sin(xvec) + xvec).sum(axis=0) - 1
-    fvec = np.concatenate([fvec, temp])
+    fvec = np.concatenate((fvec, temp))
     temp = (np.sin(xvec) + xvec).sum(axis=1) - 1
-    fvec = np.concatenate([fvec, temp])
+    fvec = np.concatenate((fvec, temp))
     return fvec
 
 
@@ -4883,6 +4923,19 @@ solution_x_methane = [
 
 
 CARTIS_ROBERTS_PROBLEMS = {
+    "flosp2hh": {
+        "criterion": partial(
+            flosp2,
+            a=np.array([1, 0, -1], dtype=np.int64),
+            b=np.array([1, 0, -1], dtype=np.int64),
+            ra=1e7,
+            dim_in=2,
+        ),
+        "start_x": [0] * 59,
+        "solution_x": None,  # multiple argmins
+        "start_criterion": 519,
+        "solution_criterion": 1 / 3,
+    },
     "argtrig": {
         "criterion": argtrig,
         "start_x": [1 / 100] * 100,
@@ -5180,43 +5233,66 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 3.633100e-4,
         "solution_criterion": 0,
     },
-    "flosp2hh": {
-        "criterion": partial(flosp2, const=[[1, 0, -1], [1, 0, -1]], ra=1e7, dim_in=2),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
     "flosp2hl": {
-        "criterion": partial(flosp2, const=[[1, 0, -1], [1, 0, -1]], ra=1e3, dim_in=2),
+        "criterion": partial(
+            flosp2,
+            a=np.array([1, 0, -1], dtype=np.int64),
+            b=np.array([1, 0, -1], dtype=np.int64),
+            ra=1e3,
+            dim_in=2,
+        ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
         "start_criterion": 519,
         "solution_criterion": 1 / 3,
     },
     "flosp2hm": {
-        "criterion": partial(flosp2, const=[[1, 0, -1], [1, 0, -1]], ra=1e5, dim_in=2),
+        "criterion": partial(
+            flosp2,
+            a=np.array([1, 0, -1], dtype=np.int64),
+            b=np.array([1, 0, -1], dtype=np.int64),
+            ra=1e5,
+            dim_in=2,
+        ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
         "start_criterion": 519,
         "solution_criterion": 1 / 3,
     },
     "flosp2th": {
-        "criterion": partial(flosp2, const=[[0, 1, 0], [0, 1, 1]], ra=1e7, dim_in=2),
+        "criterion": partial(
+            flosp2,
+            a=np.array([0, 1, 0], dtype=np.int64),
+            b=np.array([0, 1, 1], dtype=np.int64),
+            ra=1e7,
+            dim_in=2,
+        ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
         "start_criterion": 516,
         "solution_criterion": 0,
     },
     "flosp2tl": {
-        "criterion": partial(flosp2, const=[[0, 1, 0], [0, 1, 1]], ra=1e3, dim_in=2),
+        "criterion": partial(
+            flosp2,
+            a=np.array([0, 1, 0], dtype=np.int64),
+            b=np.array([0, 1, 1], dtype=np.int64),
+            ra=1e3,
+            dim_in=2,
+        ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
         "start_criterion": 516,
         "solution_criterion": 0,
     },
     "flosp2tm": {
-        "criterion": partial(flosp2, const=[[0, 1, 0], [0, 1, 1]], ra=1e5, dim_in=2),
+        "criterion": partial(
+            flosp2,
+            a=np.array([0, 1, 0], dtype=np.int64),
+            b=np.array([0, 1, 1], dtype=np.int64),
+            ra=1e5,
+            dim_in=2,
+        ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
         "start_criterion": 516,
