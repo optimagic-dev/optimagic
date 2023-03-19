@@ -108,3 +108,16 @@ class StagnationOptions(NamedTuple):
     sample_increment: int = 1
     max_trials: int = 1
     drop: bool = True
+
+
+class SubsolverOptions(NamedTuple):
+    maxiter: int = 20
+    maxiter_gradient_descent: int = 5
+    conjugate_gradient_method: str = "cg"
+    gtol_abs: float = 1e-8
+    gtol_rel: float = 1e-8
+    gtol_scaled: float = 0.0
+    gtol_abs_conjugate_gradient: float = 1e-8
+    gtol_rel_conjugate_gradient: float = 1e-6
+    k_easy: float = 0.1
+    k_hard: float = 0.2
