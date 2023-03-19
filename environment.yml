@@ -20,6 +20,7 @@ dependencies:
   - toml  # dev
   - bokeh<=2.4.3  # run, tests
   - click  # run, tests
+  - rich  # run, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
   - numba  # run, tests
