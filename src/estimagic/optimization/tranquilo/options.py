@@ -61,9 +61,9 @@ def get_default_n_evals_at_start(noisy):
 class StopOptions(NamedTuple):
     """Criteria for stopping without successful convergence."""
 
-    max_iter: int = 200
-    max_eval: int = 2_000
-    max_time: float = np.inf
+    max_iter: int
+    max_eval: int
+    max_time: float
 
 
 class ConvOptions(NamedTuple):
