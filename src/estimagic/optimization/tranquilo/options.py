@@ -1,4 +1,5 @@
 from typing import NamedTuple
+from estimagic.optimization.tranquilo.models import n_free_params
 
 import numpy as np
 
@@ -24,8 +25,13 @@ def get_default_sample_size(model_type, x):
     return out
 
 
-def get_default_model_fitter(functype):
-    return "tranquilo" if functype == "scalar" else "ols"
+def get_default_model_fitter(model_type, sample_size, x):
+    n_params = n_free_params(dim=len(x), model_type=model_type)
+    if model_type == "linear":
+        fitter = "ridge" if sample_size < n_params else "ols"
+    else:
+        fitter = "tranquilo"
+    return fitter
 
 
 def get_default_subsolver(bounds, cube_subsolver, sphere_subsolver):

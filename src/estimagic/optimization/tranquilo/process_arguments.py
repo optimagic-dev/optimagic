@@ -126,13 +126,15 @@ def process_arguments(
     radius_options = update_option_bundle(get_default_radius_options(x), radius_options)
     model_type = _process_model_type(model_type, functype)
     acceptance_decider = _process_acceptance_decider(acceptance_decider, noisy)
-    model_fitter = _process_model_fitter(model_fitter, functype)
 
     # process options that depend on arguments with dependent defaults
     target_sample_size = _process_sample_size(
         sample_size=sample_size,
         model_type=model_type,
         x=x,
+    )
+    model_fitter = _process_model_fitter(
+        model_fitter, model_type=model_type, sample_size=target_sample_size, x=x
     )
 
     # initialize components
@@ -284,9 +286,9 @@ def _process_acceptance_decider(acceptance_decider, noisy):
     return out
 
 
-def _process_model_fitter(model_fitter, functype):
+def _process_model_fitter(model_fitter, model_type, sample_size, x):
     if model_fitter is None:
-        out = get_default_model_fitter(functype)
+        out = get_default_model_fitter(model_type, sample_size=sample_size, x=x)
     else:
         out = model_fitter
 

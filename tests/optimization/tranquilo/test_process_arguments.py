@@ -134,9 +134,30 @@ def test_process_acceptance_decider():
 
 
 def test_process_model_fitter():
-    assert _process_model_fitter(model_fitter=None, functype="scalar") == "tranquilo"
-    assert _process_model_fitter(model_fitter=None, functype="least_squares") == "ols"
-    assert _process_model_fitter(model_fitter="xyz", functype=None) == "xyz"
+    assert (
+        _process_model_fitter(
+            model_fitter=None, model_type="quadratic", sample_size=3, x=np.arange(3)
+        )
+        == "tranquilo"
+    )
+    assert (
+        _process_model_fitter(
+            model_fitter=None, model_type="linear", sample_size=4, x=np.arange(3)
+        )
+        == "ols"
+    )
+    assert (
+        _process_model_fitter(
+            model_fitter=None, model_type="linear", sample_size=2, x=np.arange(3)
+        )
+        == "ridge"
+    )
+    assert (
+        _process_model_fitter(
+            model_fitter="xyz", model_type=None, sample_size=None, x=None
+        )
+        == "xyz"
+    )
 
 
 def test_process_n_evals_at_start():
