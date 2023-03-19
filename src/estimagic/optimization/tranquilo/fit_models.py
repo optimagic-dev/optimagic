@@ -6,6 +6,7 @@ from scipy.linalg import qr_multiply
 
 from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
+from estimagic.optimization.tranquilo.options import FitterOptions
 from estimagic.optimization.tranquilo.models import (
     VectorModel,
     add_models,
@@ -46,14 +47,7 @@ def get_fitter(
         "tranquilo": fit_tranquilo,
     }
 
-    default_options = {
-        "l2_penalty_linear": 0,
-        "l2_penalty_square": 0.1,
-        "model_type": model_type,
-        "p_intercept": 0.05,
-        "p_linear": 0.4,
-        "p_square": 1.0,
-    }
+    default_options = FitterOptions(model_type=model_type)
 
     mandatory_arguments = ["x", "y", "model_type"]
 

@@ -121,3 +121,17 @@ class SubsolverOptions(NamedTuple):
     gtol_rel_conjugate_gradient: float = 1e-6
     k_easy: float = 0.1
     k_hard: float = 0.2
+
+
+class FitterOptions(NamedTuple):
+    model_type: str
+    l2_penalty_linear: float = 0.0
+    l2_penalty_square: float = 0.1
+    p_intercept: float = 0.05
+    p_linear: float = 0.4
+    p_square: float = 1.0
+
+
+class VarianceEstimatorOptions(NamedTuple):
+    max_distance_factor: float = 3.0
+    min_n_evals: int = 3

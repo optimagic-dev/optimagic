@@ -27,10 +27,10 @@ def get_component(
         component_name (str): Name of the component. Used in error messages. Examples
             would be "subsolver" or "model".
         func_dict (dict): Dict with function names as keys and functions as values.
-        default_options (dict): Default options for the function. Those will be
-            partialled into the function unless overridden by user_options.
-        user_options (dict): Options for the function. Those will be partialled into
-            the function.
+        default_options (NamedTuple, Dict or None): Default options as a dict or
+            NamedTuple. The default options will be updated by the user options.
+        user_options (NamedTuple, Dict or None): User options as a dict or NamedTuple.
+            The default options will be updated by the user options.
         redundant_option_handling (str): How to handle redundant options. Can be
             "warn", "raise" or "ignore". Default "ignore".
         redundant_argument_handling (str): How to handle redundant arguments passed
@@ -128,8 +128,10 @@ def _get_valid_options(
     """Get the options that are valid for the function.
 
     Args:
-        default_options (dict): Default options for the function.
-        user_options (dict): Options for the function.
+        default_options (NamedTuple, Dict or None): Default options as a dict or
+            NamedTuple. The default options will be updated by the user options.
+        user_options (NamedTuple, Dict or None): User options as a dict or NamedTuple.
+            The default options will be updated by the user options.
         signature (list): List of arguments that are present in the signature.
         name (str): Name of the function.
         component_name (str): Name of the component. Used in error messages. Examples
@@ -142,6 +144,12 @@ def _get_valid_options(
     """
     _default_options = {} if default_options is None else default_options
     _user_options = {} if user_options is None else user_options
+
+    if not isinstance(_user_options, dict):
+        _user_options = user_options._asdict()
+
+    if not isinstance(_default_options, dict):
+        _default_options = default_options._asdict()
 
     _options = {**_default_options, **_user_options}
 
