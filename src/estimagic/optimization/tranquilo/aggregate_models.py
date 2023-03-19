@@ -5,17 +5,11 @@ import numpy as np
 from estimagic.optimization.tranquilo.models import ScalarModel
 
 
-def get_aggregator(aggregator, functype, model_type):
+def get_aggregator(aggregator):
     """Get a function that aggregates a VectorModel into a ScalarModel.
 
     Args:
-        aggregator (str or callable): Name of an aggregator or aggregator function.
-            The function must take as argument:
-            - vector_model (VectorModel): A fitted vector model.
-        functype (str): One of "scalar", "least_squares" and "likelihood".
-        model_type (str): Type of the model that is fitted. The following are supported:
-            - "linear": Only linear effects and intercept.
-            - "quadratic": Fully quadratic model.
+        aggregator (str): Name of an aggregator.
 
     Returns:
         callable: The partialled aggregator that only depends on vector_model.
@@ -28,13 +22,11 @@ def get_aggregator(aggregator, functype, model_type):
         "least_squares_linear": aggregator_least_squares_linear,
     }
 
-    if isinstance(aggregator, str) and aggregator in built_in_aggregators:
+    if aggregator in built_in_aggregators:
         _aggregator = built_in_aggregators[aggregator]
-    elif callable(aggregator):
-        _aggregator = aggregator
     else:
         raise ValueError(
-            f"Invalid aggregator:  {aggregator}. Must be one of "
+            f"Invalid aggregator: {aggregator}. Must be one of "
             f"{list(built_in_aggregators)} or a callable."
         )
 

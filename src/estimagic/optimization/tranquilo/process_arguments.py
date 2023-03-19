@@ -177,8 +177,6 @@ def process_arguments(
 
     aggregate_model = get_aggregator(
         aggregator=get_default_aggregator(functype=functype, model_type=model_type),
-        functype=functype,
-        model_type=model_type,
     )
 
     estimate_variance = get_variance_estimator(
@@ -220,13 +218,8 @@ def process_arguments(
     return out
 
 
-# ======================================================================================
-# @Tim please check if we can improve error handling below
-# ======================================================================================
-
-
 def _process_x(x):
-    return np.asarray(x, dtype=float)
+    return np.asarray(x, dtype=np.float64)
 
 
 def _process_noisy(noisy):
