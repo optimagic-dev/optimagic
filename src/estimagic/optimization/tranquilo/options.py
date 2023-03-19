@@ -1,6 +1,9 @@
 from typing import NamedTuple
 
 import numpy as np
+from rich.table import Table
+from rich.console import Console
+from rich.style import Style
 
 
 def get_default_radius_options(x):
@@ -41,17 +44,41 @@ def get_default_model_type(functype):
 
 
 def get_default_aggregator(functype, model_type):
-    if functype == "scalar":
+    if functype == "scalar" and model_type == "quadratic":
         aggregator = "identity"
-    elif functype == "likelihood" and model_type == "linear":
-        aggregator = "information_equality_linear"
     elif functype == "least_squares" and model_type == "linear":
         aggregator = "least_squares_linear"
+    elif functype == "likelihood" and model_type == "linear":
+        aggregator = "information_equality_linear"
     else:
+        table = _get_aggregator_combination_table()
+        Console().print(table)
         raise ValueError(
-            f"Invalid combi of functype: {functype} and model_type: {model_type}."
+            "The requested combination of functype and model_type is not supported. "
+            "Allowed combinations are listed in the table above. Default aggregators "
+            "are colored green."
         )
+
     return aggregator
+
+
+def _get_aggregator_combination_table():
+    columns = ["function type", "model type", "aggregator"]
+    rows = [
+        ["scalar", "quadratic", "identity"],
+        ["scalar", "quadratic", "sum"],
+        ["least_squares", "linear", "least_squares_linear"],
+        ["likelihood", "linear", "information_equality_linear"],
+        ["likelihood", "linear", "sum"],
+    ]
+    table = Table(title="Allowed aggregator combinations")
+    for col in columns:
+        table.add_column(col)
+    for k, row in enumerate(rows):
+        end_section = True if k in (1, 2) else False
+        style = Style(bold=True, color="bright_green") if k in (0, 2, 3) else None
+        table.add_row(*row, style=style, end_section=end_section)
+    return table
 
 
 def get_default_n_evals_at_start(noisy):
