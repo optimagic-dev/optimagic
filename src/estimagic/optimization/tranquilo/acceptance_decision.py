@@ -12,6 +12,7 @@ from estimagic.optimization.tranquilo.acceptance_sample_size import (
     get_acceptance_sample_sizes,
 )
 from estimagic.optimization.tranquilo.get_component import get_component
+from estimagic.optimization.tranquilo.options import AcceptanceOptions
 
 
 def get_acceptance_decider(acceptance_decider, acceptance_options):
@@ -21,14 +22,13 @@ def get_acceptance_decider(acceptance_decider, acceptance_options):
         "noisy": accept_noisy,
     }
 
-    default_options = {
-        "acceptance_options": acceptance_options,
-    }
+    default_options = AcceptanceOptions()
 
     out = get_component(
         name_or_func=acceptance_decider,
         func_dict=func_dict,
         component_name="acceptance_decider",
+        user_options=acceptance_options,
         default_options=default_options,
     )
 
@@ -41,7 +41,7 @@ def _accept_classic(
     history,
     *,
     wrapped_criterion,
-    acceptance_options,
+    min_improvement,
 ):
     """Do a classic acceptance step for a trustregion algorithm.
 
@@ -50,8 +50,7 @@ def _accept_classic(
         state (State): Namedtuple containing the trustregion, criterion value of
             previously accepted point, indices of model points, etc.
         wrapped_criterion (callable): The criterion function.
-        acceptance_options (AcceptanceOptions): Namedtuple containing the acceptance
-            options.
+        min_improvement (float): Minimum improvement required to accept a point.
 
     Returns:
         AcceptanceResult
@@ -62,7 +61,7 @@ def _accept_classic(
         state=state,
         history=history,
         wrapped_criterion=wrapped_criterion,
-        acceptance_options=acceptance_options,
+        min_improvement=min_improvement,
         n_evals=1,
     )
     return out
@@ -74,7 +73,7 @@ def accept_naive_noisy(
     history,
     *,
     wrapped_criterion,
-    acceptance_options,
+    min_improvement,
 ):
     """Do a naive noisy acceptance step, averaging over a fixed number of points."""
     out = _accept_simple(
@@ -82,7 +81,7 @@ def accept_naive_noisy(
         state=state,
         history=history,
         wrapped_criterion=wrapped_criterion,
-        acceptance_options=acceptance_options,
+        min_improvement=min_improvement,
         n_evals=5,
     )
     return out
@@ -94,7 +93,7 @@ def _accept_simple(
     history,
     *,
     wrapped_criterion,
-    acceptance_options,
+    min_improvement,
     n_evals,
 ):
     """Do a classic acceptance step for a trustregion algorithm.
@@ -104,8 +103,7 @@ def _accept_simple(
         state (State): Namedtuple containing the trustregion, criterion value of
             previously accepted point, indices of model points, etc.
         wrapped_criterion (callable): The criterion function.
-        acceptance_options (AcceptanceOptions): Namedtuple containing the acceptance
-            options.
+        min_improvement (float): Minimum improvement required to accept a point.
 
     Returns:
         AcceptanceResult
@@ -126,7 +124,7 @@ def _accept_simple(
         expected_improvement=subproblem_solution.expected_improvement,
     )
 
-    is_accepted = actual_improvement >= acceptance_options.min_improvement
+    is_accepted = actual_improvement >= min_improvement
 
     res = _get_acceptance_result(
         candidate_x=candidate_x,
@@ -147,7 +145,11 @@ def accept_noisy(
     history,
     *,
     wrapped_criterion,
-    acceptance_options,
+    min_improvement,
+    power_level,
+    confidence_level,
+    n_min,
+    n_max,
 ):
     candidate_x = subproblem_solution.x
     candidate_index = history.add_xs(candidate_x)
@@ -157,7 +159,10 @@ def accept_noisy(
         sigma=np.sqrt(noise_variance),
         existing_n1=existing_n1,
         expected_improvement=subproblem_solution.expected_improvement,
-        acceptance_options=acceptance_options,
+        power_level=power_level,
+        confidence_level=confidence_level,
+        n_min=n_min,
+        n_max=n_max,
     )
 
     eval_info = {
@@ -177,7 +182,7 @@ def accept_noisy(
         expected_improvement=subproblem_solution.expected_improvement,
     )
 
-    is_accepted = actual_improvement >= acceptance_options.min_improvement
+    is_accepted = actual_improvement >= min_improvement
 
     res = _get_acceptance_result(
         candidate_x=candidate_x,

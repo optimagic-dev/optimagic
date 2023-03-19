@@ -8,7 +8,6 @@ from estimagic.optimization.tranquilo.acceptance_decision import (
     calculate_rho,
 )
 from estimagic.optimization.tranquilo.new_history import History
-from estimagic.optimization.tranquilo.options import AcceptanceOptions
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.solve_subproblem import SubproblemResult
 from numpy.testing import assert_array_equal
@@ -30,11 +29,6 @@ def subproblem_solution():
     return res
 
 
-@pytest.fixture()
-def acceptance_options():
-    return AcceptanceOptions()
-
-
 # ======================================================================================
 # Test accept_xxx
 # ======================================================================================
@@ -52,7 +46,6 @@ states = [  # we will parametrize over `states`
 def test_accept_simple(
     state,
     subproblem_solution,
-    acceptance_options,
 ):
     history = History(functype="scalar")
 
@@ -69,7 +62,7 @@ def test_accept_simple(
         state=state,
         history=history,
         wrapped_criterion=wrapped_criterion,
-        acceptance_options=acceptance_options,
+        min_improvement=0.0,
         n_evals=2,
     )
 

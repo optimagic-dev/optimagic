@@ -12,7 +12,6 @@ from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.new_history import History
 from estimagic.optimization.tranquilo.options import (
-    AcceptanceOptions,
     ConvOptions,
     StagnationOptions,
     StopOptions,
@@ -109,9 +108,6 @@ def process_arguments(
     x = _process_x(x)
     noisy = _process_noisy(noisy)
     n_cores = _process_n_cores(n_cores)
-    acceptance_decider_options = update_option_bundle(
-        AcceptanceOptions(), acceptance_decider_options
-    )
     stagnation_options = update_option_bundle(StagnationOptions(), stagnation_options)
     n_evals_per_point = int(n_evals_per_point)
     sampling_rng = _process_seed(seed)
