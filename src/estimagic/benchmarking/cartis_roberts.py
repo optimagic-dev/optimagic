@@ -394,7 +394,6 @@ def spmsqrt(x):
     return fmat.flatten()
 
 
-@njit
 def semicon2(x):
     n = len(x) // 1
     ln = 9 * n // 10
@@ -415,9 +414,7 @@ def semicon2(x):
 
     xvec = np.zeros(n + 2, dtype=np.float64)
     xvec[0] = lua
-    for i in range(n):
-        xvec[i + 1] = x[i]
-    # xvec[1:-1] = x
+    xvec[1:-1] = x
     xvec[-1] = lub
 
     fvec = np.zeros(n, dtype=np.float64)

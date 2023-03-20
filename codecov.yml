@@ -18,6 +18,7 @@ ignore:
   - release.py
   - setup.py
   - estimagic/tests/**/*
+  - src/estimatic/benchmarking/cartis_roberts.py
   - src/estimagic/optimization/subsolvers/bntr_fast.py
   - src/estimagic/optimization/subsolvers/_trsbox_fast.py
   - src/estimagic/optimization/subsolvers/_conjugate_gradient_fast.py
