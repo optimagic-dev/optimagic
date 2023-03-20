@@ -66,7 +66,6 @@ def luksan13(x):
     return fvec
 
 
-@njit
 def luksan14(x):
     dim_in = len(x)
     dim_out = 7 * (dim_in - 2) // 3
@@ -87,17 +86,11 @@ def luksan14(x):
     return fvec
 
 
-@njit
 def luksan15(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
     temp = np.zeros((dim_out, 3), dtype=np.float64)
-    y = (
-        np.array([35.8, 11.2, 6.2, 4.4])
-        .repeat(dim_out // 4)
-        .reshape((-1, dim_out // 4))
-        .T.flatten()
-    )  # workaround: numba does not support np.tile
+    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
 
     for p in range(1, 4):
         k = 0
@@ -114,17 +107,11 @@ def luksan15(x):
     return fvec
 
 
-@njit
 def luksan16(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
     temp = np.zeros((dim_out, 3), dtype=np.float64)
-    y = (
-        np.array([35.8, 11.2, 6.2, 4.4])
-        .repeat(dim_out // 4)
-        .reshape((-1, dim_out // 4))
-        .T.flatten()
-    )  # workaround: numba does not support np.tile
+    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
 
     for p in range(1, 4):
         k = 0
@@ -140,17 +127,11 @@ def luksan16(x):
     return fvec
 
 
-@njit
 def luksan17(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
     temp = np.zeros((dim_out, 4), dtype=np.float64)
-    y = (
-        np.array([30.6, 72.2, 124.4, 187.4])
-        .repeat(dim_out // 4)
-        .reshape((-1, dim_out // 4))
-        .T.flatten()
-    )  # workaround: numba does not support np.tile
+    y = np.tile([30.6, 72.2, 124.4, 187.4], dim_out // 4)
 
     for q in range(1, 5):
         k = 0
@@ -166,7 +147,6 @@ def luksan17(x):
     return fvec
 
 
-@njit
 def luksan21(x):
     dim_out = len(x)
     h = 1 / (dim_out + 1)
@@ -214,27 +194,26 @@ def morebvne(x):
 
 
 @njit
-def flosp2(x, a, b, ra=1.0e7, dim_in=2):
-    n = dim_in * 2 + 1
+def flosp2(x, a, b, ra=1.0e7):
+    n = 5
     xvec = np.ones((3, n, n), dtype=np.float64)
     xvec[0] = x[: n**2].reshape(n, n)
     xvec[1] = x[n**2 : 2 * n**2].reshape(n, n)
     xvec[2, 1:-1, 1:-1] = x[2 * n**2 :].reshape(n - 2, n - 2)
 
-    f = np.array([1, 0, 0], dtype=np.int64)
-    g = np.array([1, 0, 0], dtype=np.int64)
-
-    h = 1 / dim_in
-    ax = 1
+    h = 1 / 2
+    ax = 1.0
     axx = ax**2
     theta = 0.5 * np.pi
     pi1 = -0.5 * ax * ra * np.cos(theta)
     pi2 = 0.5 * ax * ra * np.sin(theta)
 
-    fvec = np.zeros((n - 2, n - 2, n - 2), dtype=np.float64)
+    fvec = np.empty(59, dtype=np.float64)
+
+    temp = np.empty((n - 2, n - 2, n - 2), dtype=np.float64)
     for j in range(1, n - 1):
         for i in range(1, n - 1):
-            fvec[0, i - 1, j - 1] = (
+            temp[0, i - 1, j - 1] = (
                 xvec[0, i, j] * -2 * (1 / h) ** 2
                 + xvec[0, i + 1, j] * (1 / h) ** 2
                 + xvec[0, i - 1, j] * (1 / h) ** 2
@@ -246,7 +225,8 @@ def flosp2(x, a, b, ra=1.0e7, dim_in=2):
                 + xvec[1, i, j + 1] * -pi2 / (2 * h)
                 + xvec[1, i, j - 1] * pi2 / (2 * h)
             )
-            fvec[1, i - 1, j - 1] = (
+
+            temp[1, i - 1, j - 1] = (
                 xvec[2, i, j] * -2 * (1 / h) ** 2
                 + xvec[2, i + 1, j] * (1 / h) ** 2
                 + xvec[2, i - 1, j] * (1 / h) ** 2
@@ -255,7 +235,8 @@ def flosp2(x, a, b, ra=1.0e7, dim_in=2):
                 + xvec[2, i, j - 1] * axx * (1 / h) ** 2
                 + xvec[0, i, j] * axx * 0.25
             )
-            fvec[2, i - 1, j - 1] = (
+
+            temp[2, i - 1, j - 1] = (
                 xvec[1, i, j] * -2 * (1 / h) ** 2
                 + xvec[1, i + 1, j] * (1 / h) ** 2
                 + xvec[1, i - 1, j] * (1 / h) ** 2
@@ -273,12 +254,15 @@ def flosp2(x, a, b, ra=1.0e7, dim_in=2):
                 * (xvec[2, i + 1, j] - xvec[2, i - 1, j])
                 * (xvec[1, i, j + 1] - xvec[1, i, j - 1])
             )
+    fvec[:27] = temp.flatten()
 
     temp = np.zeros((n, n), dtype=np.float64)
-    temp[:, -1] = a[2]
-    temp[:, 0] = b[2]
-    temp[-1, 1:] = f[2]
-    temp[0, :] = g[2]
+    for k in range(n):
+        temp[k, -1] = a[2]
+        temp[k, 0] = b[2]
+        temp[0, k] = 0
+    temp[-1, -1] = 0
+
     for k in range(n):
         temp[k, -1] += (
             xvec[1, k, -1] * 2 * a[0] * (1 / h)
@@ -290,23 +274,17 @@ def flosp2(x, a, b, ra=1.0e7, dim_in=2):
             + xvec[1, k, 0] * -2 * b[0] * (1 / h)
             + xvec[1, k, 0] * b[1]
         )
-        temp[-1, k] += (
-            xvec[1, -1, k] * 2 * f[0] * (1 / (ax * h))
-            + xvec[1, -2, k] * -2 * f[0] * (1 / (ax * h))
-            + xvec[1, -1, k] * f[1]
+        temp[-1, k] += xvec[1, -1, k] * 2 * (1 / (ax * h)) + xvec[1, -2, k] * -2 * (
+            1 / (ax * h)
         )
-        temp[0, k] += (
-            xvec[1, 1, k] * 2 * g[0] * (1 / (ax * h))
-            + xvec[1, 0, k] * -2 * g[0] * (1 / (ax * h))
-            + xvec[1, 0, k] * g[1]
+        temp[0, k] += xvec[1, 1, k] * 2 * (1 / (ax * h)) + xvec[1, 0, k] * -2 * (
+            1 / (ax * h)
         )
 
-    fvec = np.concatenate(
-        (
-            fvec.flatten(),
-            np.concatenate((temp[0, :], temp[-1, :], temp[1:-1, 0], temp[1:-1, -1])),
-        )
-    )
+    fvec[27:32] = temp[0]
+    fvec[32:37] = temp[-1]
+    fvec[37:40] = temp[1:-1, 0]
+    fvec[40:43] = temp[1:-1, -1]
 
     temp = np.zeros((n, n), dtype=np.float64)
     for k in range(n):
@@ -318,12 +296,11 @@ def flosp2(x, a, b, ra=1.0e7, dim_in=2):
         temp[0, k] += xvec[2, 1, k] * 2 * (1 / (ax * h)) + xvec[2, 0, k] * -2 * (
             1 / (ax * h)
         )
-    fvec = np.concatenate(
-        (
-            fvec,
-            np.concatenate((temp[0, :], temp[-1, :], temp[1:-1, 0], temp[1:-1, -1])),
-        )
-    )
+
+    fvec[43:48] = temp[0]
+    fvec[48:53] = temp[-1]
+    fvec[53:56] = temp[1:-1, 0]
+    fvec[56:] = temp[1:-1, -1]
 
     return fvec
 
@@ -347,7 +324,7 @@ def spmsqrt(x):
     m = (len(x) + 2) // 3
     xmat = np.diag(x[2:-1:3], -1) + np.diag(x[::3], 0) + np.diag(x[1:-2:3], 1)
 
-    b = np.zeros((m, m))
+    b = np.zeros((m, m), dtype=np.float64)
     b[0, 0] = np.sin(1)
     b[0, 1] = np.sin(4)
     k = 2
@@ -363,7 +340,7 @@ def spmsqrt(x):
     k += 1
     b[-1, -1] = np.sin(k**2)
 
-    fmat = np.zeros((m, m))
+    fmat = np.zeros((m, m), dtype=np.float64)
     fmat[0, 0] = xmat[0, 0] ** 2 + xmat[0, 1] * xmat[1, 0]
     fmat[0, 1] = xmat[0, 0] * xmat[0, 1] + xmat[0, 1] * xmat[1, 1]
     fmat[0, 2] = xmat[0, 1] * xmat[1, 2]
@@ -438,7 +415,9 @@ def semicon2(x):
 
     xvec = np.zeros(n + 2, dtype=np.float64)
     xvec[0] = lua
-    xvec[1:-1] = x
+    for i in range(n):
+        xvec[i + 1] = x[i]
+    # xvec[1:-1] = x
     xvec[-1] = lub
 
     fvec = np.zeros(n, dtype=np.float64)
@@ -582,59 +561,44 @@ def hydcar(
     t = x_in[(n * m) : 4 * n]
     v = x_in[4 * n :]
 
-    avec = [9.647, 9.953, 9.466]
-    bvec = [-2998, -3448.10, -3347.25]
-    cvec = [230.66, 235.88, 215.31]
-    al = [0, 0, 0]
-    alp = [37.6, 48.2, 45.4]
-    alpp = [0, 0, 0]
-    be = [8425, 9395, 10466]
-    bep = [24.2, 35.6, 31.9]
-    bepp = [0, 0, 0]
-    fl = [30, 30, 40]
-    fv = [0, 0, 0]
-    tf = 100
-    b = 40
-    d = 60
-    q = 2500000
-    pi = np.ones(n, dtype=np.int64)
+    avec = np.array([9.647, 9.953, 9.466], dtype=np.float64)
+    bvec = np.array([-2998, -3448.10, -3347.25], dtype=np.float64)
+    cvec = np.array([230.66, 235.88, 215.31], dtype=np.float64)
+    alp = np.array([37.6, 48.2, 45.4], dtype=np.float64)
+    be = np.array([8425, 9395, 10466], dtype=np.float64)
+    bep = np.array([24.2, 35.6, 31.9], dtype=np.float64)
+    fl = np.array([30, 30, 40], dtype=np.float64)
+    tf = 100.0
+    b = 40.0
+    d = 60.0
+    q = 2500000.0
 
-    invpi = 1 / pi
-
+    out = np.empty(n * 5 - 1, dtype=np.float64)
     fvec1 = np.zeros(m, dtype=np.float64)
     fvec3 = np.zeros(m, dtype=np.float64)
     fvec2 = np.zeros((n - 2, m), dtype=np.float64)
     fvec7 = np.zeros(n, dtype=np.float64)
-    fvec9 = np.zeros(n - 2, dtype=np.float64)
     fvec8 = 0
+    fvec9 = np.zeros(n - 2, dtype=np.float64)
 
-    # 1. linear elements
     for j in range(m):
         fvec1[j] += x[0, j] * b
         fvec3[j] += -x[n - 1, j]
 
-    # 2. add non-linear elements
     for j in range(m):
         fvec1[j] += -1 * x[1, j] * (v[0] + b)
-        fvec1[j] += (
-            v[0] * x[0, j] * invpi[0] * np.exp(avec[j] + (bvec[j] / (t[0] + cvec[j])))
-        )
-        fvec3[j] += (
-            x[n - 2, j]
-            * invpi[n - 2]
-            * np.exp(avec[j] + (bvec[j] / (t[n - 2] + cvec[j])))
-        )
+        fvec1[j] += v[0] * x[0, j] * np.exp(avec[j] + (bvec[j] / (t[0] + cvec[j])))
+        fvec3[j] += x[n - 2, j] * np.exp(avec[j] + (bvec[j] / (t[n - 2] + cvec[j])))
 
         fvec8 += (
             (
                 v[0]
                 * x[0, j]
-                * invpi[0]
                 * np.exp(avec[j] + (bvec[j] / (t[0] + cvec[j])))
-                * (be[j] + bep[j] * t[0] + bepp[j] * t[0] * t[0])
+                * (be[j] + bep[j] * t[0])
             )
-            + b * x[0, j] * (al[j] + alp[j] * t[0] + alpp[j] * t[0] * t[0])
-            - x[1, j] * (b + v[0]) * (al[j] + alp[j] * t[1] + alpp[j] * t[1] * t[1])
+            + b * x[0, j] * (alp[j] * t[0])
+            - x[1, j] * (b + v[0]) * (alp[j] * t[1])
         )
 
         for i in range(1, n - 1):
@@ -642,38 +606,28 @@ def hydcar(
                 v[i - 1]
                 * x[i - 1, j]
                 * (-1)
-                * invpi[i - 1]
                 * np.exp(avec[j] + (bvec[j] / (t[i - 1] + cvec[j])))
             )
             fvec2[i - 1, j] += (
-                v[i]
-                * x[i, j]
-                * 1
-                * invpi[i]
-                * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
+                v[i] * x[i, j] * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
             )
 
             fvec9[i - 1] += (
                 v[i]
                 * x[i, j]
-                * 1
-                * invpi[i]
                 * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
-                * (be[j] + bep[j] * t[i] + bepp[j] * t[i] * t[i])
+                * (be[j] + bep[j] * t[i])
             )
             fvec9[i - 1] += (
                 v[i - 1]
                 * x[i - 1, j]
                 * (-1)
-                * invpi[i - 1]
                 * np.exp(avec[j] + (bvec[j] / (t[i - 1] + cvec[j])))
-                * (be[j] + bep[j] * t[i - 1] + bepp[j] * t[i - 1] * t[i - 1])
+                * (be[j] + bep[j] * t[i - 1])
             )
 
         for i in range(n):
-            fvec7[i] += (
-                x[i, j] * 1 * invpi[i] * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
-            )
+            fvec7[i] += x[i, j] * np.exp(avec[j] + (bvec[j] / (t[i] + cvec[j])))
 
     for j in range(m):
         for i in range(1, k):
@@ -689,69 +643,34 @@ def hydcar(
 
     for j in range(m):
         for i in range(1, k):
-            fvec9[i - 1] += (
-                1
-                * x[i, j]
-                * (v[i - 1] + b)
-                * (al[j] + alp[j] * t[i] + alpp[j] * t[i] * t[i])
-            )
-            fvec9[i - 1] += (
-                (-1)
-                * x[i + 1, j]
-                * (v[i] + b)
-                * (al[j] + alp[j] * t[i + 1] + alpp[j] * t[i + 1] * t[i + 1])
-            )
+            fvec9[i - 1] += 1 * x[i, j] * (v[i - 1] + b) * (alp[j] * t[i])
+            fvec9[i - 1] += (-1) * x[i + 1, j] * (v[i] + b) * (alp[j] * t[i + 1])
 
-        fvec9[k - 1] += (
-            1
-            * x[k, j]
-            * (v[k - 1] + b)
-            * (al[j] + alp[j] * t[i] + alpp[j] * t[k] * t[k])
-        )
-        fvec9[k - 1] += (
-            (-1)
-            * x[k + 1, j]
-            * (v[k] - d)
-            * (al[j] + alp[j] * t[k + 1] + alpp[j] * t[k + 1] * t[k + 1])
-        )
+        fvec9[k - 1] += 1 * x[k, j] * (v[k - 1] + b) * (alp[j] * t[i])
+        fvec9[k - 1] += (-1) * x[k + 1, j] * (v[k] - d) * (alp[j] * t[k + 1])
 
         for i in range(k + 1, n - 1):
-            fvec9[i - 1] += (
-                1
-                * x[i, j]
-                * (v[i - 1] - d)
-                * (al[j] + alp[j] * t[i] + alpp[j] * t[i] * t[i])
-            )
-            fvec9[i - 1] += (
-                (-1)
-                * x[i + 1, j]
-                * (v[i] - d)
-                * (al[j] + alp[j] * t[i + 1] + alpp[j] * t[i + 1] * t[i + 1])
-            )
+            fvec9[i - 1] += 1 * x[i, j] * (v[i - 1] - d) * (alp[j] * t[i])
+            fvec9[i - 1] += (-1) * x[i + 1, j] * (v[i] - d) * (alp[j] * t[i + 1])
 
     smallhf = 0
-    bighf = 0
     for j in range(m):
         fvec2[k - 1, j] -= fl[j]
-        fvec2[k, j] -= fv[j]
-        smallhf += (tf * tf * alpp[j] + tf * alp[j] + al[j]) * fl[j]
-        bighf += (tf * tf * bepp[j] + tf * bep[j] + be[j]) * fv[j]
+        smallhf += (tf * alp[j]) * fl[j]
     fvec7 -= 1
     fvec8 -= q
     fvec9[k - 1] -= smallhf
-    fvec9[k] -= bighf
 
-    fvec1 *= 1e-2
-    fvec2 *= 1e-2
-    fvec8 *= 1e-5
-    fvec9 *= 1e-5
+    out[:m] = fvec1 * 1e-2
+    out[m : 2 * m] = fvec3
+    out[2 * m : (n - 2) * m + 2 * m] = fvec2.flatten() * 1e-2
+    out[(n - 2) * m + 2 * m : (n - 2) * m + 2 * m + n] = fvec7
+    out[(n - 2) * m + 2 * m + n] = fvec8 * 1e-5
+    out[-(n - 2) :] = fvec9 * 1e-5
 
-    return np.concatenate(
-        (fvec1, fvec3, fvec2.flatten(), fvec7, np.array([fvec8]), fvec9)
-    )
+    return out
 
 
-@njit
 def methane(x):
     fvec = np.zeros(31, dtype=np.float64)
     fvec[0] = 0.01 * (
@@ -1144,10 +1063,10 @@ def argtrig(x):
     return fvec
 
 
-@njit
 def artif(x):
     dim_in = len(x)
-    xvec = np.concatenate((np.array([0]), x, np.array([0])))
+    xvec = np.zeros(dim_in + 2, dtype=np.float64)
+    xvec[1:-1] = x
     fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(dim_in):
         fvec[i] = -0.05 * (xvec[i + 1] + xvec[i + 2] + xvec[i]) + np.arctan(
@@ -1168,8 +1087,9 @@ def arwhdne(x):
 def bdvalues(x):
     dim_in = len(x)
     h = 1 / (dim_in + 1)
-    # xvec = np.concatenate([[0], x, [0]])
-    xvec = np.concatenate((np.array([0]), x, np.array([0])))
+    xvec = np.zeros(dim_in + 2, dtype=np.float64)
+    for i in range(dim_in):
+        xvec[i + 1] = x[i]
     fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(2, dim_in + 2):
         fvec[i - 2] = (
@@ -1186,8 +1106,12 @@ def bratu_2d(x, alpha):
     p = x.shape[0] + 2
     h = 1 / (p - 1)
     c = h**2 * alpha
-    xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2))
+    xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2), dtype=np.float64)
     xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1] = x
+    # for i in range(1, x.shape[0] + 1):
+    #     for j in range(1, x.shape[1] + 1):
+    #         xvec[i, j] = x[i - 1, j - 1]
+
     fvec = np.zeros(x.shape)
     for i in range(2, p):
         for j in range(2, p):
@@ -1208,9 +1132,9 @@ def bratu_3d(x, alpha):
     p = x.shape[0] + 2
     h = 1 / (p - 1)
     c = h**2 * alpha
-    xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2, x.shape[2] + 2))
+    xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2, x.shape[2] + 2), dtype=np.float64)
     xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x
-    fvec = np.zeros(x.shape)
+    fvec = np.zeros(x.shape, dtype=np.float64)
     for i in range(2, p):
         for j in range(2, p):
             for k in range(2, p):
@@ -1239,7 +1163,6 @@ def broydn_3d(x):
     return fvec
 
 
-@njit
 def broydn_bd(x):
     dim_in = len(x)
     fvec = np.zeros(dim_in, dtype=np.float64)
@@ -1259,14 +1182,14 @@ def broydn_bd(x):
 def cbratu_2d(x):
     n = int(np.sqrt(len(x) / 2))
     x = x.reshape((2, n, n))
-    xvec = np.zeros((x.shape[0], x.shape[1] + 2, x.shape[2] + 2))
+    xvec = np.zeros((x.shape[0], x.shape[1] + 2, x.shape[2] + 2), dtype=np.float64)
     xvec[0, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x[0, :, :]
     xvec[1, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x[1, :, :]
     p = x.shape[1] + 2
     h = 1 / (p - 1)
     alpha = 5
     c = h**2 * alpha
-    fvec = np.zeros(x.shape)
+    fvec = np.zeros(x.shape, dtype=np.float64)
     for i in range(2, p):
         for j in range(2, p):
             fvec[0, i - 2, j - 2] = (
@@ -1291,9 +1214,9 @@ def cbratu_2d(x):
 def chandheq(x):
     dim_in = len(x)
     constant = 1
-    w = np.ones(dim_in) / dim_in
-    h = np.ones(dim_in)
-    fvec = np.zeros(dim_in)
+    w = np.ones(dim_in, dtype=np.int64) / dim_in
+    h = np.ones(dim_in, dtype=np.int64)
+    fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(dim_in):
         fvec[i] = (-0.5 * constant * w * x[i] / (x[i] + x) * h[i] * h + h[i] - 1).sum()
     return fvec
@@ -1303,10 +1226,10 @@ def chandheq(x):
 def chemrcta(x):
     dim_in = int(len(x) / 2)
     x = x.reshape((2, dim_in))
-    # define the out vector
     fvec = np.zeros(2 * dim_in, dtype=np.float64)
-    # define some auxuliary params
-    pem = 1
+
+    # define some auxiliary params
+    pem = 1.0
     peh = 5.0
     d = 0.135
     b = 0.5
@@ -1319,6 +1242,7 @@ def chemrcta(x):
     ct1 = -h * peh
     cti1 = 1 / (h**2 * peh) + 1 / h
     cti = -beta - 1 / h - 2 / (h**2 * peh)
+
     fvec[0] = cu1 * x[0, 1] - x[0, 0] + h * pem
     fvec[1] = ct1 * x[1, 1] - x[1, 0] + h * peh
     for i in range(2, dim_in):
@@ -1343,9 +1267,9 @@ def chemrcta(x):
 @njit
 def chemrctb(x):
     dim_in = int(len(x))
-    # define the out vector
     fvec = np.zeros(dim_in, dtype=np.float64)
-    # define some auxuliary params
+
+    # define some auxiliary params
     pe = 5.0
     d = 0.135
     b = 0.5
@@ -1354,6 +1278,7 @@ def chemrctb(x):
     ct1 = -h * pe
     cti1 = 1 / (h**2 * pe) + 1 / h
     cti = -1 / h - 2 / (h**2 * pe)
+
     fvec[0] = ct1 * x[1] - x[0] + h * pe
     for i in range(2, dim_in):
         fvec[i - 1] = (
@@ -1485,7 +1410,7 @@ def drcavty(x, r):
 
 def freurone(x):
     dim_in = len(x)
-    fvec = np.zeros((2, dim_in - 1))
+    fvec = np.zeros((2, dim_in - 1), dtype=np.float64)
     for i in range(dim_in - 1):
         fvec[0, i] = (5.0 - x[i + 1]) * x[i + 1] ** 2 + x[i] - 2 * x[i + 1] - 13.0
         fvec[1, i] = (1.0 + x[i + 1]) * x[i + 1] ** 2 + x[i] - 14 * x[i + 1] - 29.0
@@ -1494,7 +1419,7 @@ def freurone(x):
 
 def hatfldg(x):
     dim_in = len(x)
-    fvec = np.zeros(dim_in)
+    fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(1, dim_in - 1):
         fvec[i - 1] = x[i] * (x[i - 1] - x[i + 1]) + x[i] - x[12] + 1
     fvec[-2] = x[0] - x[12] + 1 - x[0] * x[1]
@@ -1502,12 +1427,12 @@ def hatfldg(x):
     return fvec
 
 
-@njit
 def integreq(x):
     dim_in = len(x)
     h = 1 / (dim_in + 1)
     t = np.arange(1, dim_in + 1) * h
-    xvec = np.concatenate((np.array([0]), x, np.array([0])))
+    xvec = np.zeros(dim_in + 2, dtype=np.float64)
+    xvec[1:-1] = x
     fvec = np.zeros_like(x)
     for i in range(1, dim_in):
         fvec[i - 1] = (
@@ -1531,7 +1456,6 @@ def integreq(x):
     return fvec
 
 
-@njit
 def msqrta(x):
     dim_in = int(np.sqrt(len(x)))
     xmat = x.reshape((dim_in, dim_in))
@@ -1577,7 +1501,6 @@ def vardimne(x):
     return fvec
 
 
-@njit
 def yatpsq_1(x, dim_in):
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
@@ -1600,7 +1523,6 @@ def yatpsq_1(x, dim_in):
     return fvec
 
 
-@njit
 def yatpsq_2(x, dim_in):
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
@@ -4923,18 +4845,21 @@ solution_x_methane = [
 
 
 CARTIS_ROBERTS_PROBLEMS = {
-    "flosp2hh": {
-        "criterion": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.int64),
-            b=np.array([1, 0, -1], dtype=np.int64),
-            ra=1e7,
-            dim_in=2,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
+    "arglale": {
+        # arglale is the same as linear_full_rank with specific settings
+        "criterion": partial(linear_full_rank, dim_out=400),
+        "start_x": [1] * 100,
+        "solution_x": [-0.99999952] * 100,
+        "start_criterion": 700,
+        "solution_criterion": 300,
+    },
+    "arglble": {
+        # arglble is the same as linear_rank_one with specific settings
+        "criterion": partial(linear_rank_one, dim_out=400),
+        "start_x": [1] * 100,
+        "solution_x": solution_x_arglble,
+        "start_criterion": 5.460944e14,
+        "solution_criterion": 99.62547,
     },
     "argtrig": {
         "criterion": argtrig,
@@ -5064,6 +4989,97 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 0.4513889,
         "solution_criterion": 0,
     },
+    "eigena": {
+        "criterion": partial(eigen, param=np.diag(np.arange(1, 11))),
+        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
+        "solution_x": [*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
+        "start_criterion": 285,
+        "solution_criterion": 0,
+        "lower_bounds": np.zeros(110),
+    },
+    "eigenb": {
+        "criterion": partial(
+            eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)
+        ),
+        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
+        "solution_x": solution_x_eigenb,
+        "start_criterion": 19,
+        "solution_criterion": 1.55654284,
+        # we suspect a typo in Cartis and Roberts (2019);
+        # according to table 3 in their paper, the minimum is at 0.
+    },
+    "flosp2hh": {
+        "criterion": partial(
+            flosp2,
+            a=np.array([1, 0, -1], dtype=np.int64),
+            b=np.array([1, 0, -1], dtype=np.int64),
+            ra=1e7,
+        ),
+        "start_x": [0] * 59,
+        "solution_x": None,  # multiple argmins
+        "start_criterion": 519,
+        "solution_criterion": 1 / 3,
+    },
+    "flosp2hl": {
+        "criterion": partial(
+            flosp2,
+            a=np.array([1, 0, -1], dtype=np.float64),
+            b=np.array([1, 0, -1], dtype=np.float64),
+            ra=1e3,
+        ),
+        "start_x": [0] * 59,
+        "solution_x": None,  # multiple argmins
+        "start_criterion": 519,
+        "solution_criterion": 1 / 3,
+    },
+    "flosp2hm": {
+        "criterion": partial(
+            flosp2,
+            a=np.array([1, 0, -1], dtype=np.float64),
+            b=np.array([1, 0, -1], dtype=np.float64),
+            ra=1e5,
+        ),
+        "start_x": [0] * 59,
+        "solution_x": None,  # multiple argmins
+        "start_criterion": 519,
+        "solution_criterion": 1 / 3,
+    },
+    "flosp2th": {
+        "criterion": partial(
+            flosp2,
+            a=np.array([0, 1, 0], dtype=np.float64),
+            b=np.array([0, 1, 1], dtype=np.float64),
+            ra=1e7,
+        ),
+        "start_x": [0] * 59,
+        "solution_x": None,  # multiple argmins
+        "start_criterion": 516,
+        "solution_criterion": 0,
+    },
+    "flosp2tl": {
+        "criterion": partial(
+            flosp2,
+            a=np.array([0, 1, 0], dtype=np.float64),
+            b=np.array([0, 1, 1], dtype=np.float64),
+            ra=1e3,
+        ),
+        "start_x": [0] * 59,
+        "solution_x": None,  # multiple argmins
+        "start_criterion": 516,
+        "solution_criterion": 0,
+    },
+    "flosp2tm": {
+        "criterion": partial(
+            flosp2,
+            a=np.array([0, 1, 0], dtype=np.float64),
+            b=np.array([0, 1, 1], dtype=np.float64),
+            ra=1e5,
+        ),
+        "start_x": [0] * 59,
+        "solution_x": None,  # multiple argmins
+        "start_criterion": 516,
+        "solution_criterion": 0,
+    },
     "freurone": {
         "criterion": freurone,
         "start_x": [0.5, -2] + [0] * 98,
@@ -5078,84 +5094,26 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 27,
         "solution_criterion": 0,
     },
+    "hydcar20": {
+        "criterion": partial(hydcar, n=20, m=3, k=9),
+        "start_x": get_start_points_hydcar20(),
+        "solution_x": solution_x_hydcar20,
+        "start_criterion": 1341.663,
+        "solution_criterion": 0,
+    },
+    "hydcar6": {
+        "criterion": partial(hydcar, n=6, m=3, k=2),
+        "start_x": get_start_points_hydcar6(),
+        "solution_x": solution_x_hydcar6,
+        "start_criterion": 704.1073,
+        "solution_criterion": 0,
+    },
     "integreq": {
         "criterion": integreq,
         "start_x": (np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1)).tolist(),
         "solution_x": solution_x_integreq,
         "start_criterion": 0.5730503,
         "solution_criterion": 0,
-    },
-    "msqrta": {
-        "criterion": msqrta,
-        "start_x": get_start_points_msqrta(10),
-        "solution_x": solution_x_msqrta,
-        "start_criterion": 212.7162,
-        "solution_criterion": 0,
-    },
-    "msqrtb": {
-        "criterion": msqrta,
-        "start_x": get_start_points_msqrta(10, flag=2),
-        "solution_x": solution_x_msqrtb,
-        "start_criterion": 205.0753,
-        "solution_criterion": 0,
-    },
-    "penalty_1": {
-        "criterion": penalty_1,
-        "start_x": list(range(1, 101)),
-        "solution_x": None,
-        "start_criterion": 1.144806e11,
-        "solution_criterion": 9.025000e-9,
-    },
-    "penalty_2": {
-        "criterion": penalty_2,
-        "start_x": [0.5] * 100,
-        "solution_x": solution_x_penalty2,
-        "start_criterion": 1.591383e6,
-        "solution_criterion": 0.9809377,
-    },
-    "vardimne": {
-        "criterion": vardimne,
-        "start_x": [1 - i / 100 for i in range(1, 101)],
-        "solution_x": [1] * 100,
-        "start_criterion": 1.310584e14,
-        "solution_criterion": 0,
-    },
-    "watsonne": {
-        "criterion": watson,
-        "start_x": [0] * 31,
-        "solution_x": solution_x_watson,
-        "start_criterion": 30,
-        "solution_criterion": 0,
-    },
-    "yatpsq_1": {
-        "criterion": partial(yatpsq_1, dim_in=10),
-        "start_x": [6] * 100 + [0] * 20,
-        "solution_x": solution_x_yatpsq_1,
-        "start_criterion": 2.073643e6,
-        "solution_criterion": 0,
-    },
-    "yatpsq_2": {
-        "criterion": partial(yatpsq_2, dim_in=10),
-        "start_x": [10] * 100 + [0] * 20,
-        "solution_x": solution_x_yatpsq_2,
-        "start_criterion": 1.831687e5,
-        "solution_criterion": 0,
-    },
-    "arglale": {
-        # arglale is the same as linear_full_rank with specific settings
-        "criterion": partial(linear_full_rank, dim_out=400),
-        "start_x": [1] * 100,
-        "solution_x": [-0.99999952] * 100,
-        "start_criterion": 700,
-        "solution_criterion": 300,
-    },
-    "arglble": {
-        # arglble is the same as linear_rank_one with specific settings
-        "criterion": partial(linear_rank_one, dim_out=400),
-        "start_x": [1] * 100,
-        "solution_x": solution_x_arglble,
-        "start_criterion": 5.460944e14,
-        "solution_criterion": 99.62547,
     },
     "luksan11": {
         "criterion": luksan11,
@@ -5226,6 +5184,20 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 2.487686e4,
         "solution_criterion": 872.9230,
     },
+    "methanb8": {
+        "criterion": methane,
+        "start_x": get_start_points_methanb8(),
+        "solution_x": solution_x_methane,
+        "start_criterion": 1.043105,
+        "solution_criterion": 0,
+    },
+    "methanl8": {
+        "criterion": methane,
+        "start_x": get_start_points_methanl8(),
+        "solution_x": solution_x_methane,
+        "start_criterion": 4345.100,
+        "solution_criterion": 0,
+    },
     "morebvne": {
         "criterion": morebvne,
         "start_x": [t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
@@ -5233,69 +5205,18 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 3.633100e-4,
         "solution_criterion": 0,
     },
-    "flosp2hl": {
-        "criterion": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.int64),
-            b=np.array([1, 0, -1], dtype=np.int64),
-            ra=1e3,
-            dim_in=2,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2hm": {
-        "criterion": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.int64),
-            b=np.array([1, 0, -1], dtype=np.int64),
-            ra=1e5,
-            dim_in=2,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2th": {
-        "criterion": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.int64),
-            b=np.array([0, 1, 1], dtype=np.int64),
-            ra=1e7,
-            dim_in=2,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
+    "msqrta": {
+        "criterion": msqrta,
+        "start_x": get_start_points_msqrta(10),
+        "solution_x": solution_x_msqrta,
+        "start_criterion": 212.7162,
         "solution_criterion": 0,
     },
-    "flosp2tl": {
-        "criterion": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.int64),
-            b=np.array([0, 1, 1], dtype=np.int64),
-            ra=1e3,
-            dim_in=2,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
-        "solution_criterion": 0,
-    },
-    "flosp2tm": {
-        "criterion": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.int64),
-            b=np.array([0, 1, 1], dtype=np.int64),
-            ra=1e5,
-            dim_in=2,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
+    "msqrtb": {
+        "criterion": msqrta,
+        "start_x": get_start_points_msqrta(10, flag=2),
+        "solution_x": solution_x_msqrtb,
+        "start_criterion": 205.0753,
         "solution_criterion": 0,
     },
     "oscigrne": {
@@ -5304,6 +5225,45 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": solution_x_oscigrne,
         "start_criterion": 6.120720e8,
         "solution_criterion": 0,
+    },
+    "penalty_1": {
+        "criterion": penalty_1,
+        "start_x": list(range(1, 101)),
+        "solution_x": None,
+        "start_criterion": 1.144806e11,
+        "solution_criterion": 9.025000e-9,
+    },
+    "penalty_2": {
+        "criterion": penalty_2,
+        "start_x": [0.5] * 100,
+        "solution_x": solution_x_penalty2,
+        "start_criterion": 1.591383e6,
+        "solution_criterion": 0.9809377,
+    },
+    "powellse": {
+        "criterion": powell_singular,
+        "start_x": [3.0, -1.0, 0.0, 1] * 25,
+        "solution_x": [0] * 100,
+        "start_criterion": 41875,
+        "solution_criterion": 0,
+    },
+    "qr3d": {
+        "criterion": partial(qr3d, m=5),
+        "start_x": get_start_points_qr3d(5),
+        "solution_x": solution_x_qr3d,
+        "start_criterion": 1.2,
+        "solution_criterion": 0,
+        "lower_bounds": [-np.inf] * 25
+        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
+    },
+    "qr3dbd": {
+        "criterion": partial(qr3dbd, m=5),
+        "start_x": get_start_points_qr3dbd(5),
+        "solution_x": solution_x_qr3dbd,
+        "start_criterion": 1.2,
+        "solution_criterion": 0,
+        "lower_bounds": [-np.inf] * 25
+        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
     },
     "spmsqrt": {
         "criterion": spmsqrt,
@@ -5328,76 +5288,32 @@ CARTIS_ROBERTS_PROBLEMS = {
         "lower_bounds": -5 * np.ones(100),
         "upper_bounds": 0.2 * 700 * np.ones(100),
     },
-    "qr3d": {
-        "criterion": partial(qr3d, m=5),
-        "start_x": get_start_points_qr3d(5),
-        "solution_x": solution_x_qr3d,
-        "start_criterion": 1.2,
-        "solution_criterion": 0,
-        "lower_bounds": [-np.inf] * 25
-        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
-    },
-    "qr3dbd": {
-        "criterion": partial(qr3dbd, m=5),
-        "start_x": get_start_points_qr3dbd(5),
-        "solution_x": solution_x_qr3dbd,
-        "start_criterion": 1.2,
-        "solution_criterion": 0,
-        "lower_bounds": [-np.inf] * 25
-        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
-    },
-    "eigena": {
-        "criterion": partial(eigen, param=np.diag(np.arange(1, 11))),
-        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
-        "solution_x": [*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
-        "start_criterion": 285,
-        "solution_criterion": 0,
-        "lower_bounds": np.zeros(110),
-    },
-    "eigenb": {
-        "criterion": partial(
-            eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)
-        ),
-        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
-        "solution_x": solution_x_eigenb,
-        "start_criterion": 19,
-        "solution_criterion": 1.55654284,
-        # we suspect a typo in Cartis and Roberts (2019);
-        # according to table 3 in their paper, the minimum is at 0.
-    },
-    "powellse": {
-        "criterion": powell_singular,
-        "start_x": [3.0, -1.0, 0.0, 1] * 25,
-        "solution_x": [0] * 100,
-        "start_criterion": 41875,
+    "vardimne": {
+        "criterion": vardimne,
+        "start_x": [1 - i / 100 for i in range(1, 101)],
+        "solution_x": [1] * 100,
+        "start_criterion": 1.310584e14,
         "solution_criterion": 0,
     },
-    "hydcar20": {
-        "criterion": partial(hydcar, n=20, m=3, k=9),
-        "start_x": get_start_points_hydcar20(),
-        "solution_x": solution_x_hydcar20,
-        "start_criterion": 1341.663,
+    "watsonne": {
+        "criterion": watson,
+        "start_x": [0] * 31,
+        "solution_x": solution_x_watson,
+        "start_criterion": 30,
         "solution_criterion": 0,
     },
-    "hydcar6": {
-        "criterion": partial(hydcar, n=6, m=3, k=2),
-        "start_x": get_start_points_hydcar6(),
-        "solution_x": solution_x_hydcar6,
-        "start_criterion": 704.1073,
+    "yatpsq_1": {
+        "criterion": partial(yatpsq_1, dim_in=10),
+        "start_x": [6] * 100 + [0] * 20,
+        "solution_x": solution_x_yatpsq_1,
+        "start_criterion": 2.073643e6,
         "solution_criterion": 0,
     },
-    "methanb8": {
-        "criterion": methane,
-        "start_x": get_start_points_methanb8(),
-        "solution_x": solution_x_methane,
-        "start_criterion": 1.043105,
-        "solution_criterion": 0,
-    },
-    "methanl8": {
-        "criterion": methane,
-        "start_x": get_start_points_methanl8(),
-        "solution_x": solution_x_methane,
-        "start_criterion": 4345.100,
+    "yatpsq_2": {
+        "criterion": partial(yatpsq_2, dim_in=10),
+        "start_x": [10] * 100 + [0] * 20,
+        "solution_x": solution_x_yatpsq_2,
+        "start_criterion": 1.831687e5,
         "solution_criterion": 0,
     },
 }
