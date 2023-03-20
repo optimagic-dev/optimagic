@@ -1108,10 +1108,6 @@ def bratu_2d(x, alpha):
     c = h**2 * alpha
     xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2), dtype=np.float64)
     xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1] = x
-    # for i in range(1, x.shape[0] + 1):
-    #     for j in range(1, x.shape[1] + 1):
-    #         xvec[i, j] = x[i - 1, j - 1]
-
     fvec = np.zeros(x.shape)
     for i in range(2, p):
         for j in range(2, p):
