@@ -7,6 +7,7 @@ from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.models import n_second_order_terms
 from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
+from estimagic.optimization.tranquilo.options import FilterOptions
 
 
 def get_sample_filter(sample_filter="keep_all", user_options=None):
@@ -18,8 +19,9 @@ def get_sample_filter(sample_filter="keep_all", user_options=None):
     The resulting function only takes an array of shape n_points, n_params as argument.
 
     Args:
-        filter (str or callable): The name of a built in filter or a function with the
-            filter interface.
+        sample_filter (str or callable): The name of a built in filter or a function
+            with the filter interface.
+        user_options (dict or namedtuple): Additional options for the filter.
 
     Returns:
         callable: The filter
@@ -39,6 +41,7 @@ def get_sample_filter(sample_filter="keep_all", user_options=None):
         component_name="sample_filter",
         func_dict=built_in_filters,
         user_options=user_options,
+        default_options=FilterOptions(),
     )
 
     return out

@@ -25,6 +25,7 @@ from estimagic.optimization.tranquilo.options import (
     get_default_sample_size,
     get_default_search_radius_factor,
     get_default_subsolver,
+    update_option_bundle,
 )
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import get_sampler
@@ -299,47 +300,5 @@ def _process_n_evals_at_start(n_evals, noisy):
 
     if out < 1:
         raise ValueError("n_initial_acceptance_evals must be non-negative.")
-
-    return out
-
-
-def update_option_bundle(default_options, user_options=None):
-    """Update default options with user options.
-
-    The user option is converted to the type of the default option if possible.
-
-    Args:
-        default_options (NamedTuple): Options that behave like a `typing.NamedTuple`,
-            i.e. have _fields as well as _asdict and _replace methods.
-        user_options (NamedTuple, Dict or None): User options as a dict or NamedTuple.
-            The default options will be updated by the user options.
-
-    """
-    if user_options is None:
-        return default_options
-
-    # convert user options to dict
-    if not isinstance(user_options, dict):
-        user_options = user_options._asdict()
-
-    # check that all user options are valid
-    invalid_fields = set(user_options) - set(default_options._fields)
-    if invalid_fields:
-        raise ValueError(
-            f"The following user options are not valid: {invalid_fields}. "
-            f"Valid options are {default_options._fields}."
-        )
-
-    # convert types if possible
-    typed = {}
-    for k, v in user_options.items():
-        target_type = type(getattr(default_options, k))
-        if isinstance(v, target_type):
-            typed[k] = v
-        else:
-            typed[k] = target_type(v)
-
-    # update default options
-    out = default_options._replace(**typed)
 
     return out

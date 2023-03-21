@@ -14,14 +14,12 @@ def get_variance_estimator(fitter, user_options):
         "classic": _estimate_variance_classic,
     }
 
-    default_options = VarianceEstimatorOptions()
-
     out = get_component(
         name_or_func=fitter,
         func_dict=func_dict,
         component_name="variance estimator",
         user_options=user_options,
-        default_options=default_options,
+        default_options=VarianceEstimatorOptions(),
     )
 
     return out

@@ -4,6 +4,7 @@ import warnings
 from functools import partial
 
 from estimagic.utilities import propose_alternatives
+from estimagic.optimization.tranquilo.options import update_option_bundle
 
 
 def get_component(
@@ -27,8 +28,8 @@ def get_component(
         component_name (str): Name of the component. Used in error messages. Examples
             would be "subsolver" or "model".
         func_dict (dict): Dict with function names as keys and functions as values.
-        default_options (NamedTuple, Dict or None): Default options as a dict or
-            NamedTuple. The default options will be updated by the user options.
+        default_options (NamedTuple): Default options as a dict or NamedTuple. The
+            default options will be updated by the user options.
         user_options (NamedTuple, Dict or None): User options as a dict or NamedTuple.
             The default options will be updated by the user options.
         redundant_option_handling (str): How to handle redundant options. Can be
@@ -128,8 +129,8 @@ def _get_valid_options(
     """Get the options that are valid for the function.
 
     Args:
-        default_options (NamedTuple, Dict or None): Default options as a dict or
-            NamedTuple. The default options will be updated by the user options.
+        default_options (NamedTuple): Default options as a dict or NamedTuple. The
+            default options will be updated by the user options.
         user_options (NamedTuple, Dict or None): User options as a dict or NamedTuple.
             The default options will be updated by the user options.
         signature (list): List of arguments that are present in the signature.
@@ -142,16 +143,8 @@ def _get_valid_options(
         dict: Valid options.
 
     """
-    _default_options = {} if default_options is None else default_options
-    _user_options = {} if user_options is None else user_options
-
-    if not isinstance(_user_options, dict):
-        _user_options = user_options._asdict()
-
-    if not isinstance(_default_options, dict):
-        _default_options = default_options._asdict()
-
-    _options = {**_default_options, **_user_options}
+    _options = update_option_bundle(default_options, user_options=user_options)
+    _options = _options._asdict()
 
     _valid_options = {k: v for k, v in _options.items() if k in signature}
     _redundant_options = {k: v for k, v in _options.items() if k not in signature}

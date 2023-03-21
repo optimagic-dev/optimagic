@@ -22,14 +22,12 @@ def get_acceptance_decider(acceptance_decider, acceptance_options):
         "noisy": accept_noisy,
     }
 
-    default_options = AcceptanceOptions()
-
     out = get_component(
         name_or_func=acceptance_decider,
         func_dict=func_dict,
         component_name="acceptance_decider",
         user_options=acceptance_options,
-        default_options=default_options,
+        default_options=AcceptanceOptions(),
     )
 
     return out

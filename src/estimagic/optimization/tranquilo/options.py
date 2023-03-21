@@ -59,7 +59,7 @@ def get_default_aggregator(functype, model_type):
             "least_squares": "linear",
             "likelihood": "linear",
         }
-        raise ValueError(
+        raise NotImplementedError(
             "The requested combination of functype and model_type is not supported. "
             f"Allowed combinations are: {list(allowed_combinations.items())}."
         )
@@ -148,3 +148,60 @@ class FitterOptions(NamedTuple):
 class VarianceEstimatorOptions(NamedTuple):
     max_distance_factor: float = 3.0
     min_n_evals: int = 3
+
+
+class FilterOptions(NamedTuple):
+    strictness: float = 1e-10
+    shape: str = "sphere"
+
+
+class SamplerOptions(NamedTuple):
+    distribution: str = None
+    hardness: float = 1
+    algorithm: str = "scipy_lbfgsb"
+    algo_options: dict = None
+    criterion: str = None
+    n_points_randomsearch: int = 1
+    return_info: bool = False
+
+
+def update_option_bundle(default_options, user_options=None):
+    """Update default options with user options.
+
+    The user option is converted to the type of the default option if possible.
+
+    Args:
+        default_options (NamedTuple): Options that behave like a `typing.NamedTuple`,
+            i.e. have _fields as well as _asdict and _replace methods.
+        user_options (NamedTuple, Dict or None): User options as a dict or NamedTuple.
+            The default options will be updated by the user options.
+
+    """
+    if user_options is None:
+        return default_options
+
+    # convert user options to dict
+    if not isinstance(user_options, dict):
+        user_options = user_options._asdict()
+
+    # check that all user options are valid
+    invalid_fields = set(user_options) - set(default_options._fields)
+    if invalid_fields:
+        raise ValueError(
+            f"The following user options are not valid: {invalid_fields}. "
+            f"Valid options are {default_options._fields}."
+        )
+
+    # convert types if possible
+    typed = {}
+    for k, v in user_options.items():
+        target_type = type(getattr(default_options, k))
+        if isinstance(v, target_type):
+            typed[k] = v
+        else:
+            typed[k] = target_type(v)
+
+    # update default options
+    out = default_options._replace(**typed)
+
+    return out
