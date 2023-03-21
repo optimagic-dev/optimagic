@@ -6,6 +6,7 @@ import numpy as np
 from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.new_history import History
 from estimagic.optimization.tranquilo.region import Region
+from estimagic.optimization.tranquilo.options import VarianceEstimatorOptions
 
 
 def get_variance_estimator(fitter, user_options):
@@ -13,17 +14,12 @@ def get_variance_estimator(fitter, user_options):
         "classic": _estimate_variance_classic,
     }
 
-    default_options = {
-        "max_distance_factor": 3,
-        "min_n_evals": 3,
-    }
-
     out = get_component(
         name_or_func=fitter,
         func_dict=func_dict,
         component_name="variance estimator",
         user_options=user_options,
-        default_options=default_options,
+        default_options=VarianceEstimatorOptions(),
     )
 
     return out

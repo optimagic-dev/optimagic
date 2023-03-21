@@ -6,6 +6,7 @@ from scipy.special import gammainc, logsumexp
 
 import estimagic as em
 from estimagic.optimization.tranquilo.get_component import get_component
+from estimagic.optimization.tranquilo.options import SamplerOptions
 
 
 def get_sampler(sampler, user_options=None):
@@ -47,6 +48,7 @@ def get_sampler(sampler, user_options=None):
         component_name="sampler",
         func_dict=built_in_samplers,
         user_options=user_options,
+        default_options=SamplerOptions(),
         mandatory_signature=mandatory_args,
     )
 
@@ -57,7 +59,7 @@ def _interior_sampler(
     trustregion,
     n_points,
     rng,
-    existing_xs=None,
+    existing_xs=None,  # noqa: ARG001
 ):
     """Random generation of trustregion points inside a ball or box.
 
@@ -79,7 +81,6 @@ def _interior_sampler(
         trustregion=trustregion,
         n_points=n_points,
         rng=rng,
-        existing_xs=existing_xs,
     )
     return out
 
@@ -88,7 +89,6 @@ def _box_sampler(
     trustregion,
     n_points,
     rng,
-    existing_xs=None,  # noqa: ARG001
 ):
     """Naive random generation of trustregion points inside a box.
 
@@ -115,7 +115,6 @@ def _ball_sampler(
     trustregion,
     n_points,
     rng,
-    existing_xs=None,  # noqa: ARG001
 ):
     """Naive random generation of trustregion points inside a ball.
 
@@ -143,7 +142,7 @@ def _hull_sampler(
     trustregion,
     n_points,
     rng,
-    distribution=None,
+    distribution,
     existing_xs=None,  # noqa: ARG001
 ):
     """Random generation of trustregion points on the hull of general sphere / cube.
@@ -177,14 +176,14 @@ def _optimal_hull_sampler(
     trustregion,
     n_points,
     rng,
-    distribution=None,
-    hardness=1,
+    distribution,
+    hardness,
+    algorithm,
+    algo_options,
+    criterion,
+    n_points_randomsearch,
+    return_info,
     existing_xs=None,
-    algorithm="scipy_lbfgsb",
-    algo_options=None,
-    criterion=None,
-    n_points_randomsearch=1,
-    return_info=False,
 ):
     """Optimal generation of trustregion points on the hull of general sphere / cube.
 
@@ -205,9 +204,6 @@ def _optimal_hull_sampler(
         hardness (float): Positive scaling factor. As hardness tends to infinity the
             soft minimum (logsumexp) approaches the hard minimum. Default is 1. A
             detailed explanation is given in the docstring.
-        existing_xs (np.ndarray or None): 2d numpy array in which each row is an
-            x vector at which the criterion function has already been evaluated, that
-            satisfies lower_bounds <= existing_xs <= upper_bounds.
         algorithm (str): Optimization algorithm.
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm. Default
@@ -227,6 +223,9 @@ def _optimal_hull_sampler(
         n_points_randomsearch (int): Number of random points to from which to select
             the best in terms of the Fekete criterion before starting the optimization.
             Default is 1.
+        existing_xs (np.ndarray or None): 2d numpy array in which each row is an
+            x vector at which the criterion function has already been evaluated, that
+            satisfies lower_bounds <= existing_xs <= upper_bounds.
 
     Returns:
         - np.ndarray: Generated points. Has shape (n_points, len(trustregion.center)).

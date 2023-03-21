@@ -19,6 +19,7 @@ from estimagic.optimization.tranquilo.wrapped_subsolvers import (
     slsqp_sphere,
     solve_multistart,
 )
+from estimagic.optimization.tranquilo.options import SubsolverOptions
 
 
 def get_subsolver(solver, user_options=None, bounds=None):
@@ -85,20 +86,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
             "or a callable."
         )
 
-    default_options = {
-        "maxiter": 20,
-        "maxiter_gradient_descent": 5,
-        "conjugate_gradient_method": "cg",
-        "gtol_abs": 1e-8,
-        "gtol_rel": 1e-8,
-        "gtol_scaled": 0,
-        "gtol_abs_conjugate_gradient": 1e-8,
-        "gtol_rel_conjugate_gradient": 1e-6,
-        "k_easy": 0.1,
-        "k_hard": 0.2,
-    }
-
-    all_options = {**default_options, **user_options}
+    all_options = SubsolverOptions()._replace(**user_options)._asdict()
 
     args = set(inspect.signature(_solver).parameters)
 
