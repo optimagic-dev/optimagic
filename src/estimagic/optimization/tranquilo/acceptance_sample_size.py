@@ -6,23 +6,22 @@ def get_acceptance_sample_sizes(
     sigma,
     existing_n1,
     expected_improvement,
-    acceptance_options,
+    power_level,
+    confidence_level,
+    n_min,
+    n_max,
 ):
     n1_raw, n2_raw = _get_optimal_sample_sizes(
         sd_1=sigma,
         sd_2=sigma,
         existing_n1=existing_n1,
         minimal_effect_size=np.clip(expected_improvement, 1e-8, np.inf),
-        power_level=acceptance_options.power_level,
-        significance_level=1 - acceptance_options.confidence_level,
+        power_level=power_level,
+        significance_level=1 - confidence_level,
     )
 
-    n1 = int(
-        np.ceil(np.clip(n1_raw, 0, max(0, acceptance_options.n_max - existing_n1)))
-    )
-    n2 = int(
-        np.ceil(np.clip(n2_raw, acceptance_options.n_min, acceptance_options.n_max))
-    )
+    n1 = int(np.ceil(np.clip(n1_raw, 0, max(0, n_max - existing_n1))))
+    n2 = int(np.ceil(np.clip(n2_raw, n_min, n_max)))
     return n1, n2
 
 

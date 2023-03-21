@@ -5,17 +5,11 @@ import numpy as np
 from estimagic.optimization.tranquilo.models import ScalarModel
 
 
-def get_aggregator(aggregator, functype, model_type):
+def get_aggregator(aggregator):
     """Get a function that aggregates a VectorModel into a ScalarModel.
 
     Args:
-        aggregator (str or callable): Name of an aggregator or aggregator function.
-            The function must take as argument:
-            - vector_model (VectorModel): A fitted vector model.
-        functype (str): One of "scalar", "least_squares" and "likelihood".
-        model_type (str): Type of the model that is fitted. The following are supported:
-            - "linear": Only linear effects and intercept.
-            - "quadratic": Fully quadratic model.
+        aggregator (str): Name of an aggregator.
 
     Returns:
         callable: The partialled aggregator that only depends on vector_model.
@@ -28,51 +22,14 @@ def get_aggregator(aggregator, functype, model_type):
         "least_squares_linear": aggregator_least_squares_linear,
     }
 
-    if isinstance(aggregator, str) and aggregator in built_in_aggregators:
+    if aggregator in built_in_aggregators:
         _aggregator = built_in_aggregators[aggregator]
-        _aggregator_name = aggregator
-        _using_built_in_aggregator = True
-    elif callable(aggregator):
-        _aggregator = aggregator
-        _aggregator_name = getattr(aggregator, "__name__", "your aggregator")
-        _using_built_in_aggregator = False
     else:
         raise ValueError(
-            "Invalid aggregator:  {aggregator}. Must be one of "
+            f"Invalid aggregator: {aggregator}. Must be one of "
             f"{list(built_in_aggregators)} or a callable."
         )
 
-    # determine if aggregator is compatible with functype and model_type
-    aggregator_compatible_with_functype = {
-        "scalar": ("identity", "sum"),
-        "least_squares": ("least_squares_linear",),
-        "likelihood": (
-            "sum",
-            "information_equality_linear",
-        ),
-    }
-
-    aggregator_compatible_with_model_type = {
-        "linear": {"information_equality_linear", "least_squares_linear"},
-        "quadratic": {"identity", "sum"},
-    }
-
-    if _using_built_in_aggregator:
-        # compatibility errors
-        if _aggregator_name not in aggregator_compatible_with_functype[functype]:
-            raise ValueError(
-                f"Aggregator {_aggregator_name} is not compatible with functype "
-                f"{functype}. It would not produce a quadratic main model."
-            )
-        if _aggregator_name not in aggregator_compatible_with_model_type[model_type]:
-            raise ValueError(
-                f"Aggregator {_aggregator_name} is not compatible with model_type "
-                f"{model_type}. This is because the combination would not produce a "
-                "quadratic main model or that the aggregator requires a different "
-                "residual model."
-            )
-
-    # create aggregator
     out = partial(_aggregate_models_template, aggregator=_aggregator)
     return out
 

@@ -1,4 +1,5 @@
 import pytest
+from collections import namedtuple
 from estimagic.optimization.tranquilo.get_component import (
     _add_redundant_argument_handling,
     _fail_if_mandatory_argument_is_missing,
@@ -17,12 +18,18 @@ def func_dict():
     return out
 
 
-def test_get_component(func_dict):
+@pytest.fixture
+def default_options():
+    options = namedtuple("default_options", "x y")
+    return options(x=1, y=1)
+
+
+def test_get_component(func_dict, default_options):
     got = get_component(
         name_or_func="g",
         component_name="component",
         func_dict=func_dict,
-        default_options={"x": 1},
+        default_options=default_options,
         user_options={"y": 2},
         redundant_option_handling="ignore",
         redundant_argument_handling="ignore",
@@ -74,38 +81,51 @@ def test_get_function_and_string_wrong_type():
         )
 
 
-def test_get_valid_options_ignore():
+def test_get_valid_options_ignore(default_options):
     got = _get_valid_options(
-        default_options={"a": 1, "b": 2},
-        user_options={"a": 3, "c": 4},
-        signature=["a", "c"],
+        default_options=default_options,
+        user_options={"x": 3, "y": 4},
+        signature=["x", "y"],
         name="bla",
         component_name="component",
         redundant_option_handling="ignore",
     )
-    expected = {"a": 3, "c": 4}
+    expected = {"x": 3, "y": 4}
 
     assert got == expected
 
 
-def test_get_valid_options_raise():
-    with pytest.raises(ValueError, match="The following options are not supported"):
+def test_get_valid_options_raise_update_option_bundle(default_options):
+    # provokes error in update_option_bundle
+    with pytest.raises(ValueError, match="The following user options are not valid"):
         _get_valid_options(
-            default_options={"a": 1, "b": 2},
-            user_options={"a": 3, "c": 4},
-            signature=["a", "c"],
+            default_options=default_options,
+            user_options={"x": 3, "z": 4},
+            signature=["x", "y"],
             name="bla",
             component_name="component",
             redundant_option_handling="raise",
         )
 
 
-def test_get_valid_options_warn():
+def test_get_valid_options_raise(default_options):
+    with pytest.raises(ValueError, match="The following options are not supported"):
+        _get_valid_options(
+            default_options=default_options,
+            user_options={"y": 3},
+            signature=["x"],
+            name="bla",
+            component_name="component",
+            redundant_option_handling="raise",
+        )
+
+
+def test_get_valid_options_warn(default_options):
     with pytest.warns(UserWarning, match="The following options are not supported"):
         _get_valid_options(
-            default_options={"a": 1, "b": 2},
-            user_options={"a": 3, "c": 4},
-            signature=["a", "c"],
+            default_options=default_options,
+            user_options={"y": 3},
+            signature=["x"],
             name="bla",
             component_name="component",
             redundant_option_handling="warn",

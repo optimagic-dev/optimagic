@@ -5,12 +5,10 @@ from estimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 def test_gqtpar_lambdas():
     algo_options = {
         "disable_convergence": True,
-        "stopping.max_iterations": 30,
-        "silence_experimental_warning": True,
+        "stopping_max_iterations": 30,
         "sample_filter": "keep_all",
-        "subsolver": "gqtpar",
         "sampler": "random_hull",
-        "solver_options": {"k_hard": 0.001, "k_easy": 0.001},
+        "subsolver_options": {"k_hard": 0.001, "k_easy": 0.001},
     }
     problem_info = get_benchmark_problems("more_wild")["freudenstein_roth_good_start"]
 

@@ -33,8 +33,6 @@ def test_convergence_to_one_if_noise_is_tiny(functype):
         model_type = "linear"
         model_aggregator = get_aggregator(
             aggregator="least_squares_linear",
-            functype="least_squares",
-            model_type=model_type,
         )
         n_residuals = 2
     else:
@@ -42,8 +40,6 @@ def test_convergence_to_one_if_noise_is_tiny(functype):
         model_type = "quadratic"
         model_aggregator = get_aggregator(
             aggregator="identity",
-            functype="scalar",
-            model_type=model_type,
         )
         n_residuals = 1
 

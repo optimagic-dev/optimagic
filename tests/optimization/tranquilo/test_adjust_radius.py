@@ -6,7 +6,7 @@ from estimagic.optimization.tranquilo.options import RadiusOptions
 
 @pytest.fixture()
 def options():
-    return RadiusOptions()
+    return RadiusOptions(initial_radius=0.1)
 
 
 def test_increase(options):
@@ -75,7 +75,7 @@ def test_min_radius_is_not_violated(options):
 
 
 def test_constant_radius():
-    options = RadiusOptions(rho_increase=1.6)
+    options = RadiusOptions(rho_increase=1.6, initial_radius=0.1)
 
     calculated = adjust_radius(
         radius=1,
@@ -90,7 +90,7 @@ def test_constant_radius():
 
 
 def test_max_radius_to_step_ratio_is_not_violated():
-    options = RadiusOptions(max_radius_to_step_ratio=2)
+    options = RadiusOptions(max_radius_to_step_ratio=2, initial_radius=0.1)
 
     calculated = adjust_radius(
         radius=1,
