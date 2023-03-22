@@ -19,6 +19,7 @@ from estimagic.optimization.tranquilo.options import (
     get_default_aggregator,
     get_default_batch_size,
     get_default_model_fitter,
+    get_default_residualize,
     get_default_model_type,
     get_default_n_evals_at_start,
     get_default_radius_options,
@@ -85,6 +86,7 @@ def process_arguments(
     variance_estimator="classic",
     variance_estimator_options=None,
     infinity_handler="relative",
+    residualize=None,
 ):
     # process convergence options
     conv_options = ConvOptions(
@@ -133,6 +135,9 @@ def process_arguments(
     model_fitter = _process_model_fitter(
         model_fitter, model_type=model_type, sample_size=target_sample_size, x=x
     )
+    residualize = _process_residualize(
+        residualize, model_type=model_type, sample_size=target_sample_size, x=x
+    )
 
     # initialize components
     history = History(functype=functype)
@@ -172,6 +177,7 @@ def process_arguments(
         fitter_options=model_fitter_options,
         model_type=model_type,
         infinity_handling=infinity_handler,
+        residualize=residualize,
     )
 
     aggregate_model = get_aggregator(
@@ -288,6 +294,17 @@ def _process_model_fitter(model_fitter, model_type, sample_size, x):
         out = get_default_model_fitter(model_type, sample_size=sample_size, x=x)
     else:
         out = model_fitter
+
+    return out
+
+
+def _process_residualize(residualize, model_type, sample_size, x):
+    if residualize is None:
+        out = get_default_residualize(model_type, sample_size=sample_size, x=x)
+    else:
+        if not isinstance(residualize, bool):
+            raise ValueError("residualize must be a boolean.")
+        out = residualize
 
     return out
 

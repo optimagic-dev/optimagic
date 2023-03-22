@@ -176,7 +176,7 @@ def _solve_subproblem_template(
 
     raw_result = solver(model, **_bounds, **options)
 
-    x = _uncenter_and_unscale(raw_result["x"], trustregion)
+    x = trustregion.map_from_unit(raw_result["x"])
 
     if "lower_bounds" in bounds:
         x = np.clip(x, bounds["lower_bounds"], np.inf)
@@ -186,7 +186,7 @@ def _solve_subproblem_template(
 
     # make sure expected improvement is calculated accurately in case of clipping and
     # does not depend on whether the subsolver ignores intercepts or not.
-    fval_at_center = model.predict(np.zeros_like(x))
+    fval_at_center = model.predict(trustregion.map_to_unit(trustregion.center))
     fval_candidate = model.predict(raw_result["x"])
 
     expected_improvement = -(fval_candidate - fval_at_center)
@@ -197,6 +197,7 @@ def _solve_subproblem_template(
         n_iterations=raw_result["n_iterations"],
         success=raw_result["success"],
         centered_x=raw_result["x"],
+        trustregion_shape=trustregion.shape,
     )
 
     return result
@@ -209,7 +210,7 @@ def _get_centered_and_scaled_bounds(bounds, trustregion):
         if bounds["lower_bounds"] is None:
             lower_bounds = np.full(n_params, -1)
         else:
-            lower_bounds = _center_and_scale(bounds["lower_bounds"], trustregion)
+            lower_bounds = trustregion.map_to_unit(bounds["lower_bounds"])
             lower_bounds = np.nan_to_num(lower_bounds, nan=-1, neginf=-1)
         out["lower_bounds"] = lower_bounds
 
@@ -217,18 +218,10 @@ def _get_centered_and_scaled_bounds(bounds, trustregion):
         if bounds["upper_bounds"] is None:
             upper_bounds = np.ones(n_params)
         else:
-            upper_bounds = _center_and_scale(bounds["upper_bounds"], trustregion)
+            upper_bounds = trustregion.map_to_unit(bounds["upper_bounds"])
             upper_bounds = np.nan_to_num(upper_bounds, nan=1, posinf=1)
         out["upper_bounds"] = upper_bounds
     return out
-
-
-def _center_and_scale(vec, trustregion):
-    return (vec - trustregion.center) / trustregion.radius
-
-
-def _uncenter_and_unscale(vec, trustregion):
-    return vec * trustregion.radius + trustregion.center
 
 
 class SubproblemResult(NamedTuple):
@@ -239,3 +232,4 @@ class SubproblemResult(NamedTuple):
     n_iterations: int
     success: bool
     centered_x: np.ndarray
+    trustregion_shape: str

@@ -46,7 +46,7 @@ def simulate_rho_noise(
     n_samples, n_params = xs.shape
     n_residuals = len(noise_cov)
 
-    centered_xs = (xs - trustregion.center) / trustregion.radius
+    centered_xs = trustregion.map_to_unit(xs)
 
     true_fvecs = vector_model.predict(centered_xs)
 

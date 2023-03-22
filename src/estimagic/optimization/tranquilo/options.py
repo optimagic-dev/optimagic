@@ -27,11 +27,16 @@ def get_default_sample_size(model_type, x):
 
 def get_default_model_fitter(model_type, sample_size, x):
     n_params = n_free_params(dim=len(x), model_type=model_type)
-    if model_type == "linear":
-        fitter = "ridge" if sample_size < n_params else "ols"
+    if model_type == "linear" or sample_size >= n_params:
+        fitter = "ols"
     else:
         fitter = "tranquilo"
     return fitter
+
+
+def get_default_residualize(model_type, sample_size, x):
+    n_params = n_free_params(dim=len(x), model_type=model_type)
+    return not (model_type == "linear" or sample_size >= n_params)
 
 
 def get_default_subsolver(bounds, cube_subsolver, sphere_subsolver):
@@ -137,7 +142,6 @@ class SubsolverOptions(NamedTuple):
 
 
 class FitterOptions(NamedTuple):
-    model_type: str
     l2_penalty_linear: float = 0.0
     l2_penalty_square: float = 0.1
     p_intercept: float = 0.05

@@ -16,7 +16,11 @@ from estimagic.optimization.tranquilo.models import (
 
 
 def get_fitter(
-    fitter, fitter_options=None, model_type=None, infinity_handling="relative"
+    fitter,
+    fitter_options=None,
+    model_type=None,
+    residualize=False,
+    infinity_handling="relative",
 ):
     """Get a fit-function with partialled options.
 
@@ -25,7 +29,7 @@ def get_fitter(
             argument of any fit method needs to be ``x``, second ``y`` and third
             ``model_type``.
 
-        user_options (dict): Options for the fit method. The following are supported:
+        fitter_options (dict): Options for the fit method. The following are supported:
             - l2_penalty_linear (float): Penalty that is applied to all linear terms.
             - l2_penalty_square (float): Penalty that is applied to all square terms,
             that is the quadratic and interaction terms.
@@ -38,8 +42,6 @@ def get_fitter(
         callable: The partialled fit method that only depends on x and y.
 
     """
-    fitter_options = {} if fitter_options is None else fitter_options
-
     built_in_fitters = {
         "ols": fit_ols,
         "ridge": fit_ridge,
@@ -47,15 +49,13 @@ def get_fitter(
         "tranquilo": fit_tranquilo,
     }
 
-    default_options = FitterOptions(model_type=model_type)
-
     mandatory_arguments = ["x", "y", "model_type"]
 
     _raw_fitter = get_component(
         name_or_func=fitter,
         component_name="fitter",
         func_dict=built_in_fitters,
-        default_options=default_options,
+        default_options=FitterOptions(),
         user_options=fitter_options,
         mandatory_signature=mandatory_arguments,
     )
@@ -67,7 +67,7 @@ def get_fitter(
         fitter=_raw_fitter,
         model_type=model_type,
         clip_infinite_values=clip_infinite_values,
-        residualize=fitter_options.get("residualize", False),
+        residualize=residualize,
     )
 
     return fitter
@@ -106,7 +106,7 @@ def _fitter_template(
     n_residuals = y.shape[1]
 
     y_clipped = clip_infinite_values(y)
-    x_centered = (x - region.center) / region.radius
+    x_centered = region.map_to_unit(x)
 
     if residualize:
         old_model_moved = move_model(old_model, region)
@@ -114,7 +114,7 @@ def _fitter_template(
             y_clipped.shape
         )
 
-    coef = fitter(x=x_centered, y=y_clipped, weights=weights)
+    coef = fitter(x=x_centered, y=y_clipped, weights=weights, model_type=model_type)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)

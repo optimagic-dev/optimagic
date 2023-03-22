@@ -25,6 +25,7 @@ def subproblem_solution():
         n_iterations=1,
         success=True,
         centered_x=None,
+        trustregion_shape=None,
     )
     return res
 
