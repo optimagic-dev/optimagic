@@ -1,3 +1,4 @@
+from typing import Union
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -41,6 +42,19 @@ class Region:
             )
         center = _get_cube_center(bounds=self.cube_bounds)
         return center
+
+    @property
+    def effective_center(self) -> np.ndarray:
+        center = self.center if self.shape == "sphere" else self.cube_center
+        return center
+
+    @property
+    def effective_radius(self) -> Union[float, np.ndarray]:
+        if self.shape == "sphere":
+            radius = self.radius
+        else:
+            radius = _get_cube_radius(self.cube_bounds)
+        return radius
 
     def map_to_unit(self, x: np.ndarray) -> np.ndarray:
         """Map points from the trustregion to the unit sphere or cube."""
@@ -108,6 +122,12 @@ def _get_cube_center(bounds):
     """Get center of region defined by bounds."""
     center = (bounds.lower + bounds.upper) / 2
     return center
+
+
+def _get_cube_radius(bounds):
+    """Get radius of region defined by bounds."""
+    radius = (bounds.upper - bounds.lower) / 2
+    return radius
 
 
 def _any_bounds_binding(bounds, center, radius):
