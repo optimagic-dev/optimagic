@@ -202,19 +202,12 @@ class History:
         if self.get_n_fun() == 0:
             return np.array([])
 
-        center = region.center
-        shape = region.shape
-        radius = region.radius
-
-        if isinstance(center, int):
-            center = self.get_xs(x_indices=center)
-
         xs = self.get_xs()
 
-        out = _find_indices_in_trust_region(xs, center=center, radius=radius)
+        out = _find_indices_in_region(xs, center=region.center, radius=region.radius)
 
-        if shape == "sphere":
-            mask = np.linalg.norm(xs[out] - region.center, axis=1) <= radius
+        if region.shape == "sphere":
+            mask = np.linalg.norm(xs[out] - region.center, axis=1) <= region.radius
             out = out[mask]
 
         return out
@@ -244,8 +237,8 @@ def _add_entries_to_array(arr, new, position):
 
 
 @njit
-def _find_indices_in_trust_region(xs, center, radius):
-    """Get the row indices of all parameter vectors in a trust region.
+def _find_indices_in_region(xs, center, radius):
+    """Get the row indices of all parameter vectors in a region.
 
     This is for square trust regions, i.e. balls in term of an infinity norm.
 

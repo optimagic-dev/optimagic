@@ -6,7 +6,7 @@ from estimagic.optimization.tranquilo.filter_points import (
 )
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.tranquilo import State
-from estimagic.optimization.tranquilo.tranquilo_history import History
+from estimagic.optimization.tranquilo.new_history import History
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_equal
 
@@ -200,9 +200,10 @@ def test_indices_in_trust_region(basic_case):
     radius = 0.0125
 
     trustregion = Region(center=x_accepted, radius=radius)
-    history.add_entries(xs, np.zeros(xs.shape[0]))
+    x_indices = history.add_xs(xs)
+    history.add_evals(x_indices, np.zeros(xs.shape[0]))
 
-    indices_in_tr = history.get_indices_in_region(trustregion)
+    indices_in_tr = history.get_x_indices_in_region(trustregion)
 
     expected_indices = np.array([0, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
     assert_equal(indices_in_tr, expected_indices)

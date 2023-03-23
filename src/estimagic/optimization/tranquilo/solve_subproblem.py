@@ -186,10 +186,10 @@ def _solve_subproblem_template(
 
     # make sure expected improvement is calculated accurately in case of clipping and
     # does not depend on whether the subsolver ignores intercepts or not.
-    fval_at_center = model.predict(trustregion.map_to_unit(trustregion.center))
+    fval_old = model.predict(trustregion.map_to_unit(trustregion.center))
     fval_candidate = model.predict(raw_result["x"])
 
-    expected_improvement = -(fval_candidate - fval_at_center)
+    expected_improvement = -(fval_candidate - fval_old)
 
     result = SubproblemResult(
         x=x,
@@ -197,7 +197,7 @@ def _solve_subproblem_template(
         n_iterations=raw_result["n_iterations"],
         success=raw_result["success"],
         centered_x=raw_result["x"],
-        trustregion_shape=trustregion.shape,
+        shape=trustregion.shape,
     )
 
     return result
@@ -232,4 +232,4 @@ class SubproblemResult(NamedTuple):
     n_iterations: int
     success: bool
     centered_x: np.ndarray
-    trustregion_shape: str
+    shape: str
