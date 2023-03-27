@@ -167,32 +167,50 @@ def move_model(model, new_region):
 
     """
     old_region = model.region
-    out = _scale_model(model, old_radius=old_region.radius, new_radius=1.0)
+    out = _scale_model(
+        model, old_effective_radius=old_region.effective_radius, new_radius=1.0
+    )
     if isinstance(model, ScalarModel):
         out = _shift_scalar_model(
-            out, old_center=old_region.center, new_center=new_region.center
+            out,
+            old_center=old_region.effective_center,
+            new_center=new_region.center,
+            new_effective_center=new_region.effective_center,
         )
     else:
         out = _shift_vector_model(
-            out, old_center=old_region.center, new_center=new_region.center
+            out,
+            old_center=old_region.effective_center,
+            new_center=new_region.center,
+            new_effective_center=new_region.effective_center,
         )
-    out = _scale_model(out, old_radius=1.0, new_radius=new_region.radius)
+    out = _scale_model(
+        out,
+        old_effective_radius=1.0,
+        new_radius=new_region.radius,
+        new_effective_radius=new_region.effective_radius,
+    )
     return out
 
 
-def _scale_model(model, old_radius, new_radius):
+def _scale_model(model, old_effective_radius, new_radius, new_effective_radius=None):
     """Scale a scalar or vector model to a new radius.
 
     Args:
         model (Union[ScalarModel, VectorModel]): The model to scale.
-        old_radius (float): The old radius.
+        old_effective_radius (Union[float, np.ndarray]): The old radius.
         new_radius (float): The new radius.
+        new_effective_radius (float, optional): The new effective radius. If None,
+            the new effective radius is set to the new radius.
 
     Returns:
         Union[ScalarModel, VectorModel]: The scaled model.
 
     """
-    factor = new_radius / old_radius
+    if new_effective_radius is None:
+        new_effective_radius = new_radius
+
+    factor = new_effective_radius / old_effective_radius
 
     new_g = model.linear_terms * factor
     new_h = None if model.square_terms is None else model.square_terms * factor**2
@@ -205,23 +223,24 @@ def _scale_model(model, old_radius, new_radius):
     return out
 
 
-def _shift_scalar_model(model, old_center, new_center):
+def _shift_scalar_model(model, old_center, new_center, new_effective_center):
     """Shift a scalar model to a new center.
 
     Args:
         model (ScalarModel): The model to shift.
         old_center (np.ndarray): The old center.
         new_center (np.ndarray): The new center.
+        new_effective_center (np.ndarray): The new effective center.
 
     Returns:
         ScalarModel: The shifted model.
 
     """
-    shift = new_center - old_center
+    shift = new_effective_center - old_center
 
     new_c = model.predict(shift)
 
-    new_g = model.linear_terms + shift @ model.square_terms
+    new_g = model.linear_terms + model.square_terms @ shift
 
     out = model._replace(
         intercept=new_c,
@@ -232,19 +251,20 @@ def _shift_scalar_model(model, old_center, new_center):
     return out
 
 
-def _shift_vector_model(model, old_center, new_center):
+def _shift_vector_model(model, old_center, new_center, new_effective_center):
     """Shift a vector model to a new center.
 
     Args:
         model (VectorModel): The model to shift.
         old_center (np.ndarray): The old center.
         new_center (np.ndarray): The new center.
+        new_effective_center (np.ndarray): The new effective center.
 
     Returns:
         VectorModel: The shifted model.
 
     """
-    shift = new_center - old_center
+    shift = new_effective_center - old_center
 
     new_c = model.predict(shift)
 

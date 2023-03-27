@@ -140,8 +140,8 @@ def test_move_scalar_model(scalar_model):
 
     old_model = scalar_model
     x_unscaled = np.array([[0.5, 0.5]])
-    x_old = (x_unscaled - old_region.center) / old_region.radius
-    x_new = (x_unscaled - new_region.center) / new_region.radius
+    x_old = old_region.map_to_unit(x_unscaled)
+    x_new = new_region.map_to_unit(x_unscaled)
 
     new_model = move_model(old_model, new_region)
 

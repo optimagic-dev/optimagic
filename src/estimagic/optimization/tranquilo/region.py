@@ -138,5 +138,5 @@ def _any_bounds_binding(bounds, center, radius):
             lower_binding = np.min(center - bounds.lower) <= radius
         if bounds.upper is not None:
             upper_binding = np.min(bounds.upper - center) <= radius
-        out = lower_binding or upper_binding
+        out = np.any(lower_binding) or np.any(upper_binding)
     return out
