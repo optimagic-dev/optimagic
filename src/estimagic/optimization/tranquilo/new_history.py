@@ -1,5 +1,4 @@
 import numpy as np
-from numba import njit
 
 
 class History:
@@ -204,11 +203,8 @@ class History:
 
         xs = self.get_xs()
 
-        out = _find_indices_in_region(xs, center=region.center, radius=region.radius)
-
-        if region.shape == "sphere":
-            mask = np.linalg.norm(xs[out] - region.center, axis=1) <= region.radius
-            out = out[mask]
+        mask = np.linalg.norm(xs - region.center, axis=1) <= region.radius
+        out = np.where(mask)[0]
 
         return out
 
@@ -234,40 +230,6 @@ def _add_entries_to_array(arr, new, position):
     arr[position : position + n_new_points] = new
 
     return arr
-
-
-@njit
-def _find_indices_in_region(xs, center, radius):
-    """Get the row indices of all parameter vectors in a region.
-
-    This is for square trust regions, i.e. balls in term of an infinity norm.
-
-    Args:
-        xs (np.ndarray): 2d numpy array where each row is a parameter vector.
-        center (np.ndarray): 1d numpy array that marks the center of the trust region.
-        radius (float): Radius of the trust region.
-
-    Returns:
-        np.ndarray: The indices of parameters in the trust region.
-
-    """
-    n_obs, dim = xs.shape
-    out = np.zeros(n_obs).astype(np.int64)
-    success_counter = 0
-    upper = center + radius
-    lower = center - radius
-    for i in range(n_obs):
-        success = True
-        for j in range(dim):
-            value = xs[i, j]
-            if not (lower[j] <= value <= upper[j]) or np.isnan(value):
-                success = False
-                continue
-        if success:
-            out[success_counter] = i
-            success_counter += 1
-
-    return out[:success_counter]
 
 
 def _extract_from_indices(arr, mapper, x_indices, n_xs):

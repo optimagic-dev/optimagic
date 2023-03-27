@@ -93,8 +93,7 @@ def drop_worst_points(xs, indices, state, n_to_drop):
     n_dropped = 0
 
     if n_dropped < n_to_drop:
-        order = 2 if state.trustregion.shape == "sphere" else np.inf
-        dists = np.linalg.norm(xs - state.x, axis=1, ord=order)
+        dists = np.linalg.norm(xs - state.x, axis=1)
 
         while n_dropped < n_to_drop and (dists > state.trustregion.radius).any():
             drop_index = np.argmax(dists)
