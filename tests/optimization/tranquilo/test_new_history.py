@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.new_history import History
+from estimagic.optimization.tranquilo.history import History
 from numpy.testing import assert_array_almost_equal as aaae
 
 XS = [

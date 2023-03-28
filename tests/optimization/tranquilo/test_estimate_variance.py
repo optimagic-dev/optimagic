@@ -3,7 +3,7 @@ import pytest
 from estimagic.optimization.tranquilo.estimate_variance import (
     _estimate_variance_classic,
 )
-from estimagic.optimization.tranquilo.new_history import History
+from estimagic.optimization.tranquilo.history import History
 from estimagic.optimization.tranquilo.tranquilo import Region
 from numpy.testing import assert_array_almost_equal as aaae
 

@@ -7,7 +7,7 @@ from estimagic.optimization.tranquilo.acceptance_decision import (
     _get_acceptance_result,
     calculate_rho,
 )
-from estimagic.optimization.tranquilo.new_history import History
+from estimagic.optimization.tranquilo.history import History
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.solve_subproblem import SubproblemResult
 from numpy.testing import assert_array_equal

@@ -5,7 +5,7 @@ from estimagic.optimization.tranquilo.filter_points import (
 )
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.tranquilo import State
-from estimagic.optimization.tranquilo.new_history import History
+from estimagic.optimization.tranquilo.history import History
 from numpy.testing import assert_equal
 
 

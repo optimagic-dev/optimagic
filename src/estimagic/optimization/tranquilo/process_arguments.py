@@ -10,7 +10,7 @@ from estimagic.optimization.tranquilo.bounds import Bounds
 from estimagic.optimization.tranquilo.estimate_variance import get_variance_estimator
 from estimagic.optimization.tranquilo.filter_points import get_sample_filter
 from estimagic.optimization.tranquilo.fit_models import get_fitter
-from estimagic.optimization.tranquilo.new_history import History
+from estimagic.optimization.tranquilo.history import History
 from estimagic.optimization.tranquilo.options import (
     ConvOptions,
     StagnationOptions,
