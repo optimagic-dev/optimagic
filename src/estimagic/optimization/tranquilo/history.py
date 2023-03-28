@@ -197,15 +197,9 @@ class History:
         return self.n_xs
 
     def get_x_indices_in_region(self, region):
-        # early return if there are no entries
-        if self.get_n_fun() == 0:
-            return np.array([])
-
         xs = self.get_xs()
-
         mask = np.linalg.norm(xs - region.center, axis=1) <= region.radius
-        out = np.where(mask)[0]
-
+        out = np.arange(len(mask))[mask]
         return out
 
     def __repr__(self):

@@ -1,10 +1,10 @@
 """Test the history class for least-squares optimizers."""
-from collections import namedtuple
-
 import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.history import History
+from estimagic.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal as aaae
+
 
 XS = [
     np.arange(3),
@@ -117,10 +117,9 @@ def test_get_indices_in_trustregion():
     indices = history.add_xs(xs)
     history.add_evals(indices, fvecs)
 
-    trustregion = namedtuple("Region", ["center", "radius", "shape"])(
+    trustregion = Region(
         center=np.ones(2),
         radius=0.3,
-        shape="sphere",
     )
 
     indices = history.get_x_indices_in_region(trustregion)
