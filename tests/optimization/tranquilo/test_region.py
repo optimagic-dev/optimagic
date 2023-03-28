@@ -14,6 +14,7 @@ from estimagic.optimization.tranquilo.region import (
     _map_to_unit_sphere,
 )
 from numpy.testing import assert_array_equal
+import pytest
 
 
 def test_map_to_unit_sphere():
@@ -110,9 +111,10 @@ def test_region_non_binding_bounds():
     assert region.shape == "sphere"
     assert region.radius == 1
     assert region.bounds is None
-    assert np.allclose(region.cube_bounds.lower, region.center - region.radius)
-    assert np.allclose(region.cube_bounds.upper, region.center + region.radius)
-    assert np.allclose(region.cube_center, region.center)
+    with pytest.raises(AttributeError, match="The trustregion is a sphere"):
+        region.cube_bounds
+    with pytest.raises(AttributeError, match="The trustregion is a sphere"):
+        region.cube_center
 
 
 def test_region_binding_bounds():

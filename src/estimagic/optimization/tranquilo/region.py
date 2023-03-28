@@ -25,10 +25,26 @@ class Region:
 
         # cannot use standard __setattr__ because it is frozen
         super().__setattr__("shape", shape)
-        super().__setattr__("cube_bounds", cube_bounds)
-        super().__setattr__("cube_center", cube_center)
+        super().__setattr__("_cube_bounds", cube_bounds)
+        super().__setattr__("_cube_center", cube_center)
         super().__setattr__("effective_center", effective_center)
         super().__setattr__("effective_radius", effective_radius)
+
+    @property
+    def cube_bounds(self) -> Bounds:
+        if self.shape == "sphere":
+            raise AttributeError(
+                "The trustregion is a sphere, and thus has no cube bounds."
+            )
+        return self._cube_bounds
+
+    @property
+    def cube_center(self) -> np.ndarray:
+        if self.shape == "sphere":
+            raise AttributeError(
+                "The trustregion is a sphere, and thus has no cube center."
+            )
+        return self._cube_center
 
     def map_to_unit(self, x: np.ndarray) -> np.ndarray:
         """Map points from the trustregion to the unit sphere or cube."""
