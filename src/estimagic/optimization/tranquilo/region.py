@@ -1,4 +1,3 @@
-from typing import Union
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -17,44 +16,19 @@ class Region:
     radius: float
     bounds: Bounds = None
 
-    @property
-    def shape(self) -> str:
-        any_bounds_binding = _any_bounds_binding(
-            bounds=self.bounds, center=self.center, radius=self.radius
-        )
-        return "cube" if any_bounds_binding else "sphere"
+    def __post_init__(self):
+        shape = _get_shape(self.center, self.radius, self.bounds)
+        cube_bounds = _get_cube_bounds(self.center, self.radius, self.bounds, shape)
+        cube_center = _get_cube_center(cube_bounds)
+        effective_center = _get_effective_center(shape, self.center, cube_center)
+        effective_radius = _get_effective_radius(shape, self.radius, cube_bounds)
 
-    @property
-    def cube_bounds(self) -> Bounds:
-        if self.shape == "sphere":
-            raise AttributeError(
-                "The trustregion is a sphere, and thus has no cube bounds."
-            )
-        radius = get_radius_of_cube_with_volume_of_sphere(self.radius, len(self.center))
-        bounds = _get_cube_bounds(center=self.center, radius=radius, bounds=self.bounds)
-        return bounds
-
-    @property
-    def cube_center(self) -> np.ndarray:
-        if self.shape == "sphere":
-            raise AttributeError(
-                "The trustregion is a sphere, and thus has no cube center."
-            )
-        center = _get_cube_center(bounds=self.cube_bounds)
-        return center
-
-    @property
-    def effective_center(self) -> np.ndarray:
-        center = self.center if self.shape == "sphere" else self.cube_center
-        return center
-
-    @property
-    def effective_radius(self) -> Union[float, np.ndarray]:
-        if self.shape == "sphere":
-            radius = self.radius
-        else:
-            radius = _get_cube_radius(self.cube_bounds)
-        return radius
+        # cannot use standard __setattr__ because it is frozen
+        super().__setattr__("shape", shape)
+        super().__setattr__("cube_bounds", cube_bounds)
+        super().__setattr__("cube_center", cube_center)
+        super().__setattr__("effective_center", effective_center)
+        super().__setattr__("effective_radius", effective_radius)
 
     def map_to_unit(self, x: np.ndarray) -> np.ndarray:
         """Map points from the trustregion to the unit sphere or cube."""
@@ -104,7 +78,39 @@ def _map_from_unit_sphere(x, center, radius):
     return out
 
 
-def _get_cube_bounds(center, radius, bounds):
+def _get_shape(center, radius, bounds):
+    any_bounds_binding = _any_bounds_binding(
+        bounds=bounds, center=center, radius=radius
+    )
+    return "cube" if any_bounds_binding else "sphere"
+
+
+def _get_cube_bounds(center, radius, bounds, shape):
+    if shape == "cube":
+        radius = get_radius_of_cube_with_volume_of_sphere(radius, len(center))
+    cube_bounds = _create_cube_bounds(center=center, radius=radius, bounds=bounds)
+    return cube_bounds
+
+
+def _get_cube_center(cube_bounds):
+    cube_center = (cube_bounds.lower + cube_bounds.upper) / 2
+    return cube_center
+
+
+def _get_effective_center(shape, center, cube_center):
+    effective_center = center if shape == "sphere" else cube_center
+    return effective_center
+
+
+def _get_effective_radius(shape, radius, cube_bounds):
+    if shape == "sphere":
+        effective_radius = radius
+    else:
+        effective_radius = (cube_bounds.upper - cube_bounds.lower) / 2
+    return effective_radius
+
+
+def _create_cube_bounds(center, radius, bounds):
     """Get new bounds that define the intersection of the trustregion and the bounds."""
     lower_bounds = center - radius
     upper_bounds = center + radius
@@ -116,18 +122,6 @@ def _get_cube_bounds(center, radius, bounds):
         upper_bounds = np.clip(upper_bounds, -np.inf, bounds.upper)
 
     return Bounds(lower=lower_bounds, upper=upper_bounds)
-
-
-def _get_cube_center(bounds):
-    """Get center of region defined by bounds."""
-    center = (bounds.lower + bounds.upper) / 2
-    return center
-
-
-def _get_cube_radius(bounds):
-    """Get radius of region defined by bounds."""
-    radius = (bounds.upper - bounds.lower) / 2
-    return radius
 
 
 def _any_bounds_binding(bounds, center, radius):
