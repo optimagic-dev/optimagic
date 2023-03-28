@@ -13,7 +13,7 @@ algo_options = {
     "optimal_hull": {
         "sampler": "optimal_hull",
         "subsolver": "gqtpar_fast",
-        "sample_filter": "keep_al",
+        "sample_filter": "keep_all",
         "stopping.max_iterations": 10,
     },
 }

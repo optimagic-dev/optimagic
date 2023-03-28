@@ -19,15 +19,18 @@ def get_fitter(
     fitter,
     fitter_options=None,
     model_type=None,
-    residualize=False,
-    infinity_handling="relative",
+    residualize=None,
+    infinity_handling=None,
 ):
     """Get a fit-function with partialled options.
 
     Args:
-        fitter (str or callable): Name of a fit method or a fit method. The first
-            argument of any fit method needs to be ``x``, second ``y`` and third
-            ``model_type``.
+        fitter (str or callable): Name of a fit method or a fit method. Arguments need
+            to be, in order,
+            - x (np.ndarray): Data points.
+            - y (np.ndarray): Corresponding function evaluations at data points.
+            - weighs (np.ndarray): Weights for the data points.
+            - model_type (str): Type of model to be fitted.
 
         fitter_options (dict): Options for the fit method. The following are supported:
             - l2_penalty_linear (float): Penalty that is applied to all linear terms.
@@ -37,6 +40,12 @@ def get_fitter(
         model_type (str): Type of the model that is fitted. The following are supported:
             - "linear": Only linear effects and intercept.
             - "quadratic": Fully quadratic model.
+
+        residualize (bool): If True, the model is fitted to the residuals of the old
+            model. This introduces momentum when the coefficients are penalized.
+
+        infinity_handling (str): How to handle infinite values in the data. Currently
+            supported: {"relative"}. See `handle_infinty.py`.
 
     Returns:
         callable: The partialled fit method that only depends on x and y.

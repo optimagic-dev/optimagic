@@ -6,13 +6,13 @@ from estimagic.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 
-def aaae(x, y, case=None):
+def aaae(x, y, decimal=None, case=None):
     tolerance = {
-        None: 3,
         "hessian": 2,
         "gradient": 3,
     }
-    assert_array_almost_equal(x, y, decimal=tolerance[case])
+    decimal = decimal or tolerance.get(case, None)
+    assert_array_almost_equal(x, y, decimal=decimal)
 
 
 # ======================================================================================
@@ -62,41 +62,45 @@ def quadratic_case():
 # ======================================================================================
 
 
-def test_fit_ols_against_truth(quadratic_case):
-    fit_ols = get_fitter("ols", model_type="quadratic")
-    got = fit_ols(
-        x=quadratic_case["x"],
-        y=quadratic_case["y"],
-        region=Region(center=np.zeros(4), radius=1.0),
-        old_model=None,
+@pytest.mark.parametrize("fitter", ["ols", "ridge", "powell", "tranquilo"])
+def test_fit_against_truth_quadratic(fitter, quadratic_case):
+    options = {"l2_penalty_square": 0}
+    fit_pounders = get_fitter(
+        fitter,
+        options,
+        model_type="quadratic",
+        residualize=False,
+        infinity_handling="relative",
     )
-
-    n_p = got.linear_terms.size
-    aaae(got.linear_terms.flatten(), quadratic_case["linear_terms_expected"])
-    aaae(got.square_terms.reshape(n_p, n_p), quadratic_case["square_terms_expected"])
-
-
-def test_fit_powell_against_truth_quadratic(quadratic_case):
-    fit_pounders = get_fitter("powell", model_type="quadratic")
     got = fit_pounders(
         quadratic_case["x"],
         quadratic_case["y"],
         region=Region(center=np.zeros(4), radius=1.0),
         old_model=None,
     )
+    decimal = 3 if fitter != "ridge" else 2
+    aaae(
+        got.linear_terms.flatten(),
+        quadratic_case["linear_terms_expected"],
+        decimal=decimal,
+    )
+    aaae(
+        got.square_terms.reshape((4, 4)),
+        quadratic_case["square_terms_expected"],
+        decimal=decimal,
+    )
 
-    aaae(got.linear_terms.flatten(), quadratic_case["linear_terms_expected"])
-    aaae(got.square_terms.reshape((4, 4)), quadratic_case["square_terms_expected"])
 
-
-@pytest.mark.parametrize("model", ["ols", "ridge"])
+@pytest.mark.parametrize("model", ["ols", "ridge", "tranquilo"])
 def test_fit_ols_against_gradient(model, quadratic_case):
-    if model == "ridge":
-        options = {"l2_penalty_square": 0}
-    else:
-        options = None
-
-    fit_ols = get_fitter(model, options, model_type="quadratic")
+    options = {"l2_penalty_square": 0}
+    fit_ols = get_fitter(
+        model,
+        options,
+        model_type="quadratic",
+        residualize=False,
+        infinity_handling="relative",
+    )
     got = fit_ols(
         quadratic_case["x"],
         quadratic_case["y"],
@@ -112,12 +116,16 @@ def test_fit_ols_against_gradient(model, quadratic_case):
     aaae(gradient["derivative"], grad, case="gradient")
 
 
-@pytest.mark.parametrize(
-    "model, options",
-    [("ols", None), ("ridge", {"l2_penalty_linear": 0, "l2_penalty_square": 0})],
-)
-def test_fit_ols_against_hessian(model, options, quadratic_case):
-    fit_ols = get_fitter(model, options, model_type="quadratic")
+@pytest.mark.parametrize("model", ("ols", "ridge", "tranquilo", "powell"))
+def test_fit_ols_against_hessian(model, quadratic_case):
+    options = {"l2_penalty_square": 0}
+    fit_ols = get_fitter(
+        model,
+        options,
+        model_type="quadratic",
+        residualize=False,
+        infinity_handling="relative",
+    )
     got = fit_ols(
         quadratic_case["x"],
         quadratic_case["y"],
