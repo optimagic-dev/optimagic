@@ -115,15 +115,13 @@ def _fitter_template(
     n_residuals = y.shape[1]
 
     y_clipped = clip_infinite_values(y)
-    x_centered = region.map_to_unit(x)
+    x_unit = region.map_to_unit(x)
 
     if residualize:
         old_model_moved = move_model(old_model, region)
-        y_clipped = y_clipped - old_model_moved.predict(x_centered).reshape(
-            y_clipped.shape
-        )
+        y_clipped = y_clipped - old_model_moved.predict(x_unit).reshape(y_clipped.shape)
 
-    coef = fitter(x=x_centered, y=y_clipped, weights=weights, model_type=model_type)
+    coef = fitter(x=x_unit, y=y_clipped, weights=weights, model_type=model_type)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)

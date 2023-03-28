@@ -131,30 +131,6 @@ def keep_cluster_centers(
     return out
 
 
-def _get_polynomial_feature_matrices(
-    centered_xs, indexer, index_center, n_params, n_samples, n_poly_terms
-):
-    linear_features = np.zeros((n_samples, n_params + 1))
-    square_features = np.zeros((n_samples, n_poly_terms))
-
-    linear_features[0, 1:] = centered_xs[indexer[index_center]]
-    square_features[0, :] = _scaled_square_features(linear_features[0, 1:]).flatten()
-
-    _is_center_in_head = index_center < n_params
-    idx_list_n = [i for i in range(n_params + _is_center_in_head) if i != index_center]
-    idx_list_n_plus_1 = [index_center, *idx_list_n]
-
-    linear_features[:, 0] = 1
-    linear_features[: n_params + 1, 1:] = centered_xs[indexer[idx_list_n_plus_1]]
-    square_features[: n_params + 1, :] = _scaled_square_features(
-        linear_features[: n_params + 1, 1:]
-    )
-
-    idx = n_samples - _is_center_in_head - len(idx_list_n) - 1
-
-    return linear_features, square_features, idx_list_n_plus_1, idx
-
-
 @njit
 def _scaled_square_features(x):
     """Construct scaled interaction and square terms.
