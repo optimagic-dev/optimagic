@@ -135,41 +135,40 @@ def move_model(model, new_region):
 
     """
 
-    # scale region to unit space
-    scale_to_unit = 1 / model.scale
-    out = _scale_model(model, scale=scale_to_unit)
+    # undo old scaling
+    out = _scale_model(model, factor=1 / model.scale)
 
-    # shift unit space to new center with scale 1
+    # shift the center
     shift = new_region.effective_center - model.shift
     if isinstance(model, ScalarModel):
         out = _shift_scalar_model(out, shift=shift)
     else:
         out = _shift_vector_model(out, shift=shift)
 
-    # scale region to scaling of new_region
-    scale_from_unit = new_region.effective_radius
-    out = _scale_model(out, scale=scale_from_unit)
+    # apply new scaling
+    new_scale = new_region.effective_radius
+    out = _scale_model(out, factor=new_scale)
     return out
 
 
-def _scale_model(model, scale):
+def _scale_model(model, factor):
     """Scale a scalar or vector model to a new radius.
 
     Args:
         model (Union[ScalarModel, VectorModel]): The model to scale.
-        scale (Union[float, np.ndarray]): The scaling factor.
+        factor (Union[float, np.ndarray]): The scaling factor.
 
     Returns:
         Union[ScalarModel, VectorModel]: The scaled model.
 
     """
-    new_g = model.linear_terms * scale
-    new_h = None if model.square_terms is None else model.square_terms * scale**2
+    new_g = model.linear_terms * factor
+    new_h = None if model.square_terms is None else model.square_terms * factor**2
 
     out = model._replace(
         linear_terms=new_g,
         square_terms=new_h,
-        scale=model.scale * scale,
+        scale=model.scale * factor,
     )
     return out
 
