@@ -116,31 +116,14 @@ def test_process_model_fitter():
 
 
 def test_process_residualize():
-    assert (
-        _process_residualize(
-            residualize=None, model_type="quadratic", sample_size=3, x=np.arange(3)
-        )
-        is True
-    )
-    assert (
-        _process_residualize(
-            residualize=None, model_type="linear", sample_size=4, x=np.arange(3)
-        )
-        is False
-    )
-    assert (
-        _process_residualize(
-            residualize=False, model_type=None, sample_size=None, x=None
-        )
-        is False
-    )
+    assert _process_residualize(residualize=None, model_fitter="tranquilo") is True
+    assert _process_residualize(residualize=None, model_fitter="ols") is False
+    assert _process_residualize(residualize=False, model_fitter="custom") is False
 
 
 def test_process_residualize_invalid():
     with pytest.raises(ValueError, match="residualize must be a boolean."):
-        _process_residualize(
-            residualize="invalid", model_type=None, sample_size=None, x=None
-        )
+        _process_residualize(residualize="invalid", model_fitter=None)
 
 
 def test_process_n_evals_at_start():

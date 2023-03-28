@@ -13,8 +13,8 @@ class VectorModel:
         np.ndarray, None
     ] = None  # shape (n_residuals, n_params, n_params)
 
-    # scale and shift corresponding to effective_radius and effective_center of
-    # the region on which the model was fitted
+    # scale and shift correspond to effective_radius and effective_center of the region
+    # on which the model was fitted
     scale: Union[float, np.ndarray] = None
     shift: np.ndarray = None
 
@@ -32,8 +32,8 @@ class ScalarModel:
     linear_terms: np.ndarray  # shape (n_params,)
     square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
-    # scale and shift corresponding to effective_radius and effective_center of
-    # the region on which the model was fitted
+    # scale and shift correspond to effective_radius and effective_center of the region
+    # on which the model was fitted
     scale: Union[float, np.ndarray] = None
     shift: np.ndarray = None
 
@@ -134,20 +134,20 @@ def move_model(model, new_region):
         Union[ScalarModel, VectorModel]: The moved model.
 
     """
+
     # scale region to unit space
     scale_to_unit = 1 / model.scale
-    # shift unit space to new center with scale 1
-    shift_in_unit = new_region.effective_center - model.shift
-    # scale region to scaling of new_region
-    scale_from_unit = new_region.effective_radius
-
     out = _scale_model(model, scale=scale_to_unit)
 
+    # shift unit space to new center with scale 1
+    shift = new_region.effective_center - model.shift
     if isinstance(model, ScalarModel):
-        out = _shift_scalar_model(out, shift=shift_in_unit)
+        out = _shift_scalar_model(out, shift=shift)
     else:
-        out = _shift_vector_model(out, shift=shift_in_unit)
+        out = _shift_vector_model(out, shift=shift)
 
+    # scale region to scaling of new_region
+    scale_from_unit = new_region.effective_radius
     out = _scale_model(out, scale=scale_from_unit)
     return out
 

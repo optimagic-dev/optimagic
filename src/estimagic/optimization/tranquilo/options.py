@@ -34,9 +34,8 @@ def get_default_model_fitter(model_type, sample_size, x):
     return fitter
 
 
-def get_default_residualize(model_type, sample_size, x):
-    n_params = n_free_params(dim=len(x), model_type=model_type)
-    return not (model_type == "linear" or sample_size >= n_params)
+def get_default_residualize(model_fitter):
+    return model_fitter == "tranquilo"
 
 
 def get_default_subsolver(bounds, cube_subsolver, sphere_subsolver):

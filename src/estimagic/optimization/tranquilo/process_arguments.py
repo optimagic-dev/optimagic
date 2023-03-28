@@ -135,9 +135,7 @@ def process_arguments(
     model_fitter = _process_model_fitter(
         model_fitter, model_type=model_type, sample_size=target_sample_size, x=x
     )
-    residualize = _process_residualize(
-        residualize, model_type=model_type, sample_size=target_sample_size, x=x
-    )
+    residualize = _process_residualize(residualize, model_fitter=model_fitter)
 
     # initialize components
     history = History(functype=functype)
@@ -298,9 +296,9 @@ def _process_model_fitter(model_fitter, model_type, sample_size, x):
     return out
 
 
-def _process_residualize(residualize, model_type, sample_size, x):
+def _process_residualize(residualize, model_fitter):
     if residualize is None:
-        out = get_default_residualize(model_type, sample_size=sample_size, x=x)
+        out = get_default_residualize(model_fitter)
     else:
         if not isinstance(residualize, bool):
             raise ValueError("residualize must be a boolean.")
