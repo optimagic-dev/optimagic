@@ -1,7 +1,6 @@
 import numpy as np
 import scipy
 from numba import njit
-from scipy.linalg import qr_multiply
 
 from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.get_component import get_component
@@ -31,7 +30,6 @@ def get_sample_filter(sample_filter="keep_all", user_options=None):
         "discard_all": discard_all,
         "keep_all": keep_all,
         "clustering": keep_cluster_centers,
-        "drop_pounders": drop_collinear_pounders,
         "drop_excess": drop_excess,
     }
 
@@ -52,16 +50,6 @@ def discard_all(state):
 
 def keep_all(xs, indices):
     return xs, indices
-
-
-def drop_collinear_pounders(xs, indices, state):
-    """Drop collinear points using pounders filtering."""
-    if xs.shape[0] <= xs.shape[1] + 1:
-        filtered_xs, filtered_indices = xs, indices
-    else:
-        filtered_xs, filtered_indices = _drop_collinear_pounders(xs, indices, state)
-
-    return filtered_xs, filtered_indices
 
 
 def drop_excess(xs, indices, state, target_size):
@@ -141,67 +129,6 @@ def keep_cluster_centers(
     # do I need to make sure trustregion center is in there?
     out = xs[centers], indices[centers]
     return out
-
-
-def _drop_collinear_pounders(xs, indices, state):
-    theta2 = 1e-4
-    n_samples, n_params = xs.shape
-    n_poly_terms = n_second_order_terms(n_params)
-
-    indices_reverse = indices[::-1]
-    indexer_reverse = np.arange(n_samples)[::-1]
-
-    index_center = int(np.where(indices_reverse == state.index)[0])
-    centered_xs = state.trustregion.map_to_unit(xs)
-
-    (
-        linear_features,
-        square_features,
-        idx_list_n_plus_1,
-        index,
-    ) = _get_polynomial_feature_matrices(
-        centered_xs,
-        indexer_reverse,
-        index_center,
-        n_params,
-        n_samples,
-        n_poly_terms,
-    )
-
-    indexer_filtered = indexer_reverse[idx_list_n_plus_1].tolist()
-    _index_center = indexer_reverse[index_center]
-
-    counter = n_params + 1
-
-    while (counter < n_samples) and (index >= 0):
-        if index == _index_center:
-            index -= 1
-            continue
-
-        linear_features[counter, 1:] = centered_xs[index]
-        square_features[counter, :] = _scaled_square_features(
-            linear_features[counter, 1:]
-        )
-
-        linear_features_pad = np.zeros((n_samples, n_samples))
-        linear_features_pad[:n_samples, : n_params + 1] = linear_features
-
-        n_z_mat, _ = qr_multiply(
-            linear_features_pad[: counter + 1, :],
-            square_features.T[:n_poly_terms, : counter + 1],
-        )
-        beta = np.linalg.svd(n_z_mat.T[n_params + 1 :], compute_uv=False)
-
-        if beta[min(counter - n_params, n_poly_terms) - 1] > theta2:
-            indexer_filtered += [index]
-            counter += 1
-
-        index -= 1
-
-    filtered_indices = indices[indexer_filtered]
-    filtered_xs = xs[indexer_filtered]
-
-    return filtered_xs, filtered_indices
 
 
 def _get_polynomial_feature_matrices(

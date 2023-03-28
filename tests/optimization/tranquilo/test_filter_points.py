@@ -2,12 +2,10 @@ import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.filter_points import (
     _scaled_square_features,
-    drop_collinear_pounders,
 )
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.tranquilo import State
 from estimagic.optimization.tranquilo.new_history import History
-from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_equal
 
 
@@ -207,20 +205,6 @@ def test_indices_in_trust_region(basic_case):
 
     expected_indices = np.array([0, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
     assert_equal(indices_in_tr, expected_indices)
-
-
-@pytest.mark.parametrize(
-    "test_case", ["basic_case", "reordered_case", "truncated_case", "sparse_case"]
-)
-def test_drop_collinear_pounders(test_case, request):
-    old_xs, old_indices, state, expected_xs, expected_indices = request.getfixturevalue(
-        test_case
-    )
-
-    filtered_xs, filtered_indices = drop_collinear_pounders(old_xs, old_indices, state)
-
-    assert_equal(filtered_indices, expected_indices)
-    aaae(filtered_xs, expected_xs)
 
 
 def test_scaled_square_features():

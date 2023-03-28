@@ -129,9 +129,9 @@ TEST_CASES = {
         "model_fitter": ["ols"],
         "model_type": ["linear"],
     },
-    "pounders_filtering": {
-        "sample_filter": ["drop_pounders"],
-        "model_fitter": ["ols"],
+    "tranquilo": {
+        "sample_filter": ["keep_all", "discard_all"],
+        "model_fitter": ["tranquilo"],
         "model_type": ["linear"],
     },
 }
