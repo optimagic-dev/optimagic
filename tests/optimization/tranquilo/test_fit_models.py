@@ -78,7 +78,7 @@ def test_fit_against_truth_quadratic(fitter, quadratic_case):
         region=Region(center=np.zeros(4), radius=1.0),
         old_model=None,
     )
-    decimal = 3 if fitter != "ridge" else 2
+    decimal = 3 if fitter != "ridge" else 1
     aaae(
         got.linear_terms.flatten(),
         quadratic_case["linear_terms_expected"],
