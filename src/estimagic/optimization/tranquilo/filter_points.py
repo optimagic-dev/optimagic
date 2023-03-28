@@ -1,10 +1,8 @@
 import numpy as np
 import scipy
-from numba import njit
 
 from estimagic.optimization.tranquilo.clustering import cluster
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.models import n_second_order_terms
 from estimagic.optimization.tranquilo.volume import get_radius_after_volume_scaling
 from estimagic.optimization.tranquilo.options import FilterOptions
 
@@ -129,36 +127,3 @@ def keep_cluster_centers(
     # do I need to make sure trustregion center is in there?
     out = xs[centers], indices[centers]
     return out
-
-
-@njit
-def _scaled_square_features(x):
-    """Construct scaled interaction and square terms.
-
-    The interaction terms are scaled by 1 / sqrt{2} while the square terms are scaled
-    by 1 / 2.
-
-    Args:
-        x (np.ndarray): Array of shape (n_samples, n_params).
-
-    Returns:
-        np.ndarray: Scaled interaction and square terms. Has shape (n_samples,
-            n_params + (n_params - 1) * n_params / 1).
-
-    """
-    n_samples, n_params = np.atleast_2d(x).shape
-    n_poly_terms = n_second_order_terms(n_params)
-
-    poly_terms = np.empty((n_poly_terms, n_samples), np.float64)
-    xt = x.T
-
-    idx = 0
-    for i in range(n_params):
-        poly_terms[idx] = xt[i] ** 2 / 2
-        idx += 1
-
-        for j in range(i + 1, n_params):
-            poly_terms[idx] = xt[i] * xt[j] / np.sqrt(2)
-            idx += 1
-
-    return poly_terms.T
