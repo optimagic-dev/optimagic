@@ -50,7 +50,8 @@ def _aggregate_models_template(vector_model, aggregator):
         intercept=intercept,
         linear_terms=linear_terms,
         square_terms=square_terms,
-        region=vector_model.region,
+        shift=vector_model.shift,
+        scale=vector_model.scale,
     )
     return scalar_model
 

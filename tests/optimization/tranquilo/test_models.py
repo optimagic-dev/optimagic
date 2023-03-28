@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.models import (
     ScalarModel,
     VectorModel,
@@ -11,9 +12,7 @@ from estimagic.optimization.tranquilo.models import (
     n_free_params,
     n_interactions,
     n_second_order_terms,
-    subtract_models,
 )
-from estimagic.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
 
@@ -23,7 +22,6 @@ def test_predict_scalar():
         intercept=1.0,
         linear_terms=np.arange(2),
         square_terms=(np.arange(4) + 1).reshape(2, 2),
-        region=None,
     )
     x = np.array([[0, 0], [0, 1], [1, 0], [1, 2]])
     exp = np.array([1, 4, 1.5, 16.5])
@@ -36,7 +34,6 @@ def test_predict_vector():
         intercepts=1 + np.arange(3),
         linear_terms=np.arange(6).reshape(3, 2),
         square_terms=(np.arange(3 * 2 * 2) + 1).reshape(3, 2, 2),
-        region=None,
     )
     x = np.array([[0, 0], [0, 1], [1, 0], [1, 2]], dtype=float)
     exp = np.array(
@@ -112,7 +109,8 @@ def scalar_model():
         intercept=0.5,
         linear_terms=np.array([-0.3, 0.3]),
         square_terms=np.array([[0.8, 0.2], [0.2, 0.7]]),
-        region=Region(center=np.array([0.2, 0.3]), radius=0.6),
+        shift=np.array([0.2, 0.3]),
+        scale=0.6,
     )
     return out
 
@@ -129,13 +127,14 @@ def vector_model():
                 [[0.8, 0.2], [0.2, 0.7]],
             ]
         ),
-        region=Region(center=np.array([0.2, 0.3]), radius=0.6),
+        shift=np.array([0.2, 0.3]),
+        scale=0.6,
     )
     return out
 
 
 def test_move_scalar_model(scalar_model):
-    old_region = scalar_model.region
+    old_region = Region(center=scalar_model.shift, radius=scalar_model.scale)
     new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45)
 
     old_model = scalar_model
@@ -148,29 +147,29 @@ def test_move_scalar_model(scalar_model):
     old_prediction = old_model.predict(x_old)
     new_prediction = new_model.predict(x_new)
 
-    assert new_model.region.radius == new_region.radius
-    aaae(new_model.region.center, new_region.center)
+    assert new_model.scale == new_region.radius
+    aaae(new_model.shift, new_region.center)
 
     assert np.allclose(old_prediction, new_prediction)
 
 
 def test_move_vector_model(vector_model):
-    old_region = vector_model.region
+    old_region = Region(center=vector_model.shift, radius=vector_model.scale)
     new_region = Region(center=np.array([-0.1, 0.1]), radius=0.45)
 
     old_model = vector_model
 
     x_unscaled = np.array([[0.5, 0.5]])
-    x_old = (x_unscaled - old_region.center) / old_region.radius
-    x_new = (x_unscaled - new_region.center) / new_region.radius
+    x_old = old_region.map_to_unit(x_unscaled)
+    x_new = new_region.map_to_unit(x_unscaled)
 
     new_model = move_model(old_model, new_region)
 
     old_prediction = old_model.predict(x_old)
     new_prediction = new_model.predict(x_new)
 
-    assert new_model.region.radius == new_region.radius
-    aaae(new_model.region.center, new_region.center)
+    assert new_model.scale == new_region.radius
+    aaae(new_model.shift, new_region.center)
 
     assert np.allclose(old_prediction, new_prediction)
 
@@ -189,19 +188,3 @@ def test_add_vector_models(vector_model):
     assert np.allclose(got.intercepts, vector_model.intercepts * 2)
     aaae(got.linear_terms, vector_model.linear_terms * 2)
     aaae(got.square_terms, vector_model.square_terms * 2)
-
-
-def test_subtract_scalar_model(scalar_model):
-    got = subtract_models(scalar_model, scalar_model)
-
-    assert got.intercept == 0.0
-    aaae(got.linear_terms, np.zeros_like(scalar_model.linear_terms))
-    aaae(got.square_terms, np.zeros_like(scalar_model.square_terms))
-
-
-def test_subtract_vector_model(vector_model):
-    got = subtract_models(vector_model, vector_model)
-
-    assert np.allclose(got.intercepts, np.zeros_like(vector_model.intercepts))
-    aaae(got.linear_terms, np.zeros_like(vector_model.linear_terms))
-    aaae(got.square_terms, np.zeros_like(vector_model.square_terms))

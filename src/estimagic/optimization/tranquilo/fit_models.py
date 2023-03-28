@@ -135,7 +135,13 @@ def _fitter_template(
     else:
         square_terms = None
 
-    results = VectorModel(intercepts, linear_terms, square_terms, region=region)
+    results = VectorModel(
+        intercepts,
+        linear_terms,
+        square_terms,
+        shift=region.effective_center,
+        scale=region.effective_radius,
+    )
 
     if residualize:
         results = add_models(results, old_model_moved)
