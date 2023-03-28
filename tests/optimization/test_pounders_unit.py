@@ -8,7 +8,7 @@ import pytest
 import yaml
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.config import TEST_FIXTURES_DIR
-from estimagic.optimization.history import LeastSquaresHistory
+from estimagic.optimization.pounders_history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
     create_initial_residual_model,

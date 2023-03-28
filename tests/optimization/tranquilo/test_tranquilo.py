@@ -129,9 +129,9 @@ TEST_CASES = {
         "model_fitter": ["ols"],
         "model_type": ["linear"],
     },
-    "pounders_filtering": {
-        "sample_filter": ["drop_pounders"],
-        "model_fitter": ["ols"],
+    "tranquilo": {
+        "sample_filter": ["keep_all", "discard_all"],
+        "model_fitter": ["tranquilo"],
         "model_type": ["linear"],
     },
 }
@@ -207,3 +207,28 @@ def test_tranquilo_ls_with_noise_handling_and_noisy_function():
     )
 
     aaae(res.params, np.zeros(3), decimal=1)
+
+
+# ======================================================================================
+# Bounded case
+# ======================================================================================
+
+
+def sum_of_squares(x):
+    contribs = x**2
+    return {"value": contribs.sum(), "contributions": contribs, "root_contributions": x}
+
+
+@pytest.mark.parametrize("algorithm", ["tranquilo", "tranquilo_ls"])
+def test_tranquilo_with_binding_bounds(algorithm):
+    res = minimize(
+        criterion=sum_of_squares,
+        params=np.array([3, 2, -3]),
+        lower_bounds=np.array([1, -np.inf, -np.inf]),
+        upper_bounds=np.array([np.inf, np.inf, -1]),
+        algorithm=algorithm,
+        collect_history=True,
+        skip_checks=True,
+    )
+    assert res.success in [True, None]
+    aaae(res.params, np.array([1, 0, -1]), decimal=3)

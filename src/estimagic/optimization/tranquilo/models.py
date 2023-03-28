@@ -4,10 +4,8 @@ from typing import Union
 import numpy as np
 from numba import njit
 
-from estimagic.optimization.tranquilo.region import Region
 
-
-@dataclass
+@dataclass(frozen=True)
 class VectorModel:
     intercepts: np.ndarray  # shape (n_residuals,)
     linear_terms: np.ndarray  # shape (n_residuals, n_params)
@@ -15,7 +13,10 @@ class VectorModel:
         np.ndarray, None
     ] = None  # shape (n_residuals, n_params, n_params)
 
-    region: Region = None
+    # scale and shift correspond to effective_radius and effective_center of the region
+    # on which the model was fitted
+    scale: Union[float, np.ndarray] = None
+    shift: np.ndarray = None
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         return _predict_vector(self, x)
@@ -25,13 +26,16 @@ class VectorModel:
         return replace(self, **kwargs)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ScalarModel:
     intercept: float
     linear_terms: np.ndarray  # shape (n_params,)
     square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
-    region: Region = None
+    # scale and shift correspond to effective_radius and effective_center of the region
+    # on which the model was fitted
+    scale: Union[float, np.ndarray] = None
+    shift: np.ndarray = None
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         return _predict_scalar(self, x)
@@ -41,8 +45,8 @@ class ScalarModel:
         return replace(self, **kwargs)
 
 
-def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
-    """Evaluate a VectorModel at centered_x.
+def _predict_vector(model: VectorModel, x_unit: np.ndarray) -> np.ndarray:
+    """Evaluate a VectorModel at x_unit.
 
     We utilize that a quadratic model can be written in the form:
 
@@ -55,20 +59,20 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
     f seperately.
 
     Args:
-        scalar_model (VectorModel): The aggregated model. Has entries:
+        model (VectorModel): The aggregated model. Has entries:
             - 'intercepts': corresponds to 'a' in the above equation
             - 'linear_terms': corresponds to 'g' in the above equation
             - 'square_terms': corresponds to 'H' in the above equation
-        x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
+        x_unit (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
 
     Returns:
         np.ndarray: Model evaluations, has shape (n_samples, n_residuals) if x is 2d
             and (n_residuals,) if x is 1d.
 
     """
-    is_flat_x = centered_x.ndim == 1
+    is_flat_x = x_unit.ndim == 1
 
-    x = np.atleast_2d(centered_x)
+    x = np.atleast_2d(x_unit)
 
     y = model.linear_terms @ x.T + model.intercepts.reshape(-1, 1)
 
@@ -78,7 +82,7 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
     if is_flat_x:
         out = y.flatten()
     else:
-        out = y.T.reshape(len(centered_x), -1)
+        out = y.T.reshape(len(x_unit), -1)
 
     return out
 
@@ -97,11 +101,11 @@ def add_models(model1, model2):
     if type(model1) != type(model2):
         raise TypeError("Models must be of the same type.")
 
-    if not np.allclose(model1.region.center, model2.region.center):
-        raise ValueError("Models must have the same center.")
+    if not np.allclose(model1.shift, model2.shift):
+        raise ValueError("Models must have the same shift.")
 
-    if not np.allclose(model1.region.radius, model2.region.radius):
-        raise ValueError("Models must have the same radius.")
+    if not np.allclose(model1.scale, model2.scale):
+        raise ValueError("Models must have the same scale.")
 
     new = {}
     if isinstance(model1, ScalarModel):
@@ -119,42 +123,6 @@ def add_models(model1, model2):
     return out
 
 
-def subtract_models(model1, model2):
-    """Subtract two models.
-
-    Args:
-        model1 (Union[ScalarModel, VectorModel]): The first model.
-        model2 (Union[ScalarModel, VectorModel]): The second model.
-
-    Returns:
-        Union[ScalarModel, VectorModel]: The difference of the two models.
-
-    """
-    if type(model1) != type(model2):
-        raise TypeError("Models must be of the same type.")
-
-    if not np.allclose(model1.region.center, model2.region.center):
-        raise ValueError("Models must have the same center.")
-
-    if not np.allclose(model1.region.radius, model2.region.radius):
-        raise ValueError("Models must have the same radius.")
-
-    new = {}
-    if isinstance(model1, ScalarModel):
-        new["intercept"] = model1.intercept - model2.intercept
-    else:
-        new["intercepts"] = model1.intercepts - model2.intercepts
-
-    new["linear_terms"] = model1.linear_terms - model2.linear_terms
-
-    if model1.square_terms is not None:
-        assert model2.square_terms is not None
-        new["square_terms"] = model1.square_terms - model2.square_terms
-
-    out = replace(model1, **new)
-    return out
-
-
 def move_model(model, new_region):
     """Move a model to a new region.
 
@@ -166,86 +134,78 @@ def move_model(model, new_region):
         Union[ScalarModel, VectorModel]: The moved model.
 
     """
-    old_region = model.region
-    out = _scale_model(model, old_radius=old_region.radius, new_radius=1.0)
+
+    # undo old scaling
+    out = _scale_model(model, factor=1 / model.scale)
+
+    # shift the center
+    shift = new_region.effective_center - model.shift
     if isinstance(model, ScalarModel):
-        out = _shift_scalar_model(
-            out, old_center=old_region.center, new_center=new_region.center
-        )
+        out = _shift_scalar_model(out, shift=shift)
     else:
-        out = _shift_vector_model(
-            out, old_center=old_region.center, new_center=new_region.center
-        )
-    out = _scale_model(out, old_radius=1.0, new_radius=new_region.radius)
+        out = _shift_vector_model(out, shift=shift)
+
+    # apply new scaling
+    new_scale = new_region.effective_radius
+    out = _scale_model(out, factor=new_scale)
     return out
 
 
-def _scale_model(model, old_radius, new_radius):
+def _scale_model(model, factor):
     """Scale a scalar or vector model to a new radius.
 
     Args:
         model (Union[ScalarModel, VectorModel]): The model to scale.
-        old_radius (float): The old radius.
-        new_radius (float): The new radius.
+        factor (Union[float, np.ndarray]): The scaling factor.
 
     Returns:
         Union[ScalarModel, VectorModel]: The scaled model.
 
     """
-    factor = new_radius / old_radius
-
     new_g = model.linear_terms * factor
     new_h = None if model.square_terms is None else model.square_terms * factor**2
 
     out = model._replace(
         linear_terms=new_g,
         square_terms=new_h,
-        region=model.region._replace(radius=new_radius),
+        scale=model.scale * factor,
     )
     return out
 
 
-def _shift_scalar_model(model, old_center, new_center):
+def _shift_scalar_model(model, shift):
     """Shift a scalar model to a new center.
 
     Args:
         model (ScalarModel): The model to shift.
-        old_center (np.ndarray): The old center.
-        new_center (np.ndarray): The new center.
+        shift (np.ndarray): The shift.
 
     Returns:
         ScalarModel: The shifted model.
 
     """
-    shift = new_center - old_center
-
     new_c = model.predict(shift)
-
-    new_g = model.linear_terms + shift @ model.square_terms
+    new_g = model.linear_terms + model.square_terms @ shift
 
     out = model._replace(
         intercept=new_c,
         linear_terms=new_g,
-        region=model.region._replace(center=new_center),
+        shift=model.shift + shift,
     )
-
     return out
 
 
-def _shift_vector_model(model, old_center, new_center):
+def _shift_vector_model(model, shift):
     """Shift a vector model to a new center.
 
     Args:
         model (VectorModel): The model to shift.
-        old_center (np.ndarray): The old center.
-        new_center (np.ndarray): The new center.
+        shift (np.ndarray): The shift.
 
     Returns:
         VectorModel: The shifted model.
 
     """
-    shift = new_center - old_center
-
     new_c = model.predict(shift)
 
     new_g = model.linear_terms
@@ -256,14 +216,13 @@ def _shift_vector_model(model, old_center, new_center):
     out = model._replace(
         intercepts=new_c,
         linear_terms=new_g,
-        region=model.region._replace(center=new_center),
+        shift=model.shift + shift,
     )
-
     return out
 
 
-def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
-    """Evaluate a ScalarModel at centered_x.
+def _predict_scalar(model: ScalarModel, x_unit: np.ndarray) -> np.ndarray:
+    """Evaluate a ScalarModel at x_unit.
 
     We utilize that a quadratic model can be written in the form:
 
@@ -274,11 +233,11 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
     thought of as the gradient and Hessian.
 
     Args:
-        scalar_model (ScalarModel): The aggregated model. Has entries:
+        model (ScalarModel): The aggregated model. Has entries:
             - 'intercept': corresponds to 'a' in the above equation
             - 'linear_terms': corresponds to 'g' in the above equation
             - 'square_terms': corresponds to 'H' in the above equation
-        centered_x (np.ndarray): New data. Has shape (n_params,) or (n_samples,
+        x_unit (np.ndarray): New data. Has shape (n_params,) or (n_samples,
             n_params).
 
     Returns:
@@ -286,9 +245,9 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
             is 2d and a float otherwise.
 
     """
-    is_flat_x = centered_x.ndim == 1
+    is_flat_x = x_unit.ndim == 1
 
-    x = np.atleast_2d(centered_x)
+    x = np.atleast_2d(x_unit)
 
     y = x @ model.linear_terms + model.intercept
 

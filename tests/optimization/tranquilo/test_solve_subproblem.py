@@ -1,8 +1,7 @@
-from collections import namedtuple
-
 import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.models import ScalarModel
+from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -33,7 +32,7 @@ def test_without_bounds(solver_name):
         intercept=0, linear_terms=linear_terms, square_terms=quadratic_terms
     )
 
-    trustregion = namedtuple("Trustregion", ["center", "radius"])(
+    trustregion = Region(
         center=np.zeros(3),
         radius=1,
     )

@@ -6,7 +6,7 @@ import numpy as np
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.config import DEFAULT_N_CORES
 from estimagic.decorators import mark_minimizer
-from estimagic.optimization.history import LeastSquaresHistory
+from estimagic.optimization.pounders_history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
     add_accepted_point_to_residual_model,
     add_geomtery_points_to_make_main_model_fully_linear,

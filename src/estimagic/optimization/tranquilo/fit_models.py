@@ -16,16 +16,23 @@ from estimagic.optimization.tranquilo.models import (
 
 
 def get_fitter(
-    fitter, fitter_options=None, model_type=None, infinity_handling="relative"
+    fitter,
+    fitter_options=None,
+    model_type=None,
+    residualize=None,
+    infinity_handling=None,
 ):
     """Get a fit-function with partialled options.
 
     Args:
-        fitter (str or callable): Name of a fit method or a fit method. The first
-            argument of any fit method needs to be ``x``, second ``y`` and third
-            ``model_type``.
+        fitter (str or callable): Name of a fit method or a fit method. Arguments need
+            to be, in order,
+            - x (np.ndarray): Data points.
+            - y (np.ndarray): Corresponding function evaluations at data points.
+            - weighs (np.ndarray): Weights for the data points.
+            - model_type (str): Type of model to be fitted.
 
-        user_options (dict): Options for the fit method. The following are supported:
+        fitter_options (dict): Options for the fit method. The following are supported:
             - l2_penalty_linear (float): Penalty that is applied to all linear terms.
             - l2_penalty_square (float): Penalty that is applied to all square terms,
             that is the quadratic and interaction terms.
@@ -34,12 +41,16 @@ def get_fitter(
             - "linear": Only linear effects and intercept.
             - "quadratic": Fully quadratic model.
 
+        residualize (bool): If True, the model is fitted to the residuals of the old
+            model. This introduces momentum when the coefficients are penalized.
+
+        infinity_handling (str): How to handle infinite values in the data. Currently
+            supported: {"relative"}. See `handle_infinty.py`.
+
     Returns:
         callable: The partialled fit method that only depends on x and y.
 
     """
-    fitter_options = {} if fitter_options is None else fitter_options
-
     built_in_fitters = {
         "ols": fit_ols,
         "ridge": fit_ridge,
@@ -47,15 +58,13 @@ def get_fitter(
         "tranquilo": fit_tranquilo,
     }
 
-    default_options = FitterOptions(model_type=model_type)
-
     mandatory_arguments = ["x", "y", "model_type"]
 
     _raw_fitter = get_component(
         name_or_func=fitter,
         component_name="fitter",
         func_dict=built_in_fitters,
-        default_options=default_options,
+        default_options=FitterOptions(),
         user_options=fitter_options,
         mandatory_signature=mandatory_arguments,
     )
@@ -67,7 +76,7 @@ def get_fitter(
         fitter=_raw_fitter,
         model_type=model_type,
         clip_infinite_values=clip_infinite_values,
-        residualize=fitter_options.get("residualize", False),
+        residualize=residualize,
     )
 
     return fitter
@@ -106,15 +115,13 @@ def _fitter_template(
     n_residuals = y.shape[1]
 
     y_clipped = clip_infinite_values(y)
-    x_centered = (x - region.center) / region.radius
+    x_unit = region.map_to_unit(x)
 
     if residualize:
         old_model_moved = move_model(old_model, region)
-        y_clipped = y_clipped - old_model_moved.predict(x_centered).reshape(
-            y_clipped.shape
-        )
+        y_clipped = y_clipped - old_model_moved.predict(x_unit).reshape(y_clipped.shape)
 
-    coef = fitter(x=x_centered, y=y_clipped, weights=weights)
+    coef = fitter(x=x_unit, y=y_clipped, weights=weights, model_type=model_type)
 
     # results processing
     intercepts, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=1)
@@ -128,7 +135,13 @@ def _fitter_template(
     else:
         square_terms = None
 
-    results = VectorModel(intercepts, linear_terms, square_terms, region=region)
+    results = VectorModel(
+        intercepts,
+        linear_terms,
+        square_terms,
+        shift=region.effective_center,
+        scale=region.effective_radius,
+    )
 
     if residualize:
         results = add_models(results, old_model_moved)

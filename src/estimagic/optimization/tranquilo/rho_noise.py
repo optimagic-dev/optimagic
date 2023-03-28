@@ -46,9 +46,9 @@ def simulate_rho_noise(
     n_samples, n_params = xs.shape
     n_residuals = len(noise_cov)
 
-    centered_xs = (xs - trustregion.center) / trustregion.radius
+    x_unit = trustregion.map_to_unit(xs)
 
-    true_fvecs = vector_model.predict(centered_xs)
+    true_fvecs = vector_model.predict(x_unit)
 
     true_scalar_model = model_aggregator(vector_model=vector_model)
 
@@ -74,7 +74,7 @@ def simulate_rho_noise(
         sim_scalar_model = model_aggregator(vector_model=sim_vector_model)
         sim_sub_sol = subsolver(sim_scalar_model, trustregion)
 
-        sim_candidate_fval = true_scalar_model.predict(sim_sub_sol.centered_x)
+        sim_candidate_fval = true_scalar_model.predict(sim_sub_sol.x_unit)
         sim_actual_improvement = -(sim_candidate_fval - true_current_fval)
 
         sim_rho = calculate_rho(

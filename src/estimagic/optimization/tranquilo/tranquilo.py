@@ -58,7 +58,8 @@ def _internal_tranquilo(
         intercepts=_init_fvec,
         linear_terms=np.zeros((len(_init_fvec), len(x))),
         square_terms=np.zeros((len(_init_fvec), len(x), len(x))),
-        region=trustregion,
+        shift=trustregion.center,
+        scale=trustregion.radius,
     )
 
     _init_model = aggregate_model(_init_vector_model)

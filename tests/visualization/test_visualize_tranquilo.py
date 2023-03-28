@@ -7,13 +7,13 @@ algo_options = {
     "random_hull": {
         "sampler": "random_hull",
         "subsolver": "gqtpar_fast",
-        "sample_filter": "drop_pounders",
+        "sample_filter": "keep_all",
         "stopping.max_iterations": 10,
     },
     "optimal_hull": {
         "sampler": "optimal_hull",
         "subsolver": "gqtpar_fast",
-        "sample_filter": "drop_pounders",
+        "sample_filter": "keep_all",
         "stopping.max_iterations": 10,
     },
 }

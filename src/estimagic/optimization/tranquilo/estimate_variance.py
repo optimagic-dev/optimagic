@@ -4,7 +4,7 @@
 import numpy as np
 
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.new_history import History
+from estimagic.optimization.tranquilo.history import History
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.options import VarianceEstimatorOptions
 

@@ -14,6 +14,7 @@ from estimagic.optimization.tranquilo.process_arguments import (
     _process_search_radius_factor,
     _process_acceptance_decider,
     _process_model_fitter,
+    _process_residualize,
     _process_n_evals_at_start,
 )
 
@@ -108,16 +109,21 @@ def test_process_model_fitter():
     )
     assert (
         _process_model_fitter(
-            model_fitter=None, model_type="linear", sample_size=2, x=np.arange(3)
-        )
-        == "ridge"
-    )
-    assert (
-        _process_model_fitter(
             model_fitter="xyz", model_type=None, sample_size=None, x=None
         )
         == "xyz"
     )
+
+
+def test_process_residualize():
+    assert _process_residualize(residualize=None, model_fitter="tranquilo") is True
+    assert _process_residualize(residualize=None, model_fitter="ols") is False
+    assert _process_residualize(residualize=False, model_fitter="custom") is False
+
+
+def test_process_residualize_invalid():
+    with pytest.raises(ValueError, match="residualize must be a boolean."):
+        _process_residualize(residualize="invalid", model_fitter=None)
 
 
 def test_process_n_evals_at_start():
