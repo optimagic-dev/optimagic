@@ -41,8 +41,8 @@ class ScalarModel:
         return replace(self, **kwargs)
 
 
-def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
-    """Evaluate a VectorModel at centered_x.
+def _predict_vector(model: VectorModel, x_unit: np.ndarray) -> np.ndarray:
+    """Evaluate a VectorModel at x_unit.
 
     We utilize that a quadratic model can be written in the form:
 
@@ -55,20 +55,20 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
     f seperately.
 
     Args:
-        scalar_model (VectorModel): The aggregated model. Has entries:
+        model (VectorModel): The aggregated model. Has entries:
             - 'intercepts': corresponds to 'a' in the above equation
             - 'linear_terms': corresponds to 'g' in the above equation
             - 'square_terms': corresponds to 'H' in the above equation
-        x (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
+        x_unit (np.ndarray): New data. Has shape (n_params,) or (n_samples, n_params).
 
     Returns:
         np.ndarray: Model evaluations, has shape (n_samples, n_residuals) if x is 2d
             and (n_residuals,) if x is 1d.
 
     """
-    is_flat_x = centered_x.ndim == 1
+    is_flat_x = x_unit.ndim == 1
 
-    x = np.atleast_2d(centered_x)
+    x = np.atleast_2d(x_unit)
 
     y = model.linear_terms @ x.T + model.intercepts.reshape(-1, 1)
 
@@ -78,7 +78,7 @@ def _predict_vector(model: VectorModel, centered_x: np.ndarray) -> np.ndarray:
     if is_flat_x:
         out = y.flatten()
     else:
-        out = y.T.reshape(len(centered_x), -1)
+        out = y.T.reshape(len(x_unit), -1)
 
     return out
 
@@ -282,8 +282,8 @@ def _shift_vector_model(model, old_center, new_center, new_effective_center):
     return out
 
 
-def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
-    """Evaluate a ScalarModel at centered_x.
+def _predict_scalar(model: ScalarModel, x_unit: np.ndarray) -> np.ndarray:
+    """Evaluate a ScalarModel at x_unit.
 
     We utilize that a quadratic model can be written in the form:
 
@@ -294,11 +294,11 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
     thought of as the gradient and Hessian.
 
     Args:
-        scalar_model (ScalarModel): The aggregated model. Has entries:
+        model (ScalarModel): The aggregated model. Has entries:
             - 'intercept': corresponds to 'a' in the above equation
             - 'linear_terms': corresponds to 'g' in the above equation
             - 'square_terms': corresponds to 'H' in the above equation
-        centered_x (np.ndarray): New data. Has shape (n_params,) or (n_samples,
+        x_unit (np.ndarray): New data. Has shape (n_params,) or (n_samples,
             n_params).
 
     Returns:
@@ -306,9 +306,9 @@ def _predict_scalar(model: ScalarModel, centered_x: np.ndarray) -> np.ndarray:
             is 2d and a float otherwise.
 
     """
-    is_flat_x = centered_x.ndim == 1
+    is_flat_x = x_unit.ndim == 1
 
-    x = np.atleast_2d(centered_x)
+    x = np.atleast_2d(x_unit)
 
     y = x @ model.linear_terms + model.intercept
 

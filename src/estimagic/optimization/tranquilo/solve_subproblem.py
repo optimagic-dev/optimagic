@@ -196,7 +196,7 @@ def _solve_subproblem_template(
         expected_improvement=expected_improvement,
         n_iterations=raw_result["n_iterations"],
         success=raw_result["success"],
-        centered_x=raw_result["x"],
+        x_unit=raw_result["x"],
         shape=trustregion.shape,
     )
 
@@ -231,5 +231,5 @@ class SubproblemResult(NamedTuple):
     expected_improvement: float
     n_iterations: int
     success: bool
-    centered_x: np.ndarray
+    x_unit: np.ndarray
     shape: str

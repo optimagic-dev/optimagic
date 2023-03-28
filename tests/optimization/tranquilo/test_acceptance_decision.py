@@ -24,7 +24,7 @@ def subproblem_solution():
         expected_improvement=1.0,
         n_iterations=1,
         success=True,
-        centered_x=None,
+        x_unit=None,
         shape=None,
     )
     return res
