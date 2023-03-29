@@ -259,7 +259,7 @@ def render_latex(
         significance_levels (list or tuple): a list of floats for p value's significance
             cutt-off values. Default is [0.1,0.05,0.01].
         custom_notes (list): A list of strings for additional notes. Default is None.
-        siunitx_watning (bool): If True, print warning about LaTex preamble to add for
+        siunitx_warning (bool): If True, print warning about LaTex preamble to add for
             proper compilation of  when working with siunitx package. Default True.
         show_index_names (bool): If True, display index names in the table.
         show_col_names (bool): If True, the column names are displayed.
