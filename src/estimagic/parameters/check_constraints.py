@@ -93,7 +93,7 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
 
         report = "\n".join(report)
         if report != "":
-            raise InvalidParamsError(f"Invalid model specification:\n{report}")
+            raise InvalidParamsError(f"Violated constraint at start params:\n{report}")
 
 
 def _get_message(constraint, param_names, explanation=""):
