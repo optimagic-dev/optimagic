@@ -543,7 +543,7 @@ def _get_estimation_table_body_and_footer(
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or callable that is used to apply string formatter(s) to floats in the
             table.
-        add_trailing_zeros (bool): If True, format floats such that they haave same
+        add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point.
 
     Returns:
@@ -597,7 +597,6 @@ def _build_estimation_table_body(
     number_format,
     add_trailing_zeros,
 ):
-
     """Create body bloc significance stars and inference values.
 
     Applies number formatting to parameters. Concatinates inference values
