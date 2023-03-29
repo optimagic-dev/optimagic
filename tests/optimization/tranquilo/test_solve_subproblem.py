@@ -37,7 +37,7 @@ def test_without_bounds(solver_name):
         radius=1,
     )
 
-    solve_subproblem = get_subsolver(solver_name)
+    solve_subproblem = get_subsolver(sphere_solver=solver_name, cube_solver="bntr")
 
     calculated = solve_subproblem(
         model=model,

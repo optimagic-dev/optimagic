@@ -57,7 +57,7 @@ def test_convergence_to_one_if_noise_is_tiny(functype):
         xs, fvecs, weights=None, region=trustregion, old_model=None
     )
 
-    subsolver = get_subsolver(solver="gqtpar")
+    subsolver = get_subsolver(sphere_solver="gqtpar", cube_solver="bntr")
 
     rng = np.random.default_rng(123)
 

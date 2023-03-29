@@ -25,7 +25,6 @@ from estimagic.optimization.tranquilo.options import (
     get_default_radius_options,
     get_default_sample_size,
     get_default_search_radius_factor,
-    get_default_subsolver,
     update_option_bundle,
 )
 from estimagic.optimization.tranquilo.region import Region
@@ -156,13 +155,9 @@ def process_arguments(
     sample_points = get_sampler(sampler, sampler_options)
 
     solve_subproblem = get_subsolver(
-        solver=get_default_subsolver(
-            bounds=_bounds,
-            cube_subsolver=cube_subsolver,
-            sphere_subsolver=sphere_subsolver,
-        ),
+        cube_solver=cube_subsolver,
+        sphere_solver=sphere_subsolver,
         user_options=subsolver_options,
-        bounds=_bounds,
     )
 
     filter_points = get_sample_filter(
