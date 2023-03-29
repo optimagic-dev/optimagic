@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.models import ScalarModel
-from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
+from estimagic.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal as aaae
 
 solvers = ["gqtpar", "gqtpar_fast"]

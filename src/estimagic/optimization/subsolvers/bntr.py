@@ -26,6 +26,7 @@ def bntr(
     model,
     lower_bounds,
     upper_bounds,
+    x_candidate,
     *,
     conjugate_gradient_method,
     maxiter,
@@ -61,6 +62,7 @@ def bntr(
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
+        x_candidate (np.ndarray): Initial guess for the solution of the subproblem.
         conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient methods are:
                 - "cg"
@@ -104,8 +106,6 @@ def bntr(
         "max_radius": 1e10,
         "default_radius": 100.00,
     }
-
-    x_candidate = np.zeros_like(model.linear_terms)
 
     (
         x_candidate,

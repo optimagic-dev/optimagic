@@ -290,10 +290,11 @@ def solve_subproblem(
             "gtol_abs_conjugate_gradient": gtol_abs_conjugate_gradient,
             "gtol_rel_conjugate_gradient": gtol_rel_conjugate_gradient,
         }
-        result = bntr(main_model, lower_bounds, upper_bounds, **options)
+        result = bntr(main_model, lower_bounds, upper_bounds, x_candidate=x0, **options)
     elif solver == "gqtpar":
         result = gqtpar(
             main_model,
+            x_candidate=x0,
             k_easy=k_easy,
             k_hard=k_hard,
             maxiter=maxiter,

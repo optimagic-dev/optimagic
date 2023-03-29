@@ -174,7 +174,9 @@ def _solve_subproblem_template(
 
     _bounds = _get_centered_and_scaled_bounds(bounds, trustregion)
 
-    raw_result = solver(model, **_bounds, **options)
+    _center = np.zeros_like(trustregion.center)
+
+    raw_result = solver(model, **_bounds, **options, x_candidate=_center)
 
     x = trustregion.map_from_unit(raw_result["x"])
 

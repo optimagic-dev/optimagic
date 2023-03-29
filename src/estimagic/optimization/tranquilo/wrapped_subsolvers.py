@@ -6,10 +6,10 @@ from scipy.optimize import Bounds, NonlinearConstraint, minimize
 from estimagic.optimization.tiktak import draw_exploration_sample
 
 
-def solve_multistart(model, lower_bounds, upper_bounds):
+def solve_multistart(model, x_candidate, lower_bounds, upper_bounds):
     np.random.seed(12345)
     start_values = draw_exploration_sample(
-        x=np.zeros(len(lower_bounds)),
+        x=x_candidate,
         lower=lower_bounds,
         upper=upper_bounds,
         n_samples=100,
@@ -45,16 +45,15 @@ def solve_multistart(model, lower_bounds, upper_bounds):
     }
 
 
-def slsqp_sphere(model, x0=None, lower_bounds=None, upper_bounds=None):  # noqa: ARG001
+def slsqp_sphere(
+    model, x_candidate, lower_bounds=None, upper_bounds=None
+):  # noqa: ARG001
     crit, grad = get_crit_and_grad(model)
     constraints = get_constraints()
 
-    if x0 is None:
-        x0 = np.zeros(len(model.linear_terms))
-
     res = minimize(
         crit,
-        x0,
+        x_candidate,
         method="slsqp",
         jac=grad,
         constraints=constraints,
