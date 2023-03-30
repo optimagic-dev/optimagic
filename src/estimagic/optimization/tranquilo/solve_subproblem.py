@@ -156,13 +156,8 @@ def _solve_subproblem_template(
         upper_bounds=np.ones_like(old_x_unit),
     )
 
-    x = trustregion.map_from_unit(raw_result["x"])
-
-    if trustregion.bounds.has_any:
-        if trustregion.bounds.lower is not None:
-            x = np.clip(x, trustregion.bounds.lower, np.inf)
-        if trustregion.bounds.upper is not None:
-            x = np.clip(x, -np.inf, trustregion.bounds.upper)
+    if trustregion.shape == "cube":
+        raw_result["x"] = np.clip(raw_result["x"], -1.0, 1.0)
 
     # make sure expected improvement is calculated accurately in case of clipping and
     # does not depend on whether the subsolver ignores intercepts or not.
@@ -174,16 +169,20 @@ def _solve_subproblem_template(
     # in case of negative expected improvement, we return the old point
     if expected_improvement >= 0:
         success = raw_result["success"]
+        x_unit = raw_result["x"]
+        x = trustregion.map_from_unit(raw_result["x"])
     else:
         success = False
-        x = old_x_unit
+        x_unit = old_x_unit
+        x = trustregion.center
+        expected_improvement = 0.0
 
     result = SubproblemResult(
         x=x,
         expected_improvement=expected_improvement,
         n_iterations=raw_result["n_iterations"],
         success=success,
-        x_unit=raw_result["x"],
+        x_unit=x_unit,
         shape=trustregion.shape,
     )
 
