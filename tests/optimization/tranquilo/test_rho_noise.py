@@ -3,6 +3,7 @@ import pytest
 from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
 from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.region import Region
+from estimagic.optimization.tranquilo.bounds import Bounds
 from estimagic.optimization.tranquilo.rho_noise import simulate_rho_noise
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from numpy.testing import assert_array_almost_equal as aaae
@@ -45,7 +46,7 @@ def test_convergence_to_one_if_noise_is_tiny(functype):
 
     noise_cov = np.eye(n_residuals) * 1e-12
 
-    trustregion = Region(center=np.ones(2) * 0.5, radius=1.0)
+    trustregion = Region(center=np.ones(2) * 0.5, radius=1.0, bounds=Bounds(None, None))
     model_fitter = get_fitter(
         fitter="ols",
         model_type=model_type,

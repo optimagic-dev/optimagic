@@ -3,6 +3,7 @@ import pytest
 from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from estimagic.optimization.tranquilo.region import Region
+from estimagic.optimization.tranquilo.bounds import Bounds
 from numpy.testing import assert_array_almost_equal as aaae
 
 solvers = ["gqtpar", "gqtpar_fast"]
@@ -32,10 +33,7 @@ def test_without_bounds(solver_name):
         intercept=0, linear_terms=linear_terms, square_terms=quadratic_terms
     )
 
-    trustregion = Region(
-        center=np.zeros(3),
-        radius=1,
-    )
+    trustregion = Region(center=np.zeros(3), radius=1, bounds=Bounds(None, None))
 
     solve_subproblem = get_subsolver(sphere_solver=solver_name, cube_solver="bntr")
 

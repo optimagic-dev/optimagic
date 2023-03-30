@@ -27,18 +27,15 @@ def get_subsolver(sphere_solver, cube_solver, user_options=None):
     Args:
         sphere_solver (str or callable): Name of a subproblem solver or a subproblem
             solver, designed to solve the problem in the unit sphere. The first argument
-            of any subsolver needs to be ``model``. If the solver supports bounds, the
-            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
-            argument needs to be ``x_candidate``, an initial guess for the solution in
-            the unit space. Moreover, subsolvers can have any number of additional
-            keyword arguments.
+            of any subsolver needs to be ``model``. The second argument needs to be
+            ``x_candidate``, an initial guess for the solution in the unit space.
+            Moreover, subsolvers can have any number of additional keyword arguments.
         cube_solver (str or callable): Name of a subproblem solver or a subproblem
             solver, designed to solve the problem in the unit box. The first argument
-            of any subsolver needs to be ``model``. If the solver supports bounds, the
-            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
-            argument needs to be ``x_candidate``, an initial guess for the solution in
-            the unit space. Moreover, subsolvers can have any number of additional
-            keyword arguments.
+            of any subsolver needs to be ``model``. The second and third arguments have
+            to be ``lower_bounds`` and ``upper_bounds``. The fourth argument needs to be
+            ``x_candidate``, an initial guess for the solution in the unit space.
+            Moreover, subsolvers can have any number of additional keyword arguments.
         user_options (dict):
             Options for the subproblem solver. The following are supported:
             - maxiter (int): Maximum number of iterations to perform when solving the
@@ -73,7 +70,6 @@ def get_subsolver(sphere_solver, cube_solver, user_options=None):
     built_in_sphere_solvers = {
         "gqtpar": gqtpar,
         "gqtpar_fast": gqtpar_fast,
-        "multistart": solve_multistart,
         "slsqp_sphere": slsqp_sphere,
     }
 
@@ -121,20 +117,17 @@ def _solve_subproblem_template(
     Args:
         model (ScalarModel): The fitted model of which we want to find the minimum.
         trustregion (Region): The trustregion on which the model was fitted.
-        sphere_solver (str or callable): Name of a subproblem solver or a subproblem
-            solver, designed to solve the problem in the unit sphere. The first argument
-            of any subsolver needs to be ``model``. If the solver supports bounds, the
-            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
-            argument needs to be ``x_candidate``, an initial guess for the solution in
-            the unit space. Moreover, subsolvers can have any number of additional
-            keyword arguments.
-        cube_solver (str or callable): Name of a subproblem solver or a subproblem
-            solver, designed to solve the problem in the unit box. The first argument
-            of any subsolver needs to be ``model``. If the solver supports bounds, the
-            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
-            argument needs to be ``x_candidate``, an initial guess for the solution in
-            the unit space. Moreover, subsolvers can have any number of additional
-            keyword arguments.
+        sphere_solver (callable): Spherical subproblem solver, designed to solve the
+            problem in the unit sphere. The first argument of any subsolver needs to be
+            ``model``. The second argument needs to be ``x_candidate``, an initial guess
+            for the solution in the unit space. Moreover, subsolvers can have any number
+            of additional keyword arguments.
+        cube_solver (callable): Cubical subproblem solver, designed to solve the problem
+            in the unit box. The first argument of any subsolver needs to be ``model``.
+            The second and third arguments have to be ``lower_bounds`` and
+            ``upper_bounds``. The fourth argument needs to be ``x_candidate``, an
+            initial guess for the solution in the unit space. Moreover, subsolvers can
+            have any number of additional keyword arguments.
 
 
     Returns:
@@ -153,18 +146,23 @@ def _solve_subproblem_template(
     old_x_unit = trustregion.map_to_unit(trustregion.center)
 
     solver = sphere_solver if trustregion.shape == "sphere" else cube_solver
-    kwargs = {"model": model, "x_candidate": old_x_unit}
-    if trustregion.shape == "cube" or solver.__name__ == "multistart":
-        kwargs["lower_bounds"] = -np.ones_like(old_x_unit)
-        kwargs["upper_bounds"] = np.ones_like(old_x_unit)
 
-    raw_result = solver(**kwargs)
+    raw_result = solver(
+        model=model,
+        x_candidate=old_x_unit,
+        # bounds can be passed to both solvers because the functions returned by
+        # `get_component` ignore redundant arguments.
+        lower_bounds=-np.ones_like(old_x_unit),
+        upper_bounds=np.ones_like(old_x_unit),
+    )
 
     x = trustregion.map_from_unit(raw_result["x"])
 
-    if trustregion.bounds is not None and trustregion.bounds.has_any:
-        x = np.clip(x, trustregion.bounds.lower, np.inf)
-        x = np.clip(x, -np.inf, trustregion.bounds.upper)
+    if trustregion.bounds.has_any:
+        if trustregion.bounds.lower is not None:
+            x = np.clip(x, trustregion.bounds.lower, np.inf)
+        if trustregion.bounds.upper is not None:
+            x = np.clip(x, -np.inf, trustregion.bounds.upper)
 
     # make sure expected improvement is calculated accurately in case of clipping and
     # does not depend on whether the subsolver ignores intercepts or not.
@@ -173,11 +171,18 @@ def _solve_subproblem_template(
 
     expected_improvement = -(fval_candidate - fval_old)
 
+    # in case of negative expected improvement, we return the old point
+    if expected_improvement >= 0:
+        success = raw_result["success"]
+    else:
+        success = False
+        x = old_x_unit
+
     result = SubproblemResult(
         x=x,
         expected_improvement=expected_improvement,
         n_iterations=raw_result["n_iterations"],
-        success=raw_result["success"],
+        success=success,
         x_unit=raw_result["x"],
         shape=trustregion.shape,
     )
