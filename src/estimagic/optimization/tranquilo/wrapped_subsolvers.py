@@ -45,9 +45,7 @@ def solve_multistart(model, x_candidate, lower_bounds, upper_bounds):
     }
 
 
-def slsqp_sphere(
-    model, x_candidate, lower_bounds=None, upper_bounds=None
-):  # noqa: ARG001
+def slsqp_sphere(model, x_candidate):
     crit, grad = get_crit_and_grad(model)
     constraints = get_constraints()
 

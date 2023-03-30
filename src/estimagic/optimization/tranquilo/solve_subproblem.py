@@ -25,15 +25,19 @@ def get_subsolver(sphere_solver, cube_solver, user_options=None):
     """Get an algorithm-function with partialled options.
 
     Args:
-        sphere_solver (str or callable): Name of a subproblem solver or subproblem
-            solver. The first argument of any subsolver needs to be ``model``. If the
-            solver supports bounds, the next arguments have to be ``lower_bounds`` and
-            ``upper_bounds``. Moreover, subsolvers can have any number of additional
+        sphere_solver (str or callable): Name of a subproblem solver or a subproblem
+            solver, designed to solve the problem in the unit sphere. The first argument
+            of any subsolver needs to be ``model``. If the solver supports bounds, the
+            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
+            argument needs to be ``x_candidate``, an initial guess for the solution in
+            the unit space. Moreover, subsolvers can have any number of additional
             keyword arguments.
-        cube_solver (str or callable): Name of a subproblem solver or subproblem solver.
-            The first argument of any subsolver needs to be ``model``. If the solver
-            supports bounds, the next arguments have to be ``lower_bounds`` and
-            ``upper_bounds``. Moreover, subsolvers can have any number of additional
+        cube_solver (str or callable): Name of a subproblem solver or a subproblem
+            solver, designed to solve the problem in the unit box. The first argument
+            of any subsolver needs to be ``model``. If the solver supports bounds, the
+            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
+            argument needs to be ``x_candidate``, an initial guess for the solution in
+            the unit space. Moreover, subsolvers can have any number of additional
             keyword arguments.
         user_options (dict):
             Options for the subproblem solver. The following are supported:
@@ -115,40 +119,46 @@ def _solve_subproblem_template(
     """Solve the quadratic subproblem.
 
     Args:
-        model (NamedTuple): NamedTuple containing the parameters of the fitted surrogate
-            model, i.e. ``linear_terms`` and ``square_terms``. The model is assumed to
-            be defined in terms of centered and scaled parameter vectors.
-        trustregion (NamedTuple): Contains ``center`` (np.ndarray) and ``radius``
-            (float). Used to center bounds.
-        solver (callable): Trust-region subsolver to use. All options must already be
-            partialled in such that the subsolver only depends on ``model``,
-            ``lower_bounds`` and ``upper_bounds``
-        bounds (dict): Dict containing the entries "lower_bounds" and "upper_bounds"
-            Bounds are assumed to be in terms of the original parameter space, i.e. not
-            centered yet.
+        model (ScalarModel): The fitted model of which we want to find the minimum.
+        trustregion (Region): The trustregion on which the model was fitted.
+        sphere_solver (str or callable): Name of a subproblem solver or a subproblem
+            solver, designed to solve the problem in the unit sphere. The first argument
+            of any subsolver needs to be ``model``. If the solver supports bounds, the
+            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
+            argument needs to be ``x_candidate``, an initial guess for the solution in
+            the unit space. Moreover, subsolvers can have any number of additional
+            keyword arguments.
+        cube_solver (str or callable): Name of a subproblem solver or a subproblem
+            solver, designed to solve the problem in the unit box. The first argument
+            of any subsolver needs to be ``model``. If the solver supports bounds, the
+            next arguments have to be ``lower_bounds`` and ``upper_bounds``. The last
+            argument needs to be ``x_candidate``, an initial guess for the solution in
+            the unit space. Moreover, subsolvers can have any number of additional
+            keyword arguments.
 
 
     Returns:
-        (dict): Result dictionary containing the following entries:
+        SubproblemResult: Namedtuple with the following entries:
             - "x" (np.ndarray): The optimal x in terms of the original parameter space.
             - "expected_improvement" (float): The expected improvement at the solution.
               The sign has already been flipped, i.e. large means more improvement.
             - "n_iterations" (int): Number of iterations performed before termination.
             - "success" (bool): Boolean indicating whether a solution has been found
               before reaching maxiter.
+            - "x_unit" (np.ndarray): The optimal x in terms of the unit space.
+            - "shape" (str): Whether the trustregion was a sphere or a cube, which in
+              turn determines whether the sphere or cube solver was used.
 
     """
     old_x_unit = trustregion.map_to_unit(trustregion.center)
 
-    if trustregion.shape == "sphere":
-        raw_result = sphere_solver(model, x_candidate=old_x_unit)
-    else:
-        raw_result = cube_solver(
-            model=model,
-            x_candidate=old_x_unit,
-            lower_bounds=-np.ones_like(old_x_unit),
-            upper_bounds=np.ones_like(old_x_unit),
-        )
+    solver = sphere_solver if trustregion.shape == "sphere" else cube_solver
+    kwargs = {"model": model, "x_candidate": old_x_unit}
+    if trustregion.shape == "cube" or solver.__name__ == "multistart":
+        kwargs["lower_bounds"] = -np.ones_like(old_x_unit)
+        kwargs["upper_bounds"] = np.ones_like(old_x_unit)
+
+    raw_result = solver(**kwargs)
 
     x = trustregion.map_from_unit(raw_result["x"])
 
