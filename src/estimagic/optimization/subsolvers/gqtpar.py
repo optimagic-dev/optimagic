@@ -19,7 +19,7 @@ class DampingFactors(NamedTuple):
     upper_bound: Union[float, None] = None
 
 
-def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
+def gqtpar(model, x_candidate, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     """Solve the quadratic trust-region subproblem via nearly exact iterative method.
 
     This subproblem solver is mainly based on Conn et al. (2000) "Trust region methods"
@@ -50,11 +50,10 @@ def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     See pp. 194-197 in :cite:`Conn2000` for a more detailed description.
 
     Args:
-        main_model (NamedTuple): NamedTuple containing the parameters of the
-            main model, i.e.:
+        model (NamedTuple): NamedTuple containing the parameters of the main model, i.e.
             - ``linear_terms``, a np.ndarray of shape (n,) and
             - ``square_terms``, a np.ndarray of shape (n,n).
-        trustregion_radius (float): Trustregion radius, often referred to as delta.
+        x_candidate (np.ndarray): Initial guess for the solution of the subproblem.
         k_easy (float): topping criterion for the "easy" case.
         k_hard (float): Stopping criterion for the "hard" case.
         maxiter (int): Maximum number of iterations to perform. If reached,
@@ -68,8 +67,6 @@ def gqtpar(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
 
     """
     hessian_info = HessianInfo()
-
-    x_candidate = np.zeros_like(model.linear_terms)
 
     # Small floating point number signaling that for vectors smaller
     # than that backward substituition is not reliable.

@@ -201,6 +201,7 @@ def test_take_preliminary_gradient_descent_and_check_for_convergence():
         "model_hessian": model_hessian,
         "lower_bounds": lower_bounds,
         "upper_bounds": upper_bounds,
+        "x_candidate": x_candidate,
         "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-08,
         "gtol_rel": 1e-08,
@@ -503,9 +504,15 @@ def test_minimize_bntr():
         "gtol_abs_conjugate_gradient": 1e-08,
         "gtol_rel_conjugate_gradient": 1e-06,
     }
-    res_orig = bntr(model, lower_bounds, upper_bounds, **options)
+    x0 = np.zeros_like(lower_bounds)
+    res_orig = bntr(model, lower_bounds, upper_bounds, x_candidate=x0, **options)
     res_fast = _bntr_fast_jitted(
-        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
+        model_gradient=model.linear_terms,
+        model_hessian=model.square_terms,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        x_candidate=x0,
+        **options,
     )
     # using aaae to get tests run on windows machines.
     aaae(res_orig["x"], res_fast[0])
@@ -530,7 +537,12 @@ def test_minimize_bntr_break_loop_early():
         "gtol_rel_conjugate_gradient": 10,
     }
     res_fast = _bntr_fast_jitted(
-        model.linear_terms, model.square_terms, lower_bounds, upper_bounds, **options
+        model_gradient=model.linear_terms,
+        model_hessian=model.square_terms,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        x_candidate=np.zeros_like(lower_bounds),
+        **options,
     )
     # using aaae to get tests run on windows machines.
     aaae(np.zeros(len(model.linear_terms)), res_fast[0])
