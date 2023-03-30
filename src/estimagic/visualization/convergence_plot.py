@@ -1,13 +1,13 @@
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.utilities import propose_alternatives
-from estimagic.visualization.plotting_utilities import create_grid_plot
-from estimagic.visualization.plotting_utilities import create_ind_dict
+from estimagic.visualization.plotting_utilities import create_grid_plot, create_ind_dict
 
 
 def convergence_plot(
@@ -123,14 +123,14 @@ def convergence_plot(
         "criterion": "Current Function Value",
         "monotone_criterion": "Best Function Value Found So Far",
         "criterion_normalized": "Share of Function Distance to Optimum<br>"
-        + "Missing From Current Criterion Value",
+        "Missing From Current Criterion Value",
         "monotone_criterion_normalized": "Share of Function Distance to Optimum<br>"
-        + "Missing From Best So Far",
+        "Missing From Best So Far",
         "parameter_distance": "Distance Between Current and Optimal Parameters",
         "parameter_distance_normalized": "Share of Parameter Distance to Optimum<br>"
-        + "Missing From Current Parameters",
+        "Missing From Current Parameters",
         "monotone_parameter_distance_normalized": "Share of the Parameter Distance "
-        + "to Optimum<br> Missing From the Best Parameters So Far",
+        "to Optimum<br> Missing From the Best Parameters So Far",
         "monotone_parameter_distance": "Distance Between the Best Parameters So Far<br>"
         "and the Optimal Parameters",
     }
@@ -148,12 +148,10 @@ def convergence_plot(
     # creating data traces for plotting faceted/individual plots
     # dropping usage of palette for algoritms, but use the built in pallete
     for prob_name in remaining_problems:
-
         g_ind = []  # container for data for traces in individual plot
         to_plot = df[df["problem"] == prob_name]
 
         for i, alg in enumerate(to_plot["algorithm"].unique()):
-
             temp = to_plot[to_plot["algorithm"] == alg]
             trace_1 = go.Scatter(
                 x=temp[runtime_measure],
@@ -207,7 +205,6 @@ def convergence_plot(
 
     # Dictionary for individual plots
     else:
-
         ind_dict = create_ind_dict(
             **common_dependencies,
             kws={"height": 320, "width": 500, "title_x": 0.5, **common_layout},

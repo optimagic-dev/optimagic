@@ -2,21 +2,23 @@
 import numpy as np
 import pytest
 from estimagic.optimization.pounders_auxiliary import MainModel
-from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient import (
     minimize_trust_cg,
 )
-from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
+from estimagic.optimization.subsolvers._steihaug_toint import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_bntr_quadratic,
+from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
+from estimagic.optimization.subsolvers.bntr import (
+    bntr,
 )
-from estimagic.optimization.subsolvers.quadratic_subsolvers import (
-    minimize_gqtpar_quadratic,
+from estimagic.optimization.subsolvers.bntr_fast import (
+    bntr_fast,
+)
+from estimagic.optimization.subsolvers.gqtpar import (
+    gqtpar,
 )
 from numpy.testing import assert_array_almost_equal as aaae
-
 
 # ======================================================================================
 # Subsolver BNTR
@@ -439,6 +441,7 @@ TEST_CASES_BNTR = [
 ]
 
 
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "linear_terms, square_terms, lower_bounds, upper_bounds, x_expected",
     TEST_CASES_BNTR,
@@ -463,9 +466,10 @@ def test_bounded_newton_trustregion(
         "gtol_rel_conjugate_gradient": 1e-6,
     }
 
-    result = minimize_bntr_quadratic(main_model, lower_bounds, upper_bounds, **options)
-
+    result = bntr(main_model, lower_bounds, upper_bounds, **options)
+    result_fast = bntr_fast(main_model, lower_bounds, upper_bounds, **options)
     aaae(result["x"], x_expected, decimal=5)
+    aaae(result_fast["x"], x_expected, decimal=5)
 
 
 # ======================================================================================
@@ -494,13 +498,14 @@ TEST_CASES_GQTPAR = [
 ]
 
 
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "linear_terms, square_terms, x_expected, criterion_expected", TEST_CASES_GQTPAR
 )
 def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
-    result = minimize_gqtpar_quadratic(main_model)
+    result = gqtpar(main_model)
 
     aaae(result["x"], x_expected)
     aaae(result["criterion"], criterion_expected)
@@ -696,6 +701,7 @@ TEST_CASES_TRSBOX = [
 ]
 
 
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
 )
@@ -708,6 +714,7 @@ def test_trustregion_conjugate_gradient(
     aaae(x_out, x_expected)
 
 
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
 )
@@ -716,6 +723,7 @@ def test_trustregion_steihaug_toint(gradient, hessian, trustregion_radius, x_exp
     aaae(x_out, x_expected)
 
 
+@pytest.mark.slow()
 @pytest.mark.parametrize(
     "linear_terms, square_terms, trustregion_radius, x_expected",
     TEST_CASES_CG + TEST_CASES_TRSBOX,

@@ -3,12 +3,10 @@ import warnings
 
 import numpy as np
 import pytest
-from estimagic import maximize
-from estimagic import minimize
+from estimagic import maximize, minimize
 from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
-
 
 NLC_ALGORITHMS = [
     name
@@ -96,12 +94,12 @@ def nlc_2d_example():
     }
 
     kwargs = {
-        "flat": {**_kwargs, **{"constraints": constraints_flat}},
-        "long": {**_kwargs, **{"constraints": constraints_long}},
-        "equality": {**_kwargs, **{"constraints": constraints_equality}},
+        "flat": {**_kwargs, "constraints": constraints_flat},
+        "long": {**_kwargs, "constraints": constraints_long},
+        "equality": {**_kwargs, "constraints": constraints_equality},
         "equality_and_inequality": {
             **_kwargs,
-            **{"constraints": constraints_equality_and_inequality},
+            "constraints": constraints_equality_and_inequality,
         },
     }
 
@@ -191,7 +189,6 @@ def test_documentation_example(algorithm):
 
 @pytest.fixture()
 def general_example():
-
     params = {"a": np.array([0.1, 0.3, 0.4, 0.2]), "b": np.array([1.5, 2])}
 
     def criterion(params):
@@ -237,7 +234,6 @@ TEST_CASES = list(itertools.product(["ipopt"], [True, False]))
 @pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="Needs ipopt")
 @pytest.mark.parametrize("algorithm, skip_checks", TEST_CASES)
 def test_general_example(general_example, algorithm, skip_checks):
-
     kwargs = general_example
 
     with warnings.catch_warnings():

@@ -3,10 +3,10 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import scipy
+from pybaum import tree_just_flatten, tree_unflatten
+
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def transform_covariance(
@@ -49,6 +49,7 @@ def transform_covariance(
             parameters. If parameters were fixed (explicitly or by other constraints),
             the index is a subset of params.index. The columns are the same as the
             index.
+
     """
     if converter.has_transforming_constraints:
         _from_internal = converter.params_from_internal
@@ -63,16 +64,16 @@ def transform_covariance(
             size=n_samples,
         )
         transformed_free = []
-        for params_vec in sample:
+        for params in sample:
             if bounds_handling == "clip":
-                params_vec = np.clip(params_vec, a_min=lower_bounds, a_max=upper_bounds)
+                x = np.clip(params, a_min=lower_bounds, a_max=upper_bounds)
             elif bounds_handling == "raise":
-                if (params_vec < lower_bounds).any() or (
-                    params_vec > upper_bounds
-                ).any():
+                if (params < lower_bounds).any() or (params > upper_bounds).any():
                     raise ValueError()
+            else:
+                x = params
 
-            transformed = _from_internal(x=params_vec, return_type="flat")
+            transformed = _from_internal(x=x, return_type="flat")
             transformed_free.append(transformed[is_free])
 
         free_cov = np.cov(
@@ -153,11 +154,13 @@ def calculate_estimation_summary(
 
     df = pd.DataFrame(flat_data, index=names)
 
-    df.loc[free_names, "stars"] = pd.cut(
+    stars = pd.cut(
         df.loc[free_names, "p_value"],
         bins=[-1, 0.01, 0.05, 0.1, 2],
         labels=["***", "**", "*", ""],
     )
+
+    df["stars"] = stars
 
     # ==================================================================================
     # Map summary data into params tree structure
@@ -174,7 +177,6 @@ def calculate_estimation_summary(
     # index for the resulting leaf.
     summary_flat = []
     for index_leaf, params_leaf in zip(indices_flat, estimates_flat):
-
         if np.isscalar(params_leaf):
             loc = [index_leaf]
             index = [0]

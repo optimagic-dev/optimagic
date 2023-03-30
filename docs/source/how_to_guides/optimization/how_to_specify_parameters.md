@@ -2,14 +2,14 @@
 
 # How to specify `params`
 
-`params` is the first argument of any criterion function in estimagic. It collects
-all the parameters to estimate, optimize, or differentiate over. In many optimization
+`params` is the first argument of any criterion function in estimagic. It collects all
+the parameters to estimate, optimize, or differentiate over. In many optimization
 libraries, `params` must be a one-dimensional numpy array. In estimagic, it can be an
-arbitrary pytree (think nested dictionary) containing numbers, arrays,
-pandas.Series, and/or pandas.DataFrames.
+arbitrary pytree (think nested dictionary) containing numbers, arrays, pandas.Series,
+and/or pandas.DataFrames.
 
-Below, we show a few examples of what is possible in estimagic and discuss the advantages
-and drawbacks of each of them.
+Below, we show a few examples of what is possible in estimagic and discuss the
+advantages and drawbacks of each of them.
 
 Again, we use the simple `sphere` function you know from other tutorials as an example.
 
@@ -81,7 +81,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     - You can bundle information on bounds and values in one place.
     - It is easy to compare two params vectors for equality.
 
-    Check out our `Ordered Logit Example`_,
+    Check out our `Ordered Logit Example <../../getting_started/estimation/first_likelihood_estimation_with_estimagic.ipynb>`_,
     so you see one small params DataFrame in action.
 
     If you are sure you won't have bounds on your parameter, you can also use a
@@ -90,7 +90,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     A drawback of DataFrames is that they are not JAX compatible. Another one is that
     they are a bit slower than numpy arrays.
 
-    .. _Ordered Logit Example: ../../getting_started/estimation/first_likelihood_estimation_with_estimagic.ipynb
+
 ```
 
 ```{eval-rst}

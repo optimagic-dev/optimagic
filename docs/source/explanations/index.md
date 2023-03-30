@@ -56,9 +56,10 @@ get started, but very helpful for advanced users and developers of estimagic.
 ```
 
 ```{toctree}
-:hidden: true
-:maxdepth: 1
-
+---
+hidden: true
+maxdepth: 1
+---
 optimization/index
 differentiation/index
 inference/index

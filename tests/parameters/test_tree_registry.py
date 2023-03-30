@@ -3,12 +3,10 @@ import pandas as pd
 import pytest
 from estimagic.parameters.tree_registry import get_registry
 from pandas.testing import assert_frame_equal
-from pybaum import leaf_names
-from pybaum import tree_flatten
-from pybaum import tree_unflatten
+from pybaum import leaf_names, tree_flatten, tree_unflatten
 
 
-@pytest.fixture
+@pytest.fixture()
 def value_df():
     df = pd.DataFrame(
         np.arange(6).reshape(3, 2),
@@ -18,7 +16,7 @@ def value_df():
     return df
 
 
-@pytest.fixture
+@pytest.fixture()
 def other_df():
     df = pd.DataFrame(index=["alpha", "beta", "gamma"])
     df["b"] = np.arange(3).astype(np.int16)

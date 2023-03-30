@@ -54,7 +54,7 @@ class StopOptimizationError(EstimagicError):
         self.current_status = current_status
 
     def __reduce__(self):
-        """Taken from here: https://tinyurl.com/y6eeys2f"""
+        """Taken from here: https://tinyurl.com/y6eeys2f."""
         return (StopOptimizationError, (self.message, self.current_status))
 
 

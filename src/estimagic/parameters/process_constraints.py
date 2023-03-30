@@ -17,10 +17,13 @@ after consolidation.
 """
 import numpy as np
 import pandas as pd
-from estimagic.parameters.check_constraints import check_constraints_are_satisfied
-from estimagic.parameters.check_constraints import check_fixes_and_bounds
-from estimagic.parameters.check_constraints import check_for_incompatible_overlaps
-from estimagic.parameters.check_constraints import check_types
+
+from estimagic.parameters.check_constraints import (
+    check_constraints_are_satisfied,
+    check_fixes_and_bounds,
+    check_for_incompatible_overlaps,
+    check_types,
+)
 from estimagic.parameters.consolidate_constraints import consolidate_constraints
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
@@ -128,9 +131,10 @@ def _replace_pairwise_equality_by_equality(constraints):
     pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
     constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
-        equality_constraints = []
-        for elements in zip(*constr["indices"]):
-            equality_constraints.append({"index": list(elements), "type": "equality"})
+        equality_constraints = [
+            {"index": list(elements), "type": "equality"}
+            for elements in zip(*constr["indices"])
+        ]
         constraints += equality_constraints
 
     return constraints
@@ -149,7 +153,6 @@ def _process_linear_weights(constraints):
     processed = []
     for constr in constraints:
         if constr["type"] == "linear":
-
             raw_weights = constr["weights"]
 
             if isinstance(raw_weights, (np.ndarray, list, tuple, pd.Series)):
@@ -234,7 +237,7 @@ def _create_internal_bounds(lower, upper, constraints):
             # because the internal params contains the Cholesky factor of the implied
             # covariance matrix in both cases.
             dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
-            diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
+            diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             bd = constr.get("bounds_distance", 0)
             bd = np.sqrt(bd) if constr["type"] == "covariance" else bd
@@ -262,6 +265,7 @@ def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
 
     Returns:
         np.ndarray
+
     """
     int_fixed = is_fixed_to_value | is_fixed_to_other
 

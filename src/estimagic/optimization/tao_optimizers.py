@@ -1,20 +1,22 @@
 """This module implements the POUNDERs algorithm."""
+import contextlib
 import functools
 
 import numpy as np
+
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
+)
 from estimagic.utilities import calculate_trustregion_initial_radius
 
-try:
+with contextlib.suppress(ImportError):
     from petsc4py import PETSc
-except ImportError:
-    pass
 
 
 @mark_minimizer(
@@ -38,6 +40,7 @@ def tao_pounders(
     r"""Minimize a function using the POUNDERs algorithm.
 
     For details see :ref:`tao_algorithm`.
+
     """
     if not IS_PETSC4PY_INSTALLED:
         raise NotInstalledError(
@@ -62,7 +65,7 @@ def tao_pounders(
 
     tao.setFromOptions()
 
-    def func_tao(tao, x, resid_out):
+    def func_tao(tao, x, resid_out):  # noqa: ARG001
         """Evaluate objective and attach result to an petsc object f.
 
         This is required to use the pounders solver from tao.
@@ -252,7 +255,7 @@ def _process_pounders_results(residuals_out, tao):
         "n_criterion_evaluations": tao.getIterationNumber(),
         "n_derivative_evaluations": None,
         "n_iterations": None,
-        "success": True if convergence_code >= 0 else False,
+        "success": bool(convergence_code >= 0),
         "reached_convergence_criterion": convergence_reason
         if convergence_code >= 0
         else None,

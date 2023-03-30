@@ -3,21 +3,22 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.shared import _to_numpy
-from estimagic.inference.shared import calculate_estimation_summary
-from estimagic.inference.shared import get_derivative_case
-from estimagic.inference.shared import process_pandas_arguments
-from estimagic.inference.shared import transform_covariance
-from estimagic.inference.shared import transform_free_cov_to_cov
-from estimagic.inference.shared import transform_free_values_to_params_tree
+from estimagic.inference.shared import (
+    _to_numpy,
+    calculate_estimation_summary,
+    get_derivative_case,
+    process_pandas_arguments,
+    transform_covariance,
+    transform_free_cov_to_cov,
+    transform_free_values_to_params_tree,
+)
 from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import leaf_names
-from pybaum import tree_equal
+from pybaum import leaf_names, tree_equal
 
 
-@pytest.fixture
+@pytest.fixture()
 def inputs():
     jac = pd.DataFrame(np.ones((5, 3)), columns=["a", "b", "c"])
     hess = pd.DataFrame(np.eye(3) / 2, columns=list("abc"), index=list("abc"))
@@ -45,7 +46,7 @@ def test_process_pandas_arguments_incompatible_names(inputs):
         process_pandas_arguments(**inputs)
 
 
-def _from_internal(x, return_type="flat"):
+def _from_internal(x, return_type="flat"):  # noqa: ARG001
     return x
 
 
@@ -202,7 +203,7 @@ def test_transform_free_values_to_params_tree():
 
 
 def test_get_derivative_case():
-    assert get_derivative_case(lambda x: True) == "closed-form"
+    assert get_derivative_case(lambda x: True) == "closed-form"  # noqa: ARG005
     assert get_derivative_case(False) == "skip"
     assert get_derivative_case(None) == "numerical"
 

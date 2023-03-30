@@ -202,7 +202,7 @@ def osborne_two(x, y):
 
 
 def bdqrtic(x):
-    # the length of array x should be more then 5.
+    # the length of array x should be more than 5.
     dim_in = len(x)
     fvec = np.zeros(2 * (dim_in - 4))
     for i in range(dim_in - 4):

@@ -3,15 +3,17 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.estimation.msm_weighting import _assemble_block_diagonal_matrix
-from estimagic.estimation.msm_weighting import get_moments_cov
-from estimagic.estimation.msm_weighting import get_weighting_matrix
+from estimagic.estimation.msm_weighting import (
+    _assemble_block_diagonal_matrix,
+    get_moments_cov,
+    get_weighting_matrix,
+)
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture
+@pytest.fixture()
 def expected_values():
     values = np.array([[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 5, 6], [0, 0, 7, 8]])
     return values

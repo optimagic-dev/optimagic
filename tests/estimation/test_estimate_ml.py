@@ -6,9 +6,7 @@ import pytest
 import scipy as sp
 import statsmodels.api as sm
 from estimagic.estimation.estimate_ml import estimate_ml
-from estimagic.examples.logit import logit_derivative
-from estimagic.examples.logit import logit_hessian
-from estimagic.examples.logit import logit_loglike
+from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
 from estimagic.examples.logit import logit_loglike_and_derivative as llad
 from numpy.testing import assert_array_equal
 from scipy.stats import multivariate_normal
@@ -39,7 +37,6 @@ def multivariate_normal_loglike(params, data):
 
 @pytest.fixture()
 def multivariate_normal_example():
-
     # true parameters
     true_mean = np.arange(1, 4)
     true_cov = np.diag(np.arange(1, 4))
@@ -56,7 +53,6 @@ def multivariate_normal_example():
 
 
 def test_estimate_ml_with_constraints(multivariate_normal_example):
-
     params, true_params, loglike_kwargs = multivariate_normal_example
 
     constraints = [
@@ -93,7 +89,7 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
 # ======================================================================================
 
 
-@pytest.fixture
+@pytest.fixture()
 def logit_np_inputs():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
@@ -107,7 +103,7 @@ def logit_np_inputs():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def fitted_logit_model(logit_object):
     """We need to use a generic model class to access all standard errors etc."""
 
@@ -152,10 +148,8 @@ def test_estimate_ml_with_logit_no_constraints(
     jacobian,
     hessian,
 ):
-    """
-    Test that estimate_ml computes correct params and covariances under different
-    scenarios.
-    """
+    """Test that estimate_ml computes correct params and covariances under different
+    scenarios."""
 
     if jacobian is False and hessian is False:
         pytest.xfail("jacobian and hessian cannot both be False.")
@@ -203,7 +197,6 @@ def test_estimate_ml_with_logit_no_constraints(
     aaae(got.params, exp.params, decimal=4)
 
     for method in methods:
-
         # compare estimated standard errors
         exp_se = getattr(exp, f"bse{statsmodels_suffix_map[method]}")
         got_se = got.se(method=method)
@@ -260,10 +253,8 @@ def test_estimate_ml_with_logit_constraints(
     jacobian,
     constraints,
 ):
-    """
-    Test that estimate_ml computes correct params and standard errors under different
-    scenarios with constraints.
-    """
+    """Test that estimate_ml computes correct params and standard errors under different
+    scenarios with constraints."""
     seed = 1234
 
     # ==================================================================================
@@ -308,7 +299,6 @@ def test_estimate_ml_with_logit_constraints(
     aaae(got.params, exp.params, decimal=3)
 
     for method in methods:
-
         # compare estimated standard errors
         exp_se = getattr(exp, f"bse{statsmodels_suffix_map[method]}")
         got_se = got.se(method=method, seed=seed)
@@ -337,7 +327,6 @@ def test_estimate_ml_with_logit_constraints(
 
 def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_np_inputs):
     """Test that estimate_ml computes correct covariances given correct params."""
-
     kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
 
     params = pd.DataFrame({"value": fitted_logit_model.params})
@@ -374,18 +363,18 @@ def normal_loglike(params, y):
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def normal_inputs():
     true = {
         "mean": 1.0,
         "sd": 1.0,
     }
-    y = np.random.normal(loc=true["mean"], scale=true["sd"], size=10_000)
+    rng = np.random.default_rng(12345)
+    y = rng.normal(loc=true["mean"], scale=true["sd"], size=10_000)
     return {"true": true, "y": y}
 
 
 def test_estimate_ml_general_pytree(normal_inputs):
-
     # ==================================================================================
     # estimate
     # ==================================================================================

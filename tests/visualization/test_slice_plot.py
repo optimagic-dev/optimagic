@@ -3,7 +3,7 @@ import pytest
 from estimagic.visualization.slice_plot import slice_plot
 
 
-@pytest.fixture
+@pytest.fixture()
 def fixed_inputs():
     params = {"alpha": 0, "beta": 0, "gamma": 0, "delta": 0}
     lower_bounds = {name: -5 for name in params}
@@ -43,7 +43,6 @@ parametrization = [
 
 @pytest.mark.parametrize("func, kwargs", parametrization)
 def test_slice_plot(fixed_inputs, func, kwargs):
-
     slice_plot(
         func=func,
         **fixed_inputs,

@@ -12,7 +12,7 @@ def aaae(obj1, obj2, decimal=6):
     np.testing.assert_array_almost_equal(arr1, arr2, decimal=decimal)
 
 
-@pytest.fixture
+@pytest.fixture()
 def setup():
     out = {}
 
@@ -28,7 +28,7 @@ def setup():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def expected():
     out = {}
 
@@ -61,7 +61,7 @@ def expected():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def seaborn_example():
     out = {}
 
@@ -90,6 +90,7 @@ def _outcome_func(data, shift=0):
     Returns:
         pd.Series: Series where the k-th row corresponds to the mean
             of the k-th column of the input data.
+
     """
     # Return pd.Series when .mean() is applied to a Series
     # Only applying .mean() to a pd.Series would yield a float
@@ -134,7 +135,6 @@ def test_bootstrap_existing_outcomes(setup):
 
 
 def test_bootstrap_from_outcomes(setup, expected):
-
     result = bootstrap(outcome=_outcome_func, data=setup["df"], seed=1234)
 
     _ = result.outcomes
@@ -158,7 +158,6 @@ def test_bootstrap_from_outcomes(setup, expected):
 
 
 def test_bootstrap_from_outcomes_private_methods(setup, expected):
-
     result = bootstrap(outcome=_outcome_func, data=setup["df"], seed=1234)
 
     _ = result.outcomes
@@ -176,7 +175,6 @@ def test_bootstrap_from_outcomes_private_methods(setup, expected):
 
 
 def test_bootstrap_from_outcomes_single_outcome(setup, expected):
-
     result = bootstrap(outcome=_outcome_func, data=setup["df"]["x1"], seed=1234)
 
     _ = result.outcomes
@@ -189,7 +187,7 @@ def test_bootstrap_from_outcomes_single_outcome(setup, expected):
 def test_outcome_not_callable(setup):
     expected_msg = "outcome must be a callable."
 
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(TypeError) as error:
         assert bootstrap(data=setup["df"], outcome=setup["estimates_df"])
 
     assert str(error.value) == expected_msg

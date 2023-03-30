@@ -3,16 +3,18 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.tiktak import _linear_weights
-from estimagic.optimization.tiktak import _tiktak_weights
-from estimagic.optimization.tiktak import draw_exploration_sample
-from estimagic.optimization.tiktak import get_batched_optimization_sample
-from estimagic.optimization.tiktak import run_explorations
-from estimagic.optimization.tiktak import update_convergence_state
+from estimagic.optimization.tiktak import (
+    _linear_weights,
+    _tiktak_weights,
+    draw_exploration_sample,
+    get_batched_optimization_sample,
+    run_explorations,
+    update_convergence_state,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-@pytest.fixture
+@pytest.fixture()
 def params():
     df = pd.DataFrame(index=["a", "b", "c"])
     df["value"] = [0, 1, 2.0]
@@ -21,7 +23,7 @@ def params():
     return df
 
 
-@pytest.fixture
+@pytest.fixture()
 def constraints():
     return [{"type": "fixed", "loc": "c", "value": 2}]
 
@@ -117,7 +119,7 @@ def test_tiktak_weights():
     assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
 
 
-@pytest.fixture
+@pytest.fixture()
 def current_state():
     state = {
         "best_x": np.ones(3),
@@ -132,12 +134,12 @@ def current_state():
     return state
 
 
-@pytest.fixture
+@pytest.fixture()
 def starts():
     return [np.zeros(3)]
 
 
-@pytest.fixture
+@pytest.fixture()
 def results():
     return [{"solution_x": np.arange(3) + 1e-10, "solution_criterion": 4}]
 
@@ -153,6 +155,7 @@ def test_update_state_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
+        primary_key="value",
     )
 
     aaae(new_state["best_x"], np.arange(3))
@@ -176,6 +179,7 @@ def test_update_state_not_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
+        primary_key="value",
     )
 
     assert not is_converged

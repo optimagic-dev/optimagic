@@ -13,14 +13,23 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import read_last_rows
-from estimagic.logging.database_utilities import read_new_rows
-from estimagic.logging.database_utilities import read_specific_row
+from pybaum import tree_flatten, tree_unflatten
+
+from estimagic.logging.load_database import load_database
+from estimagic.logging.read_from_database import (
+    read_last_rows,
+    read_new_rows,
+    read_specific_row,
+)
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten
-from pybaum import tree_unflatten
-from sqlalchemy import MetaData
+
+
+def load_existing_database(path_or_database):
+    if isinstance(path_or_database, (Path, str)):
+        path = Path(path_or_database)
+        if not path.exists():
+            raise FileNotFoundError(f"Database {path} does not exist.")
+    return load_database(path_or_database)
 
 
 def read_start_params(path_or_database):
@@ -33,7 +42,7 @@ def read_start_params(path_or_database):
         params (pd.DataFrame): see :ref:`params`.
 
     """
-    database = _load_database(path_or_database)
+    database = load_existing_database(path_or_database)
     optimization_problem = read_last_rows(
         database=database,
         table_name="optimization_problem",
@@ -42,24 +51,6 @@ def read_start_params(path_or_database):
     )
     start_params = optimization_problem["params"][0]
     return start_params
-
-
-def _load_database(path_or_database):
-    """Get an sqlalchemy.MetaDate object from path or database."""
-
-    res = {"path": None, "metadata": None, "fast_logging": False}
-    if isinstance(path_or_database, MetaData):
-        res = path_or_database
-    elif isinstance(path_or_database, (Path, str)):
-        path = Path(path_or_database)
-        if not path.exists():
-            raise FileNotFoundError(f"No such database file: {path}")
-        res = load_database(path=path)
-    else:
-        raise ValueError(
-            "path_or_database must be a path or sqlalchemy.MetaData object"
-        )
-    return res
 
 
 def read_steps_table(path_or_database):
@@ -72,7 +63,7 @@ def read_steps_table(path_or_database):
         steps_df (pandas.DataFrame)
 
     """
-    database = _load_database(path_or_database)
+    database = load_existing_database(path_or_database)
     steps_table, _ = read_new_rows(
         database=database,
         table_name="steps",
@@ -94,7 +85,7 @@ def read_optimization_problem_table(path_or_database):
         params (pd.DataFrame): see :ref:`params`.
 
     """
-    database = _load_database(path_or_database)
+    database = load_existing_database(path_or_database)
     steps_table, _ = read_new_rows(
         database=database,
         table_name="optimization_problem",
@@ -113,7 +104,7 @@ class OptimizeLogReader:
     path: Union[str, Path]
 
     def __post_init__(self):
-        _database = _load_database(self.path)
+        _database = load_existing_database(self.path)
         _start_params = read_start_params(_database)
         _registry = get_registry(extended=True)
         _, _treedef = tree_flatten(_start_params, registry=_registry)
@@ -188,7 +179,6 @@ def _read_optimization_iteration(database, iteration, params_treedef, registry):
 
 def _read_optimization_history(database, params_treedef, registry):
     """Read a histories out values, parameters and other information."""
-
     raw_res, _ = read_new_rows(
         database=database,
         table_name="optimization_iterations",
@@ -269,14 +259,10 @@ def _read_multistart_optimization_history(
     # maximum. All other histories are defined as local histories.
 
     if direction == "minimize":
-        best_idx = (
-            histories["criterion"].groupby(level="step").min().idxmin()
-        )  # noqa: F841
+        best_idx = histories["criterion"].groupby(level="step").min().idxmin()
         exploration = exploration.sort_values(by="criterion", ascending=True)
     elif direction == "maximize":
-        best_idx = (
-            histories["criterion"].groupby(level="step").max().idxmax()
-        )  # noqa: F841
+        best_idx = histories["criterion"].groupby(level="step").max().idxmax()
         exploration = exploration.sort_values(by="criterion", ascending=False)
     else:
         raise ValueError()

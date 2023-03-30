@@ -1,10 +1,12 @@
 """Test optimization helper functions."""
 import numpy as np
 import pytest
-from estimagic.optimization.pygmo_optimizers import _check_that_every_param_is_bounded
-from estimagic.optimization.pygmo_optimizers import _convert_str_to_int
-from estimagic.optimization.pygmo_optimizers import _determine_population_size
-from estimagic.optimization.pygmo_optimizers import _replace_none
+from estimagic.optimization.pygmo_optimizers import (
+    _check_that_every_param_is_bounded,
+    _convert_str_to_int,
+    _replace_none,
+    get_population_size,
+)
 
 
 def test_check_that_every_param_is_bounded():
@@ -27,9 +29,7 @@ test_cases = [
 
 @pytest.mark.parametrize("popsize, x, lower_bound, expected", test_cases)
 def test_determine_population_size(popsize, x, lower_bound, expected):
-    res = _determine_population_size(
-        population_size=popsize, x=x, lower_bound=lower_bound
-    )
+    res = get_population_size(population_size=popsize, x=x, lower_bound=lower_bound)
     assert res == expected
 
 

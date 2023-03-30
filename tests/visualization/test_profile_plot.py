@@ -1,16 +1,17 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
 from estimagic import get_benchmark_problems
 from estimagic.benchmarking.run_benchmark import run_benchmark
-from estimagic.visualization.profile_plot import _create_solution_times
-from estimagic.visualization.profile_plot import _determine_alpha_grid
-from estimagic.visualization.profile_plot import _find_switch_points
-from estimagic.visualization.profile_plot import profile_plot
+from estimagic.visualization.profile_plot import (
+    _create_solution_times,
+    _determine_alpha_grid,
+    _find_switch_points,
+    profile_plot,
+)
 
 
-@pytest.fixture
+@pytest.fixture()
 def performance_ratios():
     df = pd.DataFrame(
         data={"algo1": [1.0, 1.0, 4.0], "algo2": [1.5, np.inf, 1.0]},
@@ -133,4 +134,3 @@ def test_profile_plot_options(options):
     )
 
     profile_plot(problems=problems, results=results, **options)
-    plt.close()

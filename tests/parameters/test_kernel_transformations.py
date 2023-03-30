@@ -53,10 +53,10 @@ def get_external_sdcorr(dim, seed=0):
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
-def test_covariance_from_internal_jacobian(dim, seed):
+def test_covariance_from_internal_jacobian(dim, seed):  # noqa: ARG001
     internal = get_internal_cholesky(dim)
 
-    func = partial(kt.covariance_from_internal, **{"constr": None})
+    func = partial(kt.covariance_from_internal, constr=None)
     numerical_deriv = first_derivative(func, internal)
     deriv = kt.covariance_from_internal_jacobian(internal, None)
 
@@ -64,10 +64,10 @@ def test_covariance_from_internal_jacobian(dim, seed):
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
-def test_covariance_to_internal_jacobian(dim, seed):
+def test_covariance_to_internal_jacobian(dim, seed):  # noqa: ARG001
     external = get_external_covariance(dim)
 
-    func = partial(kt.covariance_to_internal, **{"constr": None})
+    func = partial(kt.covariance_to_internal, constr=None)
     numerical_deriv = first_derivative(func, external)
     deriv = kt.covariance_to_internal_jacobian(external, None)
 
@@ -75,10 +75,10 @@ def test_covariance_to_internal_jacobian(dim, seed):
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
-def test_probability_from_internal_jacobian(dim, seed):
+def test_probability_from_internal_jacobian(dim, seed):  # noqa: ARG001
     internal = get_internal_probability(dim)
 
-    func = partial(kt.probability_from_internal, **{"constr": None})
+    func = partial(kt.probability_from_internal, constr=None)
     numerical_deriv = first_derivative(func, internal)
     deriv = kt.probability_from_internal_jacobian(internal, None)
 
@@ -86,10 +86,10 @@ def test_probability_from_internal_jacobian(dim, seed):
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
-def test_probability_to_internal_jacobian(dim, seed):
+def test_probability_to_internal_jacobian(dim, seed):  # noqa: ARG001
     external = get_external_probability(dim)
 
-    func = partial(kt.probability_to_internal, **{"constr": None})
+    func = partial(kt.probability_to_internal, constr=None)
     numerical_deriv = first_derivative(func, external)
     deriv = kt.probability_to_internal_jacobian(external, None)
 
@@ -97,10 +97,10 @@ def test_probability_to_internal_jacobian(dim, seed):
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
-def test_sdcorr_from_internal_jacobian(dim, seed):
+def test_sdcorr_from_internal_jacobian(dim, seed):  # noqa: ARG001
     internal = get_internal_cholesky(dim)
 
-    func = partial(kt.sdcorr_from_internal, **{"constr": None})
+    func = partial(kt.sdcorr_from_internal, constr=None)
     numerical_deriv = first_derivative(func, internal)
     deriv = kt.sdcorr_from_internal_jacobian(internal, None)
 
@@ -108,10 +108,10 @@ def test_sdcorr_from_internal_jacobian(dim, seed):
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
-def test_sdcorr_to_internal_jacobian(dim, seed):
+def test_sdcorr_to_internal_jacobian(dim, seed):  # noqa: ARG001
     external = get_external_sdcorr(dim)
 
-    func = partial(kt.sdcorr_to_internal, **{"constr": None})
+    func = partial(kt.sdcorr_to_internal, constr=None)
     numerical_deriv = first_derivative(func, external)
     deriv = kt.sdcorr_to_internal_jacobian(external, None)
 

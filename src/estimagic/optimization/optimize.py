@@ -3,27 +3,31 @@ import warnings
 from pathlib import Path
 
 from estimagic.batch_evaluators import process_batch_evaluator
-from estimagic.exceptions import InvalidFunctionError
-from estimagic.exceptions import InvalidKwargsError
-from estimagic.logging.database_utilities import append_row
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import make_optimization_iteration_table
-from estimagic.logging.database_utilities import make_optimization_problem_table
-from estimagic.logging.database_utilities import make_steps_table
+from estimagic.exceptions import InvalidFunctionError, InvalidKwargsError
+from estimagic.logging.create_tables import (
+    make_optimization_iteration_table,
+    make_optimization_problem_table,
+    make_steps_table,
+)
+from estimagic.logging.load_database import load_database
+from estimagic.logging.write_to_database import append_row
 from estimagic.optimization.check_arguments import check_optimize_kwargs
 from estimagic.optimization.error_penalty import get_error_penalty_function
-from estimagic.optimization.get_algorithm import get_final_algorithm
-from estimagic.optimization.get_algorithm import process_user_algorithm
+from estimagic.optimization.get_algorithm import (
+    get_final_algorithm,
+    process_user_algorithm,
+)
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.process_multistart_sample import process_multistart_sample
 from estimagic.optimization.process_results import process_internal_optimizer_result
-from estimagic.optimization.tiktak import run_multistart_optimization
-from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
-from estimagic.parameters.conversion import aggregate_func_output_to_value
-from estimagic.parameters.conversion import get_converter
+from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS, run_multistart_optimization
+from estimagic.parameters.conversion import (
+    aggregate_func_output_to_value,
+    get_converter,
+)
 from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from estimagic.process_user_function import process_func_of_params
 
@@ -651,13 +655,8 @@ def _optimize(
     if logging:
         problem_data["free_mask"] = internal_params.free_mask
         database = _create_and_initialize_database(logging, log_options, problem_data)
-        db_kwargs = {
-            "database": database,
-            "path": logging,
-            "fast_logging": log_options.get("fast_logging", False),
-        }
     else:
-        db_kwargs = {"database": None, "path": None, "fast_logging": False}
+        database = None
 
     # ==================================================================================
     # Do some things that require internal parameters or bounds
@@ -707,7 +706,7 @@ def _optimize(
         nonlinear_constraints=internal_constraints,
         algo_options=algo_options,
         logging=logging,
-        db_kwargs=db_kwargs,
+        database=database,
         collect_history=collect_history,
     )
     # ==================================================================================
@@ -721,7 +720,7 @@ def _optimize(
         "criterion_and_derivative": criterion_and_derivative,
         "numdiff_options": numdiff_options,
         "logging": logging,
-        "db_kwargs": db_kwargs,
+        "database": database,
         "algo_info": algo_info,
         "error_handling": error_handling,
         "error_penalty_func": error_penalty_func,
@@ -744,18 +743,16 @@ def _optimize(
     # Do actual optimization
     # ==================================================================================
     if not multistart:
-
         steps = [{"type": "optimization", "name": "optimization"}]
 
         step_ids = log_scheduled_steps_and_get_ids(
             steps=steps,
             logging=logging,
-            db_kwargs=db_kwargs,
+            database=database,
         )
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
-
         multistart_options = _fill_multistart_options_with_defaults(
             options=multistart_options,
             params=params,
@@ -772,7 +769,7 @@ def _optimize(
             upper_sampling_bounds=internal_params.soft_upper_bounds,
             options=multistart_options,
             logging=logging,
-            db_kwargs=db_kwargs,
+            database=database,
             error_handling=error_handling,
         )
 
@@ -823,7 +820,7 @@ def _create_and_initialize_database(logging, log_options, problem_data):
         elif if_database_exists == "replace":
             logging.unlink()
 
-    database = load_database(path=path, fast_logging=fast_logging)
+    database = load_database(path_or_database=path, fast_logging=fast_logging)
 
     # create the optimization_iterations table
     make_optimization_iteration_table(
@@ -850,7 +847,7 @@ def _create_and_initialize_database(logging, log_options, problem_data):
         key: val for key, val in problem_data.items() if key not in not_saved
     }
 
-    append_row(problem_data, "optimization_problem", database, path, fast_logging)
+    append_row(problem_data, "optimization_problem", database=database)
 
     return database
 

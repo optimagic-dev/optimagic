@@ -4,7 +4,6 @@ import pytest
 from estimagic.optimization.process_multistart_sample import process_multistart_sample
 from numpy.testing import assert_array_almost_equal as aaae
 
-
 samples = [
     (
         pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]),
@@ -21,7 +20,6 @@ samples = [
 
 @pytest.mark.parametrize("sample, x, to_internal", samples)
 def test_process_multistart_sample(sample, x, to_internal):
-
     calculated = process_multistart_sample(sample, x, to_internal)
     expeceted = np.ones((2, 3))
     aaae(calculated, expeceted)

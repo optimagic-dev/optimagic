@@ -1,3 +1,5 @@
+import numpy as np
+
 """
 The order is the following:
 
@@ -451,3 +453,12 @@ r"""dict: Options to start the optimization while building the full trust region
             of search directions. This approach is not recommended! Default is 0.
 
 """
+
+
+def get_population_size(population_size, x, lower_bound=10):
+    """Default population size for genetic algorithms."""
+    if population_size is None:
+        population_size = int(np.clip(10 * (len(x) + 1), lower_bound, np.inf))
+    else:
+        population_size = int(population_size)
+    return population_size

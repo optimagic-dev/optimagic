@@ -1,13 +1,13 @@
 from functools import partial
 
 import numpy as np
-from estimagic.logging.database_utilities import read_new_rows
-from estimagic.logging.database_utilities import transpose_nested_list
+
+from estimagic.logging.read_from_database import read_new_rows, transpose_nested_list
 
 
 def reset_and_start_convergence(
-    attr,
-    old,
+    attr,  # noqa: ARG001
+    old,  # noqa: ARG001
     new,
     session_data,
     doc,
@@ -176,6 +176,7 @@ def _reset_column_data_sources(cds_list):
 
     Args:
         cds_list (list): list of boheh ColumnDataSources
+
     """
     for cds in cds_list:
         column_names = cds.data.keys()

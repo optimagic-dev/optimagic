@@ -1,22 +1,23 @@
 import numpy as np
 import pytest
-from estimagic.optimization.neldermead import _gao_han
-from estimagic.optimization.neldermead import _init_algo_params
-from estimagic.optimization.neldermead import _init_simplex
-from estimagic.optimization.neldermead import _nash
-from estimagic.optimization.neldermead import _pfeffer
-from estimagic.optimization.neldermead import _varadhan_borchers
-from estimagic.optimization.neldermead import neldermead_parallel
+from estimagic.optimization.neldermead import (
+    _gao_han,
+    _init_algo_params,
+    _init_simplex,
+    _nash,
+    _pfeffer,
+    _varadhan_borchers,
+    neldermead_parallel,
+)
 
 
 # function to test
-def sphere(x, *args, **kwargs):
+def sphere(x, *args, **kwargs):  # noqa: ARG001
     return (x**2).sum()
 
 
 # unit tests
 def test_init_algo_params():
-
     # test setting
     j = 2
     adaptive = True
@@ -31,7 +32,6 @@ def test_init_algo_params():
 
 
 def test_init_simplex():
-
     # test setting
     x = np.array([1, 2, 3])
 
@@ -45,7 +45,6 @@ def test_init_simplex():
 
 
 def test_pfeffer():
-
     # test setting
     x = np.array([1, 0, 1])
 
@@ -59,7 +58,6 @@ def test_pfeffer():
 
 
 def test_nash():
-
     # test setting
     x = np.array([1, 0, 1])
 
@@ -73,7 +71,6 @@ def test_nash():
 
 
 def test_gao_han():
-
     # test setting
     x = np.array([1, 0, 1])
 
@@ -87,7 +84,6 @@ def test_gao_han():
 
 
 def test_varadhan_borchers():
-
     # test setting
     x = np.array([1, 0, 1])
 

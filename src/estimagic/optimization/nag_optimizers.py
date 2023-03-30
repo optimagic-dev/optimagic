@@ -12,41 +12,31 @@ The following arguments are not supported as ``algo_options``:
 import warnings
 
 import numpy as np
-from estimagic.config import IS_DFOLS_INSTALLED
-from estimagic.config import IS_PYBOBYQA_INSTALLED
+
+from estimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING
 from estimagic.optimization.algo_options import (
+    CLIP_CRITERION_IF_OVERFLOWING,
     CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
-)
-from estimagic.optimization.algo_options import (
     CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,
-)
-from estimagic.optimization.algo_options import CONVERGENCE_SLOW_PROGRESS
-from estimagic.optimization.algo_options import INITIAL_DIRECTIONS
-from estimagic.optimization.algo_options import INTERPOLATION_ROUNDING_ERROR
-from estimagic.optimization.algo_options import RANDOM_DIRECTIONS_ORTHOGONAL
-from estimagic.optimization.algo_options import RESET_OPTIONS
-from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
-from estimagic.optimization.algo_options import THRESHOLD_FOR_SAFETY_STEP
-from estimagic.optimization.algo_options import TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL
-from estimagic.optimization.algo_options import (
+    CONVERGENCE_SLOW_PROGRESS,
+    INITIAL_DIRECTIONS,
+    INTERPOLATION_ROUNDING_ERROR,
+    RANDOM_DIRECTIONS_ORTHOGONAL,
+    RESET_OPTIONS,
+    STOPPING_MAX_CRITERION_EVALUATIONS,
+    THRESHOLD_FOR_SAFETY_STEP,
+    TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,
-)
-from estimagic.optimization.algo_options import TRUSTREGION_FAST_START_OPTIONS
-from estimagic.optimization.algo_options import TRUSTREGION_PRECONDITION_INTERPOLATION
-from estimagic.optimization.algo_options import (
+    TRUSTREGION_FAST_START_OPTIONS,
+    TRUSTREGION_PRECONDITION_INTERPOLATION,
     TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-)
-from estimagic.optimization.algo_options import (
     TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,
-)
-from estimagic.optimization.algo_options import (
     TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS,
+    TRUSTREGION_THRESHOLD_SUCCESSFUL,
+    TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
 )
-from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_SUCCESSFUL
-from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
 from estimagic.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
@@ -183,7 +173,7 @@ def nag_dfols(
         ],
         "restarts.auto_detect.min_chgJ_slope": trustregion_reset_options[
             "auto_detect_min_jacobian_increase"
-        ],  # noqa: E501
+        ],
         "restarts.max_npt": trustregion_reset_options["max_interpolation_points"],
         "restarts.increase_npt": trustregion_reset_options[
             "n_extra_interpolation_points_per_soft_reset"
@@ -226,6 +216,8 @@ def nag_dfols(
         "growing.num_new_dirns_each_iter": fast_start[
             "n_extra_search_directions_per_iteration"
         ],
+        "logging.save_diagnostic_info": True,
+        "logging.save_xk": True,
     }
 
     advanced_options.update(dfols_options)
@@ -250,7 +242,7 @@ def nag_dfols(
 
 
 @mark_minimizer(
-    name="nag_dfols",
+    name="nag_pybobyqa",
     needs_scaling=True,
     is_available=IS_PYBOBYQA_INSTALLED,
 )
@@ -343,6 +335,8 @@ def nag_pybobyqa(
         "restarts.auto_detect.min_chg_model_slope": trustregion_reset_options[
             "auto_detect_min_jacobian_increase"
         ],
+        "logging.save_diagnostic_info": True,
+        "logging.save_xk": True,
     }
 
     advanced_options.update(pybobyqa_options)
@@ -378,6 +372,7 @@ def _process_nag_result(nag_result_obj, len_x):
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
+
     """
     processed = {
         "solution_criterion": nag_result_obj.f,
@@ -385,21 +380,25 @@ def _process_nag_result(nag_result_obj, len_x):
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,
+        "diagnostic_info": nag_result_obj.diagnostic_info,
     }
+    try:
+        processed["n_iterations"] = nag_result_obj.diagnostic_info["iters_total"].iloc[
+            -1
+        ]
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception:
+        processed["n_iterations"] = None
+
+    if hasattr(nag_result_obj, "states"):
+        processed.update({"states": nag_result_obj.states})
+    if hasattr(nag_result_obj, "history_params"):
+        processed.update({"history_params": nag_result_obj.history_params})
     if nag_result_obj.x is not None:
         processed["solution_x"] = nag_result_obj.x
     else:
         processed["solution_x"] = np.array([np.nan] * len_x)
-    try:
-        processed["solution_derivative"] = nag_result_obj.gradient
-    except AttributeError:
-        pass
-    try:
-        processed["solution_hessian"] = nag_result_obj.hessian
-    except AttributeError:
-        pass
-    if processed["message"].startswith("Error (bad input)"):
-        raise ValueError(processed["message"])
     return processed
 
 
@@ -460,9 +459,6 @@ def _create_nag_advanced_options(
         "tr_radius.gamma_inc_overline": trustregion_expansion_factor_very_successful,
         "tr_radius.alpha1": trustregion_shrinking_factor_lower_radius,
         "tr_radius.alpha2": trustregion_shrinking_factor_upper_radius,
-        "general.rounding_error_constant": interpolation_rounding_error,
-        "general.safety_step_thresh": threshold_for_safety_step,
-        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
         "init.random_initial_directions": initial_directions == "random",
         "init.random_directions_make_orthogonal": random_directions_orthogonal,
         "slow.thresh_for_slow": convergence_slow_progress[
@@ -491,11 +487,11 @@ def _create_nag_advanced_options(
         "restarts.soft.move_xk": trustregion_reset_options["move_center_at_soft_reset"],
         "restarts.soft.max_fake_successful_steps": trustregion_reset_options[
             "max_iterations_without_new_best_after_soft_reset"
-        ],  # noqa: E501
+        ],
         "restarts.auto_detect": trustregion_reset_options["auto_detect"],
         "restarts.auto_detect.history": trustregion_reset_options[
             "auto_detect_history"
-        ],  # noqa: E501
+        ],
         "restarts.auto_detect.min_correl": trustregion_reset_options[
             "auto_detect_min_correlations"
         ],
@@ -508,8 +504,7 @@ def _create_nag_advanced_options(
 
 
 def _change_evals_per_point_interface(func):
-    """Change the interface of the user supplied function to the one expected
-    by NAG.
+    """Change the interface of the user supplied function to the one expected by NAG.
 
     Args:
         func (callable or None): function mapping from our names to
@@ -518,6 +513,7 @@ def _change_evals_per_point_interface(func):
     Returns:
         adjusted_noise_n_evals_per_point (callable): function mapping from the
             argument names expected by pybobyqa and df-ols to noise_n_evals_per_point.
+
     """
     if func is not None:
 

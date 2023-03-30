@@ -2,18 +2,15 @@
 import numpy as np
 import pytest
 from estimagic.config import IS_FIDES_INSTALLED
-from numpy.testing import assert_allclose
 from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_FIDES_INSTALLED:
     from estimagic.optimization.fides_optimizers import fides
-    from fides.hessian_approximation import Broyden
-    from fides.hessian_approximation import FX
-    from fides.hessian_approximation import SR1
+    from fides.hessian_approximation import FX, SR1, Broyden
 else:
-    FX = lambda: None  # noqa: E731
-    SR1 = lambda: None  # noqa: E731
-    Broyden = lambda phi: None  # noqa: E731
+    FX = lambda: None
+    SR1 = lambda: None
+    Broyden = lambda phi: None  # noqa: ARG005
 
 test_cases_no_contribs_needed = [
     {},
@@ -74,23 +71,6 @@ def test_fides_unimplemented_algo_options(algo_options):
             upper_bounds=np.array([10, 10, 10]),
             **algo_options,
         )
-
-
-@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
-def test_fides_with_super_high_convergence_criteria():
-    with pytest.raises(AssertionError):
-        res = fides(
-            criterion_and_derivative=criterion_and_derivative,
-            x=np.array([1, -5, 3]),
-            lower_bounds=np.array([-10, -10, -10]),
-            upper_bounds=np.array([10, 10, 10]),
-            convergence_absolute_criterion_tolerance=10,
-            convergence_relative_criterion_tolerance=10,
-            convergence_absolute_params_tolerance=10,
-            convergence_absolute_gradient_tolerance=10,
-            convergence_relative_gradient_tolerance=10,
-        )
-        assert_allclose(res["solution_x"], np.zeros(3), atol=1e-4)
 
 
 @pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")

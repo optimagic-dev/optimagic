@@ -4,12 +4,14 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.decorators import AlgoInfo
-from estimagic.examples.criterion_functions import sos_criterion_and_gradient
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_dict_criterion_with_pd_objects
-from estimagic.examples.criterion_functions import sos_gradient
-from estimagic.examples.criterion_functions import sos_pandas_gradient
-from estimagic.examples.criterion_functions import sos_scalar_criterion
+from estimagic.examples.criterion_functions import (
+    sos_criterion_and_gradient,
+    sos_dict_criterion,
+    sos_dict_criterion_with_pd_objects,
+    sos_gradient,
+    sos_pandas_gradient,
+    sos_scalar_criterion,
+)
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
@@ -23,7 +25,7 @@ def reparametrize_from_internal(x):
     return res
 
 
-def convert_derivative(external_derivative, internal_values):
+def convert_derivative(external_derivative, internal_values):  # noqa: ARG001
     return external_derivative
 
 
@@ -45,7 +47,7 @@ def base_inputs():
         "error_handling": "raise",
         "numdiff_options": {},
         "logging": False,
-        "db_kwargs": {"database": False, "fast_logging": False, "path": "logging.db"},
+        "database": None,
         "error_penalty_func": None,
         "fixed_log_data": {"stage": "optimization", "substage": 0},
     }
@@ -128,7 +130,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
 
     inputs["converter"] = converter
 
-    def raising_crit_and_deriv(x):
+    def raising_crit_and_deriv(x):  # noqa: ARG001
         raise ValueError()
 
     inputs["error_handling"] = "continue"
@@ -137,7 +139,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
     inputs["derivative"] = sos_gradient
     inputs["criterion_and_derivative"] = raising_crit_and_deriv
     inputs["direction"] = direction
-    inputs["error_penalty_func"] = lambda x, task: (42, 52)
+    inputs["error_penalty_func"] = lambda x, task: (42, 52)  # noqa: ARG005
 
     with pytest.warns():
         calc_criterion, calc_derivative = internal_criterion_and_derivative_template(

@@ -4,14 +4,15 @@ The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io
 
 """
 import numpy as np
+
 from estimagic.config import IS_NLOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    STOPPING_MAX_CRITERION_EVALUATIONS,
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
 from estimagic.parameters.nonlinear_constraints import (
@@ -40,7 +41,6 @@ def nlopt_bobyqa(
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-
     """Minimize a scalar function using the BOBYQA algorithm.
 
     For details see :ref:`list_of_nlopt_algorithms`.
@@ -372,7 +372,6 @@ def nlopt_ccsaq(
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-
     """Minimize a scalar function using CCSAQ algorithm.
 
     For details see :ref:`list_of_nlopt_algorithms`.
@@ -415,7 +414,6 @@ def nlopt_mma(
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-
     """Minimize a scalar function using the method of moving asymptotes (MMA).
 
     For details see :ref:`list_of_nlopt_algorithms`.
@@ -462,7 +460,6 @@ def nlopt_var(
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     rank_1_update=True,
 ):
-
     """Minimize a scalar function limited memory switching variable-metric method.
 
     For details see :ref:`list_of_nlopt_algorithms`.
@@ -780,8 +777,7 @@ def _get_nlopt_constraints(constraints, filter_type):
 
 
 def _internal_to_nlopt_constaint(c):
-    """
-    Sign flip description:
+    """Sign flip description:
 
     In estimagic, inequality constraints are internally defined as g(x) >= 0. NLOPT uses
     h(x) <= 0, which is why we need to flip the sign.
@@ -811,11 +807,11 @@ def _process_nlopt_results(nlopt_obj, solution_x):
         ),
         3: (
             "Optimizer stopped because convergence_relative_criterion_tolerance or "
-            + "convergence_absolute_criterion_tolerance was reached"
+            "convergence_absolute_criterion_tolerance was reached"
         ),
         4: (
             "Optimizer stopped because convergence_relative_params_tolerance or "
-            + "convergence_absolute_params_tolerance was reached"
+            "convergence_absolute_params_tolerance was reached"
         ),
         5: "Optimizer stopped because max_criterion_evaluations was reached",
         6: "Optimizer stopped because max running time was reached",

@@ -3,7 +3,8 @@
 All functions take a numpy array with parameters as their first argument.
 
 Example inputs for the binary choice functions are in binary_choice_inputs.pickle.
-They come from the statsmodels documentation: https://tinyurl.com/y4x67vwl
+They come from the statsmodels documentation:
+https://tinyurl.com/y4x67vwl
 We pickled them so we don't need statsmodels as a dependency.
 
 """
@@ -36,7 +37,7 @@ def logit_loglikeobs_jacobian(params, y, x):
     return (y - c).reshape(-1, 1) * x
 
 
-def logit_loglike_hessian(params, y, x):
+def logit_loglike_hessian(params, y, x):  # noqa: ARG001
     c = 1 / (1 + np.exp(-(np.dot(x, params))))
     return -np.dot(c * (1 - c) * x.T, x)
 

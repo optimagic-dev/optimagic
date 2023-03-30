@@ -28,7 +28,7 @@ def load_history(start_vec, solver_sub):
     return history_x, history_criterion
 
 
-@pytest.fixture
+@pytest.fixture()
 def criterion():
     data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
@@ -129,7 +129,6 @@ def test_bntr(
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
     aaae(result["solution_x"], x_expected, decimal=3)
-    # assert False
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])

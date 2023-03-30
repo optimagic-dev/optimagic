@@ -1,16 +1,13 @@
-"""
-Implementation of parallelosation of Nelder-Mead algorithm
-"""
+"""Implementation of parallelosation of Nelder-Mead algorithm."""
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-)
-from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
 )
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 
 
 @mark_minimizer(
@@ -32,10 +29,9 @@ def neldermead_parallel(
     convergence_absolute_params_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,  # noqa: E501
     batch_evaluator="joblib",
 ):
-    """
-    Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
-    implementation of the simplex function minimization routine,
-    Computational Economics, 2007.
+    """Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
+    implementation of the simplex function minimization routine, Computational
+    Economics, 2007.
 
     Parameters
     ----------
@@ -96,7 +92,7 @@ def neldermead_parallel(
 
     # construct initial simplex using one of feasible methods
     # see Wssing, Simon, Proper initialization is crucial for
-    # the Nelder–Mead simplex search, Optimization Letters, 2019
+    # the Nelder-Mead simplex search, Optimization Letters, 2019
     # for a discussion about the choice of initialization
 
     if not callable(init_simplex_method):
@@ -113,7 +109,6 @@ def neldermead_parallel(
 
     # parallelized function
     def func_parallel(args):
-
         criterion, s_j, s_j_r, f_s_0, f_s_j, f_s_j_1, m = args  # read arguments
 
         f_s_j_r = criterion(
@@ -121,20 +116,17 @@ def neldermead_parallel(
         )  # calculate value of the criterion at the reflection point
 
         if f_s_j_r < f_s_0:  # if the reflection point is better than the best point
-
             s_j_e = m + gamma * (s_j_r - m)  # calculate expansion point
             f_s_j_e = criterion(
                 s_j_e
             )  # calculate value of the criterion at the expansion point
 
             if f_s_j_e < f_s_0:  # if the expansion point is better than the best point
-
                 return np.hstack(
                     [s_j_e, f_s_j_e, 0]
                 )  # return the expansion point as a new point
 
             else:  # if the expansion point is worse than the best point
-
                 return np.hstack(
                     [s_j_r, f_s_j_r, 0]
                 )  # return the reflection point as a new point
@@ -142,13 +134,11 @@ def neldermead_parallel(
         elif (
             f_s_j_r < f_s_j_1
         ):  # if reflection point is better than the next worst point
-
             return np.hstack(
                 [s_j_r, f_s_j_r, 0]
             )  # return reflection point as a new point
 
         else:  # if the reflection point is worse than the next worst point
-
             if (
                 f_s_j_r < f_s_j
             ):  # if value of the criterion at reflection point is better than
@@ -172,7 +162,6 @@ def neldermead_parallel(
 
             else:
                 if f_s_j_r < f_s_j:
-
                     return np.hstack(
                         [s_j_r, f_s_j_r, 1]
                     )  # return reflection point as a new point
@@ -188,7 +177,6 @@ def neldermead_parallel(
     iterations = 0  # number of criterion evaluations
 
     while not optimal:
-
         iterations += 1  # new iteration
 
         # sort points and arguments increasing
@@ -245,14 +233,7 @@ def neldermead_parallel(
         if (
             np.max(np.abs(f_s[0, :] - f_s[1:, :]))
             <= convergence_absolute_criterion_tolerance
-            and np.max(
-                np.abs(
-                    s[0, :]
-                    - s[
-                        1:,
-                    ]
-                )
-            )
+            and np.max(np.abs(s[0, :] - s[1:,]))
             <= convergence_absolute_params_tolerance
         ):
             optimal = True
@@ -264,7 +245,6 @@ def neldermead_parallel(
             optimal = True
             converge = False
             reason_to_stop = "Maximum number of interation exceeded"
-        continue
 
     # save results
     result = {
@@ -282,7 +262,6 @@ def neldermead_parallel(
 # Nelder-Mead siplex algorithm with adaptive parameters, Computational Optimization
 # and Applications, 2012
 def _init_algo_params(adaptive, j):
-
     if adaptive:
         # algorithem parameters alla Gao-Han (adaptive)
         return (
@@ -303,7 +282,6 @@ def _init_algo_params(adaptive, j):
 
 # initial structure of the simplex
 def _init_simplex(x):
-
     s = np.vstack(
         [
             x,
@@ -316,7 +294,6 @@ def _init_simplex(x):
 
 # initilize due to L. Pfeffer at Standford (Matlab fminsearch and SciPy default option)
 def _pfeffer(x):
-
     s = _init_simplex(x)
 
     # method parameters
@@ -332,7 +309,6 @@ def _pfeffer(x):
 # see Nash, J.C.: Compact numerical methods for computers: linear algebra and
 # function minimisation, 2nd edn. Adam Hilger Ltd., Bristol (1990) for details
 def _nash(x):
-
     s = _init_simplex(x)
 
     # method parameters
@@ -346,7 +322,6 @@ def _nash(x):
 # adopted from Gao F., Han L., Implementing the
 # Nelder-Mead siplex algorithm with adaptive parameters, Computational Optimizatio
 def _gao_han(x):
-
     s = _init_simplex(x)
 
     # method parameters
@@ -372,7 +347,6 @@ def _gao_han(x):
 # see Varadhan, R., Borchers, H.W.: Dfoptim: derivative-free optimization (2016).
 # https://CRAN.R-project. org/package=dfoptim. R package version 2016.7-1 for details
 def _varadhan_borchers(x):
-
     s = _init_simplex(x)
 
     # method parameters

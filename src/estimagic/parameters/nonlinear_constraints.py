@@ -1,16 +1,15 @@
+import itertools
 from functools import partial
 
 import numpy as np
 import pandas as pd
+from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
+
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.exceptions import InvalidConstraintError
-from estimagic.exceptions import InvalidFunctionError
+from estimagic.exceptions import InvalidConstraintError, InvalidFunctionError
 from estimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def process_nonlinear_constraints(
@@ -46,13 +45,11 @@ def process_nonlinear_constraints(
     # do checks first to fail fast
     constraint_evals = []
     for _constraint in nonlinear_constraints:
-
         _eval = _check_validity_and_return_evaluation(_constraint, params, skip_checks)
         constraint_evals.append(_eval)
 
     processed = []
     for _constraint, _eval in zip(nonlinear_constraints, constraint_evals):
-
         _processed_constraint = _process_nonlinear_constraint(
             _constraint,
             constraint_eval=_eval,
@@ -138,7 +135,6 @@ def _process_nonlinear_constraint(
     _type = "eq" if "value" in c else "ineq"
 
     if _type == "eq":
-
         # ==============================================================================
         # Equality constraints
         #
@@ -157,7 +153,6 @@ def _process_nonlinear_constraint(
         n_constr = _n_constr
 
     else:
-
         # ==============================================================================
         # Inequality constraints
         #
@@ -227,6 +222,52 @@ def _equality_to_inequality(c):
     else:
         out = c
     return out
+
+
+def vector_as_list_of_scalar_constraints(nonlinear_constraints):
+    """Return constraints where vector constraints are converted to scalar constraints.
+
+    This is necessary for internal optimizers that only support scalar constraints.
+
+    """
+    list_of_constraints_lists = [
+        _vector_to_list_of_scalar(c) for c in nonlinear_constraints
+    ]
+    constraints = list(itertools.chain.from_iterable(list_of_constraints_lists))
+    return constraints
+
+
+def _vector_to_list_of_scalar(constraint):
+    if constraint["n_constr"] > 1:
+        out = []
+        for k in range(constraint["n_constr"]):
+            c = constraint.copy()
+            fun, jac = _get_components(constraint["fun"], constraint["jac"], idx=k)
+            c["fun"] = fun
+            c["jac"] = jac
+            c["n_constr"] = 1
+            out.append(c)
+    else:
+        out = [constraint]
+    return out
+
+
+def _get_components(fun, jac, idx):
+    """Return function and derivative for a single component of a vector function.
+
+    Args:
+        fun (callable): Function that returns a vector.
+        jac (callable): Derivative of the function that returns a matrix.
+        idx (int): Index of the component.
+
+    Returns:
+        callable: Component function at index idx.
+        callable: Jacobian of the component function.
+
+    """
+    fun_component = lambda x: fun(x)[idx]
+    jac_component = lambda x: jac(x)[idx]
+    return fun_component, jac_component
 
 
 # ======================================================================================
@@ -411,11 +452,11 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
         else:
             try:
                 c["selector"](params)
-            except Exception:
+            except Exception as e:
                 raise InvalidFunctionError(
                     "Error when calling 'selector' function on params in constraint "
                     f" {c}"
-                )
+                ) from e
 
     elif "loc" in c:
         if not isinstance(params, (pd.Series, pd.DataFrame)):
@@ -425,8 +466,8 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
             )
         try:
             params.loc[c["loc"]]
-        except (KeyError, IndexError):
-            raise InvalidConstraintError("'loc' string is invalid.")
+        except (KeyError, IndexError) as e:
+            raise InvalidConstraintError("'loc' string is invalid.") from e
 
     elif "query" in c:
         if not isinstance(params, pd.DataFrame):
@@ -436,10 +477,10 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
             )
         try:
             params.query(c["query"])
-        except Exception:
+        except Exception as e:
             raise InvalidConstraintError(
                 f"'query' string is invalid in constraint {c}."
-            )
+            ) from e
 
     # ==================================================================================
     # check that constraints can be evaluated
@@ -448,14 +489,13 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
     constraint_eval = None
 
     if not skip_checks:
-
         selector = _process_selector(c)
 
         try:
             constraint_eval = c["func"](selector(params))
-        except Exception:
+        except Exception as e:
             raise InvalidFunctionError(
                 f"Error when evaluating function of constraint {c}."
-            )
+            ) from e
 
     return constraint_eval

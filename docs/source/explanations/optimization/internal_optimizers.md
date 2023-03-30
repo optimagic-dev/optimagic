@@ -1,11 +1,11 @@
-(internal-optimizer-interface)=
+(internal_optimizer_interface)=
 
 # Internal optimizers for estimagic
 
-estimagic provides a large collection of optimization algorithm that can be
-used by passing the algorithm name as `algorithm` into `maximize` or `minimize`.
-Advanced users can also use estimagic with their own algorithm, as long as it
-conforms with the internal optimizer interface.
+estimagic provides a large collection of optimization algorithm that can be used by
+passing the algorithm name as `algorithm` into `maximize` or `minimize`. Advanced users
+can also use estimagic with their own algorithm, as long as it conforms with the
+internal optimizer interface.
 
 The advantages of using the algorithm with estimagic over using it directly are:
 
@@ -24,20 +24,20 @@ transformed problem.
 
 ## The internal optimizer interface
 
-An internal optimizer is a a function that minimizes a criterion function and fulfills
-a few conditions. In our experience, it is not hard to wrap any optimizer into
-this interface. The mandatory conditions for an internal optimizer function are:
+An internal optimizer is a a function that minimizes a criterion function and fulfills a
+few conditions. In our experience, it is not hard to wrap any optimizer into this
+interface. The mandatory conditions for an internal optimizer function are:
 
-1. It is decorated with the `mark_minimizer` decorator and thus carries
-   information that tells estimagic how to use the internal optimizer.
+1. It is decorated with the `mark_minimizer` decorator and thus carries information that
+   tells estimagic how to use the internal optimizer.
 
-2. It uses the standard names for the arguments that describe the optimization problem:
+1. It uses the standard names for the arguments that describe the optimization problem:
 
    - criterion: for the criterion function
    - x: for the start parameters in form of a 1d numpy array
    - derivative: for the first derivative of the criterion function
-   - criterion_and_derivative: for a function that evaluates the criterion and its
-     first derivative jointly
+   - criterion_and_derivative: for a function that evaluates the criterion and its first
+     derivative jointly
    - lower_bounds: for lower bounds in form of a 1d numpy array
    - upper_bounds: for upper bounds in form of a 1d numpy array
    - nonlinear_constraints: for nonlinear constraints in form a list of dictionaries
@@ -45,7 +45,7 @@ this interface. The mandatory conditions for an internal optimizer function are:
    Of course, algorithms that do not need a certain argument (e.g. unbounded or
    derivative free ones) do not need those arguments at all.
 
-3. All other arguments have default values.
+1. All other arguments have default values.
 
 (internal-optimizer-output)=
 
@@ -55,16 +55,16 @@ After convergence or when another stopping criterion is achieved the internal op
 should return a dictionary with the following entries:
 
 - solution_x: The best parameter achieved so far
-- solution_criterion: The value of the criterion at solution_x. This can be a scalar
-  or dictionary.
+- solution_criterion: The value of the criterion at solution_x. This can be a scalar or
+  dictionary.
 - n_criterion_evaluations: The number of criterion evaluations.
 - n_derivative_evaluations: The number of derivative evaluations.
 - n_iterations: The number of iterations
 - success: True if convergence was achieved
 - message: A string with additional information.
 
-If some of the entries are missing, they will automatically be filled with `None` and
-no errors are raised. Nevertheless, you should try to return as much information as
+If some of the entries are missing, they will automatically be filled with `None` and no
+errors are raised. Nevertheless, you should try to return as much information as
 possible.
 
 (naming-conventions)=
@@ -75,15 +75,13 @@ Many optimizers have similar but slightly different names for arguments that con
 the convergence criteria, other stopping conditions, and so on. We try to harmonize
 those names and their default values where possible.
 
-Since some optimizers support many tuning parameters we group some of them by the
-first part of their name (e.g. all convergence criteria names start with
-`convergence`). See {ref}`list_of_algorithms` for the signatures of the provided
-internal optimizers.
+Since some optimizers support many tuning parameters we group some of them by the first
+part of their name (e.g. all convergence criteria names start with `convergence`). See
+{ref}`list_of_algorithms` for the signatures of the provided internal optimizers.
 
-The preferred default values can be imported from
-`estimagic.optimization.algo_options` which are documented in {ref}`algo_options`.
-If you add a new optimizer to estimagic you should only deviate from them if you have
-good reasons.
+The preferred default values can be imported from `estimagic.optimization.algo_options`
+which are documented in {ref}`algo_options`. If you add a new optimizer to estimagic you
+should only deviate from them if you have good reasons.
 
 Note that a complete harmonization is not possible nor desirable, because often
 convergence criteria that clearly are the same are implemented slightly different for
@@ -95,15 +93,15 @@ the exact meaning of all options for all optimizers.
 Estimagic can pass nonlinear constraints to the internal optimizer. The internal
 interface for nonlinear constraints is as follows.
 
-A nonlinear constraint is a `list` of `dict` 's, where each `dict` represents a
-group of constraints. In each group the constraint function can potentially be
-multi-dimensional. We distinguish between equality and inequality constraints, which is
-signalled by a dict entry `type` that takes values `"eq"` and `"ineq"`. The
-constraint function, which takes as input an internal parameter vector, is stored under
-the entry `fun`, while the Jacobian of that function is stored at `jac`. The
-tolerance for the constraints is stored under `tol`. At last, the number of
-constraints in each group is specified under `n_constr`. An example list with one
-constraint that would be passed to the internal optimizer is given by
+A nonlinear constraint is a `list` of `dict` 's, where each `dict` represents a group of
+constraints. In each group the constraint function can potentially be multi-dimensional.
+We distinguish between equality and inequality constraints, which is signalled by a dict
+entry `type` that takes values `"eq"` and `"ineq"`. The constraint function, which takes
+as input an internal parameter vector, is stored under the entry `fun`, while the
+Jacobian of that function is stored at `jac`. The tolerance for the constraints is
+stored under `tol`. At last, the number of constraints in each group is specified under
+`n_constr`. An example list with one constraint that would be passed to the internal
+optimizer is given by
 
 ```
 constraints = [
@@ -117,30 +115,28 @@ constraints = [
 ]
 ```
 
-:::{note}
-**Equality.** Internal equality constraints assume that the constraint is met when the function is
-zero. That is
+**Equality.** Internal equality constraints assume that the constraint is met when the
+function is zero. That is
 
 $$
 0 = g(x) \in \mathbb{R}^m .
 $$
 
-**Inequality.** Internal inequality constraints assume that the constraint is met when the function is
-greater or equal to zero. That is
+**Inequality.** Internal inequality constraints assume that the constraint is met when
+the function is greater or equal to zero. That is
 
 $$
 0 \leq g(x) \in \mathbb{R}^m .
 $$
-:::
 
 ## Other conventions
 
 - Internal optimizer are functions and should thus adhere to python naming conventions,
   for functions (i.e. only consist of lowercase letters and individual words should be
-  separated by underscores). For optimizers that are implemented in many packages
-  (e.g. Nelder Mead or BFGS), the name of the original package in which it was
-  implemented has to be part of the name.
+  separated by underscores). For optimizers that are implemented in many packages (e.g.
+  Nelder Mead or BFGS), the name of the original package in which it was implemented has
+  to be part of the name.
 - All arguments of an internal optimizer should actually be used. In particular, if an
-  optimizer does not support bounds it should not have `lower_bounds` and
-  `upper_bounds` as arguments; derivative free optimizers should not have
-  `derivative` or `criterion_and_derivative` as arguments, etc.
+  optimizer does not support bounds it should not have `lower_bounds` and `upper_bounds`
+  as arguments; derivative free optimizers should not have `derivative` or
+  `criterion_and_derivative` as arguments, etc.

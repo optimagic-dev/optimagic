@@ -6,21 +6,21 @@
 
 Estimagic distinguishes between bounds and constraints. Bounds are lower and upper
 bounds for parameters. In the literature, they are sometimes called box constraints.
-Bounds are specified as `lower_bounds` and `upper_bounds` argument to `maximize`
-and `minimize`.
+Bounds are specified as `lower_bounds` and `upper_bounds` argument to `maximize` and
+`minimize`.
 
 Examples with bounds can be found in [this tutorial].
 
 To specify more general constraints on your parameters, you can use the argument
 `constraints`. The variety of constraints you can impose ranges from rather simple ones
-(e.g. parameters are fixed to a value, a group of parameters is required to be equal)
-to more complex ones (like general linear constraints, or even nonlinear constraints).
+(e.g. parameters are fixed to a value, a group of parameters is required to be equal) to
+more complex ones (like general linear constraints, or even nonlinear constraints).
 
 ## Can you use constraints with all optimizers?
 
 With the exception of general nonlinear constraints, we implement constraints via
-reparametrizations. Details are explained [here]. This means that you can use all of
-the constraints with any optimizer that supports bounds. Some constraints (e.g. fixing
+reparametrizations. Details are explained [here]. This means that you can use all of the
+constraints with any optimizer that supports bounds. Some constraints (e.g. fixing
 parameters) can even be used with optimizers that do not support bounds.
 
 ## Example criterion function
@@ -28,7 +28,7 @@ parameters) can even be used with optimizers that do not support bounds.
 Let's look at a variation of the sphere function to illustrate what kinds of constraints
 you can impose and how you specify them in estimagic:
 
-````{eval-rst}
+```{eval-rst}
 
 .. code-block:: python
 
@@ -62,10 +62,10 @@ criterion function in a additively separable way.
 
 ## Types of constraints
 
-Below, we show a very simple example of each type of constraint implemented in estimagic.
-For each constraint, we will select a subset of the parameters on which the constraint
-is imposed via the "loc" key. Generalizations for selecting subsets of `params` that are not a
-flat numpy array are explained in the next section.
+Below, we show a very simple example of each type of constraint implemented in
+estimagic. For each constraint, we will select a subset of the parameters on which the
+constraint is imposed via the "loc" key. Generalizations for selecting subsets of
+`params` that are not a flat numpy array are explained in the next section.
 
 ```{eval-rst}
 .. tabbed:: fixed
@@ -406,6 +406,10 @@ flat numpy array are explained in the next section.
 
     Where the product of all but the last parameters is equal to 1.
 
+    If you have a function that calculates the derivative of your constraint, you can
+    add this under the key `"derivative"` to the constraint dictionary. Otherwise,
+    numerical derivatives are calculated for you if needed.
+
 ```
 
 ## Imposing multiple constraints at once
@@ -439,10 +443,10 @@ get a descriptive error message if your constraints are not compatible.
 
 ## How to select the parameters?
 
-All the above examples use a `"loc"` entry in the constraint dictionary to select
-the subset of `params` on which the constraint is imposed. This is just one out
-of several ways to do it. Which methods are available also depends on whether your
-parameters are a numpy array, DataFrame, or general pytree.
+All the above examples use a `"loc"` entry in the constraint dictionary to select the
+subset of `params` on which the constraint is imposed. This is just one out of several
+ways to do it. Which methods are available also depends on whether your parameters are a
+numpy array, DataFrame, or general pytree.
 
 ```{eval-rst}
 +---------------+---------------+----------------+---------------+

@@ -4,9 +4,11 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic import get_benchmark_problems
-from estimagic.benchmarking.more_wild import linear_full_rank
-from estimagic.benchmarking.more_wild import linear_full_rank_solution_x
-from estimagic.benchmarking.more_wild import rosenbrock
+from estimagic.benchmarking.more_wild import (
+    linear_full_rank,
+    linear_full_rank_solution_x,
+    rosenbrock,
+)
 from estimagic.benchmarking.run_benchmark import run_benchmark
 
 # ======================================================================================
@@ -134,7 +136,7 @@ def _internal_criterion_pandas(params, criterion):
 
 def _internal_criterion_dict(params, criterion):
     if "b" in params:
-        x = np.array([params["a"]] + params["b"].flatten().tolist())
+        x = np.array([params["a"], *params["b"].flatten().tolist()])
     else:
         x = params["a"]
     critval = criterion(x)

@@ -6,8 +6,7 @@ This test module only runs if jax is installed.
 import numpy as np
 import pytest
 from estimagic.config import IS_JAX_INSTALLED
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.differentiation.derivatives import second_derivative
+from estimagic.differentiation.derivatives import first_derivative, second_derivative
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_equal
 
@@ -30,12 +29,11 @@ def _tree_equal_numpy_leaves(tree1, tree2):
 
 
 def _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax=None):
-    """
+    """Computes first and second derivative using estimagic and jax.
 
-    Computes first and second derivative using estimagic and jax. Then converts leaves
-    of jax output to numpy so that we can use numpy.testing. For higher dimensional
-    output we need to define two function, one with numpy array output and one with
-    jax.numpy array output.
+    Then converts leaves of jax output to numpy so that we can use numpy.testing. For
+    higher dimensional output we need to define two function, one with numpy array
+    output and one with jax.numpy array output.
 
     """
     func_jax = func if func_jax is None else func_jax
@@ -53,7 +51,7 @@ def _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax=None)
     return out
 
 
-@pytest.mark.jax
+@pytest.mark.jax()
 def test_scalar_input_scalar_output():
     def func(params):
         return params**2
@@ -65,7 +63,7 @@ def test_scalar_input_scalar_output():
     _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
 
 
-@pytest.mark.jax
+@pytest.mark.jax()
 def test_array_input_scalar_output():
     def func(params):
         return params @ params
@@ -77,7 +75,7 @@ def test_array_input_scalar_output():
     _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
 
 
-@pytest.mark.jax
+@pytest.mark.jax()
 def test_dict_input_scalar_output():
     def func(params):
         return params["a"] * params["b"]
@@ -89,7 +87,7 @@ def test_dict_input_scalar_output():
     _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
 
 
-@pytest.mark.jax
+@pytest.mark.jax()
 def test_array_dict_input_scalar_output():
     def func(params):
         return params["a"].sum() * params["b"].prod()
@@ -104,7 +102,7 @@ def test_array_dict_input_scalar_output():
     _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
 
 
-@pytest.mark.jax
+@pytest.mark.jax()
 def test_array_input_array_output():
     def func(params):
         return np.array([params.sum(), params.prod()])
@@ -119,7 +117,7 @@ def test_array_input_array_output():
     _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
 
 
-@pytest.mark.jax
+@pytest.mark.jax()
 def test_array_dict_input_array_output():
     def func(params):
         return params["b"] * np.array([params["a"].sum(), params["a"].prod()])
@@ -134,7 +132,7 @@ def test_array_dict_input_array_output():
     _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
 
 
-@pytest.mark.jax
+@pytest.mark.jax()
 def test_array_dict_input_dict_output():
     def func(params):
         value = params["b"] * np.array([params["a"].sum(), params["a"].prod()])

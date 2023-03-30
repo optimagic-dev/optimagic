@@ -1,15 +1,14 @@
+import difflib
 import warnings
 from hashlib import sha1
 
 import cloudpickle
 import numpy as np
 import pandas as pd
-from scipy.linalg import ldl
-from scipy.linalg import qr
+from scipy.linalg import ldl, qr
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
-    from fuzzywuzzy import process as fw_process
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -124,16 +123,17 @@ def propose_alternatives(requested, possibilities, number=3):
     Example:
         >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
         >>> propose_alternatives("scipy_L-BFGS-B", possibilities, number=1)
-        ['scipy_lbfgsb']
+        ['scipy_slsqp']
         >>> propose_alternatives("L-BFGS-B", possibilities, number=2)
-        ['scipy_lbfgsb', 'nlopt_lbfgsb']
+        ['scipy_slsqp', 'scipy_lbfgsb']
 
     """
     number = min(number, len(possibilities))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
-        proposals_w_probs = fw_process.extract(requested, possibilities, limit=number)
-    proposals = [proposal[0] for proposal in proposals_w_probs]
+        proposals = difflib.get_close_matches(
+            requested, possibilities, n=number, cutoff=0
+        )
 
     return proposals
 
@@ -205,8 +205,8 @@ def robust_inverse(matrix, msg=""):
 
 
 def _internal_robust_cholesky(matrix, threshold):
-    """Lower triangular cholesky factor of *matrix* using an LDL decomposition
-    and QR factorization.
+    """Lower triangular cholesky factor of *matrix* using an LDL decomposition and QR
+    factorization.
 
     Args:
         matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix
@@ -300,10 +300,7 @@ def isscalar(element):
     if np.isscalar(element):
         return True
     # call anything a scalar that says it has 0 dimensions
-    elif getattr(element, "ndim", -1) == 0:
-        return True
-    else:
-        return False
+    return getattr(element, "ndim", -1) == 0
 
 
 def get_rng(seed):

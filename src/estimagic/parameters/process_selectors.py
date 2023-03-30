@@ -3,9 +3,10 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
+from pybaum import tree_just_flatten
+
 from estimagic.exceptions import InvalidConstraintError
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten
 
 
 def process_selectors(constraints, params, tree_converter, param_names):
@@ -62,7 +63,7 @@ def process_selectors(constraints, params, tree_converter, param_names):
         except Exception as e:
             msg = (
                 "An error occurred when trying to select parameters for the following "
-                "constraint:\n{constr}"
+                f"constraint:\n{constr}"
             )
             raise InvalidConstraintError(msg) from e
 
@@ -95,7 +96,6 @@ def process_selectors(constraints, params, tree_converter, param_names):
 
 def _get_selection_field(constraint, selector_case, params_case):
     """Get the relevant selection field of a constraint."""
-
     selector_case = _get_selector_case(constraint)
 
     valid = {

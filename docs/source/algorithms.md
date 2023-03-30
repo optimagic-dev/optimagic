@@ -1,16 +1,16 @@
-(list-of-algorithms)=
+(list_of_algorithms)=
 
 # Optimizers
 
-Check out {ref}`algorithms` to see how to select an algorithm and specify
-`algo_options` when using `maximize` or `minimize`.
+Check out {ref}`algorithms` to see how to select an algorithm and specify `algo_options`
+when using `maximize` or `minimize`.
 
 ## Optimizers from scipy
 
 (scipy-algorithms)=
 
-estimagic supports most `scipy` algorithms and scipy is automatically installed when
-you install estimagic.
+estimagic supports most `scipy` algorithms and scipy is automatically installed when you
+install estimagic.
 
 ```{eval-rst}
 .. dropdown::  scipy_lbfgsb
@@ -144,7 +144,7 @@ you install estimagic.
 
     The criterion function need not be differentiable.
 
-    Powell's method is a conjugate direction method, minimising the function by a
+    Powell's method is a conjugate direction method, minimizing the function by a
     bi-directional search in each parameter's dimension.
 
     The argument ``direc``, which is the initial set of direction vectors and which
@@ -188,7 +188,7 @@ you install estimagic.
     - **stopping.max_iterations** (int): If the maximum number of iterations is reached, the optimization stops,
       but we do not count this as convergence.
     - **norm** (float): Order of the vector norm that is used to calculate the gradient's "score" that
-      is compared to the gradient tolerance to determine convergence. Defaut is infinite which means that
+      is compared to the gradient tolerance to determine convergence. Default is infinite which means that
       the largest entry of the gradient vector is compared to the gradient tolerance.
 
 ```
@@ -286,7 +286,7 @@ you install estimagic.
   Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
   COBYLA stands for Constrained Optimization By Linear Approximation.
-  It is deriviative-free and supports nonlinear inequality and equality constraints.
+  It is derivative-free and supports nonlinear inequality and equality constraints.
 
   .. note::
       Cobyla's general nonlinear constraints is not supported yet by estimagic.
@@ -398,12 +398,12 @@ you install estimagic.
     .. note::
         Its general nonlinear constraints' handling is not supported yet by estimagic.
 
-    It swiches between two implementations depending on the problem definition.
+    It switches between two implementations depending on the problem definition.
     It is the most versatile constrained minimization algorithm
     implemented in SciPy and the most appropriate for large-scale problems.
     For equality constrained problems it is an implementation of Byrd-Omojokun
     Trust-Region SQP method described in :cite:`Lalee1998` and in :cite:`Conn2000`,
-    p. 549. When inequality constraints  are imposed as well, it swiches to the
+    p. 549. When inequality constraints  are imposed as well, it switches to the
     trust-region interior point method described in :cite:`Byrd1999`.
     This interior point algorithm in turn, solves inequality constraints by
     introducing slack variables and solving a sequence of equality-constrained
@@ -562,6 +562,216 @@ you install estimagic.
 
       - ``tr_solver='exact'``: `tr_options` are ignored.
       - ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+```
+
+```{eval-rst}
+.. dropdown::  scipy_basinhopping
+
+    .. code-block::
+
+        "scipy_basinhopping"
+
+    Find the global minimum of a function using the basin-hopping algorithm which combines a global stepping algorithm with local minimization at each step.
+
+    Basin-hopping is a two-phase method that combines a global stepping algorithm with local minimization at each step. Designed to mimic the natural process of energy minimization of clusters of atoms, it works well for similar problems with “funnel-like, but rugged” energy landscapes.
+
+    This is mainly supported for completeness. Consider estimagic's built in multistart
+    optimization for a similar approach that can run multiple optimizations in parallel,
+    supports all local algorithms in estimagic (as opposed to just those from scipy)
+    and allows for a better visualization of the multistart history.
+
+    When provided the derivative is passed to the local minimization method.
+
+    The algorithm supports the following options:
+
+    - **local_algorithm** (str/callable): Any scipy local minimizer: valid options are.
+      "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
+    "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov".
+    or a custom function for local minimization, default is "L-BFGS-B".
+    - **n_local_optimizations**: (int) The number local optimizations. Default is 100 as in scipy's default.
+    - **temperature**: (float) Controls the randomness in the optimization process. Higher the temperatures the larger jumps in function value will be accepted. Default is 1.0 as in scipy's default.
+    - **stepsize**: (float) Maximum step size. Default is 0.5 as in scipy's default.
+    - **local_algo_options**: (dict) Additional keyword arguments for the local
+      minimizer. Check the documentation of the local scipy algorithms for details on
+      what is supported.
+    - **take_step**: (callable) Replaces the default step-taking routine. Default is None as in scipy's default.
+    - **accept_test**: (callable) Define a test to judge the acception of steps. Default is None as in scipy's default.
+    - **interval**: (int) Determined how often the step size is updated. Default is 50 as in scipy's default.
+    - **convergence.n_unchanged_iterations**: (int) Number of iterations the global
+    minimum estimate stays the same to stops the algorithm. Default is None as in
+    scipy's default.
+    - **seed**: (None, int, numpy.random.Generator,numpy.random.RandomState)Default is None as in scipy's default.
+    - **target_accept_rate**: (float) Adjusts the step size. Default is 0.5 as in scipy's default.
+    - **stepwise_factor**: (float) Step size multiplier upon each step. Lies between (0,1), default is 0.9 as in scipy's default.
+
+```
+
+```{eval-rst}
+.. dropdown::  scipy_brute
+
+    .. code-block::
+
+        "scipy_brute"
+
+    Find the global minimum of a fuction over a given range by brute force.
+
+    Brute force evaluates the criterion at each point and that is why better suited for problems with very few parameters.
+
+    The start values are not actually used because the grid is only defined by bounds.
+    It is still necessary for estimagic to infer the number and format of the
+    parameters.
+
+    Due to the parallelization, this algorithm cannot collect a history of parameters
+    and criterion evaluations.
+
+    The algorithm supports the following options:
+
+    - **n_grid_points** (int):  the number of grid points to use for the brute force search. Default is 20 as in scipy.
+    - **polishing_function** (callable):  Function to seek a more precise minimum near brute-force' best gridpoint taking brute-force's result at initial guess as a positional argument. Default is None providing no polishing.
+    - **n_cores** (int): The number of cores on which the function is evaluated in
+    parallel. Default 1.
+    - **batch_evaluator** (str or callable). An estimagic batch evaluator. Default
+    'joblib'.
+
+```
+
+```{eval-rst}
+.. dropdown::  scipy_differential_evolution
+
+    .. code-block::
+
+        "scipy_differential_evolution"
+
+    Find the global minimum of a multivariate function using differential evolution (DE). DE is a gradient-free method.
+
+    Due to estimagic's general parameter format the integrality and vectorized
+    arguments are not supported.
+
+    The algorithm supports the following options:
+
+    - **strategy** (str): Measure of quality to improve a candidate solution, can be one of the following keywords
+      - ‘best1bin’
+      - ‘best1exp’
+      - ‘rand1exp’
+      - ‘randtobest1exp’
+      - ‘currenttobest1exp’
+      - ‘best2exp’
+      - ‘rand2exp’
+      - ‘randtobest1bin’
+      - ‘currenttobest1bin’
+      - ‘best2bin’
+      - ‘rand2bin’
+      - ‘rand1bin’
+    ,default is 'best1bin'.
+    - **stopping.max_iterations** (int): The maximum number of criterion evaluations without polishing is(stopping.max_iterations + 1) * population_size * number of parameters)
+    - **population_size_multiplier** (int): A multiplier setting the population size. The number of individuals in the population is population_size * number of parameters. The default 15.
+    - **convergence.relative_criterion_tolerance** (float): Default 0.01.
+    - **mutation_constant** (float/tuple): The differential weight denoted by F in literature. Should be within 0 and 2.  The tuple form is used to specify (min, max) dithering which can help speed convergence.  Default is (0.5, 1).
+    - **recombination_constant** (float): The crossover probability or CR in the literature determines the probability that two solution vectors will be combined to produce a new solution vector. Should be between 0 and 1. The default is 0.7.
+    - **seed** (int): DE is stochastic. Define a seed for reproducability.
+    - **polish** (bool): Uses scipy's L-BFGS-B for unconstrained problems and trust-constr for constrained problems to slightly improve the minimization. Default is True.
+    - **sampling_method** (str/np.array): Specify the sampling method for the initial population. It can be one of the following options
+       - "latinhypercube"
+       - "sobol"
+       - "halton"
+       - "random"
+       - an array specifying the initial population of shape (total population size, number of parameters). The initial population is clipped to bounds before use. Default is 'latinhypercube'
+    - **convergence.absolute_criterion_tolerance** (float): CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
+    - **n_cores** (int): The number of cores on which the function is evaluated in
+    parallel. Default 1.
+    - **batch_evaluator** (str or callable). An estimagic batch evaluator. Default
+    'joblib'.
+
+```
+
+```{eval-rst}
+.. dropdown::  scipy_shgo
+
+    .. code-block::
+
+        "scipy_shgo"
+
+    Find the global minimum of a fuction using simplicial homology global optimization.
+
+    The algorithm supports the following options:
+
+    - **local_algorithm** (str): The local optimization algorithm to be used. Only
+    COBYLA and SLSQP supports constraints. Valid options are
+    "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC". "COBYLA".
+    "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact". "trust-krylov"
+    or a custom function for local minimization, default is "L-BFGS-B".
+    - **local_algo_options**: (dict) Additional keyword arguments for the local
+      minimizer. Check the documentation of the local scipy algorithms for details on
+      what is supported.
+    - **n_sampling_points** (int): Specify the number of sampling points to construct the simplical complex.
+    - **n_simplex_iterations** (int): Number of iterations to construct the simplical complex. Default is 1 as in scipy.
+    - **sampling_method** (str/callable): The method to use for sampling the search space. Default 'simplicial'.
+    - **max_sampling_evaluations** (int): The maximum number of evaluations of the criterion function in the sampling phase.
+    - **convergence.minimum_criterion_value** (float): Specify the global minimum when it is known. Default is - **np.inf. For maximization problems, flip the sign.
+    - **convergence.minimum_criterion_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
+    - **stopping.max_iterations** (int): The maximum number of iterations.
+    - **stopping.max_criterion_evaluations** (int): The maximum number of criterion
+    evaluations.
+    - **stopping.max_processing_time** (int): The maximum time allowed for the optimization.
+    - **minimum_homology_group_rank_differential** (int): The minimum difference in the rank of the homology group between iterations.
+    - **symmetry** (bool): Specify whether the criterion contains symetric variables.
+    - **minimize_every_iteration** ()bool: Specify whether the gloabal sampling points are passed to the local algorithm in every iteration.
+    - **max_local_minimizations_per_iteration** (int): The maximum number of local
+    optimizations per iteration. Default False, i.e. no limit.
+    - **infinity_constraints** (bool): Specify whether to save the sampling points outside the feasible domain. Default is True.
+
+```
+
+```{eval-rst}
+.. dropdown::  scipy_dual_annealing
+
+    .. code-block::
+
+        "scipy_dual_annealing"
+
+    Find the global minimum of a function using dual annealing for continuous variables.
+
+    The algorithm supports the following options:
+
+    - **stopping.max_iterations** (int): Specify the maximum number of global searh iterations.
+    - **local_algorithm** (str): The local optimization algorithm to be used. valid
+    options are. "Nelder-Mead". "Powell". "CG". "BFGS". "Newton-CG". "L-BFGS-B". "TNC".
+    "COBYLA". "SLSQP". "trust-constr". "dogleg". "trust-ncg". "trust-exact".
+    "trust-krylov". Default "L-BFGS-B".
+    - **local_algo_options**: (dict) Additional keyword arguments for the local
+      minimizer. Check the documentation of the local scipy algorithms for details on
+      what is supported.
+    - **initial_temperature** (float): The temparature algorithm starts with. The higher values lead to a wider search space. The range is (0.01, 5.e4] and default is 5230.0.
+    - **restart_temperature_ratio** (float): Reanneling starts when the algorithm is decreased to initial_temperature * restart_temperature_ratio. Default is 2e-05.
+    - **visit** (float): Specify the thickness of visiting distribution's tails. Range is (1, 3] and default is scipy's default, 2.62.
+    - **accept** (float): Controls the probability of acceptance. Range is (-1e4, -5] and default is scipy's default, -5.0. Smaller values lead to lower acceptance probability.
+    - **stopping.max_criterion_evaluations** (int): soft limit for the number of criterion evaluations.
+    - **seed** (int, None or RNG): Dual annealing is a stochastic process. Seed or
+    random number generator. Default None.
+    - **no_local_search** (bool): Specify whether to apply a traditional Generalized Simulated Annealing with no local search. Default is False.
+
+```
+
+```{eval-rst}
+.. dropdown::  scipy_direct
+
+    .. code-block::
+
+        "scipy_direct"
+
+    Find the global minimum of a function using dividing rectangles method. It is not necessary to provide an initial guess.
+
+    The algorithm supports the following options:
+
+    - **eps** (float): Specify the minimum difference of the criterion values between the current best hyperrectangle and the next potentially best hyperrectangle to be divided determining the trade off between global and local search. Default is 1e-6 differing from scipy's default 1e-4.
+    - **stopping_max_criterion_evaluations** (int/None): Maximum number of criterion evaluations allowed. Default is None which caps the number of evaluations at 1000 * number of dimentions automatically.
+    - **stopping_max_iterations** (int): Maximum number of iterations allowed.
+    - **locally_biased** (bool): Determine whether to use the locally biased variant of the algorithm DIRECT_L. Default is True.
+    - **convergence.minimum_criterion_value** (float): Specify the global minimum when it is known. Default is - **np.inf. For maximization problems, flip the sign.
+    - **convergence.minimum_criterion_tolerance** (float): Specify the relative error between the current best minimum and the supplied global criterion_minimum allowed. Default is scipy's default, 1e-4.
+    - **volume_hyperrectangle_tolerance** (float): Specify the smallest volume of the hyperrectangle containing the lowest criterion value allowed. Range is (0,1). Default is 1e-16.
+    - **length_hyperrectangle_tolerance** (float): Depending on locally_biased it can refer to normalized side (True) or diagonal (False) length of the hyperrectangle containing the lowest criterion value. Range is (0,1). Default is scipy's default, 1e-6.
 
 ```
 
@@ -746,8 +956,8 @@ We implement a few algorithms from scratch. They are currently considered experi
 
 ## Optimizers from the Toolkit for Advanced Optimization (TAO)
 
-We wrap the pounders algorithm from the Toolkit of Advanced optimization. To use it
-you need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
+We wrap the pounders algorithm from the Toolkit of Advanced optimization. To use it you
+need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
 
 ```{eval-rst}
 .. dropdown::  tao_pounders
@@ -1096,9 +1306,8 @@ install each of them separately:
 
 ## PYGMO2 Optimizers
 
-Please cite {cite}`Biscani2020` in addition to estimagic when using pygmo.
-estimagic supports the following [pygmo2](https://esa.github.io/pygmo2)
-optimizers.
+Please cite {cite}`Biscani2020` in addition to estimagic when using pygmo. estimagic
+supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
 
 ```{eval-rst}
 .. dropdown::  pygmo_gaco
@@ -1826,11 +2035,12 @@ optimizers.
 
 estimagic's support for the Interior Point Optimizer ({cite}`Waechter2005`,
 {cite}`Waechter2005a`, {cite}`Waechter2005b`, {cite}`Nocedal2009`) is built on
-[cyipopt](https://cyipopt.readthedocs.io/en/latest/index.html), a Python wrapper
-for the [Ipopt optimization package](https://coin-or.github.io/Ipopt/index.html).
+[cyipopt](https://cyipopt.readthedocs.io/en/latest/index.html), a Python wrapper for the
+[Ipopt optimization package](https://coin-or.github.io/Ipopt/index.html).
 
-To use ipopt, you need to have [cyipopt installed](https://cyipopt.readthedocs.io/en/latest/index.html) (`conda install
-cyipopt`).
+To use ipopt, you need to have
+[cyipopt installed](https://cyipopt.readthedocs.io/en/latest/index.html)
+(`conda install cyipopt`).
 
 ```{eval-rst}
 .. dropdown:: ipopt
@@ -3027,9 +3237,10 @@ cyipopt`).
 
 ## The Fides Optimizer
 
-estimagic supports the [Fides Optimizer](https://fides-optimizer.readthedocs.io/en/latest). To use Fides, you need to have
-[the fides package](https://github.com/fides-dev/fides) installed (`pip install
-fides>=0.7.4`, make sure you have at least 0.7.1).
+estimagic supports the
+[Fides Optimizer](https://fides-optimizer.readthedocs.io/en/latest). To use Fides, you
+need to have [the fides package](https://github.com/fides-dev/fides) installed
+(`pip install fides>=0.7.4`, make sure you have at least 0.7.1).
 
 ```{eval-rst}
 .. dropdown:: fides
@@ -3137,8 +3348,10 @@ fides>=0.7.4`, make sure you have at least 0.7.1).
 ## The NLOPT Optimizers (nlopt)
 
 estimagic supports the following [NLOPT](https://nlopt.readthedocs.io/en/latest/)
-algorithms. Please add the [appropriate citations](https://nlopt.readthedocs.io/en/latest/Citing_NLopt/) in addition to estimagic when
-using an NLOPT algorithm. To install nlopt run `conda install nlopt`.
+algorithms. Please add the
+[appropriate citations](https://nlopt.readthedocs.io/en/latest/Citing_NLopt/) in
+addition to estimagic when using an NLOPT algorithm. To install nlopt run
+`conda install nlopt`.
 
 ```{eval-rst}
 .. dropdown:: nlopt_bobyqa
@@ -3681,7 +3894,135 @@ using an NLOPT algorithm. To install nlopt run `conda install nlopt`.
       10 * (number of parameters + 1).
 ```
 
-**References**
+## The SimOpt Optimizers (simopt)
+
+estimagic supports the following [SimOpt](https://github.com/simopt-admin/simopt)
+algorithms. Please add the
+[appropriate citations](https://github.com/simopt-admin/simopt) in addition to estimagic
+when using a SimOpt algorithm. To install simopt run `pip install simoptlib==1.0.1`.
+
+```{eval-rst}
+.. dropdown:: simopt_adam
+
+    .. code-block::
+
+        "simopt_adam"
+
+    Minimize a scalar function using the ADAM algorithm from SimOpt.
+
+    - **stopping_max_iterations** (int): If the maximum number of iterations is reached,
+      the optimization stops, but we do not count this as convergence.
+    - **crn_across_solns** (bool): Use CRN across solutions? Default True.
+    - **r** (int): Number of replications taken at each solution. Default 1.
+    - **beta_1** (float): Exponential decay of the rate for the first moment estimates.
+      Default 0.9.
+    - **beta_2** (float): Exponential decay rate for the second-moment estimates.
+      Default 0.999.
+    - **alpha** (float): Step size. Default 1.0.
+    - **epsilon** (float): A small value to prevent zero-division. Default 10e-8.
+    - **sensitivity** (float): Shrinking scale for variable bounds. Default 10e-7.
+```
+
+```{eval-rst}
+.. dropdown:: simopt_astrodf
+
+    .. code-block::
+
+        "simopt_astrodf"
+
+    Minimize a scalar function using the ASTRODF algorithm from SimOpt.
+
+    - **stopping_max_iterations** (int): If the maximum number of iterations is reached,
+      the optimization stops, but we do not count this as convergence.
+    - **bounds_padding** (float): Subtract (add) this value of the bounds which will be
+      used by ASTRODF internally. Default 1e-8.
+    - **crn_across_solns** (bool): Use CRN across solutions? Default True.
+    - **delta_max** (float): Maximum value of the trust-region radius. Default 50.0
+    - **eta_1** (float): Threshhold for a successful iteration. Default 0.1.
+    - **eta_2** (float): Threshhold for a very successful iteration. Default 0.5.
+    - **gamma_1** (float): Very successful step trust-region radius increase. Default
+      2.0.
+    - **gamma_2** (float): Unsuccessful step trust-region radius decrease. Default 0.5.
+    - **w** (float): Trust-region radius rate of shrinkage in contracation loop. Default
+      0.85.
+    - **mu** (int): Trust-region radius ratio upper bound in contraction loop. Default
+      1000.
+    - **beta** (int): Trust-region radius ratio lower bound in contraction loop. Default
+      10.
+    - **lambda_min** (int): Minimum sample size value. Default 8.
+    - **simple_solve** (bool): Solve subproblem with Cauchy point (rough approximate)?
+      Default False.
+    - **criticality_select** (bool): Skip contraction loop if not near critical
+      region? Default True.
+    - **criticality_threshold** (float): Threshold on gradient norm indicating
+      near-critical region. Default 0.1.
+
+    .. note::
+        To get more accurate results in the case of bounds we revert the subtraction of
+        a large value from the bounds that is done internally in simopt.
+        Since the algorithm is numerically instable in the case of binding bounds
+        without this substraction, we subtract a (small) value defined by
+        ``bounds_padding``. See the ASTRODF `source code
+        <https://tinyurl.com/5fxcvw2k>`_ for details.
+
+```
+
+```{eval-rst}
+.. dropdown:: simopt_spsa
+
+    .. code-block::
+
+        "simopt_spsa"
+
+    Minimize a scalar function using the SPSA algorithm from SimOpt.
+
+    - **stopping_max_iterations** (int): If the maximum number of iterations is reached,
+      the optimization stops, but we do not count this as convergence.
+    - **crn_across_solns** (bool): Use CRN across solutions? Default True.
+    - **alpha** (float): Non-negative coefficient in the SPSA gain sequecence ak.
+      Default 0.602.
+    - **gamma** (float): Non-negative coefficient in the SPSA gain sequence ck. Default
+      0.101.
+    - **step** (float): Initial desired magnitude of change in the theta elements.
+      Default 0.5.
+    - **gavg** (int): Averaged SP gradients used per iteration. Default 1.
+    - **n_reps** (int): Number of replications takes at each solution. Default 2.
+    - **n_loss** (int): Number of loss function evaluations used in this gain
+      calculation. Default 2.
+    - **eval_pct** (float): Percentage of the expected number of loss evaluations per
+      run. Default 2/3.
+    - **iter_pct** (float): Percentage of the maximum expected number of iterations.
+      Default 0.1.
+```
+
+```{eval-rst}
+.. dropdown:: simopt_strong
+
+    .. code-block::
+
+        "simopt_strong"
+
+    Minimize a scalar function using the STRONG algorithm from SimOpt.
+
+    - **stopping_max_iterations** (int): If the maximum number of iterations is reached,
+      the optimization stops, but we do not count this as convergence.
+    - **crn_across_solns** (bool): Use CRN across solutions? Default True.
+    - **n0** (int): Initial sample size Default 10.
+    - **n_r** (int): Number of replications taken at each solution. Default 1.
+    - **sensitivity** (float): Shrinking scale for VarBds. Default 10e-7.
+    - **delta_threshold** (float): Maximum value of the radius. Default 1.2.
+    - **delta_T** (float): Initial size of trust region. Default 2.0.
+    - **eta_0** (float): Constant for accepting. Default 0.01.
+    - **eta_1** (float): Constant for more confident accepting. Default 0.3.
+    - **gamma_1** (float): Constant for shrinking the trust region. Default 0.9.
+    - **gamma_2** (float): Constant for expanding the trust region. Default 1.11.
+    - **lambda** (int): Magnifying factor for n_r inside the finite difference function.
+      Default 2.
+    - **lambda_2** (float): Magnifying factor for n_r in stage I and stage II. Default
+      1.01.
+```
+
+## References
 
 ```{eval-rst}
 .. bibliography:: refs.bib

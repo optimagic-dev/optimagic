@@ -3,17 +3,16 @@ from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_PALETTE
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.logging.read_log import OptimizeLogReader
-from estimagic.logging.read_log import read_optimization_problem_table
+from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+
+from estimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from estimagic.logging.read_log import (
+    OptimizeLogReader,
+    read_optimization_problem_table,
+)
 from estimagic.optimization.history_tools import get_history_arrays
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import leaf_names
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten
-from pybaum import tree_unflatten
 
 
 def criterion_plot(
@@ -83,7 +82,6 @@ def criterion_plot(
 
     data = []
     for name, res in results.items():
-
         if isinstance(res, OptimizeResult):
             _data = _extract_plotting_data_from_results_object(
                 res, stack_multistart, show_exploration, plot_name="criterion_plot"
@@ -95,7 +93,7 @@ def criterion_plot(
         else:
             msg = "results must be (or contain) an OptimizeResult or a path to a log"
             f"file, but is type {type(res)}."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         _data["name"] = name
         data.append(_data)
@@ -114,14 +112,12 @@ def criterion_plot(
     # Plot multistart paths
 
     if plot_multistart:
-
         scatter_kws = {
             "connectgaps": True,
             "showlegend": False,
         }
 
         for i, local_history in enumerate(data[0]["local_histories"]):
-
             history = get_history_arrays(local_history, data[0]["direction"])[key]
 
             if max_evaluations is not None and len(history) > max_evaluations:
@@ -141,7 +137,6 @@ def criterion_plot(
     # Plot main optimization objects
 
     for _data in data:
-
         if stack_multistart and _data["stacked_local_histories"] is not None:
             _history = _data["stacked_local_histories"]
         else:
@@ -160,7 +155,7 @@ def criterion_plot(
         if not isinstance(_color, str):
             msg = "highlight_palette needs to be a string or list of strings, but its "
             f"entry is of type {type(_color)}."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         line_kws = {
             "color": _color,
@@ -228,7 +223,7 @@ def params_plot(
         )
         start_params = data["start_params"]
     else:
-        raise ValueError("result must be an OptimizeResult or a path to a log file.")
+        raise TypeError("result must be an OptimizeResult or a path to a log file.")
 
     if data["stacked_local_histories"] is not None:
         history = data["stacked_local_histories"]["params"]
@@ -255,11 +250,13 @@ def params_plot(
 
     for name, data in zip(names, hist_arr):
         if max_evaluations is not None and len(data) > max_evaluations:
-            data = data[:max_evaluations]
+            plot_data = data[:max_evaluations]
+        else:
+            plot_data = data
 
         trace = go.Scatter(
-            x=np.arange(len(data)),
-            y=data,
+            x=np.arange(len(plot_data)),
+            y=plot_data,
             mode="lines",
             name=name,
         )
@@ -358,7 +355,6 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         are stacked into a single one.
 
     """
-
     reader = OptimizeLogReader(res)
     _problem_table = read_optimization_problem_table(res)
 

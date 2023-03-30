@@ -1,13 +1,15 @@
 import numpy as np
 import pytest
-from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
-from estimagic.benchmarking.cartis_roberts import get_start_points_bdvalues
-from estimagic.benchmarking.cartis_roberts import get_start_points_msqrta
+from estimagic.benchmarking.cartis_roberts import (
+    CARTIS_ROBERTS_PROBLEMS,
+    get_start_points_bdvalues,
+    get_start_points_msqrta,
+)
 from numpy.testing import assert_array_almost_equal
 
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
-def test_cartis_roberts_function_at_start_x(name, specification):
+def test_cartis_roberts_function_at_start_x(name, specification):  # noqa: ARG001
     _criterion = specification["criterion"]
     _x = np.array(specification["start_x"])
     assert isinstance(specification["start_x"], list)
@@ -19,7 +21,7 @@ def test_cartis_roberts_function_at_start_x(name, specification):
 
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
-def test_cartis_roberts_function_at_solution_x(name, specification):
+def test_cartis_roberts_function_at_solution_x(name, specification):  # noqa: ARG001
     _criterion = specification["criterion"]
     _x = specification["solution_x"]
     if _x is not None:

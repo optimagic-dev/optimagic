@@ -1,10 +1,10 @@
 """Functions to convert between array and block-tree representations of a matrix."""
 import numpy as np
 import pandas as pd
-from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten
+from pybaum import tree_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
-from pybaum import tree_unflatten
+
+from estimagic.parameters.tree_registry import get_registry
 
 
 def matrix_to_block_tree(matrix, outer_tree, inner_tree):
@@ -106,8 +106,8 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
             for leaf_inner, s2, block_values in zip(
                 flat_p, shapes_p, np.split(submat, block_bounds_p, axis=2)
             ):
-                raw_block = block_values.reshape(((*s0, *s1, *s2)))
-                raw_block = np.squeeze(raw_block)
+                _shape = [k for k in (*s0, *s1, *s2) if k != 1]
+                raw_block = block_values.reshape(_shape)
                 block = _convert_raw_block_to_pandas(raw_block, leaf_outer, leaf_inner)
                 row.append(block)
             blocks.append(row)
@@ -207,7 +207,6 @@ def block_tree_to_hessian(block_hessian, f_tree, params_tree):
 
     inner_matrices = []
     for outer_block_dim, list_inner_blocks in zip(size_f, outer_blocks):
-
         block_rows_raw = [
             list_inner_blocks[n_blocks_p * i : n_blocks_p * (i + 1)]
             for i in range(n_blocks_p)
@@ -337,13 +336,19 @@ def _check_dimensions_hessian(hessian, f_tree, params_tree):
     flat_p = tree_leaves(params_tree, registry=extended_registry)
 
     if len(flat_f) == 1:
-        if np.squeeze(hessian).ndim == 0:
-            if len(flat_p) != 1:
+        # consider only dimensions with non trivial size (larger than 1)
+        relevant_hessian_shape = tuple(k for k in hessian.shape if k != 1)
+
+        if len(relevant_hessian_shape) == 0 and len(flat_p) != 1:
+            # scalar f and scalar params -> scalar hessian
+            raise ValueError("Hessian dimension does not match those of params.")
+
+        if len(relevant_hessian_shape) == 2:
+            # scalar f and vector params -> matrix hessian
+            if relevant_hessian_shape != (len(flat_p), len(flat_p)):
                 raise ValueError("Hessian dimension does not match those of params.")
-        elif np.squeeze(hessian).ndim == 2:
-            if np.squeeze(hessian).shape != (len(flat_p), len(flat_p)):
-                raise ValueError("Hessian dimension does not match those of params.")
-        else:
+
+        if len(relevant_hessian_shape) > 2:
             raise ValueError("Hessian must be 0- or 2-d if f is scalar-valued.")
     else:
         if hessian.ndim != 3:

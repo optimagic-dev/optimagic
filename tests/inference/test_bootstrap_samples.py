@@ -1,16 +1,18 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.bootstrap_samples import _convert_cluster_ids_to_indices
-from estimagic.inference.bootstrap_samples import _get_bootstrap_samples_from_indices
-from estimagic.inference.bootstrap_samples import get_bootstrap_indices
-from estimagic.inference.bootstrap_samples import get_bootstrap_samples
+from estimagic.inference.bootstrap_samples import (
+    _convert_cluster_ids_to_indices,
+    _get_bootstrap_samples_from_indices,
+    get_bootstrap_indices,
+    get_bootstrap_samples,
+)
 from estimagic.utilities import get_rng
 from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
 
-@pytest.fixture
+@pytest.fixture()
 def data():
     df = pd.DataFrame()
     df["id"] = np.arange(900)

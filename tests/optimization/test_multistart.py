@@ -4,20 +4,21 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.decorators import switch_sign
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_scalar_criterion
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import read_new_rows
+from estimagic.examples.criterion_functions import (
+    sos_dict_criterion,
+    sos_scalar_criterion,
+)
+from estimagic.logging.load_database import load_database
+from estimagic.logging.read_from_database import read_new_rows
 from estimagic.logging.read_log import read_steps_table
-from estimagic.optimization.optimize import maximize
-from estimagic.optimization.optimize import minimize
+from estimagic.optimization.optimize import maximize, minimize
 from estimagic.optimization.optimize_result import OptimizeResult
 from numpy.testing import assert_array_almost_equal as aaae
 
 criteria = [sos_scalar_criterion, sos_dict_criterion]
 
 
-@pytest.fixture
+@pytest.fixture()
 def params():
     params = pd.DataFrame()
     params["value"] = np.arange(4)
@@ -127,7 +128,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
         logging="logging.db",
     )
 
-    database = load_database(path="logging.db")
+    database = load_database(path_or_database="logging.db")
     iterations, _ = read_new_rows(
         database=database,
         table_name="optimization_iterations",
@@ -182,7 +183,6 @@ def test_multistart_with_numpy_params():
 
 
 def test_with_invalid_bounds():
-
     with pytest.raises(ValueError):
         minimize(
             criterion=lambda x: x @ x,
@@ -239,3 +239,17 @@ def test_with_ackley():
             "convergence_max_discoveries": 10,
         },
     )
+
+
+def test_multistart_with_least_squares_optimizers():
+    est = minimize(
+        criterion=sos_dict_criterion,
+        params=np.array([-1, 1.0]),
+        lower_bounds=np.full(2, -10.0),
+        upper_bounds=np.full(2, 10.0),
+        algorithm="scipy_ls_trf",
+        multistart=True,
+        multistart_options={"n_samples": 3, "share_optimizations": 1.0},
+    )
+
+    aaae(est.params, np.zeros(2))

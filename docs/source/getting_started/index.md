@@ -1,7 +1,7 @@
 # Getting Started
 
-This section contains quickstart guides for new estimagic users. It can also serve
-as a reference for more experienced users.
+This section contains quickstart guides for new estimagic users. It can also serve as a
+reference for more experienced users.
 
 ```{raw} html
 <div class="container" id="index-container">
@@ -72,11 +72,12 @@ as a reference for more experienced users.
 ```
 
 ```{toctree}
-:hidden: true
-:maxdepth: 1
-
+---
+hidden: true
+maxdepth: 1
+---
 installation
-first_optimization_with_estimagic.ipynb
+first_optimization_with_estimagic
 estimation/index
-first_derivative_with_estimagic.ipynb
+first_derivative_with_estimagic
 ```

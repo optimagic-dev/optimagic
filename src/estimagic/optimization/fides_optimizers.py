@@ -2,19 +2,21 @@
 import logging
 
 import numpy as np
+
 from estimagic.config import IS_FIDES_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    STOPPING_MAX_ITERATIONS,
+)
 
 if IS_FIDES_INSTALLED:
-    from fides import hessian_approximation
-    from fides import Optimizer
+    from fides import Optimizer, hessian_approximation
 
 
 @mark_minimizer(
@@ -108,8 +110,27 @@ def _process_fides_res(raw_res, opt):
         "solution_hessian": hess,
         "success": opt.converged,
         "n_iterations": opt.iteration,
+        "message": _process_exitflag(opt.exitflag),
     }
     return res
+
+
+def _process_exitflag(exitflag):
+    messages = {
+        "DID_NOT_RUN": "The optimizer did not run",
+        "MAXITER": "Reached maximum number of allowed iterations",
+        "MAXTIME": "Expected to reach maximum allowed time in next iteration",
+        "NOT_FINITE": "Encountered non-finite fval/grad/hess",
+        "EXCEEDED_BOUNDARY": "Exceeded specified boundaries",
+        "DELTA_TOO_SMALL": "Trust Region Radius too small to proceed",
+        "FTOL": "Converged according to fval difference",
+        "XTOL": "Converged according to x difference",
+        "GTOL": "Converged according to gradient norm",
+    }
+
+    out = messages.get(exitflag.name)
+
+    return out
 
 
 def _create_hessian_updater_from_user_input(hessian_update_strategy):
@@ -121,9 +142,9 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
     )
     unsupported_hess_msg = (
         f"{hessian_update_strategy} not supported because it requires "
-        + "residuals. Choose one of 'BB', 'BFGS', 'BG', 'DFP' or 'SR1' or pass "
-        + "an instance of the fides.hessian_approximation.HessianApproximation "
-        + "class."
+        "residuals. Choose one of 'BB', 'BFGS', 'BG', 'DFP' or 'SR1' or pass "
+        "an instance of the fides.hessian_approximation.HessianApproximation "
+        "class."
     )
 
     if hessian_update_strategy in ("broyden", "Broyden", "BROYDEN"):
@@ -147,7 +168,7 @@ def _create_hessian_updater_from_user_input(hessian_update_strategy):
         if isinstance(hessian_instance, hessians_needing_residuals):
             raise NotImplementedError(unsupported_hess_msg)
     else:
-        raise ValueError(
+        raise TypeError(
             "You must provide a hessian_update_strategy that is either a string or an "
             "instance of the fides.hessian_approximation.HessianApproximation class."
         )

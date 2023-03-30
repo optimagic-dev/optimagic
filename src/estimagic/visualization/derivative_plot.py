@@ -4,10 +4,9 @@ import itertools
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_PALETTE
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.visualization.plotting_utilities import create_grid_plot
-from estimagic.visualization.plotting_utilities import create_ind_dict
+
+from estimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from estimagic.visualization.plotting_utilities import create_grid_plot, create_ind_dict
 
 
 def derivative_plot(
@@ -48,7 +47,7 @@ def derivative_plot(
 
     # remove index from main data for plotting
     df = func_evals.reset_index()
-    df = df.assign(**{"step": df.step * df.sign})
+    df = df.assign(step=df.step * df.sign)
     func_evals = df.set_index(["sign", "step_number", "dim_x", "dim_f"])
 
     # prepare derivative data
@@ -77,7 +76,7 @@ def derivative_plot(
     g_list = []
 
     # creating data traces for plotting faceted/individual plots
-    for (row, col) in itertools.product(dim_x, dim_f):
+    for row, col in itertools.product(dim_x, dim_f):
         g_ind = []  # container for data for traces in individual plot
 
         # initial values and x grid
@@ -211,7 +210,7 @@ def _select_derivative_with_minimal_error(df_jac_cand, given_method=False):
 
     """
     given = ["method"] if given_method else []
-    minimizer = df_jac_cand.groupby(given + ["dim_x", "dim_f"])["err"].idxmin()
+    minimizer = df_jac_cand.groupby([*given, "dim_x", "dim_f"])["err"].idxmin()
     df = df_jac_cand.loc[minimizer]["der"]
     index_level_to_drop = list({"method", "num_term"} - set(given))
     df = df.droplevel(index_level_to_drop).copy()

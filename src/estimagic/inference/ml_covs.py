@@ -1,6 +1,7 @@
 """Functions for inferences in maximum likelihood models."""
 import numpy as np
 import pandas as pd
+
 from estimagic.exceptions import INVALID_INFERENCE_MSG
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
@@ -214,7 +215,6 @@ def _clustering(jac, design_info):
             the likelihood equation (Pg.557, 14-10, Greene 7th edition)
 
     """
-
     list_of_clusters = design_info["psu"].unique()
     meat = np.zeros([len(jac[0, :]), len(jac[0, :])])
     for psu in list_of_clusters:

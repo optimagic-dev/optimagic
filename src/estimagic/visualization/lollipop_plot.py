@@ -1,12 +1,10 @@
 import math
 
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_PALETTE
-from estimagic.config import PLOTLY_TEMPLATE
-from estimagic.visualization.plotting_utilities import create_grid_plot
-from estimagic.visualization.plotting_utilities import create_ind_dict
+
+from estimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from estimagic.visualization.plotting_utilities import create_grid_plot, create_ind_dict
 
 
 def lollipop_plot(
@@ -143,8 +141,8 @@ def _harmonize_data(data):
         data = [data]
 
     to_concat = []
-    for i, df in enumerate(data):
-        df = df.copy()
+    for i, _df in enumerate(data):
+        df = _df.copy()
         df.columns = _make_string_index(df.columns)
         df.index = _make_string_index(df.index)
         df["__name__"] = df.index
@@ -164,14 +162,7 @@ def _harmonize_data(data):
 
 def _make_string_index(ind):
     if isinstance(ind, pd.MultiIndex):
-        out = ind.map(lambda tup: "_".join((str(name) for name in tup))).tolist()
+        out = ind.map(lambda tup: "_".join(str(name) for name in tup)).tolist()
     else:
         out = ind.map(str).tolist()
     return out
-
-
-df = pd.DataFrame(
-    np.arange(12).reshape(4, 3),
-    index=pd.MultiIndex.from_tuples([(0, "a"), ("b", 1), ("a", "b"), (2, 3)]),
-    columns=["a", "b", "c"],
-)

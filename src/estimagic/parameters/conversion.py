@@ -2,10 +2,10 @@
 from typing import NamedTuple
 
 import numpy as np
+
 from estimagic.parameters.process_selectors import process_selectors
 from estimagic.parameters.scale_conversion import get_scale_converter
-from estimagic.parameters.space_conversion import get_space_converter
-from estimagic.parameters.space_conversion import InternalParams
+from estimagic.parameters.space_conversion import InternalParams, get_space_converter
 from estimagic.parameters.tree_conversion import get_tree_converter
 
 
@@ -216,7 +216,9 @@ def _fast_params_from_internal(x, return_type="tree"):
 
 
 def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
-    def _fast_derivative_to_internal(derivative_eval, x, jac_is_flat=True):
+    def _fast_derivative_to_internal(
+        derivative_eval, x, jac_is_flat=True  # noqa: ARG001
+    ):
         # make signature compatible with non-fast path
         return derivative_eval
 

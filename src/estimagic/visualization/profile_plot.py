@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
+
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
@@ -65,6 +66,7 @@ def profile_plot(
 
     Returns:
         plotly.Figure
+
     """
     if stopping_criterion is None:
         raise ValueError(
@@ -104,12 +106,15 @@ def profile_plot(
     fig = px.line(performance_profiles, x="alpha", y=0, color="algorithm")
 
     xlabels = {
-        ("n_evaluations", True): "Multiple of Minimal Number of Function Evaluations\n"
+        (
+            "n_evaluations",
+            True,
+        ): "Multiple of Minimal Number of Function Evaluations<br>"
         "Needed to Solve the Problem",
         (
             "walltime",
             True,
-        ): "Multiple of Minimal Wall Time\nNeeded to Solve the Problem",
+        ): "Multiple of Minimal Wall Time<br>Needed to Solve the Problem",
         ("n_evaluations", False): "Number of Function Evaluations",
         ("walltime", False): "Wall Time Needed to Solve the Problem",
     }

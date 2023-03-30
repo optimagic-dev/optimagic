@@ -6,18 +6,17 @@ from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
+from pybaum import tree_flatten, tree_unflatten
+from pybaum import tree_just_flatten as tree_leaves
+
 from estimagic import batch_evaluators
 from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
-from estimagic.parameters.block_trees import hessian_to_block_tree
-from estimagic.parameters.block_trees import matrix_to_block_tree
+from estimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten
-from pybaum import tree_just_flatten as tree_leaves
-from pybaum import tree_unflatten
 
 
 class Evals(NamedTuple):
@@ -301,7 +300,8 @@ def second_derivative(
     return_info=False,
     key=None,
 ):
-    """Evaluate second derivative of func at params according to method and step options
+    """Evaluate second derivative of func at params according to method and step
+    options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
     array. Then the Hessians of that function are calculated. The resulting derivative
@@ -665,7 +665,6 @@ def _convert_evaluation_data_to_frame(steps, evals):
 
     dfs = []
     for direction, step_arr, eval_arr in zip((1, -1), steps, evals):
-
         df_steps = pd.DataFrame(step_arr, columns=range(dim_x))
         df_steps = df_steps.reset_index()
         df_steps = df_steps.rename(columns={"index": "step_number"})
@@ -676,14 +675,14 @@ def _convert_evaluation_data_to_frame(steps, evals):
         df_steps = df_steps.reset_index(drop=True)
         df_steps = df_steps.apply(lambda col: col.abs() if col.name == "step" else col)
 
-        eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
-        df_evals = pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
+        reshaped_eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
+        df_evals = pd.concat((df_steps, pd.DataFrame(reshaped_eval_arr)), axis=1)
         df_evals = df_evals.melt(
             id_vars=["step_number", "dim_x", "step"],
             var_name="dim_f",
             value_name="eval",
         )
-        df_evals = df_evals.assign(**{"sign": direction})
+        df_evals = df_evals.assign(sign=direction)
         df_evals = df_evals.set_index(["sign", "step_number", "dim_x", "dim_f"])
         df_evals = df_evals.sort_index()
 
@@ -817,7 +816,7 @@ def _consolidate_extrapolated(candidates):
     candidate_der_dict = {}
     candidate_err_dict = {}
 
-    for key in candidates.keys():
+    for key in candidates:
         _der = candidates[key]["derivative"]
         _err = candidates[key]["error"]
         derivative, error = _select_minimizer_along_axis(_der, _err)

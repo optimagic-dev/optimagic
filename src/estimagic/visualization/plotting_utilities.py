@@ -3,8 +3,9 @@ from copy import deepcopy
 
 import numpy as np
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_TEMPLATE
 from plotly.subplots import make_subplots
+
+from estimagic.config import PLOTLY_TEMPLATE
 
 
 def combine_plots(
@@ -23,8 +24,8 @@ def combine_plots(
     legend_kwargs=None,
     title_kwargs=None,
 ):
-    """Combine individual plots into figure with subplots.
-    Uses list of plotly Figures to build plotly Figure with subplots.
+    """Combine individual plots into figure with subplots. Uses list of plotly Figures
+    to build plotly Figure with subplots.
 
     Args:
         plots (list): List with individual plots.
@@ -138,7 +139,6 @@ def create_grid_plot(
     x_min=None,
     x_max=None,
 ):
-
     """Create a dictionary for a grid plot from a list of traces.
 
     Args:
@@ -308,8 +308,9 @@ def get_make_subplot_kwargs(sharex, sharey, kwrgs, plots_per_row, plots):
 
 def get_layout_kwargs(layout_kwargs, legend_kwargs, title_kwargs, template, showlegend):
     """Define and update default kwargs for update_layout.
-    Defines some default keyword arguments to update figure layout, such as
-    title and legend.
+
+    Defines some default keyword arguments to update figure layout, such as title and
+    legend.
 
     """
     default_kwargs = {

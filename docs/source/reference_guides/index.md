@@ -65,7 +65,7 @@
 
 ```
 
-(first-derivative)=
+(first_derivative)=
 
 ## Derivatives
 
@@ -227,8 +227,9 @@
 ## Other:
 
 ```{toctree}
-:maxdepth: 1
-
+---
+maxdepth: 1
+---
 utilities
 algo_options
 batch_evaluators

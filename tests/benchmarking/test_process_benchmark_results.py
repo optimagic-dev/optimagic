@@ -1,24 +1,20 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.benchmarking.process_benchmark_results import _clip_histories
-from estimagic.benchmarking.process_benchmark_results import _find_first_converged
 from estimagic.benchmarking.process_benchmark_results import (
+    _clip_histories,
+    _find_first_converged,
     _get_history_as_stacked_sr_from_results,
-)
-from estimagic.benchmarking.process_benchmark_results import (
     _get_history_of_the_parameter_distance,
-)
-from estimagic.benchmarking.process_benchmark_results import _make_history_monotone
-from estimagic.benchmarking.process_benchmark_results import _normalize
-from estimagic.benchmarking.process_benchmark_results import (
+    _make_history_monotone,
+    _normalize,
     create_convergence_histories,
 )
 
 PROBLEMS = ["prob1", "prob2", "prob3"]
 
 
-@pytest.fixture
+@pytest.fixture()
 def problem_algo_eval_df():
     df = pd.DataFrame()
     df["problem"] = ["prob1"] * 8 + ["prob2"] * 6
@@ -87,7 +83,7 @@ def test_normalize_minimize():
 
     df = pd.DataFrame()
     df["problem"] = PROBLEMS * 3
-    df["criterion"] = start_values.tolist() + [2, 3, 9] + target_values.tolist()
+    df["criterion"] = [*start_values.tolist(), 2, 3, 9, *target_values.tolist()]
 
     res = _normalize(
         df=df, col="criterion", start_values=start_values, target_values=target_values
@@ -106,7 +102,7 @@ def test_normalize_maximize():
 
     df = pd.DataFrame()
     df["problem"] = PROBLEMS * 3
-    df["criterion"] = start_values.tolist() + [2, 4, 9] + target_values.tolist()
+    df["criterion"] = [*start_values.tolist(), 2, 4, 9, *target_values.tolist()]
 
     res = _normalize(
         df=df, col="criterion", start_values=start_values, target_values=target_values
@@ -119,7 +115,7 @@ def test_normalize_maximize():
     pd.testing.assert_series_equal(res, expected)
 
 
-@pytest.fixture
+@pytest.fixture()
 def df_for_clip_histories(problem_algo_eval_df):
     df = problem_algo_eval_df
     df["monotone_criterion_normalized"] = [
@@ -291,7 +287,7 @@ def test_make_history_monotone_minimize():
     pd.testing.assert_series_equal(res_shuffled, expected)
 
 
-@pytest.fixture
+@pytest.fixture()
 def benchmark_results():
     sec = pd.Timedelta(seconds=1)
     results = {

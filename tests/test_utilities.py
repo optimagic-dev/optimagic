@@ -2,24 +2,27 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.config import IS_JAX_INSTALLED
-from estimagic.utilities import calculate_trustregion_initial_radius
-from estimagic.utilities import chol_params_to_lower_triangular_matrix
-from estimagic.utilities import cov_matrix_to_params
-from estimagic.utilities import cov_matrix_to_sdcorr_params
-from estimagic.utilities import cov_params_to_matrix
-from estimagic.utilities import cov_to_sds_and_corr
-from estimagic.utilities import dimension_to_number_of_triangular_elements
-from estimagic.utilities import get_rng
-from estimagic.utilities import hash_array
-from estimagic.utilities import isscalar
-from estimagic.utilities import number_of_triangular_elements_to_dimension
-from estimagic.utilities import read_pickle
-from estimagic.utilities import robust_cholesky
-from estimagic.utilities import robust_inverse
-from estimagic.utilities import sdcorr_params_to_matrix
-from estimagic.utilities import sdcorr_params_to_sds_and_corr
-from estimagic.utilities import sds_and_corr_to_cov
-from estimagic.utilities import to_pickle
+from estimagic.utilities import (
+    calculate_trustregion_initial_radius,
+    chol_params_to_lower_triangular_matrix,
+    cov_matrix_to_params,
+    cov_matrix_to_sdcorr_params,
+    cov_params_to_matrix,
+    cov_to_sds_and_corr,
+    dimension_to_number_of_triangular_elements,
+    get_rng,
+    hash_array,
+    isscalar,
+    number_of_triangular_elements_to_dimension,
+    propose_alternatives,
+    read_pickle,
+    robust_cholesky,
+    robust_inverse,
+    sdcorr_params_to_matrix,
+    sdcorr_params_to_sds_and_corr,
+    sds_and_corr_to_cov,
+    to_pickle,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_JAX_INSTALLED:
@@ -237,3 +240,11 @@ TEST_CASES = [0.1, "a", object(), lambda x: x**2]
 def test_get_rng_wrong_input(seed):
     with pytest.raises(TypeError):
         get_rng(seed)
+
+
+def test_propose_alternatives():
+    possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
+    inputs = [["scipy_L-BFGS-B", 1], ["L-BFGS-B", 2]]
+    expected = [["scipy_slsqp"], ["scipy_slsqp", "scipy_lbfgsb"]]
+    for inp, exp in zip(inputs, expected):
+        assert propose_alternatives(inp[0], possibilities, number=inp[1]) == exp

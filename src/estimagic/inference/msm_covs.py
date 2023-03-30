@@ -1,4 +1,5 @@
 import pandas as pd
+
 from estimagic.exceptions import INVALID_INFERENCE_MSG
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse

@@ -1,5 +1,6 @@
 """Implement Berndt-Hall-Hall-Hausman (BHHH) algorithm."""
 import numpy as np
+
 from estimagic.decorators import mark_minimizer
 
 
@@ -19,6 +20,7 @@ def bhhh(
     """Minimize a likelihood function using the BHHH algorithm.
 
     For details, see :ref:`_own_algorithms`.
+
     """
     result_dict = bhhh_internal(
         criterion_and_derivative,
@@ -54,6 +56,7 @@ def bhhh_internal(
         - n_iterations (int): Number of iterations the algorithm ran before finding a
             solution vector or reaching stopping_max_iterations.
         - message (str): Message to the user. Currently it says: "Under development."
+
     """
     criterion_accepted, gradient = criterion_and_derivative(x)
     x_accepted = x

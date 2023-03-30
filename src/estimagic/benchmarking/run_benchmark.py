@@ -5,15 +5,17 @@ TO-DO:
     - finish medium scale problems from https://arxiv.org/pdf/1710.11005.pdf, Page 34.
     - add scalar problems from https://github.com/AxelThevenot
 - Add option for deterministic noise or wiggle.
+
 """
 import numpy as np
 import pandas as pd
+from pybaum import tree_just_flatten
+
 from estimagic import batch_evaluators
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten
 
 
 def run_benchmark(
@@ -58,6 +60,7 @@ def run_benchmark(
             are tuples where the first entry is the name of the problem and the second
             the name of the optimize options. The values are dicts with the entries:
             "params_history", "criterion_history", "time_history" and "solution".
+
     """
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(
@@ -105,11 +108,11 @@ def _process_optimize_options(raw_options, max_evals, disable_convergence):
         default_algo_options["convergence.relative_gradient_tolerance"] = 1e-14
 
     out_options = {}
-    for name, option in dict_options.items():
-        if not isinstance(option, dict):
-            option = {"algorithm": option}
+    for name, _option in dict_options.items():
+        if not isinstance(_option, dict):
+            option = {"algorithm": _option}
         else:
-            option = option.copy()
+            option = _option.copy()
 
         algo_options = {**default_algo_options, **option.get("algo_options", {})}
         algo_options = {k.replace(".", "_"): v for k, v in algo_options.items()}
@@ -156,7 +159,6 @@ def _get_results(names, raw_results, kwargs_list):
     results = {}
 
     for name, result, inputs in zip(names, raw_results, kwargs_list):
-
         if isinstance(result, OptimizeResult):
             history = result.history
             params_history = pd.DataFrame(
@@ -174,7 +176,7 @@ def _get_results(names, raw_results, kwargs_list):
 
             time_history = pd.Series([np.inf])
         else:
-            raise ValueError(
+            raise TypeError(
                 "'result' object is expected to be of type 'dict' or 'str'."
             )
 

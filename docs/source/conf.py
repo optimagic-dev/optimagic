@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # estimagic documentation build configuration file, created by
 # sphinx-quickstart on Fri Jan 18 10:59:27 2019.
@@ -19,7 +18,6 @@
 import datetime as dt
 import os
 from importlib.metadata import version
-
 
 year = dt.datetime.now().year
 
@@ -46,11 +44,10 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
-    "nbsphinx",
+    "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
     "sphinx_copybutton",
-    "myst_parser",
 ]
 
 myst_enable_extensions = [
@@ -69,7 +66,6 @@ autodoc_mock_imports = [
     "cloudpickle",
     "cyipopt",
     "fides",
-    "fuzzywuzzy",
     "joblib",
     "nlopt",
     "pandas",
@@ -80,6 +76,7 @@ autodoc_mock_imports = [
     "tornado",
     "petsc4py",
     "statsmodels",
+    "numba",
 ]
 
 extlinks = {
@@ -104,7 +101,7 @@ html_static_path = ["_static"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = [".rst", ".md"]
+source_suffix = [".rst", ".ipynb", ".md"]
 
 # The master toctree document.
 master_doc = "index"
@@ -143,18 +140,21 @@ else:
     todo_include_todos = True
     todo_emit_warnings = True
 
-# -- Options for nbsphinx  ----------------------------------------
-# Execute notebooks before conversion: 'always', 'never', 'auto' (default)
-nbsphinx_execute = "never"
-nbsphinx_prolog = r"""
-{% set docname = 'docs/source/' + env.doc2path(env.docname, base=None) %}
+# -- Options for myst-nb  ----------------------------------------
+nb_execution_mode = "force"
+nb_execution_allow_errors = False
+nb_merge_streams = True
 
-.. only:: html
+# Notebook cell execution timeout; defaults to 30.
+nb_execution_timeout = 1000
 
-    .. nbinfo::
-        Download the notebook :download:`here
-        <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/master/{{ docname }}>`
-"""
+# List of notebooks that will not be executed.
+nb_execution_excludepatterns = [
+    # Problem with latex rendering
+    "how_to_generate_publication_quality_tables.ipynb",
+    # too long runtime
+    "bootstrap_montecarlo_comparison.ipynb",
+]
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -174,7 +174,7 @@ html_css_files = ["css/custom.css"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["_static"]  # noqa: E800
+# html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

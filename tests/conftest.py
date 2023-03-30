@@ -5,13 +5,13 @@ import pytest
 import statsmodels.api as sm
 
 
-@pytest.fixture(scope="function", autouse=True)
-def fresh_directory(tmp_path):
+@pytest.fixture(autouse=True)
+def fresh_directory(tmp_path):  # noqa: PT004
     """Each test is executed in a fresh directory."""
     os.chdir(tmp_path)
 
 
-@pytest.fixture
+@pytest.fixture()
 def logit_inputs():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
@@ -24,7 +24,7 @@ def logit_inputs():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def logit_object():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)

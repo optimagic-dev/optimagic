@@ -1,58 +1,49 @@
+---
 name: estimagic
-
 channels:
   - conda-forge
-  - defaults
-  - opensourceeconomics
-
+  - nodefaults
 dependencies:
-  - python=3.9
-  - pip
-  - setuptools_scm
-  - toml
-  - anaconda-client
-  - bokeh>=1.3
-  - ansi2html
-  - click
-  - conda-build
-  - conda-verify
-  - cyipopt
-  - fuzzywuzzy
-  - joblib
-  - cloudpickle
-  - jupyterlab
-  - nbsphinx
-  - numpy>=1.17.0
-  - myst-parser
-  - pandas
-  - pdbpp
-  - pytest
-  - pytest-cov
-  - pytest-xdist
-  - scipy>=1.2.1
-  - seaborn
-  - plotly
-  - sphinx
-  - pydata-sphinx-theme>=0.3.0
-  - sphinxcontrib-bibtex
-  - sphinx-copybutton
-  - sqlalchemy>=1.3
-  - tox-conda
-  - statsmodels
-  - pytask>=0.0.11
-  - nlopt
-  - sphinx-panels
-  - nb_black
-  - pybaum>=0.1.2
-
-  - pip:
-      - black
-      - blackcellmagic
-      - bump2version
-      - pre-commit
-      - Py-BOBYQA
-      - DFO-LS
-      - fides==0.7.4
-      - gif
-      - gif[matplotlib]
-      - kaleido
+  - python=3.10  # dev
+  - cyipopt  # dev
+  - jupyterlab  # dev, docs
+  - nb_black  # dev, docs
+  - nlopt  # dev, tests
+  - pdbpp  # dev
+  - pip  # dev, tests, docs
+  - pytask>=0.0.11  # dev
+  - pytest  # dev, tests
+  - pytest-cov  # tests
+  - pytest-xdist  # dev, tests
+  - setuptools_scm  # dev
+  - statsmodels  # dev, tests
+  - toml  # dev
+  - bokeh<=2.4.3  # run, tests
+  - click  # run, tests
+  - cloudpickle  # run, tests
+  - joblib  # run, tests
+  - numba  # run, tests
+  - numpy>=1.17.0  # run, tests
+  - pandas  # run, tests
+  - plotly  # run, tests
+  - pybaum >= 0.1.2  # run, tests
+  - scipy>=1.2.1  # run, tests
+  - sqlalchemy  # run, tests
+  - pydata-sphinx-theme>=0.3.0  # docs
+  - myst-nb  # docs
+  - sphinx  # docs
+  - sphinx-copybutton  # docs
+  - sphinx-panels  # docs
+  - sphinxcontrib-bibtex  # docs
+  - pip:  # dev, tests, docs
+      - DFO-LS  # dev, tests
+      - Py-BOBYQA  # dev, tests
+      - black  # dev
+      - blackcellmagic  # dev
+      - fides==0.7.4  # dev, tests
+      - gif  # dev
+      - gif[matplotlib]  # dev
+      - kaleido  # dev, tests
+      - pre-commit  # dev
+      - simoptlib==1.0.1  # dev, tests
+      - -e .  # dev

@@ -4,6 +4,49 @@ This is a record of all past estimagic releases and what went into them in rever
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
 
+
+## 0.4.4
+
+- {gh}`437` removes fuzzywuzzy as dependency ({ghuser}`aidatak97`)
+- {gh}`432` makes logging compatible with sqlalchemy 2.x ({ghuser}`janosg`)
+- {gh}`430` refactors the getter functions in Tranquilo ({ghuser}`janosg`)
+- {gh}`427` improves pre-commit setup ({ghuser}`timmens` and {ghuser}`hmgaudecker`)
+- {gh}`425` improves handling of notebooks in documentation ({ghuser}`baharcos`)
+- {gh}`423` and {gh}`399` add code to calculate poisdeness constants ({ghuser}`segsell`)
+- {gh}`420` improve CI infrastructure ({ghuser}`hmgaudecker`, {ghuser}`janosg`)
+- {gh}`407` adds global optimizers from scipy ({ghuser}`baharcos`)
+
+## 0.4.3
+
+- {gh}`416` improves documentation and packaging ({ghuser}`janosg`)
+
+## 0.4.2
+
+- {gh}`412` Improves the output of the fides optimizer among other small changes
+  ({ghuser}`janosg`)
+- {gh}`411` Fixes a bug in multistart optimizations with least squares optimizers.
+  See {gh}`410` for details ({ghuser}`janosg`)
+- {gh}`404` speeds up the gqtpar subsolver ({ghuser}`mpetrosian` )
+- {gh}`400` refactors subsolvers ({ghuser}`mpetrosian`)
+- {gh}`398`, {gh}`397`, {gh}`395`, {gh}`390`, {gh}`389`, {gh}`388` continue with the
+  implementation of tranquilo ({ghuser}`segsell`, {ghuser}`timmens`,
+  {ghuser}`mpetrosian`, {ghuser}`janosg`)
+- {gh}`391` speeds up the bntr subsolver ({ghuser}`mpetrosian`)
+
+
+## 0.4.1
+
+- {gh}`307` Adopts a code of condact and governance model
+- {gh}`384` Polish documentation ({ghuser}`janosg` and {ghuser}`mpetrosian`)
+- {gh}`374` Moves the documentation to MyST ({ghuser}`baharcos`)
+- {gh}`365` Adds copybuttos to documentation ({ghuser}`amageh`)
+- {gh}`371` Refactors the pounders algorithm ({ghuser}`segsell`)
+- {gh}`369` Fixes CI ({ghuser}`janosg`)
+- {gh}`367` Fixes the linux environment ({ghuser}`timmens`)
+- {gh}`294` Adds the very first experimental version of tranquilo ({ghuser}`janosg`,
+  {ghuser}`timmens`, {ghuser}`segsell`, {ghuser}`mpetrosian`)
+
+
 ## 0.4.0
 
 - {gh}`366` Update  ({ghuser}`segsell`)

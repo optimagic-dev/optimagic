@@ -1,45 +1,86 @@
+import io
+import textwrap
+
 import numpy as np
 import pandas as pd
 import pytest
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
-from estimagic.visualization.estimation_table import _apply_number_format
 from estimagic.visualization.estimation_table import (
+    _apply_number_format,
+    _check_order_of_model_names,
+    _convert_frame_to_string_series,
+    _create_group_to_col_position,
+    _create_statistics_sr,
+    _customize_col_groups,
+    _customize_col_names,
+    _get_default_column_names_and_groups,
+    _get_digits_after_decimal,
+    _get_model_names,
+    _get_params_frames_with_common_index,
+    _process_frame_indices,
+    _process_model,
+    estimation_table,
+    render_html,
+    render_latex,
     _center_align_integers_and_non_numeric_strings,
 )
-from estimagic.visualization.estimation_table import _check_order_of_model_names
-from estimagic.visualization.estimation_table import _convert_frame_to_string_series
-from estimagic.visualization.estimation_table import _create_group_to_col_position
-from estimagic.visualization.estimation_table import _create_statistics_sr
-from estimagic.visualization.estimation_table import _customize_col_groups
-from estimagic.visualization.estimation_table import _customize_col_names
-from estimagic.visualization.estimation_table import (
-    _get_default_column_names_and_groups,
-)
-from estimagic.visualization.estimation_table import _get_digits_after_decimal
-from estimagic.visualization.estimation_table import _get_model_names
-from estimagic.visualization.estimation_table import (
-    _get_params_frames_with_common_index,
-)
-from estimagic.visualization.estimation_table import _process_frame_indices
-from estimagic.visualization.estimation_table import _process_model
-from estimagic.visualization.estimation_table import estimation_table
-from estimagic.visualization.estimation_table import render_html
-from estimagic.visualization.estimation_table import render_latex
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
-from tests.visualization.helpers_test_estimation_table import (
-    _get_models_multiindex,
-)
-from tests.visualization.helpers_test_estimation_table import (
-    _get_models_multiindex_multi_column,
-)
-from tests.visualization.helpers_test_estimation_table import (
-    _get_models_single_index,
-)
-from tests.visualization.helpers_test_estimation_table import _read_csv_string
 
+# ======================================================================================
+# Helper functions
+# ======================================================================================
+def _get_models_multiindex():
+    df = pd.DataFrame(
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
+    )
+    df.index = pd.MultiIndex.from_tuples(
+        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
+    )
+    info = {"n_obs": 400}
+    mod1 = {"params": df, "info": info, "name": "m1"}
+    mod2 = {"params": df, "info": info, "name": "m2"}
+    models = [mod1, mod2]
+    return models
+
+
+def _get_models_single_index():
+    df = pd.DataFrame(
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
+    )
+    df.index = [f"p{i}" for i in [1, 2, 3]]
+    info = {"n_obs": 400}
+    mod1 = {"params": df, "info": info, "name": "m1"}
+    mod2 = {"params": df, "info": info, "name": "m2"}
+    models = [mod1, mod2]
+    return models
+
+
+def _get_models_multiindex_multi_column():
+    df = pd.DataFrame(
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
+    )
+    df.index = pd.MultiIndex.from_tuples(
+        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
+    )
+    info = {"n_obs": 400}
+    mod1 = {"params": df.iloc[1:], "info": info, "name": "m1"}
+    mod2 = {"params": df, "info": info, "name": "m2"}
+    mod3 = {"params": df, "info": info, "name": "m2"}
+    models = [mod1, mod2, mod3]
+    return models
+
+
+def _read_csv_string(string, index_cols=None):
+    string = textwrap.dedent(string)
+    return pd.read_csv(io.StringIO(string), index_col=index_cols)
+
+
+# ======================================================================================
+# Tests
+# ======================================================================================
 
 # test process_model for different model types
 
@@ -307,7 +348,7 @@ def test_apply_number_format_int():
 
 def test_apply_number_format_callable():
     def nsf(num, n=3):
-        """n-Significant Figures"""
+        """N-Significant Figures."""
         numstr = ("{0:.%ie}" % (n - 1)).format(num)
         return numstr
 

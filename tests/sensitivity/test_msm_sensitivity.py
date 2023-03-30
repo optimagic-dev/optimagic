@@ -4,25 +4,20 @@ import pytest
 from estimagic.config import EXAMPLE_DIR
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.inference.msm_covs import cov_optimal
-from estimagic.sensitivity.msm_sensitivity import calculate_actual_sensitivity_to_noise
 from estimagic.sensitivity.msm_sensitivity import (
+    calculate_actual_sensitivity_to_noise,
     calculate_actual_sensitivity_to_removal,
-)
-from estimagic.sensitivity.msm_sensitivity import (
     calculate_fundamental_sensitivity_to_noise,
-)
-from estimagic.sensitivity.msm_sensitivity import (
     calculate_fundamental_sensitivity_to_removal,
+    calculate_sensitivity_to_bias,
+    calculate_sensitivity_to_weighting,
 )
-from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
-from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy import stats
 
 
 def simulate_aggregated_moments(params, x, y):
     """Calculate aggregated moments for example from Honore, DePaula, Jorgensen."""
-
     mom_value = simulate_moment_contributions(params, x, y)
     moments = mom_value.mean(axis=1)
 
@@ -31,7 +26,6 @@ def simulate_aggregated_moments(params, x, y):
 
 def simulate_moment_contributions(params, x, y):
     """Calculate moment contributions for example from Honore, DePaula, Jorgensen."""
-
     y_estimated = x.to_numpy() @ (params["value"].to_numpy())
 
     x_np = x.T.to_numpy()
@@ -53,7 +47,7 @@ def simulate_moment_contributions(params, x, y):
     return mom_value
 
 
-@pytest.fixture
+@pytest.fixture()
 def moments_cov(params, func_kwargs):
     mom_value = simulate_moment_contributions(params, **func_kwargs)
     mom_value = mom_value.to_numpy()
@@ -61,7 +55,7 @@ def moments_cov(params, func_kwargs):
     return s
 
 
-@pytest.fixture
+@pytest.fixture()
 def params():
     params_index = [["beta"], ["intersection", "x1", "x2"]]
     params_index = pd.MultiIndex.from_product(params_index, names=["type", "name"])
@@ -71,7 +65,7 @@ def params():
     return params
 
 
-@pytest.fixture
+@pytest.fixture()
 def func_kwargs():
     data = pd.read_csv(EXAMPLE_DIR / "sensitivity_probit_example_data.csv")
     y_data = data[["y"]]
@@ -80,7 +74,7 @@ def func_kwargs():
     return func_kwargs
 
 
-@pytest.fixture
+@pytest.fixture()
 def jac(params, func_kwargs):
     derivative_dict = first_derivative(
         func=simulate_aggregated_moments,
@@ -92,12 +86,12 @@ def jac(params, func_kwargs):
     return g.to_numpy()
 
 
-@pytest.fixture
+@pytest.fixture()
 def weights(moments_cov):
     return np.linalg.inv(moments_cov)
 
 
-@pytest.fixture
+@pytest.fixture()
 def params_cov_opt(jac, weights):
     return cov_optimal(jac, weights)
 
@@ -160,7 +154,6 @@ def test_actual_sensitivity_to_noise(jac, weights, moments_cov, params_cov_opt, 
 def test_actual_sensitivity_to_removal(
     jac, weights, moments_cov, params_cov_opt, params
 ):
-
     calculated = calculate_actual_sensitivity_to_removal(
         jac, weights, moments_cov, params_cov_opt
     )
@@ -178,7 +171,6 @@ def test_actual_sensitivity_to_removal(
 
 
 def test_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_opt, params):
-
     calculated = calculate_fundamental_sensitivity_to_removal(
         jac, moments_cov, params_cov_opt
     )

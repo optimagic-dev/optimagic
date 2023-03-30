@@ -1,9 +1,9 @@
 import numpy as np
+from pybaum import leaf_names, tree_map
+from pybaum import tree_just_flatten as tree_leaves
+
 from estimagic.exceptions import InvalidBoundsError
 from estimagic.parameters.tree_registry import get_registry
-from pybaum import leaf_names
-from pybaum import tree_just_flatten as tree_leaves
-from pybaum import tree_map
 
 
 def get_bounds(
@@ -51,7 +51,7 @@ def get_bounds(
 
     # Fill leaves with np.nan. If params contains a data frame with bounds as a column,
     # that column is NOT overwritten (as long as an extended registry is used).
-    nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)
+    nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)  # noqa: ARG005
 
     lower_flat = _update_bounds_and_flatten(
         nan_tree, lower_bounds, direction="lower_bound"
@@ -93,7 +93,6 @@ def _update_bounds_and_flatten(nan_tree, bounds, direction):
     flat_nan_tree = tree_leaves(nan_tree, registry=registry)
 
     if bounds is not None:
-
         registry = get_registry(extended=True)
         flat_bounds = tree_leaves(bounds, registry=registry)
 
@@ -105,7 +104,6 @@ def _update_bounds_and_flatten(nan_tree, bounds, direction):
 
         invalid = {"names": [], "bounds": []}
         for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds):
-
             # if a bounds leaf is None we treat it as saying the the corresponding
             # subtree of params has no bounds.
             if bounds_leaf is not None:

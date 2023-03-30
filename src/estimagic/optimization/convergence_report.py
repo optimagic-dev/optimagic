@@ -1,9 +1,9 @@
 import numpy as np
+
 from estimagic.optimization.history_tools import get_history_arrays
 
 
 def get_convergence_report(history, direction):
-
     history_arrs = get_history_arrays(
         history=history,
         direction=direction,
@@ -39,7 +39,7 @@ def _get_max_f_changes(critvals):
     best_val = critvals[-1]
     worst_val = critvals[0]
 
-    max_change_abs = np.abs((best_val - worst_val))
+    max_change_abs = np.abs(best_val - worst_val)
     denom = max(np.abs(best_val), 0.1)
 
     max_change_rel = max_change_abs / denom

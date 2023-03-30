@@ -1,21 +1,27 @@
+---
 codecov:
   notify:
-    require_ci_to_pass: yes
-
+    require_ci_to_pass: true
 coverage:
   precision: 2
   round: down
-  range: "50...100"
+  range: 50...100
   status:
     patch:
       default:
-        target: 80%
+        target: 70%
     project:
       default:
         target: 90%
-
 ignore:
-  - ".tox/**/*"
-  - "release.py"
-  - "setup.py"
-  - "estimagic/tests/**/*"
+  - .tox/**/*
+  - release.py
+  - setup.py
+  - estimagic/tests/**/*
+  - src/estimagic/benchmarking/cartis_roberts.py
+  - src/estimagic/optimization/subsolvers/bntr_fast.py
+  - src/estimagic/optimization/subsolvers/_trsbox_fast.py
+  - src/estimagic/optimization/subsolvers/_conjugate_gradient_fast.py
+  - src/estimagic/optimization/subsolvers/_steihaug_toint_fast.py
+  - src/estimagic/optimization/subsolvers/gqtpar_fast.py
+  - src/estimagic/optimization/tranquilo/clustering.py

@@ -3,9 +3,12 @@ import warnings
 from functools import partial
 
 import numpy as np
+
 from estimagic.batch_evaluators import process_batch_evaluator
-from estimagic.logging.database_utilities import list_of_dicts_to_dict_of_lists
-from estimagic.logging.database_utilities import update_row
+from estimagic.logging.read_from_database import (
+    list_of_dicts_to_dict_of_lists,
+)
+from estimagic.logging.write_to_database import update_row
 from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 
@@ -52,7 +55,7 @@ def get_final_algorithm(
     nonlinear_constraints,
     algo_options,
     logging,
-    db_kwargs,
+    database,
     collect_history,
 ):
     """Get algorithm-function with partialled options.
@@ -71,7 +74,7 @@ def get_final_algorithm(
             algorithm. Entries that are not used by the algorithm are ignored with a
             warning.
         logging (bool): Whether the algorithm should do logging.
-        db_kwargs (dict): Dict with the entries "database", "path" and "fast_logging"
+        database (DataBase): Database to which the logging should be written.
 
     Returns:
         callable: The algorithm.
@@ -93,7 +96,7 @@ def get_final_algorithm(
     algorithm = _add_logging(
         algorithm,
         logging=logging,
-        db_kwargs=db_kwargs,
+        database=database,
     )
 
     is_parallel = internal_options.get("n_cores") not in (None, 1)
@@ -107,7 +110,7 @@ def get_final_algorithm(
     return algorithm
 
 
-def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
+def _add_logging(algorithm=None, *, logging=None, database=None):
     """Add logging of status to the algorithm."""
 
     def decorator_add_logging_to_algorithm(algorithm):
@@ -122,7 +125,7 @@ def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
                     data={"status": "running"},
                     rowid=step_id,
                     table_name="steps",
-                    **db_kwargs,
+                    database=database,
                 )
 
             for task in ["criterion", "derivative", "criterion_and_derivative"]:
@@ -138,7 +141,7 @@ def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
                     data={"status": "complete"},
                     rowid=step_id,
                     table_name="steps",
-                    **db_kwargs,
+                    database=database,
                 )
 
             return res
@@ -187,7 +190,6 @@ def _add_history_collection_via_batch_evaluator(algorithm):
 
         @functools.wraps(batch_evaluator)
         def wrapped_batch_evaluator(*args, **kwargs):
-
             if args:
                 func = args[0]
             else:
@@ -195,7 +197,6 @@ def _add_history_collection_via_batch_evaluator(algorithm):
 
             # find out if func is our internal criterion function
             if isinstance(func, partial) and "history_container" in func.keywords:
-
                 # partial in None as history container to disable history collection via
                 # criterion function, which would not work with parallelization anyways
                 _func = partial(func, history_container=None, return_history_entry=True)
