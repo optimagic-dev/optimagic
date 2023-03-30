@@ -432,7 +432,7 @@ def test_check_order_of_model_names_raises_error():
         _check_order_of_model_names(model_names)
 
 
-def test_render_latex():
+def test_manual_extra_info():
     footer_str = """
          ,target
         R$^2$,0.40
