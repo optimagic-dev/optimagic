@@ -18,6 +18,7 @@ def bntr_fast(
     model,
     lower_bounds,
     upper_bounds,
+    x_candidate,
     *,
     conjugate_gradient_method,
     maxiter,
@@ -56,6 +57,7 @@ def bntr_fast(
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
+        x_candidate (np.ndarray): Initial guess for the solution of the subproblem.
         conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient methods are:
                 - "cg"
@@ -99,6 +101,7 @@ def bntr_fast(
         model_hessian=model_hessian,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        x_candidate=x_candidate,
         conjugate_gradient_method=conjugate_gradient_method,
         maxiter=maxiter,
         maxiter_gradient_descent=maxiter_gradient_descent,
@@ -126,6 +129,7 @@ def _bntr_fast_jitted(
     model_hessian,
     lower_bounds,
     upper_bounds,
+    x_candidate,
     conjugate_gradient_method,
     maxiter,
     maxiter_gradient_descent,
@@ -163,6 +167,7 @@ def _bntr_fast_jitted(
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
+        x_candidate (np.ndarray): Initial guess for the solution of the subproblem.
         conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient methods are:
                 - "cg"
@@ -209,6 +214,7 @@ def _bntr_fast_jitted(
         model_hessian,
         lower_bounds,
         upper_bounds,
+        x_candidate,
         maxiter_gradient_descent,
         gtol_abs,
         gtol_rel,
@@ -341,6 +347,7 @@ def _take_preliminary_gradient_descent_step_and_check_for_solution(
     model_hessian,
     lower_bounds,
     upper_bounds,
+    x_candidate,
     maxiter_gradient_descent,
     gtol_abs,
     gtol_rel,
@@ -357,6 +364,7 @@ def _take_preliminary_gradient_descent_step_and_check_for_solution(
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
+        x_candidate (np.ndarray): Initial guess for the solution of the subproblem.
         maxiter_gradient_descent (int): Maximum number of iterations in performing
             gradient descent step
         gtol_abs (float): Convergence tolerance for the absolute gradient norm.
@@ -383,8 +391,6 @@ def _take_preliminary_gradient_descent_step_and_check_for_solution(
 
     converged = False
     convergence_reason = 0
-
-    x_candidate = np.zeros(len(model_gradient))
 
     criterion_candidate = _evaluate_model_criterion(
         x_candidate, model_gradient, model_hessian

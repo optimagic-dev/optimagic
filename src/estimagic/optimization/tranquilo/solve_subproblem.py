@@ -1,10 +1,9 @@
-import inspect
-import warnings
 from functools import partial
 from typing import NamedTuple
 
 import numpy as np
 
+from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.subsolvers.bntr import (
     bntr,
 )
@@ -22,15 +21,21 @@ from estimagic.optimization.tranquilo.wrapped_subsolvers import (
 from estimagic.optimization.tranquilo.options import SubsolverOptions
 
 
-def get_subsolver(solver, user_options=None, bounds=None):
+def get_subsolver(sphere_solver, cube_solver, user_options=None):
     """Get an algorithm-function with partialled options.
 
     Args:
-        solver (str or callable): Name of a subproblem solver or subproblem solver. The
-            first argument of any subsolver needs to be ``model``. If the solver
-            supports bounds, the next arguments have to be ``lower_bounds`` and
-            ``upper_bounds``. Moreover, subsolvers can have any number of additional
-            keyword arguments.
+        sphere_solver (str or callable): Name of a subproblem solver or a subproblem
+            solver, designed to solve the problem in the unit sphere. The first argument
+            of any subsolver needs to be ``model``. The second argument needs to be
+            ``x_candidate``, an initial guess for the solution in the unit space.
+            Moreover, subsolvers can have any number of additional keyword arguments.
+        cube_solver (str or callable): Name of a subproblem solver or a subproblem
+            solver, designed to solve the problem in the unit box. The first argument
+            of any subsolver needs to be ``model``. The second and third arguments have
+            to be ``lower_bounds`` and ``upper_bounds``. The fourth argument needs to be
+            ``x_candidate``, an initial guess for the solution in the unit space.
+            Moreover, subsolvers can have any number of additional keyword arguments.
         user_options (dict):
             Options for the subproblem solver. The following are supported:
             - maxiter (int): Maximum number of iterations to perform when solving the
@@ -57,171 +62,131 @@ def get_subsolver(solver, user_options=None, bounds=None):
                 subproblem ("gqtpar").
             - k_hard (float): Stopping criterion for the "hard" case in the trust-region
                 subproblem ("gqtpar").
-        bounds (Bounds):
 
     Returns:
         callable: The subsolver.
 
     """
-    user_options = {} if user_options is None else user_options
-
-    built_in_solvers = {
-        "bntr": bntr,
-        "bntr_fast": bntr_fast,
+    built_in_sphere_solvers = {
         "gqtpar": gqtpar,
         "gqtpar_fast": gqtpar_fast,
-        "multistart": solve_multistart,
         "slsqp_sphere": slsqp_sphere,
     }
 
-    if isinstance(solver, str) and solver in built_in_solvers:
-        _solver = built_in_solvers[solver]
-        _solver_name = solver
-    elif callable(solver):
-        _solver = solver
-        _solver_name = getattr(solver, "__name__", "your solver")
-    else:
-        raise ValueError(
-            "Invalid solver: {solver}. Must be one of {list(built_in_solvers)} "
-            "or a callable."
-        )
-
-    all_options = SubsolverOptions()._replace(**user_options)._asdict()
-
-    args = set(inspect.signature(_solver).parameters)
-
-    if "model" not in args:
-        raise ValueError("subproblem solvers need to take 'model' as first argument.")
-
-    valid_bounds = {"lower_bounds", "upper_bounds"}.intersection(args)
-
-    bounds_dict = {"lower_bounds": None, "upper_bounds": None}
-    if bounds is not None and bounds.has_any:
-        for type_ in ["lower", "upper"]:
-            candidate = getattr(bounds, type_)
-            if candidate is not None and np.isfinite(candidate).any():
-                bounds_dict[f"{type_}_bounds"] = candidate
-
-    for name, value in bounds_dict.items():
-        if name not in valid_bounds and value is not None:
-            raise ValueError(
-                f"You have {name} but requested a subproblem solver that does not "
-                "support them. Use bntr or another bounded subproblem solver instead."
-            )
-
-    bounds_dict = {k: v for k, v in bounds_dict.items() if k in valid_bounds}
-
-    not_options = {"model"} | valid_bounds
-    if isinstance(_solver, partial):
-        partialed_in = set(_solver.args).union(set(_solver.keywords))
-        not_options = not_options | partialed_in
-
-    valid_options = args - not_options
-
-    reduced = {key: val for key, val in all_options.items() if key in valid_options}
-
-    ignored = {
-        key: val for key, val in user_options.items() if key not in valid_options
+    built_in_cube_solvers = {
+        "bntr": bntr,
+        "bntr_fast": bntr_fast,
+        "multistart": solve_multistart,
     }
 
-    if ignored:
-        warnings.warn(
-            "The following options were ignored because they are not compatible "
-            f"with {_solver_name}:\n\n {ignored}"
-        )
-
-    out = partial(
-        _solve_subproblem_template, solver=_solver, bounds=bounds_dict, options=reduced
+    _sphere_subsolver = get_component(
+        name_or_func=sphere_solver,
+        component_name="sphere_solver",
+        func_dict=built_in_sphere_solvers,
+        default_options=SubsolverOptions(),
+        user_options=user_options,
+        mandatory_signature=["model", "x_candidate"],
     )
 
-    return out
+    _cube_subsolver = get_component(
+        name_or_func=cube_solver,
+        component_name="cube_solver",
+        func_dict=built_in_cube_solvers,
+        default_options=SubsolverOptions(),
+        user_options=user_options,
+        mandatory_signature=["model", "x_candidate", "lower_bounds", "upper_bounds"],
+    )
+
+    solver = partial(
+        _solve_subproblem_template,
+        sphere_solver=_sphere_subsolver,
+        cube_solver=_cube_subsolver,
+    )
+
+    return solver
 
 
 def _solve_subproblem_template(
     model,
     trustregion,
-    solver,
-    bounds,
-    options,
+    sphere_solver,
+    cube_solver,
 ):
     """Solve the quadratic subproblem.
 
     Args:
-        model (NamedTuple): NamedTuple containing the parameters of the fitted surrogate
-            model, i.e. ``linear_terms`` and ``square_terms``. The model is assumed to
-            be defined in terms of centered and scaled parameter vectors.
-        trustregion (NamedTuple): Contains ``center`` (np.ndarray) and ``radius``
-            (float). Used to center bounds.
-        solver (callable): Trust-region subsolver to use. All options must already be
-            partialled in such that the subsolver only depends on ``model``,
-            ``lower_bounds`` and ``upper_bounds``
-        bounds (dict): Dict containing the entries "lower_bounds" and "upper_bounds"
-            Bounds are assumed to be in terms of the original parameter space, i.e. not
-            centered yet.
-        options (dict): Solver specific options.
+        model (ScalarModel): The fitted model of which we want to find the minimum.
+        trustregion (Region): The trustregion on which the model was fitted.
+        sphere_solver (callable): Spherical subproblem solver, designed to solve the
+            problem in the unit sphere. The first argument of any subsolver needs to be
+            ``model``. The second argument needs to be ``x_candidate``, an initial guess
+            for the solution in the unit space. Moreover, subsolvers can have any number
+            of additional keyword arguments.
+        cube_solver (callable): Cubical subproblem solver, designed to solve the problem
+            in the unit box. The first argument of any subsolver needs to be ``model``.
+            The second and third arguments have to be ``lower_bounds`` and
+            ``upper_bounds``. The fourth argument needs to be ``x_candidate``, an
+            initial guess for the solution in the unit space. Moreover, subsolvers can
+            have any number of additional keyword arguments.
 
 
     Returns:
-        (dict): Result dictionary containing the following entries:
+        SubproblemResult: Namedtuple with the following entries:
             - "x" (np.ndarray): The optimal x in terms of the original parameter space.
             - "expected_improvement" (float): The expected improvement at the solution.
               The sign has already been flipped, i.e. large means more improvement.
             - "n_iterations" (int): Number of iterations performed before termination.
             - "success" (bool): Boolean indicating whether a solution has been found
               before reaching maxiter.
+            - "x_unit" (np.ndarray): The optimal x in terms of the unit space.
+            - "shape" (str): Whether the trustregion was a sphere or a cube, which in
+              turn determines whether the sphere or cube solver was used.
 
     """
+    old_x_unit = trustregion.map_to_unit(trustregion.center)
 
-    _bounds = _get_centered_and_scaled_bounds(bounds, trustregion)
+    solver = sphere_solver if trustregion.shape == "sphere" else cube_solver
 
-    raw_result = solver(model, **_bounds, **options)
+    raw_result = solver(
+        model=model,
+        x_candidate=old_x_unit,
+        # bounds can be passed to both solvers because the functions returned by
+        # `get_component` ignore redundant arguments.
+        lower_bounds=-np.ones_like(old_x_unit),
+        upper_bounds=np.ones_like(old_x_unit),
+    )
 
-    x = trustregion.map_from_unit(raw_result["x"])
-
-    if "lower_bounds" in bounds:
-        x = np.clip(x, bounds["lower_bounds"], np.inf)
-
-    if "upper_bounds" in bounds:
-        x = np.clip(x, -np.inf, bounds["upper_bounds"])
+    if trustregion.shape == "cube":
+        raw_result["x"] = np.clip(raw_result["x"], -1.0, 1.0)
 
     # make sure expected improvement is calculated accurately in case of clipping and
     # does not depend on whether the subsolver ignores intercepts or not.
-    fval_old = model.predict(trustregion.map_to_unit(trustregion.center))
+    fval_old = model.predict(old_x_unit)
     fval_candidate = model.predict(raw_result["x"])
 
     expected_improvement = -(fval_candidate - fval_old)
+
+    # in case of negative expected improvement, we return the old point
+    if expected_improvement >= 0:
+        success = raw_result["success"]
+        x_unit = raw_result["x"]
+        x = trustregion.map_from_unit(raw_result["x"])
+    else:
+        success = False
+        x_unit = old_x_unit
+        x = trustregion.center
+        expected_improvement = 0.0
 
     result = SubproblemResult(
         x=x,
         expected_improvement=expected_improvement,
         n_iterations=raw_result["n_iterations"],
-        success=raw_result["success"],
-        x_unit=raw_result["x"],
+        success=success,
+        x_unit=x_unit,
         shape=trustregion.shape,
     )
 
     return result
-
-
-def _get_centered_and_scaled_bounds(bounds, trustregion):
-    out = {}
-    n_params = len(trustregion.center)
-    if "lower_bounds" in bounds:
-        if bounds["lower_bounds"] is None:
-            lower_bounds = np.full(n_params, -1)
-        else:
-            lower_bounds = trustregion.map_to_unit(bounds["lower_bounds"])
-            lower_bounds = np.nan_to_num(lower_bounds, nan=-1, neginf=-1)
-        out["lower_bounds"] = lower_bounds
-
-    if "upper_bounds" in bounds:
-        if bounds["upper_bounds"] is None:
-            upper_bounds = np.ones(n_params)
-        else:
-            upper_bounds = trustregion.map_to_unit(bounds["upper_bounds"])
-            upper_bounds = np.nan_to_num(upper_bounds, nan=1, posinf=1)
-        out["upper_bounds"] = upper_bounds
-    return out
 
 
 class SubproblemResult(NamedTuple):
