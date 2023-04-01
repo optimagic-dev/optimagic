@@ -7,6 +7,7 @@ from functools import partial
 
 import numpy as np
 
+# import pandas as pd
 
 from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from estimagic.utilities import cov_params_to_matrix, sdcorr_params_to_matrix
@@ -192,6 +193,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
     # dfold = pd.DataFrame(constr_info, index=parnames)
     # what to do with parnames, add as a key value pair?
     df = constr_info
+    df["index"] = parnames
 
     # Check fixes and bounds are compatible with other constraints
     prob_msg = (
@@ -208,8 +210,9 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         if constr["type"] in ["covariance", "sdcorr"]:
             subset = _iloc(df, slice(1, None))
             # subset = dfold.iloc[constr["index"][1:]]
-            if subset["is_fixed_to_value"].any():
-                problematic = subset[subset["is_fixed_to_value"]].index
+            if any(subset["is_fixed_to_value"]):
+                # problematic = subset[subset["is_fixed_to_value"]].index
+                problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
                 raise InvalidConstraintError(
                     cov_msg.format(constr["type"], problematic)
                 )
@@ -221,20 +224,23 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         elif constr["type"] == "probability":
             subset = df
             # subsetOld = dfold.iloc[constr["index"]]
-            if subset["is_fixed_to_value"].any():
-                problematic = subset[subset["is_fixed_to_value"]].index
+            if any(subset["is_fixed_to_value"]):
+                # breakpoint()
+                problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
 
             if np.isfinite([subset["lower_bounds"], subset["upper_bounds"]]).any():
+                # breakpoint()
                 problematic = [k for k, v in subset.items() if np.any(~np.isfinite(v))]
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
 
-    # invalid =
-    # df.query("lower_bounds >= upper_bounds")[["lower_bounds", "upper_bounds"]]
+    # breakpoint()
+    # invalid = dfold.query("lower_bounds >= upper_bounds")
+    # [["lower_bounds", "upper_bounds"]]
     invalid = {}
     lower_bounds = df["lower_bounds"]
     upper_bounds = df["upper_bounds"]
