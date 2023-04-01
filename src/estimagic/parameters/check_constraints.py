@@ -7,7 +7,6 @@ from functools import partial
 
 import numpy as np
 
-# import pandas as pd
 
 from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from estimagic.utilities import cov_params_to_matrix, sdcorr_params_to_matrix
@@ -172,8 +171,20 @@ def check_for_incompatible_overlaps(transformations, parnames):
         raise InvalidConstraintError(msg.format(invalid_names))
 
 
-def _iloc(dictionary, info):
-    return {k: val[info] for k, val in dictionary.items()}
+def _iloc(dictionary, info, ignore_first_row):
+    # return {k: val[info] for k, val in dictionary.items()}
+    # create subset based on index values in constr
+    subset = {}
+    for key in dictionary:
+        if key != "index":
+            if ignore_first_row:
+                subset[key] = [dictionary[key][int(i)] for i in info[1:]]
+            else:
+                subset[key] = [dictionary[key][int(i)] for i in info]
+    # convert subset to a dictionary with numpy arrays
+    subset = {key: np.array(subset[key]) for key in subset}
+
+    return subset
 
 
 def check_fixes_and_bounds(constr_info, transformations, parnames):
@@ -190,12 +201,9 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         parnames (list): List of parameter names.
 
     """
-    # dfold = pd.DataFrame(constr_info, index=parnames)
-    # what to do with parnames, add as a key value pair?
     df = constr_info
     df["index"] = parnames
 
-    # Check fixes and bounds are compatible with other constraints
     prob_msg = (
         "{} constraints are incompatible with fixes or bounds. "
         "This is violated for:\n{}"
@@ -208,11 +216,9 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = _iloc(df, slice(1, None))
-            # subset = dfold.iloc[constr["index"][1:]]
+            subset = _iloc(df, constr["index"], True)
             if any(subset["is_fixed_to_value"]):
-                # problematic = subset[subset["is_fixed_to_value"]].index
-                problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
+                problematic = np.where(subset["is_fixed_to_value"])[0]
                 raise InvalidConstraintError(
                     cov_msg.format(constr["type"], problematic)
                 )
@@ -222,25 +228,19 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                     prob_msg.format(constr["type"], problematic)
                 )
         elif constr["type"] == "probability":
-            subset = df
-            # subsetOld = dfold.iloc[constr["index"]]
+            subset = _iloc(df, constr["index"], False)
             if any(subset["is_fixed_to_value"]):
-                # breakpoint()
                 problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
 
             if np.isfinite([subset["lower_bounds"], subset["upper_bounds"]]).any():
-                # breakpoint()
                 problematic = [k for k, v in subset.items() if np.any(~np.isfinite(v))]
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
 
-    # breakpoint()
-    # invalid = dfold.query("lower_bounds >= upper_bounds")
-    # [["lower_bounds", "upper_bounds"]]
     invalid = {}
     lower_bounds = df["lower_bounds"]
     upper_bounds = df["upper_bounds"]
