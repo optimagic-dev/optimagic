@@ -185,8 +185,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         parnames (list): List of parameter names.
 
     """
-    dict = constr_info.copy()
-    dict["index"] = parnames
+    constr_dict = constr_info.copy()
+    constr_dict["index"] = parnames
 
     prob_msg = (
         "{} constraints are incompatible with fixes or bounds. "
@@ -200,7 +200,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = _iloc(dictionary=dict, position=constr["index"][1:])
+            subset = _iloc(dictionary=constr_dict, position=constr["index"][1:])
             if any(subset["is_fixed_to_value"]):
                 problematic = np.where(subset["is_fixed_to_value"])[0]
                 raise InvalidConstraintError(
@@ -212,7 +212,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                     prob_msg.format(constr["type"], problematic)
                 )
         elif constr["type"] == "probability":
-            subset = _iloc(dictionary=dict, position=constr["index"])
+            subset = _iloc(dictionary=constr_dict, position=constr["index"])
             if any(subset["is_fixed_to_value"]):
                 problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
                 raise InvalidConstraintError(
@@ -226,8 +226,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                 )
 
     invalid = {}
-    lower_bounds = dict["lower_bounds"]
-    upper_bounds = dict["upper_bounds"]
+    lower_bounds = constr_dict["lower_bounds"]
+    upper_bounds = constr_dict["upper_bounds"]
 
     invalid = np.where(lower_bounds >= upper_bounds)[0]
 
