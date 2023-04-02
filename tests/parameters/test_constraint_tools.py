@@ -32,14 +32,14 @@ def test_iloc():
         "upper_bounds": [1, 1, 1],
         "is_fixed_to_value": [False, False, True],
     }
-    info = [0, 2]
-    ignore_first_row = True
+    position = [0, 2]
+    skip_first_row = True
     expected_result = {
         "lower_bounds": np.array([0]),
         "upper_bounds": np.array([1]),
         "is_fixed_to_value": np.array([True]),
     }
-    result = _iloc(dictionary, info, ignore_first_row)
+    result = _iloc(dictionary, position, skip_first_row)
     assert len(result) == len(expected_result)
     for k, v in expected_result.items():
         assert k in result
@@ -53,14 +53,14 @@ def test_iloc():
         "upper_bounds": [1, 1, 1],
         "is_fixed_to_value": [False, False, True],
     }
-    info = [0, 2]
+    position = [0, 2]
     ignore_first_row = False
     expected_result = {
         "lower_bounds": np.array([0, 0]),
         "upper_bounds": np.array([1, 1]),
         "is_fixed_to_value": np.array([False, True]),
     }
-    result = _iloc(dictionary, info, ignore_first_row)
+    result = _iloc(dictionary, position, ignore_first_row)
     assert len(result) == len(expected_result)
     for k, v in expected_result.items():
         assert k in result
