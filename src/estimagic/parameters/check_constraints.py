@@ -171,22 +171,6 @@ def check_for_incompatible_overlaps(transformations, parnames):
         raise InvalidConstraintError(msg.format(invalid_names))
 
 
-def _iloc(dictionary, info, ignore_first_row):
-    # return {k: val[info] for k, val in dictionary.items()}
-    # create subset based on index values in constr
-    subset = {}
-    for key in dictionary:
-        if key != "index":
-            if ignore_first_row:
-                subset[key] = [dictionary[key][int(i)] for i in info[1:]]
-            else:
-                subset[key] = [dictionary[key][int(i)] for i in info]
-    # convert subset to a dictionary with numpy arrays
-    subset = {key: np.array(subset[key]) for key in subset}
-
-    return subset
-
-
 def check_fixes_and_bounds(constr_info, transformations, parnames):
     """Check fixes.
 
@@ -253,3 +237,31 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
     )
     if len(invalid) > 0:
         raise InvalidConstraintError(msg)
+
+
+def _iloc(dictionary, info, ignore_first_row):
+    """Substitute function for DataFrame.iloc.
+
+    It creates a subset of the input dictionary based on the
+    index values in the info list, and returns this subset as
+    a dictionary with numpy arrays.
+
+    Args:
+        dictionary (dict): Dictionary used to get a subset
+        info (list): Specifies which rows to select from the input "dictionary"
+        ignore_first_row (boolean): Determines whether or not the first
+        row of the data should be excluded when creating the subset
+
+    """
+    # Create subset based on index values in constr
+    subset = {}
+    for key in dictionary:
+        if key != "index":
+            if ignore_first_row:
+                subset[key] = [dictionary[key][int(i)] for i in info[1:]]
+            else:
+                subset[key] = [dictionary[key][int(i)] for i in info]
+    # Convert subset to a dictionary with numpy arrays
+    subset = {key: np.array(subset[key]) for key in subset}
+
+    return subset
