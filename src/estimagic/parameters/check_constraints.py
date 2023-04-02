@@ -185,8 +185,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         parnames (list): List of parameter names.
 
     """
-    df = constr_info
-    df["index"] = parnames
+    dict = constr_info.copy()
+    dict["index"] = parnames
 
     prob_msg = (
         "{} constraints are incompatible with fixes or bounds. "
@@ -200,7 +200,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = _iloc(df, constr["index"], True)
+            subset = _iloc(dictionary=dict, position=constr["index"][1:])
             if any(subset["is_fixed_to_value"]):
                 problematic = np.where(subset["is_fixed_to_value"])[0]
                 raise InvalidConstraintError(
@@ -212,7 +212,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                     prob_msg.format(constr["type"], problematic)
                 )
         elif constr["type"] == "probability":
-            subset = _iloc(df, constr["index"], False)
+            subset = _iloc(dictionary=dict, position=constr["index"])
             if any(subset["is_fixed_to_value"]):
                 problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
                 raise InvalidConstraintError(
@@ -226,8 +226,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                 )
 
     invalid = {}
-    lower_bounds = df["lower_bounds"]
-    upper_bounds = df["upper_bounds"]
+    lower_bounds = dict["lower_bounds"]
+    upper_bounds = dict["upper_bounds"]
 
     invalid = np.where(lower_bounds >= upper_bounds)[0]
 
@@ -239,7 +239,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         raise InvalidConstraintError(msg)
 
 
-def _iloc(dictionary, position, skip_first_row):
+def _iloc(dictionary, position):
     """Substitute function for DataFrame.iloc.
 
     It creates a subset of the input dictionary based on the
@@ -248,19 +248,14 @@ def _iloc(dictionary, position, skip_first_row):
 
     Args:
         dictionary (dict): Dictionary used to get a subset
-        info (list): Specifies which rows to select from the input "dictionary"
-        ignore_first_row (boolean): Determines whether or not the first
-        row of the data should be excluded when creating the subset
+        position (list): Specifies which rows to select from the input dictionary
 
     """
     # Create subset based on index values in constr
     subset = {}
     for key in dictionary:
         if key != "index":
-            if skip_first_row:
-                subset[key] = [dictionary[key][int(i)] for i in position[1:]]
-            else:
-                subset[key] = [dictionary[key][int(i)] for i in position]
+            subset[key] = [dictionary[key][int(i)] for i in position]
     # Convert subset to a dictionary with numpy arrays
     subset = {key: np.array(subset[key]) for key in subset}
 
