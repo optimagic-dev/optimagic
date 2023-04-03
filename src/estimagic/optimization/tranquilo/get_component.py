@@ -197,7 +197,6 @@ def _fail_if_mandatory_argument_is_missing(
         )
         raise ValueError(msg)
 
-    return None
 
 
 def _add_redundant_argument_handling(func, signature, warn):
