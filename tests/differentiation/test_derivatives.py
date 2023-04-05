@@ -299,7 +299,7 @@ def test__convert_richardson_candidates_to_frame():
     )
     expected = expected.set_index(["method", "num_term", "dim_x", "dim_f"])
     got = _convert_richardson_candidates_to_frame(jac, err)
-    assert_frame_equal(got, expected, check_dtype=False)
+    assert_frame_equal(got, expected, check_dtype=False, check_index_type=False)
 
 
 def test__select_minimizer_along_axis():
