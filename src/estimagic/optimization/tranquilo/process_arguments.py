@@ -13,7 +13,6 @@ from estimagic.optimization.tranquilo.fit_models import get_fitter
 from estimagic.optimization.tranquilo.history import History
 from estimagic.optimization.tranquilo.options import (
     ConvOptions,
-    StagnationOptions,
     StopOptions,
     get_default_acceptance_decider,
     get_default_aggregator,
@@ -25,6 +24,7 @@ from estimagic.optimization.tranquilo.options import (
     get_default_radius_options,
     get_default_sample_size,
     get_default_search_radius_factor,
+    get_default_stagnation_options,
     update_option_bundle,
 )
 from estimagic.optimization.tranquilo.region import Region
@@ -110,7 +110,6 @@ def process_arguments(
     x = _process_x(x)
     noisy = _process_noisy(noisy)
     n_cores = _process_n_cores(n_cores)
-    stagnation_options = update_option_bundle(StagnationOptions(), stagnation_options)
     n_evals_per_point = int(n_evals_per_point)
     sampling_rng = _process_seed(seed)
     n_evals_at_start = _process_n_evals_at_start(
@@ -121,6 +120,9 @@ def process_arguments(
     # process options that depend on arguments with static defaults
     search_radius_factor = _process_search_radius_factor(search_radius_factor, functype)
     batch_size = _process_batch_size(batch_size, n_cores)
+    stagnation_options = update_option_bundle(
+        get_default_stagnation_options(batch_size), stagnation_options
+    )
     radius_options = update_option_bundle(get_default_radius_options(x), radius_options)
     model_type = _process_model_type(model_type, functype)
     acceptance_decider = _process_acceptance_decider(acceptance_decider, noisy)

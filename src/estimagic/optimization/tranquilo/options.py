@@ -12,6 +12,10 @@ def get_default_batch_size(n_cores):
     return n_cores
 
 
+def get_default_stagnation_options(batch_size):
+    return StagnationOptions(sample_increment=batch_size)
+
+
 def get_default_acceptance_decider(noisy):
     return "noisy" if noisy else "classic"
 
@@ -36,10 +40,6 @@ def get_default_model_fitter(model_type, sample_size, x):
 
 def get_default_residualize(model_fitter):
     return model_fitter == "tranquilo"
-
-
-def get_default_subsolver(bounds, cube_subsolver, sphere_subsolver):
-    return cube_subsolver if bounds.has_any else sphere_subsolver
 
 
 def get_default_search_radius_factor(functype):
@@ -120,9 +120,9 @@ class AcceptanceOptions(NamedTuple):
 
 
 class StagnationOptions(NamedTuple):
+    sample_increment: int
     min_relative_step_keep: float = 0.125
     min_relative_step: float = 0.05
-    sample_increment: int = 1
     max_trials: int = 1
     drop: bool = True
 

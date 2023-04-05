@@ -2,6 +2,7 @@ import pytest
 from collections import namedtuple
 from estimagic.optimization.tranquilo.options import (
     get_default_aggregator,
+    get_default_stagnation_options,
     update_option_bundle,
 )
 
@@ -54,3 +55,7 @@ def test_update_option_bundle_invalid_field(default_options):
         ValueError, match="The following user options are not valid: {'not_a_field'}"
     ):
         update_option_bundle(default_options, user_options={"not_a_field": 10})
+
+
+def test_get_default_stagnation_options():
+    assert get_default_stagnation_options(10).sample_increment == 10
