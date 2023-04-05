@@ -219,8 +219,8 @@ def process_pandas_arguments(**kwargs):
     """Convert pandas objects to arrays and extract names of moments and parameters.
 
     This works for any number of keyword arguments. The result is a tuple containing
-    numpy arrays in same order as the keyword arguments and a dictionary with
-    the separated index objects as last entry. This dictionary contains the entries
+    numpy arrays in same order as the keyword arguments and a dictionary with the
+    separated index objects as last entry. This dictionary contains the entries
     "moments" and "params" for the identified moment names and parameter names.
 
     The keyword arguments "jac", "hess", "weights" and "moments_cov" are used to extract

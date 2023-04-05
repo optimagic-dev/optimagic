@@ -8,16 +8,11 @@ TikTak (`Arnoud, Guvenen, and Kleineberg
 
 
 
+is an algorithm for solving global optimization problems. It performs local searches
+from a set of carefully-selected points in the parameter space.
 
+First implemented in Python by Alisdair McKay (
 
-
-
-
-is an algorithm for solving global optimization problems. It performs local
-searches from a set of carefully-selected points in the parameter space.
-
-First implemented in Python by Alisdair McKay
-(
 `GitHub Repository <https://github.com/amckay/TikTak>`_)
 
 """

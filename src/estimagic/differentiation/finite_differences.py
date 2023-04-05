@@ -1,8 +1,8 @@
 """Finite difference formulae for jacobians and hessians.
 
-All functions in this module should not only work for the simple case
-of one positive and/or one negative step, but also for the Richardson
-Extrapolation case with several positive and/or several negative steps.
+All functions in this module should not only work for the simple case of one positive
+and/or one negative step, but also for the Richardson Extrapolation case with several
+positive and/or several negative steps.
 
 Since steps and evals contain NaNs, we have to make sure that the functions do not raise
 warnings or errors for that case.

@@ -198,7 +198,6 @@ def _fail_if_mandatory_argument_is_missing(
         raise ValueError(msg)
 
 
-
 def _add_redundant_argument_handling(func, signature, warn):
     """Allow func to be called with arguments that are not in the signature.
 

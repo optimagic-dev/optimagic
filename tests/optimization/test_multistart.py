@@ -179,7 +179,7 @@ def test_multistart_with_numpy_params():
         multistart=True,
     )
 
-    res.params
+    aaae(res.params, np.zeros(5))
 
 
 def test_with_invalid_bounds():

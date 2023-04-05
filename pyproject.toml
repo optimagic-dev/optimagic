@@ -51,6 +51,10 @@ extend-ignore = [
   "PLR2004",
   # Consider `elif` instead of `else` then `if` to remove indentation level
   "PLR5501",
+  # For calls to warnings.warn(): No explicit `stacklevel` keyword argument found
+  "B028",
+  # Found useless expression. Either assign it to a variable or remove it.
+  "B018",
 ]
 
 [tool.ruff.per-file-ignores]

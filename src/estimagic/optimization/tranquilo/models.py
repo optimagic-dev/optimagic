@@ -134,7 +134,6 @@ def move_model(model, new_region):
         Union[ScalarModel, VectorModel]: The moved model.
 
     """
-
     # undo old scaling
     out = _scale_model(model, factor=1 / model.scale)
 
