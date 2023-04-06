@@ -2,8 +2,8 @@ import itertools
 
 import numpy as np
 import pytest
-from estimagic.optimization.optimize import minimize
-from estimagic.visualization.history_plots import criterion_plot, params_plot
+from tranquilo.optimization.optimize import minimize
+from tranquilo.visualization.history_plots import criterion_plot, params_plot
 
 
 @pytest.fixture()

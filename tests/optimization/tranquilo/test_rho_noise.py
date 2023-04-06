@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.aggregate_models import get_aggregator
-from estimagic.optimization.tranquilo.fit_models import get_fitter
-from estimagic.optimization.tranquilo.region import Region
-from estimagic.optimization.tranquilo.bounds import Bounds
-from estimagic.optimization.tranquilo.rho_noise import simulate_rho_noise
-from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
+from tranquilo.optimization.tranquilo.aggregate_models import get_aggregator
+from tranquilo.optimization.tranquilo.fit_models import get_fitter
+from tranquilo.optimization.tranquilo.region import Region
+from tranquilo.optimization.tranquilo.bounds import Bounds
+from tranquilo.optimization.tranquilo.rho_noise import simulate_rho_noise
+from tranquilo.optimization.tranquilo.solve_subproblem import get_subsolver
 from numpy.testing import assert_array_almost_equal as aaae
 
 

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
-from estimagic.differentiation.derivatives import Evals
-from estimagic.differentiation.finite_differences import jacobian
-from estimagic.differentiation.generate_steps import Steps
+from tranquilo.differentiation.derivatives import Evals
+from tranquilo.differentiation.finite_differences import jacobian
+from tranquilo.differentiation.generate_steps import Steps
 from numpy.testing import assert_array_almost_equal as aaae
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.region import Region
-from estimagic.optimization.tranquilo.models import (
+from tranquilo.optimization.tranquilo.region import Region
+from tranquilo.optimization.tranquilo.models import (
     ScalarModel,
     VectorModel,
     _predict_scalar,

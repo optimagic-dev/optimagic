@@ -1,5 +1,5 @@
 import numpy as np
-from estimagic.optimization.tranquilo.clustering import cluster
+from tranquilo.optimization.tranquilo.clustering import cluster
 from numpy.testing import assert_array_equal as aae
 
 

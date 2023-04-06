@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.exceptions import InvalidConstraintError
-from estimagic.parameters.process_selectors import process_selectors
-from estimagic.parameters.tree_conversion import TreeConverter
-from estimagic.parameters.tree_registry import get_registry
+from tranquilo.exceptions import InvalidConstraintError
+from tranquilo.parameters.process_selectors import process_selectors
+from tranquilo.parameters.tree_conversion import TreeConverter
+from tranquilo.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_equal as aae
 from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 

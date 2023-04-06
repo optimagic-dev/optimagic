@@ -1,5 +1,5 @@
 import pytest
-from estimagic.optimization.tranquilo.acceptance_sample_size import (
+from tranquilo.optimization.tranquilo.acceptance_sample_size import (
     _compute_factor,
     _get_optimal_sample_sizes,
 )

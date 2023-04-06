@@ -129,6 +129,6 @@ venv.bak/
 .pytask.sqlite3
 
 
-src/estimagic/_version.py
+src/tranquilo/_version.py
 
 *.~lock.*

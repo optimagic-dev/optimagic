@@ -1,4 +1,4 @@
-from estimagic.optimization.process_results import switch_sign
+from tranquilo.optimization.process_results import switch_sign
 
 
 def test_switch_sign_dict():

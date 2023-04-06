@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.examples.criterion_functions import (
+from tranquilo.examples.criterion_functions import (
     rosenbrock_criterion_and_gradient,
     rosenbrock_dict_criterion,
     rosenbrock_gradient,

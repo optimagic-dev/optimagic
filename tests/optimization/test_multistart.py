@@ -3,16 +3,16 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.decorators import switch_sign
-from estimagic.examples.criterion_functions import (
+from tranquilo.decorators import switch_sign
+from tranquilo.examples.criterion_functions import (
     sos_dict_criterion,
     sos_scalar_criterion,
 )
-from estimagic.logging.load_database import load_database
-from estimagic.logging.read_from_database import read_new_rows
-from estimagic.logging.read_log import read_steps_table
-from estimagic.optimization.optimize import maximize, minimize
-from estimagic.optimization.optimize_result import OptimizeResult
+from tranquilo.logging.load_database import load_database
+from tranquilo.logging.read_from_database import read_new_rows
+from tranquilo.logging.read_log import read_steps_table
+from tranquilo.optimization.optimize import maximize, minimize
+from tranquilo.optimization.optimize_result import OptimizeResult
 from numpy.testing import assert_array_almost_equal as aaae
 
 criteria = [sos_scalar_criterion, sos_dict_criterion]

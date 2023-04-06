@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from estimagic.parameters.parameter_groups import (
+from tranquilo.parameters.parameter_groups import (
     _get_group_and_name,
     _replace_too_common_groups,
     _split_long_group,

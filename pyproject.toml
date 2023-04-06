@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [tool.setuptools_scm]
-write_to = "src/estimagic/_version.py"
+write_to = "src/tranquilo/_version.py"
 
 
 [tool.ruff]
@@ -57,7 +57,7 @@ extend-ignore = [
 
 [tool.ruff.per-file-ignores]
 "docs/source/conf.py" = ["E501", "ERA001", "DTZ005"]
-"src/estimagic/parameters/kernel_transformations.py" = ["ARG001", "N806"]
+"src/tranquilo/parameters/kernel_transformations.py" = ["ARG001", "N806"]
 "docs/source/*" = ["B018"]
 
 [tool.ruff.pydocstyle]

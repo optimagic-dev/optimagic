@@ -1,6 +1,6 @@
 import numpy as np
-from estimagic.optimization.tranquilo.bounds import Bounds
-from estimagic.optimization.tranquilo.region import (
+from tranquilo.optimization.tranquilo.bounds import Bounds
+from tranquilo.optimization.tranquilo.region import (
     Region,
     _any_bounds_binding,
     _get_shape,

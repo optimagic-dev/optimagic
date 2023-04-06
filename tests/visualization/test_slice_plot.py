@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.visualization.slice_plot import slice_plot
+from tranquilo.visualization.slice_plot import slice_plot
 
 
 @pytest.fixture()

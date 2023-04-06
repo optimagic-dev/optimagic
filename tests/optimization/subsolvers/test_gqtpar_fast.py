@@ -1,27 +1,27 @@
 import numpy as np
-from estimagic.optimization.subsolvers.gqtpar import (
+from tranquilo.optimization.subsolvers.gqtpar import (
     DampingFactors,
     HessianInfo,
 )
-from estimagic.optimization.subsolvers.gqtpar import (
+from tranquilo.optimization.subsolvers.gqtpar import (
     _compute_smallest_step_len_for_candidate_vector as compute_smallest_step_orig,
 )
-from estimagic.optimization.subsolvers.gqtpar import (
+from tranquilo.optimization.subsolvers.gqtpar import (
     _find_new_candidate_and_update_parameters as find_new_and_update_candidate_orig,
 )
-from estimagic.optimization.subsolvers.gqtpar import (
+from tranquilo.optimization.subsolvers.gqtpar import (
     _get_initial_guess_for_lambdas as init_lambdas_orig,
 )
-from estimagic.optimization.subsolvers.gqtpar_fast import (
+from tranquilo.optimization.subsolvers.gqtpar_fast import (
     _compute_smallest_step_len_for_candidate_vector as compute_smallest_step_fast,
 )
-from estimagic.optimization.subsolvers.gqtpar_fast import (
+from tranquilo.optimization.subsolvers.gqtpar_fast import (
     _find_new_candidate_and_update_parameters as find_new_and_update_candidate_fast,
 )
-from estimagic.optimization.subsolvers.gqtpar_fast import (
+from tranquilo.optimization.subsolvers.gqtpar_fast import (
     _get_initial_guess_for_lambdas as init_lambdas_fast,
 )
-from estimagic.optimization.tranquilo.models import ScalarModel
+from tranquilo.optimization.tranquilo.models import ScalarModel
 from numpy.testing import assert_array_almost_equal as aaae
 
 

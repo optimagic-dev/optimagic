@@ -50,7 +50,7 @@ repos:
       - id: trailing-whitespace
       - id: check-ast
       - id: check-docstring-first
-        exclude: src/estimagic/optimization/algo_options.py
+        exclude: src/tranquilo/optimization/algo_options.py
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.30.0
     hooks:

@@ -1,5 +1,5 @@
 import pytest
-from estimagic.decorators import catch, mark_minimizer, unpack
+from tranquilo.decorators import catch, mark_minimizer, unpack
 
 
 def test_catch_at_defaults():

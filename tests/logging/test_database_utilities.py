@@ -2,18 +2,18 @@ import pickle
 
 import numpy as np
 import pytest
-from estimagic.logging.create_tables import (
+from tranquilo.logging.create_tables import (
     make_optimization_iteration_table,
     make_optimization_problem_table,
     make_steps_table,
 )
-from estimagic.logging.load_database import DataBase, load_database
-from estimagic.logging.read_from_database import (
+from tranquilo.logging.load_database import DataBase, load_database
+from tranquilo.logging.read_from_database import (
     read_last_rows,
     read_new_rows,
     read_table,
 )
-from estimagic.logging.write_to_database import append_row, update_row
+from tranquilo.logging.write_to_database import append_row, update_row
 from numpy.testing import assert_array_equal
 
 

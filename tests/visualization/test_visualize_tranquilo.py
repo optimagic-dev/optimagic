@@ -1,6 +1,6 @@
 import pytest
-from estimagic import get_benchmark_problems, minimize
-from estimagic.visualization.visualize_tranquilo import visualize_tranquilo
+from tranquilo import get_benchmark_problems, minimize
+from tranquilo.visualization.visualize_tranquilo import visualize_tranquilo
 
 cases = []
 algo_options = {

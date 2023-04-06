@@ -1,7 +1,7 @@
 import pytest
-from estimagic import get_benchmark_problems
-from estimagic.benchmarking.run_benchmark import run_benchmark
-from estimagic.visualization.convergence_plot import (
+from tranquilo import get_benchmark_problems
+from tranquilo.benchmarking.run_benchmark import run_benchmark
+from tranquilo.visualization.convergence_plot import (
     _check_only_allowed_subset_provided,
     convergence_plot,
 )

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.poisedness import (
+from tranquilo.optimization.tranquilo.poisedness import (
     _get_minimize_options,
     _lagrange_poly_matrix,
     _reshape_coef_to_square_terms,

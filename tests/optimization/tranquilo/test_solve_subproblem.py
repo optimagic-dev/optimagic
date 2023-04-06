@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.models import ScalarModel
-from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
-from estimagic.optimization.tranquilo.region import Region
-from estimagic.optimization.tranquilo.bounds import Bounds
+from tranquilo.optimization.tranquilo.models import ScalarModel
+from tranquilo.optimization.tranquilo.solve_subproblem import get_subsolver
+from tranquilo.optimization.tranquilo.region import Region
+from tranquilo.optimization.tranquilo.bounds import Bounds
 from numpy.testing import assert_array_almost_equal as aaae
 
 solvers = ["gqtpar", "gqtpar_fast"]

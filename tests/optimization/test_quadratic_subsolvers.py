@@ -1,21 +1,21 @@
 """Test various solvers for quadratic trust-region subproblems."""
 import numpy as np
 import pytest
-from estimagic.optimization.pounders_auxiliary import MainModel
-from estimagic.optimization.subsolvers._conjugate_gradient import (
+from tranquilo.optimization.pounders_auxiliary import MainModel
+from tranquilo.optimization.subsolvers._conjugate_gradient import (
     minimize_trust_cg,
 )
-from estimagic.optimization.subsolvers._steihaug_toint import (
+from tranquilo.optimization.subsolvers._steihaug_toint import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers._trsbox import minimize_trust_trsbox
+from tranquilo.optimization.subsolvers.bntr import (
     bntr,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     bntr_fast,
 )
-from estimagic.optimization.subsolvers.gqtpar import (
+from tranquilo.optimization.subsolvers.gqtpar import (
     gqtpar,
 )
 from numpy.testing import assert_array_almost_equal as aaae

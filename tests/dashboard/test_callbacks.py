@@ -1,6 +1,6 @@
 import numpy as np
 from bokeh.models import ColumnDataSource
-from estimagic.dashboard.callbacks import (
+from tranquilo.dashboard.callbacks import (
     _create_params_data_for_update,
     _reset_column_data_sources,
 )

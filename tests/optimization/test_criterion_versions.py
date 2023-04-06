@@ -9,14 +9,14 @@ Here we want to take:
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import IS_DFOLS_INSTALLED
-from estimagic.examples.criterion_functions import (
+from tranquilo.config import IS_DFOLS_INSTALLED
+from tranquilo.examples.criterion_functions import (
     sos_dict_criterion,
     sos_dict_criterion_with_pd_objects,
     sos_scalar_criterion,
 )
-from estimagic.exceptions import InvalidFunctionError
-from estimagic.optimization.optimize import minimize
+from tranquilo.exceptions import InvalidFunctionError
+from tranquilo.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 algorithms = ["scipy_lbfgsb", "scipy_neldermead"]

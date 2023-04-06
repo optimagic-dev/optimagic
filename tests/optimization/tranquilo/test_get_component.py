@@ -1,6 +1,6 @@
 import pytest
 from collections import namedtuple
-from estimagic.optimization.tranquilo.get_component import (
+from tranquilo.optimization.tranquilo.get_component import (
     _add_redundant_argument_handling,
     _fail_if_mandatory_argument_is_missing,
     _get_function_and_name,

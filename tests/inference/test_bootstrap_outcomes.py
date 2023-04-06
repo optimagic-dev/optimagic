@@ -3,12 +3,12 @@ import functools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.inference.bootstrap_outcomes import (
+from tranquilo.batch_evaluators import joblib_batch_evaluator
+from tranquilo.inference.bootstrap_outcomes import (
     _get_bootstrap_outcomes_from_indices,
     get_bootstrap_outcomes,
 )
-from estimagic.utilities import get_rng
+from tranquilo.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 

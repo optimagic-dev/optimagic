@@ -9,8 +9,8 @@ import sys
 
 import numpy as np
 import pytest
-from estimagic.optimization import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
-from estimagic.optimization.optimize import minimize
+from tranquilo.optimization import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
+from tranquilo.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 LOCAL_ALGORITHMS = {

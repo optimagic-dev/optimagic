@@ -1,6 +1,6 @@
 import pytest
 from collections import namedtuple
-from estimagic.optimization.tranquilo.options import (
+from tranquilo.optimization.tranquilo.options import (
     get_default_aggregator,
     update_option_bundle,
 )

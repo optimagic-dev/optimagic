@@ -3,9 +3,9 @@ import warnings
 
 import numpy as np
 import pytest
-from estimagic import maximize, minimize
-from estimagic.config import IS_CYIPOPT_INSTALLED
-from estimagic.optimization import AVAILABLE_ALGORITHMS
+from tranquilo import maximize, minimize
+from tranquilo.config import IS_CYIPOPT_INSTALLED
+from tranquilo.optimization import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
 
 NLC_ALGORITHMS = [

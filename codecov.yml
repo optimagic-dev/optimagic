@@ -17,11 +17,11 @@ ignore:
   - .tox/**/*
   - release.py
   - setup.py
-  - estimagic/tests/**/*
-  - src/estimagic/benchmarking/cartis_roberts.py
-  - src/estimagic/optimization/subsolvers/bntr_fast.py
-  - src/estimagic/optimization/subsolvers/_trsbox_fast.py
-  - src/estimagic/optimization/subsolvers/_conjugate_gradient_fast.py
-  - src/estimagic/optimization/subsolvers/_steihaug_toint_fast.py
-  - src/estimagic/optimization/subsolvers/gqtpar_fast.py
-  - src/estimagic/optimization/tranquilo/clustering.py
+  - tranquilo/tests/**/*
+  - src/tranquilo/benchmarking/cartis_roberts.py
+  - src/tranquilo/optimization/subsolvers/bntr_fast.py
+  - src/tranquilo/optimization/subsolvers/_trsbox_fast.py
+  - src/tranquilo/optimization/subsolvers/_conjugate_gradient_fast.py
+  - src/tranquilo/optimization/subsolvers/_steihaug_toint_fast.py
+  - src/tranquilo/optimization/subsolvers/gqtpar_fast.py
+  - src/tranquilo/optimization/tranquilo/clustering.py

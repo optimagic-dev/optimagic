@@ -1,5 +1,5 @@
 import numpy as np
-from estimagic.optimization.tranquilo.handle_infinity import get_infinity_handler
+from tranquilo.optimization.tranquilo.handle_infinity import get_infinity_handler
 from numpy.testing import assert_array_almost_equal as aaae
 
 

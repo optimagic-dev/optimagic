@@ -6,7 +6,7 @@ depend on the inputs, not the values with static defaults.
 """
 import pytest
 import numpy as np
-from estimagic.optimization.tranquilo.process_arguments import (
+from tranquilo.optimization.tranquilo.process_arguments import (
     process_arguments,
     _process_batch_size,
     _process_sample_size,

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.history_tools import get_history_arrays
+from tranquilo.optimization.history_tools import get_history_arrays
 from numpy.testing import assert_array_almost_equal as aaae
 
 

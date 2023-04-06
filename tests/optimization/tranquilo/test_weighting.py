@@ -1,5 +1,5 @@
 import numpy as np
-from estimagic.optimization.tranquilo.weighting import get_sample_weighter
+from tranquilo.optimization.tranquilo.weighting import get_sample_weighter
 
 
 def test_no_weighting():

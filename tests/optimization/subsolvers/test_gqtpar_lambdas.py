@@ -1,5 +1,5 @@
-import estimagic as em
-from estimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
+import tranquilo as em
+from tranquilo.benchmarking.get_benchmark_problems import get_benchmark_problems
 
 
 def test_gqtpar_lambdas():

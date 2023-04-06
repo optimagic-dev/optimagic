@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.benchmarking.process_benchmark_results import (
+from tranquilo.benchmarking.process_benchmark_results import (
     _clip_histories,
     _find_first_converged,
     _get_history_as_stacked_sr_from_results,

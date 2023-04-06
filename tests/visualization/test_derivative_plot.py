@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.visualization.derivative_plot import (
+from tranquilo.differentiation.derivatives import first_derivative
+from tranquilo.visualization.derivative_plot import (
     _select_derivative_with_minimal_error,
     _select_eval_with_lowest_and_highest_step,
     derivative_plot,

@@ -5,9 +5,9 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.config import TEST_FIXTURES_DIR
-from estimagic.optimization.pounders import internal_solve_pounders
+from tranquilo.batch_evaluators import joblib_batch_evaluator
+from tranquilo.config import TEST_FIXTURES_DIR
+from tranquilo.optimization.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
 
 

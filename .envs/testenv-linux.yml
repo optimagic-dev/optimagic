@@ -1,5 +1,5 @@
 ---
-name: estimagic
+name: tranquilo
 channels:
   - conda-forge
   - nodefaults

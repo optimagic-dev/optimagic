@@ -1,8 +1,8 @@
 """Test the history class for least-squares optimizers."""
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.history import History
-from estimagic.optimization.tranquilo.region import Region
+from tranquilo.optimization.tranquilo.history import History
+from tranquilo.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_almost_equal as aaae
 
 

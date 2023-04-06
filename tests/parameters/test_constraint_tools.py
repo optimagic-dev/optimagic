@@ -1,6 +1,6 @@
 import pytest
-from estimagic.exceptions import InvalidParamsError
-from estimagic.parameters.constraint_tools import check_constraints, count_free_params
+from tranquilo.exceptions import InvalidParamsError
+from tranquilo.parameters.constraint_tools import check_constraints, count_free_params
 
 
 def test_count_free_params_no_constraints():

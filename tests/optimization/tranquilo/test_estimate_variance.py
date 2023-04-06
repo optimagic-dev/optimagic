@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.estimate_variance import (
+from tranquilo.optimization.tranquilo.estimate_variance import (
     _estimate_variance_classic,
 )
-from estimagic.optimization.tranquilo.history import History
-from estimagic.optimization.tranquilo.tranquilo import Region
+from tranquilo.optimization.tranquilo.history import History
+from tranquilo.optimization.tranquilo.tranquilo import Region
 from numpy.testing import assert_array_almost_equal as aaae
 
 

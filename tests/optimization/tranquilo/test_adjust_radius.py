@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.adjust_radius import adjust_radius
-from estimagic.optimization.tranquilo.options import RadiusOptions
+from tranquilo.optimization.tranquilo.adjust_radius import adjust_radius
+from tranquilo.optimization.tranquilo.options import RadiusOptions
 
 
 @pytest.fixture()

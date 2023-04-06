@@ -1,6 +1,6 @@
-from estimagic.optimization.tranquilo.filter_points import get_sample_filter
-from estimagic.optimization.tranquilo.tranquilo import State
-from estimagic.optimization.tranquilo.region import Region
+from tranquilo.optimization.tranquilo.filter_points import get_sample_filter
+from tranquilo.optimization.tranquilo.tranquilo import State
+from tranquilo.optimization.tranquilo.region import Region
 from numpy.testing import assert_array_equal as aae
 import pytest
 import numpy as np

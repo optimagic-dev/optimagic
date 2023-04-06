@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.parameters.conversion import (
+from tranquilo.parameters.conversion import (
     _is_fast_deriv_eval,
     _is_fast_func_eval,
     _is_fast_path,

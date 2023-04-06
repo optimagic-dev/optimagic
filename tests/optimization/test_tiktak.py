@@ -3,7 +3,7 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.tiktak import (
+from tranquilo.optimization.tiktak import (
     _linear_weights,
     _tiktak_weights,
     draw_exploration_sample,

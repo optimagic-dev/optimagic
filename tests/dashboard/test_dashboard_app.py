@@ -5,8 +5,8 @@ import pandas.testing as pdt
 import pytest
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
-from estimagic import minimize
-from estimagic.dashboard import dashboard_app
+from tranquilo import minimize
+from tranquilo.dashboard import dashboard_app
 
 
 def pybaum_sphere(params):
@@ -106,7 +106,7 @@ def test_calculate_start_point(monkeypatch):
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
-        "estimagic.dashboard.dashboard_app.read_last_rows", fake_read_last_rows
+        "tranquilo.dashboard.dashboard_app.read_last_rows", fake_read_last_rows
     )
 
     updating_options = {
@@ -127,7 +127,7 @@ def test_calculate_start_point_no_negative_value(monkeypatch):
         return [{"rowid": 20}]
 
     monkeypatch.setattr(
-        "estimagic.dashboard.dashboard_app.read_last_rows", fake_read_last_rows
+        "tranquilo.dashboard.dashboard_app.read_last_rows", fake_read_last_rows
     )
 
     res = dashboard_app._calculate_start_point(

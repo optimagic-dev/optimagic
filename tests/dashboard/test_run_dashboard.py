@@ -1,7 +1,7 @@
 """Test the functions to run the dashboard."""
 from click.testing import CliRunner
-from estimagic.cli import cli
-from estimagic.config import EXAMPLE_DIR
+from tranquilo.cli import cli
+from tranquilo.config import EXAMPLE_DIR
 
 
 def test_dashboard_cli(monkeypatch):
@@ -17,7 +17,7 @@ def test_dashboard_cli(monkeypatch):
         assert updating_options["jump"]
         assert updating_options["stride"] == 1
 
-    monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
+    monkeypatch.setattr("tranquilo.cli.run_dashboard", fake_run_dashboard)
 
     runner = CliRunner()
     result = runner.invoke(

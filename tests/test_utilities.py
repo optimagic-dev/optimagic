@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import IS_JAX_INSTALLED
-from estimagic.utilities import (
+from tranquilo.config import IS_JAX_INSTALLED
+from tranquilo.utilities import (
     calculate_trustregion_initial_radius,
     chol_params_to_lower_triangular_matrix,
     cov_matrix_to_params,

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.differentiation.generate_steps import (
+from tranquilo.differentiation.generate_steps import (
     _calculate_or_validate_base_steps,
     _fillna,
     _rescale_to_accomodate_bounds,

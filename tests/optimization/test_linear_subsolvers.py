@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 import pytest
-from estimagic.optimization.subsolvers.linear_subsolvers import (
+from tranquilo.optimization.subsolvers.linear_subsolvers import (
     LinearModel,
     improve_geomtery_trsbox_linear,
     minimize_trsbox_linear,

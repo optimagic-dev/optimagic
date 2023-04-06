@@ -2,14 +2,14 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.acceptance_decision import (
+from tranquilo.optimization.tranquilo.acceptance_decision import (
     _accept_simple,
     _get_acceptance_result,
     calculate_rho,
 )
-from estimagic.optimization.tranquilo.history import History
-from estimagic.optimization.tranquilo.region import Region
-from estimagic.optimization.tranquilo.solve_subproblem import SubproblemResult
+from tranquilo.optimization.tranquilo.history import History
+from tranquilo.optimization.tranquilo.region import Region
+from tranquilo.optimization.tranquilo.solve_subproblem import SubproblemResult
 from numpy.testing import assert_array_equal
 
 # ======================================================================================

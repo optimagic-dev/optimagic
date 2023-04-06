@@ -1,91 +1,91 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import TEST_FIXTURES_DIR
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.config import TEST_FIXTURES_DIR
+from tranquilo.optimization.subsolvers.bntr import (
     ActiveBounds,
     _update_trustregion_radius_and_gradient_descent,
     bntr,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _apply_bounds_to_x_candidate as apply_bounds_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _compute_conjugate_gradient_step as cg_step_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _compute_predicted_reduction_from_conjugate_gradient_step as reduction_cg_step_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _evaluate_model_criterion as eval_criterion_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _find_hessian_submatrix_where_bounds_inactive as find_hessian_inact_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _get_fischer_burmeister_direction_vector as fb_vector_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _get_information_on_active_bounds as get_info_bounds_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _perform_gradient_descent_step as gradient_descent_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _project_gradient_onto_feasible_set as grad_feas_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _take_preliminary_gradient_descent_step_and_check_for_solution as pgd_orig,
 )
-from estimagic.optimization.subsolvers.bntr import (
+from tranquilo.optimization.subsolvers.bntr import (
     _update_trustregion_radius_conjugate_gradient as update_radius_cg_orig,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _apply_bounds_to_conjugate_gradient_step as bounds_cg_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _apply_bounds_to_x_candidate as apply_bounds_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _bntr_fast_jitted,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _compute_conjugate_gradient_step as cg_step_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _compute_predicted_reduction_from_conjugate_gradient_step as reduction_cg_step_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _evaluate_model_criterion as eval_criterion_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _find_hessian_submatrix_where_bounds_inactive as find_hessian_inact_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _get_fischer_burmeister_direction_vector as fb_vector_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _get_information_on_active_bounds as get_info_bounds_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _perform_gradient_descent_step as gradient_descent_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _project_gradient_onto_feasible_set as grad_feas_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _take_preliminary_gradient_descent_step_and_check_for_solution as pgd_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _update_trustregion_radius_and_gradient_descent as _update_trr_and_gd_fast,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
+from tranquilo.optimization.subsolvers.bntr_fast import (
     _update_trustregion_radius_conjugate_gradient as update_radius_cg_fast,
 )
-from estimagic.optimization.tranquilo.models import ScalarModel
+from tranquilo.optimization.tranquilo.models import ScalarModel
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 

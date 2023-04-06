@@ -4,8 +4,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.exceptions import InvalidConstraintError
-from estimagic.parameters.nonlinear_constraints import (
+from tranquilo.exceptions import InvalidConstraintError
+from tranquilo.parameters.nonlinear_constraints import (
     _check_validity_and_return_evaluation,
     _get_components,
     _get_selection_indices,
@@ -17,7 +17,7 @@ from estimagic.parameters.nonlinear_constraints import (
     process_nonlinear_constraints,
     vector_as_list_of_scalar_constraints,
 )
-from estimagic.parameters.tree_registry import get_registry
+from tranquilo.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 from pybaum import tree_just_flatten

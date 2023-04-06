@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-* estimagic version used, if any:
+* tranquilo version used, if any:
 * Python version, if any:
 * Operating System:
 

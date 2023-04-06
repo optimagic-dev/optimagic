@@ -2,8 +2,8 @@ import functools
 
 import numpy as np
 import pytest
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.optimization.error_penalty import (
+from tranquilo.differentiation.derivatives import first_derivative
+from tranquilo.optimization.error_penalty import (
     _penalty_contributions,
     _penalty_contributions_derivative,
     _penalty_root_contributions,
@@ -12,7 +12,7 @@ from estimagic.optimization.error_penalty import (
     _penalty_value_derivative,
     get_error_penalty_function,
 )
-from estimagic.utilities import get_rng
+from tranquilo.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 

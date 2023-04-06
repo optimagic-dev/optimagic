@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.bounds import Bounds, _any_finite
+from tranquilo.optimization.tranquilo.bounds import Bounds, _any_finite
 
 CASES = [
     (np.array([1, 2]), np.array([5, 6]), True),

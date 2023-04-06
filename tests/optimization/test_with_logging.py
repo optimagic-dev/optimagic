@@ -9,13 +9,13 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.examples.criterion_functions import (
+from tranquilo.examples.criterion_functions import (
     sos_dict_criterion,
     sos_dict_derivative,
 )
-from estimagic.exceptions import TableExistsError
-from estimagic.optimization.optimize import minimize
-from estimagic.parameters.tree_registry import get_registry
+from tranquilo.exceptions import TableExistsError
+from tranquilo.optimization.optimize import minimize
+from tranquilo.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_just_flatten
 

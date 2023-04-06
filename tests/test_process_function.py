@@ -1,6 +1,6 @@
 import pytest
-from estimagic.exceptions import InvalidKwargsError
-from estimagic.process_user_function import process_func_of_params
+from tranquilo.exceptions import InvalidKwargsError
+from tranquilo.process_user_function import process_func_of_params
 
 
 def test_process_func_of_params():

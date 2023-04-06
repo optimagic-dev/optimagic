@@ -5,9 +5,9 @@ import pandas as pd
 import pytest
 import scipy as sp
 import statsmodels.api as sm
-from estimagic.estimation.estimate_ml import estimate_ml
-from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
-from estimagic.examples.logit import logit_loglike_and_derivative as llad
+from tranquilo.estimation.estimate_ml import estimate_ml
+from tranquilo.examples.logit import logit_derivative, logit_hessian, logit_loglike
+from tranquilo.examples.logit import logit_loglike_and_derivative as llad
 from numpy.testing import assert_array_equal
 from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel

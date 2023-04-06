@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import statsmodels.api as sm
-from estimagic.examples.criterion_functions import (
+from tranquilo.examples.criterion_functions import (
     rosenbrock_dict_criterion,
     rosenbrock_gradient,
     rotated_hyper_ellipsoid_dict_criterion,
@@ -24,9 +24,9 @@ from estimagic.examples.criterion_functions import (
     trid_gradient,
     trid_scalar_criterion,
 )
-from estimagic.examples.logit import logit_loglike
-from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
-from estimagic.optimization.optimize import maximize, minimize
+from tranquilo.examples.logit import logit_loglike
+from tranquilo.exceptions import InvalidConstraintError, InvalidParamsError
+from tranquilo.optimization.optimize import maximize, minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 FUNC_INFO = {

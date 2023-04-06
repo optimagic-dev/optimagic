@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.neldermead import (
+from tranquilo.optimization.neldermead import (
     _gao_han,
     _init_algo_params,
     _init_simplex,

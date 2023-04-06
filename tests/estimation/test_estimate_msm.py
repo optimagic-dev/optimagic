@@ -4,8 +4,8 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.estimation.estimate_msm import estimate_msm
-from estimagic.shared.check_option_dicts import (
+from tranquilo.estimation.estimate_msm import estimate_msm
+from tranquilo.shared.check_option_dicts import (
     check_numdiff_options,
     check_optimization_options,
 )

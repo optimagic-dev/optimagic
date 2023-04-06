@@ -1,8 +1,8 @@
 """Most test exploit the special case where simulate_moments just returns parameters."""
 import numpy as np
 import pandas as pd
-from estimagic.estimation.estimate_msm import estimate_msm
-from estimagic.parameters.tree_registry import get_registry
+from tranquilo.estimation.estimate_msm import estimate_msm
+from tranquilo.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_just_flatten
 

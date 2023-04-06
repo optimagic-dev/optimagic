@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.bounds import Bounds
-from estimagic.optimization.tranquilo.region import Region
-from estimagic.optimization.tranquilo.sample_points import (
+from tranquilo.optimization.tranquilo.bounds import Bounds
+from tranquilo.optimization.tranquilo.region import Region
+from tranquilo.optimization.tranquilo.sample_points import (
     _draw_from_distribution,
     _minimal_pairwise_distance_on_hull,
     _project_onto_unit_hull,

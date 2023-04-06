@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
-from estimagic import first_derivative
-from estimagic.parameters.conversion import InternalParams
-from estimagic.parameters.scale_conversion import get_scale_converter
+from tranquilo import first_derivative
+from tranquilo.parameters.conversion import InternalParams
+from tranquilo.parameters.scale_conversion import get_scale_converter
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 

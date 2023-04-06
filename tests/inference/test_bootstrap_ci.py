@@ -3,9 +3,9 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.bootstrap_ci import calculate_ci
-from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.parameters.tree_registry import get_registry
+from tranquilo.inference.bootstrap_ci import calculate_ci
+from tranquilo.inference.bootstrap_helpers import check_inputs
+from tranquilo.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
 

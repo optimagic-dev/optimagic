@@ -3,13 +3,13 @@ from functools import partial
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic import get_benchmark_problems
-from estimagic.benchmarking.more_wild import (
+from tranquilo import get_benchmark_problems
+from tranquilo.benchmarking.more_wild import (
     linear_full_rank,
     linear_full_rank_solution_x,
     rosenbrock,
 )
-from estimagic.benchmarking.run_benchmark import run_benchmark
+from tranquilo.benchmarking.run_benchmark import run_benchmark
 
 # ======================================================================================
 # Internal benchmark suite

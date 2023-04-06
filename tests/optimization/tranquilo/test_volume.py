@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.volume import (
+from tranquilo.optimization.tranquilo.volume import (
     _cube_radius,
     _cube_volume,
     _sphere_radius,

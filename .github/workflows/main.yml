@@ -30,14 +30,14 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: ./.envs/testenv-linux.yml
-          environment-name: estimagic
+          environment-name: tranquilo
           cache-env: true
           extra-specs: |
             python=${{ matrix.python-version }}
       - name: run pytest
         shell: bash -l {0}
         run: |
-          micromamba activate estimagic
+          micromamba activate tranquilo
           pytest --cov-report=xml --cov=./
       - name: Upload coverage report.
         if: runner.os == 'Linux' && matrix.python-version == '3.10'
@@ -63,14 +63,14 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: ./.envs/testenv-others.yml
-          environment-name: estimagic
+          environment-name: tranquilo
           cache-env: true
           extra-specs: |
             python=${{ matrix.python-version }}
       - name: run pytest
         shell: bash -l {0}
         run: |
-          micromamba activate estimagic
+          micromamba activate tranquilo
           pytest -m "not slow and not jax"
   code-in-docs:
     name: Run code snippets in documentation
@@ -81,12 +81,12 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: ./.envs/testenv-linux.yml
-          environment-name: estimagic
+          environment-name: tranquilo
           cache-env: true
           extra-specs: python=3.10
       - name: run sphinx
         shell: bash -l {0}
         run: |-
-          micromamba activate estimagic
+          micromamba activate tranquilo
           cd docs/source
           python -m doctest -v how_to_guides/optimization/how_to_specify_constraints.md

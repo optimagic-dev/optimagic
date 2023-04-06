@@ -2,8 +2,8 @@ import itertools
 
 import numpy as np
 import pytest
-from estimagic.optimization.tranquilo.history import History
-from estimagic.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
+from tranquilo.optimization.tranquilo.history import History
+from tranquilo.optimization.tranquilo.wrap_criterion import get_wrapped_criterion
 from numpy.testing import assert_array_almost_equal as aaae
 
 TEST_CASES = list(itertools.product(["scalar", "least_squares", "likelihood"], [1, 2]))

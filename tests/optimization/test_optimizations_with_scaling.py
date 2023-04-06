@@ -4,8 +4,8 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import IS_PYBOBYQA_INSTALLED
-from estimagic.optimization.optimize import minimize
+from tranquilo.config import IS_PYBOBYQA_INSTALLED
+from tranquilo.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 ALGORITHMS = ["scipy_lbfgsb"]

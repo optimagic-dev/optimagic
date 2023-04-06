@@ -2,8 +2,8 @@ import itertools
 
 import numpy as np
 import pytest
-from estimagic.optimization.optimize import minimize
-from estimagic.optimization.tranquilo.tranquilo import (
+from tranquilo.optimization.optimize import minimize
+from tranquilo.optimization.tranquilo.tranquilo import (
     tranquilo,
     tranquilo_ls,
 )

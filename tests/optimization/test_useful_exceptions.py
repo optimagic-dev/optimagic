@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.exceptions import (
+from tranquilo.exceptions import (
     InvalidFunctionError,
     InvalidKwargsError,
     UserFunctionRuntimeError,
 )
-from estimagic.optimization.optimize import minimize
+from tranquilo.optimization.optimize import minimize
 
 
 def test_missing_criterion_kwargs():

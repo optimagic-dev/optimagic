@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import EXAMPLE_DIR
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.inference.msm_covs import cov_optimal
-from estimagic.sensitivity.msm_sensitivity import (
+from tranquilo.config import EXAMPLE_DIR
+from tranquilo.differentiation.derivatives import first_derivative
+from tranquilo.inference.msm_covs import cov_optimal
+from tranquilo.sensitivity.msm_sensitivity import (
     calculate_actual_sensitivity_to_noise,
     calculate_actual_sensitivity_to_removal,
     calculate_fundamental_sensitivity_to_noise,

@@ -2,9 +2,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.examples.criterion_functions import sos_scalar_criterion
-from estimagic.exceptions import InvalidKwargsError
-from estimagic.optimization.optimize import maximize, minimize
+from tranquilo.examples.criterion_functions import sos_scalar_criterion
+from tranquilo.exceptions import InvalidKwargsError
+from tranquilo.optimization.optimize import maximize, minimize
 
 
 def test_sign_is_switched_back_after_maximization():

@@ -3,13 +3,13 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.estimation.msm_weighting import (
+from tranquilo.estimation.msm_weighting import (
     _assemble_block_diagonal_matrix,
     get_moments_cov,
     get_weighting_matrix,
 )
-from estimagic.parameters.block_trees import block_tree_to_matrix
-from estimagic.utilities import get_rng
+from tranquilo.parameters.block_trees import block_tree_to_matrix
+from tranquilo.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 
 
