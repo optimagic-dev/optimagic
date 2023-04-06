@@ -1,7 +1,7 @@
 """Functions to consolidate user provided constraints.
 
-Consolidation means that redundant constraints are dropped
-and other constraints are collected in meaningful bundles.
+Consolidation means that redundant constraints are dropped and other constraints are
+collected in meaningful bundles.
 
 Check the module docstring of process_constraints for naming conventions.
 

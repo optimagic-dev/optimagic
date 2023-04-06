@@ -51,15 +51,17 @@ extend-ignore = [
   "PLR2004",
   # Consider `elif` instead of `else` then `if` to remove indentation level
   "PLR5501",
+  # For calls to warnings.warn(): No explicit `stacklevel` keyword argument found
+  "B028",
 ]
 
 [tool.ruff.per-file-ignores]
 "docs/source/conf.py" = ["E501", "ERA001", "DTZ005"]
 "src/estimagic/parameters/kernel_transformations.py" = ["ARG001", "N806"]
+"docs/source/*" = ["B018"]
 
 [tool.ruff.pydocstyle]
 convention = "google"
-
 
 [tool.nbqa.config]
 black = "pyproject.toml"

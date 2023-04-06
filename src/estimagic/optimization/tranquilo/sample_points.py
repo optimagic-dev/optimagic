@@ -29,7 +29,6 @@ def get_sampler(sampler, user_options=None):
             returns a new sample.
 
     """
-
     built_in_samplers = {
         "random_interior": _interior_sampler,
         "random_hull": _hull_sampler,

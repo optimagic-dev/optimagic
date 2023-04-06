@@ -1,18 +1,17 @@
 """Process the user provided pc for use during the optimization.
 
-The main purpose of this module is to convert the user provided constraints into
-inputs for fast reparametrization functions. In the process, the constraints are
-checked and consolidated. Consolidation means that redundant constraints are dropped
-and other constraints are collected in meaningful bundles.
+The main purpose of this module is to convert the user provided constraints into inputs
+for fast reparametrization functions. In the process, the constraints are checked and
+consolidated. Consolidation means that redundant constraints are dropped and other
+constraints are collected in meaningful bundles.
 
 To improve readability, the actual code for checking and consolidation are in separate
 modules.
 
-Calls to functions doing checking are scattered across the module.
-This is in order to perform each check as soon as it becomes possible, which allows
-errors to be raised at a point where constraints still look similar to
-what users wrote. However, some checks can only be done
-after consolidation.
+Calls to functions doing checking are scattered across the module. This is in order to
+perform each check as soon as it becomes possible, which allows errors to be raised at a
+point where constraints still look similar to what users wrote. However, some checks can
+only be done after consolidation.
 
 """
 import numpy as np
