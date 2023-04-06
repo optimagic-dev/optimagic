@@ -12,7 +12,7 @@ from estimagic.optimization.tranquilo.acceptance_sample_size import (
     get_acceptance_sample_sizes,
 )
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import AcceptanceOptions
+from estimagic.optimization.tranquilo.options import ceil_to_multiple
 
 
 def get_acceptance_decider(acceptance_decider, acceptance_options):
@@ -26,8 +26,7 @@ def get_acceptance_decider(acceptance_decider, acceptance_options):
         name_or_func=acceptance_decider,
         func_dict=func_dict,
         component_name="acceptance_decider",
-        user_options=acceptance_options,
-        default_options=AcceptanceOptions(),
+        default_options=acceptance_options,
     )
 
     return out
@@ -40,6 +39,7 @@ def _accept_classic(
     *,
     wrapped_criterion,
     min_improvement,
+    batch_size,
 ):
     """Do a classic acceptance step for a trustregion algorithm.
 
@@ -49,6 +49,7 @@ def _accept_classic(
             previously accepted point, indices of model points, etc.
         wrapped_criterion (callable): The criterion function.
         min_improvement (float): Minimum improvement required to accept a point.
+        batch_size (int): Number of points to evaluate in parallel.
 
     Returns:
         AcceptanceResult
@@ -61,6 +62,7 @@ def _accept_classic(
         wrapped_criterion=wrapped_criterion,
         min_improvement=min_improvement,
         n_evals=1,
+        batch_size=batch_size,
     )
     return out
 
@@ -72,6 +74,7 @@ def accept_naive_noisy(
     *,
     wrapped_criterion,
     min_improvement,
+    batch_size,
 ):
     """Do a naive noisy acceptance step, averaging over a fixed number of points."""
     out = _accept_simple(
@@ -81,6 +84,7 @@ def accept_naive_noisy(
         wrapped_criterion=wrapped_criterion,
         min_improvement=min_improvement,
         n_evals=5,
+        batch_size=batch_size,
     )
     return out
 
@@ -93,6 +97,7 @@ def _accept_simple(
     wrapped_criterion,
     min_improvement,
     n_evals,
+    batch_size,
 ):
     """Do a classic acceptance step for a trustregion algorithm.
 
@@ -111,7 +116,9 @@ def _accept_simple(
 
     candidate_index = history.add_xs(candidate_x)
 
-    wrapped_criterion({candidate_index: n_evals})
+    n_evals_batch_conformal = ceil_to_multiple(n_evals, multiple=batch_size)
+
+    wrapped_criterion({candidate_index: n_evals_batch_conformal})
 
     candidate_fval = np.mean(history.get_fvals(candidate_index))
 

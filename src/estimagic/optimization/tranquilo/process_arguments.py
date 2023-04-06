@@ -25,7 +25,9 @@ from estimagic.optimization.tranquilo.options import (
     get_default_sample_size,
     get_default_search_radius_factor,
     get_default_stagnation_options,
+    get_default_acceptance_options,
     update_option_bundle,
+    ceil_to_multiple,
 )
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.sample_points import get_sampler
@@ -118,6 +120,9 @@ def process_arguments(
     batch_size = _process_batch_size(batch_size, n_cores)
     stagnation_options = update_option_bundle(
         get_default_stagnation_options(batch_size), stagnation_options
+    )
+    acceptance_decider_options = update_option_bundle(
+        get_default_acceptance_options(batch_size), acceptance_decider_options
     )
     radius_options = update_option_bundle(get_default_radius_options(x), radius_options)
     model_type = _process_model_type(model_type, functype)
@@ -313,7 +318,3 @@ def _process_n_evals_at_start(n_evals, noisy, batch_size):
     out = ceil_to_multiple(out, multiple=batch_size)
 
     return out
-
-
-def ceil_to_multiple(n, multiple):
-    return int(np.ceil(n / multiple)) * multiple

@@ -65,6 +65,7 @@ def test_accept_simple(
         wrapped_criterion=wrapped_criterion,
         min_improvement=0.0,
         n_evals=2,
+        batch_size=1,
     )
 
     assert res_got.accepted

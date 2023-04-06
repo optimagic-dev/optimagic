@@ -12,6 +12,10 @@ def get_default_batch_size(n_cores):
     return n_cores
 
 
+def get_default_acceptance_options(batch_size):
+    return AcceptanceOptions(batch_size=batch_size)
+
+
 def get_default_stagnation_options(batch_size):
     return StagnationOptions(sample_increment=batch_size)
 
@@ -111,6 +115,7 @@ class RadiusOptions(NamedTuple):
 
 
 class AcceptanceOptions(NamedTuple):
+    batch_size: int
     confidence_level: float = 0.8
     power_level: float = 0.8
     n_initial: int = 5
@@ -208,3 +213,7 @@ def update_option_bundle(default_options, user_options=None):
     out = default_options._replace(**typed)
 
     return out
+
+
+def ceil_to_multiple(n, multiple):
+    return int(np.ceil(n / multiple)) * multiple
