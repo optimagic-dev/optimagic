@@ -13,7 +13,10 @@ from estimagic.optimization.tranquilo.models import (
     ScalarModel,
     VectorModel,
 )
-from estimagic.optimization.tranquilo.process_arguments import process_arguments
+from estimagic.optimization.tranquilo.process_arguments import (
+    process_arguments,
+    ceil_to_multiple,
+)
 from estimagic.optimization.tranquilo.region import Region
 
 
@@ -110,16 +113,28 @@ def _internal_tranquilo(
         # ==========================================================================
         # sample points if necessary and do simple iteration
         # ==========================================================================
+
+        n_new_points_candidate = max(0, target_sample_size - len(model_xs))
+
+        (
+            n_new_points,
+            list_of_n_evals_per_point,
+        ) = get_batch_consistent_number_of_eval_points(
+            n_new_points=n_new_points_candidate,
+            n_evals_per_point=n_evals_per_point,
+            batch_size=batch_size,
+        )
+
         new_xs = sample_points(
             trustregion=state.trustregion,
-            n_points=max(0, target_sample_size - len(model_xs)),
+            n_points=n_new_points,
             existing_xs=model_xs,
             rng=sampling_rng,
         )
 
         new_indices = history.add_xs(new_xs)
 
-        eval_info = {i: n_evals_per_point for i in new_indices}
+        eval_info = {i: list_of_n_evals_per_point[k] for k, i in enumerate(new_indices)}
 
         evaluate_criterion(eval_info)
 
@@ -203,16 +218,27 @@ def _internal_tranquilo(
                     n_to_drop=stagnation_options.sample_increment,
                 )
 
+            (
+                n_new_points,
+                list_of_n_evals_per_point,
+            ) = get_batch_consistent_number_of_eval_points(
+                n_new_points=stagnation_options.sample_increment,
+                n_evals_per_point=n_evals_per_point,
+                batch_size=batch_size,
+            )
+
             new_xs = sample_points(
                 trustregion=state.trustregion,
-                n_points=stagnation_options.sample_increment,
+                n_points=n_new_points,
                 existing_xs=model_xs,
                 rng=sampling_rng,
             )
 
             new_indices = history.add_xs(new_xs)
 
-            eval_info = {i: n_evals_per_point for i in new_indices}
+            eval_info = {
+                i: list_of_n_evals_per_point[k] for k, i in enumerate(new_indices)
+            }
 
             evaluate_criterion(eval_info)
 
@@ -466,3 +492,55 @@ def _concatenate_indices(first, second):
     first = np.atleast_1d(first).astype(int)
     second = np.atleast_1d(second).astype(int)
     return np.hstack((first, second))
+
+
+def get_batch_consistent_number_of_eval_points(
+    n_new_points, n_evals_per_point, batch_size
+):
+    """Consolidate new points and function evaluations with batch size.
+
+    We add new points until the total number of function evaluations is close to a
+    multiple of batch_size. We then add number of missing function evaluations to the
+    evaluations per point until the total number is a multiple of batch_size.
+
+    Args:
+        n_new_points (int): Number of new x points to be sampled.
+        n_evals_per_point (int): Number of function evaluations per x point.
+        batch_size: Number of function evaluations per batch.
+
+    Returns:
+        - int: Number of new x points to be sampled.
+        - list: Number of function evaluations for each x point.
+
+    """
+    n_evals_total = n_new_points * n_evals_per_point
+
+    n_evals_batch_conformal = ceil_to_multiple(n_evals_total, multiple=batch_size)
+
+    # ==================================================================================
+    # Update number of new points to be sampled if evaluations are not allocated
+    # ==================================================================================
+    n_missing = n_evals_batch_conformal - n_evals_total
+
+    if n_missing > n_evals_per_point:
+        _n_new_points = n_new_points + n_missing // n_evals_per_point
+    else:
+        _n_new_points = n_new_points
+
+    # ==================================================================================
+    # Update number of evaluations per point if evaluations are not allocated
+    # ==================================================================================
+    n_missing = n_evals_batch_conformal - _n_new_points * n_evals_per_point
+
+    _n_evals_per_point = np.full(_n_new_points, fill_value=n_evals_per_point)
+
+    if n_missing > 0:
+        # try to distribute remaining evaluations to all points
+        add_to_all_points = (n_missing - 1) // _n_new_points
+        _n_evals_per_point += add_to_all_points
+
+        # distribute leftover evaluations to first few points
+        leftover = n_missing - add_to_all_points * _n_new_points
+        _n_evals_per_point[:leftover] += 1
+
+    return _n_new_points, _n_evals_per_point.tolist()

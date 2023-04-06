@@ -6,6 +6,7 @@ from estimagic.optimization.optimize import minimize
 from estimagic.optimization.tranquilo.tranquilo import (
     tranquilo,
     tranquilo_ls,
+    get_batch_consistent_number_of_eval_points,
 )
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -232,3 +233,35 @@ def test_tranquilo_with_binding_bounds(algorithm):
     )
     assert res.success in [True, None]
     aaae(res.params, np.array([1, 0, -1]), decimal=3)
+
+
+# ======================================================================================
+# Helper functions
+# ======================================================================================
+
+TEST_CASES = [
+    # (n_new_points, n_evals_per_point, batch_size, expected)
+    (1, 1, 1, (1, [1])),
+    (2, 3, 1, (2, [3, 3])),
+    (2, 1, 2, (2, [1, 1])),
+    (2, 1, 3, (2, [2, 1])),
+    (2, 1, 4, (4, [1, 1, 1, 1])),
+    (2, 2, 4, (2, [2, 2])),
+    (2, 3, 4, (2, [4, 4])),
+]
+
+
+@pytest.mark.parametrize(
+    "n_new_points, n_evals_per_point, batch_size, expected", TEST_CASES
+)
+def test_get_batch_consistent_number_of_eval_points(
+    n_new_points, n_evals_per_point, batch_size, expected
+):
+    _n_new_points, _n_evals_per_point = get_batch_consistent_number_of_eval_points(
+        n_new_points=n_new_points,
+        n_evals_per_point=n_evals_per_point,
+        batch_size=batch_size,
+    )
+
+    assert _n_new_points == expected[0]
+    assert _n_evals_per_point == expected[1]
