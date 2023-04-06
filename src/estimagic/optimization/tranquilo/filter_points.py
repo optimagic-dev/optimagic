@@ -69,11 +69,11 @@ def drop_worst_points(xs, indices, state, n_to_drop):
     each other. If one of them is the center, drop the other one. If none is the center,
     drop the one that is closer to the center.
 
-    This reflects that we want to have points as far out as possible as
-    long as they are inside the trustregion.
+    This reflects that we want to have points as far out as possible as long as they are
+    inside the trustregion.
 
-    The control flow is a bit complicated to avoid unnecessary or repeated
-    computations of distances and pairwise distances.
+    The control flow is a bit complicated to avoid unnecessary or repeated computations
+    of distances and pairwise distances.
 
     """
     n_dropped = 0

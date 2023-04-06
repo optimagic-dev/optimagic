@@ -112,9 +112,9 @@ def test_region_non_binding_bounds():
     assert region.radius == 1
     assert region.bounds is None
     with pytest.raises(AttributeError, match="The trustregion is a sphere"):
-        region.cube_bounds
+        region.cube_bounds  # noqa: B018
     with pytest.raises(AttributeError, match="The trustregion is a sphere"):
-        region.cube_center
+        region.cube_center  # noqa: B018
 
 
 def test_region_binding_bounds():
