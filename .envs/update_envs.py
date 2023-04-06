@@ -41,7 +41,8 @@ def main():
 
     # write environments
     for name, env in zip(["linux", "others"], [test_env_linux, test_env_others]):
-        Path(f".envs/testenv-{name}.yml").write_text("\n".join(env) + "\n")
+        with Path(f".envs/testenv-{name}.yml").open("wb") as file:
+            file.write(bytes("\n".join(env) + "\n", "UTF-8"))
 
 
 if __name__ == "__main__":
