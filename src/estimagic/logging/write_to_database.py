@@ -20,7 +20,6 @@ def append_row(data, table_name, database):
         database (DataBase): The database to which the row is added.
 
     """
-
     stmt = database.metadata.tables[table_name].insert().values(**data)
 
     _execute_write_statement(stmt, database)

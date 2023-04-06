@@ -6,8 +6,8 @@ class History:
 
     These entries are: xs, fvecs and fvals.
 
-    fvals don't need to be added explicitly, as they are computed internally
-    whenever new entries are added.
+    fvals don't need to be added explicitly, as they are computed internally whenever
+    new entries are added.
 
     """
 

@@ -9,8 +9,8 @@ def get_wrapped_criterion(criterion, batch_evaluator, n_cores, history):
     """Wrap the criterion function to do get parallelization and history handling.
 
     The wrapped criterion function takes a dict mapping x_indices to required numbers of
-    evaluations as only argument. It evaluates the criterion function in parallel
-    and saves the resulting function evaluations in the history.
+    evaluations as only argument. It evaluates the criterion function in parallel and
+    saves the resulting function evaluations in the history.
 
     The wrapped criterion function does not return anything.
 
