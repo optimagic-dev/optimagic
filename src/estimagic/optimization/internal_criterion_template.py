@@ -61,7 +61,7 @@ def internal_criterion_and_derivative_template(
             derivative.
         criterion_and_derivative (callable): Function that returns criterion
             and derivative as a tuple. This can be used to exploit synergies in the
-            evaluation of both functions. The fist element of the tuple has to be
+            evaluation of both functions. The first element of the tuple has to be
             exactly the same as the output of criterion. The second has to be exactly
             the same as the output of derivative.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
