@@ -8,11 +8,23 @@ from estimagic.batch_evaluators import process_batch_evaluator
 def get_wrapped_criterion(criterion, batch_evaluator, n_cores, history):
     """Wrap the criterion function to do get parallelization and history handling.
 
+    Notes
+    -----
+
     The wrapped criterion function takes a dict mapping x_indices to required numbers of
     evaluations as only argument. It evaluates the criterion function in parallel and
     saves the resulting function evaluations in the history.
 
     The wrapped criterion function does not return anything.
+
+    Args:
+        criterion (function): The criterion function to wrap.
+        batch_evaluator (function): The batch evaluator to use.
+        n_cores (int): The number of cores to use.
+        history (History): The tranquilo history.
+
+    Returns:
+        callable: The wrapped criterion function.
 
     """
     batch_evaluator = process_batch_evaluator(batch_evaluator)

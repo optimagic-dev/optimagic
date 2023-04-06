@@ -112,10 +112,6 @@ def process_arguments(
     n_cores = _process_n_cores(n_cores)
     n_evals_per_point = int(n_evals_per_point)
     sampling_rng = _process_seed(seed)
-    n_evals_at_start = _process_n_evals_at_start(
-        n_evals_at_start,
-        noisy,
-    )
 
     # process options that depend on arguments with static defaults
     search_radius_factor = _process_search_radius_factor(search_radius_factor, functype)
@@ -126,6 +122,7 @@ def process_arguments(
     radius_options = update_option_bundle(get_default_radius_options(x), radius_options)
     model_type = _process_model_type(model_type, functype)
     acceptance_decider = _process_acceptance_decider(acceptance_decider, noisy)
+    n_evals_at_start = _process_n_evals_at_start(n_evals_at_start, noisy, batch_size)
 
     # process options that depend on arguments with dependent defaults
     target_sample_size = _process_sample_size(
@@ -304,7 +301,7 @@ def _process_residualize(residualize, model_fitter):
     return out
 
 
-def _process_n_evals_at_start(n_evals, noisy):
+def _process_n_evals_at_start(n_evals, noisy, batch_size):
     if n_evals is None:
         out = get_default_n_evals_at_start(noisy)
     else:
@@ -313,4 +310,10 @@ def _process_n_evals_at_start(n_evals, noisy):
     if out < 1:
         raise ValueError("n_initial_acceptance_evals must be non-negative.")
 
+    out = ceil_to_multiple(out, multiple=batch_size)
+
     return out
+
+
+def ceil_to_multiple(n, multiple):
+    return int(np.ceil(n / multiple)) * multiple
