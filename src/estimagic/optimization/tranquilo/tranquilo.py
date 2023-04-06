@@ -515,12 +515,12 @@ def get_batch_consistent_number_of_eval_points(
     """
     n_evals_total = n_new_points * n_evals_per_point
 
-    n_evals_batch_conformal = ceil_to_multiple(n_evals_total, multiple=batch_size)
+    n_evals_batch_consistent = ceil_to_multiple(n_evals_total, multiple=batch_size)
 
     # ==================================================================================
     # Update number of new points to be sampled if evaluations are not allocated
     # ==================================================================================
-    n_missing = n_evals_batch_conformal - n_evals_total
+    n_missing = n_evals_batch_consistent - n_evals_total
 
     if n_missing > n_evals_per_point:
         _n_new_points = n_new_points + n_missing // n_evals_per_point
@@ -530,7 +530,7 @@ def get_batch_consistent_number_of_eval_points(
     # ==================================================================================
     # Update number of evaluations per point if evaluations are not allocated
     # ==================================================================================
-    n_missing = n_evals_batch_conformal - _n_new_points * n_evals_per_point
+    n_missing = n_evals_batch_consistent - _n_new_points * n_evals_per_point
 
     _n_evals_per_point = np.full(_n_new_points, fill_value=n_evals_per_point)
 

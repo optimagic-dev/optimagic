@@ -116,9 +116,9 @@ def _accept_simple(
 
     candidate_index = history.add_xs(candidate_x)
 
-    n_evals_batch_conformal = ceil_to_multiple(n_evals, multiple=batch_size)
+    n_evals_batch_consistent = ceil_to_multiple(n_evals, multiple=batch_size)
 
-    wrapped_criterion({candidate_index: n_evals_batch_conformal})
+    wrapped_criterion({candidate_index: n_evals_batch_consistent})
 
     candidate_fval = np.mean(history.get_fvals(candidate_index))
 
