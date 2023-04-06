@@ -53,8 +53,6 @@ extend-ignore = [
   "PLR5501",
   # For calls to warnings.warn(): No explicit `stacklevel` keyword argument found
   "B028",
-  # Found useless expression. Either assign it to a variable or remove it.
-  "B018",
 ]
 
 [tool.ruff.per-file-ignores]
@@ -63,7 +61,6 @@ extend-ignore = [
 
 [tool.ruff.pydocstyle]
 convention = "google"
-
 
 [tool.nbqa.config]
 black = "pyproject.toml"
