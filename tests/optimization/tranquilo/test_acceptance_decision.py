@@ -66,6 +66,7 @@ def test_accept_simple(
         min_improvement=0.0,
         n_evals=2,
         batch_size=1,
+        sample_points=None,
     )
 
     assert res_got.accepted

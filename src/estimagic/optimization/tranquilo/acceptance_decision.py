@@ -12,7 +12,7 @@ from estimagic.optimization.tranquilo.acceptance_sample_size import (
     get_acceptance_sample_sizes,
 )
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import ceil_to_multiple
+from estimagic.optimization.tranquilo.options import ceil_to_multiple, AcceptanceOptions
 
 
 def get_acceptance_decider(acceptance_decider, acceptance_options):
@@ -22,11 +22,21 @@ def get_acceptance_decider(acceptance_decider, acceptance_options):
         "noisy": accept_noisy,
     }
 
+    mandatory_args = [
+        "subproblem_solution",
+        "state",
+        "history",
+        "batch_size",
+        "sample_points",
+    ]
+
     out = get_component(
         name_or_func=acceptance_decider,
         func_dict=func_dict,
         component_name="acceptance_decider",
-        default_options=acceptance_options,
+        default_options=AcceptanceOptions(),
+        user_options=acceptance_options,
+        mandatory_signature=mandatory_args,
     )
 
     return out
@@ -36,10 +46,11 @@ def _accept_classic(
     subproblem_solution,
     state,
     history,
+    batch_size,
+    sample_points,
     *,
     wrapped_criterion,
     min_improvement,
-    batch_size,
 ):
     """Do a classic acceptance step for a trustregion algorithm.
 
@@ -47,9 +58,11 @@ def _accept_classic(
         subproblem_solution (SubproblemResult): Result of the subproblem solution.
         state (State): Namedtuple containing the trustregion, criterion value of
             previously accepted point, indices of model points, etc.
+        history (History): The tranquilo history.
+        batch_size (int): Number of points to evaluate in parallel.
+        sample_points (callable): Function that samples points from the trustregion.
         wrapped_criterion (callable): The criterion function.
         min_improvement (float): Minimum improvement required to accept a point.
-        batch_size (int): Number of points to evaluate in parallel.
 
     Returns:
         AcceptanceResult
@@ -59,10 +72,11 @@ def _accept_classic(
         subproblem_solution=subproblem_solution,
         state=state,
         history=history,
+        batch_size=batch_size,
+        sample_points=sample_points,
         wrapped_criterion=wrapped_criterion,
         min_improvement=min_improvement,
         n_evals=1,
-        batch_size=batch_size,
     )
     return out
 
@@ -71,20 +85,22 @@ def accept_naive_noisy(
     subproblem_solution,
     state,
     history,
+    batch_size,
+    sample_points,
     *,
     wrapped_criterion,
     min_improvement,
-    batch_size,
 ):
     """Do a naive noisy acceptance step, averaging over a fixed number of points."""
     out = _accept_simple(
         subproblem_solution=subproblem_solution,
         state=state,
         history=history,
+        batch_size=batch_size,
+        sample_points=sample_points,
         wrapped_criterion=wrapped_criterion,
         min_improvement=min_improvement,
         n_evals=5,
-        batch_size=batch_size,
     )
     return out
 
@@ -93,11 +109,12 @@ def _accept_simple(
     subproblem_solution,
     state,
     history,
+    batch_size,
+    sample_points,
     *,
     wrapped_criterion,
     min_improvement,
     n_evals,
-    batch_size,
 ):
     """Do a classic acceptance step for a trustregion algorithm.
 
@@ -105,11 +122,14 @@ def _accept_simple(
         subproblem_solution (SubproblemResult): Result of the subproblem solution.
         state (State): Namedtuple containing the trustregion, criterion value of
             previously accepted point, indices of model points, etc.
+        history (History): The tranquilo history.
+        batch_size (int): Number of points to evaluate in parallel.
+        sample_points (callable): Function that samples points from the trustregion.
         wrapped_criterion (callable): The criterion function.
         min_improvement (float): Minimum improvement required to accept a point.
 
     Returns:
-        AcceptanceResult
+        AcceptanceResult: The acceptance result.
 
     """
     candidate_x = subproblem_solution.x
@@ -148,6 +168,8 @@ def accept_noisy(
     state,
     noise_variance,
     history,
+    batch_size,
+    sample_points,
     *,
     wrapped_criterion,
     min_improvement,

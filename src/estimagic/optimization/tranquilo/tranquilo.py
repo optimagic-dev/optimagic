@@ -292,9 +292,11 @@ def _internal_tranquilo(
         acceptance_result = accept_candidate(
             subproblem_solution=sub_sol,
             state=state,
+            history=history,
+            batch_size=batch_size,
+            sample_points=sample_points,
             wrapped_criterion=evaluate_criterion,
             noise_variance=scalar_noise_variance,
-            history=history,
         )
 
         # ==============================================================================
