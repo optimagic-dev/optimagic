@@ -295,6 +295,7 @@ def _internal_tranquilo(
             history=history,
             batch_size=batch_size,
             sample_points=sample_points,
+            rng=sampling_rng,
             wrapped_criterion=evaluate_criterion,
             noise_variance=scalar_noise_variance,
         )

@@ -58,6 +58,9 @@ def test_accept_simple(
         indices = np.array(list(eval_info)).repeat(np.array(list(eval_info.values())))
         history.add_evals(indices, -indices)
 
+    def _mock_sample_points(trustregion, n_points, rng):
+        return None
+
     res_got = _accept_simple(
         subproblem_solution=subproblem_solution,
         state=state,
@@ -66,7 +69,8 @@ def test_accept_simple(
         min_improvement=0.0,
         n_evals=2,
         batch_size=1,
-        sample_points=None,
+        sample_points=_mock_sample_points,
+        rng=None,
     )
 
     assert res_got.accepted

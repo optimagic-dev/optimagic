@@ -13,6 +13,9 @@ from estimagic.optimization.tranquilo.acceptance_sample_size import (
 )
 from estimagic.optimization.tranquilo.get_component import get_component
 from estimagic.optimization.tranquilo.options import ceil_to_multiple, AcceptanceOptions
+from estimagic.optimization.tranquilo.speculative_sampling import (
+    sample_from_next_trustregion,
+)
 
 
 def get_acceptance_decider(acceptance_decider, acceptance_options):
@@ -48,6 +51,7 @@ def _accept_classic(
     history,
     batch_size,
     sample_points,
+    rng,
     *,
     wrapped_criterion,
     min_improvement,
@@ -61,11 +65,12 @@ def _accept_classic(
         history (History): The tranquilo history.
         batch_size (int): Number of points to evaluate in parallel.
         sample_points (callable): Function that samples points from the trustregion.
+        rng (np.random.Generator): Random number generator.
         wrapped_criterion (callable): The criterion function.
         min_improvement (float): Minimum improvement required to accept a point.
 
     Returns:
-        AcceptanceResult
+        AcceptanceResult: The acceptance result.
 
     """
     out = _accept_simple(
@@ -74,6 +79,7 @@ def _accept_classic(
         history=history,
         batch_size=batch_size,
         sample_points=sample_points,
+        rng=rng,
         wrapped_criterion=wrapped_criterion,
         min_improvement=min_improvement,
         n_evals=1,
@@ -87,6 +93,7 @@ def accept_naive_noisy(
     history,
     batch_size,
     sample_points,
+    rng,
     *,
     wrapped_criterion,
     min_improvement,
@@ -98,6 +105,7 @@ def accept_naive_noisy(
         history=history,
         batch_size=batch_size,
         sample_points=sample_points,
+        rng=rng,
         wrapped_criterion=wrapped_criterion,
         min_improvement=min_improvement,
         n_evals=5,
@@ -111,6 +119,7 @@ def _accept_simple(
     history,
     batch_size,
     sample_points,
+    rng,
     *,
     wrapped_criterion,
     min_improvement,
@@ -125,6 +134,7 @@ def _accept_simple(
         history (History): The tranquilo history.
         batch_size (int): Number of points to evaluate in parallel.
         sample_points (callable): Function that samples points from the trustregion.
+        rng (np.random.Generator): Random number generator.
         wrapped_criterion (callable): The criterion function.
         min_improvement (float): Minimum improvement required to accept a point.
 
@@ -132,14 +142,31 @@ def _accept_simple(
         AcceptanceResult: The acceptance result.
 
     """
+    # store candidate evaluation info
     candidate_x = subproblem_solution.x
-
     candidate_index = history.add_xs(candidate_x)
+    candidate_eval_info = {candidate_index: n_evals}
 
+    # create explorative evaluations, if batch size is not exhausted
     n_evals_batch_consistent = ceil_to_multiple(n_evals, multiple=batch_size)
+    n_missing = n_evals_batch_consistent - n_evals
 
-    wrapped_criterion({candidate_index: n_evals_batch_consistent})
+    speculative_xs = sample_from_next_trustregion(
+        next_center=candidate_x,
+        old_region=state.trustregion,
+        n_points=n_missing,
+        sample_points=sample_points,
+        rng=rng,
+    )
 
+    speculative_index = history.add_xs(speculative_xs)
+    speculative_eval_info = {i: 1 for i in speculative_index}
+
+    # perform evaluations
+    eval_info = {**candidate_eval_info, **speculative_eval_info}
+    wrapped_criterion(eval_info)
+
+    # compute acceptance decision
     candidate_fval = np.mean(history.get_fvals(candidate_index))
 
     actual_improvement = -(candidate_fval - state.fval)
@@ -170,6 +197,7 @@ def accept_noisy(
     history,
     batch_size,
     sample_points,
+    rng,
     *,
     wrapped_criterion,
     min_improvement,
