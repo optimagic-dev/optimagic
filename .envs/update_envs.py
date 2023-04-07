@@ -41,6 +41,8 @@ def main():
 
     # write environments
     for name, env in zip(["linux", "others"], [test_env_linux, test_env_others]):
+        # Open file in binary mode to avoid wrong line endings on Windows.
+        # See: https://stackoverflow.com/a/9184137
         with Path(f".envs/testenv-{name}.yml").open("wb") as file:
             file.write(bytes("\n".join(env) + "\n", "UTF-8"))
 
