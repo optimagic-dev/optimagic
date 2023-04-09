@@ -7,6 +7,10 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
+import warnings
+
+warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
+
 
 def estimation_table(
     models,
