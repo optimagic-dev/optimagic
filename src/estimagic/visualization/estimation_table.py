@@ -9,8 +9,6 @@ import pandas as pd
 
 import warnings
 
-warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-
 
 def estimation_table(
     models,
@@ -140,91 +138,94 @@ def estimation_table(
             the resulting table at the given path.
 
     """
-    if not isinstance(models, (tuple, list)):
-        raise TypeError(f"models must be a list or tuple. Not: {type(models)}")
-    models = [_process_model(model) for model in models]
-    model_names = _get_model_names(models)
-    default_col_names, default_col_groups = _get_default_column_names_and_groups(
-        model_names
-    )
-    column_groups = _customize_col_groups(
-        default_col_groups=default_col_groups, custom_col_groups=custom_col_groups
-    )
-    column_names = _customize_col_names(
-        default_col_names=default_col_names, custom_col_names=custom_col_names
-    )
-    show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
-    stats_options = _set_default_stats_options(stats_options)
-    body, footer = _get_estimation_table_body_and_footer(
-        models,
-        column_names,
-        column_groups,
-        custom_param_names,
-        custom_index_names,
-        significance_levels,
-        stats_options,
-        show_col_names,
-        show_col_groups,
-        show_stars,
-        show_inference,
-        confidence_intervals,
-        number_format,
-        add_trailing_zeros,
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
-    render_inputs = {
-        "body": body,
-        "footer": footer,
-        "render_options": render_options,
-    }
-    if return_type == "render_inputs":
-        out = render_inputs
-    elif str(return_type).endswith("tex"):
-        out = render_latex(
-            **render_inputs,
-            show_footer=show_footer,
-            append_notes=append_notes,
-            notes_label=notes_label,
-            significance_levels=significance_levels,
-            custom_notes=custom_notes,
-            siunitx_warning=siunitx_warning,
-            show_index_names=show_index_names,
-            show_col_names=show_col_names,
-            escape_special_characters=escape_special_characters,
+        if not isinstance(models, (tuple, list)):
+            raise TypeError(f"models must be a list or tuple. Not: {type(models)}")
+        models = [_process_model(model) for model in models]
+        model_names = _get_model_names(models)
+        default_col_names, default_col_groups = _get_default_column_names_and_groups(
+            model_names
         )
-    elif str(return_type).endswith("html"):
-        out = render_html(
-            **render_inputs,
-            show_footer=show_footer,
-            append_notes=append_notes,
-            notes_label=notes_label,
-            custom_notes=custom_notes,
-            significance_levels=significance_levels,
-            show_index_names=show_index_names,
-            show_col_names=show_col_names,
-            escape_special_characters=escape_special_characters,
+        column_groups = _customize_col_groups(
+            default_col_groups=default_col_groups, custom_col_groups=custom_col_groups
+        )
+        column_names = _customize_col_names(
+            default_col_names=default_col_names, custom_col_names=custom_col_names
+        )
+        show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
+        stats_options = _set_default_stats_options(stats_options)
+        body, footer = _get_estimation_table_body_and_footer(
+            models,
+            column_names,
+            column_groups,
+            custom_param_names,
+            custom_index_names,
+            significance_levels,
+            stats_options,
+            show_col_names,
+            show_col_groups,
+            show_stars,
+            show_inference,
+            confidence_intervals,
+            number_format,
+            add_trailing_zeros,
         )
 
-    elif return_type == "dataframe":
-        if show_footer:
-            footer.index.names = body.index.names
-            out = pd.concat([body.reset_index(), footer.reset_index()]).set_index(
-                body.index.names
+        render_inputs = {
+            "body": body,
+            "footer": footer,
+            "render_options": render_options,
+        }
+        if return_type == "render_inputs":
+            out = render_inputs
+        elif str(return_type).endswith("tex"):
+            out = render_latex(
+                **render_inputs,
+                show_footer=show_footer,
+                append_notes=append_notes,
+                notes_label=notes_label,
+                significance_levels=significance_levels,
+                custom_notes=custom_notes,
+                siunitx_warning=siunitx_warning,
+                show_index_names=show_index_names,
+                show_col_names=show_col_names,
+                escape_special_characters=escape_special_characters,
             )
-        else:
-            out = body
-    else:
-        raise ValueError(
-            f"""Value of return type can be either of
-            ['data_frame', 'render_inputs','latex' ,'html']
-            or a path ending with '.html' or '.tex'. Not: {return_type}."""
-        )
+        elif str(return_type).endswith("html"):
+            out = render_html(
+                **render_inputs,
+                show_footer=show_footer,
+                append_notes=append_notes,
+                notes_label=notes_label,
+                custom_notes=custom_notes,
+                significance_levels=significance_levels,
+                show_index_names=show_index_names,
+                show_col_names=show_col_names,
+                escape_special_characters=escape_special_characters,
+            )
 
-    return_type = Path(return_type)
-    if return_type.suffix not in (".html", ".tex"):
-        return out
-    else:
-        return_type.write_text(out)
+        elif return_type == "dataframe":
+            if show_footer:
+                footer.index.names = body.index.names
+                out = pd.concat([body.reset_index(), footer.reset_index()]).set_index(
+                    body.index.names
+                )
+            else:
+                out = body
+        else:
+            raise ValueError(
+                f"""Value of return type can be either of
+                ['data_frame', 'render_inputs','latex' ,'html']
+                or a path ending with '.html' or '.tex'. Not: {return_type}."""
+            )
+
+        return_type = Path(return_type)
+        if return_type.suffix not in (".html", ".tex"):
+            return out
+        else:
+            return_type.write_text(out)
 
 
 def render_latex(
