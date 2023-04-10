@@ -92,7 +92,7 @@ def first_derivative(
         error_handling (str): One of "continue" (catch errors and continue to calculate
             derivative estimates. In this case, some derivative estimates can be
             missing but no errors are raised), "raise" (catch errors and continue
-            to calculate derivative estimates at fist but raise an error if all
+            to calculate derivative estimates at first but raise an error if all
             evaluations for one parameter failed) and "raise_strict" (raise an error
             as soon as a function evaluation fails).
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
@@ -360,7 +360,7 @@ def second_derivative(
         error_handling (str): One of "continue" (catch errors and continue to calculate
             derivative estimates. In this case, some derivative estimates can be
             missing but no errors are raised), "raise" (catch errors and continue
-            to calculate derivative estimates at fist but raise an error if all
+            to calculate derivative estimates at first but raise an error if all
             evaluations for one parameter failed) and "raise_strict" (raise an error
             as soon as a function evaluation fails).
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
