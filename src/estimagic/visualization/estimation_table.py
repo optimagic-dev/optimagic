@@ -53,7 +53,7 @@ def estimation_table(
     other table packages and motivated by the fact that most estimation tables give
     a wrong feeling of precision by showing too many decimal points.
 
-    The function wrapps _estimation_table, but ignors PerformanceWarnings.
+    The function wraps _estimation_table, but ignors PerformanceWarnings.
     Args:
         models (list): list of estimation results. The models can come from
             statmodels or be constructed from the outputs of `estimagic.estimate_ml`
