@@ -7,9 +7,12 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-import warnings
+
+suppress_performance_warnings = np.testing.suppress_warnings()
+suppress_performance_warnings.filter(category=pd.errors.PerformanceWarning)
 
 
+@suppress_performance_warnings
 def estimation_table(
     models,
     *,
@@ -53,7 +56,6 @@ def estimation_table(
     other table packages and motivated by the fact that most estimation tables give
     a wrong feeling of precision by showing too many decimal points.
 
-    The function wraps _estimation_table, but ignors PerformanceWarnings.
     Args:
         models (list): list of estimation results. The models can come from
             statmodels or be constructed from the outputs of `estimagic.estimate_ml`
@@ -124,165 +126,7 @@ def estimation_table(
             used as row names in the table.
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or string that is used to apply string formatter(s) to floats in the
-            table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
-        add_trailing_zeros (bool): If True, format floats such that they have same
-            number of digits after the decimal point. Default True.
-        siunitx_warning (bool): If True, print warning about LaTex preamble to add for
-            proper compilation of  when working with siunitx package. Default True.
-        escape_special_characters (bool): If True, replaces special characters
-            in parameter and model names with LaTeX or HTML safe sequences.
-    Returns:
-        res_table (data frame, str or dictionary): depending on the rerturn type,
-            data frame with formatted strings, a string for html or latex tables,
-            or a dictionary with statistics and parameters dataframes, and strings
-            for footers is returned. If the return type is a path, the function saves
-            the resulting table at the given path.
-
-    """
-    with warnings.catch_warnings():
-        warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-
-        return _estimation_table(
-            models=models,
-            return_type=return_type,
-            render_options=render_options,
-            show_col_names=show_col_names,
-            show_col_groups=show_col_groups,
-            show_index_names=show_index_names,
-            show_inference=show_inference,
-            show_stars=show_stars,
-            show_footer=show_footer,
-            custom_param_names=custom_param_names,
-            custom_col_names=custom_col_names,
-            custom_col_groups=custom_col_groups,
-            custom_index_names=custom_index_names,
-            custom_notes=custom_notes,
-            confidence_intervals=confidence_intervals,
-            significance_levels=significance_levels,
-            append_notes=append_notes,
-            notes_label=notes_label,
-            stats_options=stats_options,
-            number_format=number_format,
-            add_trailing_zeros=add_trailing_zeros,
-            escape_special_characters=escape_special_characters,
-            siunitx_warning=siunitx_warning,
-        )
-
-
-def _estimation_table(
-    models,
-    *,
-    return_type="dataframe",
-    render_options=None,
-    show_col_names=True,
-    show_col_groups=None,
-    show_index_names=False,
-    show_inference=True,
-    show_stars=True,
-    show_footer=True,
-    custom_param_names=None,
-    custom_col_names=None,
-    custom_col_groups=None,
-    custom_index_names=None,
-    custom_notes=None,
-    confidence_intervals=False,
-    significance_levels=(0.1, 0.05, 0.01),
-    append_notes=True,
-    notes_label="Note:",
-    stats_options=None,
-    number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
-    add_trailing_zeros=True,
-    escape_special_characters=True,
-    siunitx_warning=True,
-):
-    r"""Generate html or LaTex tables provided (lists of) of models.
-
-    The function can create publication quality tables in various formats from
-    statsmodels or estimagic results.
-
-    It allows for extensive customization via optional arguments and almost limitless
-    flexibility when using a two-stage approach where the ``return_type`` is set to
-    ``"render_inputs"``, the resulting dictionary representation of the table is
-    modified and that modified version is then passed to ``render_latex`` or
-    ``render_html``.
-
-    The formatting of the numbers in the table is completely configurable via the
-    ``number_format`` argument. By default we round to three significant digits (i.e.
-    the three leftmost non-zero digits are displayed). This is very different from
-    other table packages and motivated by the fact that most estimation tables give
-    a wrong feeling of precision by showing too many decimal points.
-
-    Args:
-        models (list): list of estimation results. The models can come from
-            statmodels or be constructed from the outputs of `estimagic.estimate_ml`
-            or `estimagic.estimate_msm`. With a little bit of work it is also possible
-            to construct them out of R or other results. If a model is not a
-            statsmodels results they must be dictionaries with the following entries:
-            "params" (a DataFrame with value column), "info" (a dictionary with summary
-            statistics such as "n_obs", "rsquared", ...) and "name" (a string), or a
-            DataFrame with value column. If a models is a statsmodels result,
-            model.endog_names is used as name and the rest is extracted from
-            corresponding statsmodels attributes. The model names do not have to be
-            unique but if they are not, models with the same name need to be grouped
-            together.
-        return_type (str): Can be "dataframe", "latex", "html", "render_inputs" or a
-            file path with the extension .tex or .html. If "render_inputs" is passed,
-            a dictionary with the entries "body", "footer" and other
-            information is returned. The entries can be modified by the user (
-            e.g. change formatting, renameof columns or index, ...) and then passed
-            to ``render_latex`` or ``render_html``. Default "dataframe".
-        render_options (dict): a dictionary with keyword arguments that are passed to
-            df.style.to_latex or df.style.to_html, depending on the return_type.
-            The default is None.
-        show_col_names (bool): If True, the column names are displayed. The default
-            column names are the model names if the model names are unique, otherwise
-            (1), (2), etc.. Default True.
-        show_col_groups (bool): If True, the column groups are displayed. The default
-            column groups are the model names if the model names are not unique and
-            undefined otherwise. Default None. None means that the column groups are
-            displayed if they are defined.
-        show_index_names (bool): If True, the index names are displayed. Default False.
-            This is mostly relevant when working with estimagic style params DataFrames
-            with a MultiIndex.
-        show_inference(bool): If True, inference (standard errors or confidence
-            intervals) are displayed below parameter values. Default True.
-        show_stars (bool): a boolean variable for displaying significance stars.
-            Default is True.
-        show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
-            Obs numbers. Default is True. Which statistics are displayed and how they
-            are labeled can be determined via ``stats_options``.
-        custom_param_names (dict): Dictionary that is used to rename parameters. The
-            keys are the old parameter names or index entries. The values are
-            the new names. Default None.
-        custom_col_names (dict or list): A list of column names or dict to rename the
-            default column names. The default column names are the model names if the
-            model names are unique, otherwise (1), (2), etc..
-        custom_col_groups (dict or list): A list of column group or dict to rename
-            the default column groups. The default column groups are the model names
-            if the model names are not unique and undefined otherwise.
-        custom_index_names (dict or list): Dictionary or list to set the names of the
-            index levels of the parameters. This is mostly relevant when working with
-            estimagic style params DataFrames with a MultiIndex and only used if
-            "index_names" is set to True in the render_options. Default None.
-        custom_notes (list): A list of strings for additional notes. Default is None.
-        confidence_intervals (bool): If True, display confidence intervals as inference
-            values. Display standard errors otherwise. Default False.
-        significance_levels (list): a list of floats for p value's significance cut-off
-            values. This is used to generate the significance stars. Default is
-            [0.1,0.05,0.01].
-        append_notes (bool): A boolean variable for printing p value cutoff explanation
-            and additional notes, if applicable. Default is True.
-        notes_label (str): A sting to print as the title of the notes section, if
-            applicable. Default is 'Notes'
-        stats_options (dict): A dictionary that determines which statistics (e.g.
-            R-Squared, No. of Observations) are displayed and how they are labeled.
-            The keys are the names of the statistics inside the model['info'] dictionary
-            or attribute names of a statsmodels results object. The values are the new
-            labels to be displayed for those statistics, i.e. the set of the values is
-            used as row names in the table.
-        number_format (int, str, iterable or callable): A callable, iterable, integer
-            or string that is used to apply string formatter(s) to floats in the
-            table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
+            table. Default ("{0:.3g}", "{0:.5f}", "{0:.4g}").
         add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point. Default True.
         siunitx_warning (bool): If True, print warning about LaTex preamble to add for
