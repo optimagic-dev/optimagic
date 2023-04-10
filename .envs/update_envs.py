@@ -41,7 +41,11 @@ def main():
 
     # write environments
     for name, env in zip(["linux", "others"], [test_env_linux, test_env_others]):
-        Path(f".envs/testenv-{name}.yml").write_text("\n".join(env) + "\n")
+        # Specify newline to avoid wrong line endings on Windows.
+        # See: https://stackoverflow.com/a/69869641
+        Path(f".envs/testenv-{name}.yml").write_text(
+            "\n".join(env) + "\n", newline="\n"
+        )
 
 
 if __name__ == "__main__":
