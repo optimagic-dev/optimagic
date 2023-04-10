@@ -12,15 +12,13 @@ from estimagic.optimization.tranquilo.acceptance_sample_size import (
     get_acceptance_sample_sizes,
 )
 from estimagic.optimization.tranquilo.get_component import get_component
-from estimagic.optimization.tranquilo.options import ceil_to_multiple, AcceptanceOptions
-from estimagic.optimization.tranquilo.speculative_sampling import (
-    sample_from_next_trustregion,
-)
+from estimagic.optimization.tranquilo.options import AcceptanceOptions
 
 
 def get_acceptance_decider(acceptance_decider, acceptance_options):
     func_dict = {
         "classic": _accept_classic,
+        "classic_speculative": _accept_classic_speculative,
         "naive_noisy": accept_naive_noisy,
         "noisy": accept_noisy,
     }
@@ -29,8 +27,6 @@ def get_acceptance_decider(acceptance_decider, acceptance_options):
         "subproblem_solution",
         "state",
         "history",
-        "batch_size",
-        "sample_points",
     ]
 
     out = get_component(
@@ -49,9 +45,6 @@ def _accept_classic(
     subproblem_solution,
     state,
     history,
-    batch_size,
-    sample_points,
-    rng,
     *,
     wrapped_criterion,
     min_improvement,
@@ -63,9 +56,6 @@ def _accept_classic(
         state (State): Namedtuple containing the trustregion, criterion value of
             previously accepted point, indices of model points, etc.
         history (History): The tranquilo history.
-        batch_size (int): Number of points to evaluate in parallel.
-        sample_points (callable): Function that samples points from the trustregion.
-        rng (np.random.Generator): Random number generator.
         wrapped_criterion (callable): The criterion function.
         min_improvement (float): Minimum improvement required to accept a point.
 
@@ -73,21 +63,23 @@ def _accept_classic(
         AcceptanceResult: The acceptance result.
 
     """
+    candidate_x = subproblem_solution.x
+    candidate_index = history.add_xs(candidate_x)
+
+    wrapped_criterion({candidate_index: 1})
+
     out = _accept_simple(
         subproblem_solution=subproblem_solution,
         state=state,
         history=history,
-        batch_size=batch_size,
-        sample_points=sample_points,
-        rng=rng,
-        wrapped_criterion=wrapped_criterion,
+        candidate_x=candidate_x,
+        candidate_index=candidate_index,
         min_improvement=min_improvement,
-        n_evals=1,
     )
     return out
 
 
-def accept_naive_noisy(
+def _accept_classic_speculative(
     subproblem_solution,
     state,
     history,
@@ -98,34 +90,7 @@ def accept_naive_noisy(
     wrapped_criterion,
     min_improvement,
 ):
-    """Do a naive noisy acceptance step, averaging over a fixed number of points."""
-    out = _accept_simple(
-        subproblem_solution=subproblem_solution,
-        state=state,
-        history=history,
-        batch_size=batch_size,
-        sample_points=sample_points,
-        rng=rng,
-        wrapped_criterion=wrapped_criterion,
-        min_improvement=min_improvement,
-        n_evals=5,
-    )
-    return out
-
-
-def _accept_simple(
-    subproblem_solution,
-    state,
-    history,
-    batch_size,
-    sample_points,
-    rng,
-    *,
-    wrapped_criterion,
-    min_improvement,
-    n_evals,
-):
-    """Do a classic acceptance step for a trustregion algorithm.
+    """Do a speculative classic acceptance step for a trustregion algorithm.
 
     Args:
         subproblem_solution (SubproblemResult): Result of the subproblem solution.
@@ -145,11 +110,10 @@ def _accept_simple(
     # store candidate evaluation info
     candidate_x = subproblem_solution.x
     candidate_index = history.add_xs(candidate_x)
-    candidate_eval_info = {candidate_index: n_evals}
+    candidate_eval_info = {candidate_index: 1}
 
     # create explorative evaluations, if batch size is not exhausted
-    n_evals_batch_consistent = ceil_to_multiple(n_evals, multiple=batch_size)
-    n_missing = n_evals_batch_consistent - n_evals
+    n_missing = batch_size - 1
 
     speculative_xs = sample_from_next_trustregion(
         next_center=candidate_x,
@@ -166,7 +130,68 @@ def _accept_simple(
     eval_info = {**candidate_eval_info, **speculative_eval_info}
     wrapped_criterion(eval_info)
 
-    # compute acceptance decision
+    out = _accept_simple(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        history=history,
+        candidate_x=candidate_x,
+        candidate_index=candidate_index,
+        min_improvement=min_improvement,
+    )
+    return out
+
+
+def accept_naive_noisy(
+    subproblem_solution,
+    state,
+    history,
+    *,
+    wrapped_criterion,
+    min_improvement,
+):
+    """Do a naive noisy acceptance step, averaging over a fixed number of points."""
+    candidate_x = subproblem_solution.x
+    candidate_index = history.add_xs(candidate_x)
+
+    wrapped_criterion({candidate_index: 5})
+
+    out = _accept_simple(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        history=history,
+        candidate_x=candidate_x,
+        candidate_index=candidate_index,
+        min_improvement=min_improvement,
+    )
+    return out
+
+
+def _accept_simple(
+    subproblem_solution,
+    state,
+    history,
+    candidate_x,
+    candidate_index,
+    *,
+    min_improvement,
+):
+    """Do a classic acceptance step for a trustregion algorithm.
+
+    Args:
+        subproblem_solution (SubproblemResult): Result of the subproblem solution.
+        state (State): Namedtuple containing the trustregion, criterion value of
+            previously accepted point, indices of model points, etc.
+        history (History): The tranquilo history.
+        batch_size (int): Number of points to evaluate in parallel.
+        sample_points (callable): Function that samples points from the trustregion.
+        rng (np.random.Generator): Random number generator.
+        wrapped_criterion (callable): The criterion function.
+        min_improvement (float): Minimum improvement required to accept a point.
+
+    Returns:
+        AcceptanceResult: The acceptance result.
+
+    """
     candidate_fval = np.mean(history.get_fvals(candidate_index))
 
     actual_improvement = -(candidate_fval - state.fval)
@@ -299,3 +324,15 @@ def calculate_rho(actual_improvement, expected_improvement):
     else:
         rho = actual_improvement / expected_improvement
     return rho
+
+
+def sample_from_next_trustregion(
+    next_center,
+    old_region,
+    n_points,
+    sample_points,
+    rng,
+):
+    next_trustregion = old_region._replace(center=next_center)
+    xs = sample_points(trustregion=next_trustregion, n_points=n_points, rng=rng)
+    return xs

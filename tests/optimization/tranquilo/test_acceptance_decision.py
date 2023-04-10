@@ -5,11 +5,13 @@ import pytest
 from estimagic.optimization.tranquilo.acceptance_decision import (
     _accept_simple,
     _get_acceptance_result,
+    _accept_classic_speculative,
     calculate_rho,
 )
 from estimagic.optimization.tranquilo.history import History
 from estimagic.optimization.tranquilo.region import Region
 from estimagic.optimization.tranquilo.solve_subproblem import SubproblemResult
+from estimagic.optimization.tranquilo.sample_points import get_sampler
 from numpy.testing import assert_array_equal
 
 # ======================================================================================
@@ -58,21 +60,56 @@ def test_accept_simple(
         indices = np.array(list(eval_info)).repeat(np.array(list(eval_info.values())))
         history.add_evals(indices, -indices)
 
-    def _mock_sample_points(trustregion, n_points, rng):
-        return None
+    candidate_x = subproblem_solution.x
+    candidate_index = history.add_xs(candidate_x)
+
+    wrapped_criterion({candidate_index: 2})
 
     res_got = _accept_simple(
         subproblem_solution=subproblem_solution,
         state=state,
         history=history,
-        wrapped_criterion=wrapped_criterion,
+        candidate_x=candidate_x,
+        candidate_index=candidate_index,
         min_improvement=0.0,
-        n_evals=2,
-        batch_size=1,
-        sample_points=_mock_sample_points,
-        rng=None,
     )
 
+    assert res_got.accepted
+    assert res_got.index == 5
+    assert res_got.candidate_index == 5
+    assert_array_equal(res_got.x, subproblem_solution.x)
+    assert_array_equal(res_got.candidate_x, 1.0 + np.arange(2))
+
+
+def test_accept_classic_speculative(subproblem_solution):
+    history = History(functype="scalar")
+    trustregion = Region(center=np.zeros(2), radius=2.0)
+    state = State(x=np.arange(2.0), trustregion=trustregion, fval=0.25, index=0)
+
+    idxs = history.add_xs(np.arange(10).reshape(5, 2))
+
+    history.add_evals(idxs.repeat(2), np.arange(10))
+
+    rng = np.random.default_rng(12345)
+    sample_points = get_sampler(sampler="random_hull")
+
+    def wrapped_criterion(eval_info):
+        indices = np.array(list(eval_info)).repeat(np.array(list(eval_info.values())))
+        history.add_evals(indices, -indices)
+
+    res_got = _accept_classic_speculative(
+        subproblem_solution=subproblem_solution,
+        state=state,
+        history=history,
+        batch_size=7,
+        sample_points=sample_points,
+        rng=rng,
+        wrapped_criterion=wrapped_criterion,
+        min_improvement=0.0,
+    )
+
+    assert history.n_fun == 17  # 10 (prior) + 7 (acceptance step)
+    assert history.n_xs == 12  # 5 (prior) + 7 (acceptance step)
     assert res_got.accepted
     assert res_got.index == 5
     assert res_got.candidate_index == 5
