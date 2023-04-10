@@ -5,6 +5,15 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
 
 
+## 0.4.5
+
+- {gh}`379` Improves the estimation table ({ghuser}`ChristianZimpelmann`)
+- {gh}`445` fixes line endings in local pre-commit hook ({ghuser}`ChristianZimpelmann`)
+- {gh}`443`, {gh}`444`, {gh}`445`, {gh}`446`, {gh}`448` and {gh}`449` are a major
+  refactoring of tranquilo ({ghuser}`timmens` and {ghuser}`janosg`)
+- {gh}`441` Adds an aggregated convergence plot for benchmarks ({ghuser}`mpetrosian`)
+- {gh}`435` Completes the cartis-roberts benchmark set ({ghuser}`segsell`)
+
 ## 0.4.4
 
 - {gh}`437` removes fuzzywuzzy as dependency ({ghuser}`aidatak97`)
