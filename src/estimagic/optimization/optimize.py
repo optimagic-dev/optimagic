@@ -1,5 +1,6 @@
 import functools
 import warnings
+import numpy as np
 from pathlib import Path
 
 from estimagic.batch_evaluators import process_batch_evaluator
@@ -797,7 +798,15 @@ def _optimize(
         fixed_kwargs=fixed_result_kwargs,
         skip_checks=skip_checks,
     )
-
+    # ===================================================================================
+    # add fake batch history
+    # ===================================================================================
+    if res.history is not None:
+        hist = res.history.copy()
+        hist["batches"] = np.arange(len(hist["criterion"])).repeat(2)[
+            : len(hist["criterion"])
+        ]
+        res.history = hist
     return res
 
 

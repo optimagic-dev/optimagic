@@ -72,7 +72,7 @@ def profile_plot(
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
         )
-    if runtime_measure not in ["walltime", "n_evaluations"]:
+    if runtime_measure not in ["walltime", "n_evaluations", "n_batches"]:
         raise ValueError(
             "Only 'walltime' or 'n_evaluations' are allowed as "
             f"runtime_measure. You specified {runtime_measure}."
@@ -139,7 +139,7 @@ def _create_solution_times(df, runtime_measure, converged_info):
     Args:
         df (pandas.DataFrame): contains 'problem', 'algorithm' and *runtime_measure*
             as columns.
-        runtime_measure (str): 'walltime' or 'n_evaluations'.
+        runtime_measure (str): 'walltime', 'n_batches' or 'n_evaluations'.
         converged_info (pandas.DataFrame): columns are the algorithms, index are the
             problems. The values are boolean and True when the algorithm arrived at
             the solution with the desired precision.
