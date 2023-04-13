@@ -61,9 +61,10 @@ def create_convergence_histories(
     criterion_sr = _get_history_as_stacked_sr_from_results(results, "criterion_history")
     x_dist_sr = _get_history_of_the_parameter_distance(results, x_opt)
     batch_sr = _get_history_as_stacked_sr_from_results(results, "batches_history")
+    batch_sr.name = "n_batches"
     df = pd.concat([time_sr, criterion_sr, x_dist_sr, batch_sr], axis=1)
 
-    df.index = df.index.rename({"evaluation": "n_evaluations", "batch": "n_batches"})
+    df.index = df.index.rename({"evaluation": "n_evaluations"})
     df = df.sort_index().reset_index()
 
     first_evaluations = df.query("n_evaluations == 0").groupby("problem")

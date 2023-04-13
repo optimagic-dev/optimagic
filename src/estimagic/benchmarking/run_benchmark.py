@@ -165,6 +165,7 @@ def _get_results(names, raw_results, kwargs_list):
                 [tree_just_flatten(p, registry=registry) for p in history["params"]]
             )
             criterion_history = pd.Series(history["criterion"])
+            batches_history = pd.Series(history["batches"])
             time_history = pd.Series(history["runtime"])
         elif isinstance(result, str):
             _criterion = inputs["criterion"]
@@ -175,6 +176,10 @@ def _get_results(names, raw_results, kwargs_list):
             criterion_history = pd.Series(_criterion(inputs["params"])["value"])
 
             time_history = pd.Series([np.inf])
+            # =============================================================================
+            # need to check if this is correct
+            # =============================================================================
+            batches_history = pd.Series([0])
         else:
             raise TypeError(
                 "'result' object is expected to be of type 'dict' or 'str'."
@@ -184,6 +189,7 @@ def _get_results(names, raw_results, kwargs_list):
             "params_history": params_history,
             "criterion_history": criterion_history,
             "time_history": time_history,
+            "batches_history": batches_history,
             "solution": result,
         }
 

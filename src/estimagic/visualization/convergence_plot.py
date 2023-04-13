@@ -39,7 +39,7 @@ def convergence_plot(
     of evaluations or number of batches. Each algorithm's convergence is a line in the
     plot. Convergence can be measured by the criterion value of the particular
     time/evaluation. The convergence can be made monotone (i.e. always taking the bast
-    value so far) or normalized such that the distance from the start to the true 
+    value so far) or normalized such that the distance from the start to the true
     solution is one.
 
     Args:
@@ -139,7 +139,7 @@ def convergence_plot(
     x_labels = {
         "n_evaluations": "Number of Function Evaluations",
         "walltime": "Elapsed Time",
-        "n_batcvhes": "Number of Batches",
+        "n_batches": "Number of Batches",
     }
 
     # container for individual plots
@@ -152,6 +152,10 @@ def convergence_plot(
     for prob_name in remaining_problems:
         g_ind = []  # container for data for traces in individual plot
         to_plot = df[df["problem"] == prob_name]
+        if runtime_measure == "n_batches":
+            to_plot = (
+                to_plot.groupby(["algorithm", runtime_measure]).min().reset_index()
+            )
 
         for i, alg in enumerate(to_plot["algorithm"].unique()):
             temp = to_plot[to_plot["algorithm"] == alg]
