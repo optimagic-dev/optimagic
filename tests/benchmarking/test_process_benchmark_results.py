@@ -293,6 +293,7 @@ def benchmark_results():
     results = {
         ("prob1", "algo1"): {
             "criterion_history": pd.Series([1, 2, 3]),
+            "batches_history": pd.Series([0, 1, 1]),
             "time_history": pd.Series([sec, 2 * sec, 3 * sec]),
             "params_history": pd.DataFrame(
                 [
@@ -304,16 +305,19 @@ def benchmark_results():
         },
         ("prob1", "algo2"): {
             "criterion_history": pd.Series([1, 2.5]),
+            "batches_history": pd.Series([0, 1]),
             "time_history": pd.Series([0.5 * sec, 1.5 * sec]),
             "params_history": pd.DataFrame([[2, 3], [2, 2]]),
         },
         ("prob2", "algo1"): {
             "criterion_history": pd.Series([50, 40]),
+            "batches_history": pd.Series([0, 0]),
             "time_history": pd.Series([3 * sec, 3.5 * sec]),
             "params_history": pd.DataFrame([[2], [4]]),
         },
         ("prob2", "algo2"): {
             "criterion_history": pd.Series([35]),
+            "batches_history": pd.Series([0]),
             "time_history": pd.Series([3.2 * sec]),
             "params_history": pd.DataFrame([[4.2]]),
         },
@@ -416,11 +420,12 @@ def test_create_convergence_histories(benchmark_results):
         expected_x_distance,
         on=["problem", "algorithm", "evaluation"],
     ).rename(columns={"evaluation": "n_evaluations"})
-
+    expected["n_batches"] = [0, 1, 1, 0, 1, 0, 0, 0]
     to_compare = [
         "problem",
         "algorithm",
         "n_evaluations",
+        "n_batches",
         "criterion",
         "parameter_distance",
     ]
@@ -432,4 +437,6 @@ def test_create_convergence_histories(benchmark_results):
     # - monotone_parameter_distance
     # - monotone_parameter_distance_normalized
 
-    pd.testing.assert_frame_equal(res[to_compare], expected)
+    pd.testing.assert_frame_equal(
+        res[to_compare].sort_index(axis=1), expected.sort_index(axis=1)
+    )
