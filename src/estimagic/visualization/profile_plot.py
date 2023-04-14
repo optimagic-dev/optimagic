@@ -46,7 +46,7 @@ def profile_plot(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
-        runtime_measure (str): "n_evaluations" or "walltime".
+        runtime_measure (str): "n_evaluations", "n_batches" or "walltime".
             This is the runtime until the desired convergence was reached by an
             algorithm. This is called performance measure by Moré and Wild (2009).
         normalize_runtime (bool): If True the runtime each algorithm needed for each
@@ -115,8 +115,14 @@ def profile_plot(
             "walltime",
             True,
         ): "Multiple of Minimal Wall Time<br>Needed to Solve the Problem",
+        (
+            "n_batches",
+            True,
+        ): "Multiple of Minimal Number of Batches<br>"
+        "Needed to Solve the Problem",
         ("n_evaluations", False): "Number of Function Evaluations",
         ("walltime", False): "Wall Time Needed to Solve the Problem",
+        ("n_batches", False): "Number of Batches",
     }
 
     fig.update_layout(

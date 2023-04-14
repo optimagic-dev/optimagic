@@ -11,6 +11,8 @@ profile_options = [
     {"distance_measure": "criterion"},
     {"monotone": True},
     {"monotone": False},
+    {"runtime_measure": "n_evaluations"},
+    {"runtime_measure": "n_batches"},
 ]
 
 
