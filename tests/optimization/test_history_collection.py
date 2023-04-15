@@ -6,6 +6,7 @@ from estimagic.logging.read_log import OptimizeLogReader
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
+from numpy.testing import assert_array_equal as aae
 from estimagic.decorators import mark_minimizer
 
 OPTIMIZERS = []
@@ -123,6 +124,6 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
 
     assert isinstance(got_history, dict)
     assert set(got_history.keys()) == {"params", "criterion", "batches", "runtime"}
-    # assert got_history["batches"] == expected_history["batches"]
+    aae(got_history["batches"], expected_history["batches"])
     assert got_history["criterion"] == expected_history["criterion"]
     aaae(got_history["params"], expected_history["params"])

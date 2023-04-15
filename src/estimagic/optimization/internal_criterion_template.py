@@ -247,6 +247,13 @@ def internal_criterion_and_derivative_template(
             "criterion": scalar_critval,
             "runtime": now,
         }
+        if history_container is not None:
+            if history_container:
+                _batch = history_container[-1]["batches"] + 1
+            else:
+                _batch = 0
+
+            hist_entry["batches"] = _batch
     else:
         hist_entry = None
 

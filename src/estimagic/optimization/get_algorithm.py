@@ -105,9 +105,10 @@ def get_final_algorithm(
     )
 
     is_parallel = "n_cores" in internal_options
+    batch_size = internal_options.get("batch_size", internal_options.get("n_cores", 1))
 
     if collect_history and not algo_info.disable_history:
-        algorithm = _add_history_collection(algorithm, is_parallel)
+        algorithm = _add_history_collection(algorithm, is_parallel, batch_size)
 
     return algorithm
 
@@ -156,7 +157,7 @@ def _add_logging(algorithm=None, *, logging=None, database=None):
         return decorator_add_logging_to_algorithm
 
 
-def _add_history_collection(algorithm, is_parallel):
+def _add_history_collection(algorithm, is_parallel, batch_size):
     """Add history collection to the algorithm.
 
     The history collection is done jointly be the internal criterion function and the
@@ -205,6 +206,7 @@ def _add_history_collection(algorithm, is_parallel):
             _kwargs["batch_evaluator"] = _get_history_collecting_batch_evaluator(
                 batch_evaluator=batch_evaluator,
                 container=container,
+                batch_size=batch_size,
             )
 
         # call the algorithm
@@ -224,7 +226,7 @@ def _add_history_collection(algorithm, is_parallel):
     return algorithm_with_history_collection
 
 
-def _get_history_collecting_batch_evaluator(batch_evaluator, container):
+def _get_history_collecting_batch_evaluator(batch_evaluator, container, batch_size):
     @functools.wraps(batch_evaluator)
     def history_collecting_batch_evaluator(*args, **kwargs):
         if args:
@@ -250,9 +252,13 @@ def _get_history_collecting_batch_evaluator(batch_evaluator, container):
                 _kwargs["func"] = _func
 
             raw_out = batch_evaluator(*_args, **_kwargs)
-
             out = [tup[0] for tup in raw_out]
             _hist = [tup[1] for tup in raw_out if tup[1] is not None]
+            _start_batch = container[-1]["batches"] + 1 if container else 0
+            _offsets = np.arange(len(_hist)).repeat(batch_size)[: len(_hist)]
+            _batch_info = _offsets + _start_batch
+            for batch, hist_entry in zip(_batch_info, _hist):
+                hist_entry["batches"] = batch
 
             container.extend(_hist)
 
