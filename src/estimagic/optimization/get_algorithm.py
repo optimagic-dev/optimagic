@@ -60,8 +60,13 @@ def get_final_algorithm(
 ):
     """Get algorithm-function with partialled options.
 
-    The resulting function only depends on ``x``,  the relevant criterion functions
-    and derivatives and ``step_id``.
+    The resulting function only depends on ``x``,  the relevant criterion functions,
+    derivatives and ``step_id``. The remaining options are partialled in.
+
+    Moreover, we add the following capabilities over the internal algorithms:
+    - log the algorithm progress in a database (if logging is True)
+    - collect the history of parameters and criterion values as well as runtime and
+      batch information.
 
     Args:
         algorithm (str or callable): String with the name of an algorithm or internal
@@ -99,13 +104,10 @@ def get_final_algorithm(
         database=database,
     )
 
-    is_parallel = internal_options.get("n_cores") not in (None, 1)
+    is_parallel = "n_cores" in internal_options
 
     if collect_history and not algo_info.disable_history:
-        algorithm = _add_history_collection_via_criterion(algorithm)
-        if is_parallel:
-            algorithm = _add_history_collection_via_batch_evaluator(algorithm)
-        algorithm = _add_history_processing(algorithm, is_parallel)
+        algorithm = _add_history_collection(algorithm, is_parallel)
 
     return algorithm
 
@@ -154,104 +156,120 @@ def _add_logging(algorithm=None, *, logging=None, database=None):
         return decorator_add_logging_to_algorithm
 
 
-def _add_history_collection_via_criterion(algorithm):
-    """Partial a history container into all functions that define the optimization."""
+def _add_history_collection(algorithm, is_parallel):
+    """Add history collection to the algorithm.
+
+    The history collection is done jointly be the internal criterion function and the
+    batch evaluator. Using the batch evaluator for history collection is necessary
+    for two reasons:
+    1. The batch information is only known inside the batch evaluator
+    2. The normal approach of appending information to a list that is partialled into
+       the internal criterion function breaks down when the batch evaluator pickles
+       the internal criterion function.
+
+    We make sure that optimizers that do some function evaluations via the batch
+    evaluator and others directly are handled correctly.
+
+    The interplay between the two methods for history collections is as follows:
+    - If the function is called directly, all relevant information is appended to a list
+      that is partialled into the internal criterion function.
+    - If the function is called via the batch evaluator, we signal this to the internal
+      criterion via the two arguments ``history_container`` (which is set to None) and
+      ``return_history_entry`` (which is set to True). The returned history entries
+      are then collected inside the batch evaluator and appended to the history
+      container after all evaluations are done.
+
+    Args:
+        algorithm (callable): The algorithm.
+        is_parallel (bool): Whether the algorithm can parallelize.
+
+    """
 
     @functools.wraps(algorithm)
-    def wrapper_add_history_collection_via_criterion(**kwargs):
-        func_names = {"criterion", "derivative", "criterion_and_derivative"}
-
+    def algorithm_with_history_collection(**kwargs):
+        # initialize the shared history container
         container = []
 
+        # add history collection via the internal criterion functions
+        func_names = {"criterion", "derivative", "criterion_and_derivative"}
         _kwargs = kwargs.copy()
         for name in func_names:
             if name in kwargs:
                 _kwargs[name] = partial(kwargs[name], history_container=container)
 
+        # add history collection via the batch evaluator
+        if is_parallel:
+            raw_be = kwargs.get("batch_evaluator", "joblib")
+            batch_evaluator = process_batch_evaluator(raw_be)
+
+            _kwargs["batch_evaluator"] = _get_history_collecting_batch_evaluator(
+                batch_evaluator=batch_evaluator,
+                container=container,
+            )
+
+        # call the algorithm
         out = algorithm(**_kwargs)
+
+        # add the history container to the algorithm output
         if "history" not in out:
             out["history"] = container
         else:
             out["history"] = out["history"] + container
+
+        # process the history
+        out["history"] = _process_collected_history(out["history"])
+
         return out
 
-    return wrapper_add_history_collection_via_criterion
+    return algorithm_with_history_collection
 
 
-def _add_history_collection_via_batch_evaluator(algorithm):
-    """Wrap the batch_evaluator argument such that histories are collected."""
-
-    @functools.wraps(algorithm)
-    def wrapper_add_history_collection_via_batch_evaluator(**kwargs):
-        raw_be = kwargs.get("batch_evaluator", "joblib")
-        batch_evaluator = process_batch_evaluator(raw_be)
-
-        container = []
-
-        @functools.wraps(batch_evaluator)
-        def wrapped_batch_evaluator(*args, **kwargs):
-            if args:
-                func = args[0]
-            else:
-                func = kwargs["func"]
-
-            # find out if func is our internal criterion function
-            if isinstance(func, partial) and "history_container" in func.keywords:
-                # partial in None as history container to disable history collection via
-                # criterion function, which would not work with parallelization anyways
-                _func = partial(func, history_container=None, return_history_entry=True)
-
-                if args:
-                    _args = (_func, *args[1:])
-                    _kwargs = kwargs
-                else:
-                    _args = args
-                    _kwargs = kwargs.copy()
-                    _kwargs["func"] = _func
-
-                raw_out = batch_evaluator(*_args, **_kwargs)
-
-                out = [tup[0] for tup in raw_out]
-                _hist = [tup[1] for tup in raw_out if tup[1] is not None]
-
-                container.extend(_hist)
-
-            else:
-                out = batch_evaluator(*args, **kwargs)
-
-            return out
-
-        new_kwargs = kwargs.copy()
-        new_kwargs["batch_evaluator"] = wrapped_batch_evaluator
-
-        out = algorithm(**new_kwargs)
-
-        if "history" in out:
-            out["history"] = out["history"] + container
+def _get_history_collecting_batch_evaluator(batch_evaluator, container):
+    @functools.wraps(batch_evaluator)
+    def history_collecting_batch_evaluator(*args, **kwargs):
+        if args:
+            func = args[0]
         else:
-            out["history"] = container
+            func = kwargs["func"]
+
+        # find out if func is our internal criterion function. This is
+        # necessary because an algorithm might use the batch evaluatior for
+        # other functions as well, but for those functions we do not want to
+        # (and cannot) collect a history.
+        if isinstance(func, partial) and "history_container" in func.keywords:
+            # partial in None as history container to disable history collection
+            # via criterion function, which would not work with parallelization
+            _func = partial(func, history_container=None, return_history_entry=True)
+
+            if args:
+                _args = (_func, *args[1:])
+                _kwargs = kwargs
+            else:
+                _args = args
+                _kwargs = kwargs.copy()
+                _kwargs["func"] = _func
+
+            raw_out = batch_evaluator(*_args, **_kwargs)
+
+            out = [tup[0] for tup in raw_out]
+            _hist = [tup[1] for tup in raw_out if tup[1] is not None]
+
+            container.extend(_hist)
+
+        else:
+            out = batch_evaluator(*args, **kwargs)
 
         return out
 
-    return wrapper_add_history_collection_via_batch_evaluator
+    return history_collecting_batch_evaluator
 
 
-def _add_history_processing(algorithm, parallelizes):
-    @functools.wraps(algorithm)
-    def wrapper_add_history_processing(**kwargs):
-        out = algorithm(**kwargs)
-        raw = out["history"]
-        if parallelizes:
-            raw = sorted(raw, key=lambda e: e["runtime"])
-        history = list_of_dicts_to_dict_of_lists(raw)
-        runtimes = np.array(history["runtime"])
-        runtimes -= runtimes[0]
-        history["runtime"] = runtimes.tolist()
-
-        out["history"] = history
-        return out
-
-    return wrapper_add_history_processing
+def _process_collected_history(raw):
+    history = list_of_dicts_to_dict_of_lists(raw)
+    runtimes = np.array(history["runtime"])
+    runtimes -= runtimes[0]
+    history["runtime"] = runtimes.tolist()
+    return history
 
 
 def _adjust_options_to_algorithm(
