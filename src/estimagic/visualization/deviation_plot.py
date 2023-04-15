@@ -56,9 +56,6 @@ def deviation_plot(
     )
 
     outcome = f"{'monotone_' if monotone else ''}" + distance_measure + "_normalized"
-    # ====================================================================================
-    # should we take the min or the 1st value?
-    # ====================================================================================
     deviations = (
         df.groupby(["problem", "algorithm", runtime_measure])
         .min()[outcome]

@@ -176,9 +176,6 @@ def _get_results(names, raw_results, kwargs_list):
             criterion_history = pd.Series(_criterion(inputs["params"])["value"])
 
             time_history = pd.Series([np.inf])
-            # =============================================================================
-            # need to check if this is correct
-            # =============================================================================
             batches_history = pd.Series([0])
         else:
             raise TypeError(
