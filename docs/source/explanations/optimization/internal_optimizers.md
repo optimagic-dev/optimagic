@@ -88,6 +88,28 @@ convergence criteria that clearly are the same are implemented slightly differen
 different optimizers. However, complete transparency is possible and we try to document
 the exact meaning of all options for all optimizers.
 
+## Algorithms that parallelize
+
+Algorithms can evaluate the criterion function in parallel. To make such a parallel
+algorithm fully compatible with estimagic (including history collection and benchmarking
+functionality), the following conditions need to be fulfilled:
+
+- The algorithm has an argument called `n_cores` which determines how many cores are
+  used for the parallelization.
+- The algorithm has an argument called `batch_evaluator` and all parallelization is done
+  using a built-in or user provided batch evaluator.
+
+Moreover, we strongly suggest to comply with the following convention:
+
+- The algorithm has an argument called `batch_size` which is an integer that is greater
+  or equal to `n_cores`. Setting the `batch_size` larger than n_cores, allows to
+  simulate how the algorithm would behave with `n_cores=batch_size` but only uses
+  `n_cores` cores. This allows to simulate / benchmark the parallelizability of an
+  algorithm even if no parallel hardware is available.
+
+If the mandatory conditions are not fulfilled, the algorithm should disable all history
+collection by using `mark_minimizer(..., disable_history=True)`.
+
 ## Nonlinear constraints
 
 Estimagic can pass nonlinear constraints to the internal optimizer. The internal
