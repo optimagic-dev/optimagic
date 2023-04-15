@@ -49,7 +49,6 @@ def _internal_tranquilo(
     accept_candidate,
 ):
     eval_info = {0: n_evals_at_start}
-
     evaluate_criterion(eval_info)
 
     _init_fvec = history.get_fvecs(0).mean(axis=0)

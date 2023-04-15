@@ -103,8 +103,7 @@ def get_final_algorithm(
         logging=logging,
         database=database,
     )
-
-    is_parallel = "n_cores" in internal_options
+    is_parallel = algo_info.parallelizes
     batch_size = internal_options.get("batch_size", internal_options.get("n_cores", 1))
 
     if collect_history and not algo_info.disable_history:
