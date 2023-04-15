@@ -99,7 +99,6 @@ def _fake_criterion(x):
 
 
 CASES = [(1, 1), (1, 2), (2, 2), (1, 4), (2, 4)]
-CASES = [(2, 2), (2, 4)]
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Slow on other platforms.")
