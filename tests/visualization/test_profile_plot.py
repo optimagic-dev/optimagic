@@ -70,6 +70,44 @@ def test_create_solution_times_n_evaluations():
     pd.testing.assert_frame_equal(res, expected)
 
 
+def test_create_solution_times_n_batches():
+    df = pd.DataFrame(
+        columns=["problem", "algorithm", "n_batches"],
+        data=[
+            ["prob1", "algo1", 0],
+            ["prob1", "algo1", 1],
+            #
+            ["prob1", "algo2", 2],
+            ["prob1", "algo2", 2],
+            #
+            ["prob2", "algo1", 1],
+            #
+            ["prob2", "algo2", 0],
+            ["prob2", "algo2", 0],
+        ],
+    )
+    info = pd.DataFrame(
+        {
+            "algo1": [True, True],
+            "algo2": [True, False],
+        },
+        index=["prob1", "prob2"],
+    )
+    expected = pd.DataFrame(
+        {
+            "algo1": [1, 1],
+            "algo2": [2, np.inf],
+        },
+        index=pd.Index(["prob1", "prob2"], name="problem"),
+    )
+    expected.columns.name = "algorithm"
+
+    res = _create_solution_times(
+        df=df, runtime_measure="n_batches", converged_info=info
+    )
+    pd.testing.assert_frame_equal(res, expected)
+
+
 def test_create_solution_times_walltime():
     df = pd.DataFrame(
         columns=["problem", "algorithm", "n_evaluations", "walltime"],
@@ -109,6 +147,7 @@ def test_create_solution_times_walltime():
 # integration test to make sure non default argument do not throw Errors
 profile_options = [
     {"runtime_measure": "walltime"},
+    {"runtime_measure": "n_batches"},
     {"stopping_criterion": "x_or_y"},
 ]
 

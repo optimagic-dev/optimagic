@@ -13,6 +13,7 @@ profile_options = [
     {"monotone": False},
     {"normalize_distance": False},
     {"runtime_measure": "walltime"},
+    {"runtime_measure": "n_batches"},
     {"stopping_criterion": None},
     {"stopping_criterion": "x"},
     {"stopping_criterion": "x_and_y"},

@@ -35,11 +35,12 @@ def convergence_plot(
     improved on the problem. The algorithm converged where its line reaches 0
     (if normalize_distance is True) or the horizontal blue line labeled "true solution".
 
-    Each plot shows on the x axis the runtime_measure, which can be walltime or number
-    of evaluations. Each algorithm's convergence is a line in the plot. Convergence can
-    be measured by the criterion value of the particular time/evaluation. The
-    convergence can be made monotone (i.e. always taking the bast value so far) or
-    normalized such that the distance from the start to the true solution is one.
+    Each plot shows on the x axis the runtime_measure, which can be walltime, number
+    of evaluations or number of batches. Each algorithm's convergence is a line in the
+    plot. Convergence can be measured by the criterion value of the particular
+    time/evaluation. The convergence can be made monotone (i.e. always taking the bast
+    value so far) or normalized such that the distance from the start to the true
+    solution is one.
 
     Args:
         problems (dict): estimagic benchmarking problems dictionary. Keys are the
@@ -64,7 +65,7 @@ def convergence_plot(
             between the start value and the optimal value, i.e. 1 means the algorithm
             is as far from the solution as the start value and 0 means the algorithm
             has reached the solution value.
-        runtime_measure (str): "n_evaluations" or "walltime".
+        runtime_measure (str): "n_evaluations", "walltime" or "n_batches".
         stopping_criterion (str): "x_and_y", "x_or_y", "x", "y" or None. If None, no
             clipping is done.
         x_precision (float or None): how close an algorithm must have gotten to the
@@ -138,6 +139,7 @@ def convergence_plot(
     x_labels = {
         "n_evaluations": "Number of Function Evaluations",
         "walltime": "Elapsed Time",
+        "n_batches": "Number of Batches",
     }
 
     # container for individual plots
@@ -150,6 +152,10 @@ def convergence_plot(
     for prob_name in remaining_problems:
         g_ind = []  # container for data for traces in individual plot
         to_plot = df[df["problem"] == prob_name]
+        if runtime_measure == "n_batches":
+            to_plot = (
+                to_plot.groupby(["algorithm", runtime_measure]).min().reset_index()
+            )
 
         for i, alg in enumerate(to_plot["algorithm"].unique()):
             temp = to_plot[to_plot["algorithm"] == alg]
