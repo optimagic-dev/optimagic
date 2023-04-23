@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from estimagic.benchmarking.process_benchmark_results_new import (
+from estimagic.benchmarking.process_benchmark_results import (
     process_benchmark_results,
 )
 from estimagic.config import PLOTLY_TEMPLATE
