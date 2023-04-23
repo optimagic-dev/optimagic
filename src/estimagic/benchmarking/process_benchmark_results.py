@@ -180,8 +180,12 @@ def _aggregate_idxs_with_and(x, y):
 
 
 def _aggregate_idxs_with_or(x, y):
-    if x is None or y is None:
+    if x is None and y is None:
         out = None
+    elif x is None:
+        out = y
+    elif y is None:
+        out = x
     else:
         out = min(x, y)
     return out
