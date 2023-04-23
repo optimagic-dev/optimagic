@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 from estimagic.benchmarking.process_benchmark_results import (
-    create_convergence_histories,
+    process_benchmark_results,
 )
 from estimagic.config import PLOTLY_TEMPLATE
 
@@ -78,7 +78,7 @@ def profile_plot(
             f"runtime_measure. You specified {runtime_measure}."
         )
 
-    df, converged_info = create_convergence_histories(
+    df, converged_info = process_benchmark_results(
         problems=problems,
         results=results,
         stopping_criterion=stopping_criterion,

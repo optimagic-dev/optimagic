@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 
 from estimagic.benchmarking.process_benchmark_results import (
-    create_convergence_histories,
+    process_benchmark_results,
 )
 from estimagic.config import PLOTLY_TEMPLATE
 
@@ -46,8 +46,7 @@ def deviation_plot(
         plotly.Figure
 
     """
-
-    df, _ = create_convergence_histories(
+    df, _ = process_benchmark_results(
         problems=problems,
         results=results,
         stopping_criterion="y",

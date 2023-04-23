@@ -91,6 +91,10 @@ def get_benchmark_problems_custom(raw_problems, internal_criterion):
             "inputs": inputs,
             "solution": _create_problem_solution_custom(specification),
             "info": specification.get("info", {}),
+            "noise_free_criterion": partial(
+                internal_criterion, criterion=specification["criterion"]
+            ),
+            "noisy": False,
         }
 
     return problems
