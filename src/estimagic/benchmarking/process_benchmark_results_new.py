@@ -82,15 +82,8 @@ def _process_one_result(
     assert isinstance(x_precision, float)
     assert isinstance(y_precision, float)
 
-    # needed while we use pandas for results ==========================================================
-    result = result.copy()
-    for key in ["criterion_history", "time_history", "batches_history"]:
-        result[key] = result[key].to_numpy().tolist()
-    result["params_history"] = list(result["params_history"].to_numpy())
-
     # extract information
     _params_hist = result["params_history"]
-    _is_noisy = problem["noisy"]
     _solution_crit = problem["solution"]["value"]
     _start_crit = problem["start_criterion"]
     _solution_x = problem["solution"].get("params")
@@ -99,18 +92,8 @@ def _process_one_result(
     if isinstance(_solution_x, np.ndarray) and not np.isfinite(_solution_x).all():
         _solution_x = None
 
-    # get the noise free criterion value
-    if _is_noisy:
-        crit_hist = np.array([problem["noise_free_criterion"](p) for p in _params_hist])
-        if crit_hist.ndim == 2:
-            crit_hist = (crit_hist**2).sum(axis=1)
-    else:
-        crit_hist = np.array(result["criterion_history"])
-
-    # clip the criterion value at the minimum in case our min was not precise
-    crit_hist = np.clip(crit_hist, _solution_crit, np.inf)
-
     # calculate the different transformations of criterion values
+    crit_hist = np.array(result["criterion_history"])
     monotone_crit_hist = np.minimum.accumulate(crit_hist)
     normalized_crit_hist = (crit_hist - _solution_crit) / (_start_crit - _solution_crit)
     normalized_monotone_crit_hist = (monotone_crit_hist - _solution_crit) / (
@@ -149,8 +132,6 @@ def _process_one_result(
         is_converged_x, x_idx = _check_convergence(params_dist_normalized, x_precision)
         is_converged_y, y_idx = _check_convergence(normalized_crit_hist, y_precision)
 
-        y_idx = np.argmax(normalized_crit_hist <= y_precision)
-
         flag_aggregators = {
             "x": lambda x, y: x,
             "y": lambda x, y: y,
@@ -162,17 +143,16 @@ def _process_one_result(
             x=is_converged_x, y=is_converged_y
         )
 
-        idx_aggregators = {
-            "x": lambda x, y: x,
-            "y": lambda x, y: y,
-            "x_and_y": lambda x, y: max(x, y),
-            "x_or_y": lambda x, y: min(x, y),
-        }
-
-        solution_idx = idx_aggregators[stopping_criterion](x=x_idx, y=y_idx)
-
         if is_converged:
-            out_dict = {k: v[: solution_idx + 1] for k, v in out_dict.items()}
+            idx_aggregators = {
+                "x": lambda x, y: x,
+                "y": lambda x, y: y,
+                "x_and_y": _aggregate_idxs_with_and,
+                "x_or_y": _aggregate_idxs_with_or,
+            }
+            solution_idx = idx_aggregators[stopping_criterion](x=x_idx, y=y_idx)
+            if solution_idx is not None:
+                out_dict = {k: v[: solution_idx + 1] for k, v in out_dict.items()}
 
     # create a DataFrame and add metadata
     out = pd.DataFrame(out_dict)
@@ -189,3 +169,19 @@ def _check_convergence(values, threshold):
         is_converged = False
         idx = None
     return is_converged, idx
+
+
+def _aggregate_idxs_with_and(x, y):
+    if x is None or y is None:
+        out = None
+    else:
+        out = max(x, y)
+    return out
+
+
+def _aggregate_idxs_with_or(x, y):
+    if x is None or y is None:
+        out = None
+    else:
+        out = min(x, y)
+    return out
