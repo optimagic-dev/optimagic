@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def process_benchmark_results(
-    problems, results, stopping_criterion, x_precision, y_precision
+    problems, results, stopping_criterion, x_precision=1e-4, y_precision=1e-4
 ):
     """Create tidy DataFrame with all information needed for the benchmarking plots.
 
@@ -15,16 +15,17 @@ def process_benchmark_results(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
-        stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y". Determines
-            how convergence is determined from the two precisions.
-        x_precision (float or None): how close an algorithm must have gotten to the
+        stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y", or None.
+            Determines how convergence is determined from the two precisions.
+            If None, no convergence criterion is applied.
+        x_precision (float): how close an algorithm must have gotten to the
             true parameter values (as percent of the Euclidean distance between start
             and solution parameters) before the criterion for clipping and convergence
-            is fulfilled.
-        y_precision (float or None): how close an algorithm must have gotten to the
+            is fulfilled. Default is 1e-4.
+        y_precision (float): how close an algorithm must have gotten to the
             true criterion values (as percent of the distance between start
             and solution criterion value) before the criterion for clipping and
-            convergence is fulfilled.
+            convergence is fulfilled. Default is 1e-4.
 
     Returns:
         pandas.DataFrame: tidy DataFrame with the following columns:
