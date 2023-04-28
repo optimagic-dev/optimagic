@@ -4,7 +4,7 @@ from estimagic.benchmarking.process_benchmark_results import (
 )
 
 
-def create_convergence_report(
+def convergence_report(
     problems, results, *, stopping_criterion="y", x_precision=1e-4, y_precision=1e-4
 ):
     """Create a DataFrame with all information needed for the convergence report.
@@ -56,7 +56,7 @@ def create_convergence_report(
     return convergence_report
 
 
-def create_rank_report(
+def rank_report(
     problems,
     results,
     *,
@@ -141,7 +141,7 @@ def create_rank_report(
     return rank_report
 
 
-def create_traceback_report(results):
+def traceback_report(results):
     """Create a DataFrame with the traceback for all problems that have not been solved.
 
     Args:
