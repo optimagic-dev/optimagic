@@ -7,7 +7,7 @@ from estimagic.benchmarking.process_benchmark_results import (
 def convergence_report(
     problems, results, *, stopping_criterion="y", x_precision=1e-4, y_precision=1e-4
 ):
-    """Create a DataFrame with all information needed for the convergence report.
+    """Create a DataFrame with convergence information for a set of problems.
 
     Args:
         problems (dict): estimagic benchmarking problems dictionary. Keys are the
@@ -29,8 +29,8 @@ def convergence_report(
             convergence is fulfilled. Default is 1e-4.
 
     Returns:
-        pandas.DataFrame: columns are the optimizers and the dimensionality of the
-            benchmark problems, index are the problems. For the optimizers columns,
+        pandas.DataFrame: columns are the algorithms and the dimensionality of the
+            benchmark problems, indexes are the problems. For the algorithms columns,
             the values are strings that are either "success" "failed", or "error".
             For the dimensionality column, the values denote the number of dimensions
             of the problem.
@@ -66,7 +66,7 @@ def rank_report(
     x_precision=1e-4,
     y_precision=1e-4,
 ):
-    """Create a DataFrame with the ranks of the optimizers for a set of problems.
+    """Create a DataFrame with rank information for a set of problems.
 
     Args:
         problems (dict): estimagic benchmarking problems dictionary. Keys are the
@@ -96,11 +96,11 @@ def rank_report(
             convergence is fulfilled. Default is 1e-4.
 
     Returns:
-        pandas.DataFrame: columns are the optimizers, index are the problems.
-            The values are the ranks of the optimizers for each problem,
-            0 means optimizers was the fastest, 1 means it was the second fastest
-            and so on. If an optimizer did not converge on a problem, the value is
-            "failed". If an optimizer did encounter an error during optimization,
+        pandas.DataFrame: columns are the algorithms, indexes are the problems.
+            The values are the ranks of the algorithms for each problem,
+            0 means algorithms was the fastest, 1 means it was the second fastest
+            and so on. If an algorithm did not converge on a problem, the value is
+            "failed". If an algorithm did encounter an error during optimization,
             the value is "error".
 
     """
@@ -142,7 +142,7 @@ def rank_report(
 
 
 def traceback_report(results):
-    """Create a DataFrame with the traceback for all problems that have not been solved.
+    """Create a DataFrame with tracebacks for all problems that have not been solved.
 
     Args:
         results (dict): estimagic benchmarking results dictionary. Keys are
@@ -151,20 +151,20 @@ def traceback_report(results):
             and 'time_history'.
 
     Returns:
-        pandas.DataFrame: columns are the optimizers, index are the problems.
-            The values are the traceback of the optimizers for each problem
-            the optimizers stopped with an error.
+        pandas.DataFrame: columns are the algorithms, indexes are the problems.
+            The values are the traceback of the algorithms for each problem
+            the algorithms stopped with an error.
 
     """
-    scenarios = list({algo[1] for algo in results.keys()})
+    algorithms = list({algo[1] for algo in results.keys()})
 
     tracebacks = {}
-    for scenario in scenarios:
-        tracebacks[scenario] = {}
+    for algo in algorithms:
+        tracebacks[algo] = {}
 
     for key, value in results.items():
         if isinstance(value["solution"], str):
-            if key[1] in scenarios:
+            if key[1] in algorithms:
                 tracebacks[key[1]][key[0]] = value["solution"]
 
     traceback_report = pd.DataFrame.from_dict(tracebacks, orient="columns")

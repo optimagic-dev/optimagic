@@ -146,12 +146,12 @@ def _create_solution_times(df, runtime_measure, converged_info):
         df (pandas.DataFrame): contains 'problem', 'algorithm' and *runtime_measure*
             as columns.
         runtime_measure (str): 'walltime', 'n_batches' or 'n_evaluations'.
-        converged_info (pandas.DataFrame): columns are the algorithms, index are the
+        converged_info (pandas.DataFrame): columns are the algorithms, indexes are the
             problems. The values are boolean and True when the algorithm arrived at
             the solution with the desired precision.
 
     Returns:
-        solution_times (pandas.DataFrame): columns are algorithms, index are problems.
+        solution_times (pandas.DataFrame): columns are algorithms, indexes are problems.
             The values are either the number of evaluations or the walltime each
             algorithm needed to achieve the desired precision. If the desired precision
             was not achieved the value is set to np.inf (for n_evaluations) or 7000 days
@@ -180,7 +180,7 @@ def _find_switch_points(solution_times):
 
     Args:
         solution_times (pandas.DataFrame): columns are the names of the algorithms,
-            the index are the problems. Values are performance measures.
+            the indexes are the problems. Values are performance measures.
             They can be either float, when normalize_runtime was True or int when the
             runtime_measure are not normalized function evaluations or datetime when
             the not normalized walltime is used.
