@@ -164,8 +164,7 @@ def traceback_report(results):
 
     for key, value in results.items():
         if isinstance(value["solution"], str):
-            if key[1] in algorithms:
-                tracebacks[key[1]][key[0]] = value["solution"]
+            tracebacks[key[1]][key[0]] = value["solution"]
 
     traceback_report = pd.DataFrame.from_dict(tracebacks, orient="columns")
 
