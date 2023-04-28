@@ -27,7 +27,7 @@ def benchmark_example():
         n_cores=1,  # must be 1 for the test to work
     )
 
-    return optimizers, problems, results
+    return problems, optimizers, results
 
 
 # ====================================================================================
@@ -46,7 +46,7 @@ CONVERGENCE_REPORT_OPTIONS = [
 
 @pytest.mark.parametrize("options", CONVERGENCE_REPORT_OPTIONS)
 def test_convergence_report(options, benchmark_example):
-    optimizers, problems, results = benchmark_example
+    problems, optimizers, results = benchmark_example
 
     df = convergence_report(problems=problems, results=results, **options)
 
@@ -56,7 +56,7 @@ def test_convergence_report(options, benchmark_example):
 
 
 def test_convergence_report_with_failed_and_error(benchmark_example):
-    _, problems, results = benchmark_example
+    problems, _, results = benchmark_example
     failed_problem = ("bard_good_start", "nm")
     error_problem = ("box_3d", "nm")
     results[error_problem]["solution"] = "some traceback"
@@ -73,16 +73,16 @@ def test_convergence_report_with_failed_and_error(benchmark_example):
 
 keys = ["runtime_measure", "normalize_runtime", "stopping_criterion"]
 runtime_measure = ["n_evaluations", "walltime", "n_batches"]
-y_precision = [True, False]
+normalize_runtime = [True, False]
 RANK_REPORT_OPTIONS = [
     dict(zip(keys, value))
-    for value in product(runtime_measure, y_precision, stopping_criterion)
+    for value in product(runtime_measure, normalize_runtime, stopping_criterion)
 ]
 
 
 @pytest.mark.parametrize("options", RANK_REPORT_OPTIONS)
 def test_rank_report(options, benchmark_example):
-    optimizers, problems, results = benchmark_example
+    problems, optimizers, results = benchmark_example
 
     df = rank_report(problems=problems, results=results, **options)
 
@@ -91,7 +91,7 @@ def test_rank_report(options, benchmark_example):
 
 
 def test_rank_report_with_failed_and_error(benchmark_example):
-    _, problems, results = benchmark_example
+    problems, _, results = benchmark_example
     failed_problem = ("bard_good_start", "nm")
     error_problem = ("box_3d", "nm")
     results[error_problem]["solution"] = "some traceback"
@@ -107,9 +107,11 @@ def test_rank_report_with_failed_and_error(benchmark_example):
 # ====================================================================================
 
 
-def test_traceback_report(benchmark_example):
-    *_, results = benchmark_example
-    traceback_report(results=results)
+def test_traceback_report_no_error(benchmark_example):
+    _, optimizers, results = benchmark_example
+
+    df = traceback_report(results=results)
+    assert df.shape == (0, len(optimizers))
 
 
 def test_traceback_report_with_error(benchmark_example):
@@ -117,5 +119,4 @@ def test_traceback_report_with_error(benchmark_example):
     results[("box_3d", "nm")]["solution"] = "some traceback"
 
     df = traceback_report(results=results)
-
     assert df.shape[0] > 0
