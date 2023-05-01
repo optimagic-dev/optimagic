@@ -52,7 +52,7 @@ repos:
       - id: check-docstring-first
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.30.0
+    rev: v1.31.0
     hooks:
       - id: yamllint
         exclude: tests/optimization/fixtures
@@ -67,7 +67,7 @@ repos:
       - id: blacken-docs
         exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.md
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.5.1
+    rev: v1.6.4
     hooks:
       - id: docformatter
         args:
@@ -78,7 +78,7 @@ repos:
           - '88'
           - --blank
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.261
+    rev: v0.0.263
     hooks:
       - id: ruff
       #   args:
