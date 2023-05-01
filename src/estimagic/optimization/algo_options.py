@@ -1,5 +1,4 @@
 import numpy as np
-
 """
 The order is the following:
 
@@ -186,7 +185,6 @@ CONSTRAINTS_ABSOLUTE_TOLERANCE = 1e-5
 considered 'feasible'.
 
 """
-
 
 """
 -------------------------

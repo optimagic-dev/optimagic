@@ -215,7 +215,7 @@ def _consolidate_fixes_with_equality_constraints(
 def _consolidate_bounds_with_equality_constraints(
     equality_constraints, lower_bounds, upper_bounds
 ):
-    """consolidate bounds with equality constraints.
+    """Consolidate bounds with equality constraints.
 
     Check that there are no incompatible bounds on equality constrained parameters and
     set the bounds for equal parameters to the strictest bound encountered on any of
