@@ -86,7 +86,7 @@ def profile_plot(
         y_precision=y_precision,
     )
 
-    solution_times = _create_solution_times(
+    solution_times = create_solution_times(
         df,
         runtime_measure=runtime_measure,
         converged_info=converged_info,
@@ -139,7 +139,7 @@ def profile_plot(
     return fig
 
 
-def _create_solution_times(df, runtime_measure, converged_info):
+def create_solution_times(df, runtime_measure, converged_info):
     """Find the solution time for each algorithm and problem.
 
     Args:

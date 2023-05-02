@@ -4,7 +4,7 @@ import pytest
 from estimagic import get_benchmark_problems
 from estimagic.benchmarking.run_benchmark import run_benchmark
 from estimagic.visualization.profile_plot import (
-    _create_solution_times,
+    create_solution_times,
     _determine_alpha_grid,
     _find_switch_points,
     profile_plot,
@@ -64,7 +64,7 @@ def test_create_solution_times_n_evaluations():
     )
     expected.columns.name = "algorithm"
 
-    res = _create_solution_times(
+    res = create_solution_times(
         df=df, runtime_measure="n_evaluations", converged_info=info
     )
     pd.testing.assert_frame_equal(res, expected)
@@ -102,9 +102,7 @@ def test_create_solution_times_n_batches():
     )
     expected.columns.name = "algorithm"
 
-    res = _create_solution_times(
-        df=df, runtime_measure="n_batches", converged_info=info
-    )
+    res = create_solution_times(df=df, runtime_measure="n_batches", converged_info=info)
     pd.testing.assert_frame_equal(res, expected)
 
 
@@ -140,7 +138,7 @@ def test_create_solution_times_walltime():
     )
     expected.columns.name = "algorithm"
 
-    res = _create_solution_times(df=df, runtime_measure="walltime", converged_info=info)
+    res = create_solution_times(df=df, runtime_measure="walltime", converged_info=info)
     pd.testing.assert_frame_equal(res, expected)
 
 
