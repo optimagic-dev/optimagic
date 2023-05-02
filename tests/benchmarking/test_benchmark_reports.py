@@ -2,7 +2,7 @@ import pytest
 from itertools import product
 import numpy as np
 
-from estimagic.benchmarking.benchmark_reports import (
+from estimagic import (
     convergence_report,
     rank_report,
     traceback_report,

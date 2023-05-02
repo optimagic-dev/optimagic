@@ -91,7 +91,7 @@ def rank_report(
     Returns:
         pandas.DataFrame: columns are the algorithms, indexes are the problems.
             The values are the ranks of the algorithms for each problem,
-            0 means algorithms was the fastest, 1 means it was the second fastest
+            0 means the algorithm was the fastest, 1 means it was the second fastest
             and so on. If an algorithm did not converge on a problem, the value is
             "failed". If an algorithm did encounter an error during optimization,
             the value is "error".
