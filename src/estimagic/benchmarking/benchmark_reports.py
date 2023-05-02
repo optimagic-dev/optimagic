@@ -138,8 +138,8 @@ def traceback_report(results):
 
     Returns:
         pandas.DataFrame: columns are the algorithms, indexes are the problems.
-            The values are the traceback of the algorithms for each problem
-            the algorithms stopped with an error.
+            The values are the tracebacks of the algorithms for problems where they
+            stopped with an error.
 
     """
     algorithms = list({algo[1] for algo in results.keys()})

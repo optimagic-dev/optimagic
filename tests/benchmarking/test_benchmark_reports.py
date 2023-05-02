@@ -8,10 +8,16 @@ from estimagic import (
     traceback_report,
 )
 from estimagic import OptimizeResult
+from estimagic import get_benchmark_problems
 
 
 @pytest.fixture
 def benchmark_example():
+    all_problems = get_benchmark_problems("example")
+    problems = {
+        k: v for k, v in all_problems.items() if k in ["bard_good_start", "box_3d"]
+    }
+
     _stop_after_10 = {
         "stopping_max_criterion_evaluations": 10,
         "stopping_max_iterations": 10,
@@ -19,26 +25,6 @@ def benchmark_example():
     optimizers = {
         "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": _stop_after_10},
         "nm": {"algorithm": "scipy_neldermead", "algo_options": _stop_after_10},
-    }
-
-    problems = {
-        "bard_good_start": {
-            "inputs": {"params": np.array([1, 1, 1])},
-            "solution": {
-                "params": np.array([0.08241056, 1.13303608, 2.34369519]),
-                "value": 0.00821487730657897,
-            },
-            "noisy": False,
-            "info": {},
-            "start_criterion": 41.6817,
-        },
-        "box_3d": {
-            "inputs": {"params": np.array([0, 10, 20])},
-            "solution": {"params": np.array([1, 10, 1]), "value": 0},
-            "noisy": False,
-            "info": {},
-            "start_criterion": 1031.154,
-        },
     }
 
     results = {
