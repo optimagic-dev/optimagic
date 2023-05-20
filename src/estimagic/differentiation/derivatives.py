@@ -723,7 +723,7 @@ def _convert_richardson_candidates_to_frame(jac, err):
 def _convert_evals_to_numpy(
     raw_evals, key, registry, is_scalar_out=False, is_vector_out=False
 ):
-    """harmonize the output of the function evaluations.
+    """Harmonize the output of the function evaluations.
 
     The raw_evals might contain dictionaries of which we only need one entry, scalar
     np.nan where we need arrays filled with np.nan or pandas objects. The processed
