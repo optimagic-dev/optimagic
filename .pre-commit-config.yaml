@@ -77,19 +77,11 @@ repos:
           - --wrap-descriptions
           - '88'
           - --blank
+        exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.263
     hooks:
       - id: ruff
-      #   args:
-      #     - --verbose
-  # - repo: https://github.com/kynan/nbstripout
-  #   rev: 0.6.1
-  #   hooks:
-  #     - id: nbstripout
-  #       args:
-  #         - --extra-keys
-  #         - metadata.kernelspec metadata.language_info.version metadata.vscode
   - repo: https://github.com/nbQA-dev/nbQA
     rev: 1.7.0
     hooks:
