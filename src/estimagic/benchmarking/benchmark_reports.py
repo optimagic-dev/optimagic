@@ -31,8 +31,8 @@ def convergence_report(
             convergence is fulfilled. Default is 1e-4.
 
     Returns:
-        pandas.DataFrame: columns are the algorithms and the dimensionality of the
-            benchmark problems, indexes are the problems. For the algorithms columns,
+        pandas.DataFrame: indexes are the problems, columns are the algorithms and
+            the dimensionality of the benchmark problems. For the algorithms column,
             the values are strings that are either "success", "failed", or "error".
             For the dimensionality column, the values denote the number of dimensions
             of the problem.
@@ -142,11 +142,12 @@ def traceback_report(problems, results, return_type="dataframe"):
 
     Returns:
         (list or str or dict or pandas.DataFrame): traceback report. If return_type
-            is "text" or "markdown", the report is a string. If return_type is
-            "dict", the report is a dictionary. If return_type is "dataframe", the
-            report is a tidy pandas DataFrame. In the latter case, indexes are the
-            algorithm and problem names, the columns are the tracebacks and the
-            dimensionality of the problems. The values are the tracebacks of the
+            is "text", the report is a list of strings. If "markdown", it is a
+            formatted markdown string with algorithms and problem names as headers.
+            If return_type is "dict", the report is a dictionary. If return_type is
+            "dataframe", it is a tidy pandas DataFrame. In the latter case, indexes
+            are the algorithm and problem names, the columns are the tracebacks and
+            the dimensionality of the problems. The values are the tracebacks of the
             algorithms for problems where they stopped with an error.
 
     """
@@ -211,7 +212,7 @@ def _get_success_info(results, converged_info):
             the solution with the desired precision.
 
     Returns:
-        pandas.DataFrame: columns are the algorithms, indexes are the problems.
+        pandas.DataFrame: indexes are the problems, columns are the algorithms.
            values are strings that are either "success", "failed", or "error".
 
     """
@@ -228,11 +229,11 @@ def _get_problem_dimensions(problems):
     """Get the dimension of each problem.
 
     Args:
-        problems (dict): Dictionary of problems. Keys are problem names, values are
+        problems (dict): dictionary of problems. keys are problem names, values are
             dictionaries with the problem information.
 
     Returns:
-        dict: Keys are problem names, values are the dimension of the problem.
+        dict: keys are problem names, values are the dimension of the problem.
 
     """
     return {prob: len(problems[prob]["inputs"]["params"]) for prob in problems}

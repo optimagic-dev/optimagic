@@ -155,8 +155,8 @@ def create_solution_times(df, runtime_measure, converged_info, return_tidy=True)
             runtime_measure as columns.
 
     Returns:
-        solution_times (pandas.DataFrame): If return_tidy is True, columns are the
-            algorithms, indexes are the problems. If return_tidy is False, columns are
+        solution_times (pandas.DataFrame): If return_tidy is True, indexes are the
+            problems, columns are the algorithms. If return_tidy is False, columns are
             problem, algorithm and runtime_measure. The values are either the number
             of evaluations or the walltime each algorithm needed to achieve the
             desired precision. If the desired precision was not achieved the value is
