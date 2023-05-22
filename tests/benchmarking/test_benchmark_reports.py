@@ -19,8 +19,6 @@ def benchmark_example():
         for k, v in all_problems.items()
         if k in ["bard_good_start", "box_3d", "rosenbrock_good_start"]
     }
-    # breakpoint()
-
     _stop_after_10 = {
         "stopping_max_criterion_evaluations": 10,
         "stopping_max_iterations": 10,
@@ -173,9 +171,9 @@ def test_convergence_report(options, benchmark_example):
     assert df["nm"].loc["box_3d"] == "error"
 
 
-# # ====================================================================================
-# # Rank report
-# # ====================================================================================
+# ====================================================================================
+# Rank report
+# ====================================================================================
 
 keys = ["runtime_measure", "stopping_criterion"]
 runtime_measure = ["n_evaluations", "walltime", "n_batches"]
@@ -213,9 +211,11 @@ def test_traceback_report(return_type, benchmark_example):
 
     if return_type in ["text", "dict"]:
         assert len(report) == n_failed_problems
+
     elif return_type == "markdown":
-        for optimizer in optimizers:
-            assert optimizer in report
+        for algorithm_name in optimizers:
+            assert algorithm_name in report
+
     elif return_type == "dataframe":
         assert report.shape == (n_failed_problems, 2)
         assert list(report.index.names) == ["algorithm", "problem"]
