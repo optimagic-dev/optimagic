@@ -46,12 +46,10 @@ def convergence_report(
         y_precision=y_precision,
     )
 
-    convergence_report = _get_success_info(results, converged_info)
+    report = _get_success_info(results, converged_info)
+    report["dimensionality"] = report.index.map(_get_problem_dimensions(problems))
 
-    dim = {problem: len(problems[problem]["inputs"]["params"]) for problem in problems}
-    convergence_report["dimensionality"] = convergence_report.index.map(dim)
-
-    return convergence_report
+    return report
 
 
 def rank_report(
@@ -89,12 +87,12 @@ def rank_report(
             convergence is fulfilled. Default is 1e-4.
 
     Returns:
-        pandas.DataFrame: columns are the algorithms, indexes are the problems.
-            The values are the ranks of the algorithms for each problem,
-            0 means the algorithm was the fastest, 1 means it was the second fastest
-            and so on. If an algorithm did not converge on a problem, the value is
-            "failed". If an algorithm did encounter an error during optimization,
-            the value is "error".
+        pandas.DataFrame: indexes are the problems, columns are the algorithms and the
+            dimensionality of the problems. The values are the ranks of the algorithms
+            for each problem, where 0 means the algorithm was the fastest, 1 means it
+            was the second fastest and so on. If an algorithm did not converge on a
+            problem, the value is "failed". If an algorithm did encounter an error
+            during optimization, the value is "error".
 
     """
     histories, converged_info = process_benchmark_results(
@@ -105,14 +103,9 @@ def rank_report(
         y_precision=y_precision,
     )
 
-    solution_times = create_solution_times(histories, runtime_measure, converged_info)
-    solution_times = solution_times.stack().reset_index()
-    solution_times = solution_times.rename(
-        columns={solution_times.columns[2]: runtime_measure}
+    solution_times = create_solution_times(
+        histories, runtime_measure, converged_info, tidy=False
     )
-
-    success_info = _get_success_info(results, converged_info)
-
     solution_times["rank"] = (
         solution_times.groupby("problem")[runtime_measure].rank(
             method="dense", ascending=True
@@ -120,41 +113,89 @@ def rank_report(
         - 1
     ).astype("Int64")
 
+    success_info = _get_success_info(results, converged_info)
+
     df_wide = solution_times.pivot(index="problem", columns="algorithm", values="rank")
-    rank_report = df_wide.astype(str)
-    rank_report[~converged_info] = success_info
+    report = df_wide.astype(str)
+    report.columns.name = None
 
-    return rank_report
+    report[~converged_info] = success_info
+    report["dimensionality"] = report.index.map(_get_problem_dimensions(problems))
+
+    return report
 
 
-def traceback_report(results):
-    """Create a DataFrame with tracebacks for all problems that have not been solved.
+def traceback_report(problems, results, return_type="dataframe"):
+    """Create traceback report for all problems that have not been solved.
 
     Args:
         results (dict): estimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
+        return_type (str): either "text", "markdown", "dict" or "dataframe".
+            If "text", the traceback report is returned as a string. If "markdown",
+            it is a markdown string. If "dict", it is returned as a dictionary.
+            If "dataframe", it is a tidy pandas DataFrame, where indexes are the
+            algorithm and problem names, the columns are the tracebacks and the
+            dimensionality of the problem. Default is "dataframe".
 
     Returns:
-        pandas.DataFrame: columns are the algorithms, indexes are the problems.
-            The values are the tracebacks of the algorithms for problems where they
-            stopped with an error.
+        (list or str or dict or pandas.DataFrame): traceback report. If return_type
+            is "text" or "markdown", the report is a string. If return_type is
+            "dict", the report is a dictionary. If return_type is "dataframe", the
+            report is a tidy pandas DataFrame. In the latter case, indexes are the
+            algorithm and problem names, the columns are the tracebacks and the
+            dimensionality of the problems. The values are the tracebacks of the
+            algorithms for problems where they stopped with an error.
 
     """
-    algorithms = list({algo[1] for algo in results.keys()})
 
-    tracebacks = {}
-    for algo in algorithms:
-        tracebacks[algo] = {}
+    if return_type == "text":
+        report = []
+        for result in results.values():
+            if isinstance(result["solution"], str):
+                report.append(result["solution"])
 
-    for key, value in results.items():
-        if isinstance(value["solution"], str):
-            tracebacks[key[1]][key[0]] = value["solution"]
+    elif return_type == "markdown":
+        report = "```python"
+        for (problem_name, algorithm_name), result in results.items():
+            if isinstance(result["solution"], str):
+                if f"### {algorithm_name}" not in report:
+                    report += f"\n### {algorithm_name} \n"
+                report += f"\n#### {problem_name} \n"
+                report += f"\n{result['solution']} \n"
+        report += "\n```"
 
-    traceback_report = pd.DataFrame.from_dict(tracebacks, orient="columns")
+    elif return_type == "dict":
+        report = {}
+        for (problem_name, algorithm_name), result in results.items():
+            if isinstance(result["solution"], str):
+                report[(problem_name, algorithm_name)] = result["solution"]
 
-    return traceback_report
+    elif return_type == "dataframe":
+        tracebacks = {}
+        for (problem_name, algorithm_name), result in results.items():
+            if isinstance(result["solution"], str):
+                tracebacks[algorithm_name] = tracebacks.setdefault(algorithm_name, {})
+                tracebacks[algorithm_name][problem_name] = result["solution"]
+
+        report = pd.DataFrame.from_dict(tracebacks, orient="index").stack().to_frame()
+        report.index.set_names(["algorithm", "problem"], inplace=True)
+        report.columns = ["traceback"]
+        report["dimensionality"] = 0
+
+        for problem_name, dim in _get_problem_dimensions(problems).items():
+            if problem_name in report.index.get_level_values("problem"):
+                report.loc[(slice(None), problem_name), "dimensionality"] = dim
+
+    else:
+        raise ValueError(
+            f"return_type {return_type} is not supported. Must be one of "
+            f"'text', 'markdown', 'dict' or 'dataframe'."
+        )
+
+    return report
 
 
 def _get_success_info(results, converged_info):
@@ -181,3 +222,17 @@ def _get_success_info(results, converged_info):
             success_info.at[key] = "error"
 
     return success_info
+
+
+def _get_problem_dimensions(problems):
+    """Get the dimension of each problem.
+
+    Args:
+        problems (dict): Dictionary of problems. Keys are problem names, values are
+            dictionaries with the problem information.
+
+    Returns:
+        dict: Keys are problem names, values are the dimension of the problem.
+
+    """
+    return {prob: len(problems[prob]["inputs"]["params"]) for prob in problems}

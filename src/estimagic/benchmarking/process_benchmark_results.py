@@ -65,6 +65,7 @@ def process_benchmark_results(
         }
         infos.append(info)
 
+    # breakpoint()
     histories = pd.concat(histories, ignore_index=True)
     infos = pd.DataFrame(infos).set_index(["problem", "algorithm"]).unstack()
     infos.columns = [tup[1] for tup in infos.columns]

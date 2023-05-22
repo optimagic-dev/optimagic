@@ -139,29 +139,40 @@ def profile_plot(
     return fig
 
 
-def create_solution_times(df, runtime_measure, converged_info):
+def create_solution_times(df, runtime_measure, converged_info, tidy=True):
     """Find the solution time for each algorithm and problem.
 
     Args:
-        df (pandas.DataFrame): contains 'problem', 'algorithm' and *runtime_measure*
+        df (pandas.DataFrame): contains 'problem', 'algorithm' and 'runtime_measure'
             as columns.
         runtime_measure (str): 'walltime', 'n_batches' or 'n_evaluations'.
         converged_info (pandas.DataFrame): columns are the algorithms, indexes are the
             problems. The values are boolean and True when the algorithm arrived at
             the solution with the desired precision.
+        tidy (bool): If True, the resulting DataFrame will be a tidy DataFrame with
+            problem and algorithm as indexes and runtime_measure as column. If False,
+            the resulting DataFrame will have problem, algorithm and runtime_measure
+            as columns.
 
     Returns:
-        solution_times (pandas.DataFrame): columns are algorithms, indexes are problems.
-            The values are either the number of evaluations or the walltime each
-            algorithm needed to achieve the desired precision. If the desired precision
-            was not achieved the value is set to np.inf (for n_evaluations) or 7000 days
-            (for walltime since there no infinite value is allowed).
+        solution_times (pandas.DataFrame): columns are the algorithms, indexes are
+            the problems. The values are either the number of evaluations or the
+            walltime each algorithm needed to achieve the desired precision.
+            If the desired precision was not achieved the value is set to np.inf
+            (for n_evaluations) or 7000 days (for walltime since there no infinite
+            value is allowed).
 
     """
     solution_times = df.groupby(["problem", "algorithm"])[runtime_measure].max()
     solution_times = solution_times.unstack()
-
     solution_times[~converged_info] = np.inf
+
+    if not tidy:
+        solution_times = solution_times.stack().reset_index()
+        solution_times = solution_times.rename(
+            columns={solution_times.columns[2]: runtime_measure}
+        )
+
     return solution_times
 
 

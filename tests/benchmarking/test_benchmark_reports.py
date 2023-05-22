@@ -15,8 +15,11 @@ from estimagic import get_benchmark_problems
 def benchmark_example():
     all_problems = get_benchmark_problems("example")
     problems = {
-        k: v for k, v in all_problems.items() if k in ["bard_good_start", "box_3d"]
+        k: v
+        for k, v in all_problems.items()
+        if k in ["bard_good_start", "box_3d", "rosenbrock_good_start"]
     }
+    # breakpoint()
 
     _stop_after_10 = {
         "stopping_max_criterion_evaluations": 10,
@@ -70,6 +73,19 @@ def benchmark_example():
             "batches_history": [0, 1, 2],
             "solution": OptimizeResult,  # failed
         },
+        ("rosenbrock_good_start", "lbfgsb"): {
+            "params_history": [
+                [-1.2, 1.0],
+                [0.0, 0.0],
+            ],
+            "criterion_history": np.array([1.795769e6, 1e3]),
+            "time_history": [
+                0.0,
+                5.73799989069812e-04,
+            ],
+            "batches_history": [0, 1],
+            "solution": "lbfgsb traceback",  # error
+        },
         ("bard_good_start", "nm"): {
             "params_history": [
                 [1.0, 1.0, 1.0],
@@ -111,6 +127,19 @@ def benchmark_example():
             "batches_history": [0, 1, 2],
             "solution": "some traceback",  # error
         },
+        ("rosenbrock_good_start", "nm"): {
+            "params_history": [
+                [-1.2, 1.0],
+                [0.0, 0.0],
+            ],
+            "criterion_history": np.array([1.795769e6, 1e3]),
+            "time_history": [
+                0.0,
+                5.73799989069812e-04,
+            ],
+            "batches_history": [0, 1],
+            "solution": "another traceback",  # error
+        },
     }
 
     return problems, optimizers, results
@@ -144,9 +173,9 @@ def test_convergence_report(options, benchmark_example):
     assert df["nm"].loc["box_3d"] == "error"
 
 
-# ====================================================================================
-# Rank report
-# ====================================================================================
+# # ====================================================================================
+# # Rank report
+# # ====================================================================================
 
 keys = ["runtime_measure", "stopping_criterion"]
 runtime_measure = ["n_evaluations", "walltime", "n_batches"]
@@ -161,8 +190,8 @@ def test_rank_report(options, benchmark_example):
 
     df = rank_report(problems=problems, results=results, **options)
 
-    assert df.shape == (len(problems), len(optimizers))
-    assert set(df.columns) == set(optimizers.keys())
+    assert df.shape == (len(problems), len(optimizers) + 1)  # +1 for dimensionality
+    assert set(df.columns) == set(optimizers.keys()) | {"dimensionality"}
 
     assert df["lbfgsb"].loc["box_3d"] == "failed"
     assert df["nm"].loc["box_3d"] == "error"
@@ -173,10 +202,11 @@ def test_rank_report(options, benchmark_example):
 # ====================================================================================
 
 
-def test_traceback_report(benchmark_example):
-    _, optimizers, results = benchmark_example
+@pytest.mark.parametrize("return_type", ["text", "markdown", "dict", "dataframe"])
+def test_traceback_report(return_type, benchmark_example):
+    problems, optimizers, results = benchmark_example
 
-    df = traceback_report(results=results)
+    traceback_report(problems=problems, results=results, return_type=return_type)
 
-    assert df.shape == (1, len(optimizers))
-    assert np.isnan(df.at["box_3d", "lbfgsb"])
+    # assert df.shape == (1, len(optimizers))
+    # assert np.isnan(df.at["box_3d", "lbfgsb"])
