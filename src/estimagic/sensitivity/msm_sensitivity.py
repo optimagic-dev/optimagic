@@ -16,7 +16,7 @@ from estimagic.utilities import robust_inverse
 
 
 def calculate_sensitivity_to_bias(jac, weights):
-    """calculate the sensitivity to bias.
+    """Calculate the sensitivity to bias.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
 
@@ -47,7 +47,7 @@ def calculate_sensitivity_to_bias(jac, weights):
 def calculate_fundamental_sensitivity_to_noise(
     jac, weights, moments_cov, params_cov_opt
 ):
-    """calculate the fundamental sensitivity to noise.
+    """Calculate the fundamental sensitivity to noise.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
 
@@ -104,7 +104,7 @@ def calculate_fundamental_sensitivity_to_noise(
 def calculate_actual_sensitivity_to_noise(
     sensitivity_to_bias, weights, moments_cov, params_cov
 ):
-    """calculate the actual sensitivity to noise.
+    """Calculate the actual sensitivity to noise.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
 
@@ -159,7 +159,7 @@ def calculate_actual_sensitivity_to_noise(
 
 
 def calculate_actual_sensitivity_to_removal(jac, weights, moments_cov, params_cov):
-    """calculate the actual sensitivity to removal.
+    """Calculate the actual sensitivity to removal.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
 
@@ -211,7 +211,7 @@ def calculate_actual_sensitivity_to_removal(jac, weights, moments_cov, params_co
 
 
 def calculate_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_opt):
-    """calculate the fundamental sensitivity to removal.
+    """Calculate the fundamental sensitivity to removal.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
 
@@ -269,7 +269,7 @@ def calculate_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_op
 
 
 def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
-    """calculate the sensitivity to weighting.
+    """Calculate the sensitivity to weighting.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
 

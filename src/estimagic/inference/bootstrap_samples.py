@@ -75,7 +75,7 @@ def get_bootstrap_samples(data, rng, cluster_by=None, n_draws=1000):
 
 
 def _get_bootstrap_samples_from_indices(data, bootstrap_indices):
-    """convert bootstrap indices into actual bootstrap samples.
+    """Convert bootstrap indices into actual bootstrap samples.
 
     Args:
         data (pandas.DataFrame): original dataset.
