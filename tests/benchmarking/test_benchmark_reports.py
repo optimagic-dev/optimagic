@@ -205,8 +205,17 @@ def test_rank_report(options, benchmark_example):
 @pytest.mark.parametrize("return_type", ["text", "markdown", "dict", "dataframe"])
 def test_traceback_report(return_type, benchmark_example):
     problems, optimizers, results = benchmark_example
+    n_failed_problems = 3
 
-    traceback_report(problems=problems, results=results, return_type=return_type)
+    report = traceback_report(
+        problems=problems, results=results, return_type=return_type
+    )
 
-    # assert df.shape == (1, len(optimizers))
-    # assert np.isnan(df.at["box_3d", "lbfgsb"])
+    if return_type in ["text", "dict"]:
+        assert len(report) == n_failed_problems
+    elif return_type == "markdown":
+        for optimizer in optimizers:
+            assert optimizer in report
+    elif return_type == "dataframe":
+        assert report.shape == (n_failed_problems, 2)
+        assert list(report.index.names) == ["algorithm", "problem"]

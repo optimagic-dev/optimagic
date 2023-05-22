@@ -104,7 +104,7 @@ def rank_report(
     )
 
     solution_times = create_solution_times(
-        histories, runtime_measure, converged_info, tidy=False
+        histories, runtime_measure, converged_info, return_tidy=False
     )
     solution_times["rank"] = (
         solution_times.groupby("problem")[runtime_measure].rank(
