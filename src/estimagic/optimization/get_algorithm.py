@@ -9,7 +9,7 @@ from estimagic.logging.read_from_database import (
     list_of_dicts_to_dict_of_lists,
 )
 from estimagic.logging.write_to_database import update_row
-from estimagic.optimization import ALL_ALGORITHMS
+from estimagic.algorithms import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 
 

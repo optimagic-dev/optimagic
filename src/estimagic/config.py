@@ -87,6 +87,22 @@ else:
     IS_SIMOPT_INSTALLED = True
 
 
+try:
+    import tranquilo  # noqa: F401
+except ImportError:
+    IS_TRANQUILO_INSTALLED = False
+else:
+    IS_TRANQUILO_INSTALLED = True
+
+
+try:
+    import numba  # noqa: F401
+except ImportError:
+    IS_NUMBA_INSTALLED = False
+else:
+    IS_NUMBA_INSTALLED = True
+
+
 # =================================================================================
 # Dashboard Defaults
 # =================================================================================

@@ -22,7 +22,6 @@ dependencies:
   - click  # run, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numba  # run, tests
   - numpy>=1.17.0  # run, tests
   - pandas  # run, tests
   - plotly  # run, tests
@@ -35,6 +34,7 @@ dependencies:
   - sphinx-copybutton  # docs
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
+  - tranquilo>=0.0.4  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
