@@ -5,6 +5,24 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
 
 
+## 0.4.6
+
+This release drastically improves the optimizer benchmarking capabilities, especially
+with noisy functions and parallel optimizers. It makes tranquilo and numba optional
+dependencies and is the first version of estimagic to be compatible with Python
+3.11.
+
+
+- {gh}`464` Makes tranquilo and numba optional dependencies ({ghuser}`janosg`)
+- {gh}`461` Updates docstrings for procss_benchmark_results ({ghuser}`segsell`)
+- {gh}`460` Fixes several bugs in the processing of benchmark results with noisy
+  functions ({ghuser}`janosg`)
+- {gh}`459` Prepares benchmarking functionality for parallel optimizers
+  ({ghuser}`mpetrosian` and {ghuser}`janosg`)
+- {gh}`457` Removes some unused files ({ghuser}`segsell`)
+- {gh}`455` Improves a local pre-commit hook ({ghuser}`ChristianZimpelmann`)
+
+
 ## 0.4.5
 
 - {gh}`379` Improves the estimation table ({ghuser}`ChristianZimpelmann`)
