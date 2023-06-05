@@ -343,12 +343,12 @@ def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
 
 
 def _sandwich(a, b):
-    """calculate the sandwich product of two matrices: a.T * b * a."""
+    """Calculate the sandwich product of two matrices: a.T * b * a."""
     sandwich = a.T @ b @ a
     return sandwich
 
 
 def _sandwich_plus(a, b, c):
-    """calculate the sandwich product of three matrices: a.T * b.T * c * b * a"""
+    """Calculate the sandwich product of three matrices: a.T * b.T * c * b * a."""
     sandwich = a.T @ b.T @ c @ b @ a
     return sandwich

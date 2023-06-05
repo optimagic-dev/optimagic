@@ -217,7 +217,8 @@ def ipopt(
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
-    For details see :ref:`ipopt_algorithm`.
+    For details see
+    :ref: `ipopt_algorithm`.
 
     """
     if not IS_CYIPOPT_INSTALLED:
