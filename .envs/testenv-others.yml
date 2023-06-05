@@ -15,7 +15,6 @@ dependencies:
   - click  # run, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numba  # run, tests
   - numpy>=1.17.0  # run, tests
   - pandas  # run, tests
   - plotly  # run, tests
