@@ -19,7 +19,8 @@ def bhhh(
 ):
     """Minimize a likelihood function using the BHHH algorithm.
 
-    For details, see :ref:`_own_algorithms`.
+    For details, see
+    :ref: `_own_algorithms`.
 
     """
     result_dict = bhhh_internal(

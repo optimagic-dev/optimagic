@@ -86,7 +86,7 @@ def profile_plot(
         y_precision=y_precision,
     )
 
-    solution_times = _create_solution_times(
+    solution_times = create_solution_times(
         df,
         runtime_measure=runtime_measure,
         converged_info=converged_info,
@@ -139,29 +139,41 @@ def profile_plot(
     return fig
 
 
-def _create_solution_times(df, runtime_measure, converged_info):
+def create_solution_times(df, runtime_measure, converged_info, return_tidy=True):
     """Find the solution time for each algorithm and problem.
 
     Args:
-        df (pandas.DataFrame): contains 'problem', 'algorithm' and *runtime_measure*
+        df (pandas.DataFrame): contains 'problem', 'algorithm' and 'runtime_measure'
             as columns.
         runtime_measure (str): 'walltime', 'n_batches' or 'n_evaluations'.
-        converged_info (pandas.DataFrame): columns are the algorithms, index are the
+        converged_info (pandas.DataFrame): columns are the algorithms, indexes are the
             problems. The values are boolean and True when the algorithm arrived at
             the solution with the desired precision.
+        return_tidy (bool): If True, the resulting DataFrame will be a tidy DataFrame
+            with problem and algorithm as indexes and runtime_measure as column.
+            If False, the resulting DataFrame will have problem, algorithm and
+            runtime_measure as columns.
 
     Returns:
-        solution_times (pandas.DataFrame): columns are algorithms, index are problems.
-            The values are either the number of evaluations or the walltime each
-            algorithm needed to achieve the desired precision. If the desired precision
-            was not achieved the value is set to np.inf (for n_evaluations) or 7000 days
-            (for walltime since there no infinite value is allowed).
+        solution_times (pandas.DataFrame): If return_tidy is True, indexes are the
+            problems, columns are the algorithms. If return_tidy is False, columns are
+            problem, algorithm and runtime_measure. The values are either the number
+            of evaluations or the walltime each algorithm needed to achieve the
+            desired precision. If the desired precision was not achieved the value is
+            set to np.inf (for n_evaluations) or 7000 days (for walltime since there
+            no infinite value is allowed).
 
     """
     solution_times = df.groupby(["problem", "algorithm"])[runtime_measure].max()
     solution_times = solution_times.unstack()
-
     solution_times[~converged_info] = np.inf
+
+    if not return_tidy:
+        solution_times = solution_times.stack().reset_index()
+        solution_times = solution_times.rename(
+            columns={solution_times.columns[2]: runtime_measure}
+        )
+
     return solution_times
 
 
@@ -180,7 +192,7 @@ def _find_switch_points(solution_times):
 
     Args:
         solution_times (pandas.DataFrame): columns are the names of the algorithms,
-            the index are the problems. Values are performance measures.
+            the indexes are the problems. Values are performance measures.
             They can be either float, when normalize_runtime was True or int when the
             runtime_measure are not normalized function evaluations or datetime when
             the not normalized walltime is used.

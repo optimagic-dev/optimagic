@@ -53,7 +53,8 @@ def pygmo_gaco(
 ):
     """Minimize a scalar function using the generalized ant colony algorithm.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -123,7 +124,8 @@ def pygmo_bee_colony(
 ):
     """Minimize a scalar function using the artifical bee colony algorithm.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     population_size = get_population_size(
@@ -175,7 +177,8 @@ def pygmo_de(
 ):
     """Minimize a scalar function using the differential evolution algorithm.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     population_size = get_population_size(
@@ -245,7 +248,8 @@ def pygmo_sea(
 ):
     r"""Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -301,7 +305,8 @@ def pygmo_sga(
 ):
     """Minimize a scalar function using a simple genetic algorithm.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -412,7 +417,8 @@ def pygmo_sade(
 ):
     """Minimize a scalar function using Self-adaptive Differential Evolution.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -499,7 +505,8 @@ def pygmo_cmaes(
 ):
     r"""Minimize a scalar function using the Covariance Matrix Evolutionary Strategy.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -564,7 +571,8 @@ def pygmo_simulated_annealing(
 ):
     """Minimize a function with the simulated annealing algorithm.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -627,7 +635,8 @@ def pygmo_pso(
 ):
     r"""Minimize a scalar function using Particle Swarm Optimization.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -720,7 +729,8 @@ def pygmo_pso_gen(
 ):
     r"""Minimize a scalar function with generational Particle Swarm Optimization.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -807,7 +817,8 @@ def pygmo_mbh(
 ):
     """Minimize a scalar function using generalized Monotonic Basin Hopping.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -868,7 +879,8 @@ def pygmo_xnes(
 ):
     r"""Minimize a scalar function using Exponential Evolution Strategies.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -926,7 +938,8 @@ def pygmo_gwo(
 ):
     """Minimize a scalar function using the Grey Wolf Optimizer.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -976,7 +989,8 @@ def pygmo_compass_search(
 ):
     """Minimize a scalar function using compass search.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -1039,7 +1053,8 @@ def pygmo_ihs(
 ):
     """Minimize a scalar function using the improved harmony search algorithm.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -1104,7 +1119,8 @@ def pygmo_de1220(
     """Minimize a scalar function using Self-adaptive Differential Evolution, pygmo
     flavor.
 
-    For details see :ref:`list_of_pygmo_algorithms`.
+    For details see
+    :ref: `list_of_pygmo_algorithms`.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)

@@ -1,6 +1,9 @@
 from estimagic import utilities
 from estimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 from estimagic.benchmarking.run_benchmark import run_benchmark
+from estimagic.benchmarking.benchmark_reports import convergence_report
+from estimagic.benchmarking.benchmark_reports import rank_report
+from estimagic.benchmarking.benchmark_reports import traceback_report
 from estimagic.differentiation.derivatives import first_derivative, second_derivative
 from estimagic.estimation.estimate_ml import LikelihoodResult, estimate_ml
 from estimagic.estimation.estimate_msm import MomentsResult, estimate_msm
@@ -45,6 +48,9 @@ __all__ = [
     "get_benchmark_problems",
     "profile_plot",
     "convergence_plot",
+    "convergence_report",
+    "rank_report",
+    "traceback_report",
     "lollipop_plot",
     "derivative_plot",
     "slice_plot",

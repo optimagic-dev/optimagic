@@ -59,7 +59,8 @@ def pounders(
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
-    For details, see :ref:`_own_algorithms`.
+    For details, see
+    :ref: `_own_algorithms`.
 
     """
     batch_evaluator = process_batch_evaluator(batch_evaluator)

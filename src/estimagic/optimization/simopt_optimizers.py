@@ -38,7 +38,8 @@ def simopt_adam(
 ):
     """Minimize a scalar function using the ADAM algorithm from SimOpt.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     solver_options = {
@@ -94,7 +95,8 @@ def simopt_astrodf(
 ):
     """Minimize a scalar function using the ASTRODF algorithm from SimOpt.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     solver_options = {
@@ -153,7 +155,8 @@ def simopt_spsa(
 ):
     """Minimize a scalar function using the SPSA algorithm from SimOpt.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     solver_options = {
@@ -207,7 +210,8 @@ def simopt_strong(
 ):
     """Minimize a scalar function using the STRONG algorithm from SimOpt.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     solver_options = {

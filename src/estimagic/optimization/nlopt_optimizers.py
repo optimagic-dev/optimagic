@@ -43,7 +43,8 @@ def nlopt_bobyqa(
 ):
     """Minimize a scalar function using the BOBYQA algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -83,7 +84,8 @@ def nlopt_neldermead(
 ):
     """Minimize a scalar function using the Nelder-Mead simplex algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
 
@@ -122,7 +124,8 @@ def nlopt_praxis(
 ):
     """Minimize a scalar function using principal-axis method.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -163,7 +166,8 @@ def nlopt_cobyla(
 ):
     """Minimize a scalar function using the cobyla method.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
 
@@ -205,7 +209,8 @@ def nlopt_sbplx(
 ):
     """Minimize a scalar function using the "Subplex" algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
 
@@ -245,7 +250,8 @@ def nlopt_newuoa(
 ):
     """Minimize a scalar function using the NEWUOA algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     if np.any(np.isfinite(lower_bounds)) or np.any(np.isfinite(upper_bounds)):
@@ -290,7 +296,8 @@ def nlopt_tnewton(
 ):
     """Minimize a scalar function using the "TNEWTON" algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
 
@@ -332,7 +339,8 @@ def nlopt_lbfgs(
 ):
     """Minimize a scalar function using the "LBFGS" algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
 
@@ -374,7 +382,8 @@ def nlopt_ccsaq(
 ):
     """Minimize a scalar function using CCSAQ algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -416,7 +425,8 @@ def nlopt_mma(
 ):
     """Minimize a scalar function using the method of moving asymptotes (MMA).
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     # cannot handle equality constraints
@@ -462,7 +472,8 @@ def nlopt_var(
 ):
     """Minimize a scalar function limited memory switching variable-metric method.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     if rank_1_update:
@@ -508,7 +519,8 @@ def nlopt_slsqp(
 ):
     """Optimize a scalar function based on SLSQP method.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -552,7 +564,8 @@ def nlopt_direct(
 ):
     """Optimize a scalar function based on DIRECT method.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     if not locally_biased and not random_search and not unscaled_bounds:
@@ -606,7 +619,8 @@ def nlopt_esch(
 ):
     """Optimize a scalar function using the ESCH algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -649,7 +663,8 @@ def nlopt_isres(
 ):
     """Optimize a scalar function using the ISRES algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -693,7 +708,8 @@ def nlopt_crs2_lm(
 ):
     """Optimize a scalar function using the CRS2_LM algorithm.
 
-    For details see :ref:`list_of_nlopt_algorithms`.
+    For details see
+    :ref: `list_of_nlopt_algorithms`.
 
     """
     if population_size is None:

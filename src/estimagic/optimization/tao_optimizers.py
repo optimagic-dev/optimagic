@@ -39,7 +39,8 @@ def tao_pounders(
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 
-    For details see :ref:`tao_algorithm`.
+    For details see
+    :ref: `tao_algorithm`.
 
     """
     if not IS_PETSC4PY_INSTALLED:
