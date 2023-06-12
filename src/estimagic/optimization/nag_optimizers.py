@@ -88,7 +88,8 @@ def nag_dfols(
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
-    For details see :ref:`list_of_nag_algorithms`.
+    For details see
+    :ref: `list_of_nag_algorithms`.
 
     """
     if not IS_DFOLS_INSTALLED:
@@ -281,7 +282,8 @@ def nag_pybobyqa(
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
-    For details see :ref:`list_of_nag_algorithms`.
+    For details see
+    :ref: `list_of_nag_algorithms`.
 
     """
     if not IS_PYBOBYQA_INSTALLED:
