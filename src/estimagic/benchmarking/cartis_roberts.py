@@ -16,8 +16,16 @@ Implementation is based on
 """
 from functools import partial
 
-from numba import njit
 import numpy as np
+from estimagic.config import IS_NUMBA_INSTALLED
+
+if IS_NUMBA_INSTALLED:
+    from numba import njit
+else:
+
+    def njit(func):
+        return func
+
 
 from estimagic.benchmarking.more_wild import (
     brown_almost_linear,

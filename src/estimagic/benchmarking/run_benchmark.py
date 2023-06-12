@@ -10,7 +10,7 @@ TO-DO:
 import numpy as np
 
 from estimagic import batch_evaluators
-from estimagic.optimization import AVAILABLE_ALGORITHMS
+from estimagic.algorithms import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from pybaum import tree_just_flatten
 from estimagic.parameters.tree_registry import get_registry

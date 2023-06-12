@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import pytest
 from estimagic.logging.read_log import OptimizeLogReader
-from estimagic.optimization import AVAILABLE_ALGORITHMS
+from estimagic.algorithms import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae

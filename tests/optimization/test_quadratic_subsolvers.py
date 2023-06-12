@@ -12,9 +12,6 @@ from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
 from estimagic.optimization.subsolvers.bntr import (
     bntr,
 )
-from estimagic.optimization.subsolvers.bntr_fast import (
-    bntr_fast,
-)
 from estimagic.optimization.subsolvers.gqtpar import (
     gqtpar,
 )
@@ -473,15 +470,7 @@ def test_bounded_newton_trustregion(
         x_candidate=np.zeros_like(x_expected),
         **options
     )
-    result_fast = bntr_fast(
-        main_model,
-        lower_bounds,
-        upper_bounds,
-        x_candidate=np.zeros_like(x_expected),
-        **options
-    )
     aaae(result["x"], x_expected, decimal=5)
-    aaae(result_fast["x"], x_expected, decimal=5)
 
 
 # ======================================================================================
