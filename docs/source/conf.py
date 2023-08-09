@@ -163,7 +163,7 @@ nb_execution_excludepatterns = [
 # a list of builtin themes.
 html_theme = "pydata_sphinx_theme"
 
-html_logo = "_static/images/logo.svg"
+html_logo = "_static/images/estimagic_logo.svg"
 
 html_theme_options = {
     "github_url": "https://github.com/OpenSourceEconomics/estimagic",
