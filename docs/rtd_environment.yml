@@ -28,6 +28,7 @@ dependencies:
   - joblib
   - plotly
   - ipython
+  - tranquilo
   - pip:
       - ../
       - kaleido
