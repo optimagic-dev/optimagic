@@ -1,8 +1,7 @@
 ```{raw} html
 <div id="logo" style="text-align: center>
 <img src="_static/images/estimagic_logo.svg"
-     alt="estimagic icon" height="100"
-</img>
+     alt="estimagic icon" height="100"/>
 </div>
 ```
 
