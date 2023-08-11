@@ -9,6 +9,33 @@
 ## Optimization
 
 ```{eval-rst}
+.. autofunction:: estimagic.maximize
+```
+
+```{eval-rst}
+.. dropdown:: maximize
+
+    .. autofunction:: estimagic.maximize
+
+```
+
+```{eval-rst}
+.. currentmodule:: estimagic
+
+.. dropdown:: maximize
+
+    .. autofunction:: maximize
+
+```
+
+```{eval-rst}
+.. automodule:: estimagic
+    :members:
+```
+
+______________________________________________________________________
+
+```{eval-rst}
 .. dropdown:: maximize
 
     .. autofunction:: maximize
