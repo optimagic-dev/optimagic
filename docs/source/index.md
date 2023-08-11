@@ -1,7 +1,8 @@
 ```{raw} html
-<div id="logo">
+<div id="logo" >
 <img src="_static/images/estimagic_logo.svg"
      alt="estimagic icon" height="100"
+</img>
 </div>
 ```
 
