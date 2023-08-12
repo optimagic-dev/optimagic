@@ -222,8 +222,12 @@ def mark_minimizer(
         except TypeError:
             print("View func\n")
             print(func)
-            print("\n\nTest inspect.signature(func)\n")
-            print(inspect.signature(func))
+            try:
+                print("\n\nTest inspect.signature(func)\n")
+                print(inspect.signature(func))
+            except Exception:
+                print("View func\n")
+                print(func)
 
         arguments = list(inspect.signature(func).parameters)
 
