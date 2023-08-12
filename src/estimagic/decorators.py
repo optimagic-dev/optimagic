@@ -217,6 +217,14 @@ def mark_minimizer(
         raise TypeError("disable_history must be a bool.")
 
     def decorator_mark_minimizer(func):
+        try:
+            signature = inspect.signature(func)
+        except TypeError:
+            print("Test func.__signature__\n")
+            print(func.__signature__)
+            print("\n\nTest inspect.signature(func)\n")
+            print(inspect.signature(func))
+
         arguments = list(inspect.signature(func).parameters)
 
         if isinstance(func, functools.partial):
