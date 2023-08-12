@@ -6,7 +6,7 @@ if IS_TRANQUILO_INSTALLED:
     from functools import partial
     from estimagic.decorators import mark_minimizer
 
-    tranquilo = mark_minimizer(
+    tranquilo_scalar = mark_minimizer(
         func=partial(_tranquilo, functype="scalar"),
         name="tranquilo_scalar",
         primary_criterion_entry="value",
