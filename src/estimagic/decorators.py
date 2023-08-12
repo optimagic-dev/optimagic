@@ -218,18 +218,14 @@ def mark_minimizer(
 
     def decorator_mark_minimizer(func):
         try:
-            inspect.signature(func)
-        except TypeError:
-            print("View func\n")
+            arguments = list(inspect.signature(func).parameters)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            print("\nfunc\n")
             print(func)
-            try:
-                print("\n\nTest inspect.signature(func)\n")
-                print(inspect.signature(func))
-            except Exception:
-                print("View func\n")
-                print(func)
 
-        arguments = list(inspect.signature(func).parameters)
+        # arguments = list(inspect.signature(func).parameters)
 
         if isinstance(func, functools.partial):
             partialed_in = set(func.keywords)
