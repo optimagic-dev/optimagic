@@ -77,7 +77,6 @@ autodoc_mock_imports = [
     "petsc4py",
     "statsmodels",
     "numba",
-    "tranquilo",
 ]
 
 extlinks = {
