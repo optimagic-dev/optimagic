@@ -12,7 +12,7 @@ from estimagic.optimization import (
     scipy_optimizers,
     simopt_optimizers,
     tao_optimizers,
-    tranquilo_optimizers,
+    tranquilo,
 )
 
 MODULES = [
@@ -27,7 +27,7 @@ MODULES = [
     bhhh,
     neldermead,
     pounders,
-    tranquilo_optimizers,
+    tranquilo,
 ]
 
 ALL_ALGORITHMS = {}
