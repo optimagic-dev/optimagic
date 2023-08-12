@@ -8,7 +8,7 @@ if IS_TRANQUILO_INSTALLED:
 
     tranquilo = mark_minimizer(
         func=partial(_tranquilo, functype="scalar"),
-        name="tranquilo",
+        name="tranquilo_scalar",
         primary_criterion_entry="value",
         needs_scaling=True,
         is_available=True,
@@ -24,6 +24,6 @@ if IS_TRANQUILO_INSTALLED:
         is_global=False,
     )
 
-    __all__ = ["tranquilo", "tranquilo_ls"]
+    __all__ = ["tranquilo_scalar", "tranquilo_ls"]
 else:
     __all__ = []

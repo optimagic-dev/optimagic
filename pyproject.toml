@@ -85,7 +85,6 @@ filterwarnings = [
     "ignore:In a future version, the Index constructor will not infer numeric dtypes when passed object-dtype sequences",
     "ignore:distutils Version classes are deprecated. Use packaging.version instead",
     "ignore:Standard matrix inversion failed due to LinAlgError",
-    "ignore:Tranquilo is extremely experimental",
     "ignore:delta_grad == 0.0",
     "ignore:Widget._active_widgets is deprecated",
     "ignore:Widget._widget_types is deprecated",
