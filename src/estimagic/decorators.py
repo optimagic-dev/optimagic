@@ -218,7 +218,7 @@ def mark_minimizer(
 
     def decorator_mark_minimizer(func):
         try:
-            signature = inspect.signature(func)
+            inspect.signature(func)
         except TypeError:
             print("Test func.__signature__\n")
             print(func.__signature__)
