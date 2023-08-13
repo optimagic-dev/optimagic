@@ -6,7 +6,7 @@ repos:
       - id: check-useless-excludes
         # - id: identity  # Prints all files passed to pre-commits. Debugging.
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.10.0
+    rev: 1.13.0
     hooks:
       - id: yamlfix
         exclude: tests/optimization/fixtures
@@ -57,17 +57,17 @@ repos:
       - id: yamllint
         exclude: tests/optimization/fixtures
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 23.7.0
     hooks:
       - id: black
         language_version: python3.10
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.13.0
+    rev: 1.15.0
     hooks:
       - id: blacken-docs
         exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.md
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.1
+    rev: v1.7.5
     hooks:
       - id: docformatter
         args:
@@ -78,8 +78,8 @@ repos:
           - '88'
           - --blank
         exclude: src/estimagic/optimization/algo_options.py
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.270
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.282
     hooks:
       - id: ruff
   - repo: https://github.com/nbQA-dev/nbQA
@@ -110,7 +110,7 @@ repos:
           - '88'
         files: (docs/.)
   - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.3.0
+    rev: v2.4.0
     hooks:
       - id: setup-cfg-fmt
   - repo: https://github.com/mgedmin/check-manifest

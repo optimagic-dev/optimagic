@@ -1,4 +1,11 @@
-# estimagic
+```{raw} html
+<div id="logo" style="text-align:center;">
+<img src="_static/images/estimagic_logo.svg" alt="estimagic icon" height="100" />
+</div>
+```
+
+<br>
+<br>
 
 estimagic is a Python package for nonlinear optimization with or without constraints. It
 is particularly suited to solve difficult nonlinear estimation problems. On top, it
