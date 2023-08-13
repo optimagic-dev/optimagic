@@ -8,7 +8,7 @@ if IS_TRANQUILO_INSTALLED:
 
     tranquilo_scalar = mark_minimizer(
         func=partial(_tranquilo, functype="scalar"),
-        name="tranquilo_scalar",
+        name="tranquilo",
         primary_criterion_entry="value",
         needs_scaling=True,
         is_available=True,
