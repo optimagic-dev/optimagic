@@ -38,7 +38,6 @@ def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
     if len(pd.unique(groups)) == len(groups):
         groups = ["Parameters"] * len(groups)
 
-    groups = groups
     counts = pd.value_counts(groups)
     to_be_split = counts[counts > max_group_size]
     for group_name, n_occurrences in to_be_split.items():
