@@ -32,7 +32,7 @@ def main():
 
     ## test environment others
     test_env_others = deepcopy(test_env)
-    test_env_others.insert(_insert_idx, "  - cyipopt")
+    test_env_others.insert(_insert_idx, "  - cyipopt<=1.2.0")
 
     # create docs testing environment
 
