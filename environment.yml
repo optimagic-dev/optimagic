@@ -45,5 +45,5 @@ dependencies:
       - gif[matplotlib]  # dev
       - kaleido  # dev, tests
       - pre-commit  # dev
-      - simoptlib==1.0.0  # dev, tests
+      - simoptlib==1.0.1  # dev, tests
       - -e .  # dev
