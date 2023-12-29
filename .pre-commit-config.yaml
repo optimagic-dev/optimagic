@@ -6,7 +6,7 @@ repos:
       - id: check-useless-excludes
         # - id: identity  # Prints all files passed to pre-commits. Debugging.
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.13.0
+    rev: 1.16.0
     hooks:
       - id: yamlfix
         exclude: tests/optimization/fixtures
@@ -19,7 +19,7 @@ repos:
         always_run: true
         require_serial: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files
         args:
@@ -52,17 +52,17 @@ repos:
       - id: check-docstring-first
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.32.0
+    rev: v1.33.0
     hooks:
       - id: yamllint
         exclude: tests/optimization/fixtures
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.11.0
     hooks:
       - id: black
         language_version: python3.10
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.15.0
+    rev: 1.16.0
     hooks:
       - id: blacken-docs
         exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.md
@@ -79,16 +79,16 @@ repos:
           - --blank
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.282
+    rev: v0.1.6
     hooks:
       - id: ruff
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.0
+    rev: 1.7.1
     hooks:
       - id: nbqa-black
       - id: nbqa-ruff
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.16
+    rev: 0.7.17
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -99,7 +99,7 @@ repos:
           - '88'
         files: (README\.md)
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.16
+    rev: 0.7.17
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -110,7 +110,7 @@ repos:
           - '88'
         files: (docs/.)
   - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.4.0
+    rev: v2.5.0
     hooks:
       - id: setup-cfg-fmt
   - repo: https://github.com/mgedmin/check-manifest
