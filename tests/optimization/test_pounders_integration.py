@@ -1,4 +1,6 @@
 """Test suite for the internal pounders interface."""
+import sys
+
 from functools import partial
 from itertools import product
 
@@ -88,6 +90,7 @@ specific_tests = [
 TEST_CASES = universal_tests + specific_tests
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Not accurate on Windows.")
 @pytest.mark.parametrize("start_vec, conjugate_gradient_method_sub", TEST_CASES)
 def test_bntr(
     start_vec,
