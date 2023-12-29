@@ -58,7 +58,9 @@ def get_moments_cov(
         )  # xxxx won't be necessary soon!
         return out
 
-    cov_arr = bootstrap(data=data, outcome=func, outcome_kwargs=moment_kwargs).cov()
+    cov_arr = bootstrap(
+        data=data, outcome=func, outcome_kwargs=moment_kwargs, **bootstrap_kwargs
+    ).cov()
 
     if isinstance(cov_arr, pd.DataFrame):
         cov_arr = cov_arr.to_numpy()  # xxxx won't be necessary soon
