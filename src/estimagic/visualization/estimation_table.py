@@ -1237,11 +1237,12 @@ def _generate_notes_latex(
             amp_n = "&" * n_levels
             if isinstance(custom_notes, list):
                 if not all(isinstance(n, str) for n in custom_notes):
+                    not_str_notes = [n for n in custom_notes if not isinstance(n, str)]
+                    not_str_notes_types = [type(n) for n in not_str_notes]
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if type(n) != str]} are of types
-                        {[type(n) for n in custom_notes if type(n) != str]}
+                        {not_str_notes} are of types {not_str_notes_types}
                         respectively."""
                     )
                 for n in custom_notes:
@@ -1297,11 +1298,12 @@ def _generate_notes_html(
         if custom_notes:
             if isinstance(custom_notes, list):
                 if not all(isinstance(n, str) for n in custom_notes):
+                    not_str_notes = [n for n in custom_notes if not isinstance(n, str)]
+                    not_str_notes_types = [type(n) for n in not_str_notes]
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if type(n) != str]} are of types
-                        {[type(n) for n in custom_notes if type(n) != str]}
+                        {not_str_notes} are of types {not_str_notes_types}
                         respectively."""
                     )
                 notes_text += """
