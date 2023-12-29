@@ -78,7 +78,7 @@ def trustregion_subproblem_options():
     return out
 
 
-start_vec = [np.array([0.15, 0.008, 0.01])]
+start_vec = [np.array([0.15, 0.008, 0.01], dtype=np.float64)]
 cg_routine = ["cg", "steihaug_toint", "trsbox"]
 universal_tests = list(product(start_vec, cg_routine))
 specific_tests = [
