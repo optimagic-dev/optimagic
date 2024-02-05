@@ -9,6 +9,7 @@ Therefore, users who simply want to read the database should use the functions i
 ``read_log.py`` instead.
 
 """
+
 import traceback
 import warnings
 

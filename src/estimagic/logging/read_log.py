@@ -7,6 +7,7 @@ When using them internally (e.g. in the dashboard), make sure to supply a databa
 path_or_database. Otherwise, the functions may be very slow.
 
 """
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union

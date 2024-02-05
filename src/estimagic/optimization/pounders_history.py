@@ -1,4 +1,5 @@
 """History class for pounders and similar optimizers."""
+
 import numpy as np
 
 

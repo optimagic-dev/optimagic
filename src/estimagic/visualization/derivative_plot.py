@@ -1,4 +1,5 @@
 """Visualize and compare derivative estimates."""
+
 import itertools
 
 import numpy as np

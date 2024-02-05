@@ -10,6 +10,7 @@ First implemented in Python by Alisdair McKay (
 `GitHub Repository <https://github.com/amckay/TikTak>`_)
 
 """
+
 import warnings
 from functools import partial
 

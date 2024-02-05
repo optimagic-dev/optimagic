@@ -1,4 +1,5 @@
 """This module implements the POUNDERs algorithm."""
+
 import contextlib
 import functools
 
@@ -257,9 +258,9 @@ def _process_pounders_results(residuals_out, tao):
         "n_derivative_evaluations": None,
         "n_iterations": None,
         "success": bool(convergence_code >= 0),
-        "reached_convergence_criterion": convergence_reason
-        if convergence_code >= 0
-        else None,
+        "reached_convergence_criterion": (
+            convergence_reason if convergence_code >= 0 else None
+        ),
         "message": convergence_reason,
         # Further results.
         "solution_criterion_values": residuals_out.array,

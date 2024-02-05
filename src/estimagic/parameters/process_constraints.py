@@ -14,6 +14,7 @@ point where constraints still look similar to what users wrote. However, some ch
 only be done after consolidation.
 
 """
+
 import numpy as np
 import pandas as pd
 

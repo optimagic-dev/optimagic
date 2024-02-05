@@ -20,6 +20,7 @@ benchmark set:
     - Whether the base start vector is multiplied by a factor of ten or not (column 4).
 
 """
+
 from functools import partial
 
 import numpy as np

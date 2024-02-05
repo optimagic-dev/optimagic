@@ -4,6 +4,7 @@ All batch evaluators have the same interface and any function with the same inte
 can be used used as batch evaluator in estimagic.
 
 """
+
 from joblib import Parallel, delayed
 
 try:

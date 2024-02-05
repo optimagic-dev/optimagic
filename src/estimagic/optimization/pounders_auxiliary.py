@@ -1,4 +1,5 @@
 """Auxiliary functions for the pounders algorithm."""
+
 from typing import NamedTuple, Union
 
 import numpy as np
@@ -15,9 +16,9 @@ from estimagic.optimization.subsolvers.gqtpar import (
 class ResidualModel(NamedTuple):
     intercepts: Union[np.ndarray, None] = None  # shape (n_residuals,)
     linear_terms: Union[np.ndarray, None] = None  # shape (n_residuals, n_params)
-    square_terms: Union[
-        np.ndarray, None
-    ] = None  # shape (n_residuals, n_params, n_params)
+    square_terms: Union[np.ndarray, None] = (
+        None  # shape (n_residuals, n_params, n_params)
+    )
 
 
 class MainModel(NamedTuple):

@@ -9,6 +9,7 @@ The following arguments are not supported as ``algo_options``:
   and algorithm.
 
 """
+
 import warnings
 
 import numpy as np

@@ -1,4 +1,5 @@
 """Implement cyipopt's Interior Point Optimizer."""
+
 import numpy as np
 
 from estimagic.config import IS_CYIPOPT_INSTALLED

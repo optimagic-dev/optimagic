@@ -28,6 +28,7 @@ specific cases we refer to posts on math.stackexchange.com.
    https://google.github.io/styleguide/pyguide.html
 
 """
+
 import numpy as np
 
 from estimagic.utilities import (

@@ -34,6 +34,7 @@ The following arguments are not supported as part of ``algo_options``:
     terminate if it returned True.
 
 """
+
 import functools
 
 import numpy as np

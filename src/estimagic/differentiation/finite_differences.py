@@ -8,6 +8,7 @@ Since steps and evals contain NaNs, we have to make sure that the functions do n
 warnings or errors for that case.
 
 """
+
 from typing import NamedTuple
 
 import numpy as np

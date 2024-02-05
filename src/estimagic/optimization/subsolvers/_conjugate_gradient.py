@@ -1,4 +1,5 @@
 """Implementation of the Conjugate Gradient algorithm."""
+
 import numpy as np
 
 

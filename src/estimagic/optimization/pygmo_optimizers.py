@@ -1,4 +1,5 @@
 """Implement pygmo optimizers."""
+
 import contextlib
 import warnings
 

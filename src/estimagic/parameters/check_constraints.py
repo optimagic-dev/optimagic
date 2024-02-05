@@ -3,6 +3,7 @@
 See the module docstring of process_constraints for naming conventions.
 
 """
+
 from functools import partial
 
 import numpy as np
