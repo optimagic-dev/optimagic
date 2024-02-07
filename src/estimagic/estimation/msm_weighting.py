@@ -78,7 +78,7 @@ def get_weighting_matrix(
     Args:
         moments_cov (pandas.DataFrame or numpy.ndarray): Square DataFrame or Array
             with the covariance matrix of the moment conditions for msm estimation.
-        method (str): One of "optimal", "diagonal".
+        method (str): One of "optimal", "diagonal", or "identity".
         empirical_moments (pytree): Pytree containing empirical moments. Used to get
             the tree structure
         clip_value (float): Bound at which diagonal elements of the moments_cov are
@@ -106,6 +106,8 @@ def get_weighting_matrix(
     elif method == "diagonal":
         diagonal_values = 1 / np.clip(np.diagonal(_internal_cov), clip_value, np.inf)
         array_weights = np.diag(diagonal_values)
+    elif method == "identity":
+        array_weights = np.identity(_internal_cov.shape[0])
     else:
         raise ValueError(f"Invalid method: {method}")
 
