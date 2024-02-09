@@ -42,7 +42,7 @@ def test_get_weighting_matrix(moments_cov, method):
         expected = np.identity(cov_np.shape[0])
     else:
         expected = np.diag(1 / np.array([1, 2, 3]))
-    
+
     aaae(calculated, expected)
 
 
