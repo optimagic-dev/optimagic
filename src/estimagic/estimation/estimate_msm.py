@@ -150,7 +150,7 @@ def estimate_msm(
     # Check and process inputs
     # ==================================================================================
 
-    if weights not in ["diagonal", "optimal"]:
+    if weights not in ["diagonal", "optimal", "identity"]:
         raise NotImplementedError("Custom weighting matrices are not yet implemented.")
 
     is_optimized = optimize_options is False
