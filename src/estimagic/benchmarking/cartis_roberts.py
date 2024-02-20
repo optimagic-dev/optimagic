@@ -14,6 +14,7 @@ Implementation is based on
 - https://vanderbei.princeton.edu/ampl/nlmodels/cute/index.html
 
 """
+
 from functools import partial
 
 import numpy as np
@@ -5128,7 +5129,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_x": [-1] * 98,
         "solution_x": None,
         "start_criterion": 3.2160e4,
-        "solution_criterion": None
+        "solution_criterion": None,
         # we found a lower minimum than Cartis and Roberts (2019) at 1651.837;
         # according to table 3 in their paper, the minimum is at 4292.197.
         # We suspect, however, that the true optimum is even lower.

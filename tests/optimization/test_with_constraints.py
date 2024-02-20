@@ -6,6 +6,7 @@
 - closed form and numerical derivatives
 
 """
+
 from copy import deepcopy
 
 import numpy as np

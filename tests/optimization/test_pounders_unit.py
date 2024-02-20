@@ -1,4 +1,5 @@
 """Test the auxiliary functions of the pounders algorithm."""
+
 from collections import namedtuple
 from functools import partial
 

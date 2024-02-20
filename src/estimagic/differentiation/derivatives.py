@@ -747,9 +747,11 @@ def _convert_evals_to_numpy(
         evals = [val.astype(float) if not _is_scalar_nan(val) else val for val in evals]
     else:
         evals = [
-            np.array(tree_leaves(val, registry=registry), dtype=np.float64)
-            if not _is_scalar_nan(val)
-            else val
+            (
+                np.array(tree_leaves(val, registry=registry), dtype=np.float64)
+                if not _is_scalar_nan(val)
+                else val
+            )
             for val in evals
         ]
 

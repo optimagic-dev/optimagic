@@ -1,4 +1,5 @@
 """Functions for inferences in maximum likelihood models."""
+
 import numpy as np
 import pandas as pd
 

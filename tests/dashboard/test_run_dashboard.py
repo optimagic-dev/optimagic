@@ -1,4 +1,5 @@
 """Test the functions to run the dashboard."""
+
 from click.testing import CliRunner
 from estimagic.cli import cli
 from estimagic.config import EXAMPLE_DIR

@@ -1,4 +1,5 @@
 """Test optimization helper functions."""
+
 import numpy as np
 import pytest
 from estimagic.optimization.pygmo_optimizers import (

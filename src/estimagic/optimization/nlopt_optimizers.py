@@ -3,6 +3,7 @@
 The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io].
 
 """
+
 import numpy as np
 
 from estimagic.config import IS_NLOPT_INSTALLED

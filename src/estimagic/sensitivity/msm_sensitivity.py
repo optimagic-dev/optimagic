@@ -7,6 +7,7 @@ epsilon 2-6: Honore, Jorgensen & de Paula
 (https://onlinelibrary.wiley.com/doi/full/10.1002/jae.2779)
 
 """
+
 import numpy as np
 import pandas as pd
 from estimagic.exceptions import INVALID_SENSITIVITY_MSG

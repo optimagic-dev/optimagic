@@ -6,6 +6,7 @@ Here we want to take:
 - Many criterion versions (dict output, pandas output, scalar output)
 
 """
+
 import numpy as np
 import pandas as pd
 import pytest

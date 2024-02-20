@@ -1,4 +1,5 @@
 """Wrapper around pybaum get_registry to tailor it to estimagic."""
+
 from functools import partial
 from itertools import product
 

@@ -1,4 +1,5 @@
 """Helper functions for the dashboard."""
+
 from bokeh.models import HoverTool, Legend
 from bokeh.plotting import figure
 

@@ -1,4 +1,5 @@
 """Most test exploit the special case where simulate_moments just returns parameters."""
+
 import itertools
 
 import numpy as np

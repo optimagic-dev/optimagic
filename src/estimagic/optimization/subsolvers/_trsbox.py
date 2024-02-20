@@ -1,4 +1,5 @@
 """Implementation of the quadratic trustregion solver TRSBOX."""
+
 import numpy as np
 
 

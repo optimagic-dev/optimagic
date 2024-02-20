@@ -1,4 +1,5 @@
 """Functions to convert between array and block-tree representations of a matrix."""
+
 import numpy as np
 import pandas as pd
 from pybaum import tree_flatten, tree_unflatten

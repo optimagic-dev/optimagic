@@ -1,4 +1,5 @@
 """Implement the fides optimizer."""
+
 import logging
 
 import numpy as np

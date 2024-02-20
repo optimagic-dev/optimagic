@@ -4,6 +4,7 @@
 However,     for the moment they are not supported.
 
 """
+
 import numpy as np
 
 from estimagic.config import IS_SIMOPT_INSTALLED

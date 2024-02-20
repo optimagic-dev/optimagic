@@ -1,4 +1,5 @@
 """Implement the POUNDERS algorithm."""
+
 import warnings
 
 import numpy as np
