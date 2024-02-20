@@ -1,4 +1,5 @@
 """This only tests that we get the right number of colors, not the exact colors."""
+
 import pytest
 from estimagic.dashboard.colors import get_colors
 

@@ -32,6 +32,7 @@ In the following, let n_external be the length of th external parameter vector a
 n_internal the length of the internal parameter vector.
 
 """
+
 from functools import partial
 from typing import NamedTuple
 

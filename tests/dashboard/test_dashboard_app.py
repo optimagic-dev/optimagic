@@ -1,4 +1,5 @@
 """Test the functions of the dashboard app."""
+
 import numpy as np
 import pandas as pd
 import pandas.testing as pdt

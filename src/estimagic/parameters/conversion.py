@@ -1,4 +1,5 @@
 """Aggregate the multiple parameter and function output conversions into on."""
+
 from typing import NamedTuple
 
 import numpy as np

@@ -1,4 +1,5 @@
 """Implementation of the Steihaug-Toint Conjugate Gradient algorithm."""
+
 import numpy as np
 
 

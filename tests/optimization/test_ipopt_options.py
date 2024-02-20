@@ -1,4 +1,5 @@
 """Test the different options of ipopt."""
+
 import numpy as np
 import pytest
 from estimagic.config import IS_CYIPOPT_INSTALLED

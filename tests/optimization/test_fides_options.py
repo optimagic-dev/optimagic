@@ -1,4 +1,5 @@
 """Test the different options of fides."""
+
 import numpy as np
 import pytest
 from estimagic.config import IS_FIDES_INSTALLED

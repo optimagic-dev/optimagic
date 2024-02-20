@@ -1,4 +1,5 @@
 """Implementation of parallelosation of Nelder-Mead algorithm."""
+
 import numpy as np
 
 from estimagic.batch_evaluators import process_batch_evaluator

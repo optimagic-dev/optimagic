@@ -5,6 +5,7 @@
 - Only minimize
 
 """
+
 import itertools
 
 import numpy as np

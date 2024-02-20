@@ -1,4 +1,5 @@
 """Test various solvers for quadratic trust-region subproblems."""
+
 import numpy as np
 import pytest
 from estimagic.optimization.pounders_auxiliary import MainModel

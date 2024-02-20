@@ -1,4 +1,5 @@
 """Do a method of simlated moments estimation."""
+
 import functools
 import warnings
 from collections.abc import Callable

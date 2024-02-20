@@ -1,4 +1,5 @@
 """Process user provided functions."""
+
 import inspect
 from functools import partial
 

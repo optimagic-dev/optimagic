@@ -1,4 +1,5 @@
 """Tests for (almost) algorithm independent properties of maximize and minimize."""
+
 import numpy as np
 import pandas as pd
 import pytest

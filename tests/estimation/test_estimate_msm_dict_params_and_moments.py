@@ -1,4 +1,5 @@
 """Most test exploit the special case where simulate_moments just returns parameters."""
+
 import numpy as np
 import pandas as pd
 from estimagic.estimation.estimate_msm import estimate_msm

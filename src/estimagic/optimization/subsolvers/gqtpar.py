@@ -1,4 +1,5 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
+
 from typing import NamedTuple, Union
 
 import numpy as np
@@ -356,9 +357,7 @@ def _update_lambdas_when_factorization_unsuccessful(
     )
     v_norm = np.linalg.norm(v)
 
-    lambda_lower_bound = max(
-        lambdas.lower_bound, lambdas.candidate + delta / v_norm**2
-    )
+    lambda_lower_bound = max(lambdas.lower_bound, lambdas.candidate + delta / v_norm**2)
     lambda_new_candidate = _get_new_lambda_candidate(
         lower_bound=lambda_lower_bound, upper_bound=lambdas.upper_bound
     )

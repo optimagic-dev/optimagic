@@ -1,4 +1,5 @@
 """Test a subset of algorithms with different scaling methods on sum of squares."""
+
 import itertools
 
 import numpy as np

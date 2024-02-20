@@ -7,6 +7,7 @@ TO-DO:
 - Add option for deterministic noise or wiggle.
 
 """
+
 import numpy as np
 
 from estimagic import batch_evaluators

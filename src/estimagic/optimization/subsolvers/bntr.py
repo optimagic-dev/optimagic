@@ -1,4 +1,5 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
+
 from functools import reduce
 from typing import NamedTuple, Union
 
@@ -583,8 +584,7 @@ def _perform_gradient_descent_step(
         square_terms = x_inactive.T @ hessian_inactive @ x_inactive
 
         predicted_reduction = trustregion_radius * (
-            gradient_norm
-            - 0.5 * trustregion_radius * square_terms / (gradient_norm**2)
+            gradient_norm - 0.5 * trustregion_radius * square_terms / (gradient_norm**2)
         )
         actual_reduction = f_candidate_initial - f_candidate
 
