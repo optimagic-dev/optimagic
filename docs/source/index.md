@@ -1,4 +1,11 @@
 ```{raw} html
+<style>
+    .logo.mainlogo img {
+        background-color: transparent; /* Ensure SVG has no background */
+        max-height: 100px; /* Adjust size as needed */
+    }
+</style>
+
 <!-- Light mode logo -->
 <div class="logo mainlogo only-light" style="text-align: center;">
     <img src="_static/images/estimagic_logo.svg" alt="estimagic-logo" height="100" />

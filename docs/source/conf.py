@@ -167,7 +167,6 @@ html_logo = "_static/images/estimagic_logo.svg"
 html_theme_options = {
     "github_url": "https://github.com/OpenSourceEconomics/estimagic",
     "logo": {"image_dark": "_static/images/estimagic_logo_dark_mode.svg"},
-    # "logo": {"image_dark": "https://pandas.pydata.org/static/img/pandas_white.svg"},
 }
 
 html_css_files = ["css/custom.css"]
