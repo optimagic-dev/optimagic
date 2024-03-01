@@ -137,6 +137,9 @@ getting_started/index
 how_to_guides/index
 explanations/index
 reference_guides/index
+development/index
+videos
+algorithms
 ```
 
 ## Highlights
@@ -177,15 +180,6 @@ reference_guides/index
   pre-implemented or user provided batch evaluators.
 
 **Useful links for search:** {ref}`genindex` | {ref}`modindex` | {ref}`search`
-
-```{toctree}
----
-hidden: true
-maxdepth: 1
----
-development/index
-algorithms
-```
 
 [how to do multistart]: how_to_guides/optimization/how_to_do_multistart_optimizations
 [how to use logging]: how_to_guides/optimization/how_to_use_logging
