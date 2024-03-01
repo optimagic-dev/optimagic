@@ -2,7 +2,7 @@
 
 # Videos
 
-Check out our tutorials, talks and screencasts for estimagic.
+Check out our tutorials, talks and screencasts about estimagic.
 
 ## Talks and tutorials
 
