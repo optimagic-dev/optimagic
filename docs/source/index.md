@@ -118,7 +118,7 @@ For a complete introduction to optimization in estimagic, check out the
                     <div class="card-body flex-fill">
                         <h5 class="card-title">Videos</h5>
                         <p class="card-text">
-                            List of tutorial and explanation videos for estimagic.
+                            Collection of tutorials, talks, and screencasts on estimagic.
                         </p>
                     </div>
                 </div>

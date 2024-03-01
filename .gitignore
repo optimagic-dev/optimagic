@@ -73,9 +73,9 @@ instance/
 docs/_build/
 docs/build/
 docs/source/_build/
-docs/source/getting_started/*.db
-docs/source/getting_started/*.db-shm
-docs/source/getting_started/*.db-wal
+docs/source/**/*.db
+docs/source/**/*.db-shm
+docs/source/**/*.db-wal
 docs/source/refs.bib.bak
 
 # PyBuilder
