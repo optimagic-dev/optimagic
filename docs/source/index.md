@@ -109,6 +109,21 @@ For a complete introduction to optimization in estimagic, check out the
                 </div>
             </a>
         </div>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <a href="videos.html" id="index-link">
+                <div class="card text-center intro-card shadow" style="width: 100%;">
+                    <img src="_static/images/video.svg" class="card-img-top"
+                         alt="video icon" height="60"
+                    >
+                    <div class="card-body flex-fill">
+                        <h5 class="card-title">Videos</h5>
+                        <p class="card-text">
+                            List of tutorial and explanation videos for estimagic.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 </div>
 ```
