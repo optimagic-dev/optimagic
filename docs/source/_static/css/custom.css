@@ -57,7 +57,7 @@ a#index-link {
 
 /* selecting constraints guide */
 .intro-card {
-  /* background: #fff; */
+  background: #fff;
   border-radius: 0;
   padding: 20px 5px 5px 0px;
   margin: 10px 0px;
@@ -81,7 +81,7 @@ a#index-link {
 
 .install-card .card-header {
   border: none;
-  /* background-color: white; */
+  background-color: white;
   color: #150458;
   font-size: 1.1rem;
   font-weight: bold;
@@ -90,7 +90,7 @@ a#index-link {
 
 .install-card .card-footer {
   border: none;
-  /* background-color: white; */
+  background-color: white;
 }
 
 .install-card pre {
@@ -98,7 +98,7 @@ a#index-link {
 }
 
 .custom-button {
-  /* background-color: #DCDCDC; */
+  background-color: #DCDCDC;
   border: none;
   color: #484848;
   text-align: center;
@@ -152,11 +152,11 @@ a#index-link {
 
 .tutorial-card .card-header {
   cursor: pointer;
-  /* background-color: white; */
+  background-color: white;
 }
 
 .tutorial-card .card-body {
-  /* background-color: #F0F0F0; */
+  background-color: #F0F0F0;
 }
 
 .tutorial-card .badge:hover {
@@ -169,17 +169,17 @@ table.rows th {
   background-color: #F0F0F0;
   border-style: solid solid solid solid;
   border-width: 0px 0px 0px 0px;
-  /* border-color: #F0F0F0; */
+  border-color: #F0F0F0;
   text-align: center;
 }
 
 table.rows tr:nth-child(even) {
-  /* background-color: #F0F0F0; */
+  background-color: #F0F0F0;
   text-align: right;
 }
 
 table.rows tr:nth-child(odd) {
-  /* background-color: #FFFFFF; */
+  background-color: #FFFFFF;
   text-align: right;
 }
 
@@ -211,7 +211,7 @@ details.dropdown .summary-down {
 
 /* Background color of dropdown boxes */
 .card {
-  /* background-color: white !important; */
+  background-color: white !important;
 }
 
 /* Color of inline code */
