@@ -72,6 +72,37 @@ jobs:
         run: |
           micromamba activate estimagic
           pytest -m "not slow and not jax"
+  run-tests-with-old-pandas:
+    name: Run tests for ${{ matrix.os}} on ${{ matrix.python-version }} with pandas 1
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        python-version:
+          - '3.9'
+          - '3.10'
+          - '3.11'
+    steps:
+      - uses: actions/checkout@v3
+      - name: create build environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: ./.envs/testenv-pandas.yml
+          environment-name: estimagic
+          cache-env: true
+          extra-specs: |
+            python=${{ matrix.python-version }}
+      - name: run pytest
+        shell: bash -l {0}
+        run: |
+          micromamba activate estimagic
+          pytest tests/visualization
+          pytest tests/parameters
+          pytest tests/inference
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
