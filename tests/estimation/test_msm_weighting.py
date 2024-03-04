@@ -95,18 +95,19 @@ def test_get_moments_cov_passes_bootstrap_kwargs_to_bootstrap():
     rng = get_rng(1234)
     data = rng.normal(scale=[10, 5, 1], size=(100, 3))
     data = pd.DataFrame(data=data)
+    data["cluster"] = np.random.choice([1, 2, 3], size=100)
 
     def calc_moments(data, keys):
         means = data.mean()
         means.index = keys
         return means.to_dict()
 
-    moment_kwargs = {"keys": ["a", "b", "c"]}
+    moment_kwargs = {"keys": ["a", "b", "c", "cluster"]}
 
     with pytest.raises(ValueError, match="a must be a positive integer unless no"):
         get_moments_cov(
             data=data,
             calculate_moments=calc_moments,
             moment_kwargs=moment_kwargs,
-            bootstrap_kwargs={"n_draws": -1},
+            bootstrap_kwargs={"n_draws": -1, "cluster_by": "cluster"},
         )
