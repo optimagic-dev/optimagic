@@ -35,6 +35,7 @@ dependencies:
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
   - tranquilo>=0.0.4  # dev, tests
+  - seaborn  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
