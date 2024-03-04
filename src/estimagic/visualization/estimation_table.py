@@ -3,7 +3,7 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from warnings import warn
-from estimagic.utilities import pandas_df_map
+from estimagic.compat import pandas_df_map
 
 import numpy as np
 import pandas as pd

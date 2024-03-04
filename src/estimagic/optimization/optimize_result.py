@@ -4,7 +4,8 @@ from typing import Any, Dict, Union
 import numpy as np
 import pandas as pd
 
-from estimagic.utilities import to_pickle, pandas_df_map
+from estimagic.utilities import to_pickle
+from estimagic.compat import pandas_df_map
 
 
 @dataclass
