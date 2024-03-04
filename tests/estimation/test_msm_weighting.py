@@ -109,5 +109,13 @@ def test_get_moments_cov_passes_bootstrap_kwargs_to_bootstrap():
             data=data,
             calculate_moments=calc_moments,
             moment_kwargs=moment_kwargs,
-            bootstrap_kwargs={"n_draws": -1, "cluster_by": "cluster"},
+            bootstrap_kwargs={"n_draws": -1},
+        )
+
+    with pytest.raises(ValueError, match="Invalid bootstrap_kwargs: {'cluster'}"):
+        get_moments_cov(
+            data=data,
+            calculate_moments=calc_moments,
+            moment_kwargs=moment_kwargs,
+            bootstrap_kwargs={"cluster": "cluster"},
         )
