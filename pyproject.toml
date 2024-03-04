@@ -92,6 +92,7 @@ filterwarnings = [
     "ignore:Widget.widget_types is deprecated",
     "ignore:Widget.widgets is deprecated",
     "ignore:Parallelization together with",
+    "ignore:Conversion of an array with ndim > 0 to a scalar is deprecated",
 ]
 addopts = ["--doctest-modules"]
 markers = [
