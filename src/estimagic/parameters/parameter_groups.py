@@ -35,10 +35,10 @@ def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
         names.append(name)
 
     # if every parameter has its own group, they should all actually be in one group
-    if len(pd.unique(groups)) == len(groups):
+    if len(pd.Series(groups).unique()) == len(groups):
         groups = ["Parameters"] * len(groups)
 
-    counts = pd.value_counts(groups)
+    counts = pd.Series(groups).value_counts()
     to_be_split = counts[counts > max_group_size]
     for group_name, n_occurrences in to_be_split.items():
         split_group_names = _split_long_group(
