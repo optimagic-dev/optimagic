@@ -81,6 +81,7 @@ filterwarnings = [
     "ignore:Method .ptp is deprecated and will be removed in a future version. Use numpy.ptp instead.",
     "ignore:In a future version of pandas all arguments of concat except for the argument 'objs' will be keyword-only",
     "ignore:Please use `MemoizeJac` from the `scipy.optimize` namespace",
+    "ignore:DeprecationWarning: `scipy.optimize.optimize.MemoizeJac` is deprecated",
     "ignore:Some algorithms did not converge. Their walltime has been set to a very high value instead of infinity because Timedeltas do notsupport infinite values",
     "ignore:In a future version, the Index constructor will not infer numeric dtypes when passed object-dtype sequences",
     "ignore:distutils Version classes are deprecated. Use packaging.version instead",
