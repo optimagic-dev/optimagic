@@ -4,8 +4,6 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - jax
-  - pygmo
   - nlopt  # dev, tests
   - pip  # dev, tests, docs
   - pytest  # dev, tests
@@ -22,11 +20,5 @@ dependencies:
   - pybaum >= 0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
-  - tranquilo>=0.0.4  # dev, tests
   - pip:  # dev, tests, docs
-      - DFO-LS  # dev, tests
-      - Py-BOBYQA  # dev, tests
-      - fides==0.7.4  # dev, tests
-      - kaleido  # dev, tests
-      - simoptlib==1.0.1  # dev, tests
       - -e ../
