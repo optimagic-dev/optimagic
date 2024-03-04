@@ -160,13 +160,12 @@ def create_solution_times(df, runtime_measure, converged_info, return_tidy=True)
             problem, algorithm and runtime_measure. The values are either the number
             of evaluations or the walltime each algorithm needed to achieve the
             desired precision. If the desired precision was not achieved the value is
-            set to np.inf (for n_evaluations) or 7000 days (for walltime since there
-            no infinite value is allowed).
+            set to np.inf.
 
     """
     solution_times = df.groupby(["problem", "algorithm"])[runtime_measure].max()
-    solution_times = solution_times.unstack()
-    solution_times[~converged_info] = np.inf
+    solution_times = solution_times.unstack().astype(float)
+    solution_times = solution_times.where(converged_info, other=np.inf)
 
     if not return_tidy:
         solution_times = solution_times.stack().reset_index()
