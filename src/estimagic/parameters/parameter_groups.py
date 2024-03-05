@@ -35,7 +35,7 @@ def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
         names.append(name)
 
     # if every parameter has its own group, they should all actually be in one group
-    if len(pd.Series(groups).unique()) == len(groups):
+    if len(set(groups)) == len(groups):
         groups = ["Parameters"] * len(groups)
 
     counts = pd.Series(groups).value_counts()

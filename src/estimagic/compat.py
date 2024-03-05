@@ -8,7 +8,7 @@ external libraries.
 from estimagic.config import IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0
 
 
-def pandas_df_map(df, func, na_action=None, **kwargs):
+def pd_df_map(df, func, na_action=None, **kwargs):
     """Apply a function to a Dataframe elementwise.
 
     pandas has depricated the .applymap() function with version 2.1.0. This function

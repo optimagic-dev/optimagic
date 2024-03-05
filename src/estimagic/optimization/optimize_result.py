@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from estimagic.utilities import to_pickle
-from estimagic.compat import pandas_df_map
+from estimagic.compat import pd_df_map
 
 
 @dataclass
@@ -129,7 +129,7 @@ def _format_convergence_report(report, algorithm):
     report = pd.DataFrame.from_dict(report)
     columns = ["one_step", "five_steps"]
 
-    table = pandas_df_map(report[columns], _format_float).astype(str)
+    table = pd_df_map(report[columns], _format_float).astype(str)
 
     for col in "one_step", "five_steps":
         table[col] = table[col] + _create_stars(report[col])
