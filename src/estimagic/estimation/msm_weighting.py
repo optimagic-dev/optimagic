@@ -42,6 +42,8 @@ def get_moments_cov(
         "weights",
         "cluster_by",
         "error_handling",
+        "existing_result",
+        "outcome_kwargs",
     }
     problematic = set(bootstrap_kwargs).difference(valid_bs_kwargs)
     if problematic:
