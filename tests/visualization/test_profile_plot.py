@@ -57,8 +57,8 @@ def test_create_solution_times_n_evaluations():
     )
     expected = pd.DataFrame(
         {
-            "algo1": [1, 5],
-            "algo2": [3, np.inf],
+            "algo1": [1.0, 5],
+            "algo2": [3.0, np.inf],
         },
         index=pd.Index(["prob1", "prob2"], name="problem"),
     )
@@ -95,8 +95,8 @@ def test_create_solution_times_n_batches():
     )
     expected = pd.DataFrame(
         {
-            "algo1": [1, 1],
-            "algo2": [2, np.inf],
+            "algo1": [1.0, 1],
+            "algo2": [2.0, np.inf],
         },
         index=pd.Index(["prob1", "prob2"], name="problem"),
     )
@@ -131,8 +131,8 @@ def test_create_solution_times_walltime():
     )
     expected = pd.DataFrame(
         {
-            "algo1": [1, 5],
-            "algo2": [3, np.inf],
+            "algo1": [1.0, 5],
+            "algo2": [3.0, np.inf],
         },
         index=pd.Index(["prob1", "prob2"], name="problem"),
     )
