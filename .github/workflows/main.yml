@@ -74,6 +74,9 @@ jobs:
           micromamba activate estimagic
           pytest -m "not slow and not jax"
   run-tests-with-old-pandas:
+    # This job is only for testing if estimagic works with older pandas versions, as
+    # many pandas functions we use will be deprecated in pandas 3. estimagic's behavior
+    # for older verions is handled in src/estimagic/compat.py.
     name: Run tests for ${{ matrix.os}} on ${{ matrix.python-version }} with pandas 1
     runs-on: ${{ matrix.os }}
     strategy:
