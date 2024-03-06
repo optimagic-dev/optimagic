@@ -122,6 +122,21 @@ For a complete introduction to optimization in estimagic, check out the
                 </div>
             </a>
         </div>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <a href="videos.html" id="index-link">
+                <div class="card text-center intro-card shadow" style="width: 100%;">
+                    <img src="_static/images/video.svg" class="card-img-top"
+                         alt="video icon" height="60"
+                    >
+                    <div class="card-body flex-fill">
+                        <h5 class="card-title">Videos</h5>
+                        <p class="card-text">
+                            Collection of tutorials, talks, and screencasts on estimagic.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 </div>
 ```
@@ -135,6 +150,9 @@ getting_started/index
 how_to_guides/index
 explanations/index
 reference_guides/index
+development/index
+videos
+algorithms
 ```
 
 ## Highlights
@@ -175,15 +193,6 @@ reference_guides/index
   pre-implemented or user provided batch evaluators.
 
 **Useful links for search:** {ref}`genindex` | {ref}`modindex` | {ref}`search`
-
-```{toctree}
----
-hidden: true
-maxdepth: 1
----
-development/index
-algorithms
-```
 
 [how to do multistart]: how_to_guides/optimization/how_to_do_multistart_optimizations
 [how to use logging]: how_to_guides/optimization/how_to_use_logging

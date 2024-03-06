@@ -47,7 +47,6 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
-    "sphinx_copybutton",
 ]
 
 myst_enable_extensions = [
