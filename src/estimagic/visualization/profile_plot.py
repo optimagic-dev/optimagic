@@ -164,8 +164,9 @@ def create_solution_times(df, runtime_measure, converged_info, return_tidy=True)
 
     """
     solution_times = df.groupby(["problem", "algorithm"])[runtime_measure].max()
-    solution_times = solution_times.unstack().astype(float)
-    solution_times = solution_times.where(converged_info, other=np.inf)
+    solution_times = solution_times.unstack()
+    # We convert the dtype to float to support the use of np.inf
+    solution_times = solution_times.astype(float).where(converged_info, other=np.inf)
 
     if not return_tidy:
         solution_times = solution_times.stack().reset_index()
