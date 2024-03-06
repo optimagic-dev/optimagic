@@ -37,7 +37,7 @@ def bootstrap(
         data (pd.DataFrame): Dataset.
         existing_result (BootstrapResult): An existing BootstrapResult
             object from a previous call of bootstrap(). Default is None.
-        outcome_kwargs (dict): Additional keyword arguments for outco me.
+        outcome_kwargs (dict): Additional keyword arguments for outcome.
         n_draws (int): Number of bootstrap samples to draw.
             If len(existing_outcomes) >= n_draws, a random subset of existing_outcomes
             is used.

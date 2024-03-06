@@ -65,9 +65,9 @@ def expected():
 def seaborn_example():
     out = {}
 
-    df = sns.load_dataset("exercise", index_col=0)
+    raw = sns.load_dataset("exercise", index_col=0)
     replacements = {"1 min": 1, "15 min": 15, "30 min": 30}
-    df = df.replace({"time": replacements})
+    df = raw.assign(time=raw.time.cat.rename_categories(replacements).astype(int))
     df["constant"] = 1
 
     lower_ci = pd.Series([90.709236, 0.151193], index=["constant", "time"])
