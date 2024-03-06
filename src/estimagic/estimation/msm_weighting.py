@@ -24,7 +24,7 @@ def get_moments_cov(
         moment_kwargs (dict): Additional keyword arguments for calculate_moments.
         bootstrap_kwargs (dict): Additional keyword arguments that govern the
             bootstrapping. Allowed arguments are "n_draws", "seed", "n_cores",
-            "batch_evaluator", "weights", "cluster_by" and "error_handling".
+            "batch_evaluator", "weight_by", "cluster_by" and "error_handling".
             For details see the bootstrap function.
 
     Returns:
@@ -39,7 +39,7 @@ def get_moments_cov(
         "n_draws",
         "seed",
         "batch_evaluator",
-        "weights",
+        "weight_by",
         "cluster_by",
         "error_handling",
         "existing_result",

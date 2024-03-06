@@ -5,7 +5,7 @@ import pandas as pd
 def get_bootstrap_indices(
     data,
     rng,
-    weights=None,
+    weight_by=None,
     cluster_by=None,
     n_draws=1000,
 ):
@@ -17,7 +17,7 @@ def get_bootstrap_indices(
     Args:
         data (pandas.DataFrame): original dataset.
         rng (numpy.random.Generator): A random number generator.
-        weights (str): column name of the variable with weights.
+        weight_by (str): column name of the variable with weights.
         cluster_by (str): column name of the variable to cluster by.
         n_draws (int): number of draws, only relevant if seeds is None.
 
@@ -27,7 +27,7 @@ def get_bootstrap_indices(
     """
     n_obs = len(data)
 
-    if weights is None:
+    if weight_by is None:
 
         if cluster_by is None:
             bootstrap_indices = list(rng.integers(0, n_obs, size=(n_draws, n_obs)))
@@ -44,22 +44,27 @@ def get_bootstrap_indices(
     else:
 
         if cluster_by is None:
+            probs = data[weight_by] / data[weight_by].sum()
             bootstrap_indices = list(
                 rng.choice(
                     n_obs,
                     size=(n_draws, n_obs),
                     replace=True,
-                    p=data[weights] / data[weights].sum(),
+                    p=probs,
                 )
             )
         else:
-            clusters = data.groupby(cluster_by)[weights].sum().reset_index()
-
+            clusters_and_weights = (
+                data.groupby(cluster_by)[weight_by].sum().reset_index()
+            )
+            clusters = clusters_and_weights[cluster_by]
+            weights = clusters_and_weights[weight_by]
+            probs = weights / weights.sum()
             drawn_clusters = rng.choice(
-                clusters[cluster_by],
+                clusters,
                 size=(n_draws, len(clusters)),
                 replace=True,
-                p=clusters[weights] / clusters[weights].sum(),
+                p=probs,
             )
 
             bootstrap_indices = _convert_cluster_ids_to_indices(
@@ -86,7 +91,7 @@ def _convert_cluster_ids_to_indices(cluster_col, drawn_clusters):
 def get_bootstrap_samples(
     data,
     rng,
-    weights=None,
+    weight_by=None,
     cluster_by=None,
     n_draws=1000,
 ):
@@ -98,7 +103,7 @@ def get_bootstrap_samples(
     Args:
         data (pandas.DataFrame): original dataset.
         rng (numpy.random.Generator): A random number generator.
-        weights (str): weights for the observations.
+        weight_by (str): weights for the observations.
         cluster_by (str): column name of the variable to cluster by.
         n_draws (int): number of draws, only relevant if seeds is None.
 
@@ -109,7 +114,7 @@ def get_bootstrap_samples(
     indices = get_bootstrap_indices(
         data=data,
         rng=rng,
-        weights=weights,
+        weight_by=weight_by,
         cluster_by=cluster_by,
         n_draws=n_draws,
     )
