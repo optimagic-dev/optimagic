@@ -23,7 +23,7 @@ provides functionality to perform statistical inference on estimated parameters.
 
 - estimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more.
 - estimagic implements constraints efficiently via reparametrization, so you can solve
-  constrained problems with any optimzer that supports bounds.
+  constrained problems with any optimizer that supports bounds.
 - The parameters of an optimization problem can be arbitrary pytrees
 - The complete history of parameters and function evaluations can be saved in a database
   for maximum reproducibility.
