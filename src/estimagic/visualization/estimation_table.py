@@ -13,7 +13,6 @@ suppress_performance_warnings = np.testing.suppress_warnings()
 suppress_performance_warnings.filter(category=pd.errors.PerformanceWarning)
 
 
-@suppress_performance_warnings
 def estimation_table(
     models,
     *,
@@ -229,6 +228,7 @@ def estimation_table(
         return_type.write_text(out)
 
 
+@suppress_performance_warnings
 def render_latex(
     body,
     footer,

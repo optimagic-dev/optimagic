@@ -136,6 +136,7 @@ PARAMETRIZATION = [("latex", render_latex, models) for models in MODELS]
 PARAMETRIZATION += [("html", render_html, models) for models in MODELS]
 
 
+@pytest.mark.filterwarnings("error:indexing past lexsort depth may impact performance.")
 @pytest.mark.parametrize("return_type, render_func,models", PARAMETRIZATION)
 def test_one_and_stage_rendering_are_equal(return_type, render_func, models):
     first_stage = estimation_table(
