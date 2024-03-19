@@ -67,7 +67,6 @@ autodoc_mock_imports = [
     "fides",
     "joblib",
     "nlopt",
-    "pandas",
     "pytest",
     "pygmo",
     "scipy",
