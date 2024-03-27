@@ -77,7 +77,6 @@ infer_latex_dependencies = true
 filterwarnings = [
     "ignore:Using or importing the ABCs from 'collections'",
     "ignore:the imp module is deprecated",
-    "ignore:indexing past lexsort depth may impact performance.",
     "ignore:Method .ptp is deprecated and will be removed in a future version. Use numpy.ptp instead.",
     "ignore:In a future version of pandas all arguments of concat except for the argument 'objs' will be keyword-only",
     "ignore:Please use `MemoizeJac` from the `scipy.optimize` namespace",
