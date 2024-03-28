@@ -182,7 +182,7 @@ def estimation_table(
     if return_type == "render_inputs":
         out = render_inputs
     elif str(return_type).endswith("tex"):
-        out = render_latex(
+        out = _render_latex(
             **render_inputs,
             show_footer=show_footer,
             append_notes=append_notes,
@@ -229,6 +229,7 @@ def estimation_table(
         return_type.write_text(out)
 
 
+@suppress_performance_warnings
 def render_latex(
     body,
     footer,
@@ -280,6 +281,39 @@ def render_latex(
         latex_str (str): The resulting string with Latex tabular code.
 
     """
+    return _render_latex(
+        body=body,
+        footer=footer,
+        render_options=render_options,
+        show_footer=show_footer,
+        append_notes=append_notes,
+        notes_label=notes_label,
+        significance_levels=significance_levels,
+        custom_notes=custom_notes,
+        siunitx_warning=siunitx_warning,
+        show_index_names=show_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        escape_special_characters=escape_special_characters,
+    )
+
+
+def _render_latex(
+    body,
+    footer,
+    render_options=None,
+    show_footer=True,
+    append_notes=True,
+    notes_label="Note:",
+    significance_levels=(0.1, 0.05, 0.01),
+    custom_notes=None,
+    siunitx_warning=True,
+    show_index_names=False,
+    show_col_names=True,
+    show_col_groups=True,
+    escape_special_characters=True,
+):
+    """See docstring of render_latex for more information."""
     if not pd.__version__ >= "1.4.0":
         raise ValueError(
             r"""render_latex or estimation_table with return_type="latex" requires

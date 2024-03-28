@@ -5,6 +5,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.estimation.estimate_msm import estimate_msm
 from estimagic.shared.check_option_dicts import (
     check_numdiff_options,
@@ -63,6 +64,9 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
 
     # check that minimization works
     aaae(calculated.params, expected_params)
+
+    # assert that optimization result exists and is of correct type
+    assert isinstance(calculated.optimize_result, OptimizeResult)
 
     # check that cov works
     calculated_cov = calculated.cov()

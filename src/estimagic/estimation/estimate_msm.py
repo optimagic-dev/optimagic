@@ -27,6 +27,7 @@ from estimagic.inference.shared import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
+from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
 from estimagic.parameters.conversion import Converter, get_converter
@@ -328,6 +329,7 @@ def estimate_msm(
         _params=estimates,
         _weights=weights,
         _converter=converter,
+        _optimize_result=opt_res,
         _internal_weights=internal_weights,
         _internal_moments_cov=internal_moments_cov,
         _internal_jacobian=int_jac,
@@ -463,6 +465,7 @@ class MomentsResult:
     _internal_jacobian: np.ndarray
     _empirical_moments: Any
     _has_constraints: bool
+    _optimize_result: Union[OptimizeResult, None] = None
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
     _cache: Dict = field(default_factory=dict)
@@ -503,6 +506,10 @@ class MomentsResult:
     @property
     def params(self):
         return self._params
+
+    @property
+    def optimize_result(self):
+        return self._optimize_result
 
     @property
     def weights(self):
