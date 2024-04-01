@@ -52,12 +52,12 @@ repos:
       - id: check-docstring-first
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.33.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
         exclude: tests/optimization/fixtures
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.3.0
     hooks:
       - id: black
         language_version: python3.10
@@ -79,11 +79,11 @@ repos:
           - --blank
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.0
+    rev: v0.3.5
     hooks:
       - id: ruff
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.1
+    rev: 1.8.5
     hooks:
       - id: nbqa-black
       - id: nbqa-ruff
