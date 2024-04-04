@@ -41,6 +41,14 @@ to estimagic's style guide.
    $ pip install -e .
    ```
 
+1. Create a new local branch
+
+   ```bash
+   $ git checkout -b YOUR_BRANCH
+   ```
+
+   This assumes that you are on the estimagic main branch, which you are by default.
+
 1. Implement the fix or new feature. To stage your changes for commit, type
 
    ```bash
