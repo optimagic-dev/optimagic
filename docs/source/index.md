@@ -1,26 +1,11 @@
 ```{raw} html
-<style>
-    .logo.mainlogo img {
-        background-color: transparent; /* Ensure SVG has no background */
-        max-height: 100px; /* Adjust size as needed */
-    }
-</style>
+<img src="_static/images/estimagic_logo.svg" class="only-light center" style="display:block; margin-left:auto; margin-right:auto; width:300px; height:auto;"/>
 
-<!-- Light mode logo -->
-<div class="logo mainlogo only-light" style="text-align: center;">
-    <img src="_static/images/estimagic_logo.svg" alt="estimagic-logo" height="100" />
-</div>
-
-<!-- Dark mode logo -->
-<div class="logo mainlogo only-dark" style="text-align: center;">
-    <img src="_static/images/estimagic_logo_dark_mode.svg" alt="estimagic-logo" height="100" />
-</div>
+<img src="_static/images/estimagic_logo_dark_mode.svg" class="only-dark center" style="display:block; margin-left:auto; margin-right:auto; width:300px; height:auto;"/>
 ```
 
 <br>
 <br>
-
-## estimagic documentation
 
 `estimagic` is a Python package for nonlinear optimization with or without constraints.
 It is particularly suited to solve difficult nonlinear estimation problems. On top, it
