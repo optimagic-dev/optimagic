@@ -1,33 +1,35 @@
 # How to contribute
 
-Contributions are always welcome and highly appreciated! Anything ranging from small
-extensions and contributions to the documentation to implementing new features. Of
-course, the bigger the change the more you are encouraged to reach out to us in advance.
-That way we can start discussing your ideas before you actually start implementing them.
-You can post an issue or contact [janosg](https://github.com/janosg) via email.
+Contributions of all forms and sizes are welcome and highly appreciated! Anything
+ranging from updates to the documentation and small extensions to implementing new
+features. For substantial changes, please get in touch with us beforehand. This enables
+us to discuss your proposals and potentially guide the development process from the
+start. You can initiate a conversation by posting an issue or directly reaching out to
+[janosg](https://github.com/janosg) via email.
 
-To get acquainted with the code base, you can check out our
+To familiarize yourself with the codebase, you can check out our
 [issue tracker](https://github.com/OpenSourceEconomics/estimagic/issues) for some
 immediate and clearly defined tasks.
 
-Assuming you have settled on contributing a small fix to the project, please read the
-{ref}`style_guide` on the next page before you continue.
+Assuming you have settled on contributing to the project, we advise reviewing the
+{ref}`style_guide` available on the following page to ensure consistency with the
+project's coding standards.
 
-Next, clone the [repository](https://github.com/OpenSourceEconomics/estimagic/) to your
-local machine. This will create a copy of estimagic's repository where you have local
-write access. You'll implement all changes and fixes on your local estimagic copy before
-opening a Pull Request (PR). With a PR you propose your changes to be merged into the
-project's main branch. If you plan to become a regular contributor, we can give you push
-access to unprotected branches, which makes the process more convenient for you.
+To begin contributing, start by cloning the
+[repository](https://github.com/OpenSourceEconomics/estimagic/) to your local machine.
+This will create a copy of estimagic's repository where you have local write access.
+You'll implement all changes and fixes on your local estimagic copy before opening a
+Pull Request (PR). With a PR you propose your changes to be merged into the project's
+main branch. Regular contributors receive push access to unprotected branches,
+simplifying the contribution process.
 
-Below is a step-by-step guide on how to implement your changes via a PR while adhering
-to estimagic's style guide.
+Here's a step-by-step guide for making contributions via PR, adhering to the estimagic
+style guide:
 
-1. Clone the repository to your disk. Set up the project environment with conda. This
-   will automatically install a local version of estimagic in editable mode.
+1. Clone the repository to your disk and set up your project environment using conda.
 
-   On your computer, open the terminal in the root directory of your local estimagic
-   repo and enter the following commands
+   Open the terminal and execute the following commands from the root directory of your
+   local estimagic repository
 
    ```bash
    $ conda env create -f environment.yml
@@ -37,35 +39,33 @@ to estimagic's style guide.
    $ conda activate estimagic
    ```
 
-   ```bash
-   $ pip install -e .
-   ```
+   This automatically installs estimagic in editable mode.
 
-1. Create a new local branch
+1. Create a new local branch for your work with
 
    ```bash
    $ git checkout -b YOUR_BRANCH
    ```
 
-   This assumes that you are on the local estimagic main branch, which you are by
-   default.
+   This assumes that you are starting from the main branch.
 
-1. Implement the fix or new feature. To stage your changes for commit, type
+1. Implement your fix or feature. To stage your changes for commit, type
 
    ```bash
    $ git add src/estimagic/YOUR_FILE.py
    ```
 
-   To learn more about git and how to add/commit your local changes, have a look at
-   these
+   To learn more about git, how to add and commit changes, have a look at these
    [online materials](https://effective-programming-practices.vercel.app/git/staging/objectives_materials.html).
 
-1. We validate contributions in two ways. First, we use a comprehensive test suite to
-   check if your changes are compatible with estimagic. Second, we use
+1. We validate contributions in two ways. First, we employ a comprehensive test suite to
+   check if new implementations are compatible with estimagic's existing codebase.
+   Second, we use
    [pre-commit hooks](https://effective-programming-practices.vercel.app/git/pre_commits/objectives_materials.html)
-   to fix stylistic errors in code and documentation.
+   to ensure contributions meet our quality standards and adhere to our stylistic
+   guidelines.
 
-   You can run the test suit via
+   Run the test suit with
 
    ```bash
    $ pytest
@@ -73,13 +73,13 @@ to estimagic's style guide.
 
    Look at the summary report and fix any errors that pop up.
 
-   To enable stylistic error-checking and linting via pre-commit, type
+   To enable pre-commit hooks for linting and stylistic error-checking, type
 
    ```bash
    $ pre-commit install
    ```
 
-   With pre-commit installed, linters are executed before each commit and the commit is
+   With pre-commit installed, linters are executed before each commit. A commit is
    rejected if any of the checks fails. Note that some linters fix the errors
    automatically by modifying the code in-place. Restage the respective files via
    `git add src/estimagic/YOUR_FILE.py`.
@@ -90,10 +90,9 @@ to estimagic's style guide.
    $ pre-commit run -a
    ```
 
-1. If you have made changes to the estimagic documentation, check if the it builds
-   correctly. To do so, go to the root directory of your local estimagic repo and
-   navigate to the `docs` folder. There, you need to create the `estimagic-docs`
-   environment and activate it
+1. If you have updated the documentation, check if it builds correctly. To do so, go to
+   the root directory of your local estimagic repo and navigate to the `docs` folder.
+   There, you need to create the `estimagic-docs` environment and activate it
 
    ```bash
    $ conda env create -f rtd_environment.yml
@@ -103,14 +102,14 @@ to estimagic's style guide.
    $ conda activate estimagic-docs
    ```
 
-   Still in the `docs` folder, type
+   Inside the `docs` folder, type
 
    ```bash
    $ make html
    ```
 
-   and sphinx automatically builds the documentation locally. You can then open the html
-   pages in your browser (e.g. Google Chrome) via
+   and sphinx automatically builds the documentation locally. You can view the built
+   html documentation in your browser (e.g. Google Chrome) via
 
    ```bash
    $ google-chrome build/html/index.html
@@ -124,18 +123,21 @@ to estimagic's style guide.
    $ google-chrome build/html/explanations/optimization/why_optimization_is_hard.html
    ```
 
-1. If all tests and pre-commit hooks pass locally, you are ready to push your changes to
-   a new branch on the remote estimagic repository
+1. Once all tests and pre-commit hooks pass locally, push your branch to the remote
+   estimagic repository
 
    ```bash
    $ git push --set-upstream origin YOUR_BRANCH
    ```
 
-   After setting up the new upstream branch, go to estimagic's Github page. A banner
-   will be displayed asking you whether you would like to create a pull request. Click
-   on the link and follow the instructions of the PR template. Fill out the PR form to
-   inform everyone what you have been working on, what you have been trying to
-   accomplish, and what you have done to achieve it.
+   and create a pull request through the GitHub interface: Go to estimagic's Github
+   page. A banner will be displayed asking you whether you would like to create a pull
+   request. Click on the link.
+
+   Follow the instructions of the estimagic
+   [PR template](https://github.com/OpenSourceEconomics/estimagic/blob/main/.github/PULL_REQUEST_TEMPLATE/pull_request_template.md)
+   to describe your contribution, the problem you want to solve, and your proposed
+   solution.
 
    Opening a PR starts a complete run of the test suite on a Continuous Integration (CI)
    server. The status of the CI run is shown on your PR page. If necessary, make
