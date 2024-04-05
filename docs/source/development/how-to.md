@@ -1,10 +1,10 @@
 # How to contribute
 
 Contributions are always welcome and highly appreciated! Anything ranging from small
-extensions of the documentation to implementing new features. Of course, the bigger the
-change the more you are encouraged to reach out to us in advance. That way we can start
-discussing your ideas before you actually start implementing them. You can post an issue
-or contact [janosg](https://github.com/janosg) via email.
+extensions and contributions to the documentation to implementing new features. Of
+course, the bigger the change the more you are encouraged to reach out to us in advance.
+That way we can start discussing your ideas before you actually start implementing them.
+You can post an issue or contact [janosg](https://github.com/janosg) via email.
 
 To get acquainted with the code base, you can check out our
 [issue tracker](https://github.com/OpenSourceEconomics/estimagic/issues) for some
@@ -15,10 +15,10 @@ Assuming you have settled on contributing a small fix to the project, please rea
 
 Next, clone the [repository](https://github.com/OpenSourceEconomics/estimagic/) to your
 local machine. This will create a copy of estimagic's repository where you have local
-write access. You'll implement all changes and fixes on your local copy before opening a
-Pull Request (PR). With a PR you propose your changes to be merged into the project's
-main branch. If you plan to become a regular contributor, we can give you push access to
-unprotected branches, which makes the process more convenient for you.
+write access. You'll implement all changes and fixes on your local estimagic copy before
+opening a Pull Request (PR). With a PR you propose your changes to be merged into the
+project's main branch. If you plan to become a regular contributor, we can give you push
+access to unprotected branches, which makes the process more convenient for you.
 
 Below is a step-by-step guide on how to implement your changes via a PR while adhering
 to estimagic's style guide.
@@ -27,7 +27,7 @@ to estimagic's style guide.
    will automatically install a local version of estimagic in editable mode.
 
    On your computer, open the terminal in the root directory of your local estimagic
-   repo and enter the following commands:
+   repo and enter the following commands
 
    ```bash
    $ conda env create -f environment.yml
@@ -110,7 +110,7 @@ to estimagic's style guide.
    ```
 
    and sphinx automatically builds the documentation locally. You can then open the html
-   pages in you browser (e.g. Google Chrome) via
+   pages in your browser (e.g. Google Chrome) via
 
    ```bash
    $ google-chrome build/html/index.html
@@ -125,7 +125,7 @@ to estimagic's style guide.
    ```
 
 1. If all tests and pre-commit hooks pass locally, you are ready to push your changes to
-   a new branch on the remote estimagic repository:
+   a new branch on the remote estimagic repository
 
    ```bash
    $ git push --set-upstream origin YOUR_BRANCH
