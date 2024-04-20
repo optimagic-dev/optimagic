@@ -4,7 +4,7 @@
 
 We welcome and greatly appreciate contributions of all forms and sizes! Whether it's
 updating the online documentation, adding small extensions, or implementing new
-features, every contribution is valued.
+features, every effort is valued.
 
 For substantial changes, please contact us in advance. This allows us to discuss your
 ideas and guide the development process from the beginning. You can start a conversation
@@ -58,11 +58,11 @@ For regular contributors: **Clone** the [repository](https://github.com/OpenSour
 1. Contributions are validated in two main ways. We run a comprehensive test suite to
    ensure compatibility with the existing codebase and employ
    [pre-commit hooks](https://effective-programming-practices.vercel.app/git/pre_commits/objectives_materials.html)
-   to maintain quality and adherence to our style guidelines. Opening a PR triggers
-   estimagic's
+   to maintain quality and adherence to our style guidelines. Opening a PR (see
+   paragraph 7 below) triggers estimagic's
    [Continuous Integration (CI)](https://docs.github.com/en/actions/automating-builds-and-tests/about-continuous-integration)
    workflow, which runs the full `pytest` suite, pre-commit hooks, and other checks on a
-   remote server (see paragraph 7 below).
+   remote server.
 
    You can also run the test suite locally for
    [debugging](https://effective-programming-practices.vercel.app/debugging/pdbp/objectives_materials.html):
