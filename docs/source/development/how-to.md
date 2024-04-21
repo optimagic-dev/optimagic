@@ -42,9 +42,9 @@ For regular contributors: **Clone** the [repository](https://github.com/OpenSour
    local estimagic repository:
 
    ```console
-   conda env create -f environment.yml
-   conda activate estimagic
-   pre-commit install
+   $ conda env create -f environment.yml
+   $ conda activate estimagic
+   $ pre-commit install
    ```
 
    These commands install estimagic in editable mode and activate pre-commit hooks for
@@ -67,8 +67,8 @@ For regular contributors: **Clone** the [repository](https://github.com/OpenSour
    You can also run the test suite locally for
    [debugging](https://effective-programming-practices.vercel.app/debugging/pdbp/objectives_materials.html):
 
-   ```bash
-   pytest
+   ```console
+   $ pytest
    ```
 
    With pre-commit installed, linters run before each commit. Commits are rejected if
@@ -84,23 +84,20 @@ Skip the next paragraph if you haven't worked on the documentation.
    up the estimagic-docs environment:
 
    ```console
-   conda env create -f rtd_environment.yml
-   conda activate estimagic-docs
+   $ conda env create -f rtd_environment.yml
+   $ conda activate estimagic-docs
    ```
 
    Inside the `docs` folder, run:
 
    ```console
-   make html
+   $ make html
    ```
 
    This command builds the HTML documentation, saving all files in the `build/html`
-   directory. You can view the documentation using your preferred web browser by
-   navigating to:
-
-   ```console
-   build/html/index.html
-   ```
+   directory. You can view the documentation with your preferred web browser by opening
+   `build/html/index.html` or any other file. Similar to the online documentation, you
+   can navigate to different pages simply by clicking on the links.
 
 1. Once all tests and pre-commit hooks pass locally, push your changes to your forked
    repository and create a pull request through GitHub: Go to the Github repository of
