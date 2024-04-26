@@ -34,13 +34,21 @@ def main():
     test_env_others = deepcopy(test_env)
     test_env_others.insert(_insert_idx, "  - cyipopt<=1.2.0")
 
+    ## test environment for pandas version 1
+    test_env_pandas = deepcopy(test_env)
+    test_env_pandas = [line for line in test_env_pandas if "pandas" not in line]
+    test_env_pandas.insert(_insert_idx, "  - pandas<2.0.0")
+
     # create docs testing environment
 
     docs_env = [line for line in lines if _keep_line(line, "docs")]
     docs_env.append("      - -e ../")  # add local installation
 
     # write environments
-    for name, env in zip(["linux", "others"], [test_env_linux, test_env_others]):
+    for name, env in zip(
+        ["linux", "others", "pandas"],
+        [test_env_linux, test_env_others, test_env_pandas],
+    ):
         # Specify newline to avoid wrong line endings on Windows.
         # See: https://stackoverflow.com/a/69869641
         Path(f".envs/testenv-{name}.yml").write_text(

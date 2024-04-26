@@ -3,6 +3,7 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from warnings import warn
+from estimagic.compat import pd_df_map
 
 import numpy as np
 import pandas as pd
@@ -181,7 +182,7 @@ def estimation_table(
     if return_type == "render_inputs":
         out = render_inputs
     elif str(return_type).endswith("tex"):
-        out = render_latex(
+        out = _render_latex(
             **render_inputs,
             show_footer=show_footer,
             append_notes=append_notes,
@@ -228,6 +229,7 @@ def estimation_table(
         return_type.write_text(out)
 
 
+@suppress_performance_warnings
 def render_latex(
     body,
     footer,
@@ -279,6 +281,39 @@ def render_latex(
         latex_str (str): The resulting string with Latex tabular code.
 
     """
+    return _render_latex(
+        body=body,
+        footer=footer,
+        render_options=render_options,
+        show_footer=show_footer,
+        append_notes=append_notes,
+        notes_label=notes_label,
+        significance_levels=significance_levels,
+        custom_notes=custom_notes,
+        siunitx_warning=siunitx_warning,
+        show_index_names=show_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        escape_special_characters=escape_special_characters,
+    )
+
+
+def _render_latex(
+    body,
+    footer,
+    render_options=None,
+    show_footer=True,
+    append_notes=True,
+    notes_label="Note:",
+    significance_levels=(0.1, 0.05, 0.01),
+    custom_notes=None,
+    siunitx_warning=True,
+    show_index_names=False,
+    show_col_names=True,
+    show_col_groups=True,
+    escape_special_characters=True,
+):
+    """See docstring of render_latex for more information."""
     if not pd.__version__ >= "1.4.0":
         raise ValueError(
             r"""render_latex or estimation_table with return_type="latex" requires
@@ -305,7 +340,7 @@ def render_latex(
         ci_in_body = False
 
     if ci_in_body:
-        body.loc[("",)] = body.loc[("",)].applymap("{{{}}}".format).values
+        body.loc[("",)] = pd_df_map(body.loc[("",)], "{{{}}}".format).values
     if body.columns.nlevels > 1:
         column_groups = body.columns.get_level_values(0)
     else:
@@ -1383,22 +1418,23 @@ def _apply_number_format(df_raw, number_format, format_integers):
     if isinstance(processed_format, (list, tuple)):
         df_formatted = df_raw.copy(deep=True).astype("float")
         for formatter in processed_format[:-1]:
-            df_formatted = df_formatted.applymap(formatter.format).astype("float")
-        df_formatted = df_formatted.astype("float").applymap(
-            processed_format[-1].format
+            df_formatted = pd_df_map(df_formatted, formatter.format).astype("float")
+        df_formatted = pd_df_map(
+            df_formatted.astype("float"), processed_format[-1].format
         )
     elif isinstance(processed_format, str):
-        df_formatted = df_raw.astype("str").applymap(
-            partial(_format_non_scientific_numbers, format_string=processed_format)
+        df_formatted = pd_df_map(
+            df_raw.astype("str"),
+            partial(_format_non_scientific_numbers, format_string=processed_format),
         )
     elif callable(processed_format):
-        df_formatted = df_raw.applymap(processed_format)
+        df_formatted = pd_df_map(df_raw, processed_format)
 
     # Don't format integers: set to original value
     if not format_integers:
-        integer_locs = df_raw.applymap(_is_integer)
-        df_formatted[integer_locs] = (
-            df_raw[integer_locs].astype(float).applymap("{:.0f}".format)
+        integer_locs = pd_df_map(df_raw, _is_integer)
+        df_formatted[integer_locs] = pd_df_map(
+            df_raw[integer_locs].astype(float), "{:.0f}".format
         )
     return df_formatted
 

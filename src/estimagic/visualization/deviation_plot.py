@@ -68,7 +68,7 @@ def deviation_plot(
                 names=["problem", "algorithm", runtime_measure],
             )
         )
-        .fillna(method="ffill")
+        .ffill()
         .reset_index()
     )
     average_deviations = (

@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.9
+  - python=3.10
   - pip
   - setuptools_scm
   - toml
@@ -25,7 +25,7 @@ dependencies:
   - scipy
   - patsy
   - joblib
-  - plotly<=5.18
+  - plotly
   - ipython
   - pip:
       - ../
