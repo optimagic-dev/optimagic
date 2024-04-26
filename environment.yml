@@ -5,7 +5,7 @@ channels:
   - nodefaults
 dependencies:
   - python=3.10  # dev
-  - cyipopt  # dev
+  - cyipopt<=1.2.0  # dev
   - jupyterlab  # dev, docs
   - nb_black  # dev, docs
   - nlopt  # dev, tests
@@ -22,7 +22,6 @@ dependencies:
   - click  # run, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numba  # run, tests
   - numpy>=1.17.0  # run, tests
   - pandas  # run, tests
   - plotly  # run, tests
@@ -35,6 +34,8 @@ dependencies:
   - sphinx-copybutton  # docs
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
+  - tranquilo>=0.0.4  # dev, tests
+  - seaborn  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests

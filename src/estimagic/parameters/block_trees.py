@@ -1,4 +1,5 @@
 """Functions to convert between array and block-tree representations of a matrix."""
+
 import numpy as np
 import pandas as pd
 from pybaum import tree_flatten, tree_unflatten
@@ -36,8 +37,8 @@ def matrix_to_block_tree(matrix, outer_tree, inner_tree):
     shapes_outer = [np.shape(a) for a in flat_outer_np]
     shapes_inner = [np.shape(a) for a in flat_inner_np]
 
-    block_bounds_outer = np.cumsum([int(np.product(s)) for s in shapes_outer[:-1]])
-    block_bounds_inner = np.cumsum([int(np.product(s)) for s in shapes_inner[:-1]])
+    block_bounds_outer = np.cumsum([int(np.prod(s)) for s in shapes_outer[:-1]])
+    block_bounds_inner = np.cumsum([int(np.prod(s)) for s in shapes_inner[:-1]])
 
     blocks = []
     for leaf_outer, s1, submat in zip(
@@ -93,8 +94,8 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
     shapes_f = [np.shape(a) for a in flat_f_np]
     shapes_p = [np.shape(a) for a in flat_p_np]
 
-    block_bounds_f = np.cumsum([int(np.product(s)) for s in shapes_f[:-1]])
-    block_bounds_p = np.cumsum([int(np.product(s)) for s in shapes_p[:-1]])
+    block_bounds_f = np.cumsum([int(np.prod(s)) for s in shapes_f[:-1]])
+    block_bounds_p = np.cumsum([int(np.prod(s)) for s in shapes_p[:-1]])
 
     sub_block_trees = []
     for s0, subarr in zip(shapes_f, np.split(hessian, block_bounds_f, axis=0)):

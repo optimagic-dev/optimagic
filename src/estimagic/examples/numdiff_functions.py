@@ -2,12 +2,13 @@
 
 All functions take a numpy array with parameters as their first argument.
 
-Example inputs for the binary choice functions are in binary_choice_inputs.pickle.
-They come from the statsmodels documentation:
+Example inputs for the binary choice functions are in binary_choice_inputs.pickle. They
+come from the statsmodels documentation:
 https://tinyurl.com/y4x67vwl
 We pickled them so we don't need statsmodels as a dependency.
 
 """
+
 import numpy as np
 from scipy.stats import norm
 

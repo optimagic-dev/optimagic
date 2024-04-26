@@ -1,4 +1,5 @@
 """Test the wrapper around pounders."""
+
 import functools
 
 import numpy as np
@@ -78,7 +79,7 @@ def test_max_iters():
         algo_options={"stopping.max_iterations": 25},
     )
 
-    assert result.message == "user defined" or result.message == "step size small"
+    assert result.message in ("user defined", "step size small")
 
 
 def test_grtol():
@@ -99,9 +100,9 @@ def test_grtol():
         },
     )
 
-    assert (
-        result.message == "relative_gradient_tolerance below critical value"
-        or result.message == "step size small"
+    assert result.message in (
+        "relative_gradient_tolerance below critical value",
+        "step size small",
     )
 
 
@@ -123,9 +124,9 @@ def test_gatol():
         },
     )
 
-    assert (
-        result.message == "absolute_gradient_tolerance below critical value"
-        or result.message == "step size small"
+    assert result.message in (
+        "absolute_gradient_tolerance below critical value",
+        "step size small",
     )
 
 
@@ -147,9 +148,9 @@ def test_gttol():
         },
     )
 
-    assert (
-        result.message == "gradient_total_tolerance below critical value"
-        or result.message == "step size small"
+    assert result.message in (
+        "gradient_total_tolerance below critical value",
+        "step size small",
     )
 
 

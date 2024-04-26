@@ -1,12 +1,13 @@
 """Functions to read data from the database used for logging.
 
-The functions in the module are meant for end users of estimagic.
-They do not require any knowledge of databases.
+The functions in the module are meant for end users of estimagic. They do not require
+any knowledge of databases.
 
 When using them internally (e.g. in the dashboard), make sure to supply a database to
 path_or_database. Otherwise, the functions may be very slow.
 
 """
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union

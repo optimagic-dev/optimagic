@@ -1,4 +1,5 @@
 """Implement cyipopt's Interior Point Optimizer."""
+
 import numpy as np
 
 from estimagic.config import IS_CYIPOPT_INSTALLED
@@ -217,7 +218,8 @@ def ipopt(
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
-    For details see :ref:`ipopt_algorithm`.
+    For details see
+    :ref: `ipopt_algorithm`.
 
     """
     if not IS_CYIPOPT_INSTALLED:

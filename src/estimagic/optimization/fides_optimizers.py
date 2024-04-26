@@ -1,4 +1,5 @@
 """Implement the fides optimizer."""
+
 import logging
 
 import numpy as np
@@ -50,7 +51,8 @@ def fides(
 ):
     """Minimize a scalar function using the Fides Optimizer.
 
-    For details see :ref:`fides_algorithm`.
+    For details see
+    :ref: `fides_algorithm`.
 
     """
     if not IS_FIDES_INSTALLED:

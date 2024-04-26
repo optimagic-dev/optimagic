@@ -23,6 +23,7 @@ from estimagic.visualization.estimation_table import (
     estimation_table,
     render_html,
     render_latex,
+    _center_align_integers_and_non_numeric_strings,
 )
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
@@ -269,7 +270,7 @@ def test_create_statistics_sr():
         add_trailing_zeros,
         max_trail=4,
     )
-    exp = pd.Series(["0.4500", "0.0002", "400.0000"])
+    exp = pd.Series(["0.4500", "0.0002", "400"])
     exp.index = pd.MultiIndex.from_arrays(
         np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
     )
@@ -329,15 +330,19 @@ def test_apply_number_format_tuple():
     number_format = ("{0:.2g}", "{0:.2f}", "{0:.2g}")
     raw = pd.DataFrame(data=[1234.2332, 0.0001])
     exp = pd.DataFrame(data=["1.2e+03", "0"])
-    res = _apply_number_format(df=raw, number_format=number_format)
+    res = _apply_number_format(
+        df_raw=raw, number_format=number_format, format_integers=False
+    )
     afe(exp, res)
 
 
 def test_apply_number_format_int():
     number_format = 3
     raw = pd.DataFrame(data=["1234.2332", "1.2e+03"])
-    exp = pd.DataFrame(data=["1234.233", "1.2e+03"])
-    res = _apply_number_format(df=raw, number_format=number_format)
+    exp = pd.DataFrame(data=["1234.233", "1200"])
+    res = _apply_number_format(
+        df_raw=raw, number_format=number_format, format_integers=False
+    )
     afe(exp, res)
 
 
@@ -349,7 +354,7 @@ def test_apply_number_format_callable():
 
     raw = pd.DataFrame(data=[1234.2332, 0.0001])
     exp = pd.DataFrame(data=["1.23e+03", "1.00e-04"])
-    res = _apply_number_format(df=raw, number_format=nsf)
+    res = _apply_number_format(df_raw=raw, number_format=nsf, format_integers=False)
     afe(exp, res)
 
 
@@ -466,3 +471,26 @@ def test_check_order_of_model_names_raises_error():
     model_names = ["a", "b", "a"]
     with pytest.raises(ValueError):
         _check_order_of_model_names(model_names)
+
+
+def test_manual_extra_info():
+    footer_str = """
+         ,target
+        R$^2$,0.40
+        Adj. R$^2$,0.40
+        Residual Std. Error,60.5
+        F Statistic,72.90$^{***}$
+        Observations,442
+        Controls,Yes
+
+    """
+    footer = _read_csv_string(footer_str).fillna("")
+    footer.set_index(" ", inplace=True)
+    footer.index.names = [None]
+    footer.index = pd.MultiIndex.from_arrays([footer.index])
+    exp = footer.copy(deep=True)
+    exp.loc["Controls"] = "\\multicolumn{1}{c}{Yes}"
+    exp.loc["Observations"] = "\\multicolumn{1}{c}{442}"
+    for i, r in footer.iterrows():
+        res = _center_align_integers_and_non_numeric_strings(r)
+        ase(exp.loc[i], res)

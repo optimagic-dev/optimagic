@@ -1,4 +1,6 @@
 from pathlib import Path
+import pandas as pd
+from packaging import version
 
 import plotly.express as px
 
@@ -19,9 +21,9 @@ DEFAULT_N_CORES = 1
 CRITERION_PENALTY_SLOPE = 0.1
 CRITERION_PENALTY_CONSTANT = 100
 
-# =====================================================================================
+# ======================================================================================
 # Check Available Packages
-# =====================================================================================
+# ======================================================================================
 
 try:
     from petsc4py import PETSc  # noqa: F401
@@ -87,9 +89,34 @@ else:
     IS_SIMOPT_INSTALLED = True
 
 
-# =================================================================================
+try:
+    import tranquilo  # noqa: F401
+except ImportError:
+    IS_TRANQUILO_INSTALLED = False
+else:
+    IS_TRANQUILO_INSTALLED = True
+
+
+try:
+    import numba  # noqa: F401
+except ImportError:
+    IS_NUMBA_INSTALLED = False
+else:
+    IS_NUMBA_INSTALLED = True
+
+
+# ======================================================================================
+# Check if pandas version is newer or equal to version 2.1.0
+# ======================================================================================
+
+IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0 = version.parse(
+    pd.__version__
+) >= version.parse("2.1.0")
+
+
+# ======================================================================================
 # Dashboard Defaults
-# =================================================================================
+# ======================================================================================
 
 Y_RANGE_PADDING = 0.05
 Y_RANGE_PADDING_UNITS = "absolute"

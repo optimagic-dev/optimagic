@@ -3,6 +3,7 @@
 This test module only runs if jax is installed.
 
 """
+
 import numpy as np
 import pytest
 from estimagic.config import IS_JAX_INSTALLED

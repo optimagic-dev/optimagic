@@ -1,4 +1,5 @@
 """Test the history class for least-squares optimizers."""
+
 import numpy as np
 import pytest
 from estimagic.optimization.pounders_history import LeastSquaresHistory

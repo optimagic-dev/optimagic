@@ -1,12 +1,9 @@
 import numpy as np
 import pandas as pd
-from pybaum import tree_just_flatten
-
-from estimagic.parameters.tree_registry import get_registry
 
 
-def create_convergence_histories(
-    problems, results, stopping_criterion, x_precision, y_precision
+def process_benchmark_results(
+    problems, results, stopping_criterion, x_precision=1e-4, y_precision=1e-4
 ):
     """Create tidy DataFrame with all information needed for the benchmarking plots.
 
@@ -18,16 +15,17 @@ def create_convergence_histories(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
-        stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y". Determines
-            how convergence is determined from the two precisions.
-        x_precision (float or None): how close an algorithm must have gotten to the
+        stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y", or None.
+            Determines how convergence is determined from the two precisions.
+            If None, no convergence criterion is applied.
+        x_precision (float): how close an algorithm must have gotten to the
             true parameter values (as percent of the Euclidean distance between start
             and solution parameters) before the criterion for clipping and convergence
-            is fulfilled.
-        y_precision (float or None): how close an algorithm must have gotten to the
+            is fulfilled. Default is 1e-4.
+        y_precision (float): how close an algorithm must have gotten to the
             true criterion values (as percent of the distance between start
             and solution criterion value) before the criterion for clipping and
-            convergence is fulfilled.
+            convergence is fulfilled. Default is 1e-4.
 
     Returns:
         pandas.DataFrame: tidy DataFrame with the following columns:
@@ -45,265 +43,151 @@ def create_convergence_histories(
             - monotone_parameter_distance_normalized
 
     """
-    # get solution values for each problem
-    registry = get_registry(extended=True)
-    x_opt = {
-        name: tree_just_flatten(prob["solution"]["params"], registry=registry)
-        for name, prob in problems.items()
-    }
-    f_opt = pd.Series(
-        {name: prob["solution"]["value"] for name, prob in problems.items()}
-    )
+    histories = []
+    infos = []
 
-    # build df from results
-    time_sr = _get_history_as_stacked_sr_from_results(results, "time_history")
-    time_sr.name = "walltime"
-    criterion_sr = _get_history_as_stacked_sr_from_results(results, "criterion_history")
-    x_dist_sr = _get_history_of_the_parameter_distance(results, x_opt)
-    df = pd.concat([time_sr, criterion_sr, x_dist_sr], axis=1)
-
-    df.index = df.index.rename({"evaluation": "n_evaluations"})
-    df = df.sort_index().reset_index()
-
-    first_evaluations = df.query("n_evaluations == 0").groupby("problem")
-    f_0 = first_evaluations["criterion"].mean()
-    x_0_dist = first_evaluations["parameter_distance"].mean()
-    x_opt_dist = {name: 0 for name in problems}
-
-    # normalizations
-    df["criterion_normalized"] = _normalize(
-        df=df, col="criterion", start_values=f_0, target_values=f_opt
-    )
-    df["parameter_distance_normalized"] = _normalize(
-        df=df,
-        col="parameter_distance",
-        start_values=x_0_dist,
-        target_values=x_opt_dist,
-    )
-    # create monotone versions of columns
-    df["monotone_criterion"] = _make_history_monotone(df, "criterion")
-    df["monotone_parameter_distance"] = _make_history_monotone(df, "parameter_distance")
-    df["monotone_criterion_normalized"] = _make_history_monotone(
-        df, "criterion_normalized"
-    )
-    df["monotone_parameter_distance_normalized"] = _make_history_monotone(
-        df, "parameter_distance_normalized"
-    )
-
-    if stopping_criterion is not None:
-        df, converged_info = _clip_histories(
-            df=df,
+    for (problem_name, algorithm_name), result in results.items():
+        history, is_converged = _process_one_result(
+            problem=problems[problem_name],
+            result=result,
             stopping_criterion=stopping_criterion,
             x_precision=x_precision,
             y_precision=y_precision,
         )
+        history["problem"] = problem_name
+        history["algorithm"] = algorithm_name
+        histories.append(history)
+
+        info = {
+            "problem": problem_name,
+            "algorithm": algorithm_name,
+            "is_converged": is_converged,
+        }
+        infos.append(info)
+
+    # breakpoint()
+    histories = pd.concat(histories, ignore_index=True)
+    infos = pd.DataFrame(infos).set_index(["problem", "algorithm"]).unstack()
+    infos.columns = [tup[1] for tup in infos.columns]
+
+    return histories, infos
+
+
+def _process_one_result(
+    problem,
+    result,
+    stopping_criterion,
+    x_precision,
+    y_precision,
+):
+    # input processing
+    assert isinstance(x_precision, float)
+    assert isinstance(y_precision, float)
+
+    # extract information
+    _params_hist = result["params_history"]
+    _solution_crit = problem["solution"]["value"]
+    _start_crit = problem["start_criterion"]
+    _solution_x = problem["solution"].get("params")
+    _start_x = problem["inputs"]["params"]
+    _needed_step = np.linalg.norm(_solution_x - _start_x)
+    if isinstance(_solution_x, np.ndarray) and not np.isfinite(_solution_x).all():
+        _solution_x = None
+
+    # calculate the different transformations of criterion values
+    crit_hist = np.array(result["criterion_history"])
+    monotone_crit_hist = np.minimum.accumulate(crit_hist)
+    normalized_crit_hist = (crit_hist - _solution_crit) / (_start_crit - _solution_crit)
+    normalized_monotone_crit_hist = (monotone_crit_hist - _solution_crit) / (
+        _start_crit - _solution_crit
+    )
+
+    # calculate the different versions of params distance if we have a solution
+    if _solution_x is not None:
+        params_dist = np.linalg.norm(np.array(_params_hist - _solution_x), axis=1)
+        monotone_params_dist = np.minimum.accumulate(params_dist)
+        params_dist_normalized = params_dist / _needed_step
+        monotone_params_dist_normalized = monotone_params_dist / _needed_step
     else:
-        converged_info = None
+        params_dist = np.full(len(_params_hist), np.nan)
+        monotone_params_dist = np.full(len(_params_hist), np.nan)
+        params_dist_normalized = np.full(len(_params_hist), np.nan)
+        monotone_params_dist_normalized = np.full(len(_params_hist), np.nan)
 
-    return df, converged_info
+    # put everything together in a dict
+    out_dict = {
+        "n_evaluations": np.arange(len(crit_hist)),
+        "n_batches": result["batches_history"],
+        "walltime": result["time_history"],
+        "criterion": crit_hist,
+        "criterion_normalized": normalized_crit_hist,
+        "monotone_criterion": monotone_crit_hist,
+        "monotone_criterion_normalized": normalized_monotone_crit_hist,
+        "parameter_distance": params_dist,
+        "monotone_parameter_distance": monotone_params_dist,
+        "parameter_distance_normalized": params_dist_normalized,
+        "monotone_parameter_distance_normalized": monotone_params_dist_normalized,
+    }
 
+    # calculate at which iteration the problem has been solved
+    if stopping_criterion is not None:
+        is_converged_x, x_idx = _check_convergence(params_dist_normalized, x_precision)
+        is_converged_y, y_idx = _check_convergence(normalized_crit_hist, y_precision)
 
-def _get_history_as_stacked_sr_from_results(results, key):
-    """Get history as stacked Series from results.
+        flag_aggregators = {
+            "x": lambda x, y: x,
+            "y": lambda x, y: y,
+            "x_and_y": lambda x, y: x and y,
+            "x_or_y": lambda x, y: x or y,
+        }
 
-    Args:
-        results (dict): estimagic benchmarking results dictionary.
-        key (str): name of the history for which to build the Series, e.g.
-            criterion_history.
-
-    Returns:
-        pandas.Series: index levels are 'problem', 'algorithm' and 'evaluation'.
-            the name is the key with '_history' stripped off.
-
-    """
-    histories = {tup: res[key] for tup, res in results.items()}
-    sr = pd.concat(histories)
-    sr.index.names = ["problem", "algorithm", "evaluation"]
-    sr.name = key.replace("_history", "")
-    return sr
-
-
-def _get_history_of_the_parameter_distance(results, x_opt):
-    """Calculate the history of the distances to the optimal parameters.
-
-    Args:
-        results (dict): estimagic benchmarking results dictionary. Keys are
-            tuples of the form (problem, algorithm), values are dictionaries of the
-            collected information on the benchmark run, including 'params_history'.
-        x_opt (dict): the keys are the problems, the values are pandas.Series with the
-            optimal parameters for the respective problem.
-
-    Returns:
-        pandas.Series: index levels are "problem", "algorithm", "evaluation". The name
-            is "parameter_distance".
-
-    """
-    x_dist_history = {}
-    for (prob, algo), res in results.items():
-        param_history = res["params_history"]
-
-        x_dist_history[(prob, algo)] = pd.Series(
-            np.linalg.norm(param_history - x_opt[prob], axis=1)
+        is_converged = flag_aggregators[stopping_criterion](
+            x=is_converged_x, y=is_converged_y
         )
 
-    sr = pd.concat(x_dist_history)
-    sr.index.names = ["problem", "algorithm", "evaluation"]
-    sr.name = "parameter_distance"
-    return sr
+        if is_converged:
+            idx_aggregators = {
+                "x": lambda x, y: x,
+                "y": lambda x, y: y,
+                "x_and_y": _aggregate_idxs_with_and,
+                "x_or_y": _aggregate_idxs_with_or,
+            }
+            solution_idx = idx_aggregators[stopping_criterion](x=x_idx, y=y_idx)
+            if solution_idx is not None:
+                out_dict = {k: v[: solution_idx + 1] for k, v in out_dict.items()}
+
+    # create a DataFrame and add metadata
+    out = pd.DataFrame(out_dict)
+
+    return out, is_converged
 
 
-def _make_history_monotone(df, target_col, direction="minimize"):
-    """Create a monotone Series, i.e. the best so far instead of the current evaluation.
-
-    Args:
-        df (pandas.Dataframe): must contain ["problem", "algorithm", "n_evaluations"]
-            and the target_col as columns.
-        target_col (str): column of which to create the monotone version.
-        direction (str): "minimize" or "maximize". "minimize" makes the history
-            monotonically decreasing, "maximize" means the history will be monotonically
-            increasing.
-
-    Returns:
-        pd.Series: target column where all values that are not weak improvements are
-            replaced with the best value so far. Index is the same as that of df.
-
-    """
-    sorted_df = df.sort_values(["problem", "algorithm", "n_evaluations"])
-    grouped = sorted_df.groupby(["problem", "algorithm"], group_keys=False)[target_col]
-
-    if direction == "minimize":
-        out = grouped.apply(np.minimum.accumulate)
-    elif direction == "maximize":
-        out = grouped.apply(np.maximum.accumulate)
+def _check_convergence(values, threshold):
+    boo = values <= threshold
+    if boo.any():
+        is_converged = True
+        idx = np.argmax(boo)
     else:
-        raise ValueError("Only maximize and minimize are allowed as directions.")
+        is_converged = False
+        idx = None
+    return is_converged, idx
 
+
+def _aggregate_idxs_with_and(x, y):
+    if x is None or y is None:
+        out = None
+    else:
+        out = max(x, y)
     return out
 
 
-def _normalize(df, col, start_values, target_values):
-    """Normalize the values in **col** relative to the total possible improvement.
-
-    We normalize the values of **col** by calculating the share of the distance between
-    the start and target values that is still missing.
-
-    Note: This is correct whether we have a minimization or a maximization problem
-    because in the case of a maximization both the sign of the numerator and denominator
-    in the line where normalized is defined would be switched, i.e. that cancels out.
-    (In the case of a maximization the total improvement would be target - start values
-    and the currently still missing improvement would be target - current values)
-
-    Args:
-        df (pandas.DataFrame): contains the columns **col** and "problem".
-        col (str): name of the column to normalize
-        start_values (pandas.Series): index are problems, values are start values
-        target_values (pandas.Series): index are problems, values are target values.
-
-    Returns:
-        pandas.Series: index is the same as that of sr. The lower the value the closer
-            the current value is to the target value. 0 means the target value has been
-            reached. 1 means the current value is as far from the target value as the
-            start value.
-
-    """
-    # expand start and target values to the length of the full DataFrame
-    start_values = df["problem"].map(start_values)
-    target_values = df["problem"].map(target_values)
-
-    normalized = (df[col] - target_values) / (start_values - target_values)
-    return normalized
-
-
-def _clip_histories(df, stopping_criterion, x_precision, y_precision):
-    """Shorten the DataFrame to just the evaluations until each algorithm converged.
-
-    Args:
-        df (pandas.DataFrame): index levels are ['problem', 'algorithm', 'evaluation'].
-            Columns must include "monotone_criterion_normalized" if stopping_criterion
-            includes y and "monotone_parameter_distance_normalized" if x is in
-            the stopping_criterion.
-        stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y".
-        x_precision (float): when an algorithm's parameters are closer than this to the
-            true solution's parameters, the algorithm is counted as having converged.
-        y_precision (float): when an algorithm's criterion value is closer than this to
-            the solution value, the algorithm is counted as having converged.
-
-    Returns:
-        shortened (pandas.DataFrame): the entered DataFrame with all histories
-            shortened to stop once conversion according to the given criteria is
-            reached.
-        converged_info (pandas.DataFrame): columns are the algorithms, index are the
-            problems. The values are boolean and True when the algorithm arrived at
-            the solution with the desired precision.
-
-    """
-    # drop problems with no known solution
-    if "x" in stopping_criterion:
-        df = df[df["monotone_parameter_distance_normalized"].notnull()]
-    if "y" in stopping_criterion:
-        df = df[df["monotone_criterion_normalized"].notnull()]
-
-    # determine convergence in the known problems
-    if "x" in stopping_criterion:
-        x_converged = df["monotone_parameter_distance_normalized"] < x_precision
-    if "y" in stopping_criterion:
-        y_converged = df["monotone_criterion_normalized"] < y_precision
-
-    # determine converged function evaluations
-    if stopping_criterion == "y":
-        converged = y_converged
-    elif stopping_criterion == "x":
-        converged = x_converged
-    elif stopping_criterion == "x_and_y":
-        converged = y_converged & x_converged
-    elif stopping_criterion == "x_or_y":
-        converged = y_converged | x_converged
+def _aggregate_idxs_with_or(x, y):
+    if x is None and y is None:
+        out = None
+    elif x is None:
+        out = y
+    elif y is None:
+        out = x
     else:
-        raise NotImplementedError(
-            f"You specified {stopping_criterion} as stopping_criterion but only the "
-            "following are allowed: 'x_and_y', 'x_or_y', 'x', or 'y'."
-        )
-
-    first_converged = _find_first_converged(converged, df)
-
-    # keep first converged and non-converged
-    shortened = df[~converged | first_converged]
-
-    # create converged_info
-    converged.index = pd.MultiIndex.from_frame(df[["problem", "algorithm"]])
-    grouped = converged.groupby(["problem", "algorithm"])
-    converged_info = grouped.any().unstack("algorithm")
-
-    return shortened, converged_info
-
-
-def _find_first_converged(converged, df):
-    """Identify the first converged entry for each problem run.
-
-    Args:
-        converged (pandas.Series): same index as df, True where an algorithm has gotten
-            sufficiently close to the solution.
-        df (pandas.DataFrame): contains the "problem", "algorithm" and "n_evaluations"
-            columns.
-
-    Returns:
-        pandas.Series: same index as converged. Only True for the first converged entry
-            for each problem run, i.e. problem and algorithm combination.
-
-    """
-    # this function can probably be implemented much quicker and easier by shifting
-    # the converged Series to identify the first converged entries
-
-    converged_with_multi_index = converged.copy(deep=True)
-    multi_index = pd.MultiIndex.from_frame(
-        df[["problem", "algorithm", "n_evaluations"]]
-    )
-    converged_with_multi_index.index = multi_index
-
-    only_converged = converged_with_multi_index[converged_with_multi_index]
-    first_true_indices = only_converged.groupby(["problem", "algorithm"]).idxmin()
-    first_trues = pd.Series(
-        converged_with_multi_index.index.isin(first_true_indices.values),
-        index=converged.index,
-    )
-    return first_trues
+        out = min(x, y)
+    return out

@@ -99,7 +99,7 @@ def maximize(
         derivative_kwargs (dict): Additional keyword arguments for derivative.
         criterion_and_derivative (callable): Function that returns criterion
             and derivative as a tuple. This can be used to exploit synergies in the
-            evaluation of both functions. The fist element of the tuple has to be
+            evaluation of both functions. The first element of the tuple has to be
             exactly the same as the output of criterion. The second has to be exactly
             the same as the output of derivative.
         criterion_and_derivative_kwargs (dict): Additional keyword arguments for
@@ -300,7 +300,7 @@ def minimize(
         derivative_kwargs (dict): Additional keyword arguments for derivative.
         criterion_and_derivative (callable): Function that returns criterion
             and derivative as a tuple. This can be used to exploit synergies in the
-            evaluation of both functions. The fist element of the tuple has to be
+            evaluation of both functions. The first element of the tuple has to be
             exactly the same as the output of criterion. The second has to be exactly
             the same as the output of derivative.
         criterion_and_derivative_kwargs (dict): Additional keyword arguments for

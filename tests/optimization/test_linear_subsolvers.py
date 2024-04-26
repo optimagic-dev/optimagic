@@ -1,4 +1,5 @@
 """Test suite for linear trust-region subsolvers."""
+
 import math
 
 import numpy as np

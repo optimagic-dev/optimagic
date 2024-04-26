@@ -34,6 +34,7 @@ The following arguments are not supported as part of ``algo_options``:
     terminate if it returned True.
 
 """
+
 import functools
 
 import numpy as np
@@ -80,7 +81,8 @@ def scipy_lbfgsb(
 ):
     """Minimize a scalar function of one or more variables using the L-BFGS-B algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -117,7 +119,8 @@ def scipy_slsqp(
 ):
     """Minimize a scalar function of one or more variables using the SLSQP algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -153,7 +156,8 @@ def scipy_neldermead(
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -191,7 +195,8 @@ def scipy_powell(
 ):
     """Minimize a scalar function using the modified Powell method.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -223,7 +228,8 @@ def scipy_bfgs(
 ):
     """Minimize a scalar function of one or more variables using the BFGS algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -254,7 +260,8 @@ def scipy_conjugate_gradient(
 ):
     """Minimize a function using a nonlinear conjugate gradient algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -284,7 +291,8 @@ def scipy_newton_cg(
 ):
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -315,7 +323,8 @@ def scipy_cobyla(
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     if trustregion_initial_radius is None:
@@ -346,7 +355,6 @@ def scipy_truncated_newton(
     upper_bounds,
     *,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
     convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
@@ -359,7 +367,8 @@ def scipy_truncated_newton(
 ):
     """Minimize a scalar function using truncated Newton algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     options = {
@@ -371,7 +380,6 @@ def scipy_truncated_newton(
         "xtol": convergence_absolute_params_tolerance,
         "gtol": convergence_absolute_gradient_tolerance,
         "maxfun": stopping_max_criterion_evaluations,
-        "maxiter": stopping_max_iterations,
         "maxCGit": max_hess_evaluations_per_iteration,
         "stepmx": max_step_for_line_search,
         "minfev": func_min_estimate,
@@ -407,7 +415,8 @@ def scipy_trust_constr(
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     if trustregion_initial_radius is None:
@@ -591,7 +600,8 @@ def scipy_basinhopping(
 ):
     """Find the global minimum of a function using the basin-hopping algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     n_local_optimizations = max(1, n_local_optimizations - 1)
@@ -695,7 +705,8 @@ def scipy_differential_evolution(
 ):
     """Finds the global minimum of a multivariate function.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     workers = _get_workers(n_cores, batch_evaluator)
@@ -750,7 +761,9 @@ def scipy_shgo(
 
     SHGO stands for “simplicial homology global optimization”.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+
+    :ref: `list_of_scipy_algorithms`.
 
     """
     if local_algorithm == "COBYLA":
@@ -821,7 +834,8 @@ def scipy_dual_annealing(
 ):
     """Find the global minimum of a function using Dual Annealing.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
     local_algo_options = {} if local_algo_options is None else local_algo_options
@@ -869,7 +883,8 @@ def scipy_direct(
 ):
     """Finds the global minimum of a function using the DIRECT algorithm.
 
-    For details see :ref:`list_of_scipy_algorithms`.
+    For details see
+    :ref: `list_of_scipy_algorithms`.
 
     """
 

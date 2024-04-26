@@ -187,7 +187,6 @@ considered 'feasible'.
 
 """
 
-
 """
 -------------------------
 Trust Region Parameters

@@ -1,4 +1,5 @@
 """Auxiliary functions for the pounders algorithm."""
+
 from typing import NamedTuple, Union
 
 import numpy as np
@@ -15,9 +16,9 @@ from estimagic.optimization.subsolvers.gqtpar import (
 class ResidualModel(NamedTuple):
     intercepts: Union[np.ndarray, None] = None  # shape (n_residuals,)
     linear_terms: Union[np.ndarray, None] = None  # shape (n_residuals, n_params)
-    square_terms: Union[
-        np.ndarray, None
-    ] = None  # shape (n_residuals, n_params, n_params)
+    square_terms: Union[np.ndarray, None] = (
+        None  # shape (n_residuals, n_params, n_params)
+    )
 
 
 class MainModel(NamedTuple):
@@ -290,10 +291,11 @@ def solve_subproblem(
             "gtol_abs_conjugate_gradient": gtol_abs_conjugate_gradient,
             "gtol_rel_conjugate_gradient": gtol_rel_conjugate_gradient,
         }
-        result = bntr(main_model, lower_bounds, upper_bounds, **options)
+        result = bntr(main_model, lower_bounds, upper_bounds, x_candidate=x0, **options)
     elif solver == "gqtpar":
         result = gqtpar(
             main_model,
+            x_candidate=x0,
             k_easy=k_easy,
             k_hard=k_hard,
             maxiter=maxiter,

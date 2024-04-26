@@ -7,6 +7,7 @@ Here we want to take:
 - Maximize and minimize since this might make a difference
 
 """
+
 import numpy as np
 import pandas as pd
 import pytest
