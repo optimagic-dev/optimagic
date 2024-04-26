@@ -1,75 +1,123 @@
 # How to contribute
 
-Contributions are always welcome. Everything ranging from small extensions of the
-documentation to implementing new features is appreciated. Of course, the bigger the
-change the more it is necessary to reach out to us in advance for an discussion. You can
-post an issue or contact [janosg](https://github.com/janosg) via email.
+## 1. Intro
 
-To get acquainted with the code base, you can also check out our
+We welcome and greatly appreciate contributions of all forms and sizes! Whether it's
+updating the online documentation, adding small extensions, or implementing new
+features, every effort is valued.
+
+For substantial changes, please contact us in advance. This allows us to discuss your
+ideas and guide the development process from the beginning. You can start a conversation
+by posting an issue on GitHub or by emailing [janosg](https://github.com/janosg).
+
+To get familiar with the codebase, we recommend checking out our
 [issue tracker](https://github.com/OpenSourceEconomics/estimagic/issues) for some
 immediate and clearly defined tasks.
 
-1. Assuming you have settled on contributing a small fix to the project, please read the
-   {ref}`style_guide` on the next page before you continue.
+## 2. Before you start
 
-1. Next, fork the [repository](https://github.com/OpenSourceEconomics/estimagic/). This
-   will create a copy of the repository where you have write access. Your fix will be
-   implemented in your copy. After that, you will start a pull request (PR) which means
-   a proposal to merge your changes into the project. If you plan to become a regular
-   contributor we can give you push access to unprotected branches, which makes the
-   process more convenient for you.
+Once you've decided to contribute, please review the {ref}`style_guide` (see the next
+page) to ensure your work aligns with the project's coding standards.
 
-1. Clone the repository to your disk. Set up the project environment with conda and the
-   and install your local version of estimagic in editable mode. The commands for this
-   are (in a terminal in the root of your local estimagic repo):
+We manage new features through Pull Requests (PRs). Contributors work on their local
+copy of estimagic, modifying and extending the codebase there, before opening a PR to
+propose merging their changes into the main branch.
 
-   `conda env create -f environment.yml`
+Regular contributors gain push access to unprotected branches, which simplifies the
+contribution process (see Notes below).
 
-   `conda activate estimagic`
+## 3. Step-by-step guide
 
-   `pip install -e .`
+1. Fork the [estimagic repository](https://github.com/OpenSourceEconomics/estimagic/).
+   This action creates a copy of the repository with write access for you.
 
-1. Implement the fix or new feature.
+```{note}
+For regular contributors: **Clone** the [repository](https://github.com/OpenSourceEconomics/estimagic/) to your local machine and create a new branch for implementing your changes. You can push your branch directly to the remote estimagic repository and open a PR from there.
+```
 
-1. We validate contributions in three ways. First, we have a test suite to check the
-   implementation of respy. Second, we correct for stylistic errors in code and
-   documentation using linters. Third, we test whether the documentation builds
-   successfully.
+2. Clone your forked repository to your disk. This is where you'll make all your
+   changes.
 
-   You can run all checks with `tox` by running
+1. Open your terminal and execute the following commands from the root directory of your
+   local estimagic repository:
 
-   ```bash
-   $ tox
-   ```
-
-   This will run the complete test suite. To run only a subset of the suite you can use
-   the environments, `pytest`, `linting` and `sphinx`, with the `-e` flag of tox.
-
-   Correct any errors displayed in the terminal.
-
-   To correct stylistic errors, you can also install the linters as a pre-commit with
-
-   ```bash
+   ```console
+   $ conda env create -f environment.yml
+   $ conda activate estimagic
    $ pre-commit install
    ```
 
-   Then, all the linters are executed before each commit and the commit is aborted if
-   one of the check fails. You can also manually run the linters with
+   These commands install estimagic in editable mode and activate pre-commit hooks for
+   linting and style formatting.
 
-   ```bash
-   $ pre-commit run -a
+1. Implement your fix or feature. Use git to add, commit, and push your changes to the
+   remote repository. For more on git and how to stage and commit your work, refer to
+   these
+   [online materials](https://effective-programming-practices.vercel.app/git/staging/objectives_materials.html).
+
+1. Contributions are validated in two main ways. We run a comprehensive test suite to
+   ensure compatibility with the existing codebase and employ
+   [pre-commit hooks](https://effective-programming-practices.vercel.app/git/pre_commits/objectives_materials.html)
+   to maintain quality and adherence to our style guidelines. Opening a PR (see
+   paragraph 7 below) triggers estimagic's
+   [Continuous Integration (CI)](https://docs.github.com/en/actions/automating-builds-and-tests/about-continuous-integration)
+   workflow, which runs the full `pytest` suite, pre-commit hooks, and other checks on a
+   remote server.
+
+   You can also run the test suite locally for
+   [debugging](https://effective-programming-practices.vercel.app/debugging/pdbp/objectives_materials.html):
+
+   ```console
+   $ pytest
    ```
 
-5) If the tests pass, push your changes to your repository. Go to the Github page of
-   your fork. A banner will be displayed asking you whether you would like to create a
-   PR. Follow the link and the instructions of the PR template. Fill out the PR form to
-   inform everyone else on what you are trying to accomplish and how you did it.
+   With pre-commit installed, linters run before each commit. Commits are rejected if
+   any checks fail. Note that some linters may automatically fix errors by modifying the
+   code in-place. Remember to re-stage the files after such modifications.
 
-   The PR also starts a complete run of the test suite on a continuous integration
-   server. The status of the tests is shown in the PR. Reiterate on your changes until
-   the tests pass on the remote machine.
+```{tip}
+Skip the next paragraph if you haven't worked on the documentation.
+```
 
-1) Ask one of the main contributors to review your changes. Include their remarks in
-   your changes.
+6. Assuming you have updated the documentation, verify that it builds correctly. From
+   the root directory of your local estimagic repo, navigate to the docs folder and set
+   up the estimagic-docs environment:
 
-1) The final PR will be merged by one of the main contributors.
+   ```console
+   $ conda env create -f rtd_environment.yml
+   $ conda activate estimagic-docs
+   ```
+
+   Inside the `docs` folder, run:
+
+   ```console
+   $ make html
+   ```
+
+   This command builds the HTML documentation, saving all files in the `build/html`
+   directory. You can view the documentation with your preferred web browser by opening
+   `build/html/index.html` or any other file. Similar to the online documentation, you
+   can navigate to different pages simply by clicking on the links.
+
+1. Once all tests and pre-commit hooks pass locally, push your changes to your forked
+   repository and create a pull request through GitHub: Go to the Github repository of
+   your fork. A banner on your fork's GitHub repository will prompt you to open a PR.
+
+   ```{note}
+   Regular contributors with push access can directly push their local branch to the remote estimagic repository and initiate a PR from there.
+   ```
+
+   Follow the steps outlined in the estimagic
+   [PR template](https://github.com/OpenSourceEconomics/estimagic/blob/main/.github/PULL_REQUEST_TEMPLATE/pull_request_template.md)
+   to describe your contribution, the problem it addresses, and your proposed solution.
+
+   Opening a PR initiates a complete CI run, including the `pytest` suite, linters, code
+   coverage checks, doctests, and building the HTML documentation. Monitor the CI
+   workflow status on your PR page and make necessary modifications to your code based
+   on the results, iterating until all tests pass.
+
+1. Request a review from one of the main contributors once all CI tests pass. Address
+   any feedback or suggestions by making the necessary changes and committing them.
+
+1. After your PR is approved, one of the main contributors will merge it into
+   estimagic's main branch.

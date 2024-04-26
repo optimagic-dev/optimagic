@@ -24,7 +24,7 @@ def get_moments_cov(
         moment_kwargs (dict): Additional keyword arguments for calculate_moments.
         bootstrap_kwargs (dict): Additional keyword arguments that govern the
             bootstrapping. Allowed arguments are "n_draws", "seed", "n_cores",
-            "batch_evaluator", "cluster" and "error_handling". For details see the
+            "batch_evaluator", "cluster_by" and "error_handling". For details see the
             bootstrap function.
 
     Returns:
@@ -39,8 +39,10 @@ def get_moments_cov(
         "n_draws",
         "seed",
         "batch_evaluator",
-        "cluster",
+        "cluster_by",
         "error_handling",
+        "existing_result",
+        "outcome_kwargs",
     }
     problematic = set(bootstrap_kwargs).difference(valid_bs_kwargs)
     if problematic:
@@ -58,7 +60,9 @@ def get_moments_cov(
         )  # xxxx won't be necessary soon!
         return out
 
-    cov_arr = bootstrap(data=data, outcome=func, outcome_kwargs=moment_kwargs).cov()
+    cov_arr = bootstrap(
+        data=data, outcome=func, outcome_kwargs=moment_kwargs, **bootstrap_kwargs
+    ).cov()
 
     if isinstance(cov_arr, pd.DataFrame):
         cov_arr = cov_arr.to_numpy()  # xxxx won't be necessary soon
@@ -76,7 +80,7 @@ def get_weighting_matrix(
     Args:
         moments_cov (pandas.DataFrame or numpy.ndarray): Square DataFrame or Array
             with the covariance matrix of the moment conditions for msm estimation.
-        method (str): One of "optimal", "diagonal".
+        method (str): One of "optimal", "diagonal", or "identity".
         empirical_moments (pytree): Pytree containing empirical moments. Used to get
             the tree structure
         clip_value (float): Bound at which diagonal elements of the moments_cov are
@@ -104,6 +108,8 @@ def get_weighting_matrix(
     elif method == "diagonal":
         diagonal_values = 1 / np.clip(np.diagonal(_internal_cov), clip_value, np.inf)
         array_weights = np.diag(diagonal_values)
+    elif method == "identity":
+        array_weights = np.identity(_internal_cov.shape[0])
     else:
         raise ValueError(f"Invalid method: {method}")
 

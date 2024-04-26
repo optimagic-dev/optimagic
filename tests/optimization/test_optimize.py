@@ -1,9 +1,10 @@
 """Tests for (almost) algorithm independent properties of maximize and minimize."""
+
 import numpy as np
 import pandas as pd
 import pytest
 from estimagic.examples.criterion_functions import sos_scalar_criterion
-from estimagic.exceptions import InvalidKwargsError
+from estimagic.exceptions import InvalidKwargsError, InvalidFunctionError
 from estimagic.optimization.optimize import maximize, minimize
 
 
@@ -23,9 +24,9 @@ def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
     params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
 
     def raising_crit_and_deriv(params):  # noqa: ARG001
-        raise Exception()
+        raise NotImplementedError("This should not be called.")
 
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidFunctionError, match="Error while evaluating"):
         minimize(
             criterion=sos_scalar_criterion,
             params=params,

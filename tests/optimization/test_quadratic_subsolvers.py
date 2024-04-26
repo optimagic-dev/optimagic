@@ -1,4 +1,5 @@
 """Test various solvers for quadratic trust-region subproblems."""
+
 import numpy as np
 import pytest
 from estimagic.optimization.pounders_auxiliary import MainModel
@@ -11,9 +12,6 @@ from estimagic.optimization.subsolvers._steihaug_toint import (
 from estimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
 from estimagic.optimization.subsolvers.bntr import (
     bntr,
-)
-from estimagic.optimization.subsolvers.bntr_fast import (
-    bntr_fast,
 )
 from estimagic.optimization.subsolvers.gqtpar import (
     gqtpar,
@@ -161,7 +159,7 @@ TEST_CASES_BNTR = [
         ),
         np.array([-1.0, -1.0, -1.0]),
         np.ones(3),
-        np.array([1, 1, -1]),
+        np.array([1.0, 1, -1]),
     ),
     (
         np.array([39307.4, 43176.2, 19136.1]),
@@ -466,10 +464,14 @@ def test_bounded_newton_trustregion(
         "gtol_rel_conjugate_gradient": 1e-6,
     }
 
-    result = bntr(main_model, lower_bounds, upper_bounds, **options)
-    result_fast = bntr_fast(main_model, lower_bounds, upper_bounds, **options)
+    result = bntr(
+        main_model,
+        lower_bounds,
+        upper_bounds,
+        x_candidate=np.zeros_like(x_expected),
+        **options
+    )
     aaae(result["x"], x_expected, decimal=5)
-    aaae(result_fast["x"], x_expected, decimal=5)
 
 
 # ======================================================================================
@@ -505,7 +507,7 @@ TEST_CASES_GQTPAR = [
 def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
-    result = gqtpar(main_model)
+    result = gqtpar(main_model, x_candidate=np.zeros_like(x_expected))
 
     aaae(result["x"], x_expected)
     aaae(result["criterion"], criterion_expected)

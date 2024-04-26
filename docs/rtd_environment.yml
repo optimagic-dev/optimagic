@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.9
+  - python=3.10
   - pip
   - setuptools_scm
   - toml
@@ -16,8 +16,7 @@ dependencies:
   - ipython
   - ipython_genutils
   - myst-nb
-  - pydata-sphinx-theme<=0.12.0
-  - numba
+  - pydata-sphinx-theme
   - pybaum
   - matplotlib
   - seaborn

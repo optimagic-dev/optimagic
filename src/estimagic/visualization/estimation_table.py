@@ -3,11 +3,17 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from warnings import warn
+from estimagic.compat import pd_df_map
 
 import numpy as np
 import pandas as pd
 
 
+suppress_performance_warnings = np.testing.suppress_warnings()
+suppress_performance_warnings.filter(category=pd.errors.PerformanceWarning)
+
+
+@suppress_performance_warnings
 def estimation_table(
     models,
     *,
@@ -107,7 +113,7 @@ def estimation_table(
         confidence_intervals (bool): If True, display confidence intervals as inference
             values. Display standard errors otherwise. Default False.
         significance_levels (list): a list of floats for p value's significance cut-off
-            values.This is used to generate the significance stars. Default is
+            values. This is used to generate the significance stars. Default is
             [0.1,0.05,0.01].
         append_notes (bool): A boolean variable for printing p value cutoff explanation
             and additional notes, if applicable. Default is True.
@@ -121,7 +127,7 @@ def estimation_table(
             used as row names in the table.
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or string that is used to apply string formatter(s) to floats in the
-            table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
+            table. Default ("{0:.3g}", "{0:.5f}", "{0:.4g}").
         add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point. Default True.
         siunitx_warning (bool): If True, print warning about LaTex preamble to add for
@@ -176,7 +182,7 @@ def estimation_table(
     if return_type == "render_inputs":
         out = render_inputs
     elif str(return_type).endswith("tex"):
-        out = render_latex(
+        out = _render_latex(
             **render_inputs,
             show_footer=show_footer,
             append_notes=append_notes,
@@ -223,6 +229,7 @@ def estimation_table(
         return_type.write_text(out)
 
 
+@suppress_performance_warnings
 def render_latex(
     body,
     footer,
@@ -261,7 +268,7 @@ def render_latex(
         significance_levels (list or tuple): a list of floats for p value's significance
             cutt-off values. Default is [0.1,0.05,0.01].
         custom_notes (list): A list of strings for additional notes. Default is None.
-        siunitx_watning (bool): If True, print warning about LaTex preamble to add for
+        siunitx_warning (bool): If True, print warning about LaTex preamble to add for
             proper compilation of  when working with siunitx package. Default True.
         show_index_names (bool): If True, display index names in the table.
         show_col_names (bool): If True, the column names are displayed.
@@ -274,6 +281,39 @@ def render_latex(
         latex_str (str): The resulting string with Latex tabular code.
 
     """
+    return _render_latex(
+        body=body,
+        footer=footer,
+        render_options=render_options,
+        show_footer=show_footer,
+        append_notes=append_notes,
+        notes_label=notes_label,
+        significance_levels=significance_levels,
+        custom_notes=custom_notes,
+        siunitx_warning=siunitx_warning,
+        show_index_names=show_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        escape_special_characters=escape_special_characters,
+    )
+
+
+def _render_latex(
+    body,
+    footer,
+    render_options=None,
+    show_footer=True,
+    append_notes=True,
+    notes_label="Note:",
+    significance_levels=(0.1, 0.05, 0.01),
+    custom_notes=None,
+    siunitx_warning=True,
+    show_index_names=False,
+    show_col_names=True,
+    show_col_groups=True,
+    escape_special_characters=True,
+):
+    """See docstring of render_latex for more information."""
     if not pd.__version__ >= "1.4.0":
         raise ValueError(
             r"""render_latex or estimation_table with return_type="latex" requires
@@ -300,7 +340,7 @@ def render_latex(
         ci_in_body = False
 
     if ci_in_body:
-        body.loc[("",)] = body.loc[("",)].applymap("{{{}}}".format).values
+        body.loc[("",)] = pd_df_map(body.loc[("",)], "{{{}}}".format).values
     if body.columns.nlevels > 1:
         column_groups = body.columns.get_level_values(0)
     else:
@@ -348,7 +388,7 @@ def render_latex(
     latex_str = latex_str.split("\\bottomrule")[0]
     if show_footer:
         footer = footer.copy(deep=True)
-        footer = footer.apply(_center_align_integers, axis=1)
+        footer = footer.apply(_center_align_integers_and_non_numeric_strings, axis=1)
         footer_styler = footer.style
         stats_str = footer_styler.to_latex(**default_options)
         if "\\midrule" in stats_str:
@@ -543,7 +583,7 @@ def _get_estimation_table_body_and_footer(
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or callable that is used to apply string formatter(s) to floats in the
             table.
-        add_trailing_zeros (bool): If True, format floats such that they haave same
+        add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point.
 
     Returns:
@@ -623,7 +663,7 @@ def _build_estimation_table_body(
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or callable that is used to apply string formatter(s) to floats in the
             table.
-        add_trailing_zeros (bool): If True, format floats such that they haave same
+        add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point.
 
     Returns:
@@ -718,7 +758,6 @@ def _build_estimation_table_footer(
         for mod in models
     ]
     stats = pd.concat(to_concat, axis=1)
-    stats = stats.apply(_unformat_integers, axis=1)
     return stats
 
 
@@ -768,10 +807,17 @@ def _get_cols_to_format(show_inference, confidence_intervals):
 
 def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_zeros):
     """Apply string formatter to specific columns of a list of DataFrames."""
-    raw_formatted = [_apply_number_format(df[columns], number_format) for df in dfs]
+
+    raw_formatted = [
+        _apply_number_format(df[columns], number_format, format_integers=False)
+        for df in dfs
+    ]
     max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
     if add_trailing_zeros:
-        formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
+        formatted = [
+            _apply_number_format(df, max_trail, format_integers=True)
+            for df in raw_formatted
+        ]
     else:
         formatted = raw_formatted
     return formatted, max_trail
@@ -980,7 +1026,7 @@ def _convert_frame_to_string_series(
 
         df (DataFrame): params DataFrame of the model
         significance_levels (list): see main docstring
-        number_format (int): see main docstring
+        number_format (int, str, iterable or callable): see main docstring
         show_inference (bool): see main docstring
         confidence_intervals (bool): see main docstring
         show_stars (bool): see main docstring
@@ -1074,7 +1120,12 @@ def _create_statistics_sr(
         stats_options (dict): see main docstring
         significance_levels (list): see main docstring
         show_stars (bool): see main docstring
-        number_format (int): see main focstring
+        number_format (int, str, iterable or callable): see main docstring
+        add_trailing_zeros (bool): If True, format floats such that they haave same
+            number of digits after the decimal point.
+        max_trail (int): If add_trailing_zeros is True, add corresponding number of
+            trailing zeros to floats in the stats DataFrame to have number of digits
+            after a decimal point equal to max_trail for each float.
 
     Returns:
         series: string series with summary statistics values and additional info
@@ -1089,11 +1140,14 @@ def _create_statistics_sr(
         show_dof = None
     for k in stats_options:
         stats_values[stats_options[k]] = model["info"].get(k, np.nan)
+
     raw_formatted = _apply_number_format(
-        pd.DataFrame(pd.Series(stats_values)), number_format
+        pd.DataFrame(pd.Series(stats_values)), number_format, format_integers=False
     )
     if add_trailing_zeros:
-        formatted = _apply_number_format(raw_formatted, max_trail)
+        formatted = _apply_number_format(
+            raw_formatted, max_trail, format_integers=False
+        )
     else:
         formatted = raw_formatted
     stats_values = formatted.to_dict()[0]
@@ -1122,7 +1176,7 @@ def _create_statistics_sr(
                 stats_values["Residual Std. Error"], int(model["info"]["df_resid"])
             )
     stat_sr = pd.Series(stats_values)
-    # the follwing is to make sure statistics dataframe has as many levels of
+    # the following is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
     stat_ind = np.empty((len(stat_sr), model["params"].index.nlevels - 1), dtype=str)
     stat_ind = np.concatenate(
@@ -1218,11 +1272,12 @@ def _generate_notes_latex(
             amp_n = "&" * n_levels
             if isinstance(custom_notes, list):
                 if not all(isinstance(n, str) for n in custom_notes):
+                    not_str_notes = [n for n in custom_notes if not isinstance(n, str)]
+                    not_str_notes_types = [type(n) for n in not_str_notes]
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if type(n) != str]} are of types
-                        {[type(n) for n in custom_notes if type(n) != str]}
+                        {not_str_notes} are of types {not_str_notes_types}
                         respectively."""
                     )
                 for n in custom_notes:
@@ -1278,11 +1333,12 @@ def _generate_notes_html(
         if custom_notes:
             if isinstance(custom_notes, list):
                 if not all(isinstance(n, str) for n in custom_notes):
+                    not_str_notes = [n for n in custom_notes if not isinstance(n, str)]
+                    not_str_notes_types = [type(n) for n in not_str_notes]
                     raise ValueError(
                         f"""Each custom note can only be of string type.
                         The following notes:
-                        {[n for n in custom_notes if type(n) != str]} are of types
-                        {[type(n) for n in custom_notes if type(n) != str]}
+                        {not_str_notes} are of types {not_str_notes_types}
                         respectively."""
                     )
                 notes_text += """
@@ -1344,32 +1400,42 @@ def _extract_info_from_sm(model):
     return info
 
 
-def _apply_number_format(df, number_format):
+def _apply_number_format(df_raw, number_format, format_integers):
     """Apply string format to DataFrame cells.
 
     Args:
-        df (DataFrame): The DataFrame with float values to format.
-        number_format(str, list, tuple, callable or int): User defined number format
+        df_raw (DataFrame): The DataFrame with float values to format.
+        number_format (str, list, tuple, callable or int): User defined number format
             to apply to the DataFrame.
+        format_integers (bool): Apply number format also to integers
 
     Returns:
         df_formatted (DataFrame): Formatted DataFrame.
 
     """
     processed_format = _process_number_format(number_format)
+    df_raw = df_raw.copy(deep=True)
     if isinstance(processed_format, (list, tuple)):
-        df_formatted = df.copy(deep=True).astype("float")
+        df_formatted = df_raw.copy(deep=True).astype("float")
         for formatter in processed_format[:-1]:
-            df_formatted = df_formatted.applymap(formatter.format).astype("float")
-        df_formatted = df_formatted.astype("float").applymap(
-            processed_format[-1].format
+            df_formatted = pd_df_map(df_formatted, formatter.format).astype("float")
+        df_formatted = pd_df_map(
+            df_formatted.astype("float"), processed_format[-1].format
         )
     elif isinstance(processed_format, str):
-        df_formatted = df.astype("str").applymap(
-            partial(_format_non_scientific_numbers, format_string=processed_format)
+        df_formatted = pd_df_map(
+            df_raw.astype("str"),
+            partial(_format_non_scientific_numbers, format_string=processed_format),
         )
     elif callable(processed_format):
-        df_formatted = df.applymap(processed_format)
+        df_formatted = pd_df_map(df_raw, processed_format)
+
+    # Don't format integers: set to original value
+    if not format_integers:
+        integer_locs = pd_df_map(df_raw, _is_integer)
+        df_formatted[integer_locs] = pd_df_map(
+            df_raw[integer_locs].astype(float), "{:.0f}".format
+        )
     return df_formatted
 
 
@@ -1425,49 +1491,16 @@ def _get_digits_after_decimal(df):
     return max_trail
 
 
-def _center_align_integers(sr):
-    """Align integer numbers at the center of model column.
-
-    Args:
-        sr (pandas.Series): Series.
-
-    Returns:
-        pandas.Series: Series with numbers aligned at the center.
-
-    """
-    sr = sr.copy()
+def _center_align_integers_and_non_numeric_strings(sr):
+    """Align integer numbers and strings at the center of model column."""
+    sr = deepcopy(sr)
     for i in sr.index:
-        res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
-        )
-        if res_numeric:
-            num = res_numeric[0]
-            char = sr[i].split(num)[1]
-            if int(float(num)) == float(num):
-                sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num)))+char}}}"
-    return sr
-
-
-def _unformat_integers(sr):
-    """Remove trailing zeros from integer numbers.
-
-    Args:
-        sr (pandas.Series): Series.
-
-    Returns:
-        pandas.Series: Series with trailing zeros removed.
-
-    """
-    sr = sr.copy()
-    for i in sr.index:
-        res_numeric = re.findall(
-            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
-        )
-        if res_numeric:
-            num = res_numeric[0]
-            char = sr[i].split(num)[1]
-            if int(float(num)) == float(num):
-                sr[i] = str(int(float(num))) + char
+        if _is_integer(sr[i]):
+            sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(sr[i])))}}}"
+        else:
+            string_without_stars = sr[i].split("$", 1)[0]
+            if not string_without_stars.replace(".", "").isnumeric():
+                sr[i] = f"\\multicolumn{{1}}{{c}}{{{sr[i]}}}"
     return sr
 
 
@@ -1485,3 +1518,12 @@ def _get_updated_styler(
     for ax in [0, 1]:
         styler = styler.format_index(escape=escape_special_characters, axis=ax)
     return styler
+
+
+def _is_integer(num):
+    """Check if number is an integer (including a float with only zeros as digits)"""
+    try:
+        out = int(float(num)) == float(num)
+    except ValueError:
+        out = False
+    return out

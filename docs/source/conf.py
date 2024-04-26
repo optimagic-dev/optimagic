@@ -47,7 +47,6 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
-    "sphinx_copybutton",
 ]
 
 myst_enable_extensions = [
@@ -68,7 +67,6 @@ autodoc_mock_imports = [
     "fides",
     "joblib",
     "nlopt",
-    "pandas",
     "pytest",
     "pygmo",
     "scipy",
@@ -162,7 +160,7 @@ nb_execution_excludepatterns = [
 # a list of builtin themes.
 html_theme = "pydata_sphinx_theme"
 
-html_logo = "_static/images/logo.svg"
+html_logo = "_static/images/estimagic_logo.svg"
 
 html_theme_options = {
     "github_url": "https://github.com/OpenSourceEconomics/estimagic",

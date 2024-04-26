@@ -1,11 +1,12 @@
 """Functions to consolidate user provided constraints.
 
-Consolidation means that redundant constraints are dropped
-and other constraints are collected in meaningful bundles.
+Consolidation means that redundant constraints are dropped and other constraints are
+collected in meaningful bundles.
 
 Check the module docstring of process_constraints for naming conventions.
 
 """
+
 import numpy as np
 import pandas as pd
 
@@ -215,7 +216,7 @@ def _consolidate_fixes_with_equality_constraints(
 def _consolidate_bounds_with_equality_constraints(
     equality_constraints, lower_bounds, upper_bounds
 ):
-    """consolidate bounds with equality constraints.
+    """Consolidate bounds with equality constraints.
 
     Check that there are no incompatible bounds on equality constrained parameters and
     set the bounds for equal parameters to the strictest bound encountered on any of
@@ -591,7 +592,7 @@ def _drop_redundant_linear_constraints(weights, rhs):
         new_rhs (pd.DataFrame)
 
     """
-    weights["dupl_group"] = weights.groupby(list(weights.columns)).grouper.group_info[0]
+    weights["dupl_group"] = weights.groupby(list(weights.columns)).ngroup()
     rhs["dupl_group"] = weights["dupl_group"]
     weights.set_index("dupl_group", inplace=True)
 

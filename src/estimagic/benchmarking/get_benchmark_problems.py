@@ -84,6 +84,8 @@ def get_benchmark_problems(
 
     raw_problems = {k: v for k, v in raw_problems.items() if k not in exclude}
 
+    is_noisy = bool(additive_noise or multiplicative_noise)
+
     if additive_noise:
         additive_options = _process_noise_options(additive_noise_options, False)
     else:
@@ -114,10 +116,13 @@ def get_benchmark_problems(
 
         problems[name] = {
             "inputs": inputs,
+            "noise_free_criterion": specification["criterion"],
             "solution": _create_problem_solution(
                 specification, scaling_options=scaling_options
             ),
+            "noisy": is_noisy,
             "info": specification.get("info", {}),
+            "start_criterion": specification["start_criterion"],
         }
 
     return problems

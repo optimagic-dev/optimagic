@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 from estimagic.benchmarking.process_benchmark_results import (
-    create_convergence_histories,
+    process_benchmark_results,
 )
 from estimagic.config import PLOTLY_TEMPLATE
 
@@ -46,7 +46,7 @@ def profile_plot(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
-        runtime_measure (str): "n_evaluations" or "walltime".
+        runtime_measure (str): "n_evaluations", "n_batches" or "walltime".
             This is the runtime until the desired convergence was reached by an
             algorithm. This is called performance measure by Moré and Wild (2009).
         normalize_runtime (bool): If True the runtime each algorithm needed for each
@@ -72,13 +72,13 @@ def profile_plot(
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
         )
-    if runtime_measure not in ["walltime", "n_evaluations"]:
+    if runtime_measure not in ["walltime", "n_evaluations", "n_batches"]:
         raise ValueError(
             "Only 'walltime' or 'n_evaluations' are allowed as "
             f"runtime_measure. You specified {runtime_measure}."
         )
 
-    df, converged_info = create_convergence_histories(
+    df, converged_info = process_benchmark_results(
         problems=problems,
         results=results,
         stopping_criterion=stopping_criterion,
@@ -86,7 +86,7 @@ def profile_plot(
         y_precision=y_precision,
     )
 
-    solution_times = _create_solution_times(
+    solution_times = create_solution_times(
         df,
         runtime_measure=runtime_measure,
         converged_info=converged_info,
@@ -115,8 +115,14 @@ def profile_plot(
             "walltime",
             True,
         ): "Multiple of Minimal Wall Time<br>Needed to Solve the Problem",
+        (
+            "n_batches",
+            True,
+        ): "Multiple of Minimal Number of Batches<br>"
+        "Needed to Solve the Problem",
         ("n_evaluations", False): "Number of Function Evaluations",
         ("walltime", False): "Wall Time Needed to Solve the Problem",
+        ("n_batches", False): "Number of Batches",
     }
 
     fig.update_layout(
@@ -133,29 +139,41 @@ def profile_plot(
     return fig
 
 
-def _create_solution_times(df, runtime_measure, converged_info):
+def create_solution_times(df, runtime_measure, converged_info, return_tidy=True):
     """Find the solution time for each algorithm and problem.
 
     Args:
-        df (pandas.DataFrame): contains 'problem', 'algorithm' and *runtime_measure*
+        df (pandas.DataFrame): contains 'problem', 'algorithm' and 'runtime_measure'
             as columns.
-        runtime_measure (str): 'walltime' or 'n_evaluations'.
-        converged_info (pandas.DataFrame): columns are the algorithms, index are the
+        runtime_measure (str): 'walltime', 'n_batches' or 'n_evaluations'.
+        converged_info (pandas.DataFrame): columns are the algorithms, indexes are the
             problems. The values are boolean and True when the algorithm arrived at
             the solution with the desired precision.
+        return_tidy (bool): If True, the resulting DataFrame will be a tidy DataFrame
+            with problem and algorithm as indexes and runtime_measure as column.
+            If False, the resulting DataFrame will have problem, algorithm and
+            runtime_measure as columns.
 
     Returns:
-        solution_times (pandas.DataFrame): columns are algorithms, index are problems.
-            The values are either the number of evaluations or the walltime each
-            algorithm needed to achieve the desired precision. If the desired precision
-            was not achieved the value is set to np.inf (for n_evaluations) or 7000 days
-            (for walltime since there no infinite value is allowed).
+        solution_times (pandas.DataFrame): If return_tidy is True, indexes are the
+            problems, columns are the algorithms. If return_tidy is False, columns are
+            problem, algorithm and runtime_measure. The values are either the number
+            of evaluations or the walltime each algorithm needed to achieve the
+            desired precision. If the desired precision was not achieved the value is
+            set to np.inf.
 
     """
     solution_times = df.groupby(["problem", "algorithm"])[runtime_measure].max()
     solution_times = solution_times.unstack()
+    # We convert the dtype to float to support the use of np.inf
+    solution_times = solution_times.astype(float).where(converged_info, other=np.inf)
 
-    solution_times[~converged_info] = np.inf
+    if not return_tidy:
+        solution_times = solution_times.stack().reset_index()
+        solution_times = solution_times.rename(
+            columns={solution_times.columns[2]: runtime_measure}
+        )
+
     return solution_times
 
 
@@ -174,7 +192,7 @@ def _find_switch_points(solution_times):
 
     Args:
         solution_times (pandas.DataFrame): columns are the names of the algorithms,
-            the index are the problems. Values are performance measures.
+            the indexes are the problems. Values are performance measures.
             They can be either float, when normalize_runtime was True or int when the
             runtime_measure are not normalized function evaluations or datetime when
             the not normalized walltime is used.

@@ -1,4 +1,5 @@
 """Show the development of one database's criterion and parameters over time."""
+
 from functools import partial
 from pathlib import Path
 

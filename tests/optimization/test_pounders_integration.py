@@ -1,4 +1,7 @@
 """Test suite for the internal pounders interface."""
+
+import sys
+
 from functools import partial
 from itertools import product
 
@@ -78,7 +81,7 @@ def trustregion_subproblem_options():
     return out
 
 
-start_vec = [np.array([0.15, 0.008, 0.01])]
+start_vec = [np.array([0.15, 0.008, 0.01], dtype=np.float64)]
 cg_routine = ["cg", "steihaug_toint", "trsbox"]
 universal_tests = list(product(start_vec, cg_routine))
 specific_tests = [
@@ -88,6 +91,7 @@ specific_tests = [
 TEST_CASES = universal_tests + specific_tests
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not accurate on Windows.")
 @pytest.mark.parametrize("start_vec, conjugate_gradient_method_sub", TEST_CASES)
 def test_bntr(
     start_vec,

@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 
 from estimagic.benchmarking.process_benchmark_results import (
-    create_convergence_histories,
+    process_benchmark_results,
 )
 from estimagic.config import PLOTLY_TEMPLATE
 
@@ -11,6 +11,7 @@ def deviation_plot(
     problems,
     results,
     *,
+    runtime_measure="n_evaluations",
     distance_measure="criterion",
     monotone=True,
     template=PLOTLY_TEMPLATE,
@@ -35,6 +36,7 @@ def deviation_plot(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
+        runtime_measure (str): One of "n_evaluations", "n_batches".
         distance_measure (str): One of "criterion", "parameter_distance".
         monotone (bool): If True the best found criterion value so far is plotted.
             If False the particular criterion evaluation of that time is used.
@@ -44,8 +46,7 @@ def deviation_plot(
         plotly.Figure
 
     """
-
-    df, _ = create_convergence_histories(
+    df, _ = process_benchmark_results(
         problems=problems,
         results=results,
         stopping_criterion="y",
@@ -55,26 +56,27 @@ def deviation_plot(
 
     outcome = f"{'monotone_' if monotone else ''}" + distance_measure + "_normalized"
     deviations = (
-        df.set_index(["problem", "algorithm", "n_evaluations"])[outcome]
+        df.groupby(["problem", "algorithm", runtime_measure])
+        .min()[outcome]
         .reindex(
             pd.MultiIndex.from_product(
                 [
                     df["problem"].unique(),
                     df["algorithm"].unique(),
-                    range(df["n_evaluations"].min(), df["n_evaluations"].max() + 1),
+                    range(df[runtime_measure].min(), df[runtime_measure].max() + 1),
                 ],
-                names=["problem", "algorithm", "n_evaluations"],
+                names=["problem", "algorithm", runtime_measure],
             )
         )
-        .fillna(method="ffill")
+        .ffill()
         .reset_index()
     )
     average_deviations = (
-        deviations.groupby(["algorithm", "n_evaluations"])
+        deviations.groupby(["algorithm", runtime_measure])
         .mean(numeric_only=True)[outcome]
         .reset_index()
     )
-    fig = px.line(average_deviations, x="n_evaluations", y=outcome, color="algorithm")
+    fig = px.line(average_deviations, x=runtime_measure, y=outcome, color="algorithm")
 
     y_labels = {
         "criterion_normalized": "Share of Function Distance to Optimum<br>"
@@ -86,8 +88,12 @@ def deviation_plot(
         "monotone_parameter_distance_normalized": "Share of the Parameter Distance "
         "to Optimum<br> Missing From the Best Parameters So Far",
     }
+    x_labels = {
+        "n_evaluations": "Numver of Function Evaluations",
+        "n_batches": "Number of Batches",
+    }
     fig.update_layout(
-        xaxis_title="Number of Function Evaluations",
+        xaxis_title=x_labels[runtime_measure],
         yaxis_title=y_labels[outcome],
         title=None,
         height=300,

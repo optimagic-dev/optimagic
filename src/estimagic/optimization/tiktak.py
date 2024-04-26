@@ -3,24 +3,14 @@
 TikTak (`Arnoud, Guvenen, and Kleineberg
 <https://www.nber.org/system/files/working_papers/w26340/w26340.pdf>`_)
 
+ is an algorithm for solving global optimization problems. It performs local searches
+from a set of carefully-selected points in the parameter space.
 
-
-
-
-
-
-
-
-
-
-is an algorithm for solving global optimization problems. It performs local
-searches from a set of carefully-selected points in the parameter space.
-
-First implemented in Python by Alisdair McKay
-(
+First implemented in Python by Alisdair McKay (
 `GitHub Repository <https://github.com/amckay/TikTak>`_)
 
 """
+
 import warnings
 from functools import partial
 

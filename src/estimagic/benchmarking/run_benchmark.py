@@ -7,14 +7,13 @@ TO-DO:
 - Add option for deterministic noise or wiggle.
 
 """
+
 import numpy as np
-import pandas as pd
-from pybaum import tree_just_flatten
 
 from estimagic import batch_evaluators
-from estimagic.optimization import AVAILABLE_ALGORITHMS
+from estimagic.algorithms import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import minimize
-from estimagic.optimization.optimize_result import OptimizeResult
+from pybaum import tree_just_flatten
 from estimagic.parameters.tree_registry import get_registry
 
 
@@ -72,17 +71,33 @@ def run_benchmark(
         disable_convergence=disable_convergence,
     )
 
-    kwargs_list, names = _get_kwargs_list_and_names(problems, opt_options)
+    minimize_arguments, keys = _get_optimization_arguments_and_keys(
+        problems, opt_options
+    )
 
     raw_results = batch_evaluator(
         func=minimize,
-        arguments=kwargs_list,
+        arguments=minimize_arguments,
         n_cores=n_cores,
         error_handling=error_handling,
         unpack_symbol="**",
     )
 
-    results = _get_results(names, raw_results, kwargs_list)
+    processing_arguments = []
+    for name, raw_result in zip(keys, raw_results):
+        processing_arguments.append(
+            {"optimize_result": raw_result, "problem": problems[name[0]]}
+        )
+
+    results = batch_evaluator(
+        func=_process_one_result,
+        arguments=processing_arguments,
+        n_cores=n_cores,
+        error_handling="raise",
+        unpack_symbol="**",
+    )
+
+    results = dict(zip(keys, results))
 
     return results
 
@@ -127,7 +142,7 @@ def _process_optimize_options(raw_options, max_evals, disable_convergence):
     return out_options
 
 
-def _get_kwargs_list_and_names(problems, opt_options):
+def _get_optimization_arguments_and_keys(problems, opt_options):
     kwargs_list = []
     names = []
 
@@ -154,37 +169,52 @@ def _get_kwargs_list_and_names(problems, opt_options):
     return kwargs_list, names
 
 
-def _get_results(names, raw_results, kwargs_list):
-    registry = get_registry(extended=True)
-    results = {}
+def _process_one_result(optimize_result, problem):
+    """Process the result of one optimization run.
 
-    for name, result, inputs in zip(names, raw_results, kwargs_list):
-        if isinstance(result, OptimizeResult):
-            history = result.history
-            params_history = pd.DataFrame(
-                [tree_just_flatten(p, registry=registry) for p in history["params"]]
-            )
-            criterion_history = pd.Series(history["criterion"])
-            time_history = pd.Series(history["runtime"])
-        elif isinstance(result, str):
-            _criterion = inputs["criterion"]
+    Args:
+        optimize_result (OptimizeResult): Result of one optimization run.
+        problem (dict): Problem specification.
 
-            params_history = pd.DataFrame(
-                tree_just_flatten(inputs["params"], registry=registry)
-            ).T
-            criterion_history = pd.Series(_criterion(inputs["params"])["value"])
+    Returns:
+        dict: Processed result.
 
-            time_history = pd.Series([np.inf])
+    """
+    _registry = get_registry(extended=True)
+    _criterion = problem["noise_free_criterion"]
+    _start_x = problem["inputs"]["params"]
+    _start_crit_value = _criterion(_start_x)
+    if isinstance(_start_crit_value, np.ndarray):
+        _start_crit_value = (_start_crit_value**2).sum()
+    _is_noisy = problem["noisy"]
+    _solution_crit = problem["solution"]["value"]
+
+    # This will happen if the optimization raised an error
+    if isinstance(optimize_result, str):
+        params_history_flat = [tree_just_flatten(_start_x, registry=_registry)]
+        criterion_history = [_start_crit_value]
+        time_history = [np.inf]
+        batches_history = [0]
+    else:
+        history = optimize_result.history
+        params_history = history["params"]
+        params_history_flat = [
+            tree_just_flatten(p, registry=_registry) for p in params_history
+        ]
+        if _is_noisy:
+            criterion_history = np.array([_criterion(p) for p in params_history])
+            if criterion_history.ndim == 2:
+                criterion_history = (criterion_history**2).sum(axis=1)
         else:
-            raise TypeError(
-                "'result' object is expected to be of type 'dict' or 'str'."
-            )
+            criterion_history = history["criterion"]
+        criterion_history = np.clip(criterion_history, _solution_crit, np.inf)
+        batches_history = history["batches"]
+        time_history = history["runtime"]
 
-        results[name] = {
-            "params_history": params_history,
-            "criterion_history": criterion_history,
-            "time_history": time_history,
-            "solution": result,
-        }
-
-    return results
+    return {
+        "params_history": params_history_flat,
+        "criterion_history": criterion_history,
+        "time_history": time_history,
+        "batches_history": batches_history,
+        "solution": optimize_result,
+    }
