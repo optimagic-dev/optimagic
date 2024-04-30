@@ -17,6 +17,7 @@ dependencies:
   - ipython_genutils
   - myst-nb
   - pydata-sphinx-theme
+  - furo
   - pybaum
   - matplotlib
   - seaborn
