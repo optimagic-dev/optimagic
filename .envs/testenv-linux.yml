@@ -32,6 +32,6 @@ dependencies:
       - kaleido  # dev, tests
       - simoptlib==1.0.1  # dev, tests
       - pandas-stubs  # dev, tests
-      - types-cffi
-      - types-openpyxl
+      - types-cffi  # dev, tests
+      - types-openpyxl  # dev, tests
       - -e ../

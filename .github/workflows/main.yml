@@ -21,7 +21,6 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.9'
           - '3.10'
           - '3.11'
           - '3.12'
@@ -55,9 +54,9 @@ jobs:
           - macos-latest
           - windows-latest
         python-version:
-          - '3.9'
           - '3.10'
           - '3.11'
+          - '3.12'
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -85,7 +84,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.11'
+          - '3.12'
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
@@ -114,7 +113,7 @@ jobs:
           environment-file: ./.envs/testenv-linux.yml
           environment-name: estimagic
           cache-env: true
-          extra-specs: python=3.10
+          extra-specs: python=3.12
       - name: run sphinx
         shell: bash -l {0}
         run: |-

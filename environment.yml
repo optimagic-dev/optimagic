@@ -51,5 +51,5 @@ dependencies:
       - -e .  # dev
       # type stubs
       - pandas-stubs  # dev, tests
-      - types-cffi
-      - types-openpyxl
+      - types-cffi  # dev, tests
+      - types-openpyxl  # dev, tests
