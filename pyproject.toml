@@ -302,5 +302,6 @@ module = [
     "numba",
     "pathos",
     "pathos.pools",
+    "estimagic._version",
   ]
 ignore_missing_imports = true
