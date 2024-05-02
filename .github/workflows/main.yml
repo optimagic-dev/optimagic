@@ -119,3 +119,23 @@ jobs:
           micromamba activate estimagic
           cd docs/source
           python -m doctest -v how_to_guides/optimization/how_to_specify_constraints.md
+  run-mypy:
+    name: Run mypy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: create build environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: ./.envs/testenv-linux.yml
+          environment-name: estimagic
+          cache-env: true
+          extra-specs: |
+            python=3.10
+      - name: Run mypy
+        shell: bash -l {0}
+        run: |-
+          micromamba activate estimagic
+          mypy
