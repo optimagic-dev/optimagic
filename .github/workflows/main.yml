@@ -84,7 +84,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.12'
+          - '3.10'
     steps:
       - uses: actions/checkout@v3
       - name: create build environment
