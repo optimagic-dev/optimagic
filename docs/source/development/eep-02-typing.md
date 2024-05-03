@@ -53,6 +53,8 @@ benefits of static typing without breaking users' code.
 
 ### Internal algorithm interface
 
+## Summary of design philosophy
+
 ## Changes in documentation
 
 - No type hints in docstrings anymore
