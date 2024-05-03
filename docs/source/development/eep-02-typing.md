@@ -195,7 +195,41 @@ Since there is no need to modify instances of Bounds, it should be immutable.
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+Currently, constraints are dictionaries with a set of required keys. The exact
+requirements depend on the type of constraint and even on the structure of params.
+
+Each constraint needs a way to select the parameters to which the constraint applies.
+There are three dictionary keys for this:
+
+- "loc", which works if params are numpy arrays, pandas.Series or pandas.DataFrame
+- "query", which works only if params are pandas.DataFrame
+- "Selector", which works for all valid formats of params
+
+Moreover, each constraint needs to specify its type using the "type" key.
+
+Some constraints have additional required keys:
+
+- fixed constraints have "value"
+- linear constraints have "weights", "lower_bound", "upper_bound", and "value"
+- nonlinear constraints have "func", "lower_bounds", "upper_bound", and "value"
+
+Details and examples can be found
+[here](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_constraints.html)
+
+**Things we want to keep**
+
+- The constraints interface is very declarative; Constraints purely collect information
+  and are completely separate from the implementation.
+- All three ways of selecting parameters have their strength and can be very concise and
+  readable in specific applications.
+
+**Problems**
+
+- Constraints are hard to document and generally not understood by most users
+- Having multiple ways of selecting parameters (not all compatible with all params
+  formats) is confusing for users and annoying when processing constraints.
+- Dicts with required keys are brittle and do not provide autocomplete. This is made
+  worse by the fact that each type of constraint requires different sets of keys.
 
 #### Proposal
 
