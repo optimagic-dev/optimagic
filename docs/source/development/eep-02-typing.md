@@ -209,7 +209,6 @@ Moreover, each constraint needs to specify its type using the "type" key.
 
 Some constraints have additional required keys:
 
-- fixed constraints have "value"
 - linear constraints have "weights", "lower_bound", "upper_bound", and "value"
 - nonlinear constraints have "func", "lower_bounds", "upper_bound", and "value"
 
@@ -227,19 +226,132 @@ Details and examples can be found
 
 - Constraints are hard to document and generally not understood by most users
 - Having multiple ways of selecting parameters (not all compatible with all params
-  formats) is confusing for users and annoying when processing constraints.
+  formats) is confusing for users and annoying when processing constraints. We have to
+  handle the case where no selection or multiple selections are specified.
 - Dicts with required keys are brittle and do not provide autocomplete. This is made
   worse by the fact that each type of constraint requires different sets of keys.
 
 #### Proposal
 
+1. We implement simple dataclasses for each type of constraint
+1. We get rid of `loc` and `query` as parameter selection methods. Instead we show in
+   the documentation how both selection methods can be used inside a `selector`
+   function.
+
+Examples of the new syntax are:
+
+```python
+constraints = [
+    em.constraints.FixedConstraint(selector=lambda x: x[0, 5]),
+    em.constraints.IncreasingConstraint(selector=lambda x: x[1:4]),
+]
+
+res = em.minimize(
+    criterion=criterion,
+    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
+    algorithm="scipy_lbfgsb",
+    constraints=constraints,
+)
+```
+
+Since there is no need to modify instances of constraints, they should be immutable.
+
+All constraints can subclass `Constraint` which will only have the `selector` attribute.
+During the deprecation phase, `Constraint` will also have `loc` and `query` attributes.
+
+The current `cov` and `sdcorr` constraints apply to flattened covariance matrices as
+well as standard deviations and flattened correlation matrices. This comes from a time
+where estimagic only supported an essentially flat parameter format (DataFrames with
+"value" column). We can exploit the fact that we already have breaking changes to rename
+the current `cov` and `sdcorr` constraints to `FlatCovConstraint` and
+`FlatSdcorrConstraint`. This prepares the introduction of a more natural `CovConstraint`
+and `SdcorrConstraint` later.
+
 ### Algorithm selection
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+`algorithm` is a string or a callable that satisfies the internal algorithm interface.
+If the user passes a string, we look up the algorithm implementation in a dictionary
+containing all installed algorithms. We implement suggestions for typical typos based on
+fuzzy matching of strings.
 
-#### Proposal
+**Problems**
+
+- There is no autocomplete
+- It is very easy to make typos and they only get caught at runtime
+- Users cannot select algorithms without reading the documentation
+
+#### Difficulties
+
+The usual solution to selecting algorithms in an autocomplete friendly way is an Enum.
+However, there are two difficulties that make this solution suboptimal:
+
+1. The set of available algorithms depends on the packages a user has installed. Almost
+   all algorithms come from optional dependencies and very few users install all
+   optional dependencies.
+
+1. We already have more than 50 algorithms and plan to add many more. A simple
+   autocomplete is not very helpful. Instead the user would have to be able to filter
+   the autocomplete results according to the problem properties (e.g. least-squares,
+   gradient-based, local, ...). However, it is not clear which filters are relevant and
+   in which order a user wants to apply them.
+
+#### Goal
+
+Assume a simplified situation with 5 algorithms:
+
+- neldermead: installed, gradient_free
+- bobyqa: installed, gradient_free
+- lbfgs: installed, gradient_based
+- slsqp: installed, gradient_based
+- ipopt: not installed, gradient_based
+
+We want the following behavior:
+
+The user types `em.algorithms.` and autocomplete shows
+
+- GradientBased
+- GradientFree
+- neldermead
+- bobyqa
+- lbfgs
+- slsqp
+
+A user can either select one of the algorithms (lowercase) directly or filter the
+further by selecting a category (CamelCase). This would look as follows:
+
+The user types `em.algorithms.GradientFree.` and autocomplete shows
+
+- neldermead
+- bobyqa
+
+Once the user arrives at an algorithm, an instance of `Algorithm` is returned. This
+instance will be passed to `minimize` or `maximize`. Thus, in `minimize` and `maximize`
+we know the exact type we receive and do not have to make a distinction between built-in
+and user provided algorithms.
+
+In practice we would have a lot more algorithms and a lot more categories. Some
+categories might be mutually exclusive, in that case the second category is omitted
+after the first one is selected.
+
+We have the following categories:
+
+- GradientBased vs. GradientFree
+- Local vs. Global
+- Bounded vs. Unbounded
+- Scalar vs. LeastSquares vs. Likelihood
+- LinearConstrained vs. NonlinearConstrained vs. Unconstrained
+
+These categories match nicely with our
+[algorithm selection tutorials](https://effective-programming-practices.vercel.app/scientific_computing/optimization_algorithms/objectives_materials.html)
+
+#### Implementation
+
+We can use
+[`dataclasses.make_dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.make_dataclass)
+to programatically build up a data structure with the autocomplete behavior described
+above. `make_dataclass` also supports type hints.
 
 ### Algorithm options
 
@@ -330,3 +442,4 @@ the realease of `0.5.0`.
   criterion function.
 - The arguments `lower_bounds`, `upper_bounds`, `soft_lower_bounds` and
   `soft_uppper_bounds` are deprecated. Use `bounds` instead.
+- Selecting an algorithm by strings is deprecated. Pass an `Algorithm` instead.
