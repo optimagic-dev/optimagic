@@ -39,9 +39,9 @@ benefits of static typing without breaking users' code in too many places.
 ## Motivation and ressources
 
 - [Writing Python like it's Rust](https://kobzol.github.io/rust/python/2023/05/20/writing-python-like-its-rust.html).
-  A very good blogpost that summarizes the drawbacks of "stringly-typed" Python code and shows how
-  to incorporate typing philosophies from Rust into Python projects. Read this if you
-  don't have time to read the other ressources.
+  A very good blogpost that summarizes the drawbacks of "stringly-typed" Python code and
+  shows how to incorporate typing philosophies from Rust into Python projects. Read this
+  if you don't have time to read the other ressources.
 - [Robust Python](https://www.oreilly.com/library/view/robust-python/9781098100650/), an
   excellent book that discusses how to design code around types and provides an
   introduction to static type checkers in Python.
