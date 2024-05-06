@@ -39,9 +39,9 @@ benefits of static typing without breaking users' code in too many places.
 ## Motivation and ressources
 
 - [Writing Python like it's Rust](https://kobzol.github.io/rust/python/2023/05/20/writing-python-like-its-rust.html).
-  A very good blogpost that summarizes the drawbacks of "stringly-typed" Python code and shows how
-  to incorporate typing philosophies from Rust into Python projects. Read this if you
-  don't have time to read the other ressources.
+  A very good blogpost that summarizes the drawbacks of "stringly-typed" Python code and
+  shows how to incorporate typing philosophies from Rust into Python projects. Read this
+  if you don't have time to read the other ressources.
 - [Robust Python](https://www.oreilly.com/library/view/robust-python/9781098100650/), an
   excellent book that discusses how to design code around types and provides an
   introduction to static type checkers in Python.
@@ -299,7 +299,9 @@ However, there are two difficulties that make this solution suboptimal:
 
 #### Goal
 
-Assume a simplified situation with 5 algorithms:
+Assume a simplified situation with 5 algorithms. We only consider whether an algorithm
+is gradient free or gradient based. One algorithm is not installed, so should never show
+up anywhere. Here is the ficticious list:
 
 - neldermead: installed, gradient_free
 - bobyqa: installed, gradient_free
@@ -343,6 +345,10 @@ We have the following categories:
 - Scalar vs. LeastSquares vs. Likelihood
 - LinearConstrained vs. NonlinearConstrained vs. Unconstrained
 
+Potentially, we could also offer a `.All` attribute that returns a list of all currently
+selected algorithms. That way a user could for example loop over all Bounded and
+GradientBased LeastSquares algorithms and compare them in a criterion plot.
+
 These categories match nicely with our
 [algorithm selection tutorials](https://effective-programming-practices.vercel.app/scientific_computing/optimization_algorithms/objectives_materials.html)
 
@@ -352,6 +358,14 @@ We can use
 [`dataclasses.make_dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.make_dataclass)
 to programatically build up a data structure with the autocomplete behavior described
 above. `make_dataclass` also supports type hints.
+
+```{note}
+The first solution I found when
+playing with this is eager, i.e. the complete data structure is created created at
+import time, no matter what the user does. A lazy solution where only the branches of
+the data structure we need are created. Maybe, this can be achieved with properties
+but I don't know yet how easy that is to add properties via `make_dataclass`
+```
 
 ### Algorithm options
 
