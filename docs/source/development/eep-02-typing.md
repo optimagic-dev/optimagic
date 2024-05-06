@@ -39,7 +39,7 @@ benefits of static typing without breaking users' code in too many places.
 ## Motivation and ressources
 
 - [Writing Python like it's Rust](https://kobzol.github.io/rust/python/2023/05/20/writing-python-like-its-rust.html).
-  A very good blogpost that the drawbacks of "stringly-typed" Python code and shows how
+  A very good blogpost that summarizes the drawbacks of "stringly-typed" Python code and shows how
   to incorporate typing philosophies from Rust into Python projects. Read this if you
   don't have time to read the other ressources.
 - [Robust Python](https://www.oreilly.com/library/view/robust-python/9781098100650/), an
@@ -64,7 +64,7 @@ i.e. `maximize`, `minimize`, `slice_plot`, `criterion_plot`, `params_plot`,
 #### Current situation
 
 A function that takes params (a pytree) as first argument and returns a scalar (if only
-scalar algorithms will be used) or a dictionary that contains at the entries "value" (a
+scalar algorithms will be used) or a dictionary that contains the entries "value" (a
 scalar float), "contributions" (a pytree containing the summands that make up the
 criterion value of a likelihood problem) or "root_contributions" (a pytree containing
 the residuals of a least-squares problem). Moreover, the dict can have any number of
@@ -82,7 +82,7 @@ def dict_sphere(params: dict) -> float:
     return params["a"] ** 2 + params["b"] ** 2
 
 
-def least_squares_sphere(params: np.ndarray) -> dict[str:Any]:
+def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
     out = {"root_contributions": params, "p_mean": params.mean(), "p_std": params.std()}
     return out
 ```
@@ -101,7 +101,7 @@ def least_squares_sphere(params: np.ndarray) -> dict[str:Any]:
 - Internally we can make almost no assumptions about the output of a criterion function,
   making the code very complex and brittle
 - The best typing information we could get for the output of the criterion function is
-  `float | dict[str: Any]` which is not very useful.
+  `float | dict[str, Any]` which is not very useful.
 
 #### Proposal
 
@@ -122,7 +122,7 @@ def least_squares_sphere(params: np.ndarray) -> em.CriterionValue:
 ```
 
 We can exploit this deprecation cycle to rename `root_contributions` to `residuals`
-which is more in line with the literater.
+which is more in line with the literature.
 
 If a user only wants to express the least-squares structure of the problem without
 logging any additional information, they can use a decorator to simplify things:
