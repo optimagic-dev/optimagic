@@ -1,3 +1,6 @@
+<div style="padding-top: 50px;">
+</div>
+
 ```{raw} html
 <img src="_static/images/estimagic_logo.svg" class="only-light center" style="display:block; margin-left:auto; margin-right:auto; width:300px; height:auto;"/>
 
@@ -14,7 +17,7 @@ provides functionality to perform statistical inference on estimated parameters.
 For a complete introduction to optimization in estimagic, check out the
 {ref}`estimagic_scipy2022`
 
-If you want to know more about pytask, dive into one of the following topics
+If you want to know more about estimagic, dive into one of the following topics
 
 `````{grid} 1 2 2 2
 ---
