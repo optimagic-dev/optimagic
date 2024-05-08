@@ -17,7 +17,7 @@ provides functionality to perform statistical inference on estimated parameters.
 For a complete introduction to optimization in estimagic, check out the
 {ref}`estimagic_scipy2022`
 
-If you want to know more about estimagic, dive into one of the following topics
+If you want to learn more about estimagic, dive into one of the following topics
 
 `````{grid} 1 2 2 2
 ---
@@ -159,120 +159,6 @@ Collection of tutorials, talks, and screencasts on estimagic.
 ````
 
 `````
-
-<!-- ```{raw} html
-<div class="container" id="index-container">
-    <div class="row">
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-            <a href="getting_started/index.html" id="index-link">
-                <div class="card text-center intro-card shadow">
-                    <img src="_static/images/light-bulb.svg" class="card-img-top"
-                         alt="getting_started-icon" height="52"
-                    >
-                    <div class="card-body flex-fill">
-                        <h5 class="card-title">Getting Started</h5>
-                        <p class="card-text">
-                            New users of estimagic should read this first.
-                        </p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-            <a href="how_to_guides/index.html" id="index-link">
-                <div class="card text-center intro-card shadow">
-                    <img src="_static/images/book.svg" class="card-img-top"
-                         alt="how-to guides icon" height="52"
-                    >
-                    <div class="card-body flex-fill">
-                        <h5 class="card-title">How-to Guides</h5>
-                        <p class="card-text">
-                            Detailed instructions for specific and advanced tasks.
-                        </p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-            <a href="getting_started/installation.html" id="index-link">
-                <div class="card text-center intro-card shadow">
-                    <img src="_static/images/installation.svg" class="card-img-top"
-                         alt="installation icon" height="52"
-                    >
-                    <div class="card-body flex-fill">
-                        <h5 class="card-title">Installation</h5>
-                        <p class="card-text">
-                            Installation instructions for estimagic
-                            and optional dependencies.
-                        </p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-            <a href="algorithms.html" id="index-link">
-                <div class="card text-center intro-card shadow">
-                    <img src="_static/images/optimization.svg" class="card-img-top"
-                         alt="algos icon" height="52"
-                    >
-                    <div class="card-body flex-fill">
-                        <h5 class="card-title">Optimization Algorithms</h5>
-                        <p class="card-text">
-                            List of numerical optimizers and their optional parameters.
-                        </p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-            <a href="explanations/index.html" id="index-link">
-                <div class="card text-center intro-card shadow">
-                    <img src="_static/images/books.svg" class="card-img-top"
-                         alt="explanations icon" height="52"
-                    >
-                    <div class="card-body flex-fill">
-                        <h5 class="card-title">Explanations</h5>
-                        <p class="card-text">
-                            Background information to key topics
-                            underlying the package.
-                        </p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-            <a href="reference_guides/index.html" id="index-link">
-                <div class="card text-center intro-card shadow">
-                    <img src="_static/images/coding.svg" class="card-img-top"
-                         alt="reference guides icon" height="52"
-                    >
-                    <div class="card-body flex-fill">
-                        <h5 class="card-title">API Reference</h5>
-                        <p class="card-text">
-                            Detailed description of the estimagic API.
-                        </p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-            <a href="videos.html" id="index-link">
-                <div class="card text-center intro-card shadow" style="width: 100%;">
-                    <img src="_static/images/video.svg" class="card-img-top"
-                         alt="video icon" height="60"
-                    >
-                    <div class="card-body flex-fill">
-                        <h5 class="card-title">Videos</h5>
-                        <p class="card-text">
-                            Collection of tutorials, talks, and screencasts on estimagic.
-                        </p>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-</div>
-``` -->
 
 ```{toctree}
 ---
