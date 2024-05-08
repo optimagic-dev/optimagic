@@ -3,7 +3,71 @@
 Explanations contain background information on important topics. They are not needed to
 get started, but very helpful for advanced users and developers of estimagic.
 
-```{raw} html
+`````{grid} 1 2 2 2
+---
+gutter: 3
+---
+````{grid-item-card}
+:text-align: center
+:img-top: ../_static/images/optimization.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} optimization/index.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Optimization
+```
+
+Learn how to use constraints, parallelize function evaluations, and configure every aspect of your optimization.
+
+````
+
+````{grid-item-card}
+:text-align: center
+:img-top: ../_static/images/differentiation.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} differentiation/index.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Differentiation
+```
+
+Learn how to influence step sizes, parallelize function evaluations, and use advanced options for numerical differentiation.
+
+````
+
+````{grid-item-card}
+:text-align: center
+:img-top: ../_static/images/bullseye.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} inference/index.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Estimation
+```
+
+Learn how to calculate different types of standard errors and do sensitivity analysis.
+
+````
+
+
+`````
+
+<!-- ```{raw} html
 <div class="container" id="index-container">
     <div class="row">
         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
@@ -53,7 +117,7 @@ get started, but very helpful for advanced users and developers of estimagic.
         </div>
     </div>
 </div>
-```
+``` -->
 
 ```{toctree}
 ---
