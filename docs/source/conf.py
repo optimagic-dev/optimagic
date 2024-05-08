@@ -47,6 +47,7 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
+    "sphinx_design",
 ]
 
 myst_enable_extensions = [
@@ -161,7 +162,13 @@ nb_execution_excludepatterns = [
 # a list of builtin themes.
 html_theme = "furo"
 
-html_css_files = ["css/custom.css"]
+# Add any paths that contain custom static files (such as style sheets) here, relative
+# to this directory. They are copied after the built-in static files, so a file named
+# "default.css" will overwrite the built-in "default.css".
+html_css_files = ["css/termynal.css", "css/termynal_custom.css", "css/custom_tobi.css"]
+
+html_js_files = ["js/termynal.js", "js/custom.js"]
+# html_css_files = ["css/custom.css"]
 
 # html_theme_options = {
 #     "github_url": "https://github.com/OpenSourceEconomics/estimagic",

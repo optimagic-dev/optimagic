@@ -14,7 +14,150 @@ provides functionality to perform statistical inference on estimated parameters.
 For a complete introduction to optimization in estimagic, check out the
 {ref}`estimagic_scipy2022`
 
-```{raw} html
+If you want to know more about pytask, dive into one of the following topics
+
+`````{grid} 1 2 2 2
+---
+gutter: 3
+---
+````{grid-item-card}
+:text-align: center
+:img-top: _static/images/light-bulb.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} getting_started/index.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Getting Started
+```
+
+New users of estimagic should read this first.
+
+````
+
+````{grid-item-card}
+:text-align: center
+:img-top: _static/images/book.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} how_to_guides/index.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+How-to Guides
+```
+
+Detailed instructions for specific and advanced tasks.
+
+````
+
+````{grid-item-card}
+:text-align: center
+:img-top: _static/images/installation.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} getting_started/installation.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Installation
+```
+
+Installation instructions for estimagic and optional dependencies.
+
+````
+
+````{grid-item-card}
+:text-align: center
+:img-top: _static/images/optimization.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} algorithms.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Optimization Algorithms
+```
+
+List of numerical optimizers and their optional parameters.
+
+````
+
+
+````{grid-item-card}
+:text-align: center
+:img-top: _static/images/books.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} explanations/index.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Explanations
+```
+
+Background information on key topics central to the package.
+
+````
+
+````{grid-item-card}
+:text-align: center
+:img-top: _static/images/coding.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} reference_guides/index.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+API Reference
+```
+
+Detailed description of the estimagic API.
+
+````
+
+````{grid-item-card}
+:text-align: center
+:columns: 12
+:img-top: _static/images/video.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} videos.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link
+---
+Videos
+```
+
+Collection of tutorials, talks, and screencasts on estimagic.
+
+````
+
+`````
+
+<!-- ```{raw} html
 <div class="container" id="index-container">
     <div class="row">
         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
@@ -126,7 +269,7 @@ For a complete introduction to optimization in estimagic, check out the
         </div>
     </div>
 </div>
-```
+``` -->
 
 ```{toctree}
 ---
