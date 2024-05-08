@@ -95,7 +95,6 @@ linkcheck_ignore = [
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-html_static_path = ["_static"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -165,41 +164,15 @@ html_theme = "furo"
 # Add any paths that contain custom static files (such as style sheets) here, relative
 # to this directory. They are copied after the built-in static files, so a file named
 # "default.css" will overwrite the built-in "default.css".
-html_css_files = ["css/termynal.css", "css/termynal_custom.css", "css/custom_tobi.css"]
+html_css_files = ["css/termynal.css", "css/termynal_custom.css", "css/custom.css"]
 
 html_js_files = ["js/termynal.js", "js/custom.js"]
-# html_css_files = ["css/custom.css"]
 
-# html_theme_options = {
-#     "github_url": "https://github.com/OpenSourceEconomics/estimagic",
-#     "logo": {
-#         "text": "estimagic",
-#         "image_dark": "_static/images/estimagic_icon_dark_mode.svg",
-#     },
-# }
-
-
-# # Add any paths that contain custom static files (such as style sheets) here,
-# # relative to this directory. They are copied after the builtin static files,
-# # so a file named "default.css" will overwrite the builtin "default.css".
-# # html_static_path = ["_static"]
-
-# # Custom sidebar templates, must be a dictionary that maps document names
-# # to template names.
-# #
-# # This is required for the alabaster theme
-# # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-# html_sidebars = {
-#     "**": [
-#         "relations.html",  # needs 'show_related': True theme option to display
-#         "searchbox.html",
-#     ]
-# }
 
 # Add any paths that contain custom static files (such as style sheets) here, relative
 # to this directory. They are copied after the builtin static files, so a file named
 # "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["_static"]
+html_static_path = ["_static"]
 
 # If false, no module index is generated.
 html_domain_indices = True
@@ -224,8 +197,6 @@ html_title = "estimagic"
 html_theme_options = {
     "sidebar_hide_name": True,
     "navigation_with_keys": True,
-    # "light_logo": "_static/images/estimagic_icon.svg",
-    # "dark_logo": "_static/images/estimagic_icon_dark_mode.svg",
-    "light_logo": "_static/images/estimagic_logo",
-    "dark_logo": "_static/images/estimagic_logo_dark_mode",
+    "light_logo": "images/estimagic_logo.svg",
+    "dark_logo": "images/estimagic_logo_dark_mode.svg",
 }
