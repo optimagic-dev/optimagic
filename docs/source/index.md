@@ -25,7 +25,7 @@ gutter: 3
 ---
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/light-bulb.svg
+:img-top: _static/images/light-bulb_blue.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -33,7 +33,7 @@ gutter: 3
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Getting Started
 ```
@@ -44,7 +44,7 @@ New users of estimagic should read this first.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/book.svg
+:img-top: _static/images/book_blue.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -52,7 +52,7 @@ New users of estimagic should read this first.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 How-to Guides
 ```
@@ -63,7 +63,7 @@ Detailed instructions for specific and advanced tasks.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/installation.svg
+:img-top: _static/images/installation_blue.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -71,7 +71,7 @@ Detailed instructions for specific and advanced tasks.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Installation
 ```
@@ -90,7 +90,7 @@ Installation instructions for estimagic and optional dependencies.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Optimization Algorithms
 ```
@@ -102,7 +102,7 @@ List of numerical optimizers and their optional parameters.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/books.svg
+:img-top: _static/images/books_blue.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -110,7 +110,7 @@ List of numerical optimizers and their optional parameters.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Explanations
 ```
@@ -121,7 +121,7 @@ Background information on key topics central to the package.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/coding.svg
+:img-top: _static/images/coding_blue.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -129,7 +129,7 @@ Background information on key topics central to the package.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 API Reference
 ```
@@ -141,7 +141,7 @@ Detailed description of the estimagic API.
 ````{grid-item-card}
 :text-align: center
 :columns: 12
-:img-top: _static/images/video.svg
+:img-top: _static/images/video_blue.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -149,7 +149,7 @@ Detailed description of the estimagic API.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Videos
 ```

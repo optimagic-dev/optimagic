@@ -18,7 +18,7 @@ gutter: 3
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Optimization
 ```
@@ -37,7 +37,7 @@ Learn how to use constraints, parallelize function evaluations, and configure ev
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Differentiation
 ```
@@ -56,7 +56,7 @@ Learn how to influence step sizes, parallelize function evaluations, and use adv
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Estimation
 ```
@@ -75,7 +75,7 @@ Learn how to calculate different types of standard errors and do sensitivity ana
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Miscellaneous
 ```
@@ -95,7 +95,7 @@ Learn how to create publication quality LaTeX tables, use custom batch evaluator
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Videos
 ```

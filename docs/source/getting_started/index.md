@@ -17,7 +17,7 @@ gutter: 3
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Optimization
 ```
@@ -36,7 +36,7 @@ Learn numerical optimization with estimagic.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Differentiation
 ```
@@ -55,7 +55,7 @@ Learn numerical differentiation with estimagic.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Estimation
 ```
@@ -74,7 +74,7 @@ Learn maximum likelihood and methods of simulated moments estimation with estima
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Installation
 ```
@@ -94,7 +94,7 @@ Installation instructions for estimagic and optional dependencies.
 ---
 click-parent:
 ref-type: ref
-class: stretched-link index-card-link
+class: stretched-link index-card-link sd-text-primary
 ---
 Videos
 ```
