@@ -25,7 +25,7 @@ gutter: 3
 ---
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/light-bulb_blue.svg
+:img-top: _static/images/light-bulb.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -44,7 +44,7 @@ New users of estimagic should read this first.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/book_blue.svg
+:img-top: _static/images/book.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -63,7 +63,7 @@ Detailed instructions for specific and advanced tasks.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/installation_blue.svg
+:img-top: _static/images/installation.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -102,7 +102,7 @@ List of numerical optimizers and their optional parameters.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/books_blue.svg
+:img-top: _static/images/books.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -121,7 +121,7 @@ Background information on key topics central to the package.
 
 ````{grid-item-card}
 :text-align: center
-:img-top: _static/images/coding_blue.svg
+:img-top: _static/images/coding.svg
 :class-img-top: index-card-image
 :shadow: md
 
@@ -141,7 +141,7 @@ Detailed description of the estimagic API.
 ````{grid-item-card}
 :text-align: center
 :columns: 12
-:img-top: _static/images/video_blue.svg
+:img-top: _static/images/video.svg
 :class-img-top: index-card-image
 :shadow: md
 

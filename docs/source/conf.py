@@ -200,11 +200,11 @@ html_theme_options = {
     "light_logo": "images/estimagic_logo.svg",
     "dark_logo": "images/estimagic_logo_dark_mode.svg",
     "light_css_variables": {
-        "color-brand-primary": "#006fe5",
-        "color-brand-content": "#006fe5",
+        "color-brand-primary": "#f04f43",
+        "color-brand-content": "#f04f43",
     },
     "dark_css_variables": {
-        "color-brand-primary": "#006fe5",
-        "color-brand-content": "#006fe5",
+        "color-brand-primary": "#f04f43",
+        "color-brand-content": "#f04f43",
     },
 }
