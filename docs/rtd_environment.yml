@@ -17,7 +17,6 @@ dependencies:
   - ipython
   - ipython_genutils
   - myst-nb
-  - pydata-sphinx-theme
   - furo
   - pybaum
   - matplotlib
@@ -28,7 +27,6 @@ dependencies:
   - patsy
   - joblib
   - plotly
-  - ipython
   - pip:
       - ../
       - kaleido

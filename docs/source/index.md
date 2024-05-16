@@ -189,13 +189,6 @@ algorithms
 - The progress of the optimization is displayed in real time via an interactive
   dashboard. See {ref}`dashboard`.
 
-> ```{image} _static/images/dashboard.gif
-> ---
-> align: center
-> scale: 80 %
-> ---
-> ```
-
 ### Estimation and Inference
 
 - You can estimate a model using method of simulated moments (MSM), calculate standard
