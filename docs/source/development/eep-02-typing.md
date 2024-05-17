@@ -267,6 +267,8 @@ the current `cov` and `sdcorr` constraints to `FlatCovConstraint` and
 `FlatSdcorrConstraint`. This prepares the introduction of a more natural `CovConstraint`
 and `SdcorrConstraint` later.
 
+(algorithm-selection)=
+
 ### Algorithm selection
 
 #### Current situation
@@ -297,11 +299,16 @@ However, there are two difficulties that make this solution suboptimal:
    gradient-based, local, ...). However, it is not clear which filters are relevant and
    in which order a user wants to apply them.
 
-#### Goal
+#### Proposal
 
-Assume a simplified situation with 5 algorithms. We only consider whether an algorithm
-is gradient free or gradient based. One algorithm is not installed, so should never show
-up anywhere. Here is the ficticious list:
+We continue to support passing algorithms as strings. This is important because
+estimagic promises to work "just like scipy" for simple things. On top, we offer a new
+way of specifying algorithms that is less prone to typos, supports autocomplete and will
+be useful for advanced algortihm configuration.
+
+To exemplify the new approach, assume a simplified situation with 5 algorithms. We only
+consider whether an algorithm is gradient free or gradient based. One algorithm is not
+installed, so should never show up anywhere. Here is the ficticious list:
 
 - neldermead: installed, gradient_free
 - bobyqa: installed, gradient_free
@@ -328,10 +335,9 @@ The user types `em.algorithms.GradientFree.` and autocomplete shows
 - neldermead
 - bobyqa
 
-Once the user arrives at an algorithm, an instance of `Algorithm` is returned. This
-instance will be passed to `minimize` or `maximize`. Thus, in `minimize` and `maximize`
-we know the exact type we receive and do not have to make a distinction between built-in
-and user provided algorithms.
+Once the user arrives at an algorithm, a subclass of `Algorithm` is returned. This class
+will be passed to `minimize` or `maximize`. Passing configured instances of an
+`Algorithm`s will be discussed in [Algorithm Options](algorithm-options).
 
 In practice we would have a lot more algorithms and a lot more categories. Some
 categories might be mutually exclusive, in that case the second category is omitted
@@ -352,8 +358,6 @@ GradientBased LeastSquares algorithms and compare them in a criterion plot.
 These categories match nicely with our
 [algorithm selection tutorials](https://effective-programming-practices.vercel.app/scientific_computing/optimization_algorithms/objectives_materials.html)
 
-#### Implementation
-
 We can use
 [`dataclasses.make_dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.make_dataclass)
 to programatically build up a data structure with the autocomplete behavior described
@@ -367,13 +371,205 @@ the data structure we need are created. Maybe, this can be achieved with propert
 but I don't know yet how easy that is to add properties via `make_dataclass`
 ```
 
+(algorithm-options)=
+
 ### Algorithm options
+
+Algorithm options refer to options that are not handled by estimagic but directly by the
+algorithms. Examples are convergence criteria, stopping criteria and advanced
+configuration of algorithms. Some of them are supported by many algorithms (e.g.
+stopping after a maximum number of function evaluations is reached), some are supported
+by certain classes of algorithms (e.g. most genetic algorithms have a population size,
+most trustregion algorithms allow to set an initial trustregion radius) and some of them
+are completely specific to one algorithm (e.g. ipopt has more than 100 very specific
+options, nag_dfols supports very specific restarting strategies, ...).
+
+While nothing can be changed about the fact that every algorithm supports different
+options (e.g. there is simply no trustregion radius in a genetic algorithm), we go very
+far in harmonizing algo options across optimizers:
+
+1. Options that are the same in spirit (e.g. stop after a specific number of iterations)
+   get the same name across all optimizers wrapped in estimagic. Most of them even get
+   the same default value.
+1. Options that have undescriptive (and often heavily abbreviated) names in their
+   original implementation get more readable names, even if they appear only in a single
+   algorithm.
+1. Options that are specific to a well known optimizer (e.g. ipopt) are not renamed
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+The user passes `algo_options` as a dictionary of keyword arguments. All options that
+are not supported by the selected algorithm are discarded with a warning. The names of
+most options is very descriptive (even though a bit too long at times).
+
+We implement basic namespaces by introducing a dot notation. Example:
+
+```python
+options = {
+    "stopping.max_iterations": 1000,
+    "stopping.max_criterion_evaluations": 1500,
+    "convergence.relative_criterion_tolerance": 1e-6,
+    "convergence.scaled_gradient_tolerance": 1e-6,
+    "initial_radius": 0.1,
+    "population_size": 100,
+}
+```
+
+The option dictionary is then used as follows:
+
+```python
+minimize(
+    # ...
+    algorithm="scipy_lbfgsb",
+    algo_options=options,
+    # ...
+)
+```
+
+In the example, only the options `stopping.max_criterion_evaluations`,
+`stopping.max_iterations` and `convergence.relative_criterion_tolerance` are supported
+by `scipy_lbfgsb`. All other options would be ignored.
+
+**Things we want to keep**
+
+- Mixing the options for all optimizers in a single dictionary and discarding options
+  that do not apply to the selected optimizer allows to loop very efficiently over very
+  different algorithms (without if conditions in the user's code). This is very good for
+  quick experimentation, e.g. solving the same problem with three different optimizers
+  and limiting each optimizer to 100 function evaluations.
+- The basic namespaces help to quickly see what is influenced by a specific option. This
+  works especially well to distinguish stopping options and convergence criteria from
+  other tuning parameters of the algorithms.
+- All options are documented in the estimagic documentation, i.e. we do not link to the
+  docs of original packages.
+
+**Problems**
+
+- There is no autocomplete and the only way to find out which options are supported is
+  the documentation.
+- A small typo in an option name can easily lead to the option being discarded
+- Option dictionaries can grow very big
+- Only the namespaces for stopping and convergence work really well, everything else is
+  too different across optimizers.
+- The fact that option dictionaries are mutable can lead to errors, for example when a
+  user wants to try out a grid of values for one tuning parameter while keeping all
+  other options constant.
+
+**Secondary problems**
+
+The following problems are not related to the specific goals of this enhancement
+proposal but it might be a good idea to address them in the same deprecation cycle.
+
+- In an effort to make everything very descriptive, some names got too long. For example
+  `"convergence.absolute_gradient_tolerance"` is very long but most people are so
+  familiar with reading `"gtol_abs"` (from scipy and nlopt) that
+  `"convergence.gtol_abs"` would be a better name.
+- It might have been a bad idea to harmonize default values for similar options that
+  appear in multiple optimizers. Sometimes the options, while similar in spirit, are
+  defined slightly differently and usually algorithm developers will set all tuning
+  parameters to maximize performance on a benchmark set they care about. If we change
+  how options are handled in estimagic, should consider to just harmonize names and not
+  default values.
 
 #### Proposal
+
+In total we want to offer three entry points for the configuration of optimizers:
+
+1. Instead of passing an `Algorithm` class (as described in
+   [Algorithm Slection](algorithm-selection)) the user can create an instance of their
+   selected algorithm. When creating the instance, they have autocompletion for all
+   options supported by the selected algorithm. `Algorithm`s are immutable.
+1. Given an instance of an `Algorithm`, a user can easily create a modified copy of that
+   instance by using the following methods:
+
+- `with_stopping`: To modify the stopping criteria
+- `with_convergence`: To modify the convergence criteria
+- `with_option`: To modify other algorithm options.
+
+3. As before, the user can pass a global set of options to `maximize` or `minimize`. We
+   continue to support option dictionaries but also allow `AlgorithmOption` objects that
+   enable better autocomplete and immutability. Global options override the options that
+   were directly passed to an optimizer. For consistency, `AlgorithmOptions` can offer
+   the `with_stopping`, `with_convergence` and `with_option` methods.
+
+The previous example continues to work. Examples of the new possibilities are:
+
+```python
+# configured algorithm
+algo = em.algorithms.scipy_lbfgsb(
+    stopping_max_iterations=1000,
+    stopping_max_criterion_evaluations=1500,
+    convergence_relative_criterion_tolerance=1e-6,
+)
+minimize(
+    # ...
+    algorithm=algo,
+    # ...
+)
+```
+
+```python
+# using copy constructors for better namespaces
+algo = (
+    em.algorithms.scipy_lbfgsb()
+    .with_stopping(
+        max_iterations=1000,
+        max_criterion_evaluations=1500,
+    )
+    .with_convergence(
+        relative_criterion_tolerance=1e-6,
+    )
+)
+
+minimize(
+    # ...
+    algorithm=algo,
+    # ...
+)
+```
+
+```python
+# using copy constructors to create variants
+base_algo = em.algorithms.fides(stopping_max_iterations=1000)
+algorithms = [base_algo.with_option(initial_radius=r) for r in [0.1, 0.2, 0.5]]
+
+for algo in algorithms:
+    minimize(
+        # ...
+        algorithm=algo,
+        # ...
+    )
+```
+
+```python
+# option object
+options = em.AlgorithmOptions(
+    stopping_max_iterations=1000,
+    stopping_max_criterion_evaluations=1500,
+    convergence_relative_criterion_tolerance=1e-6,
+    convergence_scaled_gradient_tolerance=1e-6,
+    initial_radius=0.1,
+    population_size=100,
+)
+
+
+minimize(
+    # ...
+    algorithm=em.algorithms.scipy_lbfgsb,
+    algo_options=options,
+    # ...
+)
+```
+
+The implementation of this behavior is not trivial since the signatures across several
+methods need to be aligned. This introduces code duplication unless helpers like
+`functools.wraps` or dynamic signature creation as in
+[dags](https://github.com/OpenSourceEconomics/dags/blob/main/src/dags/signature.py) are
+used. Unfortunately, those helpers break autocompletion in Vscode and Pycharm. A
+possible way out is dynamic creation of algorithm classes. This is also necessary to
+preserve backwards compatibility with the current internal algorithm interface. The
+discussion is continued in
+[The internal algorithm interface and \`Algorithm objects](algorithm-interface)
 
 ### Custom derivatives
 
@@ -391,13 +587,242 @@ but I don't know yet how easy that is to add properties via `make_dataclass`
 
 #### Proposal
 
-### The internal algorithm interface
+(algorithm-interface)=
+
+### The internal algorithm interface and `Algorithm` objects
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+Currently, algorithms are defined as `minimize` functions that are decorated with
+`em.mark_minimizer`. The `minimize` function returns a dictionary with a few mandatory
+and several optional keys. Algorithms can provide information to estimagic in two ways:
+
+1. The signature of the minimize function signals whether the algorithm needs
+   derivatives and whether it supports bounds and nonlinear constraints. Moreover, it
+   signals which algorithm specific options are supported. Default values for algorithm
+   specific options are also defined in the signature of the minimize function.
+1. `@mark_minimizer` collectn the following information via keyword arguments
+
+- Is the algorithm a scalar, least-squares or likelihood optimizer?
+- The algorithm name
+- Does the algorithm require well scaled problems
+- Is the algortihm currently installed
+- Is the algorithm global or local
+- Should the history tracking be disabled (e.g. because the algorithm tracks its own
+  history)
+- Does the algorithm parallelize criterion evaluations
+
+A slightly simplified example of the current internal algorithm interface is:
+
+```python
+@mark_minimizer(name="scipy_neldermead", needs_scaling=True)
+def scipy_neldermead(
+    criterion,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    stopping_max_iterations=1_000_000,
+    stopping_max_criterion_evaluations=1_000_000,
+    convergence_absolute_criterion_tolerance=1e-8,
+    convergence_absolute_params_tolerance=1e-8,
+    adaptive=False,
+):
+    pass
+```
+
+The first two arguments (`criterion` and `x`) are mandatory. The lack of any arguments
+related to derivatives signifies that `scipy_neldermead` is a gradient free algorithm.
+The bounds show that it supports box constraints. The remaining arguments define the
+supported stoppin criteria and algorithm options as well as their default values.
+
+The decorator simply attaches information to the function as `_algorithm_info`
+attribute. This originated as a hack but was never changed afterwards. The
+`AlgorithmInfo` looks as follows:
+
+```python
+class AlgoInfo(NamedTuple):
+    primary_criterion_entry: str
+    name: str
+    parallelizes: bool
+    needs_scaling: bool
+    is_available: bool
+    arguments: list  # this is read from the signature
+    is_global: bool = False
+    disable_history: bool = False
+```
+
+**Things we want to keep**
+
+- Writing `minimize` functions is very simple in many cases we only need minimal
+  wrappers around optimizer libraries.
+- The internal interface has proven flexible enough for many optimizers we had not
+  wrapped when we designed it. It is easy to add more optional arguments to the
+  decorator without breaking any existing code.
+- The decorator approach completely hides how we represent algorithms internally
+- Since we read a lot of information from function signatures (as opposed to registering
+  options somewhere) there is no duplicated information.
+
+**Problems**
+
+- Type checkers complain about the `._algorithm_info` hack
+- A function with attached `._algorithm_info` is not a good internal representation
+- All computations and signature checking are done eagerly for all algorithms at import
+  time. This is one of the reasons why imports are slow.
+- The first few arguments to the minimize functions follow a naming scheme and any typo
+  in those names would lead to situations that are hard to debug (e.g. if `lower_bound`
+  was misstyped as `lower_buond` we would assume that the algorithm does not support
+  lower bounds but has a tuning parameter called `lower_buond`)
 
 #### Proposal
+
+The primary changes to the internal algorithm interface are:
+
+1. The minimize function takes an instance of `em.InternalProblem` as first argument.
+   `em.InternalProblem` bundles all problem specific arguments like `criterion`,
+   `lower_bounds`, `upper_bounds`, `derivative`, `criterion_and_derivative`, and
+   `nonlinear_constraints`. This reduces the potential for typos but means that all
+   information we read from the presence or absence of those arguments needs to be
+   passed into the `mark.minimizer` decorator instead. Therefore, `mark.minimizer` gets
+   the following new arguments:
+
+- supports_bounds: bool
+- supports_nonlinear_constraints: bool
+- supports_linear_constraints: bool (currently not used, but we should add it)
+- needs_derivative: bool This is a breaking change that we will implement without
+  deprecation cycle. There are probably very few users of estimagic who use custom
+  algorithms and are affected by this.
+
+2. The minimize function returns an `InternalOptimizeResult` instead of a dictionary. We
+   can use a deprecation cycle for this.
+1. Instead of simply attaching information to a function, the `mark.minimizer` decorator
+   dynamically creates a suclass of `em.Algorithm`. This class contains all information
+   that is currently stored in `._algorithm_info` and supports the configuration methods
+   `with_stopping`, `with_convergence` and `with_option`. This is not a breaking change
+   as it was never documented what `mark_minimizer` does.
+
+```{note}
+This proposal violates several best practices of object oriented programming:
+1. Classes are dynamically generated, which will probably require the use of `exec`.
+It seems justifiable since it gets rid of all duplication in the signatures of
+`__init__` and the `with_...` methods and thus produces a very nice autocomplete
+behavior.
+2. The `with_...` methods have different signatures across subclasses and thus
+violate the Liskov Substitution Principle. However, it seems justifiable since they are
+basically constructors.
+3. `InternalProblem` is a relative imprecise type as it needs to work for all problems
+that can be solved by estimagic (constrained vs. unconstrained, least-squares vs. scalar,
+...). We could work with a Class hierarchy here to get better static information, but
+opt against it because it would complicate the internal algorithm interface.
+```
+
+```{note}
+We can use this deprecation cycle to get rid of `primary_criterion_entry` (which could
+take the values "value", "contributions" or "root_contributions") and use
+`problem_type` instead, which can take the values `em.ProblemType.scalar`,
+`em.ProblemType.least_squares` and `em.ProblemType.likelihood`.
+```
+
+```{note}
+Should we continue to infer `parallelizes` from the presence of `batch_evaluator` in
+the function signature?
+```
+
+Here are a few code snippets to make things concrete. The `InternalProblem` will be an
+immutable dataclass that looks as follows:
+
+```python
+from numpy.typing import NDArray
+from dataclasses import dataclass
+from typing import Callable, Tuple
+import estimagic as em
+
+
+@dataclass(frozen=True)
+class ScalarProblemFunctions:
+    f: Callable[[NDArray[float]], float]
+    jac: Callable[[NDArray[float]], NDArray[float]]
+    f_and_jac: Callable[[NDArray[float]], Tuple[float, NDArray[float]]]
+
+
+@dataclass(frozen=True)
+class LeastSquaresProblemFunctions:
+    f: Callable[[NDArray[float]], NDArray[float]]
+    jac: Callable[[NDArray[float]], NDArray[float]]
+    f_and_jac: Callable[[NDArray[float]], Tuple[NDArray[float], NDArray[float]]]
+
+
+@dataclass(frozen=True)
+class LikelihoodProblemFunctions:
+    f: Callable[[NDArray[float]], NDArray[float]]
+    jac: Callable[[NDArray[float]], NDArray[float]]
+    f_and_jac: Callable[[NDArray[float]], Tuple[NDArray[float], NDArray[float]]]
+
+
+@dataclass(frozen=True)
+class InternalProblem:
+    scalar: ScalarProblemFunctions
+    least_squares: LeastSquaresProblemFunctions
+    likelihood: LikelihoodProblemFunctions
+    bounds: em.Bounds | None
+    linear_constraints: list[em.LinearConstraint] | None
+    nonlinear_constraints: list[em.NonlinearConstraint] | None
+```
+
+The `InternalOptimizeResult` formalizes the current dictionary solution:
+
+```python
+@dataclass(frozen=True)
+class InternalOptimizeResult:
+    solution_x: NDArray[float]
+    solution_criterion: float
+    n_criterion_evaluations: int | None
+    n_derivative_evaluations: int | None
+    n_iterations: int | None
+    success: bool | None
+    message: str | None
+```
+
+Explicitly writing out all optional arguments of `mark.minimizer`, the wrapper for
+`scipy_neldermead` changes to:
+
+```python
+@em.mark.minimizer(
+    name="scipy_neldermead",
+    problem_type=em.ProblemType.scalar,
+    needs_scaling=True,
+    is_available=IS_SCIPY_AVAILABLE,
+    is_global=False,
+    disable_history=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    needs_derivative=False,
+)
+def scipy_neldermead(
+    internal_problem: InternalProblem,
+    x: NDArray[float],
+    stopping_max_iterations=1_000_000,
+    stopping_max_criterion_evaluations=1_000_000,
+    convergence_absolute_criterion_tolerance=1e-8,
+    convergence_absolute_params_tolerance=1e-8,
+    adaptive=False,
+) -> InternalOptimizeResult:
+    pass
+```
+
+The abstract base class `Algorithm` is:
+
+```python
+
+```
+
+If we were to define the dynamically generated `ScipyNeldermead` class ourselves, the
+code would roughly look as follows:
+
+```python
+
+```
 
 ## Numerical differentiation
 
