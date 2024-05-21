@@ -47,6 +47,23 @@ def test_get_bootstrap_indices_randomization_works_with_weights_and_clustering(d
     assert set(res[0]) != set(res[1])
 
 
+def test_get_bootstrap_indices_randomization_works_with_and_without_weights(data):
+    rng1 = get_rng(seed=12345)
+    rng2 = get_rng(seed=12345)
+    res1 = get_bootstrap_indices(data, n_draws=1, rng=rng1)
+    res2 = get_bootstrap_indices(data, weight_by="weights", n_draws=1, rng=rng2)
+    assert not np.array_equal(res1, res2)
+
+
+def test_get_boostrap_indices_randomization_works_with_extreme_case(data):
+    rng = get_rng(seed=12345)
+    weights = np.zeros(900)
+    weights[0] = 1.0
+    data["weights"] = weights
+    res = get_bootstrap_indices(data, weight_by="weights", n_draws=1, rng=rng)
+    assert len(np.unique(res)) == 1
+
+
 def test_clustering_leaves_households_intact(data):
     rng = get_rng(seed=12345)
     indices = get_bootstrap_indices(data, cluster_by="hh", n_draws=1, rng=rng)[0]

@@ -26,52 +26,46 @@ def get_bootstrap_indices(
 
     """
     n_obs = len(data)
+    probs = _get_probs_for_bootstrap_indices(data, weight_by, cluster_by)
 
-    if weight_by is None:
-
-        if cluster_by is None:
-            bootstrap_indices = list(rng.integers(0, n_obs, size=(n_draws, n_obs)))
-        else:
-            clusters = data[cluster_by].unique()
-            drawn_clusters = rng.choice(
-                clusters, size=(n_draws, len(clusters)), replace=True
-            )
-
-            bootstrap_indices = _convert_cluster_ids_to_indices(
-                data[cluster_by], drawn_clusters
-            )
-
+    if cluster_by is None:
+        bootstrap_indices = list(
+            rng.choice(n_obs, size=(n_draws, n_obs), replace=True, p=probs)
+        )
     else:
+        clusters = data[cluster_by].unique()
+        drawn_clusters = rng.choice(
+            clusters, size=(n_draws, len(clusters)), replace=True, p=probs
+        )
 
-        if cluster_by is None:
-            probs = data[weight_by] / data[weight_by].sum()
-            bootstrap_indices = list(
-                rng.choice(
-                    n_obs,
-                    size=(n_draws, n_obs),
-                    replace=True,
-                    p=probs,
-                )
-            )
-        else:
-            clusters_and_weights = (
-                data.groupby(cluster_by)[weight_by].sum().reset_index()
-            )
-            clusters = clusters_and_weights[cluster_by]
-            weights = clusters_and_weights[weight_by]
-            probs = weights / weights.sum()
-            drawn_clusters = rng.choice(
-                clusters,
-                size=(n_draws, len(clusters)),
-                replace=True,
-                p=probs,
-            )
-
-            bootstrap_indices = _convert_cluster_ids_to_indices(
-                data[cluster_by], drawn_clusters
-            )
+        bootstrap_indices = _convert_cluster_ids_to_indices(
+            data[cluster_by], drawn_clusters
+        )
 
     return bootstrap_indices
+
+
+def _get_probs_for_bootstrap_indices(data, weight_by, cluster_by):
+    """Calculate probabilities for drawing bootstrap indices.
+
+    Args:
+        data (pandas.DataFrame): original dataset.
+        weight_by (str): column name of the variable with weights.
+        cluster_by (str): column name of the variable to cluster by.
+
+    Returns:
+        list: numpy array with probabilities.
+
+    """
+    if weight_by is None:
+        probs = None
+    else:
+        if cluster_by is None:
+            probs = data[weight_by] / data[weight_by].sum()
+        else:
+            cluster_weights = data.groupby(cluster_by, sort=False)[weight_by].sum()
+            probs = cluster_weights / cluster_weights.sum()
+    return probs
 
 
 def _convert_cluster_ids_to_indices(cluster_col, drawn_clusters):
