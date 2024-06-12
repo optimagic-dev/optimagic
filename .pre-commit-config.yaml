@@ -79,7 +79,7 @@ repos:
           - --blank
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.3
+    rev: v0.4.8
     hooks:
       - id: ruff
   - repo: https://github.com/nbQA-dev/nbQA
