@@ -692,9 +692,76 @@ returns a tuple of the criterion value and the derivative instead.
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+We often allow to switch on some behavior with a bool or a string value and then
+configure the behavior with an option dictionary. Examples are:
+
+- `logging` (str | pathlib.Path | False) and `log_options` (dict)
+- `scaling` (bool) and `scaling_options` (dict)
+- `error_handling` (Literal\["raise", "continue"\]) and `error_penalty` (dict)
+- `multistart` (bool) and `multistart_options`
+
+Moreover we have option dictionaries whenever we have nested invocations of estimagic
+functions. Examples are:
+
+- `numdiff_options` in `minimize` and `maximize`
+- `optimize_options` in `estimate_msm` and `estimate_ml`
+
+**Things we want to keep**
+
+- It is nice that complex behavior like logging or multistart can be switched on in
+  extremely simple ways, without importing anything and without looking up supported
+  options.
+- The interfaces are very declarative and decoupled from our implementation.
+
+**Problems**
+
+- Option dictionaries are brittle and don't support autocomplete
+- It can be confusing if someone provided scaling options or multistart options but they
+  take no effect because `scaling` or `multistart` were not set to True.
 
 #### Proposal
+
+We want to keep a simple way of enabling complex behavior (with some default options)
+but get rid of having two separate arguments, one to switch the behavior on and one to
+configure it. This will mean that we have to be generous regarding input types.
+
+##### Logging
+
+Currently we only implement logging via an sqlite database. All `log_options` are
+specific to this type of logging. However, logging is slow and we should support more
+types of logging. For this, we can implement a simple `Logger` abstraction. Advanced
+users could implement their own logger.
+
+After the changes, `logging` can be any of the following:
+
+- False (or anything Falsy): No logging is used
+- a str or pathlib.Path: Logging is used at default options
+- An instance of `estimagic.Logger`. There will be multiple subclasses, e.g.
+  `SqliteLogger` which allow us to switch out the logging backend. Each subclass might
+  have different optional arguments.
+
+The `log_options` are deprecated.
+
+##### Scaling, error handling and multistart
+
+In contrast to logging, scaling, error handling and multistart are deeply baked into
+estimagic's minimize function. Therefore, it does not make sense to create abstractions
+for these features that would make them replaceable components that can be switched out
+for other implementations by advanced users. Most of these features are already
+perceived as advanced and allow for a lot of configuration.
+
+We therefore suggest the following argument types:
+
+- `scaling`: `bool | ScalingOptions`
+- `error_handling`: `bool | ErrorHandlingOptions`
+- `multistart`: `bool | MultistartOptions`
+
+All of the Option objects are simple dataclasses that mirror the current dictionaries.
+All `_options` arguments are deprecated.
+
+##### NumdiffOptions and similar
+
+Replace the current dictionaries by dataclasses.
 
 (algorithm-interface)=
 
@@ -969,8 +1036,12 @@ class InternalOptimizeResult:
 
 ## Internal changes
 
+This section will be fledged out when we start the implementation of this enhancement
+proposal. Until then it serves as a collection of ideas.
+
 - The `history` list becomes a class
-- The internal criterion and derivative becomes a class instead of using partial
+- The internal criterion and derivative becomes a class instead of using multiple
+  partialling.
 - We add a logger abstraction that will enable alternatives to the sqlite database in
   the future
 - ...
