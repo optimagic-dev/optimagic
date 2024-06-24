@@ -36,6 +36,12 @@ etc.).
 This enhancement proposal outlines how we can accomodate the changes needed to reap the
 benefits of static typing without breaking users' code in too many places.
 
+A few deprecations and breaking changes will, however, be unavoidable. Since we are
+already interrupting users, we can use this deprecation cycle as a chance to better
+align some names in estimagic with scipy and other optimization library where we think
+it can improve the user experience. These changes will be marked as independent of the
+core proposal and summarized in [aligning names](aligning-names)
+
 ## Motivation and resources
 
 - [Writing Python like it's Rust](https://kobzol.github.io/rust/python/2023/05/20/writing-python-like-its-rust.html).
@@ -58,9 +64,12 @@ The following changes apply to all functions that are directly related to optimi
 i.e. `maximize`, `minimize`, `slice_plot`, `criterion_plot`, `params_plot`,
 `count_free_params`, `check_constraints` and `OptimizeResult`.
 
-### The `criterion` function
+### The objective function
 
 #### Current situation
+
+The objective or criterion function is the function being optimized. Currently, it is
+called `criterion` in estimagic.
 
 The `criterion` function maps a pytree of parameters into a criterion value.
 
@@ -71,8 +80,8 @@ this achieved by returning a dictionary instead of just a scalar float.
 
 The conventions for the return value of the criterion function is as follows:
 
-- For the simplest case where only scalar optimizers are used, `criterion` returns a
-  float ot a dictionary containing the key "value" which is a float.
+- For the simplest case where only scalar optimizers `criterion` returns a float ot a
+  dictionary containing the key "value" which is a float.
 - For likelihood functions, `criterion` returns a dictionary that contains at least the
   key `"contributions"` which can be any pytree that can be flattened into a numpy array
   of floats.
@@ -123,6 +132,7 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
   root_contributions, contributions and value even though any of them could be
   constructed out of the root_contributions. This means we need to check that all of
   them are compatible.
+- The name `criterion` is not used very widely in the Python optimization ecosystem
 
 #### Proposal
 
@@ -179,6 +189,9 @@ add the relevant information to the return type. However, I find that harder for
 beginner users.
 ```
 
+On top of the described changes, we suggest to rename `criterion` to `fun` to align the
+naming with `scipy.optimize`
+
 ### Bundling bounds
 
 #### Current situation
@@ -229,6 +242,10 @@ creation time such that users get errors before running an optimization.
 Using the old arguments will be deprecated.
 
 Since there is no need to modify instances of Bounds, it should be immutable.
+
+To improve the alignment with scipy, we can also allow users to pass a
+`scipy.optimize.Bounds` object as bounds. Internally, this will be converted to our
+`Bounds` object.
 
 ### Constraints
 
@@ -286,7 +303,7 @@ constraints = [
 ]
 
 res = em.minimize(
-    criterion=criterion,
+    fun=criterion,
     params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     algorithm="scipy_lbfgsb",
     constraints=constraints,
@@ -619,11 +636,57 @@ of dynamic signature creation. For more details, see the discussions about the
 
 ### Custom derivatives
 
+Providing custom derivatives to estimagic is slightly complicated because we support
+scalar, likelihood and least-squares problems in the same interface. Moreover, we allow
+to either provide a `derivative` function or a joint `criterion_and_derivative` function
+that allow users to exploit synergies between evaluating the criterion and the
+derivative.
+
 #### Current situation
 
-**Things we want to keep** **Problems**
+The `derivative` argument can currently be one of three things:
+
+- A callable: This is assumed to be the relevant derivative of `criterion`. If a scalar
+  optimizer is used, it is the gradient of the criterion value w.r.t. params. If a
+  likelihood optimizer is used, it is the jacobian of the likelihood contributions
+  w.r.t. params. If a least-squares optimizer is used, it is the jacobian of the
+  residuals w.r.t. params.
+- A dict: The dict must have three keys "value", "contributions" and
+  "root_contributions". The corresponding values are the three callables described
+  above.
+- None: In this case, a numerical derivative is calculated.
+
+The `criterion_and_derivative` argument exactly mirrors `derivative` but each callable
+returns a tuple of the criterion value and the derivative instead.
+
+**Things we want to keep**
+
+- It is good that synergies between `criterion` and `derivative` can be exploited
+- The three arguments (criterion, derivative, criterion_and_derivative) make sure that
+  every algorithm can run efficiently when looping over algorithms and keeping
+  everything else equal. With `scipy's` approach of setting `jac=True` if one wants to
+  use a joint criterion and derivative function, a gradient free optimizer would have no
+  chance of evaluating just the criterion.
+- We want to support scalar, least-squares and likelihood problems in one interface
+
+**Problems**
+
+- A dict with required keys is brittle
+- Autodiff needs to be handled completely outside of estimagic
+- The names `criterion`, `derivative` and `criterion_and_derivative` are not aligned
+  with scipy and very long.
 
 #### Proposal
+
+1. We keep the three arguments but rename them to `fun`, `jac` and `fun_and_jac`
+1. `jac` can also be a string `"jax"` or an enum `em.autodiff_backend.Jax`. This can be
+   used to signal that the objective function is jax compatible and jax should be used
+   to calculate its derivatives. In the long run we can add pytorch support and more.
+   Since this is mostly about a signal of compatibility, it would be enough to set one
+   of the two arguments to `"jax"`, the other one can be left at None.
+1. The dictionaries of callables get replaced by appropriate dataclasses. We align the
+   names with the names in `CriterionValue` (e.g. rename `root_contributions` to
+   `residuals`)
 
 ### Other option dictionaries
 
@@ -789,7 +852,7 @@ class ScipyNelderMead(Algorithm):
         }
 
         res = minimize(
-            fun=problem.scalar.f,
+            fun=problem.scalar.fun,
             x0=x,
             bounds=_get_scipy_bounds(problem.bounds),
             method="Nelder-Mead",
@@ -835,23 +898,23 @@ import estimagic as em
 
 @dataclass(frozen=True)
 class ScalarProblemFunctions:
-    f: Callable[[NDArray[float]], float]
+    fun: Callable[[NDArray[float]], float]
     jac: Callable[[NDArray[float]], NDArray[float]]
-    f_and_jac: Callable[[NDArray[float]], Tuple[float, NDArray[float]]]
+    fun_and_jac: Callable[[NDArray[float]], Tuple[float, NDArray[float]]]
 
 
 @dataclass(frozen=True)
 class LeastSquaresProblemFunctions:
-    f: Callable[[NDArray[float]], NDArray[float]]
+    fun: Callable[[NDArray[float]], NDArray[float]]
     jac: Callable[[NDArray[float]], NDArray[float]]
-    f_and_jac: Callable[[NDArray[float]], Tuple[NDArray[float], NDArray[float]]]
+    fun_and_jac: Callable[[NDArray[float]], Tuple[NDArray[float], NDArray[float]]]
 
 
 @dataclass(frozen=True)
 class LikelihoodProblemFunctions:
-    f: Callable[[NDArray[float]], NDArray[float]]
+    fun: Callable[[NDArray[float]], NDArray[float]]
     jac: Callable[[NDArray[float]], NDArray[float]]
-    f_and_jac: Callable[[NDArray[float]], Tuple[NDArray[float], NDArray[float]]]
+    fun_and_jac: Callable[[NDArray[float]], Tuple[NDArray[float], NDArray[float]]]
 
 
 @dataclass(frozen=True)
@@ -876,34 +939,6 @@ class InternalOptimizeResult:
     n_iterations: int | None
     success: bool | None
     message: str | None
-```
-
-Explicitly writing out all optional arguments of `mark.minimizer`, the wrapper for
-`scipy_neldermead` changes to:
-
-```python
-@em.mark.minimizer(
-    name="scipy_neldermead",
-    problem_type=em.ProblemType.scalar,
-    needs_scaling=True,
-    is_available=IS_SCIPY_AVAILABLE,
-    is_global=False,
-    disable_history=False,
-    supports_bounds=True,
-    supports_linear_constraints=False,
-    supports_nonlinear_constraints=False,
-    needs_derivative=False,
-)
-def scipy_neldermead(
-    internal_problem: InternalProblem,
-    x: NDArray[float],
-    stopping_max_iterations=1_000_000,
-    stopping_max_criterion_evaluations=1_000_000,
-    convergence_absolute_criterion_tolerance=1e-8,
-    convergence_absolute_params_tolerance=1e-8,
-    adaptive=False,
-) -> InternalOptimizeResult:
-    pass
 ```
 
 ## Numerical differentiation
@@ -934,7 +969,11 @@ def scipy_neldermead(
 
 ## Internal changes
 
-### Internal criterion and derivative
+- The `history` list becomes a class
+- The internal criterion and derivative becomes a class instead of using partial
+- We add a logger abstraction that will enable alternatives to the sqlite database in
+  the future
+- ...
 
 ## Type checkers and their configuration
 
@@ -949,6 +988,29 @@ type of most user inputs so we can give them early feedback when problems arise.
 
 - No type hints in docstrings anymore
 - Only show new recommended ways of doing things, not deprecated ones
+
+(aligning-names)=
+
+## Aligning names
+
+### Suggested changes
+
+| **Old Name** | **Proposed Name** | **Aligned with** |
+| ------------ | ----------------- | ---------------- |
+| `criterion`  | `fun`             | scipy            |
+| `derivative` | `jac`             | scipy            |
+
+### Things we do not want to align
+
+- We do not want to rename `algorithm` to `method` because our algorithm names are
+  different from scipy, so people who switch over from scipy need to adjust their code
+  anyways.
+- We do not want to rename `algo_options` to `options` for the same reason.
+
+### On the fence
+
+- I am not sure if `params` should be renamed to `x0`. It would align estimagic more
+  with scipy, but `params` is just easier to pronounce and use as a word than `x0`.
 
 ## Breaking changes
 
