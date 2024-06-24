@@ -21,10 +21,10 @@
 This enhancement proposal explains how we want to adopt static typing in estimagic. The
 overarching goals of the proposal are the folloing:
 
+- Better discoverability and autocomplete for users of estimagic
+- Better readability of code due to type hints
 - More robust code due to static type checking and use of stricter types in internal
   functions.
-- Better readability of code due to type hints
-- Better discoverability and autocomplete for users of estimagic
 
 Achieving these goals requires more than adding type hints. Estimagic is currently
 mostly [stringly typed](https://wiki.c2.com/?StringlyTyped) and full of dictionaries
@@ -36,7 +36,7 @@ etc.).
 This enhancement proposal outlines how we can accomodate the changes needed to reap the
 benefits of static typing without breaking users' code in too many places.
 
-## Motivation and ressources
+## Motivation and resources
 
 - [Writing Python like it's Rust](https://kobzol.github.io/rust/python/2023/05/20/writing-python-like-its-rust.html).
   A very good blogpost that summarizes the drawbacks of "stringly-typed" Python code and
@@ -45,8 +45,7 @@ benefits of static typing without breaking users' code in too many places.
 - [Robust Python](https://www.oreilly.com/library/view/robust-python/9781098100650/), an
   excellent book that discusses how to design code around types and provides an
   introduction to static type checkers in Python.
-- A
-  [jax enhancement proposal](https://jax.readthedocs.io/en/latest/jep/12049-type-annotations.html)
+- [jax enhancement proposal](https://jax.readthedocs.io/en/latest/jep/12049-type-annotations.html)
   for adopting static typing. It has a very good discussion on benefits of static
   typing.
 - [Subclassing in Python Redux](https://hynek.me/articles/python-subclassing-redux/)
@@ -63,13 +62,25 @@ i.e. `maximize`, `minimize`, `slice_plot`, `criterion_plot`, `params_plot`,
 
 #### Current situation
 
-A function that takes params (a pytree) as first argument and returns a scalar (if only
-scalar algorithms will be used) or a dictionary that contains the entries "value" (a
-scalar float), "contributions" (a pytree containing the summands that make up the
-criterion value of a likelihood problem) or "root_contributions" (a pytree containing
-the residuals of a least-squares problem). Moreover, the dict can have any number of
-additional entries. The additional dict entries will be stored in a database if logging
-is used.
+The `criterion` function maps a pytree of parameters into a criterion value.
+
+An important feature of estimagic is that the same criterion function can work for
+scalar, least-squares and likelihood optimizers. Moreover, a criterion function can
+return additional data that is stored in the log file (if logging is active). All of
+this achieved by returning a dictionary instead of just a scalar float.
+
+The conventions for the return value of the criterion function is as follows:
+
+- For the simplest case where only scalar optimizers are used, `criterion` returns a
+  float ot a dictionary containing the key "value" which is a float.
+- For likelihood functions, `criterion` returns a dictionary that contains at least the
+  key `"contributions"` which can be any pytree that can be flattened into a numpy array
+  of floats.
+- For least-squares problems, `criterion` returns a dictionary that contains at least
+  the key `"root_contributions"` which can be any pytree that can be flattened into a
+  numpy array of floats.
+- In any case the returned dictionary can have an arbitrary number of additional keys.
+  The corresponding information will be stored in the log database (if logging is used).
 
 A few simple examples of valid criterion functions are:
 
@@ -97,11 +108,21 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 
 **Problems**
 
-- Newcomers find it hard to specify least-squares problems
+- Most users of estimagic find it hard to write criterion functions that return the
+  correct dictionary. Therefore, they don't use the logging feature and we often get
+  questions about specifying least-squares problems correctly.
 - Internally we can make almost no assumptions about the output of a criterion function,
-  making the code very complex and brittle
+  making the code that processes the criterion output very complex and full of if
+  conditions.
 - The best typing information we could get for the output of the criterion function is
   `float | dict[str, Any]` which is not very useful.
+- We only know if the specified criterion function is compatible with the selected
+  optimizer after we evaluate it once. This means that errors for users are raised very
+  late.
+- While optional, in least-squares problems it is possible that a user specifies
+  root_contributions, contributions and value even though any of them could be
+  constructed out of the root_contributions. This means we need to check that all of
+  them are compatible.
 
 #### Proposal
 
@@ -114,6 +135,7 @@ The first two previous examples remain valid. The third one will be deprecated a
 should be replaced by:
 
 ```python
+@em.mark.least_squares
 def least_squares_sphere(params: np.ndarray) -> em.CriterionValue:
     out = CriterionValue(
         residuals=params, info={"p_mean": params.mean, "p_std": params.std()}
@@ -124,8 +146,11 @@ def least_squares_sphere(params: np.ndarray) -> em.CriterionValue:
 We can exploit this deprecation cycle to rename `root_contributions` to `residuals`
 which is more in line with the literature.
 
+Since there is no need to modify instances of CriterionValue, it should be immutable.
+
 If a user only wants to express the least-squares structure of the problem without
-logging any additional information, they can use a decorator to simplify things:
+logging any additional information, they can only return the least-squares residuals as
+a pytree or vector. Since the decorator was used, we know how to interpret the output.
 
 ```python
 @em.mark.least_squares
@@ -138,7 +163,21 @@ least-squares optimizers (e.g. DFO-LS), which will make it very easy for new use
 estimagic. Similarly, `em.mark.likelihood` will be available for creating criterion
 functions that are compatible with the BHHH optimizer.
 
-Since there is no need to modify instances of CriterionValue, it should be immutable.
+For completeness we can implement a `em.mark.scalar` decorator, but this will be
+optional, i.e. if none of the decorators was used we'll assume that the problem is a
+scalar problem.
+
+```{note}
+In principle we could make the usage of the decorator optional if a `CriterionValue`
+instance is returned. However, then we still would need one criterion evaluation until
+we know whether the criterion function is compatible with the selected optimizer.
+```
+
+```{note}
+A more modern alternative to a `mark` decorator would be to use `typing.Annotated` to
+add the relevant information to the return type. However, I find that harder for
+beginner users.
+```
 
 ### Bundling bounds
 
@@ -210,7 +249,7 @@ Moreover, each constraint needs to specify its type using the "type" key.
 Some constraints have additional required keys:
 
 - linear constraints have "weights", "lower_bound", "upper_bound", and "value"
-- nonlinear constraints have "func", "lower_bounds", "upper_bound", and "value"
+- nonlinear constraints have "func", "lower_bound", "upper_bound", and "value"
 
 Details and examples can be found
 [here](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_constraints.html)
@@ -304,11 +343,11 @@ However, there are two difficulties that make this solution suboptimal:
 We continue to support passing algorithms as strings. This is important because
 estimagic promises to work "just like scipy" for simple things. On top, we offer a new
 way of specifying algorithms that is less prone to typos, supports autocomplete and will
-be useful for advanced algortihm configuration.
+be useful for advanced algorithm configuration.
 
 To exemplify the new approach, assume a simplified situation with 5 algorithms. We only
 consider whether an algorithm is gradient free or gradient based. One algorithm is not
-installed, so should never show up anywhere. Here is the ficticious list:
+installed, so should never show up anywhere. Here is the fictitious list:
 
 - neldermead: installed, gradient_free
 - bobyqa: installed, gradient_free
@@ -327,8 +366,8 @@ The user types `em.algorithms.` and autocomplete shows
 - lbfgs
 - slsqp
 
-A user can either select one of the algorithms (lowercase) directly or filter the
-further by selecting a category (CamelCase). This would look as follows:
+A user can either select one of the algorithms (lowercase) directly or filter further by
+selecting a category (CamelCase). This would look as follows:
 
 The user types `em.algorithms.GradientFree.` and autocomplete shows
 
@@ -367,8 +406,9 @@ above. `make_dataclass` also supports type hints.
 The first solution I found when
 playing with this is eager, i.e. the complete data structure is created created at
 import time, no matter what the user does. A lazy solution where only the branches of
-the data structure we need are created. Maybe, this can be achieved with properties
-but I don't know yet how easy that is to add properties via `make_dataclass`
+the data structure we need are created would be nicer. Maybe, this can be achieved with
+properties but I don't know yet how easy easy is to add properties via `make_dataclass`
+and whether it would break some of the autocomplete behavior we want.
 ```
 
 (algorithm-options)=
@@ -391,7 +431,7 @@ far in harmonizing algo options across optimizers:
 1. Options that are the same in spirit (e.g. stop after a specific number of iterations)
    get the same name across all optimizers wrapped in estimagic. Most of them even get
    the same default value.
-1. Options that have undescriptive (and often heavily abbreviated) names in their
+1. Options that have non-descriptive (and often heavily abbreviated) names in their
    original implementation get more readable names, even if they appear only in a single
    algorithm.
 1. Options that are specific to a well known optimizer (e.g. ipopt) are not renamed
@@ -430,6 +470,12 @@ In the example, only the options `stopping.max_criterion_evaluations`,
 `stopping.max_iterations` and `convergence.relative_criterion_tolerance` are supported
 by `scipy_lbfgsb`. All other options would be ignored.
 
+```{note}
+The `.` notation in `stopping.max_iterations` is just syntactic sugar. Internally, the
+option is called `stopping_max_iterations` because all options need to be valid
+Python variable names.
+```
+
 **Things we want to keep**
 
 - Mixing the options for all optimizers in a single dictionary and discarding options
@@ -439,7 +485,8 @@ by `scipy_lbfgsb`. All other options would be ignored.
   and limiting each optimizer to 100 function evaluations.
 - The basic namespaces help to quickly see what is influenced by a specific option. This
   works especially well to distinguish stopping options and convergence criteria from
-  other tuning parameters of the algorithms.
+  other tuning parameters of the algorithms. However, it would be enough to keep them as
+  a naming convention if we find it hard to support the `.` notation.
 - All options are documented in the estimagic documentation, i.e. we do not link to the
   docs of original packages.
 
@@ -449,8 +496,6 @@ by `scipy_lbfgsb`. All other options would be ignored.
   the documentation.
 - A small typo in an option name can easily lead to the option being discarded
 - Option dictionaries can grow very big
-- Only the namespaces for stopping and convergence work really well, everything else is
-  too different across optimizers.
 - The fact that option dictionaries are mutable can lead to errors, for example when a
   user wants to try out a grid of values for one tuning parameter while keeping all
   other options constant.
@@ -473,24 +518,27 @@ proposal but it might be a good idea to address them in the same deprecation cyc
 
 #### Proposal
 
-In total we want to offer three entry points for the configuration of optimizers:
+In total we want to offer four entry points for the configuration of optimizers:
 
 1. Instead of passing an `Algorithm` class (as described in
    [Algorithm Slection](algorithm-selection)) the user can create an instance of their
    selected algorithm. When creating the instance, they have autocompletion for all
    options supported by the selected algorithm. `Algorithm`s are immutable.
 1. Given an instance of an `Algorithm`, a user can easily create a modified copy of that
-   instance by using the following methods:
-
-- `with_stopping`: To modify the stopping criteria
-- `with_convergence`: To modify the convergence criteria
-- `with_option`: To modify other algorithm options.
-
-3. As before, the user can pass a global set of options to `maximize` or `minimize`. We
+   instance by using the `with_option` method.
+1. We can provide additional methods `with_stopping` and `with_convergence` call
+   `with_option` internally but provide two additional features:
+   1. They valiadate that the option is indeed a stopping/convergence criterion
+   1. They allow to omit the `convergence_` or `stopping_` at the beginning of the
+      option name and can thus safe typing and allow to focus on the more important part
+      of the option's name.
+1. As before, the user can pass a global set of options to `maximize` or `minimize`. We
    continue to support option dictionaries but also allow `AlgorithmOption` objects that
-   enable better autocomplete and immutability. Global options override the options that
-   were directly passed to an optimizer. For consistency, `AlgorithmOptions` can offer
-   the `with_stopping`, `with_convergence` and `with_option` methods.
+   enable better autocomplete and immutability. They can be constructed dynamically
+   using `make_dataclass`. Global options override the options that were directly passed
+   to an optimizer. For consistency, `AlgorithmOptions` can offer the `with_stopping`,
+   `with_convergence` and `with_option` copy-constructors, so users can modify options
+   safely.
 
 The previous example continues to work. Examples of the new possibilities are:
 
@@ -561,15 +609,13 @@ minimize(
 )
 ```
 
-The implementation of this behavior is not trivial since the signatures across several
-methods need to be aligned. This introduces code duplication unless helpers like
-`functools.wraps` or dynamic signature creation as in
-[dags](https://github.com/OpenSourceEconomics/dags/blob/main/src/dags/signature.py) are
-used. Unfortunately, those helpers break autocompletion in Vscode and Pycharm. A
-possible way out is dynamic creation of algorithm classes. This is also necessary to
-preserve backwards compatibility with the current internal algorithm interface. The
-discussion is continued in
-[The internal algorithm interface and \`Algorithm objects](algorithm-interface)
+```{note}
+In my currently planned implementation, autocomplete will not work reliably for the
+copy constructors (`with_option`, `with_stopping` and `with_convergence). The main
+reason is that most Editors do not play well with `functools.wraps` or any other means
+of dynamic signature creation. For more details, see the discussions about the
+[Internal Algorithm Interface](algorithm-interface).
+```
 
 ### Custom derivatives
 
@@ -601,7 +647,7 @@ and several optional keys. Algorithms can provide information to estimagic in tw
    derivatives and whether it supports bounds and nonlinear constraints. Moreover, it
    signals which algorithm specific options are supported. Default values for algorithm
    specific options are also defined in the signature of the minimize function.
-1. `@mark_minimizer` collectn the following information via keyword arguments
+1. `@mark_minimizer` collects the following information via keyword arguments
 
 - Is the algorithm a scalar, least-squares or likelihood optimizer?
 - The algorithm name
@@ -615,7 +661,14 @@ and several optional keys. Algorithms can provide information to estimagic in tw
 A slightly simplified example of the current internal algorithm interface is:
 
 ```python
-@mark_minimizer(name="scipy_neldermead", needs_scaling=True)
+@mark_minimizer(
+    name="scipy_neldermead",
+    needs_scaling=False,
+    primary_criterion_entry="value",
+    is_available=IS_SCIPY_AVAILABLE,
+    is_global=False,
+    disable_history=False,
+)
 def scipy_neldermead(
     criterion,
     x,
@@ -628,13 +681,31 @@ def scipy_neldermead(
     convergence_absolute_params_tolerance=1e-8,
     adaptive=False,
 ):
-    pass
+    options = {
+        "maxiter": stopping_max_iterations,
+        "maxfev": stopping_max_criterion_evaluations,
+        # both tolerances seem to have to be fulfilled for Nelder-Mead to converge.
+        # if not both are specified it does not converge in our tests.
+        "xatol": convergence_absolute_params_tolerance,
+        "fatol": convergence_absolute_criterion_tolerance,
+        "adaptive": adaptive,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=criterion,
+        x0=x,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        method="Nelder-Mead",
+        options=options,
+    )
+
+    return process_scipy_result(res)
 ```
 
 The first two arguments (`criterion` and `x`) are mandatory. The lack of any arguments
 related to derivatives signifies that `scipy_neldermead` is a gradient free algorithm.
 The bounds show that it supports box constraints. The remaining arguments define the
-supported stoppin criteria and algorithm options as well as their default values.
+supported stopping criteria and algorithm options as well as their default values.
 
 The decorator simply attaches information to the function as `_algorithm_info`
 attribute. This originated as a hack but was never changed afterwards. The
@@ -661,75 +732,99 @@ class AlgoInfo(NamedTuple):
   decorator without breaking any existing code.
 - The decorator approach completely hides how we represent algorithms internally
 - Since we read a lot of information from function signatures (as opposed to registering
-  options somewhere) there is no duplicated information.
+  options somewhere) there is no duplicated information. If we change the approach to
+  collecting information, we still need to ensure there is no duplication.
 
 **Problems**
 
 - Type checkers complain about the `._algorithm_info` hack
-- A function with attached `._algorithm_info` is not a good internal representation
 - All computations and signature checking are done eagerly for all algorithms at import
   time. This is one of the reasons why imports are slow.
 - The first few arguments to the minimize functions follow a naming scheme and any typo
   in those names would lead to situations that are hard to debug (e.g. if `lower_bound`
-  was misstyped as `lower_buond` we would assume that the algorithm does not support
+  was miss-typed as `lower_buond` we would assume that the algorithm does not support
   lower bounds but has a tuning parameter called `lower_buond`)
 
 #### Proposal
 
-The primary changes to the internal algorithm interface are:
+We first show the proposed new algorithm interface and discuss the changes later.
 
-1. The minimize function takes an instance of `em.InternalProblem` as first argument.
-   `em.InternalProblem` bundles all problem specific arguments like `criterion`,
-   `lower_bounds`, `upper_bounds`, `derivative`, `criterion_and_derivative`, and
-   `nonlinear_constraints`. This reduces the potential for typos but means that all
-   information we read from the presence or absence of those arguments needs to be
-   passed into the `mark.minimizer` decorator instead. Therefore, `mark.minimizer` gets
-   the following new arguments:
+```python
+@em.mark.minimizer(
+    name="scipy_neldermead",
+    needs_scaling=False,
+    problem_type=em.ProblemType.Scalar,
+    is_available=IS_SCIPY_AVAILABLE,
+    is_global=False,
+    disable_history=False,
+    needs_derivatives=False,
+    needs_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+)
+@dataclass(frozen=True)
+class ScipyNelderMead(Algorithm):
+    stopping_max_iterations: int = 1_000_000
+    stopping_max_criterion_evaluations: int = 1_000_000
+    convergence_absolute_criterion_tolerance: float = 1e-8
+    convergence_absolute_params_tolerance: float = 1e-8
+    adaptive = False
 
-- supports_bounds: bool
-- supports_nonlinear_constraints: bool
-- supports_linear_constraints: bool (currently not used, but we should add it)
-- needs_derivative: bool This is a breaking change that we will implement without
-  deprecation cycle. There are probably very few users of estimagic who use custom
-  algorithms and are affected by this.
+    def __post_init__(self):
+        # check everything that cannot be handled by the type system
+        assert self.convergence_absolute_criterion_tolerance > 0
+        assert self.convergence_absolute_params_tolerance > 0
 
-2. The minimize function returns an `InternalOptimizeResult` instead of a dictionary. We
-   can use a deprecation cycle for this.
-1. Instead of simply attaching information to a function, the `mark.minimizer` decorator
-   dynamically creates a suclass of `em.Algorithm`. This class contains all information
-   that is currently stored in `._algorithm_info` and supports the configuration methods
-   `with_stopping`, `with_convergence` and `with_option`. This is not a breaking change
-   as it was never documented what `mark_minimizer` does.
+    def __call__(
+        self, problem: InternalProblem, x: NDArray[float]
+    ) -> InternalOptimizeResult:
 
-```{note}
-This proposal violates several best practices of object oriented programming:
-1. Classes are dynamically generated, which will probably require the use of `exec`.
-It seems justifiable since it gets rid of all duplication in the signatures of
-`__init__` and the `with_...` methods and thus produces a very nice autocomplete
-behavior.
-2. The `with_...` methods have different signatures across subclasses and thus
-violate the Liskov Substitution Principle. However, it seems justifiable since they are
-basically constructors.
-3. `InternalProblem` is a relative imprecise type as it needs to work for all problems
-that can be solved by estimagic (constrained vs. unconstrained, least-squares vs. scalar,
-...). We could work with a Class hierarchy here to get better static information, but
-opt against it because it would complicate the internal algorithm interface.
+        options = {
+            "maxiter": self.stopping_max_iterations,
+            "maxfev": self.stopping_max_criterion_evaluations,
+            "xatol": self.convergence_absolute_params_tolerance,
+            "fatol": self.convergence_absolute_criterion_tolerance,
+            "adaptive": self.adaptive,
+        }
+
+        res = minimize(
+            fun=problem.scalar.f,
+            x0=x,
+            bounds=_get_scipy_bounds(problem.bounds),
+            method="Nelder-Mead",
+            options=options,
+        )
+
+        return process_scipy_result(res)
 ```
 
-```{note}
-We can use this deprecation cycle to get rid of `primary_criterion_entry` (which could
-take the values "value", "contributions" or "root_contributions") and use
-`problem_type` instead, which can take the values `em.ProblemType.scalar`,
-`em.ProblemType.least_squares` and `em.ProblemType.likelihood`.
-```
+1. The new internal algorithms are dataclasses, where all algorithm options are
+   dataclass fields. This enables us to obtain information about the options via the
+   `__dataclass_fields__` attribute without inspecting signatures or imposing naming
+   conventions on non-option arguments.
+1. The `__call__` method receives an instance of `InternalProblem` and `x` (the start
+   values) as arguments. `InternalProblem` collects the criterion function, its
+   derivatives, bounds, etc. This again avoids any potential for typos in argument
+   names.
+1. The `mark.minimizer` decorator collects all the information that was previously
+   collected via optional arguments with naming conventions. This information is
+   available while constructing the instance of `InternalProblem`. Thus we can make sure
+   that attributes that were not requested (e.g. derivatives if `needs_derivative` is
+   False) raise an AttributeError if used.
+1. The minimize function returns an `InternalOptimizeResult` instead of a dictionary.
 
-```{note}
-Should we continue to infer `parallelizes` from the presence of `batch_evaluator` in
-the function signature?
-```
+The copy constructors (`with_option`, `with_convergence` and `with_stopping`) are
+inherited from `estimagic.Algorithm`. This means, that they will have `**kwargs` as
+signature and thus do not support autocomplete. However, they can check that all
+specified options are actually in the `__dataclass_fields__` and thus provide feedback
+before an optimization is run.
 
-Here are a few code snippets to make things concrete. The `InternalProblem` will be an
-immutable dataclass that looks as follows:
+All breaking changes of the internal algorithm interface are done without deprecation
+cycle.
+
+To make things more concrete, here are prototypes for components related to the
+`InternalProblem` and `InternalOptimizeResult`.
 
 ```python
 from numpy.typing import NDArray
@@ -811,19 +906,6 @@ def scipy_neldermead(
     pass
 ```
 
-The abstract base class `Algorithm` is:
-
-```python
-
-```
-
-If we were to define the dynamically generated `ScipyNeldermead` class ourselves, the
-code would roughly look as follows:
-
-```python
-
-```
-
 ## Numerical differentiation
 
 #### Current situation
@@ -870,6 +952,8 @@ type of most user inputs so we can give them early feedback when problems arise.
 
 ## Breaking changes
 
+- The internal algorithm interface changes without deprecations.
+
 ## Summary of deprecations
 
 The following deprecations become active in version `0.5.0`. The functionality will be
@@ -881,4 +965,3 @@ the realease of `0.5.0`.
   criterion function.
 - The arguments `lower_bounds`, `upper_bounds`, `soft_lower_bounds` and
   `soft_uppper_bounds` are deprecated. Use `bounds` instead.
-- Selecting an algorithm by strings is deprecated. Pass an `Algorithm` instead.
