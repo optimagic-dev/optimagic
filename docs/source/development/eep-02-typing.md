@@ -19,7 +19,7 @@
 ## Abstract
 
 This enhancement proposal explains how we want to adopt static typing in estimagic. The
-overarching goals of the proposal are the folloing:
+overarching goals of the proposal are the following:
 
 - Better discoverability and autocomplete for users of estimagic
 - Better readability of code due to type hints
@@ -33,7 +33,7 @@ with a fixed set of required keys (e.g.
 [option dictionaries](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_algorithm_and_algo_options.html),
 etc.).
 
-This enhancement proposal outlines how we can accomodate the changes needed to reap the
+This enhancement proposal outlines how we can accommodate the changes needed to reap the
 benefits of static typing without breaking users' code in too many places.
 
 A few deprecations and breaking changes will, however, be unavoidable. Since we are
@@ -47,7 +47,7 @@ core proposal and summarized in [aligning names](aligning-names)
 - [Writing Python like it's Rust](https://kobzol.github.io/rust/python/2023/05/20/writing-python-like-its-rust.html).
   A very good blogpost that summarizes the drawbacks of "stringly-typed" Python code and
   shows how to incorporate typing philosophies from Rust into Python projects. Read this
-  if you don't have time to read the other ressources.
+  if you don't have time to read the other resources.
 - [Robust Python](https://www.oreilly.com/library/view/robust-python/9781098100650/), an
   excellent book that discusses how to design code around types and provides an
   introduction to static type checkers in Python.
@@ -80,7 +80,7 @@ this achieved by returning a dictionary instead of just a scalar float.
 
 The conventions for the return value of the criterion function is as follows:
 
-- For the simplest case where only scalar optimizers `criterion` returns a float ot a
+- For the simplest case where only scalar optimizers `criterion` returns a float or a
   dictionary containing the key "value" which is a float.
 - For likelihood functions, `criterion` returns a dictionary that contains at least the
   key `"contributions"` which can be any pytree that can be flattened into a numpy array
@@ -419,7 +419,7 @@ These categories match nicely with our
 
 We can use
 [`dataclasses.make_dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.make_dataclass)
-to programatically build up a data structure with the autocomplete behavior described
+to programmatically build up a data structure with the autocomplete behavior described
 above. `make_dataclass` also supports type hints.
 
 ```{note}
@@ -548,7 +548,7 @@ In total we want to offer four entry points for the configuration of optimizers:
    instance by using the `with_option` method.
 1. We can provide additional methods `with_stopping` and `with_convergence` that call
    `with_option` internally but provide two additional features:
-   1. They valiadate that the option is indeed a stopping/convergence criterion
+   1. They validate that the option is indeed a stopping/convergence criterion
    1. They allow to omit the `convergence_` or `stopping_` at the beginning of the
       option name and can thus reduce repetition in the option names.
 1. As before, the user can pass a global set of options to `maximize` or `minimize`. We
@@ -763,7 +763,7 @@ We therefore suggest the following argument types:
 All of the Option objects are simple dataclasses that mirror the current dictionaries.
 All `_options` arguments are deprecated.
 
-##### NumdiffOptions and similar
+##### numdiff_options and similar
 
 Replace the current dictionaries by dataclasses. Dictionaries are supported during a
 deprecation cycle.
@@ -1186,7 +1186,7 @@ We implement several subclasses of `BenchmarkNoise` to cover the current use cas
 syntactic sugar, we can make `BenchmarkNoise` instances addable (by implementing an
 `__add__` method) so multiple sources of noise can be combined.
 
-A rough protype for `BenchmarkNoise` looks as follows:
+A rough prototype for `BenchmarkNoise` looks as follows:
 
 ```python
 FvalType = TypeVar("FvalType", bound=float | NDArray[float])
@@ -1383,7 +1383,9 @@ beartype during testing but it is not a priority for now.
 
 ## Breaking changes
 
-- The internal algorithm interface changes without deprecations.
+- The internal algorithm interface changes without deprecations
+- The representation of benchmark problems and benchmark results changes without
+  deprecations
 
 ## Summary of deprecations
 
