@@ -112,6 +112,9 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 - The fact that `params` can be arbitrary pytrees makes estimagic flexible and popular.
   We do not need to restrict this type in any way because flattening the pytree gives us
   a very precise type no matter how complicated the tree was.
+- Using the same criterion function for scalar, likelihood and least-squares optimizers
+  makes it easy to try out and compare very different algorithms with minimal code
+  changes
 - We do not need to restrict the type of additional arguments of the criterion function.
 - The simplest form of our criterion functions is also compatible with scipy.optimize
 
@@ -318,10 +321,10 @@ During the deprecation phase, `Constraint` will also have `loc` and `query` attr
 The current `cov` and `sdcorr` constraints apply to flattened covariance matrices as
 well as standard deviations and flattened correlation matrices. This comes from a time
 where estimagic only supported an essentially flat parameter format (DataFrames with
-"value" column). We can exploit the fact that we already have breaking changes to rename
-the current `cov` and `sdcorr` constraints to `FlatCovConstraint` and
-`FlatSdcorrConstraint`. This prepares the introduction of a more natural `CovConstraint`
-and `SdcorrConstraint` later.
+"value" column). We can exploit the current deprecation cycle to rename the current
+`cov` and `sdcorr` constraints to `FlatCovConstraint` and `FlatSdcorrConstraint`. This
+prepares the introduction of a more natural `CovConstraint` and `SdcorrConstraint`
+later.
 
 (algorithm-selection)=
 
@@ -392,8 +395,8 @@ The user types `em.algorithms.GradientFree.` and autocomplete shows
 - bobyqa
 
 Once the user arrives at an algorithm, a subclass of `Algorithm` is returned. This class
-will be passed to `minimize` or `maximize`. Passing configured instances of an
-`Algorithm`s will be discussed in [Algorithm Options](algorithm-options).
+will be passed to `minimize` or `maximize`. Passing configured instances of `Algorithm`s
+will be discussed in [Algorithm Options](algorithm-options).
 
 In practice we would have a lot more algorithms and a lot more categories. Some
 categories might be mutually exclusive, in that case the second category is omitted
@@ -538,17 +541,16 @@ proposal but it might be a good idea to address them in the same deprecation cyc
 In total we want to offer four entry points for the configuration of optimizers:
 
 1. Instead of passing an `Algorithm` class (as described in
-   [Algorithm Slection](algorithm-selection)) the user can create an instance of their
+   [Algorithm Selection](algorithm-selection)) the user can create an instance of their
    selected algorithm. When creating the instance, they have autocompletion for all
    options supported by the selected algorithm. `Algorithm`s are immutable.
 1. Given an instance of an `Algorithm`, a user can easily create a modified copy of that
    instance by using the `with_option` method.
-1. We can provide additional methods `with_stopping` and `with_convergence` call
+1. We can provide additional methods `with_stopping` and `with_convergence` that call
    `with_option` internally but provide two additional features:
    1. They valiadate that the option is indeed a stopping/convergence criterion
    1. They allow to omit the `convergence_` or `stopping_` at the beginning of the
-      option name and can thus safe typing and allow to focus on the more important part
-      of the option's name.
+      option name and can thus reduce repetition in the option names.
 1. As before, the user can pass a global set of options to `maximize` or `minimize`. We
    continue to support option dictionaries but also allow `AlgorithmOption` objects that
    enable better autocomplete and immutability. They can be constructed dynamically
@@ -679,11 +681,12 @@ returns a tuple of the criterion value and the derivative instead.
 #### Proposal
 
 1. We keep the three arguments but rename them to `fun`, `jac` and `fun_and_jac`
-1. `jac` can also be a string `"jax"` or an enum `em.autodiff_backend.Jax`. This can be
-   used to signal that the objective function is jax compatible and jax should be used
-   to calculate its derivatives. In the long run we can add pytorch support and more.
-   Since this is mostly about a signal of compatibility, it would be enough to set one
-   of the two arguments to `"jax"`, the other one can be left at None.
+1. `jac` can also be a string `"jax"` or a more autocomplete friendly enum
+   `em.autodiff_backend.JAX`. This can be used to signal that the objective function is
+   jax compatible and jax should be used to calculate its derivatives. In the long run
+   we can add pytorch support and more. Since this is mostly about a signal of
+   compatibility, it would be enough to set one of the two arguments to `"jax"`, the
+   other one can be left at None.
 1. The dictionaries of callables get replaced by appropriate dataclasses. We align the
    names with the names in `CriterionValue` (e.g. rename `root_contributions` to
    `residuals`)
@@ -716,14 +719,14 @@ functions. Examples are:
 **Problems**
 
 - Option dictionaries are brittle and don't support autocomplete
-- It can be confusing if someone provided scaling options or multistart options but they
-  take no effect because `scaling` or `multistart` were not set to True.
+- It can be confusing if someone provided `scaling_options` or `multistart_options` but
+  they take no effect because `scaling` or `multistart` were not set to True.
 
 #### Proposal
 
 We want to keep a simple way of enabling complex behavior (with some default options)
-but get rid of having two separate arguments, one to switch the behavior on and one to
-configure it. This will mean that we have to be generous regarding input types.
+but get rid of having two separate arguments (one to switch the behavior on and one to
+configure it). This means that we have to be generous regarding input types.
 
 ##### Logging
 
@@ -740,7 +743,8 @@ After the changes, `logging` can be any of the following:
   `SqliteLogger` which allow us to switch out the logging backend. Each subclass might
   have different optional arguments.
 
-The `log_options` are deprecated.
+The `log_options` are deprecated. Using dictionaries instead of Option objects will be
+supported during a deprecation cycle.
 
 ##### Scaling, error handling and multistart
 
@@ -761,7 +765,8 @@ All `_options` arguments are deprecated.
 
 ##### NumdiffOptions and similar
 
-Replace the current dictionaries by dataclasses.
+Replace the current dictionaries by dataclasses. Dictionaries are supported during a
+deprecation cycle.
 
 (algorithm-interface)=
 
@@ -855,7 +860,7 @@ class AlgoInfo(NamedTuple):
 
 **Things we want to keep**
 
-- Writing `minimize` functions is very simple in many cases we only need minimal
+- Writing `minimize` functions is very simple and in many cases we only need minimal
   wrappers around optimizer libraries.
 - The internal interface has proven flexible enough for many optimizers we had not
   wrapped when we designed it. It is easy to add more optional arguments to the
@@ -863,7 +868,8 @@ class AlgoInfo(NamedTuple):
 - The decorator approach completely hides how we represent algorithms internally
 - Since we read a lot of information from function signatures (as opposed to registering
   options somewhere) there is no duplicated information. If we change the approach to
-  collecting information, we still need to ensure there is no duplication.
+  collecting information, we still need to ensure there is no duplication or possibility
+  to provide wrong information to estimagic.
 
 **Problems**
 
@@ -906,8 +912,8 @@ class ScipyNelderMead(Algorithm):
         assert self.convergence_absolute_criterion_tolerance > 0
         assert self.convergence_absolute_params_tolerance > 0
 
-    def __call__(
-        self, problem: InternalProblem, x: NDArray[float]
+    def _solve_internal_problem(
+        self, problem: InternalProblem, x0: NDArray[float]
     ) -> InternalOptimizeResult:
 
         options = {
@@ -933,10 +939,10 @@ class ScipyNelderMead(Algorithm):
    dataclass fields. This enables us to obtain information about the options via the
    `__dataclass_fields__` attribute without inspecting signatures or imposing naming
    conventions on non-option arguments.
-1. The `__call__` method receives an instance of `InternalProblem` and `x` (the start
-   values) as arguments. `InternalProblem` collects the criterion function, its
-   derivatives, bounds, etc. This again avoids any potential for typos in argument
-   names.
+1. The `_solve_internal_problem` method receives an instance of `InternalProblem` and
+   `x0` (the start values) as arguments. `InternalProblem` collects the criterion
+   function, its derivatives, bounds, etc. This again avoids any potential for typos in
+   argument names.
 1. The `mark.minimizer` decorator collects all the information that was previously
    collected via optional arguments with naming conventions. This information is
    available while constructing the instance of `InternalProblem`. Thus we can make sure
