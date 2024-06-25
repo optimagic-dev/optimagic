@@ -515,8 +515,8 @@ Python variable names.
 
 - There is no autocomplete and the only way to find out which options are supported is
   the documentation.
-- A small typo in an option name can easily lead to the option being discarded
-- Option dictionaries can grow very big
+- A small typo in an option name can easily lead to the option being discarded.
+- Option dictionaries can grow very big.
 - The fact that option dictionaries are mutable can lead to errors, for example when a
   user wants to try out a grid of values for one tuning parameter while keeping all
   other options constant.
@@ -528,18 +528,18 @@ proposal but it might be a good idea to address them in the same deprecation cyc
 
 - In an effort to make everything very descriptive, some names got too long. For example
   `"convergence.absolute_gradient_tolerance"` is very long but most people are so
-  familiar with reading `"gtol_abs"` (from scipy and nlopt) that
+  familiar with reading `"gtol_abs"` (from SciPy and NLopt) that
   `"convergence.gtol_abs"` would be a better name.
 - It might have been a bad idea to harmonize default values for similar options that
-  appear in multiple optimizers. Sometimes the options, while similar in spirit, are
+  appear in multiple optimizers. Sometimes, the options, while similar in spirit, are
   defined slightly differently and usually algorithm developers will set all tuning
   parameters to maximize performance on a benchmark set they care about. If we change
-  how options are handled in estimagic, should consider to just harmonize names and not
-  default values.
+  how options are handled in estimagic, we should consider just harmonizing names and
+  not default values.
 
 #### Proposal
 
-In total we want to offer four entry points for the configuration of optimizers:
+In total, we want to offer four entry points for the configuration of optimizers:
 
 1. Instead of passing an `Algorithm` class (as described in
    [Algorithm Selection](algorithm-selection)) the user can create an instance of their
@@ -549,7 +549,7 @@ In total we want to offer four entry points for the configuration of optimizers:
    instance by using the `with_option` method.
 1. We can provide additional methods `with_stopping` and `with_convergence` that call
    `with_option` internally but provide two additional features:
-   1. They validate that the option is indeed a stopping/convergence criterion
+   1. They validate that the option is indeed a stopping/convergence criterion.
    1. They allow to omit the `convergence_` or `stopping_` at the beginning of the
       option name and can thus reduce repetition in the option names.
 1. As before, the user can pass a global set of options to `maximize` or `minimize`. We
@@ -632,7 +632,7 @@ minimize(
 ```{note}
 In my currently planned implementation, autocomplete will not work reliably for the
 copy constructors (`with_option`, `with_stopping` and `with_convergence). The main
-reason is that most Editors do not play well with `functools.wraps` or any other means
+reason is that most editors do not play well with `functools.wraps` or any other means
 of dynamic signature creation. For more details, see the discussions about the
 [Internal Algorithm Interface](algorithm-interface).
 ```
@@ -649,28 +649,28 @@ derivative.
 
 The `derivative` argument can currently be one of three things:
 
-- A callable: This is assumed to be the relevant derivative of `criterion`. If a scalar
-  optimizer is used, it is the gradient of the criterion value w.r.t. params. If a
-  likelihood optimizer is used, it is the jacobian of the likelihood contributions
+- A `callable`: This is assumed to be the relevant derivative of `criterion`. If a
+  scalar optimizer is used, it is the gradient of the criterion value w.r.t. params. If
+  a likelihood optimizer is used, it is the jacobian of the likelihood contributions
   w.r.t. params. If a least-squares optimizer is used, it is the jacobian of the
   residuals w.r.t. params.
-- A dict: The dict must have three keys "value", "contributions" and
-  "root_contributions". The corresponding values are the three callables described
+- A `dict`: The dict must have three keys `"value"`, `"contributions"` and
+  `"root_contributions"`. The corresponding values are the three callables described
   above.
-- None: In this case, a numerical derivative is calculated.
+- `None`: In this case, a numerical derivative is calculated.
 
 The `criterion_and_derivative` argument exactly mirrors `derivative` but each callable
 returns a tuple of the criterion value and the derivative instead.
 
 **Things we want to keep**
 
-- It is good that synergies between `criterion` and `derivative` can be exploited
-- The three arguments (criterion, derivative, criterion_and_derivative) make sure that
-  every algorithm can run efficiently when looping over algorithms and keeping
-  everything else equal. With `scipy's` approach of setting `jac=True` if one wants to
-  use a joint criterion and derivative function, a gradient free optimizer would have no
+- It is good that synergies between `criterion` and `derivative` can be exploited.
+- The three arguments (`criterion`, `derivative`, `criterion_and_derivative`) make sure
+  that every algorithm can run efficiently when looping over algorithms and keeping
+  everything else equal. With SciPy's approach of setting `jac=True` if one wants to use
+  a joint criterion and derivative function, a gradient free optimizer would have no
   chance of evaluating just the criterion.
-- We want to support scalar, least-squares and likelihood problems in one interface
+- We want to support scalar, least-squares and likelihood problems in one interface.
 
 **Problems**
 
@@ -681,16 +681,16 @@ returns a tuple of the criterion value and the derivative instead.
 
 #### Proposal
 
-1. We keep the three arguments but rename them to `fun`, `jac` and `fun_and_jac`
+1. We keep the three arguments but rename them to `fun`, `jac` and `fun_and_jac`.
 1. `jac` can also be a string `"jax"` or a more autocomplete friendly enum
    `em.autodiff_backend.JAX`. This can be used to signal that the objective function is
    jax compatible and jax should be used to calculate its derivatives. In the long run
-   we can add pytorch support and more. Since this is mostly about a signal of
+   we can add PyTorch support and more. Since this is mostly about a signal of
    compatibility, it would be enough to set one of the two arguments to `"jax"`, the
-   other one can be left at None.
+   other one can be left at `None`.
 1. The dictionaries of callables get replaced by appropriate dataclasses. We align the
    names with the names in `CriterionValue` (e.g. rename `root_contributions` to
-   `residuals`)
+   `residuals`).
 
 ### Other option dictionaries
 
@@ -699,10 +699,10 @@ returns a tuple of the criterion value and the derivative instead.
 We often allow to switch on some behavior with a bool or a string value and then
 configure the behavior with an option dictionary. Examples are:
 
-- `logging` (str | pathlib.Path | False) and `log_options` (dict)
-- `scaling` (bool) and `scaling_options` (dict)
-- `error_handling` (Literal\["raise", "continue"\]) and `error_penalty` (dict)
-- `multistart` (bool) and `multistart_options`
+- `logging` (`str | pathlib.Path | False`) and `log_options` (dict)
+- `scaling` (`bool`) and `scaling_options` (dict)
+- `error_handling` (`Literal\["raise", "continue"\]`) and `error_penalty` (dict)
+- `multistart` (`bool`) and `multistart_options`
 
 Moreover we have option dictionaries whenever we have nested invocations of estimagic
 functions. Examples are:
@@ -719,9 +719,9 @@ functions. Examples are:
 
 **Problems**
 
-- Option dictionaries are brittle and don't support autocomplete
+- Option dictionaries are brittle and don't support autocomplete.
 - It can be confusing if someone provided `scaling_options` or `multistart_options` but
-  they take no effect because `scaling` or `multistart` were not set to True.
+  they take no effect because `scaling` or `multistart` were not set to `True`.
 
 #### Proposal
 
@@ -738,13 +738,13 @@ users could implement their own logger.
 
 After the changes, `logging` can be any of the following:
 
-- False (or anything Falsy): No logging is used
-- a str or pathlib.Path: Logging is used at default options
+- `False` (or anything Falsy): No logging is used.
+- A `str` or `pathlib.Path`: Logging is used at default options.
 - An instance of `estimagic.Logger`. There will be multiple subclasses, e.g.
   `SqliteLogger` which allow us to switch out the logging backend. Each subclass might
   have different optional arguments.
 
-The `log_options` are deprecated. Using dictionaries instead of Option objects will be
+The `log_options` are deprecated. Using dictionaries instead of `Option` objects will be
 supported during a deprecation cycle.
 
 ##### Scaling, error handling and multistart
@@ -764,7 +764,7 @@ We therefore suggest the following argument types:
 All of the Option objects are simple dataclasses that mirror the current dictionaries.
 All `_options` arguments are deprecated.
 
-##### numdiff_options and similar
+##### `numdiff_options` and similar
 
 Replace the current dictionaries by dataclasses. Dictionaries are supported during a
 deprecation cycle.
@@ -783,16 +783,16 @@ and several optional keys. Algorithms can provide information to estimagic in tw
    derivatives and whether it supports bounds and nonlinear constraints. Moreover, it
    signals which algorithm specific options are supported. Default values for algorithm
    specific options are also defined in the signature of the minimize function.
-1. `@mark_minimizer` collects the following information via keyword arguments
+1. `@mark_minimizer` collects the following information via keyword arguments:
 
 - Is the algorithm a scalar, least-squares or likelihood optimizer?
-- The algorithm name
-- Does the algorithm require well scaled problems
-- Is the algortihm currently installed
-- Is the algorithm global or local
+- The algorithm name.
+- Does the algorithm requires well scaled problems?
+- Is the algorithm currently installed?
+- Is the algorithm global or local?
 - Should the history tracking be disabled (e.g. because the algorithm tracks its own
-  history)
-- Does the algorithm parallelize criterion evaluations
+  history)?
+- Does the algorithm parallelize criterion evaluations?
 
 A slightly simplified example of the current internal algorithm interface is:
 
@@ -866,21 +866,21 @@ class AlgoInfo(NamedTuple):
 - The internal interface has proven flexible enough for many optimizers we had not
   wrapped when we designed it. It is easy to add more optional arguments to the
   decorator without breaking any existing code.
-- The decorator approach completely hides how we represent algorithms internally
+- The decorator approach completely hides how we represent algorithms internally.
 - Since we read a lot of information from function signatures (as opposed to registering
-  options somewhere) there is no duplicated information. If we change the approach to
+  options somewhere), there is no duplicated information. If we change the approach to
   collecting information, we still need to ensure there is no duplication or possibility
   to provide wrong information to estimagic.
 
 **Problems**
 
-- Type checkers complain about the `._algorithm_info` hack
+- Type checkers complain about the `._algorithm_info` hack.
 - All computations and signature checking are done eagerly for all algorithms at import
   time. This is one of the reasons why imports are slow.
 - The first few arguments to the minimize functions follow a naming scheme and any typo
   in those names would lead to situations that are hard to debug (e.g. if `lower_bound`
   was miss-typed as `lower_buond` we would assume that the algorithm does not support
-  lower bounds but has a tuning parameter called `lower_buond`)
+  lower bounds but has a tuning parameter called `lower_buond`).
 
 #### Proposal
 
@@ -948,10 +948,10 @@ class ScipyNelderMead(Algorithm):
    collected via optional arguments with naming conventions. This information is
    available while constructing the instance of `InternalProblem`. Thus we can make sure
    that attributes that were not requested (e.g. derivatives if `needs_derivative` is
-   False) raise an AttributeError if used.
+   `False`) raise an `AttributeError` if used.
 1. The minimize function returns an `InternalOptimizeResult` instead of a dictionary.
 
-The copy constructors (`with_option`, `with_convergence` and `with_stopping`) are
+The copy constructors (`with_option`, `with_convergence`, and `with_stopping`) are
 inherited from `estimagic.Algorithm`. This means, that they will have `**kwargs` as
 signature and thus do not support autocomplete. However, they can check that all
 specified options are actually in the `__dataclass_fields__` and thus provide feedback
