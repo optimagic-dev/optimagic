@@ -501,9 +501,9 @@ Python variable names.
 
 - Mixing the options for all optimizers in a single dictionary and discarding options
   that do not apply to the selected optimizer allows to loop very efficiently over very
-  different algorithms (without if conditions in the user's code). This is very good for
-  quick experimentation, e.g. solving the same problem with three different optimizers
-  and limiting each optimizer to 100 function evaluations.
+  different algorithms (without `if` conditions in the user's code). This is very good
+  for quick experimentation, e.g. solving the same problem with three different
+  optimizers and limiting each optimizer to 100 function evaluations.
 - The basic namespaces help to quickly see what is influenced by a specific option. This
   works especially well to distinguish stopping options and convergence criteria from
   other tuning parameters of the algorithms. However, it would be enough to keep them as
