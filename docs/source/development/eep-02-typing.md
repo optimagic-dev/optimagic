@@ -1083,12 +1083,17 @@ had in mind were:
 - Standard error estimation of wiggly functions where the slope and curvature at the
   minimum does not yield reasonable standard errors and confidence intervals
 
-Unfortunately, our practical experience with Richardson Extrapolation was not positive
-and it seems that Richardson extrapolation is not designed for our use-cases (it is
-designed as a sequence acceleration method that reduces roundoff error while shrinking a
-step size to zero, whereas in our application it might often be better to take a larger
-step size or aggregate derivative estimates from multiple step sizes in a different way
-than Richardson Extrapolation does).
+Unfortunately, the computational cost of Richardson extrapolation is too high for any
+application during optimization. Moreover, our practical experience with Richardson
+Extrapolation was not positive and it seems that Richardson extrapolation is not
+designed for our use-cases. It is designed as a sequence acceleration method that
+reduces roundoff error while shrinking a step size to zero, whereas in our application
+it might often be better to take a larger step size (for example, the success of
+derivative free trust-region optimizers suggest less local slope and curvature
+information is more useful than actual derivatives for optimization; similarly,
+numerical derivatives with larger step sizes could be seen as an estimate of a
+[quasi jacobian](https://arxiv.org/abs/1907.13093) and inference based on it might have
+good statistical properties).
 
 We therefore propose to remove Richardson extrapolation and open an Issue to work on
 alternatives. Examples for alternatives could be:
@@ -1134,21 +1139,170 @@ All of these will be very simple wrappers around `first_derivative` and
 
 ## Benchmarking
 
-### Benchmark problems
+### `get_benchmark_problems`
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+As other functions in estimagic, `get_benchmark_problems` follows a design where
+behavior can be switched on by a bool and configured by an options dictionary. The
+following arguments are related to this:
+
+- `additive_noise` and `additive_noise_options`
+- `multiplicative_noise` and `multiplicative_noise_options`
+- `scaling` and `scaling_options`
+
+All of them have the purpose of adding some difficult characteristics to an existing
+benchmark set, so we can analyze how well an optimizer can deal with this situation.
+
+The name of the benchmark set is passed in as a string.
+
+The return value of `get_benchmark_problems` is a nested dictionary. The keys in the
+outer dictionary are the names of benchmark problems. The inner dictionaries represent
+benchmark problems.
+
+**Things we want to keep**
+
+- Collecting benchmark problems in a dictionary is good because it makes it easy to
+  merge problems from multiple benchmark sets or filter benchmark sets. A fixed field
+  data structure would not work here.
+
+**Problems**
+
+- As discussed before, having separate arguments for switching-on behavior and
+  configuring it can be dangerous
+- Each single benchmark problem should not be represented as a dictionary
+- Adding noise or scaling problems should be made more flexible and generic
 
 #### Proposal
 
-### Benchmark results
+##### Add noise to benchmark problems
+
+The four arguments `additive_noise`, `multiplicative_noise`, `additive_noise_options`,
+and `multiplicative_noise_options` are combined in one `noise` argument. This `noise`
+argument can be `bool | BenchmarkNoise`. If `False`, no noise is added. If `True`,
+standard normal noise is added.
+
+We implement several subclasses of `BenchmarkNoise` to cover the current use cases. As
+syntactic sugar, we can make `BenchmarkNoise` instances addable (by implementing an
+`__add__` method) so multiple sources of noise can be combined.
+
+A rough protype for `BenchmarkNoise` looks as follows:
+
+```python
+FvalType = TypeVar("FvalType", bound=float | NDArray[float])
+
+
+class BenchmarkNoise(ABC):
+
+    @abstractmethod
+    def draw_noise(
+        self, fval: FvalType, params: NDArray, size: int, rng: np.random.Generator
+    ) -> FvalType:
+        pass
+
+    def __add__(self, other: BenchmarkNoise):
+        pass
+```
+
+Passing `fval` and `params` to `draw_noise` enables use to implement multiplicative
+noise (i.e. noise where the standard deviation scales with the function value) and
+stochastic or deterministic wiggle (e.g. a sine curve that depends on params).
+Therefore, this proposal does not just cover everything that is currently implemented
+but also adds new functionality we wanted to implement.
+
+##### Add scaling issues to benchmark problems
+
+The `scaling_options` argument is deprecated. The `scaling` argument can be
+`bool | BenchmarkScaler`. We implement `LinspaceBenchmarkScaler` to cover everything
+that is implemented right now but more types of scaling can be implemented in the
+future. A rough prototype of `BenchmarkScaler` looks as follows:
+
+```python
+class BenchmarkScaler(ABC):
+    @abstractmethod
+    def scale(self, params: NDArray) -> NDArray:
+        pass
+
+    @abstractmethod
+    def unscale(self, params: NDArray) -> NDArray:
+        pass
+```
+
+##### Representing benchmark problems
+
+Instead of the fixed-field dictionary we will have a dataclass with corresponding
+fields. This would roughly look as follows:
+
+```python
+@dataclass
+class BenchmarkProblem:
+    fun: Callable[[NDArray], CriterionValue]
+    start_x: NDArray
+    solution_x: NDArray | None
+    start_fun: float
+    solution_fun: float
+```
+
+### `run_benchmark`
+
+`run_benchmark` takes `benchmark_problems` (covered in the previous section),
+`optimize_options` and a few other arguments and returns a nested dictionary
+representing benchmark results.
+
+`optimize_options` can be a list of algorithm names, a dict with algorithm names as
+values or a nested dict of
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+**Things we want to keep**
+
+- Collecting benchmark results in a dictionary is good because it makes it easy to merge
+  results from multiple benchmark runs or filter results. A fixed field data structure
+  would not work here.
+
+**Problems**
+
+- `optimize_options` are super flexible but error prone and hard to write as there is no
+  autocomplete support
+- Each single benchmark result should not be represented as a dictionary
 
 #### Proposal
+
+We restrict the typo of `optimize_options` to
+`dict[str, Type[Algorithm] | Algorithm | OptimizeOptions]`. Here, `OptimizeOptions` will
+be a simple dataclass that we need for `estimate_ml` and `estimate_msm` anyways.
+
+Passing just lists of algorithm names is deprecated. Passing dicts as optimize options
+is also deprecated. Most use-cases will be covered by passing dictionaries of configured
+Algorithms as optimize options. Actually using the fully power of passing
+`OptimizeOptions` will be rarely needed.
+
+The return type of `run_benchmark` will be `dict[tuple[str], BenchmarkResult]`
+
+`BenchmarkResult` is a dataclass with fields that mirror the keys of the current
+dictionary. It will roughly look as follows:
+
+```python
+@dataclass
+class BenchmarkResult:
+    params_history: list[NDArray]
+    fun_history: list[float]
+    time_history: list[float]
+    batches_history: list[int]
+    solution: OptimizeResult
+```
+
+## Estimation
+
+The changes to the estimation functions `estimate_ml` and `estimate_msm` will be
+minimal:
+
+- `lower_bounds` and `upper_bounds` are replaced by `bounds` (as in optimization)
+- `numdiff_options` and `optimize_options` become dataclasses
+- `logging` and `log_options` get aligned with our proposal for optimization
+
+In the long run we plan a general overhaul of `MSM` estimation that provides better
+access to currently internal objects such as the MSM objective function.
 
 ## Internal changes
 
@@ -1164,10 +1318,28 @@ proposal. Until then it serves as a collection of ideas.
 
 ## Type checkers and their configuration
 
+We choose mypy as static type checker and run it as part of our continuous integration.
+
+Once this enhancement proposal is fully implemented, we want to use the following
+settings:
+
+```
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+```
+
 ## Runtime type checking
 
 Since most of our users do not use static type checkers we will still need to check the
 type of most user inputs so we can give them early feedback when problems arise.
+
+We can investigate using `jaxtyping`'s pytest hooks to enable runtime typecheckers like
+beartype during testing but it is not a priority for now.
 
 ## Summary of design philosophy
 
@@ -1182,10 +1354,20 @@ type of most user inputs so we can give them early feedback when problems arise.
 
 ### Suggested changes
 
-| **Old Name** | **Proposed Name** | **Aligned with** |
-| ------------ | ----------------- | ---------------- |
-| `criterion`  | `fun`             | scipy            |
-| `derivative` | `jac`             | scipy            |
+| **Old Name**                               | **Proposed Name**         | **Source** |
+| ------------------------------------------ | ------------------------- | ---------- |
+| `criterion`                                | `fun`                     | scipy      |
+| `derivative`                               | `jac`                     | scipy      |
+| `criterion_and_derivative`                 | `fun_and_jac`             | (follows)  |
+| `stopping_max_criterion_evaluations`       | `stopping_maxfun`         | scipy      |
+| `stopping_max_iterations`                  | `stopping_maxiter`        | scipy      |
+| `convergence_absolute_criterion_tolerance` | `convergence_ftol_abs`    | NlOpt      |
+| `convergence_relative_criterion_tolerance` | `convergence_ftol_rel`    | NlOpt      |
+| `convergence_absolute_params_tolerance`    | `convergence_xtol_abs`    | NlOpt      |
+| `convergence_relative_params_tolerance`    | `convergence_xtol_rel`    | NlOpt      |
+| `convergence_absolute_gradient_tolerance`  | `convergence_gtol_abs`    | NlOpt      |
+| `convergence_relative_gradient_tolerance`  | `convergence_gtol_rel`    | NlOpt      |
+| `convergence_scaled_gradient_tolerance`    | `convergence_gtol_scaled` | (follows)  |
 
 ### Things we do not want to align
 
