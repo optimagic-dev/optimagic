@@ -1018,9 +1018,119 @@ class InternalOptimizeResult:
 
 #### Current situation
 
-**Things we want to keep** **Problems**
+The following proposal applies to the functions `first_derivative` and
+`second_derivative`. Both functions have an interface that has grown over time and both
+return a relatively complex result dictionary. There are several arguments that govern
+which entries are stored in the result dictionary.
+
+The functions `first_derivative` and `second_derivative` allow params to be arbitrary
+pytrees. They work for scalar and vector valued functions and a `key` argument makes
+sure that they work for `criterion` functions that return a dict containing
+`"value", `"contributions", and `"root_contributions"`.
+
+In contrast to optimization, all pytree handling (for params and function outputs) is
+mixed with the calculation of the numerical derivatives. This can produce more
+informative error messages and save some memory. However it increases complexity
+extremely because we can make very few assumptions on types. There are many if
+conditions to deal with this situation.
+
+The interface is further complicated by supporting Richardson Extrapolation. This
+feature was inspired by [numdifftools](https://numdifftools.readthedocs.io/en/latest/)
+but has not produced convincing results in benchmarks.
+
+**Things we want to keep**
+
+- `params` and function values can be pytrees
+- support for estimagic `criterion` functions (now functions that return
+  `CriterionValue`)
+- Many optional arguments to influence the details of the numerical differentiation
+- Rich output format that helps to get insights on the precision of the numerical
+  differentiation
+- Ability to optionally pass in a function evaluation at `params` or return a function
+  evaluation at `params`
+
+**Problems**
+
+- We can make no assumptions on types inside the function because pytree handling is
+  mixed with calculations
+- Support for Richardson extrapolation complicates the interface but has not been
+  convincing in benchmarks
+- Pytree handling is acatually incomplete (`base_steps`, `mi@` and `step_ratio` are
+  assumed to be flat numpy arrays)
+- Many users expect the output of a function for numerical differentiation to be just
+  the gradient, jacobian or hessian, not a more complex result object.
 
 #### Proposal
+
+##### Separation of calculations and pytree handling
+
+As in numerical optimization, we should implement the core functionality for first and
+second derivative for functions that map from 1-Dimensional numpy arrays to
+1-Dimensional numpy arrays. All pytree handling or other handling of function outputs
+(e.g. functions that return a `CriterionValue`) should be done outside of the core
+functions.
+
+##### Deprecate Richardson Extrapolation (and prepare alternatives)
+
+The goal of implementing Richardson Extrapolation was to get more precise estimates of
+numerical derivatives when it is hard to find an optimal step size. Example use-cases we
+had in mind were:
+
+- Optimization of a function that is piecewise flat, e.g. the likelihood function of a
+  naively implemented multinomial probit
+- Optimization or standard error estimation of slightly noisy functions, e.g. functions
+  of an MSM estimation problem
+- Standard error estimation of wiggly functions where the slope and curvature at the
+  minimum does not yield reasonable standard errors and confidence intervals
+
+Unfortunately, our practical experience with Richardson Extrapolation was not positive
+and it seems that Richardson extrapolation is not designed for our use-cases (it is
+designed as a sequence acceleration method that reduces roundoff error while shrinking a
+step size to zero, whereas in our application it might often be better to take a larger
+step size or aggregate derivative estimates from multiple step sizes in a different way
+than Richardson Extrapolation does).
+
+We therefore propose to remove Richardson extrapolation and open an Issue to work on
+alternatives. Examples for alternatives could be:
+
+- [Moré and Wild (2010)](https://www.mcs.anl.gov/papers/P1785.pdf) propose an approach
+  to calculate optimal step sizes for finite difference differentiation of noisy
+  functions
+- We could think about aggregating derivative estimates at multiple step sizes in a way
+  that produces worst case standard errors and confidence intervals
+- ...
+
+```{note}
+Richardson extrapolation was only completed for first derivatives, even though it is
+already prepared in the interface for second derivatives.
+```
+
+##### Better `NumdiffResult` object
+
+The result dictionary will be replaced by a `NumdiffResult` object. All arguments that
+govern which results are stored will be removed. If some of the formerly optional
+results require extra computation that we wanted to avoid by making them optional, they
+can be properties or methods of the result object.
+
+##### Jax inspired high-level interfaces
+
+Since our `first_derivative` and `second_derivative` functions need to fulfill very
+specific requirements for use during optimization, they need to return a complex result
+object. However, this can be annoying in simple situations where users just want a
+gradient, jacobian or hessian.
+
+To cover these simple situations and provide a high level interface to our numdiff
+functions, we can provide a set of jax inspired decorators:
+
+- `@grad`
+- `@value_and_grad`
+- `@jac` (no distinction between `@jacrev` and `jacfwd` necessary)
+- `@value_and_jac`
+- `@hessian`
+- `@value_and_hessian`
+
+All of these will be very simple wrappers around `first_derivative` and
+`second_derivative` with very low implementation and maintenance costs.
 
 ## Benchmarking
 
