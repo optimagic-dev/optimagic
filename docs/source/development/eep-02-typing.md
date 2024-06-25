@@ -21,12 +21,12 @@
 This enhancement proposal explains how we want to adopt static typing in estimagic. The
 overarching goals of the proposal are the following:
 
-- Better discoverability and autocomplete for users of estimagic
-- Better readability of code due to type hints
+- Better discoverability and autocomplete for users of estimagic.
+- Better readability of code due to type hints.
 - More robust code due to static type checking and use of stricter types in internal
   functions.
 
-Achieving these goals requires more than adding type hints. Estimagic is currently
+Achieving these goals requires more than adding type hints. estimagic is currently
 mostly [stringly typed](https://wiki.c2.com/?StringlyTyped) and full of dictionaries
 with a fixed set of required keys (e.g.
 [constraints](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_constraints.html),
@@ -38,9 +38,9 @@ benefits of static typing without breaking users' code in too many places.
 
 A few deprecations and breaking changes will, however, be unavoidable. Since we are
 already interrupting users, we can use this deprecation cycle as a chance to better
-align some names in estimagic with scipy and other optimization library where we think
+align some names in estimagic with SciPy and other optimization libraries where we think
 it can improve the user experience. These changes will be marked as independent of the
-core proposal and summarized in [aligning names](aligning-names)
+core proposal and summarized in [aligning names](aligning-names).
 
 ## Motivation and resources
 
@@ -76,12 +76,12 @@ The `criterion` function maps a pytree of parameters into a criterion value.
 An important feature of estimagic is that the same criterion function can work for
 scalar, least-squares and likelihood optimizers. Moreover, a criterion function can
 return additional data that is stored in the log file (if logging is active). All of
-this achieved by returning a dictionary instead of just a scalar float.
+this is achieved by returning a dictionary instead of just a scalar float.
 
-The conventions for the return value of the criterion function is as follows:
+The conventions for the return value of the criterion function are as follows:
 
-- For the simplest case where only scalar optimizers `criterion` returns a float or a
-  dictionary containing the key "value" which is a float.
+- For the simplest case, where only scalar optimizers are used, `criterion` returns a
+  float or a dictionary containing the key "value" which is a float.
 - For likelihood functions, `criterion` returns a dictionary that contains at least the
   key `"contributions"` which can be any pytree that can be flattened into a numpy array
   of floats.
@@ -114,7 +114,7 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
   a very precise type no matter how complicated the tree was.
 - Using the same criterion function for scalar, likelihood and least-squares optimizers
   makes it easy to try out and compare very different algorithms with minimal code
-  changes
+  changes.
 - We do not need to restrict the type of additional arguments of the criterion function.
 - The simplest form of our criterion functions is also compatible with scipy.optimize
 
@@ -127,15 +127,15 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
   making the code that processes the criterion output very complex and full of if
   conditions.
 - The best typing information we could get for the output of the criterion function is
-  `float | dict[str, Any]` which is not very useful.
+  `float | dict[str, Any]`, which is not very useful.
 - We only know if the specified criterion function is compatible with the selected
   optimizer after we evaluate it once. This means that errors for users are raised very
   late.
 - While optional, in least-squares problems it is possible that a user specifies
-  root_contributions, contributions and value even though any of them could be
-  constructed out of the root_contributions. This means we need to check that all of
+  `root_contributions`, `contributions` and `value` even though any of them could be
+  constructed out of the `root_contributions`. This means we need to check that all of
   them are compatible.
-- The name `criterion` is not used very widely in the Python optimization ecosystem
+- The name `criterion` is not used very widely in the Python optimization ecosystem.
 
 #### Proposal
 
@@ -159,7 +159,7 @@ def least_squares_sphere(params: np.ndarray) -> em.CriterionValue:
 We can exploit this deprecation cycle to rename `root_contributions` to `residuals`
 which is more in line with the literature.
 
-Since there is no need to modify instances of CriterionValue, it should be immutable.
+Since there is no need to modify instances of `CriterionValue`, it should be immutable.
 
 If a user only wants to express the least-squares structure of the problem without
 logging any additional information, they can only return the least-squares residuals as
@@ -176,12 +176,12 @@ least-squares optimizers (e.g. DFO-LS), which will make it very easy for new use
 estimagic. Similarly, `em.mark.likelihood` will be available for creating criterion
 functions that are compatible with the BHHH optimizer.
 
-For completeness we can implement a `em.mark.scalar` decorator, but this will be
+For completeness, we can implement an `em.mark.scalar` decorator, but this will be
 optional, i.e. if none of the decorators was used we'll assume that the problem is a
 scalar problem.
 
 ```{note}
-In principle we could make the usage of the decorator optional if a `CriterionValue`
+In principle, we could make the usage of the decorator optional if a `CriterionValue`
 instance is returned. However, then we still would need one criterion evaluation until
 we know whether the criterion function is compatible with the selected optimizer.
 ```
@@ -199,7 +199,7 @@ naming with `scipy.optimize`
 
 #### Current situation
 
-Currently we have four arguments of `maximize`, `minimize` and related functions that
+Currently we have four arguments of `maximize`, `minimize`, and related functions that
 let the user specify bounds:
 
 ```python
@@ -213,17 +213,17 @@ em.minimize(
 )
 ```
 
-Each of them is a pytree that mirrors the structure of params or None
+Each of them is a pytree that mirrors the structure of `params` or `None`
 
 **Problems**
 
-- Usually all of these arguments are used together and passing them around individually
-  is annoying
-- The names are very long because the word `bounds` is repeated
+- Usually, all of these arguments are used together and passing them around individually
+  is annoying.
+- The names are very long because the word `bounds` is repeated.
 
 #### Proposal
 
-We bundle the bounds together in a `Bound` type:
+We bundle the bounds together in a `Bounds` type:
 
 ```python
 bounds = em.Bounds(
@@ -244,9 +244,9 @@ creation time such that users get errors before running an optimization.
 
 Using the old arguments will be deprecated.
 
-Since there is no need to modify instances of Bounds, it should be immutable.
+Since there is no need to modify instances of `Bounds`, it should be immutable.
 
-To improve the alignment with scipy, we can also allow users to pass a
+To improve the alignment with SciPy, we can also allow users to pass a
 `scipy.optimize.Bounds` object as bounds. Internally, this will be converted to our
 `Bounds` object.
 
@@ -255,24 +255,25 @@ To improve the alignment with scipy, we can also allow users to pass a
 #### Current situation
 
 Currently, constraints are dictionaries with a set of required keys. The exact
-requirements depend on the type of constraint and even on the structure of params.
+requirements depend on the type of constraints and even on the structure of `params`.
 
 Each constraint needs a way to select the parameters to which the constraint applies.
 There are three dictionary keys for this:
 
-- "loc", which works if params are numpy arrays, pandas.Series or pandas.DataFrame
-- "query", which works only if params are pandas.DataFrame
-- "Selector", which works for all valid formats of params
+- `"loc"`, which works if params are numpy arrays, `pandas.Series` or
+  `pandas.DataFrame`.
+- `"query"`, which works only if `params` are `pandas.DataFrame`
+- `"Selector"`, which works for all valid formats of `params`.
 
-Moreover, each constraint needs to specify its type using the "type" key.
+Moreover, each constraint needs to specify its type using the `"type"` key.
 
 Some constraints have additional required keys:
 
-- linear constraints have "weights", "lower_bound", "upper_bound", and "value"
-- nonlinear constraints have "func", "lower_bound", "upper_bound", and "value"
+- Linear constraints have `"weights"`, `"lower_bound"`, `"upper_bound"`, and `"value"`.
+- Nonlinear constraints have `"func"`, `"lower_bound"`, `"upper_bound"`, and `"value"`.
 
 Details and examples can be found
-[here](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_constraints.html)
+[here](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_constraints.html).
 
 **Things we want to keep**
 
@@ -283,8 +284,8 @@ Details and examples can be found
 
 **Problems**
 
-- Constraints are hard to document and generally not understood by most users
-- Having multiple ways of selecting parameters (not all compatible with all params
+- Constraints are hard to document and generally not understood by most users.
+- Having multiple ways of selecting parameters (not all compatible with all `params`
   formats) is confusing for users and annoying when processing constraints. We have to
   handle the case where no selection or multiple selections are specified.
 - Dicts with required keys are brittle and do not provide autocomplete. This is made
@@ -292,8 +293,8 @@ Details and examples can be found
 
 #### Proposal
 
-1. We implement simple dataclasses for each type of constraint
-1. We get rid of `loc` and `query` as parameter selection methods. Instead we show in
+1. We implement simple dataclasses for each type of constraint.
+1. We get rid of `loc` and `query` as parameter selection methods. Instead, we show in
    the documentation how both selection methods can be used inside a `selector`
    function.
 
@@ -318,10 +319,10 @@ Since there is no need to modify instances of constraints, they should be immuta
 All constraints can subclass `Constraint` which will only have the `selector` attribute.
 During the deprecation phase, `Constraint` will also have `loc` and `query` attributes.
 
-The current `cov` and `sdcorr` constraints apply to flattened covariance matrices as
+The current `cov` and `sdcorr` constraints apply to flattened covariance matrices, as
 well as standard deviations and flattened correlation matrices. This comes from a time
-where estimagic only supported an essentially flat parameter format (DataFrames with
-"value" column). We can exploit the current deprecation cycle to rename the current
+where estimagic only supported an essentially flat parameter format (`DataFrames` with
+`"value"` column). We can exploit the current deprecation cycle to rename the current
 `cov` and `sdcorr` constraints to `FlatCovConstraint` and `FlatSdcorrConstraint`. This
 prepares the introduction of a more natural `CovConstraint` and `SdcorrConstraint`
 later.
@@ -339,13 +340,13 @@ fuzzy matching of strings.
 
 **Problems**
 
-- There is no autocomplete
-- It is very easy to make typos and they only get caught at runtime
-- Users cannot select algorithms without reading the documentation
+- There is no autocomplete.
+- It is very easy to make typos and they only get caught at runtime.
+- Users cannot select algorithms without reading the documentation.
 
 #### Difficulties
 
-The usual solution to selecting algorithms in an autocomplete friendly way is an Enum.
+The usual solution to selecting algorithms in an autocomplete friendly way is an `Enum`.
 However, there are two difficulties that make this solution suboptimal:
 
 1. The set of available algorithms depends on the packages a user has installed. Almost
@@ -353,7 +354,7 @@ However, there are two difficulties that make this solution suboptimal:
    optional dependencies.
 
 1. We already have more than 50 algorithms and plan to add many more. A simple
-   autocomplete is not very helpful. Instead the user would have to be able to filter
+   autocomplete is not very helpful. Instead, the user would have to be able to filter
    the autocomplete results according to the problem properties (e.g. least-squares,
    gradient-based, local, ...). However, it is not clear which filters are relevant and
    in which order a user wants to apply them.
@@ -361,7 +362,7 @@ However, there are two difficulties that make this solution suboptimal:
 #### Proposal
 
 We continue to support passing algorithms as strings. This is important because
-estimagic promises to work "just like scipy" for simple things. On top, we offer a new
+estimagic promises to work "just like SciPy" for simple things. On top, we offer a new
 way of specifying algorithms that is less prone to typos, supports autocomplete and will
 be useful for advanced algorithm configuration.
 
@@ -369,53 +370,53 @@ To exemplify the new approach, assume a simplified situation with 5 algorithms. 
 consider whether an algorithm is gradient free or gradient based. One algorithm is not
 installed, so should never show up anywhere. Here is the fictitious list:
 
-- neldermead: installed, gradient_free
-- bobyqa: installed, gradient_free
-- lbfgs: installed, gradient_based
-- slsqp: installed, gradient_based
-- ipopt: not installed, gradient_based
+- `neldermead`: installed, `gradient_free`
+- `bobyqa`: installed, `gradient_free`
+- `lbfgs`: installed, `gradient_based`
+- `slsqp`: installed, `gradient_based`
+- `ipopt`: not installed, `gradient_based`
 
 We want the following behavior:
 
 The user types `em.algorithms.` and autocomplete shows
 
-- GradientBased
-- GradientFree
-- neldermead
-- bobyqa
-- lbfgs
-- slsqp
+- `GradientBased`
+- `GradientFree`
+- `neldermead`
+- `bobyqa`
+- `lbfgs`
+- `slsqp`
 
 A user can either select one of the algorithms (lowercase) directly or filter further by
 selecting a category (CamelCase). This would look as follows:
 
 The user types `em.algorithms.GradientFree.` and autocomplete shows
 
-- neldermead
-- bobyqa
+- `neldermead`
+- `bobyqa`
 
 Once the user arrives at an algorithm, a subclass of `Algorithm` is returned. This class
 will be passed to `minimize` or `maximize`. Passing configured instances of `Algorithm`s
 will be discussed in [Algorithm Options](algorithm-options).
 
-In practice we would have a lot more algorithms and a lot more categories. Some
+In practice, we would have a lot more algorithms and a lot more categories. Some
 categories might be mutually exclusive, in that case the second category is omitted
 after the first one is selected.
 
 We have the following categories:
 
-- GradientBased vs. GradientFree
-- Local vs. Global
-- Bounded vs. Unbounded
-- Scalar vs. LeastSquares vs. Likelihood
-- LinearConstrained vs. NonlinearConstrained vs. Unconstrained
+- `GradientBased` vs. `GradientFree`
+- `Local` vs. `Global`
+- `Bounded` vs. `Unbounded`
+- `Scalar` vs. `LeastSquares` vs. `Likelihood`
+- `LinearConstrained` vs. `NonlinearConstrained` vs. `Unconstrained`
 
 Potentially, we could also offer a `.All` attribute that returns a list of all currently
-selected algorithms. That way a user could for example loop over all Bounded and
-GradientBased LeastSquares algorithms and compare them in a criterion plot.
+selected algorithms. That way a user could for example loop over all `Bounded` and
+`GradientBased` `LeastSquares` algorithms and compare them in a criterion plot.
 
 These categories match nicely with our
-[algorithm selection tutorials](https://effective-programming-practices.vercel.app/scientific_computing/optimization_algorithms/objectives_materials.html)
+[algorithm selection tutorials](https://effective-programming-practices.vercel.app/scientific_computing/optimization_algorithms/objectives_materials.html).
 
 We can use
 [`dataclasses.make_dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.make_dataclass)
@@ -424,10 +425,10 @@ above. `make_dataclass` also supports type hints.
 
 ```{note}
 The first solution I found when
-playing with this is eager, i.e. the complete data structure is created created at
+playing with this is eager, i.e. the complete data structure is created at
 import time, no matter what the user does. A lazy solution where only the branches of
 the data structure we need are created would be nicer. Maybe, this can be achieved with
-properties but I don't know yet how easy easy is to add properties via `make_dataclass`
+properties, but I don't know yet how easy it is to add properties via `make_dataclass`
 and whether it would break some of the autocomplete behavior we want.
 ```
 
@@ -442,11 +443,11 @@ stopping after a maximum number of function evaluations is reached), some are su
 by certain classes of algorithms (e.g. most genetic algorithms have a population size,
 most trustregion algorithms allow to set an initial trustregion radius) and some of them
 are completely specific to one algorithm (e.g. ipopt has more than 100 very specific
-options, nag_dfols supports very specific restarting strategies, ...).
+options, `nag_dfols` supports very specific restarting strategies, ...).
 
 While nothing can be changed about the fact that every algorithm supports different
 options (e.g. there is simply no trustregion radius in a genetic algorithm), we go very
-far in harmonizing algo options across optimizers:
+far in harmonizing `algo_options` across optimizers:
 
 1. Options that are the same in spirit (e.g. stop after a specific number of iterations)
    get the same name across all optimizers wrapped in estimagic. Most of them even get
@@ -454,13 +455,13 @@ far in harmonizing algo options across optimizers:
 1. Options that have non-descriptive (and often heavily abbreviated) names in their
    original implementation get more readable names, even if they appear only in a single
    algorithm.
-1. Options that are specific to a well known optimizer (e.g. ipopt) are not renamed
+1. Options that are specific to a well known optimizer (e.g. `ipopt`) are not renamed
 
 #### Current situation
 
 The user passes `algo_options` as a dictionary of keyword arguments. All options that
 are not supported by the selected algorithm are discarded with a warning. The names of
-most options is very descriptive (even though a bit too long at times).
+most options are very descriptive (even though a bit too long at times).
 
 We implement basic namespaces by introducing a dot notation. Example:
 
