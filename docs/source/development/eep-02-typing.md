@@ -140,26 +140,27 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 #### Proposal
 
 `params` and additional keyword arguments of the criterion function stay unchanged. The
-output of the criterion function becomes `float | CriterionValue`. There are decorators
+output of the criterion function becomes `float | FunctionValue`. There are decorators
 that help the user to write valid criterion functions without making an explicit
-instance of `CriterionValue`.
+instance of `FunctionValue`.
 
 The first two previous examples remain valid. The third one will be deprecated and
 should be replaced by:
 
 ```python
 @em.mark.least_squares
-def least_squares_sphere(params: np.ndarray) -> em.CriterionValue:
-    out = CriterionValue(
+def least_squares_sphere(params: np.ndarray) -> em.FunctionValue:
+    out = FunctionValue(
         residuals=params, info={"p_mean": params.mean, "p_std": params.std()}
     )
     return out
 ```
 
 We can exploit this deprecation cycle to rename `root_contributions` to `residuals`
-which is more in line with the literature.
+which is more in line with the literature. Similarly, `contributions` can be renamed to
+`loglikes`.
 
-Since there is no need to modify instances of `CriterionValue`, it should be immutable.
+Since there is no need to modify instances of `FunctionValue`, it should be immutable.
 
 If a user only wants to express the least-squares structure of the problem without
 logging any additional information, they can only return the least-squares residuals as
@@ -181,7 +182,7 @@ optional, i.e. if none of the decorators was used we'll assume that the problem 
 scalar problem.
 
 ```{note}
-In principle, we could make the usage of the decorator optional if a `CriterionValue`
+In principle, we could make the usage of the decorator optional if a `FunctionValue`
 instance is returned. However, then we still would need one criterion evaluation until
 we know whether the criterion function is compatible with the selected optimizer.
 ```
@@ -554,11 +555,11 @@ In total, we want to offer four entry points for the configuration of optimizers
       option name and can thus reduce repetition in the option names.
 1. As before, the user can pass a global set of options to `maximize` or `minimize`. We
    continue to support option dictionaries but also allow `AlgorithmOption` objects that
-   enable better autocomplete and immutability. They can be constructed dynamically
-   using `make_dataclass`. Global options override the options that were directly passed
-   to an optimizer. For consistency, `AlgorithmOptions` can offer the `with_stopping`,
-   `with_convergence` and `with_option` copy-constructors, so users can modify options
-   safely.
+   enable better autocomplete and immutability. We can construct them dynamically at
+   import time using `make_dataclass`. Global options override the options that were
+   directly passed to an optimizer. For consistency, `AlgorithmOptions` can offer the
+   `with_stopping`, `with_convergence` and `with_option` copy-constructors, so users can
+   modify options safely.
 
 The previous example continues to work. Examples of the new possibilities are:
 
@@ -689,7 +690,7 @@ returns a tuple of the criterion value and the derivative instead.
    compatibility, it would be enough to set one of the two arguments to `"jax"`, the
    other one can be left at `None`.
 1. The dictionaries of callables get replaced by appropriate dataclasses. We align the
-   names with the names in `CriterionValue` (e.g. rename `root_contributions` to
+   names with the names in `FunctionValue` (e.g. rename `root_contributions` to
    `residuals`).
 
 ### Other option dictionaries
@@ -766,8 +767,7 @@ All `_options` arguments are deprecated.
 
 ##### `numdiff_options` and similar
 
-Replace the current dictionaries by dataclasses. Dictionaries are supported during a
-deprecation cycle.
+Replace the current dictionaries by dataclasses. Dictionaries are still supported.
 
 (algorithm-interface)=
 
@@ -1043,7 +1043,7 @@ but has not produced convincing results in benchmarks.
 
 - `params` and function values can be pytrees
 - support for estimagic `criterion` functions (now functions that return
-  `CriterionValue`)
+  `FunctionValue`)
 - Many optional arguments to influence the details of the numerical differentiation
 - Rich output format that helps to get insights on the precision of the numerical
   differentiation
@@ -1056,8 +1056,8 @@ but has not produced convincing results in benchmarks.
   mixed with calculations
 - Support for Richardson extrapolation complicates the interface but has not been
   convincing in benchmarks
-- Pytree handling is acatually incomplete (`base_steps`, `mi@` and `step_ratio` are
-  assumed to be flat numpy arrays)
+- Pytree handling is acatually incomplete (`base_steps`, `min_steps` and `step_ratio`
+  are assumed to be flat numpy arrays)
 - Many users expect the output of a function for numerical differentiation to be just
   the gradient, jacobian or hessian, not a more complex result object.
 
@@ -1068,7 +1068,7 @@ but has not produced convincing results in benchmarks.
 As in numerical optimization, we should implement the core functionality for first and
 second derivative for functions that map from 1-Dimensional numpy arrays to
 1-Dimensional numpy arrays. All pytree handling or other handling of function outputs
-(e.g. functions that return a `CriterionValue`) should be done outside of the core
+(e.g. functions that return a `FunctionValue`) should be done outside of the core
 functions.
 
 ##### Deprecate Richardson Extrapolation (and prepare alternatives)
@@ -1237,7 +1237,7 @@ fields. This would roughly look as follows:
 ```python
 @dataclass
 class BenchmarkProblem:
-    fun: Callable[[NDArray], CriterionValue]
+    fun: Callable[[NDArray], FunctionValue]
     start_x: NDArray
     solution_x: NDArray | None
     start_fun: float
@@ -1342,8 +1342,6 @@ type of most user inputs so we can give them early feedback when problems arise.
 We can investigate using `jaxtyping`'s pytest hooks to enable runtime typecheckers like
 beartype during testing but it is not a priority for now.
 
-## Summary of design philosophy
-
 ## Changes in documentation
 
 - No type hints in docstrings anymore
@@ -1355,20 +1353,22 @@ beartype during testing but it is not a priority for now.
 
 ### Suggested changes
 
-| **Old Name**                               | **Proposed Name**         | **Source** |
-| ------------------------------------------ | ------------------------- | ---------- |
-| `criterion`                                | `fun`                     | scipy      |
-| `derivative`                               | `jac`                     | scipy      |
-| `criterion_and_derivative`                 | `fun_and_jac`             | (follows)  |
-| `stopping_max_criterion_evaluations`       | `stopping_maxfun`         | scipy      |
-| `stopping_max_iterations`                  | `stopping_maxiter`        | scipy      |
-| `convergence_absolute_criterion_tolerance` | `convergence_ftol_abs`    | NlOpt      |
-| `convergence_relative_criterion_tolerance` | `convergence_ftol_rel`    | NlOpt      |
-| `convergence_absolute_params_tolerance`    | `convergence_xtol_abs`    | NlOpt      |
-| `convergence_relative_params_tolerance`    | `convergence_xtol_rel`    | NlOpt      |
-| `convergence_absolute_gradient_tolerance`  | `convergence_gtol_abs`    | NlOpt      |
-| `convergence_relative_gradient_tolerance`  | `convergence_gtol_rel`    | NlOpt      |
-| `convergence_scaled_gradient_tolerance`    | `convergence_gtol_scaled` | (follows)  |
+| **Old Name**                               | **Proposed Name**         | **Source**  |
+| ------------------------------------------ | ------------------------- | ----------- |
+| `criterion`                                | `fun`                     | scipy       |
+| `derivative`                               | `jac`                     | scipy       |
+| `criterion_and_derivative`                 | `fun_and_jac`             |             |
+| `stopping_max_criterion_evaluations`       | `stopping_maxfun`         | scipy       |
+| `stopping_max_iterations`                  | `stopping_maxiter`        | scipy       |
+| `convergence_absolute_criterion_tolerance` | `convergence_ftol_abs`    | NlOpt       |
+| `convergence_relative_criterion_tolerance` | `convergence_ftol_rel`    | NlOpt       |
+| `convergence_absolute_params_tolerance`    | `convergence_xtol_abs`    | NlOpt       |
+| `convergence_relative_params_tolerance`    | `convergence_xtol_rel`    | NlOpt       |
+| `convergence_absolute_gradient_tolerance`  | `convergence_gtol_abs`    | NlOpt       |
+| `convergence_relative_gradient_tolerance`  | `convergence_gtol_rel`    | NlOpt       |
+| `convergence_scaled_gradient_tolerance`    | `convergence_gtol_scaled` |             |
+| `root_contributions`                       | `residuals`               | Literature  |
+| `contributions`                            | `loglikes`                | Statsmodels |
 
 ### Things we do not want to align
 
@@ -1376,15 +1376,17 @@ beartype during testing but it is not a priority for now.
   different from scipy, so people who switch over from scipy need to adjust their code
   anyways.
 - We do not want to rename `algo_options` to `options` for the same reason.
-
-### On the fence
-
 - I am not sure if `params` should be renamed to `x0`. It would align estimagic more
   with scipy, but `params` is just easier to pronounce and use as a word than `x0`.
 
-## Breaking changes
+## Summary of breaking changes
 
-- The internal algorithm interface changes without deprecations
+- The internal algorithm interface changes completely without deprecations
+- The support for Richardson Extrapolation in `first_derivative` is dropped without
+  deprecation; The corresponding arguments `n_steps` and `step_ratio` are removed.
+- The return type of `first_derivative` and `second_derivative` changes from dict to
+  `NumdiffResult` without deprecations. The arguments `return_func_value` and
+  `return_info` are dropped.
 - The representation of benchmark problems and benchmark results changes without
   deprecations
 
@@ -1394,8 +1396,32 @@ The following deprecations become active in version `0.5.0`. The functionality w
 removed in version `0.6.0` which should be scheduled for approximately half a year after
 the realease of `0.5.0`.
 
-- Returning a `dict` in the `criterion` function io deprecated. Return `CriterionValue`
-  instead or use `em.mark.least_squares` or `em.mark.likelihood` to create your
-  criterion function.
+- Multiple arguments of `minimize` and multiple `algo_options` get renamed to align them
+  better with SciPy and/or NlOpt. See [Aligning Names](aligning-names) for details.
+- Returning a `dict` in the objective function io deprecated. Return `FunctionValue`
+  instead. In addition, likelihood and least-squares problems need to be decorated with
+  `em.mark.likelihood` and `em.mark_least_squares`.
 - The arguments `lower_bounds`, `upper_bounds`, `soft_lower_bounds` and
-  `soft_uppper_bounds` are deprecated. Use `bounds` instead.
+  `soft_uppper_bounds` are deprecated. Use `bounds` instead. `bounds` can be
+  `estimagic.Bounds` or `scipy.optimize.Bounds` objects.
+- Specifying constraints with dictionaries is deprecated. Use the corresponding subclass
+  of `em.constraints.Constraint` instead. In addition, all selection methods except for
+  `selector` are deprecated.
+- The `covariance` constraint is renamed to `FlatCovConstraint` and the `sdcorr`
+  constraint is renamed to `FlatSdcorrConstraint` to prepare the introduction of more
+  natural (non-flattened) covariance and sdcorr constraints.
+- The `log_options` argument of `maximize` and `minimize` is deprecated and gets
+  subsumed in the `logging` argument.
+- The `scaling_options` argument of `maximize` and `minimize` is deprecated and gets
+  subsumed in the `scaling` argument.
+- The `error_penalty` argument of `maximize` and `minimize` is deprecated and gets
+  subsumed in the `error_handling` argument.
+- The `multistart_options` argument of `maximize` and `minimize` is deprecated and gets
+  subsumed in the `multistart` argument.
+- The arguments `additive_noise`, `additive_noise_options`, `multiplicative_noise`, and
+  `multiplicative_noise_options` in `get_benchmark_problems` are deprecated and combined
+  into `noise`.
+- The `scaling_options` argument in `get_benchmark_problems` is deprecated and subsumed
+  in the `scaling` argument.
+- Passing just a list of algorithm strings as `optimize_options` in `run_benchmark` is
+  deprecated.
