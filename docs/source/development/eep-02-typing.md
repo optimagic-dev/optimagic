@@ -1,4 +1,4 @@
-(eeppytrees)=
+(eeptyping)=
 
 # EEP-02: Static typing
 
@@ -38,9 +38,9 @@ benefits of static typing without breaking users' code in too many places.
 
 A few deprecations and breaking changes will, however, be unavoidable. Since we are
 already interrupting users, we can use this deprecation cycle as a chance to better
-align some names in estimagic with SciPy and other optimization libraries where we think
-it can improve the user experience. These changes will be marked as independent of the
-core proposal and summarized in [aligning names](aligning-names).
+align some names in estimagic with SciPy and other optimization libraries. These changes
+will be marked as independent of the core proposal and summarized in
+[aligning names](aligning-names).
 
 ## Motivation and resources
 
@@ -57,6 +57,8 @@ core proposal and summarized in [aligning names](aligning-names).
 - [Subclassing in Python Redux](https://hynek.me/articles/python-subclassing-redux/)
   explains which types of subclassing are considered harmful and was very helpful for
   designing this proposal.
+
+For a summary of the new design philosophy, see [here](design-philosophy).
 
 ## Changes for optimization
 
@@ -81,12 +83,12 @@ this is achieved by returning a dictionary instead of just a scalar float.
 The conventions for the return value of the criterion function are as follows:
 
 - For the simplest case, where only scalar optimizers are used, `criterion` returns a
-  float or a dictionary containing the key "value" which is a float.
+  float or a dictionary containing the entry "value" which is a float.
 - For likelihood functions, `criterion` returns a dictionary that contains at least the
-  key `"contributions"` which can be any pytree that can be flattened into a numpy array
-  of floats.
+  entry `"contributions"` which can be any pytree that can be flattened into a numpy
+  array of floats.
 - For least-squares problems, `criterion` returns a dictionary that contains at least
-  the key `"root_contributions"` which can be any pytree that can be flattened into a
+  the entry `"root_contributions"` which can be any pytree that can be flattened into a
   numpy array of floats.
 - In any case the returned dictionary can have an arbitrary number of additional keys.
   The corresponding information will be stored in the log database (if logging is used).
@@ -139,10 +141,9 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 
 #### Proposal
 
-`params` and additional keyword arguments of the criterion function stay unchanged. The
-output of the criterion function becomes `float | FunctionValue`. There are decorators
-that help the user to write valid criterion functions without making an explicit
-instance of `FunctionValue`.
+The output of the criterion function becomes `float | FunctionValue`. There are
+decorators that help the user to write valid criterion functions without making an
+explicit instance of `FunctionValue`.
 
 The first two previous examples remain valid. The third one will be deprecated and
 should be replaced by:
@@ -194,7 +195,8 @@ beginner users.
 ```
 
 On top of the described changes, we suggest to rename `criterion` to `fun` to align the
-naming with `scipy.optimize`
+naming with `scipy.optimize`. Similarly, `criterion_kwargs` should be renamed to
+`fun_kwargs`.
 
 ### Bundling bounds
 
@@ -381,20 +383,24 @@ We want the following behavior:
 
 The user types `em.algorithms.` and autocomplete shows
 
-- `GradientBased`
-- `GradientFree`
-- `neldermead`
-- `bobyqa`
-- `lbfgs`
-- `slsqp`
+|                 |
+| --------------- |
+| `GradientBased` |
+| `GradientFree`  |
+| `neldermead`    |
+| `bobyqa`        |
+| `lbfgs`         |
+| `slsqp`         |
 
 A user can either select one of the algorithms (lowercase) directly or filter further by
 selecting a category (CamelCase). This would look as follows:
 
 The user types `em.algorithms.GradientFree.` and autocomplete shows
 
-- `neldermead`
-- `bobyqa`
+|              |
+| ------------ |
+| `neldermead` |
+| `bobyqa`     |
 
 Once the user arrives at an algorithm, a subclass of `Algorithm` is returned. This class
 will be passed to `minimize` or `maximize`. Passing configured instances of `Algorithm`s
@@ -683,15 +689,18 @@ returns a tuple of the criterion value and the derivative instead.
 #### Proposal
 
 1. We keep the three arguments but rename them to `fun`, `jac` and `fun_and_jac`.
-1. `jac` can also be a string `"jax"` or a more autocomplete friendly enum
-   `em.autodiff_backend.JAX`. This can be used to signal that the objective function is
-   jax compatible and jax should be used to calculate its derivatives. In the long run
-   we can add PyTorch support and more. Since this is mostly about a signal of
-   compatibility, it would be enough to set one of the two arguments to `"jax"`, the
+1. `jac` or `fun_and_jac` can also be a string `"jax"` or a more autocomplete friendly
+   enum `em.autodiff_backend.JAX`. This can be used to signal that the objective
+   function is jax compatible and jax should be used to calculate its derivatives. In
+   the long run we can add PyTorch support and more. Since this is mostly about a signal
+   of compatibility, it would be enough to set one of the two arguments to `"jax"`, the
    other one can be left at `None`.
 1. The dictionaries of callables get replaced by appropriate dataclasses. We align the
    names with the names in `FunctionValue` (e.g. rename `root_contributions` to
    `residuals`).
+1. If a single callable is passed, it is assumed to be the gradient of the scalar
+   function value unless it is decorated with `em.mark.least_squares` or
+   `em.mark.likelihood`.
 
 ### Other option dictionaries
 
@@ -702,7 +711,7 @@ configure the behavior with an option dictionary. Examples are:
 
 - `logging` (`str | pathlib.Path | False`) and `log_options` (dict)
 - `scaling` (`bool`) and `scaling_options` (dict)
-- `error_handling` (`Literal\["raise", "continue"\]`) and `error_penalty` (dict)
+- `error_handling` (`Literal["raise", "continue"]`) and `error_penalty` (dict)
 - `multistart` (`bool`) and `multistart_options`
 
 Moreover we have option dictionaries whenever we have nested invocations of estimagic
@@ -767,7 +776,8 @@ All `_options` arguments are deprecated.
 
 ##### `numdiff_options` and similar
 
-Replace the current dictionaries by dataclasses. Dictionaries are still supported.
+Dictionaries are still supported but we also offer more autocomplete friendly
+dataclasses as alternative.
 
 (algorithm-interface)=
 
@@ -787,7 +797,7 @@ and several optional keys. Algorithms can provide information to estimagic in tw
 
 - Is the algorithm a scalar, least-squares or likelihood optimizer?
 - The algorithm name.
-- Does the algorithm requires well scaled problems?
+- Does the algorithm require well scaled problems?
 - Is the algorithm currently installed?
 - Is the algorithm global or local?
 - Should the history tracking be disabled (e.g. because the algorithm tracks its own
@@ -840,8 +850,9 @@ def scipy_neldermead(
 
 The first two arguments (`criterion` and `x`) are mandatory. The lack of any arguments
 related to derivatives signifies that `scipy_neldermead` is a gradient free algorithm.
-The bounds show that it supports box constraints. The remaining arguments define the
-supported stopping criteria and algorithm options as well as their default values.
+The bounds related arguments show that it supports box constraints. The remaining
+arguments define the supported stopping criteria and algorithm options as well as their
+default values.
 
 The decorator simply attaches information to the function as `_algorithm_info`
 attribute. This originated as a hack but was never changed afterwards. The
@@ -861,8 +872,6 @@ class AlgoInfo(NamedTuple):
 
 **Things we want to keep**
 
-- Writing `minimize` functions is very simple and in many cases we only need minimal
-  wrappers around optimizer libraries.
 - The internal interface has proven flexible enough for many optimizers we had not
   wrapped when we designed it. It is easy to add more optional arguments to the
   decorator without breaking any existing code.
@@ -960,6 +969,12 @@ before an optimization is run.
 All breaking changes of the internal algorithm interface are done without deprecation
 cycle.
 
+```{note}
+The `_solve_internal_problem` method is private because users should not call it; This
+also prepares adding a public `minimize` method that internally calls the
+`minimize` function.
+```
+
 To make things more concrete, here are prototypes for components related to the
 `InternalProblem` and `InternalOptimizeResult`.
 
@@ -1026,8 +1041,8 @@ which entries are stored in the result dictionary.
 
 The functions `first_derivative` and `second_derivative` allow params to be arbitrary
 pytrees. They work for scalar and vector valued functions and a `key` argument makes
-sure that they work for `criterion` functions that return a dict containing
-`"value", `"contributions", and `"root_contributions"`.
+sure that they work for `criterion` functions that return a dict containing `"value"`,
+`"contributions"`, and `"root_contributions"`.
 
 In contrast to optimization, all pytree handling (for params and function outputs) is
 mixed with the calculation of the numerical derivatives. This can produce more
@@ -1054,8 +1069,8 @@ but has not produced convincing results in benchmarks.
 
 - We can make no assumptions on types inside the function because pytree handling is
   mixed with calculations
-- Support for Richardson extrapolation complicates the interface but has not been
-  convincing in benchmarks
+- Support for Richardson extrapolation complicates the interface and implementation but
+  has not been convincing in benchmarks
 - Pytree handling is acatually incomplete (`base_steps`, `min_steps` and `step_ratio`
   are assumed to be flat numpy arrays)
 - Many users expect the output of a function for numerical differentiation to be just
@@ -1246,14 +1261,14 @@ class BenchmarkProblem:
 
 ### `run_benchmark`
 
+#### Current situation
+
 `run_benchmark` takes `benchmark_problems` (covered in the previous section),
 `optimize_options` and a few other arguments and returns a nested dictionary
 representing benchmark results.
 
 `optimize_options` can be a list of algorithm names, a dict with algorithm names as
-values or a nested dict of
-
-#### Current situation
+values or a nested dict of keyword arguments for `minimize`.
 
 **Things we want to keep**
 
@@ -1275,7 +1290,7 @@ be a simple dataclass that we need for `estimate_ml` and `estimate_msm` anyways.
 
 Passing just lists of algorithm names is deprecated. Passing dicts as optimize options
 is also deprecated. Most use-cases will be covered by passing dictionaries of configured
-Algorithms as optimize options. Actually using the fully power of passing
+Algorithms as optimize options. Actually using the full power of passing
 `OptimizeOptions` will be rarely needed.
 
 The return type of `run_benchmark` will be `dict[tuple[str], BenchmarkResult]`
@@ -1305,17 +1320,44 @@ minimal:
 In the long run we plan a general overhaul of `MSM` estimation that provides better
 access to currently internal objects such as the MSM objective function.
 
-## Internal changes
+(design-philosophy)=
 
-This section will be fledged out when we start the implementation of this enhancement
-proposal. Until then it serves as a collection of ideas.
+## Design Philosophy
 
-- The `history` list becomes a class
-- The internal criterion and derivative becomes a class instead of using multiple
-  partialling.
-- We add a logger abstraction that will enable alternatives to the sqlite database in
-  the future
-- ...
+- User facing functions should be generous regarding their input type. Example: the
+  `algorithm` argument can be a string, `Algorithm` class or `Algorithm` instance. The
+  `algo_options` can be an `AlgorithmOptions` object or a dictionary of keyword
+  arguments.
+- User facing functions should be strict about their output types. A strict output type
+  does not just mean that the output type is known (and not a generous Union), but that
+  it is a proper type that enables static analysis for available attributes. Example:
+  whenever possible, public functions should not return dicts but proper result types
+  (e.g. `OptimizeResult`, `NumdiffResult`, ...)
+- Internal functions should be strict about input and output types; Typically, a public
+  function will check all arguments, convert them to a proper type and then call an
+  internal function. Example: `minimize` will convert any valid value for `algorithm`
+  into an `Algorithm` instance and then call an internal function with that type.
+- Each argument that previously accepted strings or option dictionaries now also accepts
+  input types that are more amenable to static analysis and offer better autocomplete.
+  Example: `algo_options` could just be a dict of keyword arguments. Now it can also be
+  an `AlgorithmOptions` instance that enables autocomplete and static analysis for
+  attribute access.
+- Fixed field types should only be used if all fields are known. An example where this
+  is not the case are benchmark results, that are better represented as dictionaries.
+- The documentation will mainly show preferred ways of doing things. Example: while
+  option dictionaries are allowed in many cases, we always show how to do things in more
+  autocomplete friendly ways.
+- Whenever possible, use immutable types. Whenever things need to be changeable,
+  consider using an immutable type with copy constructors for modified instances.
+  Example: instances of `Algorithm` are immutable but using `Algorithm.with_option`
+  users can create modified copies.
+- The main entry point to estimagic are functions, objects are mostly used for
+  configuration and return types. This takes the best of both worlds: we get the safety
+  and static analysis that (in Python) can only be achieved using objects but the
+  beginner friendliness and freedom provided by functions. Example: Having a `minimize`
+  function, it is very easy to add the possibility of running minimizations with
+  multiple algorithms in parallel and returning the best value. Having a `.solve` method
+  on an algorithm object would require a whole new interface for this.
 
 ## Type checkers and their configuration
 
@@ -1337,7 +1379,9 @@ warn_unused_ignores = true
 ## Runtime type checking
 
 Since most of our users do not use static type checkers we will still need to check the
-type of most user inputs so we can give them early feedback when problems arise.
+type of most user inputs so we can give them early feedback when problems arise. Thus we
+cannot remove our current error handling just because many of these errors could now be
+caught by static analysis.
 
 We can investigate using `jaxtyping`'s pytest hooks to enable runtime typecheckers like
 beartype during testing but it is not a priority for now.
@@ -1356,8 +1400,11 @@ beartype during testing but it is not a priority for now.
 | **Old Name**                               | **Proposed Name**         | **Source**  |
 | ------------------------------------------ | ------------------------- | ----------- |
 | `criterion`                                | `fun`                     | scipy       |
+| `criterion_kwargs`                         | `fun_kwargs`              |             |
 | `derivative`                               | `jac`                     | scipy       |
+| `derivative_kwargs`                        | `jac_kwargs`              |             |
 | `criterion_and_derivative`                 | `fun_and_jac`             |             |
+| `criterion_and_derivative_kwargs`          | `fun_and_jac_kwargs`      |             |
 | `stopping_max_criterion_evaluations`       | `stopping_maxfun`         | scipy       |
 | `stopping_max_iterations`                  | `stopping_maxiter`        | scipy       |
 | `convergence_absolute_criterion_tolerance` | `convergence_ftol_abs`    | NlOpt       |
