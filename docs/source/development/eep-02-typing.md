@@ -28,20 +28,19 @@ is to reap a number of benefits:
   types in internal functions.
 
 Achieving these goals requires more than adding type hints. estimagic is currently
-mostly [stringly typed](https://wiki.c2.com/?StringlyTyped) and full of dictionaries
-with a fixed set of required keys (e.g.
+mostly [stringly typed](https://wiki.c2.com/?StringlyTyped). For example, optimization
+algorithms are selected via strings. Another example are
 [constraints](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_constraints.html),
-[option dictionaries](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_algorithm_and_algo_options.html),
-etc.).
+which are dictionaries with a fixed set of required keys.
 
 This enhancement proposal outlines how we can accommodate the changes needed to reap the
 benefits of static typing without breaking users' code in too many places.
 
 A few deprecations and breaking changes will, however, be unavoidable. Since we are
 already interrupting users, we can use this deprecation cycle as a chance to better
-align some names in estimagic with SciPy and other optimization libraries. These changes
-will be marked as independent of the core proposal and summarized in
-[aligning names](aligning-names).
+align some names in estimagic with SciPy and other optimization libraries. This will
+make it even easier for scipy users to switch to estimagic. These changes will be marked
+as independent of the core proposal and summarized in [aligning names](aligning-names).
 
 ## Motivation and resources
 
@@ -59,7 +58,52 @@ will be marked as independent of the core proposal and summarized in
   explains which types of subclassing are considered harmful and was very helpful for
   designing this proposal.
 
-For a summary of the new design philosophy, see [here](design-philosophy).
+(design-philosophy)=
+
+## Design Philosophy
+
+The core principles behind this enhancement proposal can be summarized by the following
+points. This is an extension to our existing
+[styleguide](https://estimagic.org/en/latest/development/styleguide.html) which will be
+updated if this proposal is accepted.
+
+- User facing functions should be generous regarding their input type. Example: the
+  `algorithm` argument can be a string, `Algorithm` class or `Algorithm` instance. The
+  `algo_options` can be an `AlgorithmOptions` object or a dictionary of keyword
+  arguments.
+- User facing functions should be strict about their output types. A strict output type
+  does not just mean that the output type is known (and not a generous Union), but that
+  it is a proper type that enables static analysis for available attributes. Example:
+  whenever possible, public functions should not return dicts but proper result types
+  (e.g. `OptimizeResult`, `NumdiffResult`, ...)
+- Internal functions should be strict about input and output types; Typically, a public
+  function will check all arguments, convert them to a proper type and then call an
+  internal function. Example: `minimize` will convert any valid value for `algorithm`
+  into an `Algorithm` instance and then call an internal function with that type.
+- Each argument that previously accepted strings or option dictionaries now also accepts
+  input types that are more amenable to static analysis and offer better autocomplete.
+  Example: `algo_options` could just be a dict of keyword arguments. Now it can also be
+  an `AlgorithmOptions` instance that enables autocomplete and static analysis for
+  attribute access.
+- Fixed field types should only be used if all fields are known. An example where this
+  is not the case are collections of benchmark problems, where the set of fields depends
+  on the selected benchmark sets and other things. In such situations, dictionaries that
+  map strings to BenchmarkProblem objects are a good idea.
+- For backwards compatibility and compatibility with SciPy, we allow things we don't
+  find ideal (e.g. selecting algorithms via strings). However, the documentation should
+  mostly show our prefered way of doing things. Alternatives can be hidden in tabs and
+  expandable boxes.
+- Whenever possible, use immutable types. Whenever things need to be changeable,
+  consider using an immutable type with copy constructors for modified instances.
+  Example: instances of `Algorithm` are immutable but using `Algorithm.with_option`
+  users can create modified copies.
+- The main entry point to estimagic are functions, objects are mostly used for
+  configuration and return types. This takes the best of both worlds: we get the safety
+  and static analysis that (in Python) can only be achieved using objects but the
+  beginner friendliness and freedom provided by functions. Example: Having a `minimize`
+  function, it is very easy to add the possibility of running minimizations with
+  multiple algorithms in parallel and returning the best value. Having a `.solve` method
+  on an algorithm object would require a whole new interface for this.
 
 ## Changes for optimization
 
@@ -74,47 +118,50 @@ i.e. `maximize`, `minimize`, `slice_plot`, `criterion_plot`, `params_plot`,
 The objective or criterion function is the function being optimized. Currently, it is
 called `criterion` in estimagic.
 
-The `criterion` function maps a pytree of parameters into a criterion value.
-
 The same criterion function can work for scalar, least-squares and likelihood
 optimizers. Moreover, a criterion function can return additional data that is stored in
 the log file (if logging is active). All of this is achieved by returning a dictionary
 instead of just a scalar float.
 
-The conventions for the return value of the criterion function are as follows:
+For the simplest case, where only scalar optimizers are used, `criterion` returns a
+float. Here are two examples of this simple case.
 
-- For the simplest case, where only scalar optimizers are used, `criterion` returns a
-  float or a dictionary containing the entry "value" which is a float.
-- For likelihood functions, `criterion` returns a dictionary that contains at least the
-  entry `"contributions"` which can be any pytree that can be flattened into a numpy
-  array of floats.
-- For least-squares problems, `criterion` returns a dictionary that contains at least
-  the entry `"root_contributions"` which can be any pytree that can be flattened into a
-  numpy array of floats.
-- In any case the returned dictionary can have an arbitrary number of additional keys.
-  The corresponding information will be stored in the log database (if logging is used).
-
-A few simple examples of valid criterion functions are:
+The **first example** represents `params` as a flat numpy array and returns a float.
+This would also be compatible with SciPy:
 
 ```python
 def sphere(params: np.ndarray) -> float:
     return params @ params
+```
 
+The **second example** also returns a float but uses a different format for the
+parameters:
 
+```python
 def dict_sphere(params: dict) -> float:
     return params["a"] ** 2 + params["b"] ** 2
+```
 
+If the user wants the criterion function to be compatible with specialized optimizers
+for least-squares problems, the criterion function needs to return a dictionary. The
+criterion function can also return a dictionary, if the user wants to store some
+information in the log file. An example with both is:
 
+```python
 def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
     out = {"root_contributions": params, "p_mean": params.mean(), "p_std": params.std()}
     return out
 ```
 
+Here the `root_contributions` are the least-squares residuals. All other entries can
+have arbitrary names. Note that this function can also be used with scalar optimizers,
+since estimagic knows how to aggregate least-squares residuals into a function value.
+
+The specification of likelihood functions is very analogous to least-squares functions
+and therefore omitted here.
+
 **Things we want to keep**
 
-- Allow arbitrary pytrees for the `params` argument. This makes estimagic flexible and
-  popular. We do not need to restrict this type in any way because flattening the pytree
-  gives us a very precise type no matter how complicated the tree was.
 - Allow using the same criterion function for scalar, likelihood and least-squares
   optimizers. This feature makes it easy to try out and compare very different
   algorithms with minimal code changes.
@@ -130,78 +177,129 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 - Internally we can make almost no assumptions about the output of a criterion function,
   making the code that processes the criterion output very complex and full of if
   conditions.
-- The best typing information we could get for the output of the criterion function is
-  `float | dict[str, Any]`, which is not very useful.
 - We only know whether the specified criterion function is compatible with the selected
   optimizer after we evaluate it once. This means that users see errors only very late.
 - While optional, in least-squares problems it is possible that a user specifies
   `root_contributions`, `contributions` and `value` even though any of them could be
-  constructed out of the `root_contributions`. This means we need to check that all of
-  them are compatible.
-- The name `criterion` is not used very widely in the Python optimization ecosystem.
+  constructed out of the `root_contributions`. This redundancy of information means that
+  we need to check the consistency of all user provided function outputs.
+- What we call `criterion` is called `fun` in `scipy.optimize.minimize`. Therefore,
+  users that come from SciPy need to change their code instead of just importing
+  `minimize` from a different package.
 
 #### Proposal
 
-The output of the criterion function becomes `float | FunctionValue`. There are
-decorators that help the user to write valid criterion functions without making an
-explicit instance of `FunctionValue`.
-
-The first two previous examples remain valid. The third one will be deprecated and
-should be replaced by:
+The simplest way of specifying a least-squares function that does not return any logging
+output becomes:
 
 ```python
 import estimagic as em
+
+
+@em.mark.least_squares
+def ls_sphere(params):
+    return params
+```
+
+Analogously, the simplest way of specifying a likelihood function becomes:
+
+```python
+@em.mark.likelihood
+def ll_sphere(params):
+    return params**2
+```
+
+The simplest way of specifying a scalar function stays unchanged, but optionally a
+`mark.scalar` decorator can be used:
+
+```python
+@em.mark.scalar  # this is optional
+def sphere(params):
+    return params @ params
+```
+
+Except for the decorators, these three functions are specified the same way as in other
+python libraries that support specialized optimizers (e.g.
+`scipy.optimize.least_squares`). The reason why we need the decorators is that we
+support all kinds of optimizers in the same interface.
+
+If users additionally want to return information that should be stored in the log file,
+they need to use a specific Object as return type.
+
+```python
+@dataclass(frozen=True)
+class FunctionValue:
+    value: float | PyTree
+    info: dict[str, Any]
+```
+
+Thus an example of a least-squares function that also returns additional info for the
+log file would look like this:
+
+```python
 from estimagic import FunctionValue
 
 
 @em.mark.least_squares
-def least_squares_sphere(params: np.ndarray) -> em.FunctionValue:
+def least_squares_sphere(params):
     out = FunctionValue(
-        residuals=params, info={"p_mean": params.mean, "p_std": params.std()}
+        value=params, info={"p_mean": params.mean, "p_std": params.std()}
     )
     return out
 ```
 
-We can exploit this deprecation cycle to rename `root_contributions` to `residuals`
-which is more in line with the literature. Similarly, `contributions` can be renamed to
-`loglikes`.
-
-Since there is no need to modify instances of `FunctionValue`, it should be immutable.
-
-If a user only wants to express the least-squares structure of the problem without
-logging any additional information, they can only return the least-squares residuals as
-a pytree or vector. Since the decorator was used, we know how to interpret the output.
-
-```python
-@em.mark.least_squares
-def decorated_sphere(params: np.ndarray) -> np.ndarray:
-    return params
-```
-
-In this last syntax, the criterion function is implemented the same way as in existing
-least-squares optimizers (e.g. DFO-LS), which will make it very easy for new users of
-estimagic. Similarly, `em.mark.likelihood` will be available for creating criterion
-functions that are compatible with the BHHH optimizer.
-
-For completeness, we can implement an `em.mark.scalar` decorator, but this will be
-optional, i.e. if none of the decorators was used we'll assume that the problem is a
-scalar problem.
-
-```{note}
-In principle, we could make the usage of the decorator optional if a `FunctionValue`
-instance is returned. However, then we still would need one criterion evaluation until
-we know whether the criterion function is compatible with the selected optimizer.
-```
-
-```{note}
-A more modern alternative to a `mark` decorator would be to use `typing.Annotated` to
-add the relevant information to the return type. However, I find that harder for
-beginner users.
-```
+And analogous for scalar and likelihood functions, where again the `mark.scalar`
+decorator is optional.
 
 On top of the described changes, we suggest to rename `criterion` to `fun` to align the
 naming with `scipy.optimize`. Similarly, `criterion_kwargs` should be renamed to
 `fun_kwargs`.
+
+#### Extension / Alternative
+
+The purpose of the decorators is to tell us the output type of the criterion function.
+This is necessary because there is no way of distinguishing between likelihood and
+least-squares functions from the output alone and because we want to know the function
+type before we evaluate the function once.
+
+An alternative that might be more convenient for advanced Python programmers would be to
+do this via type hints. In this case, the return types need to be a bit more
+fine-grained:
+
+```python
+@dataclass(frozen=True)
+class ScalarFunctionValue(FunctionValue):
+    value: float
+    info: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class LeastSquaresFunctionValue(FunctionValue):
+    value: PyTree
+    info: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class LikelihoodFunctionValue(FunctionValue):
+    value: PyTree
+    info: dict[str, Any]
+```
+
+A least-squares function could then be specified without decorator as follows:
+
+```python
+from estimagic import LeastSquaresFunctionValue
+
+
+def least_squares_sphere(params: np.ndarray) -> LeastSquaresFunctionValue:
+    out = LeastSquaresFunctionValue(
+        value=params, info={"p_mean": params.mean, "p_std": params.std()}
+    )
+    return out
+```
+
+I think we can support this version on top of the decorator approach but I would not
+show it in beginner tutorials.
 
 ### Bundling bounds
 
@@ -1324,45 +1422,6 @@ minimal:
 
 In the long run we plan a general overhaul of `MSM` estimation that provides better
 access to currently internal objects such as the MSM objective function.
-
-(design-philosophy)=
-
-## Design Philosophy
-
-- User facing functions should be generous regarding their input type. Example: the
-  `algorithm` argument can be a string, `Algorithm` class or `Algorithm` instance. The
-  `algo_options` can be an `AlgorithmOptions` object or a dictionary of keyword
-  arguments.
-- User facing functions should be strict about their output types. A strict output type
-  does not just mean that the output type is known (and not a generous Union), but that
-  it is a proper type that enables static analysis for available attributes. Example:
-  whenever possible, public functions should not return dicts but proper result types
-  (e.g. `OptimizeResult`, `NumdiffResult`, ...)
-- Internal functions should be strict about input and output types; Typically, a public
-  function will check all arguments, convert them to a proper type and then call an
-  internal function. Example: `minimize` will convert any valid value for `algorithm`
-  into an `Algorithm` instance and then call an internal function with that type.
-- Each argument that previously accepted strings or option dictionaries now also accepts
-  input types that are more amenable to static analysis and offer better autocomplete.
-  Example: `algo_options` could just be a dict of keyword arguments. Now it can also be
-  an `AlgorithmOptions` instance that enables autocomplete and static analysis for
-  attribute access.
-- Fixed field types should only be used if all fields are known. An example where this
-  is not the case are benchmark results, that are better represented as dictionaries.
-- The documentation will mainly show preferred ways of doing things. Example: while
-  option dictionaries are allowed in many cases, we always show how to do things in more
-  autocomplete friendly ways.
-- Whenever possible, use immutable types. Whenever things need to be changeable,
-  consider using an immutable type with copy constructors for modified instances.
-  Example: instances of `Algorithm` are immutable but using `Algorithm.with_option`
-  users can create modified copies.
-- The main entry point to estimagic are functions, objects are mostly used for
-  configuration and return types. This takes the best of both worlds: we get the safety
-  and static analysis that (in Python) can only be achieved using objects but the
-  beginner friendliness and freedom provided by functions. Example: Having a `minimize`
-  function, it is very easy to add the possibility of running minimizations with
-  multiple algorithms in parallel and returning the best value. Having a `.solve` method
-  on an algorithm object would require a whole new interface for this.
 
 ## Type checkers and their configuration
 
