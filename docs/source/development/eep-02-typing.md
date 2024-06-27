@@ -18,12 +18,12 @@
 
 ## Abstract
 
-This enhancement proposal explains how we want to adopt static typing in estimagic. The
-overarching goals of the proposal are the following:
+This enhancement proposal explains the adoption of static typing in estimagic. The
+goal is to reap a number of benefits:
 
-- Better discoverability and autocomplete for users of estimagic.
-- Better readability of code due to type hints.
-- More robust code due to static type checking and use of stricter types in internal
+- Users will benefit from IDE tools such as easier discoverability of options and autocompletion.
+- Developers and users will find code easier to read due to type hints.
+- The codebase will become more robust due to static type checking and use of stricter types in internal
   functions.
 
 Achieving these goals requires more than adding type hints. estimagic is currently
@@ -75,7 +75,7 @@ called `criterion` in estimagic.
 
 The `criterion` function maps a pytree of parameters into a criterion value.
 
-An important feature of estimagic is that the same criterion function can work for
+The same criterion function can work for
 scalar, least-squares and likelihood optimizers. Moreover, a criterion function can
 return additional data that is stored in the log file (if logging is active). All of
 this is achieved by returning a dictionary instead of just a scalar float.
@@ -111,14 +111,14 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 
 **Things we want to keep**
 
-- The fact that `params` can be arbitrary pytrees makes estimagic flexible and popular.
+- Allow arbitrary pytrees for the `params` argument. This makes estimagic flexible and popular.
   We do not need to restrict this type in any way because flattening the pytree gives us
   a very precise type no matter how complicated the tree was.
-- Using the same criterion function for scalar, likelihood and least-squares optimizers
+- Allow using the same criterion function for scalar, likelihood and least-squares optimizers. This feature
   makes it easy to try out and compare very different algorithms with minimal code
   changes.
-- We do not need to restrict the type of additional arguments of the criterion function.
-- The simplest form of our criterion functions is also compatible with scipy.optimize
+- No restrictions on the type of additional arguments of the criterion function.
+- Maintain compatibility with scipy.optimize when the criterion function returns a scalar.
 
 **Problems**
 
@@ -130,8 +130,8 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
   conditions.
 - The best typing information we could get for the output of the criterion function is
   `float | dict[str, Any]`, which is not very useful.
-- We only know if the specified criterion function is compatible with the selected
-  optimizer after we evaluate it once. This means that errors for users are raised very
+- We only know whether the specified criterion function is compatible with the selected
+  optimizer after we evaluate it once. This means that users see errors only very
   late.
 - While optional, in least-squares problems it is possible that a user specifies
   `root_contributions`, `contributions` and `value` even though any of them could be
@@ -149,6 +149,10 @@ The first two previous examples remain valid. The third one will be deprecated a
 should be replaced by:
 
 ```python
+import estimagic as em
+from estimagic import FunctionValue
+
+
 @em.mark.least_squares
 def least_squares_sphere(params: np.ndarray) -> em.FunctionValue:
     out = FunctionValue(
