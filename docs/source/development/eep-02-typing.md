@@ -18,13 +18,14 @@
 
 ## Abstract
 
-This enhancement proposal explains the adoption of static typing in estimagic. The
-goal is to reap a number of benefits:
+This enhancement proposal explains the adoption of static typing in estimagic. The goal
+is to reap a number of benefits:
 
-- Users will benefit from IDE tools such as easier discoverability of options and autocompletion.
+- Users will benefit from IDE tools such as easier discoverability of options and
+  autocompletion.
 - Developers and users will find code easier to read due to type hints.
-- The codebase will become more robust due to static type checking and use of stricter types in internal
-  functions.
+- The codebase will become more robust due to static type checking and use of stricter
+  types in internal functions.
 
 Achieving these goals requires more than adding type hints. estimagic is currently
 mostly [stringly typed](https://wiki.c2.com/?StringlyTyped) and full of dictionaries
@@ -75,10 +76,10 @@ called `criterion` in estimagic.
 
 The `criterion` function maps a pytree of parameters into a criterion value.
 
-The same criterion function can work for
-scalar, least-squares and likelihood optimizers. Moreover, a criterion function can
-return additional data that is stored in the log file (if logging is active). All of
-this is achieved by returning a dictionary instead of just a scalar float.
+The same criterion function can work for scalar, least-squares and likelihood
+optimizers. Moreover, a criterion function can return additional data that is stored in
+the log file (if logging is active). All of this is achieved by returning a dictionary
+instead of just a scalar float.
 
 The conventions for the return value of the criterion function are as follows:
 
@@ -111,14 +112,15 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 
 **Things we want to keep**
 
-- Allow arbitrary pytrees for the `params` argument. This makes estimagic flexible and popular.
-  We do not need to restrict this type in any way because flattening the pytree gives us
-  a very precise type no matter how complicated the tree was.
-- Allow using the same criterion function for scalar, likelihood and least-squares optimizers. This feature
-  makes it easy to try out and compare very different algorithms with minimal code
-  changes.
+- Allow arbitrary pytrees for the `params` argument. This makes estimagic flexible and
+  popular. We do not need to restrict this type in any way because flattening the pytree
+  gives us a very precise type no matter how complicated the tree was.
+- Allow using the same criterion function for scalar, likelihood and least-squares
+  optimizers. This feature makes it easy to try out and compare very different
+  algorithms with minimal code changes.
 - No restrictions on the type of additional arguments of the criterion function.
-- Maintain compatibility with scipy.optimize when the criterion function returns a scalar.
+- Maintain compatibility with scipy.optimize when the criterion function returns a
+  scalar.
 
 **Problems**
 
@@ -131,8 +133,7 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 - The best typing information we could get for the output of the criterion function is
   `float | dict[str, Any]`, which is not very useful.
 - We only know whether the specified criterion function is compatible with the selected
-  optimizer after we evaluate it once. This means that users see errors only very
-  late.
+  optimizer after we evaluate it once. This means that users see errors only very late.
 - While optional, in least-squares problems it is possible that a user specifies
   `root_contributions`, `contributions` and `value` even though any of them could be
   constructed out of the `root_contributions`. This means we need to check that all of
