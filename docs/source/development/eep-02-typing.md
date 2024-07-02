@@ -309,6 +309,10 @@ def least_squares_sphere(params: np.ndarray) -> LeastSquaresFunctionValue:
 I think we can support this version on top of the decorator approach but I would not
 show it in beginner tutorials.
 
+##### Summary of output types
+
+The output type of the objective function is `float | PyTree[float] | FunctionValue`.
+
 ### Bundling bounds
 
 #### Current situation
@@ -609,8 +613,7 @@ class GradientBasedAlgorithms:
     slsqp: Type[SLSQP] = SLSQP
 
     @property
-    @staticmethod
-    def All() -> List[em.typing.Algorithm]:
+    def All(self) -> List[em.typing.Algorithm]:
         return [LBFGS, SLSQP]
 
 
@@ -620,8 +623,7 @@ class GradientFreeAlgorithms:
     bobyqa: Type[Bobyqa] = Bobyqa
 
     @property
-    @staticmethod
-    def All() -> List[em.typing.Algorithm]:
+    def All(self) -> List[em.typing.Algorithm]:
         return [NelderMead, Bobyqa]
 
 
@@ -633,18 +635,15 @@ class Algorithms:
     bobyqa: Type[Bobyqa] = Bobyqa
 
     @property
-    @staticmethod
-    def GradientBased() -> GradientBasedAlgorithms:
+    def GradientBased(self) -> GradientBasedAlgorithms:
         return GradientBasedAlgorithms()
 
     @property
-    @staticmethod
-    def GradientBased() -> GradientFreeAlgorithms:
+    def GradientBased(self) -> GradientFreeAlgorithms:
         return GradientFreeAlgorithms()
 
     @property
-    @staticmethod
-    def All() -> List[em.typing.Algorithm]:
+    def All(self) -> List[em.typing.Algorithm]:
         return [LBFGS, SLSQP, NelderMead, Bobyqa]
 ```
 
@@ -657,6 +656,12 @@ it might have been overkill to achieve basic autocomplete, it is justified to ac
 this filtering behavior. How the relevant information for filtering (e.g. whether an
 algorithm is gradient based) is collected, will be discussed in
 [internal algorithms](algorithm-interface).
+
+```{note}
+The use of dataclasses is an implementation detail. This enhancement proposal only
+defines the autocomplete behavior we want to achieve. Everything else can be changed
+later as we see fit.
+```
 
 (algorithm-options)=
 
@@ -859,7 +864,7 @@ minimize(
 
 ```{note}
 In my currently planned implementation, autocomplete will not work reliably for the
-copy constructors (`with_option`, `with_stopping` and `with_convergence). The main
+copy constructors (`with_option`, `with_stopping` and `with_convergence`). The main
 reason is that most editors do not play well with `functools.wraps` or any other means
 of dynamic signature creation. For more details, see the discussions about the
 [Internal Algorithm Interface](algorithm-interface).
@@ -1654,6 +1659,10 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 ```
 
+In addition to CI, we could also run type-checks as part of the pre-commit hooks. An
+example where this is done can be found
+[here](https://github.com/google/jax/blob/de0fd722f0c4c0c238884f0e64e4ef8da72e4c1d/.pre-commit-config.yaml#L33).
+
 ## Runtime type checking
 
 Since most of our users do not use static type checkers we will still need to check the
@@ -1666,8 +1675,15 @@ beartype during testing but it is not a priority for now.
 
 ## Changes in documentation
 
-- No type hints in docstrings anymore
-- Only show new recommended ways of doing things, not deprecated ones
+All type information in docstrings will be removed.
+
+Whenever there are now multiple ways of doing things, we show the ones that support
+autocomplete and static analysis most prominently. We can achieve this via tabs, similar
+to how
+[pytask](https://pytask-dev.readthedocs.io/en/stable/tutorials/defining_dependencies_products.html#products)
+does it.
+
+The general structure of the documentation is not affected by this enhancement proposal.
 
 (aligning-names)=
 
