@@ -452,43 +452,107 @@ If the user passes a string, we look up the algorithm implementation in a dictio
 containing all installed algorithms. We implement suggestions for typical typos based on
 fuzzy matching of strings.
 
+**Things we want to keep**
+
+- Estimagic can be used just like scipy
+
 **Problems**
 
 - There is no autocomplete.
 - It is very easy to make typos and they only get caught at runtime.
 - Users cannot select algorithms without reading the documentation.
 
-#### Difficulties
-
-The usual solution to selecting algorithms in an autocomplete friendly way is an `Enum`.
-However, there are two difficulties that make this solution suboptimal:
-
-1. The set of available algorithms depends on the packages a user has installed. Almost
-   all algorithms come from optional dependencies and very few users install all
-   optional dependencies.
-
-1. We already have more than 50 algorithms and plan to add many more. A simple
-   autocomplete is not very helpful. Instead, the user would have to be able to filter
-   the autocomplete results according to the problem properties (e.g. least-squares,
-   gradient-based, local, ...). However, it is not clear which filters are relevant and
-   in which order a user wants to apply them.
-
 #### Proposal
 
-We continue to support passing algorithms as strings. This is important because
-estimagic promises to work "just like SciPy" for simple things. On top, we offer a new
-way of specifying algorithms that is less prone to typos, supports autocomplete and will
-be useful for advanced algorithm configuration.
+The following proposal is quite ambitious and split into multiple steps. Thanks to
+[@schroedk](https://github.com/schroedk) for helpful discussions on this topic.
 
-To exemplify the new approach, assume a simplified situation with 5 algorithms. We only
-consider whether an algorithm is gradient free or gradient based. One algorithm is not
-installed, so should never show up anywhere. Here is the fictitious list:
+##### Step 1: Passing algorithm classes and objects
 
-- `neldermead`: installed, `gradient_free`
-- `bobyqa`: installed, `gradient_free`
-- `lbfgs`: installed, `gradient_based`
-- `slsqp`: installed, `gradient_based`
-- `ipopt`: not installed, `gradient_based`
+For compatibility with SciPy we continue to allow algorithm strings. However, the
+preferred ways of selecting algorithms are now:
+
+1. Passing an algorithm class
+1. Passing a configured algorithm object
+
+Both new ways become possible because of changes to the internal algorithm interface.
+See [here](algorithm-interface) for the proposal.
+
+We remove the possibility of passing callables that comply with the old internal
+algorithm interface.
+
+In a simple example, algorithm selection via algorithm classes looks as follows:
+
+```python
+em.minimize(
+    lambda x: x @ x,
+    params=np.arange(5),
+    algorithm=em.algorithms.scipy_neldermead,
+)
+```
+
+Passing a configured instance of an algorithm looks as follows:
+
+```python
+em.minimize(
+    lambda x: x @ x,
+    params=np.arange(5),
+    algorithm=em.algorithms.scipy_neldermead(adaptive=True),
+)
+```
+
+##### Step 2: Achieving autocomplete without too much typing
+
+There are many ways in which the above behavior could be achieved with full autocomplete
+support. For reasons that will become clear in the next section, we choose to represent
+`algorithms` as a dataclass. Alternatives are enums, `__init__` files, NamedTuples, etc.
+
+A prototype for that dataclass looks as follows:
+
+```python
+from typing import Type
+
+
+@dataclass(frozen=True)
+class Algorithms:
+    scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
+    scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
+    # ...
+    # many more
+    # ...
+
+
+algorithms = Algorithms()
+```
+
+Currently, all algorithms are collected in a dictionary that is created
+programmatically. Representing algorithms in a static data structure instead requires a
+lot more typing and therefore code to maintain. This situation will become even worse
+with some of the features we propose below. Therefore, we want to automate the creation
+of the dataclass.
+
+We can achieve this by implementing a local pre-commit hook that looks at the
+programmatically constructed dictionary containing all algorithms and creates the code
+for the desired dataclass from it. Users of estimagic (and their IDEs) will never know
+that this code was not typed in by a human, which guarantees that autocomplete and
+static analysis will work without problems.
+
+##### Step 3: Filtered autocomplete
+
+Having the flat `Algorithms` data structure would be enough if every user knew exactly
+which algorithm they want to use and just needed help typing in the name. However, this
+is very far from realistic. Most users have little knowledge about optimization
+algorithms. In the best case, they know a few properties of their problems (e.g. whether
+it is differentiable) and their goal (e.g. do they need a local or global solution).
+
+To exemplify what we want to achieve, assume a simplified situation with 4 algorithms.
+We only consider whether an algorithm is gradient free or gradient based. Here is the
+fictitious list:
+
+- `neldermead`: `gradient_free`
+- `bobyqa`: `gradient_free`
+- `lbfgs`: `gradient_based`
+- `slsqp`: `gradient_based`
 
 We want the following behavior:
 
@@ -536,19 +600,63 @@ selected algorithms. That way a user could for example loop over all `Bounded` a
 These categories match nicely with our
 [algorithm selection tutorials](https://effective-programming-practices.vercel.app/scientific_computing/optimization_algorithms/objectives_materials.html).
 
-We can use
-[`dataclasses.make_dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.make_dataclass)
-to programmatically build up a data structure with the autocomplete behavior described
-above. `make_dataclass` also supports type hints.
+To achieve this behavior, we would have to implement something like this:
 
-```{note}
-The first solution I found when
-playing with this is eager, i.e. the complete data structure is created at
-import time, no matter what the user does. A lazy solution where only the branches of
-the data structure we need are created would be nicer. Maybe, this can be achieved with
-properties, but I don't know yet how easy it is to add properties via `make_dataclass`
-and whether it would break some of the autocomplete behavior we want.
+```python
+@dataclass(frozen=True)
+class GradientBasedAlgorithms:
+    lbfgs: Type[LBFGS] = LBFGS
+    slsqp: Type[SLSQP] = SLSQP
+
+    @property
+    @staticmethod
+    def All() -> List[em.typing.Algorithm]:
+        return [LBFGS, SLSQP]
+
+
+@dataclass(frozen=True)
+class GradientFreeAlgorithms:
+    neldermead: Type[NelderMead] = NelderMead
+    bobyqa: Type[Bobyqa] = Bobyqa
+
+    @property
+    @staticmethod
+    def All() -> List[em.typing.Algorithm]:
+        return [NelderMead, Bobyqa]
+
+
+@dataclass(frozen=True)
+class Algorithms:
+    lbfgs: Type[LBFGS] = LBFGS
+    slsqp: Type[SLSQP] = SLSQP
+    neldermead: Type[NelderMead] = NelderMead
+    bobyqa: Type[Bobyqa] = Bobyqa
+
+    @property
+    @staticmethod
+    def GradientBased() -> GradientBasedAlgorithms:
+        return GradientBasedAlgorithms()
+
+    @property
+    @staticmethod
+    def GradientBased() -> GradientFreeAlgorithms:
+        return GradientFreeAlgorithms()
+
+    @property
+    @staticmethod
+    def All() -> List[em.typing.Algorithm]:
+        return [LBFGS, SLSQP, NelderMead, Bobyqa]
 ```
+
+If implemented by hand, this would require an enormous amount of typing and introduce a
+very high maintenance burden. Whenever a new algorithm was added to estimagic, we would
+have to register it in multiple nested dataclasses.
+
+The pre-commit approach detailed in the previous section can solve this problem. While
+it might have been overkill to achieve basic autocomplete, it is justified to achieve
+this filtering behavior. How the relevant information for filtering (e.g. whether an
+algorithm is gradient based) is collected, will be discussed in
+[internal algorithms](algorithm-interface).
 
 (algorithm-options)=
 
@@ -672,11 +780,13 @@ In total, we want to offer four entry points for the configuration of optimizers
       option name and can thus reduce repetition in the option names.
 1. As before, the user can pass a global set of options to `maximize` or `minimize`. We
    continue to support option dictionaries but also allow `AlgorithmOption` objects that
-   enable better autocomplete and immutability. We can construct them dynamically at
-   import time using `make_dataclass`. Global options override the options that were
-   directly passed to an optimizer. For consistency, `AlgorithmOptions` can offer the
-   `with_stopping`, `with_convergence` and `with_option` copy-constructors, so users can
-   modify options safely.
+   enable better autocomplete and immutability. We can construct them using a similar
+   pre-commit hook approach as discussed in [algorithm selection](algorithm-selection).
+   Global options override the options that were directly passed to an optimizer. For
+   consistency, `AlgorithmOptions` can offer the `with_stopping`, `with_convergence` and
+   `with_option` copy-constructors, so users can modify options safely. Probably, this
+   approach should be featured less prominently in the documentation as it offers no
+   guarantees that the specified options are compatible with the selected algorithm.
 
 The previous example continues to work. Examples of the new possibilities are:
 
@@ -1207,6 +1317,35 @@ class InternalOptimizeResult:
     success: bool | None
     message: str | None
 ```
+
+#### Alternative to `mark.minimizer`
+
+Instead of collecting information about the optimizers via the `mark.minimizer`
+decorator, we could require the `Algorithm` subclasses to provide that information via
+class variables. The presence of all required class variables could be enforced via
+`__init_subclass__`.
+
+The two approaches are equivalent in terms of achievable functionality. I see the
+following advantages and disadvantages:
+
+**Advantages of decorator approach**
+
+- Easier for beginners as no subtle concepts (such as the difference between instance
+  and class variables) are involved
+- Very easy way to provide default values for some of the collected variables
+- Every user of estimagic is familiar with `mark` decorators
+- Autocomplete while filling out the arguments of the mark decorator
+- Very clear visual separation of algorithm options and attributes estimagic needs to
+  know about.
+
+**Advantages of class variable approach**
+
+- More familiar for people with object oriented background
+- Possibly better ways to enforce the presence of the class variables via static
+  analysis
+
+I am personally leaning towards the decorator approach but any feedback on this topic is
+welcome.
 
 ## Numerical differentiation
 
