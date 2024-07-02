@@ -730,17 +730,18 @@ Python variable names.
 
 **Things we want to keep**
 
-- Mixing the options for all optimizers in a single dictionary and discarding options
-  that do not apply to the selected optimizer allows to loop very efficiently over very
-  different algorithms (without `if` conditions in the user's code). This is very good
-  for quick experimentation, e.g. solving the same problem with three different
-  optimizers and limiting each optimizer to 100 function evaluations.
+- The ability to provide global options that are filtered for each optimizer. Mixing the
+  options for all optimizers in a single dictionary and discarding options that do not
+  apply to the selected optimizer allows to loop very efficiently over very different
+  algorithms (without `if` conditions in the user's code). This is very good for quick
+  experimentation, e.g. solving the same problem with three different optimizers and
+  limiting each optimizer to 100 function evaluations.
 - The basic namespaces help to quickly see what is influenced by a specific option. This
   works especially well to distinguish stopping options and convergence criteria from
   other tuning parameters of the algorithms. However, it would be enough to keep them as
   a naming convention if we find it hard to support the `.` notation.
 - All options are documented in the estimagic documentation, i.e. we do not link to the
-  docs of original packages.
+  docs of original packages. Now they will also be discoverable in an IDE.
 
 **Problems**
 
@@ -898,12 +899,12 @@ returns a tuple of the criterion value and the derivative instead.
 **Things we want to keep**
 
 - It is good that synergies between `criterion` and `derivative` can be exploited.
-- The three arguments (`criterion`, `derivative`, `criterion_and_derivative`) make sure
-  that every algorithm can run efficiently when looping over algorithms and keeping
-  everything else equal. With SciPy's approach of setting `jac=True` if one wants to use
-  a joint criterion and derivative function, a gradient free optimizer would have no
-  chance of evaluating just the criterion.
-- We want to support scalar, least-squares and likelihood problems in one interface.
+- There are three arguments (`criterion`, `derivative`, `criterion_and_derivative`).
+  This makes sure that every algorithm can run efficiently when looping over algorithms
+  and keeping everything else equal. With SciPy's approach of setting `jac=True` if one
+  wants to use a joint criterion and derivative function, a gradient free optimizer
+  would have no chance of evaluating just the criterion.
+- Scalar, least-squares and likelihood problems are supported in one interface.
 
 **Problems**
 
@@ -1015,9 +1016,8 @@ functions. Examples are:
 
 **Things we want to keep**
 
-- It is nice that complex behavior like logging or multistart can be switched on in
-  extremely simple ways, without importing anything and without looking up supported
-  options.
+- Complex behavior like logging or multistart can be switched on in extremely simple
+  ways, without importing anything and without looking up supported options.
 - The interfaces are very declarative and decoupled from our implementation.
 
 **Problems**
@@ -1500,9 +1500,9 @@ benchmark problems.
 
 **Things we want to keep**
 
-- Collecting benchmark problems in a dictionary is good because it makes it easy to
-  merge problems from multiple benchmark sets or filter benchmark sets. A fixed field
-  data structure would not work here.
+- Benchmark problems are collected in a dict, not in a fixed-field data structure. This
+  makes it easy to merge problems from multiple benchmark sets or filter benchmark sets.
+  A fixed field data structure would not work here.
 
 **Problems**
 
@@ -1594,9 +1594,9 @@ values or a nested dict of keyword arguments for `minimize`.
 
 **Things we want to keep**
 
-- Collecting benchmark results in a dictionary is good because it makes it easy to merge
-  results from multiple benchmark runs or filter results. A fixed field data structure
-  would not work here.
+- Benchmark results are collected in a dict, not in a fixed-field data structure. This
+  makes it easy to merge results from multiple benchmark sets or filter benchmark
+  results. A fixed field data structure would not work here.
 
 **Problems**
 
