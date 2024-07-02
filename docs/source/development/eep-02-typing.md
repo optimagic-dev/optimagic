@@ -535,11 +535,20 @@ lot more typing and therefore code to maintain. This situation will become even 
 with some of the features we propose below. Therefore, we want to automate the creation
 of the dataclass.
 
-We can achieve this by implementing a local pre-commit hook that looks at the
-programmatically constructed dictionary containing all algorithms and creates the code
-for the desired dataclass from it. Users of estimagic (and their IDEs) will never know
-that this code was not typed in by a human, which guarantees that autocomplete and
-static analysis will work without problems.
+To this end, we can write a function that automatically creates the code for the
+`Algorithms` dataclass. This function can be executed in a local pre-commit hook to make
+sure all generated code is up-to-date in every commit. It can also be executed in a
+[pytest hook](https://docs.pytest.org/en/7.1.x/how-to/writing_hook_functions.html)
+(before the collection phase) to make sure everything is up-to-date when tests run.
+
+Users of estimagic (and their IDEs) will never know that this code was not typed in by a
+human, which guarantees that autocomplete and static analysis will work without
+problems.
+
+```{note}
+We can also use [pytest-hooks](https://docs.pytest.org/en/7.1.x/how-to/writing_hook_functions.html)
+to make sure the
+```
 
 ##### Step 3: Filtered autocomplete
 
@@ -639,7 +648,7 @@ class Algorithms:
         return GradientBasedAlgorithms()
 
     @property
-    def GradientBased(self) -> GradientFreeAlgorithms:
+    def GradientFree(self) -> GradientFreeAlgorithms:
         return GradientFreeAlgorithms()
 
     @property
@@ -651,10 +660,10 @@ If implemented by hand, this would require an enormous amount of typing and intr
 very high maintenance burden. Whenever a new algorithm was added to estimagic, we would
 have to register it in multiple nested dataclasses.
 
-The pre-commit approach detailed in the previous section can solve this problem. While
-it might have been overkill to achieve basic autocomplete, it is justified to achieve
-this filtering behavior. How the relevant information for filtering (e.g. whether an
-algorithm is gradient based) is collected, will be discussed in
+The code generation approach detailed in the previous section can solve this problem.
+While it might have been overkill to achieve basic autocomplete, it is justified to
+achieve this filtering behavior. How the relevant information for filtering (e.g.
+whether an algorithm is gradient based) is collected, will be discussed in
 [internal algorithms](algorithm-interface).
 
 ```{note}
