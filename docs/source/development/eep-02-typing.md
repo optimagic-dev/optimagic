@@ -143,19 +143,30 @@ def dict_sphere(params: dict) -> float:
 ```
 
 If the user wants the criterion function to be compatible with specialized optimizers
-for least-squares problems, the criterion function needs to return a dictionary. The
-criterion function can also return a dictionary, if the user wants to store some
-information in the log file. An example with both is:
+for least-squares problems, the criterion function needs to return a dictionary.
 
 ```python
 def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
-    out = {"root_contributions": params, "p_mean": params.mean(), "p_std": params.std()}
-    return out
+    return {"root_contributions": params}
 ```
 
-Here the `root_contributions` are the least-squares residuals. All other entries can
-have arbitrary names. Note that this function can also be used with scalar optimizers,
-since estimagic knows how to aggregate least-squares residuals into a function value.
+Here the `"root_contributions"` are the least-squares residuals. The dictionary key
+tells estimagic how to interpret the output. This is needed because estimagic has no way
+of finding out whether a criterion function that returns a vector (or pytree) is a
+least-squares function or a likelihood function. Of course all specialized problems can
+still be solved with scalar optimizers.
+
+The criterion function can also return a dictionary, if the user wants to store some
+information in the log file. This is independent of having a least-squares function or
+not. An example is:
+
+```python
+def logging_sphere(x: np.ndarray) -> dict[str, Any]:
+    return {"value": x @ x, "mean": x.mean(), "std": x.std()}
+```
+
+Here `"value"` is the actual scalar criterion value. All other fields are unknown to
+estimagic and therefore just logged in the database if logging is active.
 
 The specification of likelihood functions is very analogous to least-squares functions
 and therefore omitted here.
@@ -306,8 +317,10 @@ def least_squares_sphere(params: np.ndarray) -> LeastSquaresFunctionValue:
     return out
 ```
 
-I think we can support this version on top of the decorator approach but I would not
-show it in beginner tutorials.
+This approach works nicely in projects that use type hints already. However, it would be
+hard for users who have never heard about type hints. Therefore, we should implement it
+but not use it in beginner tutorials and always make clear that this is completely
+optional.
 
 ##### Summary of output types
 
@@ -1724,8 +1737,10 @@ The general structure of the documentation is not affected by this enhancement p
   different from scipy, so people who switch over from scipy need to adjust their code
   anyways.
 - We do not want to rename `algo_options` to `options` for the same reason.
-- I am not sure if `params` should be renamed to `x0`. It would align estimagic more
-  with scipy, but `params` is just easier to pronounce and use as a word than `x0`.
+- We do not want to rename `params` to `x0`. It would align estimagic more with scipy,
+  but `params` is just easier to pronounce and use as a word than `x0`. Moreover, `x0`
+  has the strong connotation that this is a vector and not a nested dictionary or other
+  pytree.
 
 ## Summary of breaking changes
 
