@@ -6,7 +6,7 @@
 +------------+------------------------------------------------------------------+
 | Author     | `Janos Gabler <https://github.com/janosg>`_                      |
 +------------+------------------------------------------------------------------+
-| Status     | Draft                                                            |
+| Status     | Accepted                                                         |
 +------------+------------------------------------------------------------------+
 | Type       | Standards Track                                                  |
 +------------+------------------------------------------------------------------+
@@ -35,12 +35,6 @@ which are dictionaries with a fixed set of required keys.
 
 This enhancement proposal outlines how we can accommodate the changes needed to reap the
 benefits of static typing without breaking users' code in too many places.
-
-A few deprecations and breaking changes will, however, be unavoidable. Since we are
-already interrupting users, we can use this deprecation cycle as a chance to better
-align some names in estimagic with SciPy and other optimization libraries. This will
-make it even easier for scipy users to switch to estimagic. These changes will be marked
-as independent of the core proposal and summarized in [aligning names](aligning-names).
 
 ## Motivation and resources
 
@@ -115,8 +109,7 @@ i.e. `maximize`, `minimize`, `slice_plot`, `criterion_plot`, `params_plot`,
 
 #### Current situation
 
-The objective or criterion function is the function being optimized. Currently, it is
-called `criterion` in estimagic.
+The objective or criterion function is the function being optimized.
 
 The same criterion function can work for scalar, least-squares and likelihood
 optimizers. Moreover, a criterion function can return additional data that is stored in
@@ -194,9 +187,6 @@ and therefore omitted here.
   `root_contributions`, `contributions` and `value` even though any of them could be
   constructed out of the `root_contributions`. This redundancy of information means that
   we need to check the consistency of all user provided function outputs.
-- What we call `criterion` is called `fun` in `scipy.optimize.minimize`. Therefore,
-  users that come from SciPy need to change their code instead of just importing
-  `minimize` from a different package.
 
 #### Proposal
 
@@ -267,12 +257,6 @@ def least_squares_sphere(params):
 
 And analogous for scalar and likelihood functions, where again the `mark.scalar`
 decorator is optional.
-
-##### Renaming `criterion` to `fun`
-
-On top of the described changes, we suggest to rename `criterion` to `fun` to align the
-naming with `scipy.optimize`. Similarly, `criterion_kwargs` should be renamed to
-`fun_kwargs`.
 
 ##### Optionally replace decorators by type hints
 
@@ -775,51 +759,20 @@ Python variable names.
   user wants to try out a grid of values for one tuning parameter while keeping all
   other options constant.
 
-**Secondary problems**
-
-The following problems are not related to the specific goals of this enhancement
-proposal but it might be a good idea to address them in the same deprecation cycle.
-
-- In an effort to make everything very descriptive, some names got too long. For example
-  `"convergence.absolute_gradient_tolerance"` is very long but most people are so
-  familiar with reading `"gtol_abs"` (from SciPy and NLopt) that
-  `"convergence.gtol_abs"` would be a better name.
-- It might have been a bad idea to harmonize default values for similar options that
-  appear in multiple optimizers. Sometimes, the options, while similar in spirit, are
-  defined slightly differently and usually algorithm developers will set all tuning
-  parameters to maximize performance on a benchmark set they care about. If we change
-  how options are handled in estimagic, we should consider just harmonizing names and
-  not default values.
-
 #### Proposal
 
-In total, we want to offer four entry points for the configuration of optimizers:
+We want to offer multiple entry points for passing additional options to algorithms.
+Users can pick the one that works best for their particular use-case. The current
+solution remains valid but not recommended.
 
-1. Instead of passing an `Algorithm` class (as described in
-   [Algorithm Selection](algorithm-selection)) the user can create an instance of their
-   selected algorithm. When creating the instance, they have autocompletion for all
-   options supported by the selected algorithm. `Algorithm`s are immutable.
-1. Given an instance of an `Algorithm`, a user can easily create a modified copy of that
-   instance by using the `with_option` method.
-1. We can provide additional methods `with_stopping` and `with_convergence` that call
-   `with_option` internally but provide two additional features:
-   1. They validate that the option is indeed a stopping/convergence criterion.
-   1. They allow to omit the `convergence_` or `stopping_` at the beginning of the
-      option name and can thus reduce repetition in the option names.
-1. As before, the user can pass a global set of options to `maximize` or `minimize`. We
-   continue to support option dictionaries but also allow `AlgorithmOption` objects that
-   enable better autocomplete and immutability. We can construct them using a similar
-   pre-commit hook approach as discussed in [algorithm selection](algorithm-selection).
-   Global options override the options that were directly passed to an optimizer. For
-   consistency, `AlgorithmOptions` can offer the `with_stopping`, `with_convergence` and
-   `with_option` copy-constructors, so users can modify options safely. Probably, this
-   approach should be featured less prominently in the documentation as it offers no
-   guarantees that the specified options are compatible with the selected algorithm.
+##### Configured algorithms
 
-The previous example continues to work. Examples of the new possibilities are:
+Instead of passing an `Algorithm` class (as described in
+[Algorithm Selection](algorithm-selection)) the user can create an instance of their
+selected algorithm. When creating the instance, they have autocompletion for all options
+supported by the selected algorithm. `Algorithm`s are immutable.
 
 ```python
-# configured algorithm
 algo = em.algorithms.scipy_lbfgsb(
     stopping_max_iterations=1000,
     stopping_max_criterion_evaluations=1500,
@@ -831,6 +784,32 @@ minimize(
     # ...
 )
 ```
+
+##### Copy constructors on algorithms
+
+Given an instance of an `Algorithm`, a user can easily create a modified copy of that
+instance by using the `with_option` method.
+
+```python
+# using copy constructors to create variants
+base_algo = em.algorithms.fides(stopping_max_iterations=1000)
+algorithms = [base_algo.with_option(initial_radius=r) for r in [0.1, 0.2, 0.5]]
+
+for algo in algorithms:
+    minimize(
+        # ...
+        algorithm=algo,
+        # ...
+    )
+```
+
+We can provide additional methods `with_stopping` and `with_convergence` that call
+`with_option` internally but provide two additional features:
+
+1. They validate that the option is indeed a stopping/convergence criterion.
+1. They allow to omit the `convergence_` or `stopping_` at the beginning of the option
+   name and can thus reduce repetition in the option names. This recreates the
+   namespaces we currently achieve with the dot notation:
 
 ```python
 # using copy constructors for better namespaces
@@ -852,21 +831,21 @@ minimize(
 )
 ```
 
-```python
-# using copy constructors to create variants
-base_algo = em.algorithms.fides(stopping_max_iterations=1000)
-algorithms = [base_algo.with_option(initial_radius=r) for r in [0.1, 0.2, 0.5]]
+##### Global option object
 
-for algo in algorithms:
-    minimize(
-        # ...
-        algorithm=algo,
-        # ...
-    )
-```
+As before, the user can pass a global set of options to `maximize` or `minimize`. We
+continue to support option dictionaries but also allow `AlgorithmOption` objects that
+enable better autocomplete and immutability. We can construct them using a similar
+pre-commit hook approach as discussed in [algorithm selection](algorithm-selection).
+Global options override the options that were directly passed to an optimizer. For
+consistency, `AlgorithmOptions` can offer the `with_stopping`, `with_convergence` and
+`with_option` copy-constructors, so users can modify options safely. Probably, this
+approach should be featured less prominently in the documentation as it offers no
+guarantees that the specified options are compatible with the selected algorithm.
+
+The previous example continues to work. Examples of the new possibilities are:
 
 ```python
-# option object
 options = em.AlgorithmOptions(
     stopping_max_iterations=1000,
     stopping_max_criterion_evaluations=1500,
@@ -938,7 +917,10 @@ returns a tuple of the criterion value and the derivative instead.
 
 #### Proposal
 
-We keep the three arguments but rename them to `fun`, `jac` and `fun_and_jac`.
+```{note}
+The following section uses the new names `fun`, `jac` and `fun_and_jac` instead of
+`criterion`, `derivative` and `criterion_and_derivative`.
+```
 
 To improve the integration with modern automatic differentiation frameworks, `jac` or
 `fun_and_jac` can also be a string `"jax"` or a more autocomplete friendly enum
@@ -1292,6 +1274,11 @@ also prepares adding a public `minimize` method that internally calls the
 
 To make things more concrete, here are prototypes for components related to the
 `InternalProblem` and `InternalOptimizeResult`.
+
+```{note}
+The names of the internal problem are already aligned with the new names for
+the objective function and its derivatives.
+```
 
 ```python
 from numpy.typing import NDArray
@@ -1707,41 +1694,6 @@ does it.
 
 The general structure of the documentation is not affected by this enhancement proposal.
 
-(aligning-names)=
-
-## Aligning names
-
-### Suggested changes
-
-| **Old Name**                               | **Proposed Name**         | **Source** |
-| ------------------------------------------ | ------------------------- | ---------- |
-| `criterion`                                | `fun`                     | scipy      |
-| `criterion_kwargs`                         | `fun_kwargs`              |            |
-| `derivative`                               | `jac`                     | scipy      |
-| `derivative_kwargs`                        | `jac_kwargs`              |            |
-| `criterion_and_derivative`                 | `fun_and_jac`             |            |
-| `criterion_and_derivative_kwargs`          | `fun_and_jac_kwargs`      |            |
-| `stopping_max_criterion_evaluations`       | `stopping_maxfun`         | scipy      |
-| `stopping_max_iterations`                  | `stopping_maxiter`        | scipy      |
-| `convergence_absolute_criterion_tolerance` | `convergence_ftol_abs`    | NlOpt      |
-| `convergence_relative_criterion_tolerance` | `convergence_ftol_rel`    | NlOpt      |
-| `convergence_absolute_params_tolerance`    | `convergence_xtol_abs`    | NlOpt      |
-| `convergence_relative_params_tolerance`    | `convergence_xtol_rel`    | NlOpt      |
-| `convergence_absolute_gradient_tolerance`  | `convergence_gtol_abs`    | NlOpt      |
-| `convergence_relative_gradient_tolerance`  | `convergence_gtol_rel`    | NlOpt      |
-| `convergence_scaled_gradient_tolerance`    | `convergence_gtol_scaled` |            |
-
-### Things we do not want to align
-
-- We do not want to rename `algorithm` to `method` because our algorithm names are
-  different from scipy, so people who switch over from scipy need to adjust their code
-  anyways.
-- We do not want to rename `algo_options` to `options` for the same reason.
-- We do not want to rename `params` to `x0`. It would align estimagic more with scipy,
-  but `params` is just easier to pronounce and use as a word than `x0`. Moreover, `x0`
-  has the strong connotation that this is a vector and not a nested dictionary or other
-  pytree.
-
 ## Summary of breaking changes
 
 - The internal algorithm interface changes completely without deprecations
@@ -1759,13 +1711,11 @@ The following deprecations become active in version `0.5.0`. The functionality w
 removed in version `0.6.0` which should be scheduled for approximately half a year after
 the realease of `0.5.0`.
 
-- Multiple arguments of `minimize` and multiple `algo_options` get renamed to align them
-  better with SciPy and/or NlOpt. See [Aligning Names](aligning-names) for details.
 - Returning a `dict` in the objective function io deprecated. Return `FunctionValue`
   instead. In addition, likelihood and least-squares problems need to be decorated with
   `em.mark.likelihood` and `em.mark_least_squares`.
 - The arguments `lower_bounds`, `upper_bounds`, `soft_lower_bounds` and
-  `soft_uppper_bounds` are deprecated. Use `bounds` instead. `bounds` can be
+  `soft_upper_bounds` are deprecated. Use `bounds` instead. `bounds` can be
   `estimagic.Bounds` or `scipy.optimize.Bounds` objects.
 - Specifying constraints with dictionaries is deprecated. Use the corresponding subclass
   of `em.constraints.Constraint` instead. In addition, all selection methods except for
