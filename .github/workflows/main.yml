@@ -95,9 +95,10 @@ jobs:
         shell: bash -l {0}
         run: |
           micromamba activate estimagic
-          pytest tests/visualization
-          pytest tests/parameters
-          pytest tests/inference
+          pytest tests/optimagic/visualization
+          pytest tests/estimagic/visualization
+          pytest tests/optimagic/parameters
+          pytest tests/estimagic/inference
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
