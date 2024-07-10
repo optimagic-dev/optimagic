@@ -9,7 +9,7 @@ repos:
     rev: 1.16.0
     hooks:
       - id: yamlfix
-        exclude: tests/optimization/fixtures
+        exclude: tests/optimagic/optimization/fixtures
   - repo: local
     hooks:
       - id: update-environment-files
@@ -24,7 +24,7 @@ repos:
       - id: check-added-large-files
         args:
           - --maxkb=1300
-        exclude: tests/optimization/fixtures/
+        exclude: tests/optimagic/optimization/fixtures/
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-vcs-permalinks
@@ -55,7 +55,7 @@ repos:
     rev: v1.35.1
     hooks:
       - id: yamllint
-        exclude: tests/optimization/fixtures
+        exclude: tests/optimagic/optimization/fixtures
   - repo: https://github.com/psf/black
     rev: 24.4.2
     hooks:
