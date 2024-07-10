@@ -193,8 +193,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         parnames (list): List of parameter names.
 
     """
-    constr_dict = constr_info.copy()
-    constr_dict["index"] = parnames
+    constr_info = constr_info.copy()
+    constr_info["index"] = parnames
 
     prob_msg = (
         "{} constraints are incompatible with fixes or bounds. "
@@ -208,7 +208,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = _iloc(dictionary=constr_dict, positions=constr["index"][1:])
+            subset = _iloc(dictionary=constr_info, positions=constr["index"][1:])
             if subset["is_fixed_to_value"].any():
                 problematic = subset["index"][subset["is_fixed_to_value"]]
                 raise InvalidConstraintError(
@@ -223,7 +223,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                     prob_msg.format(constr["type"], problematic)
                 )
         elif constr["type"] == "probability":
-            subset = _iloc(dictionary=constr_dict, positions=constr["index"])
+            subset = _iloc(dictionary=constr_info, positions=constr["index"])
             if subset["is_fixed_to_value"].any():
                 problematic = subset["index"][subset["is_fixed_to_value"]]
                 raise InvalidConstraintError(
@@ -238,19 +238,19 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                     prob_msg.format(constr["type"], problematic)
                 )
 
-    is_invalid = constr_dict["lower_bounds"] >= constr_dict["upper_bounds"]
+    is_invalid = constr_info["lower_bounds"] >= constr_info["upper_bounds"]
     if is_invalid.any():
-        df = pd.DataFrame(
+        info = pd.DataFrame(
             {
                 "names": parnames[is_invalid],
-                "lower_bounds": constr_dict["lower_bounds"][is_invalid],
-                "upper_bounds": constr_dict["upper_bounds"][is_invalid],
+                "lower_bounds": constr_info["lower_bounds"][is_invalid],
+                "upper_bounds": constr_info["upper_bounds"][is_invalid],
             }
         )
 
         msg = (
             "lower_bound must be strictly smaller than upper_bound. "
-            f"This is violated for:\n{df}"
+            f"This is violated for:\n{info}"
         )
 
         raise InvalidConstraintError(msg)
