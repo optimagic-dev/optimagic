@@ -1226,7 +1226,7 @@ def _process_frame_indices(
         elif isinstance(custom_index_names, dict):
             df.rename_axis(index=custom_index_names, inplace=True)
         else:
-            TypeError(
+            raise TypeError(
                 f"""Invalid custom_index_names can be of type either list or dict,
                 or NoneType. Not: {type(custom_index_names)}."""
             )

@@ -22,16 +22,16 @@ dependencies:
   - click  # run, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numpy>=1.17.0  # run, tests
+  - numpy<2.0  # run, tests
   - pandas  # run, tests
   - plotly  # run, tests
   - pybaum >= 0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
-  - pydata-sphinx-theme>=0.3.0  # docs
   - myst-nb  # docs
   - sphinx  # docs
   - sphinx-copybutton  # docs
+  - sphinx-design  # docs
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
   - tranquilo>=0.0.4  # dev, tests

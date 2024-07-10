@@ -68,7 +68,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 `params` that are not a flat numpy array are explained in the next section.
 
 ```{eval-rst}
-.. tabbed:: fixed
+.. dropdown:: fixed
 
     The simplest (but very useful) constraint fixes parameters at their start values.
 
@@ -95,7 +95,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ```
 
 ````{eval-rst}
-.. tabbed:: increasing
+.. dropdown:: increasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
     right. Let's impose the constraint that the second, third and fourth parameter
@@ -133,7 +133,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ````
 
 ````{eval-rst}
-.. tabbed:: decreasing
+.. dropdown:: decreasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
     right already - without imposing any constraints. If we imposed an decreasing constraint
@@ -168,7 +168,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ````
 
 ```{eval-rst}
-.. tabbed:: equality
+.. dropdown:: equality
 
     In our example, all optimal parameters are different. Let's constrain the first
     and last to be equal to each other:
@@ -193,7 +193,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ```
 
 ```{eval-rst}
-.. tabbed:: pairwise_equality
+.. dropdown:: pairwise_equality
 
     Pairwise equality constraints are similar to equality constraints but impose that
     two or more groups of parameters are pairwise equal. Let's look at an example:
@@ -218,7 +218,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ```
 
 ```{eval-rst}
-.. tabbed:: probability
+.. dropdown:: probability
 
     Let's impose the constraint that the first four parameters form valid
     probabilities, i.e. they should add up to one and be between zero and one.
@@ -243,7 +243,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ```
 
 ```{eval-rst}
-.. tabbed:: covariance
+.. dropdown:: covariance
 
     In many estimation problems, particularly when doing a maximum likelihood estimation,
     one has to estimate the covariance matrix of a random variable. The
@@ -283,7 +283,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ```
 
 ```{eval-rst}
-.. tabbed:: sdcorr
+.. dropdown:: sdcorr
 
     ``sdcorr`` constraints are very similar to ``covariance`` constraints. The only
     difference is that instead of estimating a covariance matrix, we estimate
@@ -325,7 +325,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ```
 
 ```{eval-rst}
-.. tabbed:: linear
+.. dropdown:: linear
 
     Linear constraints are the most difficult but also the most powerful constraints
     in your toolkit. They can be used to express constraints of the form
@@ -366,7 +366,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 ```
 
 ```{eval-rst}
-.. tabbed:: nonlinear
+.. dropdown:: nonlinear
 
     .. warning::
 
@@ -463,7 +463,7 @@ numpy array, DataFrame, or general pytree.
 Below we show how to use each of these selection methods in simple examples
 
 ```{eval-rst}
-.. tabbed:: loc
+.. dropdown:: loc
 
     In all the examples above, we imposed constraints where our params are
     a numpy array and the ``loc`` method is used to select the constraint parameters.
@@ -509,7 +509,7 @@ Below we show how to use each of these selection methods in simple examples
 ```
 
 ```{eval-rst}
-.. tabbed:: query
+.. dropdown:: query
 
     Let's assume our ``params`` are a DataFrame with a two level index. The names of
     the index levels are ``category`` and ``name``. Something like this could for
@@ -549,7 +549,7 @@ Below we show how to use each of these selection methods in simple examples
 ```
 
 ```{eval-rst}
-.. tabbed:: selector
+.. dropdown:: selector
 
     Using ``selector`` to select the parameters is the most general way and works for
     all params. Let's assume we have defined parameters in a nested dictionary:
