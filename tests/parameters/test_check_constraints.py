@@ -7,13 +7,14 @@ from estimagic.parameters.constraint_tools import check_constraints
 
 def test_iloc():
     dictionary = {
-        "index": ["a", "b", "c"],
-        "lower_bounds": [0, 0, 0],
-        "upper_bounds": [1, 1, 1],
-        "is_fixed_to_value": [False, False, True],
+        "index": np.array(["a", "b", "c"]),
+        "lower_bounds": np.array([0, 0, 0]),
+        "upper_bounds": np.array([1, 1, 1]),
+        "is_fixed_to_value": np.array([False, False, True]),
     }
     position = [0, 2]
     expected_result = {
+        "index": np.array(["a", "c"]),
         "lower_bounds": np.array([0, 0]),
         "upper_bounds": np.array([1, 1]),
         "is_fixed_to_value": np.array([False, True]),

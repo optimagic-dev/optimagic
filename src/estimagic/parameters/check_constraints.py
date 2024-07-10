@@ -207,7 +207,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = _iloc(dictionary=constr_dict, position=constr["index"][1:])
+            subset = _iloc(dictionary=constr_dict, positions=constr["index"][1:])
             if any(subset["is_fixed_to_value"]):
                 problematic = np.where(subset["is_fixed_to_value"])[0]
                 raise InvalidConstraintError(
@@ -219,7 +219,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                     prob_msg.format(constr["type"], problematic)
                 )
         elif constr["type"] == "probability":
-            subset = _iloc(dictionary=constr_dict, position=constr["index"])
+            subset = _iloc(dictionary=constr_dict, positions=constr["index"])
             if any(subset["is_fixed_to_value"]):
                 problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
                 raise InvalidConstraintError(
@@ -246,24 +246,23 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         raise InvalidConstraintError(msg)
 
 
-def _iloc(dictionary, position):
-    """Substitute function for DataFrame.iloc.
+def _iloc(dictionary, positions):
+    """Substitute function for DataFrame.iloc. that works for a dictionary of arrays.
 
     It creates a subset of the input dictionary based on the
     index values in the info list, and returns this subset as
     a dictionary with numpy arrays.
 
     Args:
-        dictionary (dict): Dictionary used to get a subset
-        position (list): Specifies which rows to select from the input dictionary
+        dictionary (dict): Dictionary of arrays.
+        position (list): List, slice or array of indices.
 
     """
-    # Create subset based on index values in constr
     subset = {}
-    for key in dictionary:
-        if key != "index":
-            subset[key] = [dictionary[key][int(i)] for i in position]
-    # Convert subset to a dictionary with numpy arrays
-    subset = {key: np.array(subset[key]) for key in subset}
+    for key, value in dictionary.items():
+        if isinstance(value, list) and not isinstance(positions, slice):
+            subset[key] = [value[i] for i in positions]
+        else:
+            subset[key] = value[positions]
 
     return subset
