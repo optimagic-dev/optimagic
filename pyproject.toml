@@ -223,7 +223,6 @@ module = [
 
     "estimagic.visualization",
     "estimagic.visualization.convergence_plot",
-    "estimagic.visualization.derivative_plot",
     "estimagic.visualization.deviation_plot",
     "estimagic.visualization.estimation_table",
     "estimagic.visualization.history_plots",
