@@ -105,7 +105,7 @@ def get_benchmark_problems(
         scaling_options = None
 
     problems = {}
-    for name, specification in raw_problems.items():
+    for prob_name, specification in raw_problems.items():
         inputs = _create_problem_inputs(
             specification,
             additive_options=additive_options,
@@ -114,7 +114,7 @@ def get_benchmark_problems(
             rng=rng,
         )
 
-        problems[name] = {
+        problems[prob_name] = {
             "inputs": inputs,
             "noise_free_criterion": specification["criterion"],
             "solution": _create_problem_solution(

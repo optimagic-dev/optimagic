@@ -47,6 +47,7 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_panels",
+    "sphinx_design",
 ]
 
 myst_enable_extensions = [
@@ -94,7 +95,6 @@ linkcheck_ignore = [
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-html_static_path = ["_static"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -130,6 +130,7 @@ exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+pygments_dark_style = "monokai"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 if on_rtd:
@@ -158,30 +159,52 @@ nb_execution_excludepatterns = [
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "pydata_sphinx_theme"
+html_theme = "furo"
 
-html_logo = "_static/images/estimagic_logo.svg"
+# Add any paths that contain custom static files (such as style sheets) here, relative
+# to this directory. They are copied after the built-in static files, so a file named
+# "default.css" will overwrite the built-in "default.css".
+html_css_files = ["css/termynal.css", "css/termynal_custom.css", "css/custom.css"]
+
+html_js_files = ["js/termynal.js", "js/custom.js"]
+
+
+# Add any paths that contain custom static files (such as style sheets) here, relative
+# to this directory. They are copied after the builtin static files, so a file named
+# "default.css" will overwrite the builtin "default.css".
+html_static_path = ["_static"]
+
+# If false, no module index is generated.
+html_domain_indices = True
+
+# If false, no index is generated.
+html_use_index = True
+
+# If true, the index is split into individual pages for each letter.
+html_split_index = False
+
+# If true, links to the reST sources are added to the pages.
+html_show_sourcelink = False
+
+# If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
+html_show_sphinx = True
+
+# If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
+html_show_copyright = True
+
+html_title = "estimagic"
 
 html_theme_options = {
-    "github_url": "https://github.com/OpenSourceEconomics/estimagic",
-}
-
-html_css_files = ["css/custom.css"]
-
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["_static"]
-
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-html_sidebars = {
-    "**": [
-        "relations.html",  # needs 'show_related': True theme option to display
-        "searchbox.html",
-    ]
+    "sidebar_hide_name": True,
+    "navigation_with_keys": True,
+    "light_logo": "images/estimagic_logo.svg",
+    "dark_logo": "images/estimagic_logo_dark_mode.svg",
+    "light_css_variables": {
+        "color-brand-primary": "#f04f43",
+        "color-brand-content": "#f04f43",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#f04f43",
+        "color-brand-content": "#f04f43",
+    },
 }

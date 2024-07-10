@@ -19,7 +19,7 @@ repos:
         always_run: true
         require_serial: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-added-large-files
         args:
@@ -57,12 +57,12 @@ repos:
       - id: yamllint
         exclude: tests/optimization/fixtures
   - repo: https://github.com/psf/black
-    rev: 24.3.0
+    rev: 24.4.2
     hooks:
       - id: black
         language_version: python3.10
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.16.0
+    rev: 1.18.0
     hooks:
       - id: blacken-docs
         exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.md
@@ -79,7 +79,7 @@ repos:
           - --blank
         exclude: src/estimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.5
+    rev: v0.5.0
     hooks:
       - id: ruff
   - repo: https://github.com/nbQA-dev/nbQA
