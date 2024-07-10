@@ -10,8 +10,8 @@ import sys
 
 import numpy as np
 import pytest
-from estimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
-from estimagic.optimization.optimize import minimize
+from optimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
+from optimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
 LOCAL_ALGORITHMS = {

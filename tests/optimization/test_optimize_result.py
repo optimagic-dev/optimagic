@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.optimize_result import OptimizeResult, _create_stars
-from estimagic.utilities import get_rng
+from optimagic.optimization.optimize_result import OptimizeResult, _create_stars
+from optimagic.utilities import get_rng
 
 
 @pytest.fixture()

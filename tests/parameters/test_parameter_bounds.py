@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.exceptions import InvalidBoundsError
-from estimagic.parameters.parameter_bounds import get_bounds
+from optimagic.exceptions import InvalidBoundsError
+from optimagic.parameters.parameter_bounds import get_bounds
 from numpy.testing import assert_array_equal
 
 

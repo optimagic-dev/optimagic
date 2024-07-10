@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.benchmarking.get_benchmark_problems import _sample_from_distribution
-from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
-from estimagic.utilities import get_rng
+from optimagic.benchmarking.get_benchmark_problems import _sample_from_distribution
+from optimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
+from optimagic.utilities import get_rng
 
 
 @pytest.mark.parametrize("distribution", NOISE_DISTRIBUTIONS)

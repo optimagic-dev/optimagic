@@ -5,9 +5,9 @@ import functools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import IS_PETSC4PY_INSTALLED
-from estimagic.optimization.optimize import minimize
-from estimagic.utilities import get_rng
+from optimagic.config import IS_PETSC4PY_INSTALLED
+from optimagic.optimization.optimize import minimize
+from optimagic.utilities import get_rng
 
 if not IS_PETSC4PY_INSTALLED:
     pytestmark = pytest.mark.skip(reason="petsc4py is not installed.")

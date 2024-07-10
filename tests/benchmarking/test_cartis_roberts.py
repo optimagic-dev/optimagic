@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from estimagic.benchmarking.cartis_roberts import (
+from optimagic.benchmarking.cartis_roberts import (
     CARTIS_ROBERTS_PROBLEMS,
     get_start_points_bdvalues,
     get_start_points_msqrta,

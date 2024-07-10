@@ -1,8 +1,8 @@
 import numpy as np
-from estimagic.parameters.check_constraints import _iloc
+from optimagic.parameters.check_constraints import _iloc
 import pytest
-from estimagic.exceptions import InvalidParamsError
-from estimagic.parameters.constraint_tools import check_constraints
+from optimagic.exceptions import InvalidParamsError
+from optimagic.parameters.constraint_tools import check_constraints
 
 
 def test_iloc():

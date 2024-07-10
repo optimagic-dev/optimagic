@@ -3,9 +3,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.exceptions import InvalidConstraintError
-from estimagic.parameters.constraint_tools import check_constraints
-from estimagic.parameters.process_constraints import (
+from optimagic.exceptions import InvalidConstraintError
+from optimagic.parameters.constraint_tools import check_constraints
+from optimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
 

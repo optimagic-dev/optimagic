@@ -2,13 +2,13 @@ import pytest
 from itertools import product
 import numpy as np
 
-from estimagic import (
+from optimagic import (
     convergence_report,
     rank_report,
     traceback_report,
 )
-from estimagic import OptimizeResult
-from estimagic import get_benchmark_problems
+from optimagic import OptimizeResult
+from optimagic import get_benchmark_problems
 
 
 @pytest.fixture

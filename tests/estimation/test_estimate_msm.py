@@ -5,9 +5,9 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.optimize_result import OptimizeResult
-from estimagic.estimation.estimate_msm import estimate_msm
-from estimagic.shared.check_option_dicts import (
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.estimation.estimate_msm import estimate_msm
+from optimagic.shared.check_option_dicts import (
     check_numdiff_options,
     check_optimization_options,
 )

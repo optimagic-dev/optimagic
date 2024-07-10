@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic import get_benchmark_problems
-from estimagic.benchmarking.run_benchmark import run_benchmark
-from estimagic.visualization.profile_plot import (
+from optimagic import get_benchmark_problems
+from optimagic.benchmarking.run_benchmark import run_benchmark
+from optimagic.visualization.profile_plot import (
     create_solution_times,
     _determine_alpha_grid,
     _find_switch_points,

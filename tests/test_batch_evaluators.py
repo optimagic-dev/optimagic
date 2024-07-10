@@ -2,7 +2,7 @@ import itertools
 import warnings
 
 import pytest
-from estimagic.batch_evaluators import process_batch_evaluator
+from optimagic.batch_evaluators import process_batch_evaluator
 
 batch_evaluators = ["joblib"]
 

@@ -1,14 +1,14 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.logging.read_log import (
+from optimagic.logging.read_log import (
     OptimizeLogReader,
     read_optimization_problem_table,
     read_start_params,
     read_steps_table,
 )
-from estimagic.optimization.optimize import minimize
-from estimagic.parameters.tree_registry import get_registry
+from optimagic.optimization.optimize import minimize
+from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_equal, tree_just_flatten
 
 

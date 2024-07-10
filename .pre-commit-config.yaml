@@ -50,7 +50,7 @@ repos:
       - id: trailing-whitespace
       - id: check-ast
       - id: check-docstring-first
-        exclude: src/estimagic/optimization/algo_options.py
+        exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.35.1
     hooks:
@@ -77,7 +77,7 @@ repos:
           - --wrap-descriptions
           - '88'
           - --blank
-        exclude: src/estimagic/optimization/algo_options.py
+        exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.5.0
     hooks:

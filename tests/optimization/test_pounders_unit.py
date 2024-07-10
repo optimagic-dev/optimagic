@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.config import TEST_FIXTURES_DIR
-from estimagic.optimization.pounders_history import LeastSquaresHistory
-from estimagic.optimization.pounders_auxiliary import (
+from optimagic.batch_evaluators import joblib_batch_evaluator
+from optimagic.config import TEST_FIXTURES_DIR
+from optimagic.optimization.pounders_history import LeastSquaresHistory
+from optimagic.optimization.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
     create_initial_residual_model,
     create_main_from_residual_model,

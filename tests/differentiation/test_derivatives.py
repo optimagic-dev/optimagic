@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.differentiation.derivatives import (
+from optimagic.differentiation.derivatives import (
     Evals,
     _consolidate_one_step_derivatives,
     _convert_evaluation_data_to_frame,
@@ -18,8 +18,8 @@ from estimagic.differentiation.derivatives import (
     first_derivative,
     second_derivative,
 )
-from estimagic.differentiation.generate_steps import Steps
-from estimagic.examples.numdiff_functions import (
+from optimagic.differentiation.generate_steps import Steps
+from optimagic.examples.numdiff_functions import (
     logit_loglike,
     logit_loglike_gradient,
     logit_loglike_hessian,

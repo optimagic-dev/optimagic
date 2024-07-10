@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 import pytest
-from estimagic.optimization.subsolvers.linear_subsolvers import (
+from optimagic.optimization.subsolvers.linear_subsolvers import (
     LinearModel,
     improve_geomtery_trsbox_linear,
     minimize_trsbox_linear,

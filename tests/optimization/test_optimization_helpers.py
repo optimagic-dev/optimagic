@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from estimagic.optimization.pygmo_optimizers import (
+from optimagic.optimization.pygmo_optimizers import (
     _check_that_every_param_is_bounded,
     _convert_str_to_int,
     _replace_none,

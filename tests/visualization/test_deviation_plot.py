@@ -1,7 +1,7 @@
 import pytest
-from estimagic import get_benchmark_problems
-from estimagic.benchmarking.run_benchmark import run_benchmark
-from estimagic.visualization.deviation_plot import (
+from optimagic import get_benchmark_problems
+from optimagic.benchmarking.run_benchmark import run_benchmark
+from optimagic.visualization.deviation_plot import (
     deviation_plot,
 )
 

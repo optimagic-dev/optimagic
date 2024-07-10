@@ -2,8 +2,8 @@
 
 import numpy as np
 import pytest
-from estimagic.config import IS_CYIPOPT_INSTALLED
-from estimagic.optimization.cyipopt_optimizers import ipopt
+from optimagic.config import IS_CYIPOPT_INSTALLED
+from optimagic.optimization.cyipopt_optimizers import ipopt
 from numpy.testing import assert_array_almost_equal as aaae
 
 test_cases = [

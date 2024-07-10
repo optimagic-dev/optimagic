@@ -3,8 +3,8 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.decorators import AlgoInfo
-from estimagic.examples.criterion_functions import (
+from optimagic.decorators import AlgoInfo
+from optimagic.examples.criterion_functions import (
     sos_criterion_and_gradient,
     sos_dict_criterion,
     sos_dict_criterion_with_pd_objects,
@@ -12,10 +12,10 @@ from estimagic.examples.criterion_functions import (
     sos_pandas_gradient,
     sos_scalar_criterion,
 )
-from estimagic.optimization.internal_criterion_template import (
+from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
-from estimagic.parameters.conversion import get_converter
+from optimagic.parameters.conversion import get_converter
 from numpy.testing import assert_array_almost_equal as aaae
 
 
