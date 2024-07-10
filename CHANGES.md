@@ -5,7 +5,23 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
 
 Following the [scientific python guidelines](https://scientific-python.org/specs/spec-0000/)
-we drop the official support for Python 3.8.
+we drop the official support for Python 3.9.
+
+
+## 0.5.0
+
+This is a major release with several breaking changes and deprecations. On a high level,
+the major changes are:
+
+- Implement EP-02: Static typing
+- Implement EP-03: Alignment with SciPy
+- Rename the package from `estimagic` to `optimagic` (while keeping the `estimagic`
+  namespace for the estimation capabilities).
+
+### Breaking changes
+
+- {gh}`500` removes the dashboard, the support for simopt optimizers and the
+  `derivative_plot` ({ghuser}`janosg`)
 
 
 ## 0.4.6

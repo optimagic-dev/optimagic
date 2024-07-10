@@ -81,13 +81,6 @@ except ImportError:
 else:
     IS_JAX_INSTALLED = True
 
-try:
-    import simopt  # noqa: F401
-except ImportError:
-    IS_SIMOPT_INSTALLED = False
-else:
-    IS_SIMOPT_INSTALLED = True
-
 
 try:
     import tranquilo  # noqa: F401
