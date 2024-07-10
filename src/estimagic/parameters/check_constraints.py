@@ -9,6 +9,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
+
 from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from estimagic.utilities import cov_params_to_matrix, sdcorr_params_to_matrix
 
@@ -39,28 +40,30 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
         typ = constr["type"]
         subset = param_values[constr["index"]]
 
+        report = []
+
         _msg = partial(_get_message, constr, param_names)
 
         if typ == "covariance":
             cov = cov_params_to_matrix(subset)
             e, _ = np.linalg.eigh(cov)
             if not np.all(e > -1e-8):
-                raise InvalidParamsError(_msg())
+                report.append(_msg())
         elif typ == "sdcorr":
             cov = sdcorr_params_to_matrix(subset)
             e, _ = np.linalg.eigh(cov)
             if not np.all(e > -1e-8):
-                raise InvalidParamsError(_msg())
+                report.append(_msg())
         elif typ == "probability":
             if not np.isclose(subset.sum(), 1, rtol=0.01):
                 explanation = "Probabilities do not sum to 1."
-                raise InvalidParamsError(_msg(explanation))
+                report.append(_msg(explanation))
             if np.any(subset < 0):
                 explanation = "There are negative Probabilities."
-                raise InvalidParamsError(_msg(explanation))
+                report.append(_msg(explanation))
             if np.any(subset > 1):
                 explanation = "There are probabilities larger than 1."
-                raise InvalidParamsError(_msg(explanation))
+                report.append(_msg(explanation))
         elif typ == "fixed":
             if "value" in constr and not np.allclose(subset, constr["value"]):
                 explanation = (
@@ -68,27 +71,31 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
                     "was allowed in earlier versions of estimagic but is "
                     "forbidden now. "
                 )
-                raise InvalidParamsError(_msg(explanation))
+                report.append(_msg(explanation))
         elif typ == "increasing":
             if np.any(np.diff(subset) < 0):
-                raise InvalidParamsError(_msg())
+                report.append(_msg())
         elif typ == "decreasing":
             if np.any(np.diff(subset) > 0):
-                InvalidParamsError(_msg())
+                report.append(_msg())
         elif typ == "linear":
             wsum = subset.dot(constr["weights"])
             if "lower_bound" in constr and wsum < constr["lower_bound"]:
                 explanation = "Lower bound of linear constraint is violated."
-                raise InvalidParamsError(_msg(explanation))
+                report.append(_msg(explanation))
             elif "upper_bound" in constr and wsum > constr["upper_bound"]:
                 explanation = "Upper bound of linear constraint violated"
-                raise InvalidParamsError(_msg(explanation))
+                report.append(_msg(explanation))
             elif "value" in constr and not np.isclose(wsum, constr["value"]):
                 explanation = "Equality condition of linear constraint violated"
-                raise InvalidParamsError(_msg(explanation))
+                report.append(_msg(explanation))
         elif typ == "equality":
             if len(set(subset.tolist())) > 1:
-                raise InvalidParamsError(_msg())
+                report.append(_msg())
+
+        report = "\n".join(report)
+        if report != "":
+            raise InvalidParamsError(f"Violated constraint at start params:\n{report}")
 
 
 def _get_message(constraint, param_names, explanation=""):
@@ -186,9 +193,9 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         parnames (list): List of parameter names.
 
     """
-    df = pd.DataFrame(constr_info, index=parnames)
+    constr_info = constr_info.copy()
+    constr_info["index"] = parnames
 
-    # Check fixes and bounds are compatible with other constraints
     prob_msg = (
         "{} constraints are incompatible with fixes or bounds. "
         "This is violated for:\n{}"
@@ -201,38 +208,71 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = df.iloc[constr["index"][1:]]
+            subset = _iloc(dictionary=constr_info, positions=constr["index"][1:])
             if subset["is_fixed_to_value"].any():
-                problematic = subset[subset["is_fixed_to_value"]].index
+                problematic = subset["index"][subset["is_fixed_to_value"]]
                 raise InvalidConstraintError(
                     cov_msg.format(constr["type"], problematic)
                 )
-            if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
-                problematic = (
-                    subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
-                )
-                raise InvalidConstraintError(
-                    cov_msg.format(constr["type"], problematic)
-                )
-        elif constr["type"] == "probability":
-            subset = df.iloc[constr["index"]]
-            if subset["is_fixed_to_value"].any():
-                problematic = subset[subset["is_fixed_to_value"]].index
+            finite_bounds = np.isfinite(subset["lower_bounds"]) | np.isfinite(
+                subset["upper_bounds"]
+            )
+            if finite_bounds.any():
+                problematic = subset["index"][finite_bounds]
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
-            if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
-                problematic = (
-                    subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
+        elif constr["type"] == "probability":
+            subset = _iloc(dictionary=constr_info, positions=constr["index"])
+            if subset["is_fixed_to_value"].any():
+                problematic = subset["index"][subset["is_fixed_to_value"]]
+                raise InvalidConstraintError(
+                    prob_msg.format(constr["type"], problematic)
                 )
+            finite_bounds = np.isfinite(subset["lower_bounds"]) | np.isfinite(
+                subset["upper_bounds"]
+            )
+            if finite_bounds.any():
+                problematic = subset["index"][finite_bounds]
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
 
-    invalid = df.query("lower_bounds >= upper_bounds")[["lower_bounds", "upper_bounds"]]
-    msg = (
-        "lower_bound must be strictly smaller than upper_bound. "
-        f"This is violated for:\n{invalid}"
-    )
-    if len(invalid) > 0:
+    is_invalid = constr_info["lower_bounds"] >= constr_info["upper_bounds"]
+    if is_invalid.any():
+        info = pd.DataFrame(
+            {
+                "names": parnames[is_invalid],
+                "lower_bounds": constr_info["lower_bounds"][is_invalid],
+                "upper_bounds": constr_info["upper_bounds"][is_invalid],
+            }
+        )
+
+        msg = (
+            "lower_bound must be strictly smaller than upper_bound. "
+            f"This is violated for:\n{info}"
+        )
+
         raise InvalidConstraintError(msg)
+
+
+def _iloc(dictionary, positions):
+    """Substitute function for DataFrame.iloc. that works for a dictionary of arrays.
+
+    It creates a subset of the input dictionary based on the
+    index values in the info list, and returns this subset as
+    a dictionary with numpy arrays.
+
+    Args:
+        dictionary (dict): Dictionary of arrays.
+        position (list): List, slice or array of indices.
+
+    """
+    subset = {}
+    for key, value in dictionary.items():
+        if isinstance(value, list) and not isinstance(positions, slice):
+            subset[key] = [value[i] for i in positions]
+        else:
+            subset[key] = value[positions]
+
+    return subset
