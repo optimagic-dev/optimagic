@@ -28,8 +28,8 @@ provides functionality to perform statistical inference on estimated parameters.
 - The complete history of parameters and function evaluations can be saved in a database
   for maximum reproducibility.
 - Painless and efficient multistart optimization.
-- The progress of the optimization is displayed in real time in `criterion_plots` and
-  `params_plots`.
+- The progress of the optimization can be displayed in in `criterion_plot` and
+  `params_plot` while the optimization is still running.
 
 ### Estimation and Inference
 
