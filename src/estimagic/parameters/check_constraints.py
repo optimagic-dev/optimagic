@@ -208,26 +208,31 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
             subset = _iloc(dictionary=constr_dict, positions=constr["index"][1:])
-            if any(subset["is_fixed_to_value"]):
-                problematic = np.where(subset["is_fixed_to_value"])[0]
+            if subset["is_fixed_to_value"].any():
+                problematic = subset["index"][subset["is_fixed_to_value"]]
                 raise InvalidConstraintError(
                     cov_msg.format(constr["type"], problematic)
                 )
-            if np.isfinite([subset["lower_bounds"], subset["upper_bounds"]]).any():
-                problematic = [k for k, v in subset.items() if np.any(~np.isfinite(v))]
+            finite_bounds = np.isfinite(subset["lower_bounds"]) | np.isfinite(
+                subset["upper_bounds"]
+            )
+            if finite_bounds.any():
+                problematic = subset["index"][finite_bounds]
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
         elif constr["type"] == "probability":
             subset = _iloc(dictionary=constr_dict, positions=constr["index"])
-            if any(subset["is_fixed_to_value"]):
-                problematic = np.where(subset["is_fixed_to_value"])[0].tolist()
+            if subset["is_fixed_to_value"].any():
+                problematic = subset["index"][subset["is_fixed_to_value"]]
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
-
-            if np.isfinite([subset["lower_bounds"], subset["upper_bounds"]]).any():
-                problematic = [k for k, v in subset.items() if np.any(~np.isfinite(v))]
+            finite_bounds = np.isfinite(subset["lower_bounds"]) | np.isfinite(
+                subset["upper_bounds"]
+            )
+            if finite_bounds.any():
+                problematic = subset["index"][finite_bounds]
                 raise InvalidConstraintError(
                     prob_msg.format(constr["type"], problematic)
                 )
