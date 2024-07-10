@@ -18,8 +18,6 @@ dependencies:
   - setuptools_scm  # dev
   - statsmodels  # dev, tests
   - toml  # dev
-  - bokeh<=2.4.3  # run, tests
-  - click  # run, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
   - numpy<2.0  # run, tests
@@ -47,7 +45,6 @@ dependencies:
       - gif[matplotlib]  # dev
       - kaleido  # dev, tests
       - pre-commit  # dev
-      - simoptlib==1.0.1  # dev, tests
       - -e .  # dev
       # type stubs
       - pandas-stubs  # dev, tests

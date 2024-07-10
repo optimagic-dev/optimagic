@@ -61,7 +61,7 @@ def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
         skip_checks=True,
     )
     assert res.success in [True, None]
-    decimal = 2 if algorithm == "simopt_astrodf" else 3
+    decimal = 3
     aaae(res.params, np.array([1, 0, -1]), decimal=decimal)
 
 

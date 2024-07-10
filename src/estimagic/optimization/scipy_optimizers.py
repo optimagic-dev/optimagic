@@ -18,8 +18,6 @@ The following arguments are not supported as part of ``algo_options``:
 - ``return_all``
     If set to True, a list of the best solution at each iteration is returned.
     In estimagic it's always set to its default False.
-    Use estimagic's database and dashboard instead to explore your criterion and
-    algorithm.
 - ``tol``
     This argument of minimize (not an options key) is passed as different types of
     tolerance (gradient, parameter or criterion, as well as relative or absolute)

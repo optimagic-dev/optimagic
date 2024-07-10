@@ -83,14 +83,6 @@
 
 ```
 
-```{eval-rst}
-.. dropdown:: derivative_plot
-
-    .. autofunction:: derivative_plot
-
-
-```
-
 (estimation)=
 
 ## Estimation

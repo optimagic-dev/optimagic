@@ -14,7 +14,6 @@ from estimagic.optimization.optimize import maximize, minimize
 from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.constraint_tools import check_constraints, count_free_params
 from estimagic.visualization.convergence_plot import convergence_plot
-from estimagic.visualization.derivative_plot import derivative_plot
 from estimagic.visualization.estimation_table import (
     estimation_table,
     render_html,
@@ -52,7 +51,6 @@ __all__ = [
     "rank_report",
     "traceback_report",
     "lollipop_plot",
-    "derivative_plot",
     "slice_plot",
     "estimation_table",
     "render_html",

@@ -10,7 +10,6 @@ from estimagic.optimization import (
     pounders,
     pygmo_optimizers,
     scipy_optimizers,
-    simopt_optimizers,
     tao_optimizers,
     tranquilo,
 )
@@ -22,7 +21,6 @@ MODULES = [
     nlopt_optimizers,
     pygmo_optimizers,
     scipy_optimizers,
-    simopt_optimizers,
     tao_optimizers,
     bhhh,
     neldermead,

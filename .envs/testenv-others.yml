@@ -11,8 +11,6 @@ dependencies:
   - pytest-cov  # tests
   - pytest-xdist  # dev, tests
   - statsmodels  # dev, tests
-  - bokeh<=2.4.3  # run, tests
-  - click  # run, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
   - numpy<2.0  # run, tests
@@ -29,7 +27,6 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido  # dev, tests
-      - simoptlib==1.0.1  # dev, tests
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
