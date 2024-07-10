@@ -187,7 +187,7 @@ algorithms
   for maximum reproducibility. See [How to use logging]
 - Painless and efficient multistart optimization. See [How to do multistart]
 - The progress of the optimization is displayed in real time via an interactive
-  dashboard. See {ref}`dashboard`.
+  `criterion_plot` and `params_plot`.
 
 ### Estimation and Inference
 

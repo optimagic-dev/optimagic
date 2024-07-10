@@ -11,7 +11,6 @@ The advantages of using the algorithm with estimagic over using it directly are:
 
 - estimagic turns an unconstrained optimizer into constrained ones.
 - You can use logging.
-- You get a real time dashboard to monitor your optimization.
 - You get great error handling for exceptions in the criterion function or gradient.
 - You get a parallelized and customizable numerical gradient if the user did not provide
   a closed form gradient.

@@ -112,12 +112,12 @@ def maximize(
             When doing parallel optimizations and logging is provided, you have to
             provide a different path for each optimization you are running. You can
             disable logging completely by setting it to False, but we highly recommend
-            not to do so. The dashboard can only be used when logging is used.
+            not to do so.
         log_options (dict): Additional keyword arguments to configure the logging.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
-            is a real-time dashboard and it would not be catastrophic to get a
+            is monitoring and it would not be catastrophic to get a
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
@@ -313,12 +313,12 @@ def minimize(
             When doing parallel optimizations and logging is provided, you have to
             provide a different path for each optimization you are running. You can
             disable logging completely by setting it to False, but we highly recommend
-            not to do so. The dashboard can only be used when logging is used.
+            not to do so.
         log_options (dict): Additional keyword arguments to configure the logging.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
-            is a real-time dashboard and it would not be catastrophic to get a
+            is monitoring and it would not be catastrophic to get a
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.

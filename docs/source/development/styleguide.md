@@ -45,13 +45,12 @@ Your contribution should fulfill the criteria provided below.
   are in doubt. Example:
 
   ```python
-  def ordered_logit(formula, data, dashboard=False):
+  def ordered_logit(formula, data):
       """Estimate an ordered probit model with maximum likelihood.
 
       Args:
           formula (str): A patsy formula.
           data (str): A pandas DataFrame.
-          dashboard (bool): Switch on the dashboard.
 
       Returns:
           res: optimization result.

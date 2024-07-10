@@ -115,14 +115,14 @@ def estimate_msm(
             See :ref:`constraints`.
         logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
-            The dashboard can only be used when logging is used.
+
         log_options (dict): Additional keyword arguments to configure the logging.
 
             - "fast_logging" (bool):
                 A boolean that determines if "unsafe" settings are used to speed up
                 write processes to the database. This should only be used for very short
                 running criterion functions where the main purpose of the log is a
-                real-time dashboard and it would not be catastrophic to get a corrupted
+                monitoring and it would not be catastrophic to get a corrupted
                 database in case of a sudden system shutdown. If one evaluation of the
                 criterion function (and gradient if applicable) takes more than 100 ms,
                 the logging overhead is negligible.

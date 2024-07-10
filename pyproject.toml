@@ -129,13 +129,6 @@ module = [
     "estimagic.benchmarking.process_benchmark_results",
     "estimagic.benchmarking.run_benchmark",
 
-    "estimagic.dashboard",
-    "estimagic.dashboard.callbacks",
-    "estimagic.dashboard.colors",
-    "estimagic.dashboard.dashboard_app",
-    "estimagic.dashboard.plot_functions",
-    "estimagic.dashboard.run_dashboard",
-
     "estimagic.differentiation",
     "estimagic.differentiation.derivatives",
     "estimagic.differentiation.finite_differences",

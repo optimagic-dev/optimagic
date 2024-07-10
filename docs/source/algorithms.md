@@ -2076,7 +2076,7 @@ To use ipopt, you need to have
       - `num_linear_variables`: since estimagic may reparametrize your problem
         and this changes the parameter problem, we do not support this option.
       - derivative checks
-      - print options. Use estimagic's dashboard to monitor your optimization.
+      - print options.
 
 
     - **convergence.relative_criterion_tolerance** (float): The algorithm
