@@ -186,7 +186,7 @@ algorithms
 - The complete history of parameters and function evaluations can be saved in a database
   for maximum reproducibility. See [How to use logging]
 - Painless and efficient multistart optimization. See [How to do multistart]
-- The progress of the optimization can be displayed in in `criterion_plot` and
+- The progress of the optimization can be displayed in `criterion_plot` and
   `params_plot` while the optimization is still running.
 
 ### Estimation and Inference
