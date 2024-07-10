@@ -7,6 +7,7 @@ See the module docstring of process_constraints for naming conventions.
 from functools import partial
 
 import numpy as np
+import pandas as pd
 
 
 from estimagic.exceptions import InvalidConstraintError, InvalidParamsError
@@ -237,17 +238,21 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                     prob_msg.format(constr["type"], problematic)
                 )
 
-    invalid = {}
-    lower_bounds = constr_dict["lower_bounds"]
-    upper_bounds = constr_dict["upper_bounds"]
+    is_invalid = constr_dict["lower_bounds"] >= constr_dict["upper_bounds"]
+    if is_invalid.any():
+        df = pd.DataFrame(
+            {
+                "names": parnames[is_invalid],
+                "lower_bounds": constr_dict["lower_bounds"][is_invalid],
+                "upper_bounds": constr_dict["upper_bounds"][is_invalid],
+            }
+        )
 
-    invalid = np.where(lower_bounds >= upper_bounds)[0]
+        msg = (
+            "lower_bound must be strictly smaller than upper_bound. "
+            f"This is violated for:\n{df}"
+        )
 
-    msg = (
-        "lower_bound must be strictly smaller than upper_bound. "
-        f"This is violated for:\n{invalid}"
-    )
-    if len(invalid) > 0:
         raise InvalidConstraintError(msg)
 
 
