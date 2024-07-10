@@ -58,6 +58,12 @@ from estimagic import minimize
 | `convergence_relative_gradient_tolerance`  | `convergence_gtol_rel`    | NlOpt      |
 | `convergence_scaled_gradient_tolerance`    | `convergence_gtol_scaled` |            |
 
+While it seems that many names are taken from NlOpt and not from SciPy, this is a bit
+misleading. SciPy does use the words `xtol`, `ftol` and `gtol` just like NlOpt, but it
+does not completely harmonize them between algorithms. We therefore chose NlOpt's
+version which is understandable for everyone who knows SciPy but more readable than
+SciPy's.
+
 ## Names we do not want to align
 
 - We do not want to rename `algorithm` to `method` because our algorithm names are
@@ -95,7 +101,7 @@ relevant:
 - If a user sets `jac=True` we raise and error and explain how to use `fun_and_jac`
   instead.
 
-## Aligning default values
+## Letting algorithms pick their default values
 
 Currently we try to align default values for convergence criteria and other algorithm
 options across algorithms and even across optimizer packages. This means that sometimes
