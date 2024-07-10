@@ -5,7 +5,7 @@ import pandas as pd
 from pybaum import tree_just_flatten
 from scipy.linalg import block_diag
 
-from optimagic.inference.bootstrap import bootstrap
+from estimagic.inference.bootstrap import bootstrap
 from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.utilities import robust_inverse

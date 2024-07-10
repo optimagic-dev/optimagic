@@ -25,7 +25,7 @@ from optimagic.examples.criterion_functions import (
     trid_gradient,
     trid_scalar_criterion,
 )
-from optimagic.examples.logit import logit_loglike
+from estimagic.examples.logit import logit_loglike
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.optimization.optimize import maximize, minimize
 from numpy.testing import assert_array_almost_equal as aaae

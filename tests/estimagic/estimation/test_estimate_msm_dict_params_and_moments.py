@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from optimagic.estimation.estimate_msm import estimate_msm
+from estimagic.estimation.estimate_msm import estimate_msm
 from optimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_just_flatten

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from optimagic.visualization.lollipop_plot import lollipop_plot
+from estimagic.visualization.lollipop_plot import lollipop_plot
 
 
 def test_lollipop_plot_runs():

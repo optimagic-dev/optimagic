@@ -3,8 +3,8 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from optimagic.inference.bootstrap_ci import calculate_ci
-from optimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.inference.bootstrap_ci import calculate_ci
+from estimagic.inference.bootstrap_ci import check_inputs
 from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 

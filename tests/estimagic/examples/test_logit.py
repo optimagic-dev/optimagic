@@ -1,7 +1,7 @@
 """Tests for the logit example."""
 
 import numpy as np
-from optimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
+from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
 from numpy.testing import assert_array_almost_equal as aaae
 
 

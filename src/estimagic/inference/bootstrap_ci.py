@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import norm
 
-from optimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.inference.bootstrap_helpers import check_inputs
 
 
 def calculate_ci(

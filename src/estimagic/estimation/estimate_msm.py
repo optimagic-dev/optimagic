@@ -12,10 +12,10 @@ import pandas as pd
 from pybaum import leaf_names, tree_just_flatten
 
 from optimagic.differentiation.derivatives import first_derivative
-from optimagic.estimation.msm_weighting import get_weighting_matrix
+from estimagic.estimation.msm_weighting import get_weighting_matrix
 from optimagic.exceptions import InvalidFunctionError
-from optimagic.inference.msm_covs import cov_optimal, cov_robust
-from optimagic.inference.shared import (
+from estimagic.inference.msm_covs import cov_optimal, cov_robust
+from estimagic.inference.shared import (
     FreeParams,
     calculate_ci,
     calculate_estimation_summary,
@@ -33,7 +33,7 @@ from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_blo
 from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.sensitivity.msm_sensitivity import (
+from estimagic.sensitivity.msm_sensitivity import (
     calculate_actual_sensitivity_to_noise,
     calculate_actual_sensitivity_to_removal,
     calculate_fundamental_sensitivity_to_noise,

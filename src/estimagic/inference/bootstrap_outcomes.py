@@ -1,6 +1,6 @@
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.inference.bootstrap_helpers import check_inputs
-from optimagic.inference.bootstrap_samples import get_bootstrap_indices
+from estimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 
 
 def get_bootstrap_outcomes(

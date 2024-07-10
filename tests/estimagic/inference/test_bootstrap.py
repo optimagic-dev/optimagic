@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 import seaborn as sns
 import statsmodels.api as sm
-from optimagic import bootstrap
+from estimagic import bootstrap
 
 
 def aaae(obj1, obj2, decimal=6):

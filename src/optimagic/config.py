@@ -6,7 +6,6 @@ import plotly.express as px
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
-EXAMPLE_DIR = Path(__file__).parent / "examples"
 
 TEST_FIXTURES_DIR = (
     Path(__file__).parent.parent.parent

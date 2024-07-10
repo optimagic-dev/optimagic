@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from optimagic.config import EXAMPLE_DIR
+from estimagic.config import EXAMPLE_DIR
 from optimagic.differentiation.derivatives import first_derivative
-from optimagic.inference.msm_covs import cov_optimal
-from optimagic.sensitivity.msm_sensitivity import (
+from estimagic.inference.msm_covs import cov_optimal
+from estimagic.sensitivity.msm_sensitivity import (
     calculate_actual_sensitivity_to_noise,
     calculate_actual_sensitivity_to_removal,
     calculate_fundamental_sensitivity_to_noise,
