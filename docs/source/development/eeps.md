@@ -12,4 +12,6 @@ maxdepth: 1
 ---
 eep-00-governance-model.md
 eep-01-pytrees.md
+eep-02-typing.md
+eep-03-alignment.md
 ```

@@ -143,8 +143,8 @@ def _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol):
 
     try:
         int(n_cores)
-    except Exception:
-        ValueError("n_cores must be an integer.")
+    except Exception as e:
+        raise ValueError("n_cores must be an integer.") from e
 
     if unpack_symbol not in (None, "*", "**"):
         raise ValueError(
