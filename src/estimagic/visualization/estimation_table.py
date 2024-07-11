@@ -3,7 +3,7 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from warnings import warn
-from optimagic.compat import pd_df_map
+from optimagic.shared.compat import pd_df_map
 
 import numpy as np
 import pandas as pd

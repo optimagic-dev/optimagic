@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from optimagic.utilities import to_pickle
-from optimagic.compat import pd_df_map
+from optimagic.shared.compat import pd_df_map
 
 
 @dataclass

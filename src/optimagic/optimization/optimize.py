@@ -29,7 +29,7 @@ from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.process_user_function import process_func_of_params
+from optimagic.shared.process_user_function import process_func_of_params
 
 
 def maximize(

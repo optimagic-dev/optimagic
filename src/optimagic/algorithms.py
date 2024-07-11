@@ -5,18 +5,18 @@ from optimagic.optimizers import (
     scipy_optimizers,
     bhhh,
     neldermead,
-    fides_optimizers,
+    fides,
     tao_optimizers,
     nag_optimizers,
-    cyipopt_optimizers,
+    ipopt,
     pygmo_optimizers,
     nlopt_optimizers,
     tranquilo,
 )
 
 MODULES = [
-    cyipopt_optimizers,
-    fides_optimizers,
+    ipopt,
+    fides,
     nag_optimizers,
     nlopt_optimizers,
     pygmo_optimizers,

@@ -6,7 +6,7 @@ from optimagic.config import IS_FIDES_INSTALLED
 from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_FIDES_INSTALLED:
-    from optimagic.optimizers.fides_optimizers import fides
+    from optimagic.optimizers.fides import fides
     from fides.hessian_approximation import FX, SR1, Broyden
 else:
     FX = lambda: None
