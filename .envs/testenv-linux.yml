@@ -22,6 +22,7 @@ dependencies:
   - sqlalchemy  # run, tests
   - seaborn  # dev, tests
   - mypy  # dev, tests
+  - pyyaml  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests

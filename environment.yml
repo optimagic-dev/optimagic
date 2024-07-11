@@ -34,6 +34,7 @@ dependencies:
   - sphinxcontrib-bibtex  # docs
   - seaborn  # dev, tests
   - mypy  # dev, tests
+  - pyyaml  # dev, tests
   - pip:  # dev, tests, docs
       - furo  # dev, docs
       - DFO-LS  # dev, tests
