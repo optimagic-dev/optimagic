@@ -6,16 +6,6 @@ import plotly.express as px
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
-
-TEST_FIXTURES_DIR = (
-    Path(__file__).parent.parent.parent
-    / "tests"
-    / "optimagic"
-    / "optimization"
-    / "fixtures"
-)
-
-
 PLOTLY_TEMPLATE = "simple_white"
 PLOTLY_PALETTE = px.colors.qualitative.Set2
 

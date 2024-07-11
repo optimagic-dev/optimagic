@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 import yaml
 from optimagic.batch_evaluators import joblib_batch_evaluator
-from optimagic.config import TEST_FIXTURES_DIR
 from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 from optimagic.optimizers._pounders.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
@@ -23,6 +22,9 @@ from optimagic.optimizers._pounders.pounders_auxiliary import (
     update_residual_model_with_new_accepted_x,
 )
 from numpy.testing import assert_array_almost_equal as aaae
+from pathlib import Path
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
 def read_yaml(path):
@@ -39,7 +41,7 @@ def read_yaml(path):
 
 @pytest.fixture()
 def criterion():
-    data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
+    data = pd.read_csv(FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
     exog = np.asarray(data["t"])
 
@@ -52,7 +54,7 @@ def criterion():
 
 @pytest.fixture()
 def data_create_initial_residual_model():
-    test_data = read_yaml(TEST_FIXTURES_DIR / "update_initial_residual_model.yaml")
+    test_data = read_yaml(FIXTURES_DIR / "update_initial_residual_model.yaml")
     history = LeastSquaresHistory()
     ResidualModel = namedtuple(
         "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
@@ -78,7 +80,7 @@ def data_create_initial_residual_model():
 
 @pytest.fixture()
 def data_update_residual_model():
-    test_data = read_yaml(TEST_FIXTURES_DIR / "update_residual_model.yaml")
+    test_data = read_yaml(FIXTURES_DIR / "update_residual_model.yaml")
 
     ResidualModel = namedtuple(
         "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
@@ -111,7 +113,7 @@ def data_update_residual_model():
 
 @pytest.fixture()
 def data_update_main_from_residual_model():
-    test_data = read_yaml(TEST_FIXTURES_DIR / "update_main_from_residual_model.yaml")
+    test_data = read_yaml(FIXTURES_DIR / "update_main_from_residual_model.yaml")
 
     ResidualModel = namedtuple(
         "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
@@ -135,7 +137,7 @@ def data_update_main_from_residual_model():
 @pytest.fixture()
 def data_update_residual_model_with_new_accepted_x():
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / "update_residual_model_with_new_accepted_x.yaml"
+        FIXTURES_DIR / "update_residual_model_with_new_accepted_x.yaml"
     )
 
     ResidualModel = namedtuple(
@@ -166,9 +168,7 @@ def data_update_residual_model_with_new_accepted_x():
 
 @pytest.fixture()
 def data_update_main_model_with_new_accepted_x():
-    test_data = read_yaml(
-        TEST_FIXTURES_DIR / "update_main_model_with_new_accepted_x.yaml"
-    )
+    test_data = read_yaml(FIXTURES_DIR / "update_main_model_with_new_accepted_x.yaml")
 
     MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
 
@@ -202,9 +202,7 @@ def data_update_main_model_with_new_accepted_x():
     ]
 )
 def data_find_affine_points(request):
-    test_data = read_yaml(
-        TEST_FIXTURES_DIR / f"find_affine_points_{request.param}.yaml"
-    )
+    test_data = read_yaml(FIXTURES_DIR / f"find_affine_points_{request.param}.yaml")
 
     history = LeastSquaresHistory()
     history_x = np.array(test_data["history_x"])
@@ -234,8 +232,7 @@ def data_find_affine_points(request):
 @pytest.fixture(params=["i", "ii"])
 def data_add_points_until_main_model_fully_linear(request, criterion):
     test_data = read_yaml(
-        TEST_FIXTURES_DIR
-        / f"add_points_until_main_model_fully_linear_{request.param}.yaml"
+        FIXTURES_DIR / f"add_points_until_main_model_fully_linear_{request.param}.yaml"
     )
 
     history = LeastSquaresHistory()
@@ -279,7 +276,7 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
 @pytest.fixture()
 def data_get_interpolation_matrices_residual_model():
     test_data = read_yaml(
-        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
+        FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
     )
 
     history = LeastSquaresHistory()
@@ -319,9 +316,7 @@ def data_get_interpolation_matrices_residual_model():
 
 @pytest.fixture(params=["4", "7"])
 def data_evaluate_residual_model(request):
-    test_data = read_yaml(
-        TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.yaml"
-    )
+    test_data = read_yaml(FIXTURES_DIR / f"interpolate_f_iter_{request.param}.yaml")
 
     history = LeastSquaresHistory()
     history.add_entries(
@@ -368,7 +363,7 @@ def data_evaluate_residual_model(request):
 
 @pytest.fixture()
 def data_fit_residual_model():
-    test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
+    test_data = read_yaml(FIXTURES_DIR / "get_coefficients_residual_model.yaml")
 
     n_params = 3
     n_maxinterp = 2 * n_params + 1

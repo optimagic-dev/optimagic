@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from optimagic.batch_evaluators import joblib_batch_evaluator
-from optimagic.config import TEST_FIXTURES_DIR
+from tests.optimagic.optimizers._pounders.test_pounders_unit import FIXTURES_DIR
 from optimagic.optimizers.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -20,11 +20,11 @@ def load_history(start_vec, solver_sub):
     )
 
     history_x = np.genfromtxt(
-        TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
+        FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
         delimiter=",",
     )
     history_criterion = np.genfromtxt(
-        TEST_FIXTURES_DIR / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
+        FIXTURES_DIR / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
         delimiter=",",
     )
 
@@ -33,7 +33,7 @@ def load_history(start_vec, solver_sub):
 
 @pytest.fixture()
 def criterion():
-    data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
+    data = pd.read_csv(FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
     exog = np.asarray(data["t"])
 
