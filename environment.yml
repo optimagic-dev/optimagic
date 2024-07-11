@@ -32,7 +32,6 @@ dependencies:
   - sphinx-design  # docs
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
-  - tranquilo>=0.0.4  # dev, tests
   - seaborn  # dev, tests
   - mypy  # dev, tests
   - pip:  # dev, tests, docs

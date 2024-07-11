@@ -10,13 +10,8 @@ from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.constraint_tools import check_constraints, count_free_params
 from optimagic.visualization.convergence_plot import convergence_plot
-from estimagic.visualization.estimation_table import (
-    estimation_table,
-    render_html,
-    render_latex,
-)
+
 from optimagic.visualization.history_plots import criterion_plot, params_plot
-from estimagic.visualization.lollipop_plot import lollipop_plot
 from optimagic.visualization.profile_plot import profile_plot
 from optimagic.visualization.slice_plot import slice_plot
 
@@ -41,11 +36,7 @@ __all__ = [
     "convergence_report",
     "rank_report",
     "traceback_report",
-    "lollipop_plot",
     "slice_plot",
-    "estimation_table",
-    "render_html",
-    "render_latex",
     "criterion_plot",
     "params_plot",
     "count_free_params",

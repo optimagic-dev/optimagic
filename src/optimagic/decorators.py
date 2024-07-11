@@ -6,15 +6,6 @@ three nested functions. The former are decorators without and the latter with ar
 For more information on decorators, see this `guide
 `_ on https://realpython.com
 
-
-
-
-
-
-
-
-
-
 which
 provides a comprehensive overview.
 
@@ -250,3 +241,18 @@ def mark_minimizer(
 
     else:
         return decorator_mark_minimizer
+
+
+def deprecated(func, msg):
+    def decorator_deprecated(func):
+        @functools.wraps(func)
+        def wrapper_deprecated(*args, **kwargs):
+            warnings.warn(msg, FutureWarning)
+            return func(*args, **kwargs)
+
+        return wrapper_deprecated
+
+    if callable(func):
+        return decorator_deprecated(func)
+    else:
+        return decorator_deprecated
