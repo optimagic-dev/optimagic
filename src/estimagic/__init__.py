@@ -31,6 +31,7 @@ from optimagic.decorators import deprecated
 import warnings
 
 from optimagic import __version__
+from dataclasses import dataclass
 
 
 MSG = (
@@ -64,18 +65,19 @@ class OptimizeLogReader(_OptimizeLogReader):
             "estimagic.OptimizeLogReader has been deprecated in version 0.5.0. Use "
             "optimagic.OptimizeLogReader instead. This class will be removed in version"
             " 0.6.0.",
-            DeprecationWarning,
+            FutureWarning,
         )
         super().__init__(path)
 
 
+@dataclass
 class OptimizeResult(_OptimizeResult):
-    def __post_init__(self, path):
+    def __post_init__(self):
         warnings.warn(
             "estimagic.OptimizeResult has been deprecated in version 0.5.0. Use "
             "optimagic.OptimizeResult instead. This class will be removed in version "
             "0.6.0.",
-            DeprecationWarning,
+            FutureWarning,
         )
 
 
