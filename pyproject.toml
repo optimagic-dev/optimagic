@@ -241,6 +241,8 @@ module = [
     "optimagic.exceptions",
     "optimagic.process_user_function",
     "optimagic.utilities",
+
+    "estimagic",
 ]
 check_untyped_defs = false
 disallow_any_generics = false
