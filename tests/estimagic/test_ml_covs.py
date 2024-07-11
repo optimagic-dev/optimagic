@@ -179,7 +179,7 @@ def test_cov_jacobian(jac):
     np.allclose(calculated, expected)
 
 
-FIX_PATH = Path(__file__).resolve().parent / "fixtures"
+FIX_PATH = Path(__file__).resolve().parent / "pickled_statsmodels_ml_covs"
 
 
 def get_expected_covariance(model, cov_method):
