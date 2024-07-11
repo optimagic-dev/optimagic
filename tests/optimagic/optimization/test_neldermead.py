@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from optimagic.optimization.neldermead import (
+from optimagic.optimizers.neldermead import (
     _gao_han,
     _init_algo_params,
     _init_simplex,

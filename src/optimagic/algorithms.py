@@ -1,18 +1,18 @@
 import inspect
 
-from optimagic.optimization import (
-    bhhh,
-    cyipopt_optimizers,
-    fides_optimizers,
-    nag_optimizers,
-    neldermead,
-    nlopt_optimizers,
-    pygmo_optimizers,
+from optimagic.optimizers import (
+    pounders,
     scipy_optimizers,
+    bhhh,
+    neldermead,
+    fides_optimizers,
     tao_optimizers,
+    nag_optimizers,
+    cyipopt_optimizers,
+    pygmo_optimizers,
+    nlopt_optimizers,
     tranquilo,
 )
-from optimagic.optimizers import pounders
 
 MODULES = [
     cyipopt_optimizers,

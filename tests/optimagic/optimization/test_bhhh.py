@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 import pytest
 import statsmodels.api as sm
-from optimagic.optimization.bhhh import bhhh_internal
+from optimagic.optimizers.bhhh import bhhh_internal
 from optimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy.stats import norm

@@ -9,7 +9,7 @@ from optimagic.optimization.algo_options import (
     CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     STOPPING_MAX_ITERATIONS,
 )
-from optimagic.optimization.scipy_optimizers import process_scipy_result
+from optimagic.optimizers.scipy_optimizers import process_scipy_result
 
 if IS_CYIPOPT_INSTALLED:
     import cyipopt
