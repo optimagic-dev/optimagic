@@ -96,9 +96,8 @@ jobs:
         run: |
           micromamba activate estimagic
           pytest tests/optimagic/visualization
-          pytest tests/estimagic/visualization
           pytest tests/optimagic/parameters
-          pytest tests/estimagic/inference
+          pytest tests/estimagic
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
