@@ -22,6 +22,7 @@ dependencies:
   - seaborn  # dev, tests
   - mypy  # dev, tests
   - pyyaml  # dev, tests
+  - jinja2  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
@@ -30,4 +31,5 @@ dependencies:
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
+      - types-jinja2  # dev, tests
       - -e ../

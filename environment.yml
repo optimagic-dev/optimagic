@@ -35,6 +35,7 @@ dependencies:
   - seaborn  # dev, tests
   - mypy  # dev, tests
   - pyyaml  # dev, tests
+  - jinja2  # dev, tests
   - pip:  # dev, tests, docs
       - furo  # dev, docs
       - DFO-LS  # dev, tests
@@ -51,3 +52,4 @@ dependencies:
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
+      - types-jinja2  # dev, tests
