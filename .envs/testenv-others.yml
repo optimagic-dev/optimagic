@@ -1,5 +1,5 @@
 ---
-name: estimagic
+name: optimagic
 channels:
   - conda-forge
   - nodefaults

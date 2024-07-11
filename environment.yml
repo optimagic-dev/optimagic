@@ -1,5 +1,5 @@
 ---
-name: estimagic
+name: optimagic
 channels:
   - conda-forge
   - nodefaults
@@ -36,6 +36,7 @@ dependencies:
   - seaborn  # dev, tests
   - mypy  # dev, tests
   - pip:  # dev, tests, docs
+      - furo  # dev, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
       - black  # dev

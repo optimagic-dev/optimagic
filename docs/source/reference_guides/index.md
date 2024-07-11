@@ -1,12 +1,14 @@
 # API
 
+## optimagic
+
 ```{eval-rst}
-.. currentmodule:: estimagic
+.. currentmodule:: optimagic
 ```
 
 (maximize-and-minimize)=
 
-## Optimization
+### Optimization
 
 ```{eval-rst}
 .. dropdown:: maximize
@@ -67,7 +69,7 @@
 
 (first_derivative)=
 
-## Derivatives
+### Derivatives
 
 ```{eval-rst}
 .. dropdown:: first_derivative
@@ -83,9 +85,69 @@
 
 ```
 
+(benchmarking)=
+
+### Benchmarks
+
+```{eval-rst}
+.. dropdown:: get_benchmark_problems
+
+    .. autofunction:: get_benchmark_problems
+```
+
+```{eval-rst}
+.. dropdown:: run_benchmark
+
+    .. autofunction:: run_benchmark
+```
+
+```{eval-rst}
+.. dropdown:: profile_plot
+
+    .. autofunction:: profile_plot
+```
+
+```{eval-rst}
+.. dropdown:: convergence_plot
+
+    .. autofunction:: convergence_plot
+
+
+```
+
+(logreading)=
+
+### Log reading
+
+```{eval-rst}
+.. dropdown:: OptimizeLogReader
+
+    .. autoclass:: OptimizeLogReader
+
+
+
+```
+
+### Other:
+
+```{toctree}
+---
+maxdepth: 1
+---
+utilities
+algo_options
+batch_evaluators
+```
+
+## estimagic
+
+```{eval-rst}
+.. currentmodule:: estimagic
+```
+
 (estimation)=
 
-## Estimation
+### Estimation
 
 ```{eval-rst}
 .. dropdown:: estimate_ml
@@ -156,7 +218,7 @@
 
 (bootstrap)=
 
-## Bootstrap
+### Bootstrap
 
 ```{eval-rst}
 .. dropdown:: bootstrap
@@ -171,58 +233,4 @@
         :members:
 
 
-```
-
-(benchmarking)=
-
-## Benchmarks
-
-```{eval-rst}
-.. dropdown:: get_benchmark_problems
-
-    .. autofunction:: get_benchmark_problems
-```
-
-```{eval-rst}
-.. dropdown:: run_benchmark
-
-    .. autofunction:: run_benchmark
-```
-
-```{eval-rst}
-.. dropdown:: profile_plot
-
-    .. autofunction:: profile_plot
-```
-
-```{eval-rst}
-.. dropdown:: convergence_plot
-
-    .. autofunction:: convergence_plot
-
-
-```
-
-(logreading)=
-
-## Log reading
-
-```{eval-rst}
-.. dropdown:: OptimizeLogReader
-
-    .. autoclass:: OptimizeLogReader
-
-
-
-```
-
-## Other:
-
-```{toctree}
----
-maxdepth: 1
----
-utilities
-algo_options
-batch_evaluators
 ```
