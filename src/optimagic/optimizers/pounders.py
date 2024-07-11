@@ -7,8 +7,8 @@ import numpy as np
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES
 from optimagic.decorators import mark_minimizer
-from optimagic.optimization.pounders_history import LeastSquaresHistory
-from optimagic.optimization.pounders_auxiliary import (
+from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
+from optimagic.optimizers._pounders.pounders_auxiliary import (
     add_accepted_point_to_residual_model,
     add_geomtery_points_to_make_main_model_fully_linear,
     create_initial_residual_model,

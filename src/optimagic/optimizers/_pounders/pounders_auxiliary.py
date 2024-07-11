@@ -5,10 +5,10 @@ from typing import NamedTuple, Union
 import numpy as np
 from scipy.linalg import qr_multiply
 
-from optimagic.optimization.subsolvers.bntr import (
+from optimagic.optimizers._pounders.bntr import (
     bntr,
 )
-from optimagic.optimization.subsolvers.gqtpar import (
+from optimagic.optimizers._pounders.gqtpar import (
     gqtpar,
 )
 

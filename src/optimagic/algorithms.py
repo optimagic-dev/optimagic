@@ -7,12 +7,12 @@ from optimagic.optimization import (
     nag_optimizers,
     neldermead,
     nlopt_optimizers,
-    pounders,
     pygmo_optimizers,
     scipy_optimizers,
     tao_optimizers,
     tranquilo,
 )
+from optimagic.optimizers import pounders
 
 MODULES = [
     cyipopt_optimizers,

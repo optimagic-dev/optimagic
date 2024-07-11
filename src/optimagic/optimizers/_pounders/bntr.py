@@ -4,13 +4,13 @@ from functools import reduce
 from typing import NamedTuple, Union
 
 import numpy as np
-from optimagic.optimization.subsolvers._conjugate_gradient import (
+from optimagic.optimizers._pounders._conjugate_gradient import (
     minimize_trust_cg,
 )
-from optimagic.optimization.subsolvers._steihaug_toint import (
+from optimagic.optimizers._pounders._steihaug_toint import (
     minimize_trust_stcg,
 )
-from optimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
+from optimagic.optimizers._pounders._trsbox import minimize_trust_trsbox
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 

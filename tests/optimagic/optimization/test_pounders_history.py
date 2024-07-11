@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from optimagic.optimization.pounders_history import LeastSquaresHistory
+from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 from numpy.testing import assert_array_almost_equal as aaae
 
 ENTRIES = [

@@ -2,18 +2,18 @@
 
 import numpy as np
 import pytest
-from optimagic.optimization.pounders_auxiliary import MainModel
-from optimagic.optimization.subsolvers._conjugate_gradient import (
+from optimagic.optimizers._pounders.pounders_auxiliary import MainModel
+from optimagic.optimizers._pounders._conjugate_gradient import (
     minimize_trust_cg,
 )
-from optimagic.optimization.subsolvers._steihaug_toint import (
+from optimagic.optimizers._pounders._steihaug_toint import (
     minimize_trust_stcg,
 )
-from optimagic.optimization.subsolvers._trsbox import minimize_trust_trsbox
-from optimagic.optimization.subsolvers.bntr import (
+from optimagic.optimizers._pounders._trsbox import minimize_trust_trsbox
+from optimagic.optimizers._pounders.bntr import (
     bntr,
 )
-from optimagic.optimization.subsolvers.gqtpar import (
+from optimagic.optimizers._pounders.gqtpar import (
     gqtpar,
 )
 from numpy.testing import assert_array_almost_equal as aaae

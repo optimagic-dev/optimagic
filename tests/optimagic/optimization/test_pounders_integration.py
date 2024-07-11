@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.config import TEST_FIXTURES_DIR
-from optimagic.optimization.pounders import internal_solve_pounders
+from optimagic.optimizers.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
 
 
