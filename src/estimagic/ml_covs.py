@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from optimagic.exceptions import INVALID_INFERENCE_MSG
-from estimagic.inference.shared import process_pandas_arguments
+from estimagic.shared_covs import process_pandas_arguments
 from optimagic.utilities import robust_inverse
 
 

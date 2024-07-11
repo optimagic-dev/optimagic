@@ -4,8 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference import ml_covs
-from estimagic.inference.ml_covs import (
+from estimagic import ml_covs
+from estimagic.ml_covs import (
     _clustering,
     _sandwich_step,
     _stratification,

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.bootstrap_samples import (
+from estimagic.bootstrap_samples import (
     _convert_cluster_ids_to_indices,
     _get_bootstrap_samples_from_indices,
     get_bootstrap_indices,

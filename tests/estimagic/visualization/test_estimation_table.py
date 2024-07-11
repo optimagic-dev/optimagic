@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
-from estimagic.visualization.estimation_table import (
+from estimagic.estimation_table import (
     _apply_number_format,
     _check_order_of_model_names,
     _convert_frame_to_string_series,

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from optimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.inference.bootstrap_outcomes import (
+from estimagic.bootstrap_outcomes import (
     _get_bootstrap_outcomes_from_indices,
     get_bootstrap_outcomes,
 )

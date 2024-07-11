@@ -8,14 +8,14 @@ import pandas as pd
 
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.exceptions import InvalidFunctionError, NotAvailableError
-from estimagic.inference.ml_covs import (
+from estimagic.ml_covs import (
     cov_cluster_robust,
     cov_hessian,
     cov_jacobian,
     cov_robust,
     cov_strata_robust,
 )
-from estimagic.inference.shared import (
+from estimagic.shared_covs import (
     FreeParams,
     calculate_ci,
     calculate_estimation_summary,

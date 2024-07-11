@@ -11,8 +11,8 @@ epsilon 2-6: Honore, Jorgensen & de Paula
 import numpy as np
 import pandas as pd
 from optimagic.exceptions import INVALID_SENSITIVITY_MSG
-from estimagic.inference.msm_covs import cov_robust
-from estimagic.inference.shared import process_pandas_arguments
+from estimagic.msm_covs import cov_robust
+from estimagic.shared_covs import process_pandas_arguments
 from optimagic.utilities import robust_inverse
 
 

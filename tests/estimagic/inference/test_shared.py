@@ -3,7 +3,7 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.inference.shared import (
+from estimagic.shared_covs import (
     _to_numpy,
     calculate_estimation_summary,
     get_derivative_case,

@@ -1,8 +1,8 @@
-from estimagic.estimation.estimate_ml import LikelihoodResult, estimate_ml
-from estimagic.estimation.estimate_msm import MomentsResult, estimate_msm
-from estimagic.estimation.msm_weighting import get_moments_cov
-from estimagic.inference.bootstrap import BootstrapResult, bootstrap
-from estimagic.visualization.estimation_table import (
+from estimagic.estimate_ml import LikelihoodResult, estimate_ml
+from estimagic.estimate_msm import MomentsResult, estimate_msm
+from estimagic.msm_weighting import get_moments_cov
+from estimagic.bootstrap import BootstrapResult, bootstrap
+from estimagic.estimation_table import (
     estimation_table,
     render_html,
     render_latex,
