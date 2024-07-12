@@ -1,6 +1,6 @@
 (eepalignment)=
 
-# EEP-03: Alignment with SciPy
+# EP-03: Alignment with SciPy
 
 ```{eval-rst}
 +------------+------------------------------------------------------------------+
@@ -18,22 +18,22 @@
 
 ## Abstract
 
-This enhancement proposal explains how we will better align estimagic with
+This enhancement proposal explains how we will better align optimagic with
 `scipy.minimize`. Scipy is the most widely used optimizer library in Python and most of
 our new users are switching over from SciPy.
 
 The goal is therefore simple: Make it as easy as possible for SciPy users to use
-estimagic. In most cases this means that the only thing that has to be changed is the
+optimagic. In most cases this means that the only thing that has to be changed is the
 import statement for the `minimize` function:
 
 ```python
 # from scipy.optimize import minimize
-from estimagic import minimize
+from optimagic import minimize
 ```
 
 ## Design goals
 
-- If we can make code written for SciPy run with estimagic, we should do so
+- If we can make code written for SciPy run with optimagic, we should do so
 - If we cannot make it run, the user should get a helpful error message that explains
   how the code needs to be adjusted.
 
@@ -75,7 +75,7 @@ Instead we can provide aliases for those.
 
 ## Additional aliases
 
-To make it even easier for SciPy users to switch to estimagic, we can provide additional
+To make it even easier for SciPy users to switch to optimagic, we can provide additional
 aliases in `minimize` and `maximize` that let them used their SciPy code without changes
 or help to adjust it by showing good error messages. The following arguments are
 relevant:
@@ -105,7 +105,7 @@ relevant:
 
 Currently we try to align default values for convergence criteria and other algorithm
 options across algorithms and even across optimizer packages. This means that sometimes
-algorithms that are used via estimagic produce different results than the same algorithm
+algorithms that are used via optimagic produce different results than the same algorithm
 used via SciPy or other packages.
 
 Moreover, it is possible that we deviate from algorithm options that the original

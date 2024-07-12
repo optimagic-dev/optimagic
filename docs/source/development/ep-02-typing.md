@@ -1,6 +1,6 @@
 (eeptyping)=
 
-# EEP-02: Static typing
+# EP-02: Static typing
 
 ```{eval-rst}
 +------------+------------------------------------------------------------------+
@@ -18,7 +18,7 @@
 
 ## Abstract
 
-This enhancement proposal explains the adoption of static typing in estimagic. The goal
+This enhancement proposal explains the adoption of static typing in optimagic. The goal
 is to reap a number of benefits:
 
 - Users will benefit from IDE tools such as easier discoverability of options and
@@ -27,7 +27,7 @@ is to reap a number of benefits:
 - The codebase will become more robust due to static type checking and use of stricter
   types in internal functions.
 
-Achieving these goals requires more than adding type hints. estimagic is currently
+Achieving these goals requires more than adding type hints. optimagic is currently
 mostly [stringly typed](https://wiki.c2.com/?StringlyTyped). For example, optimization
 algorithms are selected via strings. Another example are
 [constraints](https://estimagic.readthedocs.io/en/latest/how_to_guides/optimization/how_to_specify_constraints.html),
@@ -91,7 +91,7 @@ updated if this proposal is accepted.
   consider using an immutable type with copy constructors for modified instances.
   Example: instances of `Algorithm` are immutable but using `Algorithm.with_option`
   users can create modified copies.
-- The main entry point to estimagic are functions, objects are mostly used for
+- The main entry point to optimagic are functions, objects are mostly used for
   configuration and return types. This takes the best of both worlds: we get the safety
   and static analysis that (in Python) can only be achieved using objects but the
   beginner friendliness and freedom provided by functions. Example: Having a `minimize`
@@ -144,7 +144,7 @@ def least_squares_sphere(params: np.ndarray) -> dict[str, Any]:
 ```
 
 Here the `"root_contributions"` are the least-squares residuals. The dictionary key
-tells estimagic how to interpret the output. This is needed because estimagic has no way
+tells optimagic how to interpret the output. This is needed because optimagic has no way
 of finding out whether a criterion function that returns a vector (or pytree) is a
 least-squares function or a likelihood function. Of course all specialized problems can
 still be solved with scalar optimizers.
@@ -159,7 +159,7 @@ def logging_sphere(x: np.ndarray) -> dict[str, Any]:
 ```
 
 Here `"value"` is the actual scalar criterion value. All other fields are unknown to
-estimagic and therefore just logged in the database if logging is active.
+optimagic and therefore just logged in the database if logging is active.
 
 The specification of likelihood functions is very analogous to least-squares functions
 and therefore omitted here.
@@ -175,7 +175,7 @@ and therefore omitted here.
 
 **Problems**
 
-- Most users of estimagic find it hard to write criterion functions that return the
+- Most users of optimagic find it hard to write criterion functions that return the
   correct dictionary. Therefore, they don't use the logging feature and we often get
   questions about specifying least-squares problems correctly.
 - Internally we can make almost no assumptions about the output of a criterion function,
@@ -198,10 +198,10 @@ will now be solved separately.
 The simplest way of specifying a least-squares function becomes:
 
 ```python
-import estimagic as em
+import optimagic as om
 
 
-@em.mark.least_squares
+@om.mark.least_squares
 def ls_sphere(params):
     return params
 ```
@@ -209,7 +209,7 @@ def ls_sphere(params):
 Analogously, the simplest way of specifying a likelihood function becomes:
 
 ```python
-@em.mark.likelihood
+@om.mark.likelihood
 def ll_sphere(params):
     return params**2
 ```
@@ -218,7 +218,7 @@ The simplest way of specifying a scalar function stays unchanged, but optionally
 `mark.scalar` decorator can be used:
 
 ```python
-@em.mark.scalar  # this is optional
+@om.mark.scalar  # this is optional
 def sphere(params):
     return params @ params
 ```
@@ -244,10 +244,10 @@ An example of a least-squares function that also returns additional info for the
 file would look like this:
 
 ```python
-from estimagic import FunctionValue
+from optimagic import FunctionValue
 
 
-@em.mark.least_squares
+@om.mark.least_squares
 def least_squares_sphere(params):
     out = FunctionValue(
         value=params, info={"p_mean": params.mean, "p_std": params.std()}
@@ -291,7 +291,7 @@ class LikelihoodFunctionValue(FunctionValue):
 A least-squares function could then be specified without decorator as follows:
 
 ```python
-from estimagic import LeastSquaresFunctionValue
+from optimagic import LeastSquaresFunctionValue
 
 
 def least_squares_sphere(params: np.ndarray) -> LeastSquaresFunctionValue:
@@ -318,7 +318,7 @@ Currently we have four arguments of `maximize`, `minimize`, and related function
 let the user specify bounds:
 
 ```python
-em.minimize(
+om.minimize(
     # ...
     lower_bounds=params - 1,
     upper_bounds=params + 1,
@@ -341,13 +341,13 @@ Each of them is a pytree that mirrors the structure of `params` or `None`
 We bundle the bounds together in a `Bounds` type:
 
 ```python
-bounds = em.Bounds(
+bounds = om.Bounds(
     lower=params - 1,
     upper=params + 1,
     soft_lower=params - 2,
     soft_lower=params + 2,
 )
-em.minimize(
+om.minimize(
     # ...
     bounds=bounds,
     # ...
@@ -417,11 +417,11 @@ Examples of the new syntax are:
 
 ```python
 constraints = [
-    em.constraints.FixedConstraint(selector=lambda x: x[0, 5]),
-    em.constraints.IncreasingConstraint(selector=lambda x: x[1:4]),
+    om.constraints.FixedConstraint(selector=lambda x: x[0, 5]),
+    om.constraints.IncreasingConstraint(selector=lambda x: x[1:4]),
 ]
 
-res = em.minimize(
+res = om.minimize(
     fun=criterion,
     params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     algorithm="scipy_lbfgsb",
@@ -436,7 +436,7 @@ During the deprecation phase, `Constraint` will also have `loc` and `query` attr
 
 The current `cov` and `sdcorr` constraints apply to flattened covariance matrices, as
 well as standard deviations and flattened correlation matrices. This comes from a time
-where estimagic only supported an essentially flat parameter format (`DataFrames` with
+where optimagic only supported an essentially flat parameter format (`DataFrames` with
 `"value"` column). We can exploit the current deprecation cycle to rename the current
 `cov` and `sdcorr` constraints to `FlatCovConstraint` and `FlatSdcorrConstraint`. This
 prepares the introduction of a more natural `CovConstraint` and `SdcorrConstraint`
@@ -455,7 +455,7 @@ fuzzy matching of strings.
 
 **Things we want to keep**
 
-- Estimagic can be used just like scipy
+- optimagic can be used just like scipy
 
 **Problems**
 
@@ -485,20 +485,20 @@ algorithm interface.
 In a simple example, algorithm selection via algorithm classes looks as follows:
 
 ```python
-em.minimize(
+om.minimize(
     lambda x: x @ x,
     params=np.arange(5),
-    algorithm=em.algorithms.scipy_neldermead,
+    algorithm=om.algorithms.scipy_neldermead,
 )
 ```
 
 Passing a configured instance of an algorithm looks as follows:
 
 ```python
-em.minimize(
+om.minimize(
     lambda x: x @ x,
     params=np.arange(5),
-    algorithm=em.algorithms.scipy_neldermead(adaptive=True),
+    algorithm=om.algorithms.scipy_neldermead(adaptive=True),
 )
 ```
 
@@ -538,7 +538,7 @@ sure all generated code is up-to-date in every commit. It can also be executed i
 [pytest hook](https://docs.pytest.org/en/7.1.x/how-to/writing_hook_functions.html)
 (before the collection phase) to make sure everything is up-to-date when tests run.
 
-Users of estimagic (and their IDEs) will never know that this code was not typed in by a
+Users of optimagic (and their IDEs) will never know that this code was not typed in by a
 human, which guarantees that autocomplete and static analysis will work without
 problems.
 
@@ -566,7 +566,7 @@ fictitious list:
 
 We want the following behavior:
 
-The user types `em.algorithms.` and autocomplete shows
+The user types `om.algorithms.` and autocomplete shows
 
 |                 |
 | --------------- |
@@ -580,7 +580,7 @@ The user types `em.algorithms.` and autocomplete shows
 A user can either select one of the algorithms (lowercase) directly or filter further by
 selecting a category (CamelCase). This would look as follows:
 
-The user types `em.algorithms.GradientFree.` and autocomplete shows
+The user types `om.algorithms.GradientFree.` and autocomplete shows
 
 |              |
 | ------------ |
@@ -619,7 +619,7 @@ class GradientBasedAlgorithms:
     slsqp: Type[SLSQP] = SLSQP
 
     @property
-    def All(self) -> List[em.typing.Algorithm]:
+    def All(self) -> List[om.typing.Algorithm]:
         return [LBFGS, SLSQP]
 
 
@@ -629,7 +629,7 @@ class GradientFreeAlgorithms:
     bobyqa: Type[Bobyqa] = Bobyqa
 
     @property
-    def All(self) -> List[em.typing.Algorithm]:
+    def All(self) -> List[om.typing.Algorithm]:
         return [NelderMead, Bobyqa]
 
 
@@ -649,15 +649,15 @@ class Algorithms:
         return GradientFreeAlgorithms()
 
     @property
-    def All(self) -> List[em.typing.Algorithm]:
+    def All(self) -> List[om.typing.Algorithm]:
         return [LBFGS, SLSQP, NelderMead, Bobyqa]
 ```
 
 If implemented by hand, this would require an enormous amount of typing and introduce a
-very high maintenance burden. Whenever a new algorithm was added to estimagic, we would
+very high maintenance burden. Whenever a new algorithm was added to optimagic, we would
 have to register it in multiple nested dataclasses.
 
-The code generation approach detailed in the previous section can solve this problem.
+The code generation approach detailed in the previous section can solve this problom.
 While it might have been overkill to achieve basic autocomplete, it is justified to
 achieve this filtering behavior. How the relevant information for filtering (e.g.
 whether an algorithm is gradient based) is collected, will be discussed in
@@ -673,7 +673,7 @@ later as we see fit.
 
 ### Algorithm options
 
-Algorithm options refer to options that are not handled by estimagic but directly by the
+Algorithm options refer to options that are not handled by optimagic but directly by the
 algorithms. Examples are convergence criteria, stopping criteria and advanced
 configuration of algorithms. Some of them are supported by many algorithms (e.g.
 stopping after a maximum number of function evaluations is reached), some are supported
@@ -687,7 +687,7 @@ options (e.g. there is simply no trustregion radius in a genetic algorithm), we 
 far in harmonizing `algo_options` across optimizers:
 
 1. Options that are the same in spirit (e.g. stop after a specific number of iterations)
-   get the same name across all optimizers wrapped in estimagic. Most of them even get
+   get the same name across all optimizers wrapped in optimagic. Most of them even get
    the same default value.
 1. Options that have non-descriptive (and often heavily abbreviated) names in their
    original implementation get more readable names, even if they appear only in a single
@@ -746,7 +746,7 @@ Python variable names.
   works especially well to distinguish stopping options and convergence criteria from
   other tuning parameters of the algorithms. However, it would be enough to keep them as
   a naming convention if we find it hard to support the `.` notation.
-- All options are documented in the estimagic documentation, i.e. we do not link to the
+- All options are documented in the optimagic documentation, i.e. we do not link to the
   docs of original packages. Now they will also be discoverable in an IDE.
 
 **Problems**
@@ -773,7 +773,7 @@ selected algorithm. When creating the instance, they have autocompletion for all
 supported by the selected algorithm. `Algorithm`s are immutable.
 
 ```python
-algo = em.algorithms.scipy_lbfgsb(
+algo = om.algorithms.scipy_lbfgsb(
     stopping_max_iterations=1000,
     stopping_max_criterion_evaluations=1500,
     convergence_relative_criterion_tolerance=1e-6,
@@ -792,7 +792,7 @@ instance by using the `with_option` method.
 
 ```python
 # using copy constructors to create variants
-base_algo = em.algorithms.fides(stopping_max_iterations=1000)
+base_algo = om.algorithms.fides(stopping_max_iterations=1000)
 algorithms = [base_algo.with_option(initial_radius=r) for r in [0.1, 0.2, 0.5]]
 
 for algo in algorithms:
@@ -814,7 +814,7 @@ We can provide additional methods `with_stopping` and `with_convergence` that ca
 ```python
 # using copy constructors for better namespaces
 algo = (
-    em.algorithms.scipy_lbfgsb()
+    om.algorithms.scipy_lbfgsb()
     .with_stopping(
         max_iterations=1000,
         max_criterion_evaluations=1500,
@@ -846,7 +846,7 @@ guarantees that the specified options are compatible with the selected algorithm
 The previous example continues to work. Examples of the new possibilities are:
 
 ```python
-options = em.AlgorithmOptions(
+options = om.AlgorithmOptions(
     stopping_max_iterations=1000,
     stopping_max_criterion_evaluations=1500,
     convergence_relative_criterion_tolerance=1e-6,
@@ -858,7 +858,7 @@ options = em.AlgorithmOptions(
 
 minimize(
     # ...
-    algorithm=em.algorithms.scipy_lbfgsb,
+    algorithm=om.algorithms.scipy_lbfgsb,
     algo_options=options,
     # ...
 )
@@ -874,7 +874,7 @@ of dynamic signature creation. For more details, see the discussions about the
 
 ### Custom derivatives
 
-Providing custom derivatives to estimagic is slightly complicated because we support
+Providing custom derivatives to optimagic is slightly complicated because we support
 scalar, likelihood and least-squares problems in the same interface. Moreover, we allow
 to either provide a `derivative` function or a joint `criterion_and_derivative` function
 that allow users to exploit synergies between evaluating the criterion and the
@@ -910,10 +910,10 @@ returns a tuple of the criterion value and the derivative instead.
 **Problems**
 
 - A dict with required keys is brittle
-- Autodiff needs to be handled completely outside of estimagic
+- Autodiff needs to be handled completely outside of optimagic
 - The names `criterion`, `derivative` and `criterion_and_derivative` are not aligned
   with scipy and very long.
-- Providing derivatives to estimagic is perceived as complicated and confusing.
+- Providing derivatives to optimagic is perceived as complicated and confusing.
 
 #### Proposal
 
@@ -924,7 +924,7 @@ The following section uses the new names `fun`, `jac` and `fun_and_jac` instead 
 
 To improve the integration with modern automatic differentiation frameworks, `jac` or
 `fun_and_jac` can also be a string `"jax"` or a more autocomplete friendly enum
-`em.autodiff_backend.JAX`. This can be used to signal that the objective function is jax
+`om.autodiff_backend.JAX`. This can be used to signal that the objective function is jax
 compatible and jax should be used to calculate its derivatives. In the long run we can
 add PyTorch support and more. Since this is mostly about a signal of compatibility, it
 would be enough to set one of the two arguments to `"jax"`, the other one can be left at
@@ -932,44 +932,44 @@ would be enough to set one of the two arguments to `"jax"`, the other one can be
 
 ```python
 import jax.numpy as jnp
-import estimagic as em
+import optimagic as om
 
 
 def jax_sphere(x):
     return jnp.dot(x, x)
 
 
-res = em.minimize(
+res = om.minimize(
     fun=jax_sphere,
     params=jnp.arange(5),
-    algorithm=em.algorithms.scipy_lbfgsb,
+    algorithm=om.algorithms.scipy_lbfgsb,
     jac="jax",
 )
 ```
 
 If a custom callable is provided as `jac` or `fun_and_jac`, it needs to be decorated
-with `@em.mark.least_squares` or `em.mark.likelihood` if it is not the gradient of a
-scalar function values. Using the `em.mark.scalar` decorator is optional. For a simple
+with `@om.mark.least_squares` or `om.mark.likelihood` if it is not the gradient of a
+scalar function values. Using the `om.mark.scalar` decorator is optional. For a simple
 least-squares problem this looks as follows:
 
 ```python
 import numpy as np
 
 
-@em.mark.least_squares
+@om.mark.least_squares
 def ls_sphere(params):
     return params
 
 
-@em.mark.least_squares
+@om.mark.least_squares
 def ls_sphere_jac(params):
     return np.eye(len(params))
 
 
-res = em.minimize(
+res = om.minimize(
     fun=ls_sphere,
     params=np.arange(5),
-    algorithm=em.algorithms.scipy_ls_lm,
+    algorithm=om.algorithms.scipy_ls_lm,
     jac=ls_sphere_jac,
 )
 ```
@@ -977,26 +977,26 @@ res = em.minimize(
 Note that here we have a least-squares problem and solve it with a least-squares
 optimizer. However, any least-squares problem can also be solved with scalar optimizers.
 
-While estimagic could convert the least-squares derivative to the gradient of the scalar
+While optimagic could convert the least-squares derivative to the gradient of the scalar
 function value, this is generally inefficient. Therefore, a user can provide multiple
 callables of the objective function in such a case, so we can pick the best one for the
 chosen optimizer.
 
 ```python
-@em.mark.scalar
+@om.mark.scalar
 def sphere_grad(params):
     return 2 * params
 
 
-res = em.minimize(
+res = om.minimize(
     fun=ls_sphere,
     params=np.arange(5),
-    algorithm=em.algorithms.scipy_lbfgsb,
+    algorithm=om.algorithms.scipy_lbfgsb,
     jac=[ls_sphere_jac, sphere_grad],
 )
 ```
 
-Since a scalar optimizer was chosen to solve the least-squares problem, estimagic would
+Since a scalar optimizer was chosen to solve the least-squares problem, optimagic would
 pick the `sphere_grad` as derivative. If a leas-squares solver was chosen, we would use
 `ls_sphere_jac`.
 
@@ -1012,7 +1012,7 @@ configure the behavior with an option dictionary. Examples are:
 - `error_handling` (`Literal["raise", "continue"]`) and `error_penalty` (dict)
 - `multistart` (`bool`) and `multistart_options`
 
-Moreover we have option dictionaries whenever we have nested invocations of estimagic
+Moreover we have option dictionaries whenever we have nested invocations of optimagic
 functions. Examples are:
 
 - `numdiff_options` in `minimize` and `maximize`
@@ -1047,7 +1047,7 @@ After the changes, `logging` can be any of the following:
 
 - `False` (or anything Falsy): No logging is used.
 - A `str` or `pathlib.Path`: Logging is used at default options.
-- An instance of `estimagic.Logger`. There will be multiple subclasses, e.g.
+- An instance of `optimagic.Logger`. There will be multiple subclasses, e.g.
   `SqliteLogger` which allow us to switch out the logging backend. Each subclass might
   have different optional arguments.
 
@@ -1057,7 +1057,7 @@ supported during a deprecation cycle.
 ##### Scaling, error handling and multistart
 
 In contrast to logging, scaling, error handling and multistart are deeply baked into
-estimagic's minimize function. Therefore, it does not make sense to create abstractions
+optimagic's minimize function. Therefore, it does not make sense to create abstractions
 for these features that would make them replaceable components that can be switched out
 for other implementations by advanced users. Most of these features are already
 perceived as advanced and allow for a lot of configuration.
@@ -1083,8 +1083,8 @@ dataclasses as alternative.
 #### Current situation
 
 Currently, algorithms are defined as `minimize` functions that are decorated with
-`em.mark_minimizer`. The `minimize` function returns a dictionary with a few mandatory
-and several optional keys. Algorithms can provide information to estimagic in two ways:
+`om.mark_minimizer`. The `minimize` function returns a dictionary with a few mandatory
+and several optional keys. Algorithms can provide information to optimagic in two ways:
 
 1. The signature of the minimize function signals whether the algorithm needs
    derivatives and whether it supports bounds and nonlinear constraints. Moreover, it
@@ -1176,7 +1176,7 @@ class AlgoInfo(NamedTuple):
 - Since we read a lot of information from function signatures (as opposed to registering
   options somewhere), there is no duplicated information. If we change the approach to
   collecting information, we still need to ensure there is no duplication or possibility
-  to provide wrong information to estimagic.
+  to provide wrong information to optimagic.
 
 **Problems**
 
@@ -1193,10 +1193,10 @@ class AlgoInfo(NamedTuple):
 We first show the proposed new algorithm interface and discuss the changes later.
 
 ```python
-@em.mark.minimizer(
+@om.mark.minimizer(
     name="scipy_neldermead",
     needs_scaling=False,
-    problem_type=em.ProblemType.Scalar,
+    problem_type=om.ProblemType.Scalar,
     is_available=IS_SCIPY_AVAILABLE,
     is_global=False,
     disable_history=False,
@@ -1232,9 +1232,9 @@ class ScipyNelderMead(Algorithm):
         }
 
         res = minimize(
-            fun=problem.scalar.fun,
+            fun=problom.scalar.fun,
             x0=x,
-            bounds=_get_scipy_bounds(problem.bounds),
+            bounds=_get_scipy_bounds(problom.bounds),
             method="Nelder-Mead",
             options=options,
         )
@@ -1258,7 +1258,7 @@ class ScipyNelderMead(Algorithm):
 1. The minimize function returns an `InternalOptimizeResult` instead of a dictionary.
 
 The copy constructors (`with_option`, `with_convergence`, and `with_stopping`) are
-inherited from `estimagic.Algorithm`. This means, that they will have `**kwargs` as
+inherited from `optimagic.Algorithm`. This means, that they will have `**kwargs` as
 signature and thus do not support autocomplete. However, they can check that all
 specified options are actually in the `__dataclass_fields__` and thus provide feedback
 before an optimization is run.
@@ -1284,7 +1284,7 @@ the objective function and its derivatives.
 from numpy.typing import NDArray
 from dataclasses import dataclass
 from typing import Callable, Tuple
-import estimagic as em
+import optimagic as om
 
 
 @dataclass(frozen=True)
@@ -1313,9 +1313,9 @@ class InternalProblem:
     scalar: ScalarProblemFunctions
     least_squares: LeastSquaresProblemFunctions
     likelihood: LikelihoodProblemFunctions
-    bounds: em.Bounds | None
-    linear_constraints: list[em.LinearConstraint] | None
-    nonlinear_constraints: list[em.NonlinearConstraint] | None
+    bounds: om.Bounds | None
+    linear_constraints: list[om.LinearConstraint] | None
+    nonlinear_constraints: list[om.NonlinearConstraint] | None
 ```
 
 The `InternalOptimizeResult` formalizes the current dictionary solution:
@@ -1347,9 +1347,9 @@ following advantages and disadvantages:
 - Easier for beginners as no subtle concepts (such as the difference between instance
   and class variables) are involved
 - Very easy way to provide default values for some of the collected variables
-- Every user of estimagic is familiar with `mark` decorators
+- Every user of optimagic is familiar with `mark` decorators
 - Autocomplete while filling out the arguments of the mark decorator
-- Very clear visual separation of algorithm options and attributes estimagic needs to
+- Very clear visual separation of algorithm options and attributes optimagic needs to
   know about.
 
 **Advantages of class variable approach**
@@ -1388,7 +1388,7 @@ but has not produced convincing results in benchmarks.
 **Things we want to keep**
 
 - `params` and function values can be pytrees
-- support for estimagic `criterion` functions (now functions that return
+- support for optimagic `criterion` functions (now functions that return
   `FunctionValue`)
 - Many optional arguments to influence the details of the numerical differentiation
 - Rich output format that helps to get insights on the precision of the numerical
@@ -1490,7 +1490,7 @@ All of these will be very simple wrappers around `first_derivative` and
 
 #### Current situation
 
-As other functions in estimagic, `get_benchmark_problems` follows a design where
+As other functions in optimagic, `get_benchmark_problems` follows a design where
 behavior can be switched on by a bool and configured by an options dictionary. The
 following arguments are related to this:
 
@@ -1713,12 +1713,12 @@ the realease of `0.5.0`.
 
 - Returning a `dict` in the objective function io deprecated. Return `FunctionValue`
   instead. In addition, likelihood and least-squares problems need to be decorated with
-  `em.mark.likelihood` and `em.mark_least_squares`.
+  `om.mark.likelihood` and `om.mark_least_squares`.
 - The arguments `lower_bounds`, `upper_bounds`, `soft_lower_bounds` and
   `soft_upper_bounds` are deprecated. Use `bounds` instead. `bounds` can be
-  `estimagic.Bounds` or `scipy.optimize.Bounds` objects.
+  `optimagic.Bounds` or `scipy.optimize.Bounds` objects.
 - Specifying constraints with dictionaries is deprecated. Use the corresponding subclass
-  of `em.constraints.Constraint` instead. In addition, all selection methods except for
+  of `om.constraints.Constraint` instead. In addition, all selection methods except for
   `selector` are deprecated.
 - The `covariance` constraint is renamed to `FlatCovConstraint` and the `sdcorr`
   constraint is renamed to `FlatSdcorrConstraint` to prepare the introduction of more

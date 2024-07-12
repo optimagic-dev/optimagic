@@ -51,7 +51,7 @@ def first_derivative(
     array. Then the Jacobian of that function is calculated.
 
     The parameters and the function output can be estimagic-pytrees; for more details on
-    estimagi-pytrees see :ref:`eeppytrees`. By default the resulting Jacobian will be
+    estimagi-pytrees see :ref:`eppytrees`. By default the resulting Jacobian will be
     returned as a block-pytree.
 
     For a detailed description of all options that influence the step size as well as an
