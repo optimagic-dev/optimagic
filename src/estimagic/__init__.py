@@ -7,6 +7,7 @@ from estimagic.estimation_table import (
     render_html,
     render_latex,
 )
+from estimagic.lollipop_plot import lollipop_plot
 
 from optimagic import minimize as _minimize
 from optimagic import maximize as _maximize

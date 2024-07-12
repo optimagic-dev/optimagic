@@ -36,8 +36,8 @@ dependencies:
   - mypy  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
+  - furo  # dev, docs
   - pip:  # dev, tests, docs
-      - furo  # dev, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
       - black  # dev

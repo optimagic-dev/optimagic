@@ -3,6 +3,6 @@
 # Batch evaluators
 
 ```{eval-rst}
-.. automodule:: estimagic.batch_evaluators
+.. automodule:: optimagic.batch_evaluators
     :members:
 ```
