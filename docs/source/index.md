@@ -12,11 +12,18 @@
 <br>
 <br>
 
-`optimagic` is a Python package for nonlinear optimization with or without constraints.
-It is particularly suited to solve difficult nonlinear estimation problems. On top, it
-provides functionality to perform statistical inference on estimated parameters.
+*optimagic* is a Python package for nonlinear optimization with or without constraints.
+It is a unified interface to optimizers from SciPy, NlOpt and many other Python
+packages.
 
-If you want to learn more about optimagic, dive into one of the following topics
+*optimagic*'s `minimize` function works just like SciPy's, so you don't have to adjust
+your code. You simply get more optimizers for free. On top you get powerful diagnostic
+tools, parallel numerical derivatives and more. If you want to see what\` *optimagic*
+can do, check out this [tutorial](tutorials/optimization_overview.ipynb)
+
+*optimagic* was formerly called *estimagic*, because it also provides functionality to
+perform statistical inference on estimated parameters. *estimagic* is now a subpackage
+of *optimagic*, which is documented [here](estimagic).
 
 `````{grid} 1 2 2 2
 ---
@@ -175,29 +182,7 @@ estimagic/index
 installation
 ```
 
-## Highlights
-
-### Optimization
-
-- optimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more. See
-  {ref}`list_of_algorithms`
-- optimagic implements constraints efficiently via reparametrization, so you can solve
-  constrained problems with any optimzer that supports bounds. See {ref}`constraints`
-- The parameters of an optimization problem can be arbitrary pytrees. See {ref}`params`.
-- The complete history of parameters and function evaluations can be saved in a database
-  for maximum reproducibility. See [How to use logging]
-- Painless and efficient multistart optimization. See [How to do multistart]
-- The progress of the optimization can be displayed in `criterion_plot` and
-  `params_plot` while the optimization is still running.
-
-### Numerical differentiation
-
-- optimagic can calculate precise numerical derivatives using
-  [Richardson extrapolations](https://en.wikipedia.org/wiki/Richardson_extrapolation).
-- Function evaluations needed for numerical derivatives can be done in parallel with
-  pre-implemented or user provided batch evaluators.
-
-## Acknowledgements
+______________________________________________________________________
 
 We thank all institutions that have funded or supported optimagic (formerly estimagic)
 
@@ -234,6 +219,3 @@ width: 420px
 ______________________________________________________________________
 
 **Useful links for search:** {ref}`genindex` | {ref}`modindex` | {ref}`search`
-
-[how to do multistart]: how_to/how_to_multistart
-[how to use logging]: how_to/how_to_logging

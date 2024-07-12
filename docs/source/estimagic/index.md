@@ -1,3 +1,5 @@
+(estimagic)=
+
 # Estimagic
 
 ```{toctree}
