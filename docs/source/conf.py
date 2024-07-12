@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# estimagic documentation build configuration file, created by
+# optimagic documentation build configuration file, created by
 # sphinx-quickstart on Fri Jan 18 10:59:27 2019.
 #
 # This file is execfile()d with the current directory set to its
@@ -81,7 +81,7 @@ autodoc_mock_imports = [
 
 extlinks = {
     "ghuser": ("https://github.com/%s", "@"),
-    "gh": ("https://github.com/OpenSourceEconomics/estimagic/pulls/%s", "#"),
+    "gh": ("https://github.com/OpenSourceEconomics/optimagic/pulls/%s", "#"),
 }
 
 intersphinx_mapping = {

@@ -12,11 +12,11 @@
 <br>
 <br>
 
-`estimagic` is a Python package for nonlinear optimization with or without constraints.
+`optimagic` is a Python package for nonlinear optimization with or without constraints.
 It is particularly suited to solve difficult nonlinear estimation problems. On top, it
 provides functionality to perform statistical inference on estimated parameters.
 
-If you want to learn more about estimagic, dive into one of the following topics
+If you want to learn more about optimagic, dive into one of the following topics
 
 `````{grid} 1 2 2 2
 ---
@@ -37,7 +37,7 @@ class: stretched-link index-card-link sd-text-primary
 Tutorials
 ```
 
-New users of estimagic should read this first.
+New users of optimagic should read this first.
 
 ````
 
@@ -75,7 +75,7 @@ class: stretched-link index-card-link sd-text-primary
 Installation
 ```
 
-Installation instructions for estimagic and optional dependencies.
+Installation instructions for optimagic and optional dependencies.
 
 ````
 
@@ -133,7 +133,7 @@ class: stretched-link index-card-link sd-text-primary
 API Reference
 ```
 
-Detailed description of the estimagic API.
+Detailed description of the optimagic API.
 
 ````
 
@@ -153,7 +153,7 @@ class: stretched-link index-card-link sd-text-primary
 Videos
 ```
 
-Collection of tutorials, talks, and screencasts on estimagic.
+Collection of tutorials, talks, and screencasts on optimagic.
 
 ````
 
@@ -179,9 +179,9 @@ installation
 
 ### Optimization
 
-- estimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more. See
+- optimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more. See
   {ref}`list_of_algorithms`
-- estimagic implements constraints efficiently via reparametrization, so you can solve
+- optimagic implements constraints efficiently via reparametrization, so you can solve
   constrained problems with any optimzer that supports bounds. See {ref}`constraints`
 - The parameters of an optimization problem can be arbitrary pytrees. See {ref}`params`.
 - The complete history of parameters and function evaluations can be saved in a database
@@ -192,7 +192,7 @@ installation
 
 ### Numerical differentiation
 
-- estimagic can calculate precise numerical derivatives using
+- optimagic can calculate precise numerical derivatives using
   [Richardson extrapolations](https://en.wikipedia.org/wiki/Richardson_extrapolation).
 - Function evaluations needed for numerical derivatives can be done in parallel with
   pre-implemented or user provided batch evaluators.

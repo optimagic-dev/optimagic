@@ -97,7 +97,7 @@ def fides(
 
 
 def _process_fides_res(raw_res, opt):
-    """Create an estimagic results dictionary from the Fides output.
+    """Create an optimagic results dictionary from the Fides output.
 
     Args:
         raw_res (tuple): Tuple containing the Fides result

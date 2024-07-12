@@ -9,8 +9,8 @@ when using `maximize` or `minimize`.
 
 (scipy-algorithms)=
 
-estimagic supports most `scipy` algorithms and scipy is automatically installed when you
-install estimagic.
+optimagic supports most `scipy` algorithms and scipy is automatically installed when you
+install optimagic.
 
 ```{eval-rst}
 .. dropdown::  scipy_lbfgsb
@@ -80,7 +80,7 @@ install estimagic.
     originally implemented by :cite:`Kraft1988`.
 
     .. note::
-        SLSQP's general nonlinear constraints are not supported yet by estimagic.
+        SLSQP's general nonlinear constraints are not supported yet by optimagic.
 
     - **convergence.absolute_criterion_tolerance** (float): Precision goal for the value of
       f in the stopping criterion.
@@ -109,8 +109,8 @@ install estimagic.
     Its popularity is likely due to historic reasons and much larger than its
     properties warrant.
 
-    The argument `initial_simplex` is not supported by estimagic as it is not
-    compatible with estimagic's handling of constraints.
+    The argument `initial_simplex` is not supported by optimagic as it is not
+    compatible with optimagic's handling of constraints.
 
     - **stopping.max_iterations** (int): If the maximum number of iterations is reached, the optimization stops,
       but we do not count this as convergence.
@@ -118,10 +118,10 @@ install estimagic.
       the optimization stops but we do not count this as convergence.
     - **convergence.absolute_params_tolerance** (float): Absolute difference in parameters between iterations
       that is tolerated to declare convergence. As no relative tolerances can be passed to Nelder-Mead,
-      estimagic sets a non zero default for this.
+      optimagic sets a non zero default for this.
     - **convergence.absolute_criterion_tolerance** (float): Absolute difference in the criterion value between
       iterations that is tolerated to declare convergence. As no relative tolerances can be passed to Nelder-Mead,
-      estimagic sets a non zero default for this.
+      optimagic sets a non zero default for this.
     - **adaptive** (bool): Adapt algorithm parameters to dimensionality of problem.
       Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277). scipy's default is False.
 
@@ -148,8 +148,8 @@ install estimagic.
     bi-directional search in each parameter's dimension.
 
     The argument ``direc``, which is the initial set of direction vectors and which
-    is part of the scipy interface is not supported by estimagic because it is
-    incompatible with how estimagic handles constraints.
+    is part of the scipy interface is not supported by optimagic because it is
+    incompatible with how optimagic handles constraints.
 
     - **convergence.relative_params_tolerance (float)**: Stop when the relative movement between parameter
       vectors is smaller than this.
@@ -289,7 +289,7 @@ install estimagic.
   It is derivative-free and supports nonlinear inequality and equality constraints.
 
   .. note::
-      Cobyla's general nonlinear constraints is not supported yet by estimagic.
+      Cobyla's general nonlinear constraints is not supported yet by optimagic.
 
   Scipy's implementation wraps the FORTRAN implementation of the algorithm.
 
@@ -339,8 +339,8 @@ install estimagic.
     - the gradient is not too large, e.g., has a norm less than 1000.
     - The initial guess is reasonably close to the criterion's global minimizer.
 
-    estimagic does not support the ``scale``  nor ``offset`` argument as they are not
-    compatible with the way estimagic handles constraints. It also does not support
+    optimagic does not support the ``scale``  nor ``offset`` argument as they are not
+    compatible with the way optimagic handles constraints. It also does not support
     ``messg_num`` which is an additional way to control the verbosity of the optimizer.
 
     - **func_min_estimate** (float): Minimum function value estimate. Defaults to 0.
@@ -368,13 +368,13 @@ install estimagic.
       It may be increased during the optimization. If too small, it will be set
       to 10.0. By default we use scipy's default.
     - **line_search_severity** (float): Severity of the line search. If < 0 or > 1,
-      set to 0.25. Estimagic defaults to scipy's default.
+      set to 0.25. optimagic defaults to scipy's default.
     - **finitie_difference_precision** (float): Relative precision for finite difference
       calculations. If <= machine_precision, set to sqrt(machine_precision).
-      Estimagic defaults to scipy's default.
+      optimagic defaults to scipy's default.
     - **criterion_rescale_factor** (float): Scaling factor (in log10) used to trigger
       criterion rescaling. If 0, rescale at each iteration. If a large value,
-      never rescale. If < 0, rescale is set to 1.3. Estimagic defaults to scipy's
+      never rescale. If < 0, rescale is set to 1.3. optimagic defaults to scipy's
       default.
 
 
@@ -396,7 +396,7 @@ install estimagic.
         with another local optimizer.
 
     .. note::
-        Its general nonlinear constraints' handling is not supported yet by estimagic.
+        Its general nonlinear constraints' handling is not supported yet by optimagic.
 
     It switches between two implementations depending on the problem definition.
     It is the most versatile constrained minimization algorithm
@@ -576,9 +576,9 @@ install estimagic.
 
     Basin-hopping is a two-phase method that combines a global stepping algorithm with local minimization at each step. Designed to mimic the natural process of energy minimization of clusters of atoms, it works well for similar problems with “funnel-like, but rugged” energy landscapes.
 
-    This is mainly supported for completeness. Consider estimagic's built in multistart
+    This is mainly supported for completeness. Consider optimagic's built in multistart
     optimization for a similar approach that can run multiple optimizations in parallel,
-    supports all local algorithms in estimagic (as opposed to just those from scipy)
+    supports all local algorithms in optimagic (as opposed to just those from scipy)
     and allows for a better visualization of the multistart history.
 
     When provided the derivative is passed to the local minimization method.
@@ -626,7 +626,7 @@ install estimagic.
     Brute force evaluates the criterion at each point and that is why better suited for problems with very few parameters.
 
     The start values are not actually used because the grid is only defined by bounds.
-    It is still necessary for estimagic to infer the number and format of the
+    It is still necessary for optimagic to infer the number and format of the
     parameters.
 
     Due to the parallelization, this algorithm cannot collect a history of parameters
@@ -641,7 +641,7 @@ install estimagic.
       positional argument. Default is None providing no polishing.
     - **n_cores** (int): The number of cores on which the function is evaluated in
       parallel. Default 1.
-    - **batch_evaluator** (str or callable). An estimagic batch evaluator. Default
+    - **batch_evaluator** (str or callable). An optimagic batch evaluator. Default
       'joblib'.
 
 ```
@@ -655,7 +655,7 @@ install estimagic.
 
     Find the global minimum of a multivariate function using differential evolution (DE). DE is a gradient-free method.
 
-    Due to estimagic's general parameter format the integrality and vectorized
+    Due to optimagic's general parameter format the integrality and vectorized
     arguments are not supported.
 
     The algorithm supports the following options:
@@ -706,7 +706,7 @@ install estimagic.
       CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
     - **n_cores** (int): The number of cores on which the function is evaluated in
       parallel. Default 1.
-    - **batch_evaluator** (str or callable). An estimagic batch evaluator. Default
+    - **batch_evaluator** (str or callable). An optimagic batch evaluator. Default
       'joblib'.
 
 ```
@@ -984,7 +984,7 @@ We implement a few algorithms from scratch. They are currently considered experi
       None of the dictionary keys need to be specified by default, but can be.
     - **batch_evaluator** (str or callable): Name of a pre-implemented batch evaluator
       (currently "joblib" and "pathos_mp") or callable with the same interface
-      as the estimagic batch_evaluators. Default is "joblib".
+      as the optimagic batch_evaluators. Default is "joblib".
     - **n_cores (int)**: Number of processes used to parallelize the function
       evaluations. Default is 1.
 
@@ -1091,14 +1091,14 @@ install each of them separately:
 
     The DFO-LS algorithm :cite:`Cartis2018b` is designed to solve the nonlinear
     least-squares minimization problem (with optional bound constraints).
-    Remember to cite :cite:`Cartis2018b` when using DF-OLS in addition to estimagic.
+    Remember to cite :cite:`Cartis2018b` when using DF-OLS in addition to optimagic.
 
     .. math::
 
         \min_{x\in\mathbb{R}^n}  &\quad  f(x) := \sum_{i=1}^{m}r_{i}(x)^2 \\
         \text{s.t.} &\quad  \text{lower_bounds} \leq x \leq \text{upper_bounds}
 
-    The :math:`r_{i}` are called root contributions in estimagic.
+    The :math:`r_{i}` are called root contributions in optimagic.
 
     DFO-LS is a derivative-free optimization algorithm, which means it does not require
     the user to provide the derivatives of f(x) or :math:`r_{i}(x)`, nor does it
@@ -1234,7 +1234,7 @@ install each of them separately:
     minimization problems.
 
     Remember to cite :cite:`Powell2009` and :cite:`Cartis2018` when using pybobyqa in
-    addition to estimagic. If you take advantage of the ``seek_global_optimum`` option,
+    addition to optimagic. If you take advantage of the ``seek_global_optimum`` option,
     cite :cite:`Cartis2018a` additionally.
 
     There are two main situations when using a derivative-free algorithm like BOBYQA
@@ -1344,7 +1344,7 @@ install each of them separately:
 
 ## PYGMO2 Optimizers
 
-Please cite {cite}`Biscani2020` in addition to estimagic when using pygmo. estimagic
+Please cite {cite}`Biscani2020` in addition to optimagic when using pygmo. optimagic
 supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
 
 ```{eval-rst}
@@ -1379,7 +1379,7 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
       number of parameters but at least 64.
     - **batch_evaluator** (str or Callable): Name of a pre-implemented batch
       evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
-      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
+      interface as the optimagic batch_evaluators. See :ref:`batch_evaluators`.
     - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed
@@ -1632,9 +1632,9 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
 
     CMA-ES is one of the most successful algorithm, classified as an Evolutionary
     Strategy, for derivative-free global optimization. The version supported by
-    estimagic is the version described in :cite:`Hansen2006`.
+    optimagic is the version described in :cite:`Hansen2006`.
 
-    In contrast to the pygmo version, estimagic always sets force_bounds to True. This
+    In contrast to the pygmo version, optimagic always sets force_bounds to True. This
     avoids that ill defined parameter values are evaluated.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
@@ -1796,7 +1796,7 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
       parameters but at least 10.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+      optimagic batch_evaluators. See :ref:`batch_evaluators`.
     - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
@@ -1933,7 +1933,7 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     Minimize a scalar function usinng the Grey Wolf Optimizer.
 
     The grey wolf optimizer was proposed by :cite:`Mirjalili2014`. The pygmo
-    implementation that is wrapped by estimagic is pased on the pseudo code provided in
+    implementation that is wrapped by optimagic is pased on the pseudo code provided in
     that paper.
 
     This algorithm is a classic example of a highly criticizable line of search that led
@@ -2071,7 +2071,7 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
 
 ## The Interior Point Optimizer (ipopt)
 
-estimagic's support for the Interior Point Optimizer ({cite}`Waechter2005`,
+optimagic's support for the Interior Point Optimizer ({cite}`Waechter2005`,
 {cite}`Waechter2005a`, {cite}`Waechter2005b`, {cite}`Nocedal2009`) is built on
 [cyipopt](https://cyipopt.readthedocs.io/en/latest/index.html), a Python wrapper for the
 [Ipopt optimization package](https://coin-or.github.io/Ipopt/index.html).
@@ -2111,7 +2111,7 @@ To use ipopt, you need to have
     ipopt accepts a Python `None`.
 
     The following options are not supported:
-      - `num_linear_variables`: since estimagic may reparametrize your problem
+      - `num_linear_variables`: since optimagic may reparametrize your problem
         and this changes the parameter problem, we do not support this option.
       - derivative checks
       - print options.
@@ -3275,7 +3275,7 @@ To use ipopt, you need to have
 
 ## The Fides Optimizer
 
-estimagic supports the
+optimagic supports the
 [Fides Optimizer](https://fides-optimizer.readthedocs.io/en/latest). To use Fides, you
 need to have [the fides package](https://github.com/fides-dev/fides) installed
 (`pip install fides>=0.7.4`, make sure you have at least 0.7.1).
@@ -3300,7 +3300,7 @@ need to have [the fides package](https://github.com/fides-dev/fides) installed
   - **hessian_update_strategy** (str): Hessian Update Strategy to employ. You can provide
     a lowercase or uppercase string or a
     fides.hession_approximation.HessianApproximation class instance. FX, SSM, TSSM and
-    GNSBFGS are not supported by estimagic. The available update strategies are:
+    GNSBFGS are not supported by optimagic. The available update strategies are:
 
       - **bb**: Broydens "bad" method as introduced :cite:`Broyden1965`.
       - **bfgs**: Broyden-Fletcher-Goldfarb-Shanno update strategy.
@@ -3385,10 +3385,10 @@ need to have [the fides package](https://github.com/fides-dev/fides) installed
 
 ## The NLOPT Optimizers (nlopt)
 
-estimagic supports the following [NLOPT](https://nlopt.readthedocs.io/en/latest/)
+optimagic supports the following [NLOPT](https://nlopt.readthedocs.io/en/latest/)
 algorithms. Please add the
 [appropriate citations](https://nlopt.readthedocs.io/en/latest/Citing_NLopt/) in
-addition to estimagic when using an NLOPT algorithm. To install nlopt run
+addition to optimagic when using an NLOPT algorithm. To install nlopt run
 `conda install nlopt`.
 
 ```{eval-rst}

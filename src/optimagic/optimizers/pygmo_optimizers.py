@@ -1201,7 +1201,7 @@ def _minimize_pygmo(
             the algo options that will be passed directly to the pygmo
             algorithms we have the following entries:
             - population_size (int): Population size for genetic algorithms.
-            - batch_evaluator (str or callable): An estimagic batch evaluator,
+            - batch_evaluator (str or callable): An optimagic batch evaluator,
                 default joblib batch evaluator.
             - n_cores (int): Number of cores used for parallel evaluation of
                 the criterion function. Default 1.

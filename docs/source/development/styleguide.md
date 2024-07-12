@@ -125,15 +125,4 @@ Your contribution should fulfill the criteria provided below.
   [Sphinx](https://www.sphinx-doc.org/en/master/) and written in **Markedly Structured
   Text.** How-to guides are usually Jupyter notebooks.
 
-- Purpose of documents. : Our documentation is inspired by the
-  [system](https://documentation.divio.com/) developed by Daniele Procida.
-
-  > - How-to guides are problem-oriented and show how to achieved specific tasks.
-  > - Explanations contain information on theoretical concepts underlying estimagic,
-  >   such as numerical differentiation and moment-based estimation.
-  > - The API Reference section contains auto-generated API reference documentation and
-  >   provides additional details about the implementation.
-
-- Headings. : Only the first letter of a title is capitalized.
-
-- Format. : The code formatting in .md files is ensured by blacken-docs.
+- The documentation follows the [diataxis](https://diataxis.fr) framework.

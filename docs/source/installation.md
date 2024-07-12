@@ -10,16 +10,16 @@ conda config --add channels conda-forge
 ```
 
 ```
-conda install estimagic
+conda install optimagic
 ```
 
 The first line adds conda-forge to your conda channels. This is necessary for conda to
-find all dependencies of estimagic. The second line installs estimagic and its mandatory
+find all dependencies of optimagic. The second line installs optimagic and its mandatory
 dependencies.
 
 ## Installing optional dependencies
 
-Only `scipy` is a mandatory dependency of estimagic. Other algorithms become available
+Only `scipy` is a mandatory dependency of optimagic. Other algorithms become available
 if you install more packages. We make this optional because most of the time you will
 use at least one additional package, but only very rarely will you need all of them.
 

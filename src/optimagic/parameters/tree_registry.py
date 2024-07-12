@@ -1,4 +1,4 @@
-"""Wrapper around pybaum get_registry to tailor it to estimagic."""
+"""Wrapper around pybaum get_registry to tailor it to optimagic."""
 
 from functools import partial
 from itertools import product
@@ -13,7 +13,7 @@ def get_registry(extended=False, data_col="value"):
 
     Special Rules
     -------------
-    If extended is True the registry contains pd.DataFrame. In estimagic a data frame
+    If extended is True the registry contains pd.DataFrame. In optimagic a data frame
     can represent a 1d object with extra information, instead of a 2d object. This is
     only allowed for params data frames, in which case they contain a 'value' column.
     The extra information of such an object can be accessed using the data_col argument.

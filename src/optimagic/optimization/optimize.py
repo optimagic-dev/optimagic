@@ -76,7 +76,7 @@ def maximize(
             or list containing these elements. See :ref:`params` for examples.
         algorithm (str or callable): Specifies the optimization algorithm. For built-in
             algorithms this is a string with the name of the algorithm. Otherwise it can
-            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+            be a callable with the optimagic algorithm interface. See :ref:`algorithms`.
         lower_bounds (pytree): A pytree with the same structure as params with lower
             bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
             bound.
@@ -277,7 +277,7 @@ def minimize(
             or list containing these elements. See :ref:`params` for examples.
         algorithm (str or callable): Specifies the optimization algorithm. For built-in
             algorithms this is a string with the name of the algorithm. Otherwise it can
-            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+            be a callable with the optimagic algorithm interface. See :ref:`algorithms`.
         lower_bounds (pytree): A pytree with the same structure as params with lower
             bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
             bound.

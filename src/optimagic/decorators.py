@@ -165,7 +165,7 @@ def mark_minimizer(
     is_global=False,
     disable_history=False,
 ):
-    """Decorator to mark a function as internal estimagic minimizer and add information.
+    """Decorator to mark a function as internal optimagic minimizer and add information.
 
     Args:
         func (callable): The function to be decorated

@@ -1,6 +1,6 @@
 """Functions to read data from the database used for logging.
 
-The functions in the module are meant for end users of estimagic. They do not require
+The functions in the module are meant for end users of optimagic. They do not require
 any knowledge of databases.
 
 When using them internally, make sure to supply a database to path_or_database.

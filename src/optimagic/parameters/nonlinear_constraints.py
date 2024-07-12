@@ -114,7 +114,7 @@ def _process_nonlinear_constraint(
         The constraint function is written to be evaluated on a selection of the
         external parameters. The optimizer, however, only works on internal parameters.
         These can be significantly different from the external parameters, due to
-        estimagic's reparametrization features. In this function we compute the Jacobian
+        optimagic's reparametrization features. In this function we compute the Jacobian
         of the constraint at the internal parameters using information on the Jacobian
         of the constraint at the selected external parameters.
 

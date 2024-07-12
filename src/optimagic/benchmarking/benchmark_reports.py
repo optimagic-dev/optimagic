@@ -12,10 +12,10 @@ def convergence_report(
     """Create a DataFrame with convergence information for a set of problems.
 
     Args:
-        problems (dict): estimagic benchmarking problems dictionary. Keys are the
+        problems (dict): optimagic benchmarking problems dictionary. Keys are the
             problem names. Values contain information on the problem, including the
             solution value.
-        results (dict): estimagic benchmarking results dictionary. Keys are
+        results (dict): optimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
@@ -64,10 +64,10 @@ def rank_report(
     """Create a DataFrame with rank information for a set of problems.
 
     Args:
-        problems (dict): estimagic benchmarking problems dictionary. Keys are the
+        problems (dict): optimagic benchmarking problems dictionary. Keys are the
             problem names. Values contain information on the problem, including the
             solution value.
-        results (dict): estimagic benchmarking results dictionary. Keys are
+        results (dict): optimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
@@ -129,7 +129,7 @@ def traceback_report(problems, results, return_type="dataframe"):
     """Create traceback report for all problems that have not been solved.
 
     Args:
-        results (dict): estimagic benchmarking results dictionary. Keys are
+        results (dict): optimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
@@ -203,7 +203,7 @@ def _get_success_info(results, converged_info):
     """Create a DataFrame with information on whether an algorithm succeeded or not.
 
     Args:
-        results (dict): estimagic benchmarking results dictionary. Keys are
+        results (dict): optimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.

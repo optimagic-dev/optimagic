@@ -29,8 +29,8 @@ def _tree_equal_numpy_leaves(tree1, tree2):
     tree_equal(tree1, tree2, equality_checkers=equality_checkers)
 
 
-def _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax=None):
-    """Computes first and second derivative using estimagic and jax.
+def _compute_testable_optimagic_and_jax_derivatives(func, params, func_jax=None):
+    """Computes first and second derivative using optimagic and jax.
 
     Then converts leaves of jax output to numpy so that we can use numpy.testing. For
     higher dimensional output we need to define two function, one with numpy array
@@ -39,15 +39,15 @@ def _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax=None)
     """
     func_jax = func if func_jax is None else func_jax
 
-    estimagic_jac = first_derivative(func, params)["derivative"]
+    optimagic_jac = first_derivative(func, params)["derivative"]
     jax_jac = jax.jacobian(func_jax)(params)
 
-    estimagic_hess = second_derivative(func, params)["derivative"]
+    optimagic_hess = second_derivative(func, params)["derivative"]
     jax_hess = jax.hessian(func_jax)(params)
 
     out = {
-        "jac": {"estimagic": estimagic_jac, "jax": jax_jac},
-        "hess": {"estimagic": estimagic_hess, "jax": jax_hess},
+        "jac": {"optimagic": optimagic_jac, "jax": jax_jac},
+        "hess": {"optimagic": optimagic_hess, "jax": jax_hess},
     }
     return out
 
@@ -59,9 +59,9 @@ def test_scalar_input_scalar_output():
 
     params = 1.0
 
-    result = _compute_testable_estimagic_and_jax_derivatives(func, params)
-    _tree_equal_numpy_leaves(result["jac"]["estimagic"], result["jac"]["jax"])
-    _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
+    result = _compute_testable_optimagic_and_jax_derivatives(func, params)
+    _tree_equal_numpy_leaves(result["jac"]["optimagic"], result["jac"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["optimagic"], result["hess"]["jax"])
 
 
 @pytest.mark.jax()
@@ -71,9 +71,9 @@ def test_array_input_scalar_output():
 
     params = np.array([1.0, 2, 3])
 
-    result = _compute_testable_estimagic_and_jax_derivatives(func, params)
-    _tree_equal_numpy_leaves(result["jac"]["estimagic"], result["jac"]["jax"])
-    _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
+    result = _compute_testable_optimagic_and_jax_derivatives(func, params)
+    _tree_equal_numpy_leaves(result["jac"]["optimagic"], result["jac"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["optimagic"], result["hess"]["jax"])
 
 
 @pytest.mark.jax()
@@ -83,9 +83,9 @@ def test_dict_input_scalar_output():
 
     params = {"a": 1.0, "b": 2.0}
 
-    result = _compute_testable_estimagic_and_jax_derivatives(func, params)
-    _tree_equal_numpy_leaves(result["jac"]["estimagic"], result["jac"]["jax"])
-    _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
+    result = _compute_testable_optimagic_and_jax_derivatives(func, params)
+    _tree_equal_numpy_leaves(result["jac"]["optimagic"], result["jac"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["optimagic"], result["hess"]["jax"])
 
 
 @pytest.mark.jax()
@@ -98,9 +98,9 @@ def test_array_dict_input_scalar_output():
         "b": np.arange(9, dtype=np.float64).reshape(3, 3),
     }
 
-    result = _compute_testable_estimagic_and_jax_derivatives(func, params)
-    _tree_equal_numpy_leaves(result["jac"]["estimagic"], result["jac"]["jax"])
-    _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
+    result = _compute_testable_optimagic_and_jax_derivatives(func, params)
+    _tree_equal_numpy_leaves(result["jac"]["optimagic"], result["jac"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["optimagic"], result["hess"]["jax"])
 
 
 @pytest.mark.jax()
@@ -113,9 +113,9 @@ def test_array_input_array_output():
 
     params = np.array([1.0, 2, 3])
 
-    result = _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax)
-    _tree_equal_numpy_leaves(result["jac"]["estimagic"], result["jac"]["jax"])
-    _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
+    result = _compute_testable_optimagic_and_jax_derivatives(func, params, func_jax)
+    _tree_equal_numpy_leaves(result["jac"]["optimagic"], result["jac"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["optimagic"], result["hess"]["jax"])
 
 
 @pytest.mark.jax()
@@ -128,9 +128,9 @@ def test_array_dict_input_array_output():
 
     params = {"a": np.array([1.0, 2, 3]), "b": 2.0}
 
-    result = _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax)
-    _tree_equal_numpy_leaves(result["jac"]["estimagic"], result["jac"]["jax"])
-    _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
+    result = _compute_testable_optimagic_and_jax_derivatives(func, params, func_jax)
+    _tree_equal_numpy_leaves(result["jac"]["optimagic"], result["jac"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["optimagic"], result["hess"]["jax"])
 
 
 @pytest.mark.jax()
@@ -145,6 +145,6 @@ def test_array_dict_input_dict_output():
 
     params = {"a": np.array([1.0, 2, 3]), "b": 2.0}
 
-    result = _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax)
-    _tree_equal_numpy_leaves(result["jac"]["estimagic"], result["jac"]["jax"])
-    _tree_equal_numpy_leaves(result["hess"]["estimagic"], result["hess"]["jax"])
+    result = _compute_testable_optimagic_and_jax_derivatives(func, params, func_jax)
+    _tree_equal_numpy_leaves(result["jac"]["optimagic"], result["jac"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["optimagic"], result["hess"]["jax"])

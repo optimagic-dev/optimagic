@@ -33,7 +33,7 @@ class DataBase:
 def load_database(path_or_database, fast_logging=False):
     """Load or create a database from a path and configure it for our needs.
 
-    This is the only acceptable way of loading or creating a database in estimagic!
+    This is the only acceptable way of loading or creating a database in optimagic!
 
     Args:
         path_or_database (str or pathlib.Path): Path to the database or DataBase.

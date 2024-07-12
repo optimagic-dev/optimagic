@@ -796,7 +796,7 @@ def _get_nlopt_constraints(constraints, filter_type):
 def _internal_to_nlopt_constaint(c):
     """Sign flip description:
 
-    In estimagic, inequality constraints are internally defined as g(x) >= 0. NLOPT uses
+    In optimagic, inequality constraints are internally defined as g(x) >= 0. NLOPT uses
     h(x) <= 0, which is why we need to flip the sign.
 
     """

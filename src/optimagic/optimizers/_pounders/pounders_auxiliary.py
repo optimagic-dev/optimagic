@@ -426,7 +426,7 @@ def add_geomtery_points_to_make_main_model_fully_linear(
             parameter vector. Equal to 1 if not provided by the user.
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
-            as the estimagic batch_evaluators.
+            as the optimagic batch_evaluators.
         n_cores (int): Number of processes used to parallelize the function
             evaluations.
 

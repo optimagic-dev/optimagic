@@ -49,7 +49,7 @@ def tao_pounders(
             "The 'tao_pounders' algorithm requires the petsc4py package to be "
             "installed. If you are using Linux or MacOS, install the package with "
             "'conda install -c conda-forge petsc4py. The package is not available on "
-            "Windows. Windows users can use estimagics 'pounders' algorithm instead."
+            "Windows. Windows users can use optimagics 'pounders' algorithm instead."
         )
 
     first_eval = criterion(x)

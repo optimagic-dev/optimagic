@@ -3,6 +3,6 @@
 # Utility functions
 
 ```{eval-rst}
-.. automodule:: estimagic.utilities
+.. automodule:: optimagic.utilities
     :members:
 ```

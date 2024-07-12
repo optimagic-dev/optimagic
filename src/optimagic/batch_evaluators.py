@@ -1,7 +1,7 @@
 """A collection of batch evaluators for process based parallelism.
 
 All batch evaluators have the same interface and any function with the same interface
-can be used used as batch evaluator in estimagic.
+can be used used as batch evaluator in optimagic.
 
 """
 

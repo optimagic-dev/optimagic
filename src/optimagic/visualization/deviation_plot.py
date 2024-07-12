@@ -29,10 +29,10 @@ def deviation_plot(
     best  value.
 
     Args:
-        problems (dict): estimagic benchmarking problems dictionary. Keys are the
+        problems (dict): optimagic benchmarking problems dictionary. Keys are the
             problem names. Values contain information on the problem, including the
             solution value.
-        results (dict): estimagic benchmarking results dictionary. Keys are
+        results (dict): optimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.

@@ -29,7 +29,7 @@ def internal_criterion_and_derivative_template(
     """Template for the internal criterion and derivative function.
 
     This function forms the basis of all functions that define the optimization problem
-    and are passed to the internal optimizers in estimagic. I.e. the criterion,
+    and are passed to the internal optimizers in optimagic. I.e. the criterion,
     derivative and criterion_and_derivative functions.
 
     Most of the arguments of this function will be partialled in before the functions

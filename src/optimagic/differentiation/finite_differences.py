@@ -144,7 +144,7 @@ def _calculate_outer_product_steps(signed_steps, n_steps, dim_x):
 
     Args:
         signed_steps (np.ndarray): Square array with either pos or neg steps returned
-            by :func:`~estimagic.differentiation.generate_steps.generate_steps` function
+            by :func:`~optimagic.differentiation.generate_steps.generate_steps` function
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.

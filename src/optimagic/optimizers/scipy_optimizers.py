@@ -12,12 +12,12 @@ The following arguments are not supported as part of ``algo_options``:
 
 - ``disp``
     If set to True would print a convergence message.
-    In estimagic it's always set to its default False.
-    Refer to estimagic's result dictionary's "success" entry for the convergence
+    In optimagic it's always set to its default False.
+    Refer to optimagic's result dictionary's "success" entry for the convergence
     message.
 - ``return_all``
     If set to True, a list of the best solution at each iteration is returned.
-    In estimagic it's always set to its default False.
+    In optimagic it's always set to its default False.
 - ``tol``
     This argument of minimize (not an options key) is passed as different types of
     tolerance (gradient, parameter or criterion, as well as relative or absolute)

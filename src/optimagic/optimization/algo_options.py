@@ -124,14 +124,14 @@ STOPPING_MAX_ITERATIONS = 1_000_000
 """
 
 CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
-"""float: absolute criterion tolerance estimagic requires if no other stopping
+"""float: absolute criterion tolerance optimagic requires if no other stopping
 criterion apart from max iterations etc. is available
 this is taken from scipy (SLSQP's value, smaller than Nelder-Mead).
 
 """
 
 CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 1e-08
-"""float: The absolute parameter tolerance estimagic requires if no other stopping
+"""float: The absolute parameter tolerance optimagic requires if no other stopping
 criterion apart from max iterations etc. is available. This is taken from pybobyqa.
 
 """

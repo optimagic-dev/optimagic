@@ -243,7 +243,7 @@ def internal_solve_pounders(
             subproblem ("gqtpar").
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or callable with the same interface
-            as the estimagic batch_evaluators.
+            as the optimagic batch_evaluators.
         n_cores (int): Number of processes used to parallelize the function
             evaluations. Default is 1.
 

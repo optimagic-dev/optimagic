@@ -68,7 +68,7 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
             if "value" in constr and not np.allclose(subset, constr["value"]):
                 explanation = (
                     "Fixing parameters to different values than their start values "
-                    "was allowed in earlier versions of estimagic but is "
+                    "was allowed in earlier versions of optimagic but is "
                     "forbidden now. "
                 )
                 report.append(_msg(explanation))

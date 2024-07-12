@@ -1,6 +1,6 @@
 """Functions to generate, load, write to and read from databases.
 
-The functions here are meant for internal use in estimagic, e.g. for logging during
+The functions here are meant for internal use in optimagic, e.g. for logging during
 the optimization and reading from the database. They do not require
 detailed knowledge of databases in general but some knowledge of the schema
 (e.g. table names) of the database we use for logging.
