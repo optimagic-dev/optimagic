@@ -1,4 +1,4 @@
-# API
+# estimagic API
 
 ```{eval-rst}
 .. currentmodule:: estimagic
