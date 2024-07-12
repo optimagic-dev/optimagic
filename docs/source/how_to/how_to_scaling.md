@@ -38,7 +38,7 @@ improved by simply dividing all parameter vectors by the start parameters.
 **How to specify this scaling:**
 
 ```python
-import estimagic as em
+import optimagic as om
 
 
 def sphere(params):
@@ -49,7 +49,7 @@ start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
 start_params["lower_bound"] = 0
 start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-res = em.minimize(
+res = om.minimize(
     criterion=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
@@ -85,7 +85,7 @@ changes become the same.
 **Disadvantages:**
 
 - Only works if all parameters have bounds
-- This prohibits some kinds of other constraints in estimagic
+- This prohibits some kinds of other constraints in optimagic
 
 **How to specify this scaling:**
 
@@ -98,7 +98,7 @@ start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
 start_params["lower_bound"] = 0
 start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-res = em.minimize(
+res = om.minimize(
     criterion=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
@@ -133,7 +133,7 @@ start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
 start_params["lower_bound"] = 0
 start_params["upper_bound"] = 2 * np.arange(5) + 1
 
-res = em.minimize(
+res = om.minimize(
     criterion=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
@@ -163,4 +163,4 @@ Scaling is disabled by default. If enabled, but no `scaling_options` are provide
 use the `"start_values"` method with a `"clipping_value"` of 0.1. This is the default
 method because it can be used for all optimization problems and has low computational
 cost. We strongly recommend you read the above guidelines and choose the method that is
-most suitable for your problem.
+most suitable for your problom.

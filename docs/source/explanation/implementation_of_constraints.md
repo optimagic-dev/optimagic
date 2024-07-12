@@ -2,7 +2,7 @@
 
 # How constraints are implemented
 
-Most of the optimizers wrapped in estimagic cannot deal natively with anything but box
+Most of the optimizers wrapped in optimagic cannot deal natively with anything but box
 constraints. So the problem they can solve is:
 
 $$
@@ -23,9 +23,9 @@ box constraints, into constrained optimizers: Reparametrization and penalties. B
 explain what both approaches are, why we chose the reparametrization approach over
 penalties, and which reparametrizations we are using for each type of constraint.
 
-In this text, we focus on constraints that can be solved by estimagic via bijective and
+In this text, we focus on constraints that can be solved by optimagic via bijective and
 differentiable transformations. General nonlinear constraints do not fall into this
-category. If you want to use nonlinear constraints, you can still do so, but estimagic
+category. If you want to use nonlinear constraints, you can still do so, but optimagic
 will simply pass the constraints to your chosen optimizer. See {ref}`constraints` for
 more details.
 
@@ -67,14 +67,14 @@ g(\tilde{x}) = (\tilde{x}, 5 - \tilde{x})
 $$
 
 Typically, users implement such reparametrizations manually and write functions to
-convert between the parameters of interest and their reparametrized version. Estimagic
+convert between the parameters of interest and their reparametrized version. optimagic
 does this for you, for a large number of constraints that are typically used in
 econometric applications.
 
 For this approach to be efficient, it is crucial that the reparametrizations preserve
 desirable properties of the original problem. In particular, the mapping $g$ should be
 differentiable and if possible linear. Moreover, the dimensionality of $\tilde{x}$
-should be chosen as small as possible. Estimagic only implements constraints that can be
+should be chosen as small as possible. optimagic only implements constraints that can be
 enforced with differentiable transformations and always achieves full dimensionality
 reduction.
 
@@ -89,7 +89,7 @@ While the generality and conceptual simplicity of this approach is attractive, i
 has its drawbacks. Applying penalties in a naive way can introduce kinks,
 discontinuities, and even local optima into the penalized criterion.
 
-## What estimagic does
+## What optimagic does
 
 We chose to implement constraints via reparametrizations for the following reasons:
 

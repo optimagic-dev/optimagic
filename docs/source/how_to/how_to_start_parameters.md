@@ -2,13 +2,13 @@
 
 # How to specify `params`
 
-`params` is the first argument of any criterion function in estimagic. It collects all
+`params` is the first argument of any criterion function in optimagic. It collects all
 the parameters to estimate, optimize, or differentiate over. In many optimization
-libraries, `params` must be a one-dimensional numpy array. In estimagic, it can be an
+libraries, `params` must be a one-dimensional numpy array. In optimagic, it can be an
 arbitrary pytree (think nested dictionary) containing numbers, arrays, pandas.Series,
 and/or pandas.DataFrames.
 
-Below, we show a few examples of what is possible in estimagic and discuss the
+Below, we show a few examples of what is possible in optimagic and discuss the
 advantages and drawbacks of each of them.
 
 Again, we use the simple `sphere` function you know from other tutorials as an example.
@@ -29,14 +29,14 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
 
     .. code-block:: python
 
-        import estimagic as em
+        import optimagic as om
 
 
         def sphere(params):
             return params @ params
 
 
-        em.minimize(
+        om.minimize(
             criterion=sphere,
             params=np.arange(3),
             algorithm="scipy_lbfgsb",
@@ -47,7 +47,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
 ```{eval-rst}
 .. tabbed:: DataFrame
 
-    Originally, pandas DataFrames were the mandatory format for ``params`` in estimagic.
+    Originally, pandas DataFrames were the mandatory format for ``params`` in optimagic.
     They are still highly recommended and have a few special features. For example,
     they allow to bundle information on start parameters and bounds together into one
     data structure.
@@ -65,7 +65,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
             index=["a", "b", "c"],
         )
 
-        em.minimize(
+        om.minimize(
             criterion=sphere,
             params=params,
             algorithm="scipy_lbfgsb",
@@ -81,8 +81,6 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     - You can bundle information on bounds and values in one place.
     - It is easy to compare two params vectors for equality.
 
-    Check out our `Ordered Logit Example <../../getting_started/estimation/first_likelihood_estimation_with_estimagic.ipynb>`_,
-    so you see one small params DataFrame in action.
 
     If you are sure you won't have bounds on your parameter, you can also use a
     pandas.Series instead of a pandas.DataFrame.
@@ -104,7 +102,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
             return params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
 
 
-        res = em.minimize(
+        res = om.minimize(
             criterion=sphere,
             params={"a": 0, "b": 1, "c": pd.Series([2, 3, 4])},
             algorithm="scipy_neldermead",
@@ -114,7 +112,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     groups of parameters. They are also a good choice if you calculate derivatives
     with JAX.
 
-    While estimagic won't stop you, don't go too far! Having parameters in very deeply
+    While optimagic won't stop you, don't go too far! Having parameters in very deeply
     nested dictionaries makes it hard to visualize results and/or even to compare two
     estimation results.
 
@@ -132,7 +130,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
             return params**2
 
 
-        em.minimize(
+        om.minimize(
             criterion=sphere,
             params=3,
             algorithm="scipy_lbfgsb",

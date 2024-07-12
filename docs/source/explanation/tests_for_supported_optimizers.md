@@ -1,6 +1,6 @@
 # How supported optimization algorithms are tested
 
-estimagic provides a unified interface that supports a large number of optimization
+optimagic provides a unified interface that supports a large number of optimization
 algorithms from different libraries. Additionally, it allows putting constraints on the
 optimization problem. To test the external interface of all supported algorithms, we
 consider different criterion (benchmark) functions and test each algorithm with every
@@ -42,7 +42,7 @@ for rotated hyper ellipsoid, we implement the following functions:
 - rotated_hyper_ellipsoid_criterion_and_gradient
 
 These criterion functions are specified in the `examples` directory. For an overview of
-all constraints supported in estimagic, please see [this how-to guide].
+all constraints supported in optimagic, please see [this how-to guide].
 
 We write several test functions, each corresponding to the case of one constraint. Given
 the constraint, the test function considers all possible combinations of the algorithm,

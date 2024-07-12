@@ -4,7 +4,7 @@
 
 ## Constraints vs bounds
 
-Estimagic distinguishes between bounds and constraints. Bounds are lower and upper
+optimagic distinguishes between bounds and constraints. Bounds are lower and upper
 bounds for parameters. In the literature, they are sometimes called box constraints.
 Bounds are specified as `lower_bounds` and `upper_bounds` argument to `maximize` and
 `minimize`.
@@ -26,14 +26,14 @@ parameters) can even be used with optimizers that do not support bounds.
 ## Example criterion function
 
 Let's look at a variation of the sphere function to illustrate what kinds of constraints
-you can impose and how you specify them in estimagic:
+you can impose and how you specify them in optimagic:
 
 ```{eval-rst}
 
 .. code-block:: python
 
     >>> import numpy as np
-    >>> import estimagic as em
+    >>> import optimagic as om
     >>> def criterion(params):
     ...     offset = np.linspace(1, 0, len(params))
     ...     x = params - offset
@@ -47,7 +47,7 @@ The unconstrained optimum of a six-dimensional version of this problem is:
 
 .. code-block:: python
 
-    >>> res = em.minimize(
+    >>> res = om.minimize(
     ...    criterion=criterion,
     ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     ...    algorithm="scipy_lbfgsb",
@@ -63,7 +63,7 @@ criterion function in a additively separable way.
 ## Types of constraints
 
 Below, we show a very simple example of each type of constraint implemented in
-estimagic. For each constraint, we will select a subset of the parameters on which the
+optimagic. For each constraint, we will select a subset of the parameters on which the
 constraint is imposed via the "loc" key. Generalizations for selecting subsets of
 `params` that are not a flat numpy array are explained in the next section.
 
@@ -77,7 +77,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
         ...    algorithm="scipy_lbfgsb",
@@ -104,7 +104,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
@@ -143,7 +143,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
@@ -175,7 +175,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
@@ -200,7 +200,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
@@ -225,7 +225,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.array([0.3, 0.2, 0.25, 0.25, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
@@ -256,7 +256,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
@@ -269,12 +269,12 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     >>> res.params.round(3)
     array([ 1.006,  0.784,  0.61 ,  0.4  ,  0.2  , -0.   ])
 
-    We can now use one of estimagic's utility functions to actually build the covariance
+    We can now use one of optimagic's utility functions to actually build the covariance
     matrix out of the first three parameters:
 
     .. code-block:: python
 
-        >>> from estimagic.utilities import cov_params_to_matrix
+        >>> from optimagic.utilities import cov_params_to_matrix
         >>> cov_params_to_matrix(res.params[:3]).round(2) # doctest: +NORMALIZE_WHITESPACE
         array([[1.01, 0.78],
                [0.78, 0.61]])
@@ -294,7 +294,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
@@ -308,12 +308,12 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     >>> res.params.round(3)
     array([ 1. ,  0.8,  0.6,  0.4,  0.2, -0. ])
 
-    We can now use one of estimagic's utility functions to actually build the standard
+    We can now use one of optimagic's utility functions to actually build the standard
     deviations and the correlation matrix:
 
     .. code-block:: python
 
-        >>> from estimagic.utilities import sdcorr_params_to_sds_and_corr
+        >>> from optimagic.utilities import sdcorr_params_to_sds_and_corr
         >>> sd, corr = sdcorr_params_to_sds_and_corr(res.params[:3])
         >>> sd.round(2)
         array([1. , 0.8])
@@ -341,7 +341,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
@@ -387,7 +387,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     .. code-block:: python
 
-        >>> res = em.minimize(
+        >>> res = om.minimize(
         ...    criterion=criterion,
         ...    params=np.ones(6),
         ...    algorithm="scipy_slsqp",
@@ -421,7 +421,7 @@ constraints simultaneously, simple pass in a list of constraints. For example:
 
 .. code-block:: python
 
-    >>> res = em.minimize(
+    >>> res = om.minimize(
     ...    criterion=criterion,
     ...    params=np.ones(6),
     ...    algorithm="scipy_lbfgsb",
@@ -492,7 +492,7 @@ Below we show how to use each of these selection methods in simple examples
 
     .. code-block:: python
 
-        res = em.minimize(
+        res = om.minimize(
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
@@ -500,7 +500,7 @@ Below we show how to use each of these selection methods in simple examples
         )
 
     The value corresponding to ``"loc"`` can be anything you would pass to pandas'
-    ``DataFrame.loc`` method, too. So, if you know pandas, imposing constraints in estimagic
+    ``DataFrame.loc`` method, too. So, if you know pandas, imposing constraints in optimagic
     via ``"loc"`` should feel already familiar.
     Imposing constraints this way can be extremely powerful
     if you have a well designed MultiIndex, as you can easily select groups of parameters
@@ -535,7 +535,7 @@ Below we show how to use each of these selection methods in simple examples
 
     .. code-block:: python
 
-        res = em.minimize(
+        res = om.minimize(
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
@@ -543,7 +543,7 @@ Below we show how to use each of these selection methods in simple examples
         )
 
     The value corresponding to ``"query"`` can be anything you would pass to pandas'
-    ``DataFrame.query`` method, too. So, if you know pandas, imposing constraints in estimagic
+    ``DataFrame.query`` method, too. So, if you know pandas, imposing constraints in optimagic
     via ``"query"`` should feel just the same.
 
 ```
@@ -566,7 +566,7 @@ Below we show how to use each of these selection methods in simple examples
 
     .. code-block:: python
 
-        res = em.minimize(
+        res = om.minimize(
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
@@ -586,7 +586,7 @@ Below we show how to use each of these selection methods in simple examples
             return params["b"]["d"]
 
 
-        res = em.minimize(
+        res = om.minimize(
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",

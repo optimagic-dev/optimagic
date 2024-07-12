@@ -5,10 +5,10 @@
 ## The *algorithm* argument
 
 The `algorithm` argument can either be a string with the name of an algorithm that is
-implemented in estimagic, or a function that fulfills the interface laid out in
+implemented in optimagic, or a function that fulfills the interface laid out in
 {ref}`internal_optimizer_interface`.
 
-Which algorithms are available in estimagic depends on the packages a user has
+Which algorithms are available in optimagic depends on the packages a user has
 installed. We list all supported algorithms in {ref}`list_of_algorithms`.
 
 ## The *algo_options* argument

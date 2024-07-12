@@ -1,20 +1,20 @@
 (internal_optimizer_interface)=
 
-# Internal optimizers for estimagic
+# Internal optimizers for optimagic
 
-estimagic provides a large collection of optimization algorithm that can be used by
+optimagic provides a large collection of optimization algorithm that can be used by
 passing the algorithm name as `algorithm` into `maximize` or `minimize`. Advanced users
-can also use estimagic with their own algorithm, as long as it conforms with the
+can also use optimagic with their own algorithm, as long as it conforms with the
 internal optimizer interface.
 
-The advantages of using the algorithm with estimagic over using it directly are:
+The advantages of using the algorithm with optimagic over using it directly are:
 
-- estimagic turns an unconstrained optimizer into constrained ones.
+- optimagic turns an unconstrained optimizer into constrained ones.
 - You can use logging.
 - You get great error handling for exceptions in the criterion function or gradient.
 - You get a parallelized and customizable numerical gradient if the user did not provide
   a closed form gradient.
-- You can compare your optimizer with all the other estimagic optimizers by changing
+- You can compare your optimizer with all the other optimagic optimizers by changing
   only one line of code.
 
 All of this functionality is achieved by transforming a more complicated user provided
@@ -28,7 +28,7 @@ few conditions. In our experience, it is not hard to wrap any optimizer into thi
 interface. The mandatory conditions for an internal optimizer function are:
 
 1. It is decorated with the `mark_minimizer` decorator and thus carries information that
-   tells estimagic how to use the internal optimizer.
+   tells optimagic how to use the internal optimizer.
 
 1. It uses the standard names for the arguments that describe the optimization problem:
 
@@ -78,8 +78,8 @@ Since some optimizers support many tuning parameters we group some of them by th
 part of their name (e.g. all convergence criteria names start with `convergence`). See
 {ref}`list_of_algorithms` for the signatures of the provided internal optimizers.
 
-The preferred default values can be imported from `estimagic.optimization.algo_options`
-which are documented in {ref}`algo_options`. If you add a new optimizer to estimagic you
+The preferred default values can be imported from `optimagic.optimization.algo_options`
+which are documented in {ref}`algo_options`. If you add a new optimizer to optimagic you
 should only deviate from them if you have good reasons.
 
 Note that a complete harmonization is not possible nor desirable, because often
@@ -90,7 +90,7 @@ the exact meaning of all options for all optimizers.
 ## Algorithms that parallelize
 
 Algorithms can evaluate the criterion function in parallel. To make such a parallel
-algorithm fully compatible with estimagic (including history collection and benchmarking
+algorithm fully compatible with optimagic (including history collection and benchmarking
 functionality), the following conditions need to be fulfilled:
 
 - The algorithm has an argument called `n_cores` which determines how many cores are
@@ -111,7 +111,7 @@ collection by using `mark_minimizer(..., disable_history=True)`.
 
 ## Nonlinear constraints
 
-Estimagic can pass nonlinear constraints to the internal optimizer. The internal
+optimagic can pass nonlinear constraints to the internal optimizer. The internal
 interface for nonlinear constraints is as follows.
 
 A nonlinear constraint is a `list` of `dict` 's, where each `dict` represents a group of
