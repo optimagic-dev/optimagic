@@ -12,9 +12,8 @@
 <br>
 <br>
 
-*optimagic* is a Python package for nonlinear optimization with or without constraints.
-It is a unified interface to optimizers from SciPy, NlOpt and many other Python
-packages.
+*optimagic* is a Python package for numerical optimization. It is a unified interface to
+optimizers from SciPy, NlOpt and many other Python packages.
 
 *optimagic*'s `minimize` function works just like SciPy's, so you don't have to adjust
 your code. You simply get more optimizers for free. On top you get powerful diagnostic
