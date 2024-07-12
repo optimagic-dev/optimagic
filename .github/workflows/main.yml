@@ -95,9 +95,7 @@ jobs:
         shell: bash -l {0}
         run: |
           micromamba activate estimagic
-          pytest tests/optimagic/visualization
-          pytest tests/optimagic/parameters
-          pytest tests/estimagic
+          pytest -m "not slow and not jax"
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
@@ -115,7 +113,7 @@ jobs:
         run: |-
           micromamba activate estimagic
           cd docs/source
-          python -m doctest -v how_to_guides/optimization/how_to_specify_constraints.md
+          python -m doctest -v how_to_guides/how_to_constraints.md
   run-mypy:
     name: Run mypy
     runs-on: ubuntu-latest
