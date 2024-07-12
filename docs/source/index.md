@@ -197,6 +197,42 @@ installation
 - Function evaluations needed for numerical derivatives can be done in parallel with
   pre-implemented or user provided batch evaluators.
 
+## Acknowledgements
+
+We thank all institutions that have funded or supported optimagic (formerly estimagic)
+
+```{image} _static/images/aai-institute-logo.svg
+---
+width: 185px
+---
+```
+
+```{image} _static/images/numfocus_logo.png
+---
+width: 200
+---
+```
+
+```{image} _static/images/tra_logo.png
+---
+width: 240px
+---
+```
+
+```{image} _static/images/hoover_logo.png
+---
+width: 192px
+---
+```
+
+```{image} _static/images/transferlab-logo.svg
+---
+width: 420px
+---
+```
+
+______________________________________________________________________
+
 **Useful links for search:** {ref}`genindex` | {ref}`modindex` | {ref}`search`
 
 [how to do multistart]: how_to/how_to_multistart

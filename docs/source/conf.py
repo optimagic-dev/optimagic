@@ -53,6 +53,7 @@ extensions = [
 myst_enable_extensions = [
     "colon_fence",
     "dollarmath",
+    "html_image",
 ]
 copybutton_prompt_text = ">>> "
 copybutton_only_copy_prompt_lines = False
