@@ -1363,7 +1363,7 @@ welcome.
 
 ## Numerical differentiation
 
-#### Current situation
+### Current situation
 
 The following proposal applies to the functions `first_derivative` and
 `second_derivative`. Both functions have an interface that has grown over time and both
@@ -1407,9 +1407,9 @@ but has not produced convincing results in benchmarks.
 - Many users expect the output of a function for numerical differentiation to be just
   the gradient, jacobian or hessian, not a more complex result object.
 
-#### Proposal
+### Proposal
 
-##### Separation of calculations and pytree handling
+#### Separation of calculations and pytree handling
 
 As in numerical optimization, we should implement the core functionality for first and
 second derivative for functions that map from 1-Dimensional numpy arrays to
@@ -1417,7 +1417,7 @@ second derivative for functions that map from 1-Dimensional numpy arrays to
 (e.g. functions that return a `FunctionValue`) should be done outside of the core
 functions.
 
-##### Deprecate Richardson Extrapolation (and prepare alternatives)
+#### Deprecate Richardson Extrapolation (and prepare alternatives)
 
 The goal of implementing Richardson Extrapolation was to get more precise estimates of
 numerical derivatives when it is hard to find an optimal step size. Example use-cases we
@@ -1457,14 +1457,14 @@ Richardson extrapolation was only completed for first derivatives, even though i
 already prepared in the interface for second derivatives.
 ```
 
-##### Better `NumdiffResult` object
+#### Better `NumdiffResult` object
 
 The result dictionary will be replaced by a `NumdiffResult` object. All arguments that
 govern which results are stored will be removed. If some of the formerly optional
 results require extra computation that we wanted to avoid by making them optional, they
 can be properties or methods of the result object.
 
-##### Jax inspired high-level interfaces
+#### Jax inspired high-level interfaces
 
 Since our `first_derivative` and `second_derivative` functions need to fulfill very
 specific requirements for use during optimization, they need to return a complex result

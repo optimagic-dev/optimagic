@@ -23,6 +23,8 @@ from optimagic import convergence_plot as _convergence_plot
 from optimagic import slice_plot as _slice_plot
 from optimagic import check_constraints as _check_constraints
 from optimagic import count_free_params as _count_free_params
+from optimagic import criterion_plot as _criterion_plot
+from optimagic import params_plot as _params_plot
 
 from estimagic import utilities
 from optimagic import OptimizeLogReader as _OptimizeLogReader
@@ -58,6 +60,8 @@ convergence_plot = deprecated(_convergence_plot, MSG.format(name="convergence_pl
 slice_plot = deprecated(_slice_plot, MSG.format(name="slice_plot"))
 check_constraints = deprecated(_check_constraints, MSG.format(name="check_constraints"))
 count_free_params = deprecated(_count_free_params, MSG.format(name="count_free_params"))
+criterion_plot = deprecated(_criterion_plot, MSG.format(name="criterion_plot"))
+params_plot = deprecated(_params_plot, MSG.format(name="params_plot"))
 
 
 class OptimizeLogReader(_OptimizeLogReader):
@@ -112,5 +116,7 @@ __all__ = [
     "count_free_params",
     "OptimizeLogReader",
     "OptimizeResult",
+    "criterion_plot",
+    "params_plot",
     "__version__",
 ]

@@ -206,10 +206,12 @@ The following entries of the output of minimize are affected by the change:
 - `"solution_criterion"`: The output dictionary of `crit` evaluated solution params
 - `solution_derivative`: Maybe we should not even have this entry.
 
-:::\{danger} We need to discuss if and in which form we want to have a solution
+```{note}
+We need to discuss if and in which form we want to have a solution
 derivative entry. In it's current form it is useless if constraints are used. This gets
 worse when we allow for pytrees and translating this into a meaningful shape might be
-very difficult. :::
+very difficult.
+```
 
 ### Add bounds
 

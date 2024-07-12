@@ -1,3 +1,5 @@
+# 
+
 <div style="padding-top: 50px;">
 </div>
 
@@ -14,9 +16,6 @@
 It is particularly suited to solve difficult nonlinear estimation problems. On top, it
 provides functionality to perform statistical inference on estimated parameters.
 
-For a complete introduction to optimization in estimagic, check out the
-{ref}`estimagic_scipy2022`
-
 If you want to learn more about estimagic, dive into one of the following topics
 
 `````{grid} 1 2 2 2
@@ -29,13 +28,13 @@ gutter: 3
 :class-img-top: index-card-image
 :shadow: md
 
-```{button-link} getting_started/index.html
+```{button-link} tutorials/index.html
 ---
 click-parent:
 ref-type: ref
 class: stretched-link index-card-link sd-text-primary
 ---
-Getting Started
+Tutorials
 ```
 
 New users of estimagic should read this first.
@@ -48,7 +47,7 @@ New users of estimagic should read this first.
 :class-img-top: index-card-image
 :shadow: md
 
-```{button-link} how_to_guides/index.html
+```{button-link} how_to/index.html
 ---
 click-parent:
 ref-type: ref
@@ -67,7 +66,7 @@ Detailed instructions for specific and advanced tasks.
 :class-img-top: index-card-image
 :shadow: md
 
-```{button-link} getting_started/installation.html
+```{button-link} installation.html
 ---
 click-parent:
 ref-type: ref
@@ -106,7 +105,7 @@ List of numerical optimizers and their optional parameters.
 :class-img-top: index-card-image
 :shadow: md
 
-```{button-link} explanations/index.html
+```{button-link} explanation/index.html
 ---
 click-parent:
 ref-type: ref
@@ -125,7 +124,7 @@ Background information on key topics central to the package.
 :class-img-top: index-card-image
 :shadow: md
 
-```{button-link} reference_guides/index.html
+```{button-link} reference/index.html
 ---
 click-parent:
 ref-type: ref
@@ -165,13 +164,15 @@ Collection of tutorials, talks, and screencasts on estimagic.
 hidden: true
 maxdepth: 1
 ---
-getting_started/index
-how_to_guides/index
-explanations/index
-reference_guides/index
+tutorials/index
+how_to/index
+explanation/index
+reference/index
 development/index
 videos
 algorithms
+estimagic/index
+installation
 ```
 
 ## Highlights
@@ -189,14 +190,6 @@ algorithms
 - The progress of the optimization can be displayed in `criterion_plot` and
   `params_plot` while the optimization is still running.
 
-### Estimation and Inference
-
-- You can estimate a model using method of simulated moments (MSM), calculate standard
-  errors and do sensitivity analysis with just one function call. See [MSM Tutorial]
-- Asymptotic standard errors for maximum likelihood estimation.
-- estimagic also provides bootstrap confidence intervals and standard errors. Of course
-  the bootstrap procedures are parallelized.
-
 ### Numerical differentiation
 
 - estimagic can calculate precise numerical derivatives using
@@ -206,6 +199,5 @@ algorithms
 
 **Useful links for search:** {ref}`genindex` | {ref}`modindex` | {ref}`search`
 
-[how to do multistart]: how_to_guides/optimization/how_to_do_multistart_optimizations
-[how to use logging]: how_to_guides/optimization/how_to_use_logging
-[msm tutorial]: getting_started/estimation/first_msm_estimation_with_estimagic
+[how to do multistart]: how_to/how_to_multistart
+[how to use logging]: how_to/how_to_logging

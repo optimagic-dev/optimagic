@@ -48,6 +48,7 @@ repos:
           - --branch
           - main
       - id: trailing-whitespace
+        exclude: docs/
       - id: check-ast
       - id: check-docstring-first
         exclude: src/optimagic/optimization/algo_options.py
@@ -65,7 +66,7 @@ repos:
     rev: 1.18.0
     hooks:
       - id: blacken-docs
-        exclude: docs/source/how_to_guides/optimization/how_to_specify_constraints.md
+        exclude: docs/source/how_to/how_to_constraints.md
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.7.5
     hooks:

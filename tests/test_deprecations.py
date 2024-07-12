@@ -23,6 +23,7 @@ from estimagic import check_constraints
 from estimagic import count_free_params
 from estimagic import utilities
 from estimagic import OptimizeLogReader, OptimizeResult
+from estimagic import criterion_plot, params_plot
 import optimagic as om
 
 # ======================================================================================
@@ -260,3 +261,17 @@ def test_estimagic_get_rng_is_deprecated():
     msg = "estimagic.utilities.get_rng has been deprecated"
     with pytest.warns(FutureWarning, match=msg):
         utilities.get_rng(42)
+
+
+def test_estimagic_criterion_plot_is_deprecated():
+    msg = "estimagic.criterion_plot has been deprecated"
+    res = om.minimize(lambda x: x @ x, np.arange(3), algorithm="scipy_lbfgsb")
+    with pytest.warns(FutureWarning, match=msg):
+        criterion_plot(res)
+
+
+def test_estimagic_params_plot_is_deprecated():
+    msg = "estimagic.params_plot has been deprecated"
+    res = om.minimize(lambda x: x @ x, np.arange(3), algorithm="scipy_lbfgsb")
+    with pytest.warns(FutureWarning, match=msg):
+        params_plot(res)
