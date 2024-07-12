@@ -95,7 +95,7 @@ jobs:
         shell: bash -l {0}
         run: |
           micromamba activate optimagic
-          pytest -m "not slow and not"
+          pytest -m "not slow and not jax"
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
