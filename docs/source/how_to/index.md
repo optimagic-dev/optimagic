@@ -1,8 +1,9 @@
+(how-to)=
+
 # How-to Guides
 
-How-to Guides show how to achieve specific tasks that potentially require to use
-advanced options of optimagic functions an introduction to its basic functionality,
-check out our tutorials
+How-to Guides show how to achieve specific tasks. In many cases they show you how to use
+advanced options. For a more basic introduction, check out the [tutorials](tutorials).
 
 ```{toctree}
 ---

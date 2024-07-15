@@ -1,3 +1,5 @@
+(how-to-contribute)=
+
 # How to contribute
 
 ## 1. Intro
