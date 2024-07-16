@@ -24,6 +24,24 @@ the major changes are:
   `derivative_plot` ({ghuser}`janosg`)
 
 
+## 0.4.7
+
+This release contains minor improvements and bug fixes. It is the last release before
+the package will be renamed to optimagic and two large enhancement proposals will be
+implemented.
+
+- {gh}`490` adds the attribute `optimize_result` to the `MomentsResult` class
+  ({ghuser}`timmens`)
+- {gh}`483` fixes a bug in the handling of keyword arguments in `bootstrap`
+  ({ghuser}`alanlujan91`)
+- {gh}`477` allows to use an identity weighting matrix in MSM estimation
+  ({ghuser}`sidd3888`)
+- {gh}`473` fixes a bug where bootstrap keyword arguments were ignored
+  `get_moments_cov` ({ghuser}`timmens`)
+- {gh}`467`, {gh}`478`, {gh}`479` and {gh}`480` improve the documentation
+  ({ghuser}`mpetrosian`, {ghuser}`segsell`, and {ghuser}`timmens`)
+
+
 ## 0.4.6
 
 This release drastically improves the optimizer benchmarking capabilities, especially
