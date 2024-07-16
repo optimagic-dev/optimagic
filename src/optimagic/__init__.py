@@ -43,7 +43,5 @@ __all__ = [
     "check_constraints",
     "OptimizeLogReader",
     "OptimizeResult",
-    "LikelihoodResult",
-    "MomentsResult",
     "__version__",
 ]
