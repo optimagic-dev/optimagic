@@ -1,8 +1,8 @@
 # Changes
 
-This is a record of all past estimagic releases and what went into them in reverse
+This is a record of all past optimagic releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
-releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/estimagic).
+releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/optimagic).
 
 Following the [scientific python guidelines](https://scientific-python.org/specs/spec-0000/)
 we drop the official support for Python 3.9.
