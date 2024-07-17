@@ -26,8 +26,8 @@ def test_scipy_conference_example():
     gradient = jax.grad(criterion)
 
     res = minimize(
-        criterion=criterion,
-        derivative=gradient,
+        fun=criterion,
+        jac=gradient,
         params=start_params,
         algorithm="scipy_lbfgsb",
     )
@@ -44,10 +44,10 @@ def test_params_is_jax_scalar():
         return x**2
 
     res = minimize(
-        criterion=criterion,
+        fun=criterion,
         params=jnp.array(1.0),
         algorithm="scipy_lbfgsb",
-        derivative=jax.grad(criterion),
+        jac=jax.grad(criterion),
     )
 
     assert isinstance(res.params, jnp.ndarray)
@@ -60,10 +60,10 @@ def params_is_1d_array():
         return x @ x
 
     res = minimize(
-        criterion=criterion,
+        fun=criterion,
         params=jnp.arange(3),
         algorithm="scipy_lbfgsb",
-        derivative=jax.grad(criterion),
+        jac=jax.grad(criterion),
     )
 
     assert isinstance(res.params, jnp.ndarray)
@@ -88,10 +88,10 @@ def test_dict_output_works(algorithm):
     }
 
     res = minimize(
-        criterion=criterion,
+        fun=criterion,
         params=jnp.array([1.0, 2.0, 3.0]),
         algorithm=algorithm,
-        derivative=deriv_dict,
+        jac=deriv_dict,
     )
 
     assert isinstance(res.params, jnp.ndarray)
@@ -110,10 +110,10 @@ def test_least_squares_optimizer_pytree():
     jac = jax.jacobian(ls_wrapper)
 
     res = minimize(
-        criterion=criterion,
+        fun=criterion,
         params=params,
         algorithm="scipy_ls_lm",
-        derivative=jac,
+        jac=jac,
     )
 
     assert isinstance(res.params, dict)

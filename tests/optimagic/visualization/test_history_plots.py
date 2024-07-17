@@ -13,7 +13,7 @@ def minimize_result():
         res = []
         for algorithm in ["scipy_neldermead", "scipy_lbfgsb"]:
             _res = minimize(
-                criterion=lambda x: x @ x,
+                fun=lambda x: x @ x,
                 params=np.arange(5),
                 algorithm=algorithm,
                 soft_lower_bounds=np.full(5, -1),
@@ -96,7 +96,7 @@ def test_criterion_plot_wrong_results():
 def test_criterion_plot_different_input_types():
     # logged result
     minimize(
-        criterion=lambda x: x @ x,
+        fun=lambda x: x @ x,
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         soft_lower_bounds=np.full(5, -1),
@@ -108,7 +108,7 @@ def test_criterion_plot_different_input_types():
     )
 
     res = minimize(
-        criterion=lambda x: x @ x,
+        fun=lambda x: x @ x,
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         soft_lower_bounds=np.full(5, -1),

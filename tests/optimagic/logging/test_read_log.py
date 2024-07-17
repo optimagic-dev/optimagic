@@ -21,7 +21,7 @@ def example_db(tmp_path):
         return x @ x
 
     minimize(
-        criterion=_crit,
+        fun=_crit,
         params={"a": 1, "b": 2, "c": 3},
         algorithm="scipy_lbfgsb",
         logging=path,

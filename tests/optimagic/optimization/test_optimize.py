@@ -28,17 +28,17 @@ def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
 
     with pytest.raises(InvalidFunctionError, match="Error while evaluating"):
         minimize(
-            criterion=sos_scalar_criterion,
+            fun=sos_scalar_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
-            criterion_and_derivative=raising_crit_and_deriv,
+            fun_and_jac=raising_crit_and_deriv,
         )
 
 
 def test_with_invalid_numdiff_options():
     with pytest.raises(InvalidKwargsError):
         minimize(
-            criterion=lambda x: x @ x,
+            fun=lambda x: x @ x,
             params=np.arange(5),
             algorithm="scipy_lbfgsb",
             numdiff_options={"bla": 15},

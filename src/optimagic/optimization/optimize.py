@@ -3,7 +3,11 @@ import warnings
 from pathlib import Path
 
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.exceptions import InvalidFunctionError, InvalidKwargsError
+from optimagic.exceptions import (
+    InvalidFunctionError,
+    InvalidKwargsError,
+    MissingInputError,
+)
 from optimagic.logging.create_tables import (
     make_optimization_iteration_table,
     make_optimization_problem_table,
@@ -33,21 +37,21 @@ from optimagic.shared.process_user_function import process_func_of_params
 
 
 def maximize(
-    criterion,
-    params,
-    algorithm,
+    fun=None,
+    params=None,
+    algorithm=None,
     *,
     lower_bounds=None,
     upper_bounds=None,
     soft_lower_bounds=None,
     soft_upper_bounds=None,
-    criterion_kwargs=None,
+    fun_kwargs=None,
     constraints=None,
     algo_options=None,
-    derivative=None,
-    derivative_kwargs=None,
-    criterion_and_derivative=None,
-    criterion_and_derivative_kwargs=None,
+    jac=None,
+    jac_kwargs=None,
+    fun_and_jac=None,
+    fun_and_jac_kwargs=None,
     numdiff_options=None,
     logging=False,
     log_options=None,
@@ -59,166 +63,31 @@ def maximize(
     multistart_options=None,
     collect_history=True,
     skip_checks=False,
+    # deprecated arguments
+    criterion=None,
+    criterion_kwargs=None,
+    derivative=None,
+    derivative_kwargs=None,
+    criterion_and_derivative=None,
+    criterion_and_derivative_kwargs=None,
 ):
-    """Maximize criterion using algorithm subject to constraints.
-
-    Args:
-        criterion (callable): A function that takes a params as first argument and
-            returns a scalar (if only scalar algorithms will be used) or a dictionary
-            that contains at the entries "value" (a scalar float), "contributions" (a
-            pytree containing the summands that make up the criterion value) or
-            "root_contributions" (a pytree containing the residuals of a least-squares
-            problem) and any number of additional entries. The additional dict entries
-            will be stored in a database if logging is used.
-        params (pandas): A pytree containing the parameters with respect to which the
-            criterion is optimized. Examples are a numpy array, a pandas Series,
-            a DataFrame with "value" column, a float and any kind of (nested) dictionary
-            or list containing these elements. See :ref:`params` for examples.
-        algorithm (str or callable): Specifies the optimization algorithm. For built-in
-            algorithms this is a string with the name of the algorithm. Otherwise it can
-            be a callable with the optimagic algorithm interface. See :ref:`algorithms`.
-        lower_bounds (pytree): A pytree with the same structure as params with lower
-            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
-            bound.
-        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
-            no upper bound.
-        soft_lower_bounds (pytree): As lower bounds but the bounds are not imposed
-            during optimization and just used to sample start values if multistart
-            optimization is performed.
-        soft_upper_bounds (pytree): As soft_lower_bounds.
-        criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list, dict): List with constraint dictionaries or single dict.
-            See :ref:`constraints`.
-        algo_options (dict): Algorithm specific configuration of the optimization. See
-            :ref:`list_of_algorithms` for supported options of each algorithm.
-        derivative (callable): Function that calculates the first derivative
-            of criterion. For most algorithm, this is the gradient of the scalar
-            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
-            require the jacobian of the "contributions" entry of the dict. You will get
-            an error if you provide the wrong type of derivative.
-        derivative_kwargs (dict): Additional keyword arguments for derivative.
-        criterion_and_derivative (callable): Function that returns criterion
-            and derivative as a tuple. This can be used to exploit synergies in the
-            evaluation of both functions. The first element of the tuple has to be
-            exactly the same as the output of criterion. The second has to be exactly
-            the same as the output of derivative.
-        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
-            criterion and derivative.
-        numdiff_options (dict): Keyword arguments for the calculation of numerical
-            derivatives. See :ref:`first_derivative` for details. Note that the default
-            method is changed to "forward" for speed reasons.
-        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
-            the file extension ``.db``. If the file does not exist, it will be created.
-            When doing parallel optimizations and logging is provided, you have to
-            provide a different path for each optimization you are running. You can
-            disable logging completely by setting it to False, but we highly recommend
-            not to do so.
-        log_options (dict): Additional keyword arguments to configure the logging.
-            - "fast_logging": A boolean that determines if "unsafe" settings are used
-            to speed up write processes to the database. This should only be used for
-            very short running criterion functions where the main purpose of the log
-            is monitoring and it would not be catastrophic to get a
-            corrupted database in case of a sudden system shutdown. If one evaluation
-            of the criterion function (and gradient if applicable) takes more than
-            100 ms, the logging overhead is negligible.
-            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
-            do if the tables we want to write to already exist. Default "extend".
-            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
-            do if the database we want to write to already exists. Default "extend".
-        error_handling (str): Either "raise" or "continue". Note that "continue" does
-            not absolutely guarantee that no error is raised but we try to handle as
-            many errors as possible in that case without aborting the optimization.
-        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
-            (float). If the criterion or gradient raise an error and error_handling is
-            "continue", return ``constant + slope * norm(params - start_params)`` where
-            ``norm`` is the euclidean distance as criterion value and adjust the
-            derivative accordingly. This is meant to guide the optimizer back into a
-            valid region of parameter space (in direction of the start parameters).
-            Note that the constant has to be high enough to ensure that the penalty is
-            actually a bad function value. The default constant is f0 + abs(f0) + 100
-            for minimizations and f0 - abs(f0) - 100 for maximizations, where
-            f0 is the criterion value at start parameters. The default slope is 0.1.
-        scaling (bool): If True, the parameter vector is rescaled internally for
-            better performance with scale sensitive optimizers.
-        scaling_options (dict or None): Options to configure the internal scaling ot
-            the parameter vector. See :ref:`scaling` for details and recommendations.
-        multistart (bool): Whether to do the optimization from multiple starting points.
-            Requires the params to have the columns ``"soft_lower_bound"`` and
-            ``"soft_upper_bounds"`` with finite values for all parameters, unless
-            the standard bounds are already finite for all parameters.
-        multistart_options (dict): Options to configure the optimization from multiple
-            starting values. The dictionary has the following entries
-            (all of which are optional):
-            - n_samples (int): Number of sampled points on which to do one function
-            evaluation. Default is 10 * n_params.
-            - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
-            If this is provided, n_samples, sampling_method and sampling_distribution
-            are not used.
-            - share_optimizations (float): Share of sampled points that is used to
-            construct a starting point for a local optimization. Default 0.1.
-            - sampling_distribution (str): One rof "uniform", "triangle". Default is
-            "uniform" as in the original tiktak algorithm.
-            - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
-            "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
-            points. Default is sobol for problems with up to 30 parameters and random
-            for problems with more than 30 parameters.
-            - mixing_weight_method (str or callable): Specifies how much weight is put
-            on the currently best point when calculating a new starting point for a
-            local optimization out of the currently best point and the next random
-            starting point. Either "tiktak" or "linear" or a callable that takes the
-            arguments ``iteration``, ``n_iterations``, ``min_weight``, ``max_weight``.
-            Default "tiktak".
-            - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
-            bound on mixing weights. Default (0.1, 0.995).
-            - convergence_max_discoveries (int): The multistart optimization converges
-            if the currently best local optimum has been discovered independently in
-            ``convergence_max_discoveries`` many local optimizations. Default 2.
-            - convergence.relative_params_tolerance (float): Determines the maximum
-            relative distance two parameter vectors can have to be considered equal
-            for convergence purposes.
-            - n_cores (int): Number cores used to evaluate the criterion function in
-            parallel during exploration stages and number of parallel local
-            optimization in optimization stages. Default 1.
-            - batch_evaluator (str or callable): See :ref:`batch_evaluators` for
-            details. Default "joblib".
-            - batch_size (int): If n_cores is larger than one, several starting points
-            for local optimizations are created with the same weight and from the same
-            currently best point. The ``batch_size`` argument is a way to reproduce
-            this behavior on a small machine where less cores are available. By
-            default the batch_size is equal to ``n_cores``. It can never be smaller
-            than ``n_cores``.
-            - seed (int): Random seed for the creation of starting values. Default None.
-            - exploration_error_handling (str): One of "raise" or "continue". Default
-            is continue, which means that failed function evaluations are simply
-            discarded from the sample.
-            - optimization_error_handling (str): One of "raise" or "continue". Default
-            is continue, which means that failed optimizations are simply discarded.
-        collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default True.
-        skip_checks (bool): Whether checks on the inputs are skipped. This makes the
-            optimization faster, especially for very fast criterion functions. Default
-            False.
-
-    Returns:
-        OptimizeResult: The optmization result.
-
-    """
+    """Maximize criterion using algorithm subject to constraints."""
     return _optimize(
         direction="maximize",
-        criterion=criterion,
+        fun=fun,
         params=params,
         algorithm=algorithm,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
-        criterion_kwargs=criterion_kwargs,
+        fun_kwargs=fun_kwargs,
         constraints=constraints,
         algo_options=algo_options,
-        derivative=derivative,
-        derivative_kwargs=derivative_kwargs,
-        criterion_and_derivative=criterion_and_derivative,
-        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        jac=jac,
+        jac_kwargs=jac_kwargs,
+        fun_and_jac=fun_and_jac,
+        fun_and_jac_kwargs=fun_and_jac_kwargs,
         numdiff_options=numdiff_options,
         logging=logging,
         log_options=log_options,
@@ -230,25 +99,32 @@ def maximize(
         multistart_options=multistart_options,
         collect_history=collect_history,
         skip_checks=skip_checks,
+        # deprecated arguments
+        criterion=criterion,
+        criterion_kwargs=criterion_kwargs,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
     )
 
 
 def minimize(
-    criterion,
-    params,
-    algorithm,
+    fun=None,
+    params=None,
+    algorithm=None,
     *,
     lower_bounds=None,
     upper_bounds=None,
     soft_lower_bounds=None,
     soft_upper_bounds=None,
-    criterion_kwargs=None,
+    fun_kwargs=None,
     constraints=None,
     algo_options=None,
-    derivative=None,
-    derivative_kwargs=None,
-    criterion_and_derivative=None,
-    criterion_and_derivative_kwargs=None,
+    jac=None,
+    jac_kwargs=None,
+    fun_and_jac=None,
+    fun_and_jac_kwargs=None,
     numdiff_options=None,
     logging=False,
     log_options=None,
@@ -260,166 +136,32 @@ def minimize(
     multistart_options=None,
     collect_history=True,
     skip_checks=False,
+    # deprecated arguments
+    criterion=None,
+    criterion_kwargs=None,
+    derivative=None,
+    derivative_kwargs=None,
+    criterion_and_derivative=None,
+    criterion_and_derivative_kwargs=None,
 ):
-    """Minimize criterion using algorithm subject to constraints.
+    """Minimize criterion using algorithm subject to constraints."""
 
-    Args:
-        criterion (callable): A function that takes a params as first argument and
-            returns a scalar (if only scalar algorithms will be used) or a dictionary
-            that contains at the entries "value" (a scalar float), "contributions" (a
-            pytree containing the summands that make up the criterion value) or
-            "root_contributions" (a pytree containing the residuals of a least-squares
-            problem) and any number of additional entries. The additional dict entries
-            will be stored in a database if logging is used.
-        params (pandas): A pytree containing the parameters with respect to which the
-            criterion is optimized. Examples are a numpy array, a pandas Series,
-            a DataFrame with "value" column, a float and any kind of (nested) dictionary
-            or list containing these elements. See :ref:`params` for examples.
-        algorithm (str or callable): Specifies the optimization algorithm. For built-in
-            algorithms this is a string with the name of the algorithm. Otherwise it can
-            be a callable with the optimagic algorithm interface. See :ref:`algorithms`.
-        lower_bounds (pytree): A pytree with the same structure as params with lower
-            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
-            bound.
-        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
-            no upper bound.
-        soft_lower_bounds (pytree): As lower bounds but the bounds are not imposed
-            during optimization and just used to sample start values if multistart
-            optimization is performed.
-        soft_upper_bounds (pytree): As soft_lower_bounds.
-        criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list, dict): List with constraint dictionaries or single dict.
-            See :ref:`constraints`.
-        algo_options (dict): Algorithm specific configuration of the optimization. See
-            :ref:`list_of_algorithms` for supported options of each algorithm.
-        derivative (callable): Function that calculates the first derivative
-            of criterion. For most algorithm, this is the gradient of the scalar
-            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
-            require the jacobian of the "contributions" entry of the dict. You will get
-            an error if you provide the wrong type of derivative.
-        derivative_kwargs (dict): Additional keyword arguments for derivative.
-        criterion_and_derivative (callable): Function that returns criterion
-            and derivative as a tuple. This can be used to exploit synergies in the
-            evaluation of both functions. The first element of the tuple has to be
-            exactly the same as the output of criterion. The second has to be exactly
-            the same as the output of derivative.
-        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
-            criterion and derivative.
-        numdiff_options (dict): Keyword arguments for the calculation of numerical
-            derivatives. See :ref:`first_derivative` for details. Note that the default
-            method is changed to "forward" for speed reasons.
-        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
-            the file extension ``.db``. If the file does not exist, it will be created.
-            When doing parallel optimizations and logging is provided, you have to
-            provide a different path for each optimization you are running. You can
-            disable logging completely by setting it to False, but we highly recommend
-            not to do so.
-        log_options (dict): Additional keyword arguments to configure the logging.
-            - "fast_logging": A boolean that determines if "unsafe" settings are used
-            to speed up write processes to the database. This should only be used for
-            very short running criterion functions where the main purpose of the log
-            is monitoring and it would not be catastrophic to get a
-            corrupted database in case of a sudden system shutdown. If one evaluation
-            of the criterion function (and gradient if applicable) takes more than
-            100 ms, the logging overhead is negligible.
-            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
-            do if the tables we want to write to already exist. Default "extend".
-            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
-            do if the database we want to write to already exists. Default "extend".
-        error_handling (str): Either "raise" or "continue". Note that "continue" does
-            not absolutely guarantee that no error is raised but we try to handle as
-            many errors as possible in that case without aborting the optimization.
-        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
-            (float). If the criterion or gradient raise an error and error_handling is
-            "continue", return ``constant + slope * norm(params - start_params)`` where
-            ``norm`` is the euclidean distance as criterion value and adjust the
-            derivative accordingly. This is meant to guide the optimizer back into a
-            valid region of parameter space (in direction of the start parameters).
-            Note that the constant has to be high enough to ensure that the penalty is
-            actually a bad function value. The default constant is f0 + abs(f0) + 100
-            for minimizations and f0 - abs(f0) - 100 for maximizations, where
-            f0 is the criterion value at start parameters. The default slope is 0.1.
-        scaling (bool): If True, the parameter vector is rescaled internally for
-            better performance with scale sensitive optimizers.
-        scaling_options (dict or None): Options to configure the internal scaling ot
-            the parameter vector. See :ref:`scaling` for details and recommendations.
-        multistart (bool): Whether to do the optimization from multiple starting points.
-            Requires the params to have the columns ``"soft_lower_bound"`` and
-            ``"soft_upper_bounds"`` with finite values for all parameters, unless
-            the standard bounds are already finite for all parameters.
-        multistart_options (dict): Options to configure the optimization from multiple
-            starting values. The dictionary has the following entries
-            (all of which are optional):
-            - n_samples (int): Number of sampled points on which to do one function
-            evaluation. Default is 10 * n_params.
-            - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
-            If this is provided, n_samples, sampling_method and sampling_distribution
-            are not used.
-            - share_optimizations (float): Share of sampled points that is used to
-            construct a starting point for a local optimization. Default 0.1.
-            - sampling_distribution (str): One rof "uniform", "triangle". Default is
-            "uniform" as in the original tiktak algorithm.
-            - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
-            "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
-            points. Default is sobol for problems with up to 30 parameters and random
-            for problems with more than 30 parameters.
-            - mixing_weight_method (str or callable): Specifies how much weight is put
-            on the currently best point when calculating a new starting point for a
-            local optimization out of the currently best point and the next random
-            starting point. Either "tiktak" or "linear" or a callable that takes the
-            arguments ``iteration``, ``n_iterations``, ``min_weight``, ``max_weight``.
-            Default "tiktak".
-            - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
-            bound on mixing weights. Default (0.1, 0.995).
-            - convergence_max_discoveries (int): The multistart optimization converges
-            if the currently best local optimum has been discovered independently in
-            ``convergence_max_discoveries`` many local optimizations. Default 2.
-            - convergence.relative_params_tolerance (float): Determines the maximum
-            relative distance two parameter vectors can have to be considered equal
-            for convergence purposes.
-            - n_cores (int): Number cores used to evaluate the criterion function in
-            parallel during exploration stages and number of parallel local
-            optimization in optimization stages. Default 1.
-            - batch_evaluator (str or callable): See :ref:`batch_evaluators` for
-            details. Default "joblib".
-            - batch_size (int): If n_cores is larger than one, several starting points
-            for local optimizations are created with the same weight and from the same
-            currently best point. The ``batch_size`` argument is a way to reproduce
-            this behavior on a small machine where less cores are available. By
-            default the batch_size is equal to ``n_cores``. It can never be smaller
-            than ``n_cores``.
-            - seed (int): Random seed for the creation of starting values. Default None.
-            - exploration_error_handling (str): One of "raise" or "continue". Default
-            is continue, which means that failed function evaluations are simply
-            discarded from the sample.
-            - optimization_error_handling (str): One of "raise" or "continue". Default
-            is continue, which means that failed optimizations are simply discarded.
-        collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default True.
-        skip_checks (bool): Whether checks on the inputs are skipped. This makes the
-            optimization faster, especially for very fast criterion functions. Default
-            False.
-
-    Returns:
-        OptimizeResult: The optmization result.
-
-    """
     return _optimize(
         direction="minimize",
-        criterion=criterion,
+        fun=fun,
         params=params,
         algorithm=algorithm,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
-        criterion_kwargs=criterion_kwargs,
+        fun_kwargs=fun_kwargs,
         constraints=constraints,
         algo_options=algo_options,
-        derivative=derivative,
-        derivative_kwargs=derivative_kwargs,
-        criterion_and_derivative=criterion_and_derivative,
-        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        jac=jac,
+        jac_kwargs=jac_kwargs,
+        fun_and_jac=fun_and_jac,
+        fun_and_jac_kwargs=fun_and_jac_kwargs,
         numdiff_options=numdiff_options,
         logging=logging,
         log_options=log_options,
@@ -431,26 +173,33 @@ def minimize(
         multistart_options=multistart_options,
         collect_history=collect_history,
         skip_checks=skip_checks,
+        # deprecated arguments
+        criterion=criterion,
+        criterion_kwargs=criterion_kwargs,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
     )
 
 
 def _optimize(
     direction,
-    criterion,
+    fun,
     params,
     algorithm,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
-    criterion_kwargs,
+    lower_bounds,
+    upper_bounds,
+    soft_lower_bounds,
+    soft_upper_bounds,
+    fun_kwargs,
     constraints,
     algo_options,
-    derivative,
-    derivative_kwargs,
-    criterion_and_derivative,
-    criterion_and_derivative_kwargs,
+    jac,
+    jac_kwargs,
+    fun_and_jac,
+    fun_and_jac_kwargs,
     numdiff_options,
     logging,
     log_options,
@@ -462,6 +211,13 @@ def _optimize(
     multistart_options,
     collect_history,
     skip_checks,
+    # deprecated arguments
+    criterion,
+    criterion_kwargs,
+    derivative,
+    derivative_kwargs,
+    criterion_and_derivative,
+    criterion_and_derivative_kwargs,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
@@ -472,13 +228,114 @@ def _optimize(
 
     """
     # ==================================================================================
+    # error handling needed as long as fun is an optional argument (i.e. until
+    # criterion is fully removed).
+    # ==================================================================================
+
+    if fun is None and criterion is None:
+        msg = (
+            "Missing objective function. Please provide an objective function as the "
+            "first positional argument or as the keyword argument `fun`."
+        )
+        raise MissingInputError(msg)
+
+    if params is None:
+        msg = (
+            "Missing start parameters. Please provide start parameters as the second "
+            "positional argument or as the keyword argument `params`."
+        )
+        raise MissingInputError(msg)
+
+    if algorithm is None:
+        msg = (
+            "Missing algorithm. Please provide an algorithm as the third positional "
+            "argument or as the keyword argument `algorithm`."
+        )
+        raise MissingInputError(msg)
+
+    # ==================================================================================
+    # deprecations
+    # ==================================================================================
+
+    if criterion is not None:
+        msg = (
+            "To align optimagic with scipy.optimize, the `criterion` argument has been "
+            "renamed to `fun`. Please use `fun` instead of `criterion`. Using "
+            "`criterion` will become an error in optimagic version 0.6.0 and later."
+        )
+        warnings.warn(msg, DeprecationWarning)
+
+        if fun is None:
+            fun = criterion
+
+    if criterion_kwargs is not None:
+        msg = (
+            "To align optimagic with scipy.optimize, the `criterion_kwargs` argument "
+            "has been renamed to `fun_kwargs`. Please use `fun_kwargs` instead of "
+            "`criterion_kwargs`. Using `criterion_kwargs` will become an error in "
+            "optimagic version 0.6.0 and later."
+        )
+        warnings.warn(msg, DeprecationWarning)
+
+        if fun_kwargs is None:
+            fun_kwargs = criterion_kwargs
+
+    if derivative is not None:
+        msg = (
+            "To align optimagic with scipy.optimize, the `derivative` argument has "
+            "been renamed to `jac`. Please use `jac` instead of `derivative`. Using "
+            "`derivative` will become an error in optimagic version 0.6.0 and later."
+        )
+        warnings.warn(msg, DeprecationWarning)
+
+        if jac is None:
+            jac = derivative
+
+    if derivative_kwargs is not None:
+        msg = (
+            "To align optimagic with scipy.optimize, the `derivative_kwargs` argument "
+            "has been renamed to `jac_kwargs`. Please use `jac_kwargs` instead of "
+            "`derivative_kwargs`. Using `derivative_kwargs` will become an error in "
+            "optimagic version 0.6.0 and later."
+        )
+        warnings.warn(msg, DeprecationWarning)
+
+        if jac_kwargs is None:
+            jac_kwargs = derivative_kwargs
+
+    if criterion_and_derivative is not None:
+        msg = (
+            "To align optimagic with scipy.optimize, the `criterion_and_derivative` "
+            "argument has been renamed to `fun_and_jac`. Please use `fun_and_jac` "
+            "instead of `criterion_and_derivative`. Using `criterion_and_derivative` "
+            "will become an error in optimagic version 0.6.0 and later."
+        )
+        warnings.warn(msg, DeprecationWarning)
+
+        if fun_and_jac is None:
+            fun_and_jac = criterion_and_derivative
+
+    if criterion_and_derivative_kwargs is not None:
+        msg = (
+            "To align optimagic with scipy.optimize, the "
+            "`criterion_and_derivative_kwargs` argument has been renamed to "
+            "`fun_and_jac_kwargs`. Please use `fun_and_jac_kwargs` instead of "
+            "`criterion_and_derivative_kwargs`. Using `criterion_and_derivative_kwargs`"
+            " will become an error in optimagic version 0.6.0 and later."
+        )
+        warnings.warn(msg, DeprecationWarning)
+
+        if fun_and_jac_kwargs is None:
+            fun_and_jac_kwargs = criterion_and_derivative_kwargs
+
+    # ==================================================================================
     # Set default values and check options
     # ==================================================================================
-    criterion_kwargs = _setdefault(criterion_kwargs, {})
+    fun_kwargs = _setdefault(fun_kwargs, {})
     constraints = _setdefault(constraints, [])
     algo_options = _setdefault(algo_options, {})
-    derivative_kwargs = _setdefault(derivative_kwargs, {})
-    criterion_and_derivative_kwargs = _setdefault(criterion_and_derivative_kwargs, {})
+    jac_kwargs = _setdefault(jac_kwargs, {})
+    fun_and_jac_kwargs = _setdefault(fun_and_jac_kwargs, {})
     numdiff_options = _setdefault(numdiff_options, {})
     log_options = _setdefault(log_options, {})
     scaling_options = _setdefault(scaling_options, {})
@@ -490,16 +347,16 @@ def _optimize(
     if not skip_checks:
         check_optimize_kwargs(
             direction=direction,
-            criterion=criterion,
-            criterion_kwargs=criterion_kwargs,
+            criterion=fun,
+            criterion_kwargs=fun_kwargs,
             params=params,
             algorithm=algorithm,
             constraints=constraints,
             algo_options=algo_options,
-            derivative=derivative,
-            derivative_kwargs=derivative_kwargs,
-            criterion_and_derivative=criterion_and_derivative,
-            criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+            derivative=jac,
+            derivative_kwargs=jac_kwargs,
+            criterion_and_derivative=fun_and_jac,
+            criterion_and_derivative_kwargs=fun_and_jac_kwargs,
             numdiff_options=numdiff_options,
             logging=logging,
             log_options=log_options,
@@ -548,14 +405,14 @@ def _optimize(
         problem_data = {
             "direction": direction,
             # "criterion"-criterion,
-            "criterion_kwargs": criterion_kwargs,
+            "criterion_kwargs": fun_kwargs,
             "algorithm": algorithm,
             "constraints": constraints,
             "algo_options": algo_options,
             # "derivative"-derivative,
-            "derivative_kwargs": derivative_kwargs,
+            "derivative_kwargs": jac_kwargs,
             # "criterion_and_derivative"-criterion_and_derivative,
-            "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
+            "criterion_and_derivative_kwargs": fun_and_jac_kwargs,
             "numdiff_options": numdiff_options,
             "log_options": log_options,
             "error_handling": error_handling,
@@ -566,30 +423,28 @@ def _optimize(
     # ==================================================================================
     # partial the kwargs into corresponding functions
     # ==================================================================================
-    criterion = process_func_of_params(
-        func=criterion,
-        kwargs=criterion_kwargs,
+    fun = process_func_of_params(
+        func=fun,
+        kwargs=fun_kwargs,
         name="criterion",
         skip_checks=skip_checks,
     )
-    if isinstance(derivative, dict):
-        derivative = derivative.get(algo_info.primary_criterion_entry)
-    if derivative is not None:
-        derivative = process_func_of_params(
-            func=derivative,
-            kwargs=derivative_kwargs,
+    if isinstance(jac, dict):
+        jac = jac.get(algo_info.primary_criterion_entry)
+    if jac is not None:
+        jac = process_func_of_params(
+            func=jac,
+            kwargs=jac_kwargs,
             name="derivative",
             skip_checks=skip_checks,
         )
-    if isinstance(criterion_and_derivative, dict):
-        criterion_and_derivative = criterion_and_derivative.get(
-            algo_info.primary_criterion_entry
-        )
+    if isinstance(fun_and_jac, dict):
+        fun_and_jac = fun_and_jac.get(algo_info.primary_criterion_entry)
 
-    if criterion_and_derivative is not None:
-        criterion_and_derivative = process_func_of_params(
-            func=criterion_and_derivative,
-            kwargs=criterion_and_derivative_kwargs,
+    if fun_and_jac is not None:
+        fun_and_jac = process_func_of_params(
+            func=fun_and_jac,
+            kwargs=fun_and_jac_kwargs,
             name="criterion_and_derivative",
             skip_checks=skip_checks,
         )
@@ -598,7 +453,7 @@ def _optimize(
     # Do first evaluation of user provided functions
     # ==================================================================================
     try:
-        first_crit_eval = criterion(params)
+        first_crit_eval = fun(params)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
@@ -606,27 +461,27 @@ def _optimize(
         raise InvalidFunctionError(msg) from e
 
     # do first derivative evaluation (if given)
-    if derivative is not None:
+    if jac is not None:
         try:
-            first_deriv_eval = derivative(params)
+            first_deriv_eval = jac(params)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
             msg = "Error while evaluating derivative at start params."
             raise InvalidFunctionError(msg) from e
 
-    if criterion_and_derivative is not None:
+    if fun_and_jac is not None:
         try:
-            first_crit_and_deriv_eval = criterion_and_derivative(params)
+            first_crit_and_deriv_eval = fun_and_jac(params)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
             msg = "Error while evaluating criterion_and_derivative at start params."
             raise InvalidFunctionError(msg) from e
 
-    if derivative is not None:
+    if jac is not None:
         used_deriv = first_deriv_eval
-    elif criterion_and_derivative is not None:
+    elif fun_and_jac is not None:
         used_deriv = first_crit_and_deriv_eval[1]
     else:
         used_deriv = None
@@ -714,10 +569,10 @@ def _optimize(
     # ==================================================================================
     to_partial = {
         "direction": direction,
-        "criterion": criterion,
+        "criterion": fun,
         "converter": converter,
-        "derivative": derivative,
-        "criterion_and_derivative": criterion_and_derivative,
+        "derivative": jac,
+        "criterion_and_derivative": fun_and_jac,
         "numdiff_options": numdiff_options,
         "logging": logging,
         "database": database,

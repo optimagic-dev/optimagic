@@ -169,7 +169,7 @@ def test_documentation_example(algorithm):
         del kwargs["upper_bounds"]
 
     minimize(
-        criterion=criterion,
+        fun=criterion,
         params=np.ones(6),
         algorithm=algorithm,
         constraints={

@@ -51,7 +51,7 @@ def test_tree_params_numerical_derivative_scalar_criterion(params):
     expected = np.zeros_like(flat)
 
     res = minimize(
-        criterion=flexible_sos_scalar,
+        fun=flexible_sos_scalar,
         params=params,
         algorithm="scipy_lbfgsb",
     )
@@ -65,8 +65,8 @@ def test_tree_params_scalar_criterion(params):
     expected = np.zeros_like(flat)
 
     res = minimize(
-        criterion=flexible_sos_scalar,
-        derivative=flexible_sos_scalar_derivative,
+        fun=flexible_sos_scalar,
+        jac=flexible_sos_scalar_derivative,
         params=params,
         algorithm="scipy_lbfgsb",
     )
@@ -86,7 +86,7 @@ def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
     expected = np.zeros_like(flat)
 
     res = minimize(
-        criterion=flexible_sos_ls,
+        fun=flexible_sos_ls,
         params=params,
         algorithm=algorithm,
     )
@@ -105,8 +105,8 @@ def test_tree_params_sos_ls(params, algorithm):
     }
 
     res = minimize(
-        criterion=flexible_sos_ls,
-        derivative=derivatives,
+        fun=flexible_sos_ls,
+        jac=derivatives,
         params=params,
         algorithm=algorithm,
     )

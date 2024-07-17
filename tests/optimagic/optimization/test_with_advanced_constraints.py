@@ -70,10 +70,10 @@ def test_with_covariance_constraint_bounds_distance(derivative, constr_name):
     params = pd.Series(START_INFO[constr_name], name="value").to_frame()
 
     res = minimize(
-        criterion=sos_scalar_criterion,
+        fun=sos_scalar_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
-        derivative=derivative,
+        jac=derivative,
         constraints=CONSTR_INFO[constr_name],
     )
 

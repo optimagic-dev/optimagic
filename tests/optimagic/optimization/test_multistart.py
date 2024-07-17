@@ -36,14 +36,14 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
 ):
     if direction == "minimize":
         res = minimize(
-            criterion=criterion,
+            fun=criterion,
             params=params,
             algorithm="scipy_lbfgsb",
             multistart=True,
         )
     else:
         res = maximize(
-            criterion=switch_sign(sos_dict_criterion),
+            fun=switch_sign(sos_dict_criterion),
             params=params,
             algorithm="scipy_lbfgsb",
             multistart=True,
@@ -68,7 +68,7 @@ def test_multistart_with_existing_sample(params):
     options = {"sample": sample}
 
     res = minimize(
-        criterion=sos_dict_criterion,
+        fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=True,
@@ -86,7 +86,7 @@ def test_convergence_via_max_discoveries_works(params):
     }
 
     res = maximize(
-        criterion=switch_sign(sos_dict_criterion),
+        fun=switch_sign(sos_dict_criterion),
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=True,
@@ -103,7 +103,7 @@ def test_steps_are_logged_as_skipped_if_convergence(params):
     }
 
     minimize(
-        criterion=sos_dict_criterion,
+        fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=True,
@@ -120,7 +120,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
     options = {"convergence_max_discoveries": np.inf}
 
     minimize(
-        criterion=sos_dict_criterion,
+        fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=True,
@@ -143,7 +143,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
 
 def test_with_non_transforming_constraints(params):
     res = minimize(
-        criterion=sos_dict_criterion,
+        fun=sos_dict_criterion,
         params=params,
         constraints=[{"loc": [0, 1], "type": "fixed", "value": [0, 1]}],
         algorithm="scipy_lbfgsb",
@@ -156,7 +156,7 @@ def test_with_non_transforming_constraints(params):
 def test_error_is_raised_with_transforming_constraints(params):
     with pytest.raises(NotImplementedError):
         minimize(
-            criterion=sos_dict_criterion,
+            fun=sos_dict_criterion,
             params=params,
             constraints=[{"loc": [0, 1], "type": "probability"}],
             algorithm="scipy_lbfgsb",
@@ -171,7 +171,7 @@ def _params_list_to_aray(params_list):
 
 def test_multistart_with_numpy_params():
     res = minimize(
-        criterion=lambda params: params @ params,
+        fun=lambda params: params @ params,
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         soft_lower_bounds=np.full(5, -10),
@@ -185,7 +185,7 @@ def test_multistart_with_numpy_params():
 def test_with_invalid_bounds():
     with pytest.raises(ValueError):
         minimize(
-            criterion=lambda x: x @ x,
+            fun=lambda x: x @ x,
             params=np.arange(5),
             algorithm="scipy_neldermead",
             multistart=True,
@@ -198,7 +198,7 @@ def test_with_scaling():
         return x @ x
 
     res = minimize(
-        criterion=_crit,
+        fun=_crit,
         params=np.full(5, 10),
         soft_lower_bounds=np.full(5, -1),
         soft_upper_bounds=np.full(5, 11),
@@ -243,7 +243,7 @@ def test_with_ackley():
 
 def test_multistart_with_least_squares_optimizers():
     est = minimize(
-        criterion=sos_dict_criterion,
+        fun=sos_dict_criterion,
         params=np.array([-1, 1.0]),
         lower_bounds=np.full(2, -10.0),
         upper_bounds=np.full(2, 10.0),

@@ -166,8 +166,8 @@ def estimate_ml(
         opt_res = None
     else:
         opt_res = maximize(
-            criterion=loglike,
-            criterion_kwargs=loglike_kwargs,
+            fun=loglike,
+            fun_kwargs=loglike_kwargs,
             params=params,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
