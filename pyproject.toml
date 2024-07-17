@@ -161,6 +161,7 @@ module = [
     "optimagic.optimization.process_multistart_sample",
     "optimagic.optimization.process_results",
     "optimagic.optimization.tiktak",
+    "optimagic.optimization.scipy_aliases",
 
     "optimagic.optimizers._pounders",
     "optimagic.optimizers._pounders.pounders_auxiliary",
