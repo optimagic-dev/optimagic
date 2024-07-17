@@ -181,7 +181,7 @@ def _process_one_result(optimize_result, problem):
 
     """
     _registry = get_registry(extended=True)
-    _criterion = problem["noise_free_criterion"]
+    _criterion = problem["noise_free_fun"]
     _start_x = problem["inputs"]["params"]
     _start_crit_value = _criterion(_start_x)
     if isinstance(_start_crit_value, np.ndarray):

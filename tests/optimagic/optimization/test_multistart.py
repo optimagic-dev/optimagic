@@ -222,7 +222,7 @@ def test_with_ackley():
     dim = 5
 
     kwargs = {
-        "criterion": ackley,
+        "fun": ackley,
         "params": np.full(dim, -10),
         "lower_bounds": np.full(dim, -32),
         "upper_bounds": np.full(dim, 32),

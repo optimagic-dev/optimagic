@@ -116,7 +116,7 @@ def get_benchmark_problems(
 
         problems[prob_name] = {
             "inputs": inputs,
-            "noise_free_criterion": specification["criterion"],
+            "noise_free_fun": specification["fun"],
             "solution": _create_problem_solution(
                 specification, scaling_options=scaling_options
             ),
@@ -192,9 +192,9 @@ def _get_raw_problems(name):
                 raw_problems[k] = v
             if k in subset_add_steps:
                 problem = v.copy()
-                raw_func = problem["criterion"]
+                raw_func = problem["fun"]
 
-                problem["criterion"] = partial(_step_func, raw_func=raw_func)
+                problem["fun"] = partial(_step_func, raw_func=raw_func)
                 raw_problems[f"{k}_with_steps"] = problem
 
         for k, v in CARTIS_ROBERTS_PROBLEMS.items():
@@ -223,14 +223,14 @@ def _create_problem_inputs(
 
     _criterion = partial(
         _internal_criterion_template,
-        criterion=specification["criterion"],
+        criterion=specification["fun"],
         additive_options=additive_options,
         multiplicative_options=multiplicative_options,
         scaling_factor=scaling_factor,
         rng=rng,
     )
 
-    inputs = {"criterion": _criterion, "params": _x}
+    inputs = {"fun": _criterion, "params": _x}
     return inputs
 
 

@@ -4849,7 +4849,7 @@ solution_x_methane = [
 CARTIS_ROBERTS_PROBLEMS = {
     "arglale": {
         # arglale is the same as linear_full_rank with specific settings
-        "criterion": partial(linear_full_rank, dim_out=400),
+        "fun": partial(linear_full_rank, dim_out=400),
         "start_x": [1] * 100,
         "solution_x": [-0.99999952] * 100,
         "start_criterion": 700,
@@ -4857,98 +4857,98 @@ CARTIS_ROBERTS_PROBLEMS = {
     },
     "arglble": {
         # arglble is the same as linear_rank_one with specific settings
-        "criterion": partial(linear_rank_one, dim_out=400),
+        "fun": partial(linear_rank_one, dim_out=400),
         "start_x": [1] * 100,
         "solution_x": solution_x_arglble,
         "start_criterion": 5.460944e14,
         "solution_criterion": 99.62547,
     },
     "argtrig": {
-        "criterion": argtrig,
+        "fun": argtrig,
         "start_x": [1 / 100] * 100,
         "solution_x": [0] * 100,
         "start_criterion": 32.99641,
         "solution_criterion": 0,
     },
     "artif": {
-        "criterion": artif,
+        "fun": artif,
         "start_x": [1] * 100,
         "solution_x": None,
         "start_criterion": 36.59115,
         "solution_criterion": 0,
     },
     "arwhdne": {
-        "criterion": arwhdne,
+        "fun": arwhdne,
         "start_x": [1] * 100,
         "solution_x": [0.706011] * 99 + [0],
         "start_criterion": 495,
         "solution_criterion": 27.66203,
     },
     "bdvalues": {
-        "criterion": bdvalues,
+        "fun": bdvalues,
         "start_x": get_start_points_bdvalues(100, 1000),
         "solution_x": solution_x_bdvalues,
         "start_criterion": 1.943417e7,
         "solution_criterion": 0,
     },
     "bratu_2d": {
-        "criterion": partial(bratu_2d, alpha=4),
+        "fun": partial(bratu_2d, alpha=4),
         "start_x": [0] * 64,
         "solution_x": solution_x_bratu_2d,
         "start_criterion": 0.1560738,
         "solution_criterion": 0,
     },
     "bratu_2d_t": {
-        "criterion": partial(bratu_2d, alpha=6.80812),
+        "fun": partial(bratu_2d, alpha=6.80812),
         "start_x": [0] * 64,
         "solution_x": solution_x_bratu_2d_t,
         "start_criterion": 0.4521311,
         "solution_criterion": 1.8534736e-05,
     },
     "bratu_3d": {
-        "criterion": partial(bratu_3d, alpha=6.80812),
+        "fun": partial(bratu_3d, alpha=6.80812),
         "start_x": [0] * 27,
         "solution_x": solution_x_bratu_3d,
         "start_criterion": 4.888529,
         "solution_criterion": 0,
     },
     "brownale": {
-        "criterion": brown_almost_linear,
+        "fun": brown_almost_linear,
         "start_x": [0.5] * 100,
         "solution_x": [1] * 100,
         "start_criterion": 2.524757e5,
         "solution_criterion": 0,
     },
     "broydn_3d": {
-        "criterion": broydn_3d,
+        "fun": broydn_3d,
         "start_x": [-1] * 100,
         "solution_x": solution_x_broydn_3d,
         "start_criterion": 111,
         "solution_criterion": 0,
     },
     "cbratu_2d": {
-        "criterion": cbratu_2d,
+        "fun": cbratu_2d,
         "start_x": [0] * (2 * 5 * 5),
         "solution_x": solution_x_cbratu_2d,
         "start_criterion": 0.4822531,
         "solution_criterion": 0,
     },
     "broydn_bd": {
-        "criterion": broydn_bd,
+        "fun": broydn_bd,
         "start_x": [1] * 100,
         "solution_x": solution_x_broydn_bd,
         "start_criterion": 2404,
         "solution_criterion": 0,
     },
     "chandheq": {
-        "criterion": chandheq,
+        "fun": chandheq,
         "start_x": (np.arange(1, 101) / 100).tolist(),
         "solution_x": None,
         "start_criterion": 6.923365,
         "solution_criterion": 0,
     },
     "chemrcta": {
-        "criterion": chemrcta,
+        "fun": chemrcta,
         "start_x": [1] * 100,
         "solution_x": None,
         "start_criterion": 3.0935,
@@ -4956,7 +4956,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "lower_bounds": np.concatenate([np.zeros(50), 1e-6 * np.ones(50)]),
     },
     "chemrctb": {
-        "criterion": chemrctb,
+        "fun": chemrctb,
         "start_x": [1] * 100,
         "solution_x": solution_x_chemrctb,
         "start_criterion": 1.446513,
@@ -4964,35 +4964,35 @@ CARTIS_ROBERTS_PROBLEMS = {
         "lower_bounds": 1e-6 * np.ones(100),
     },
     "chnrsbne": {
-        "criterion": chnrsbne,
+        "fun": chnrsbne,
         "start_x": [-1] * 50,
         "solution_x": [1] * 50,
         "start_criterion": 7635.84,
         "solution_criterion": 0,
     },
     "drcavty1": {
-        "criterion": partial(drcavty, r=500),
+        "fun": partial(drcavty, r=500),
         "start_x": [0] * 100,
         "solution_x": None,
         "start_criterion": 0.4513889,
         "solution_criterion": 0,
     },
     "drcavty2": {
-        "criterion": partial(drcavty, r=1000),
+        "fun": partial(drcavty, r=1000),
         "start_x": [0] * 100,
         "solution_x": solution_x_drcavty2,
         "start_criterion": 0.4513889,
         "solution_criterion": 3.988378e-4,
     },
     "drcavty3": {
-        "criterion": partial(drcavty, r=4500),
+        "fun": partial(drcavty, r=4500),
         "start_x": [0] * 100,
         "solution_x": solution_x_drcavty3,
         "start_criterion": 0.4513889,
         "solution_criterion": 0,
     },
     "eigena": {
-        "criterion": partial(eigen, param=np.diag(np.arange(1, 11))),
+        "fun": partial(eigen, param=np.diag(np.arange(1, 11))),
         "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
         "solution_x": [*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
         "start_criterion": 285,
@@ -5000,7 +5000,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "lower_bounds": np.zeros(110),
     },
     "eigenb": {
-        "criterion": partial(
+        "fun": partial(
             eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)
         ),
         "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
@@ -5011,7 +5011,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         # according to table 3 in their paper, the minimum is at 0.
     },
     "flosp2hh": {
-        "criterion": partial(
+        "fun": partial(
             flosp2,
             a=np.array([1, 0, -1], dtype=np.int64),
             b=np.array([1, 0, -1], dtype=np.int64),
@@ -5023,7 +5023,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 1 / 3,
     },
     "flosp2hl": {
-        "criterion": partial(
+        "fun": partial(
             flosp2,
             a=np.array([1, 0, -1], dtype=np.float64),
             b=np.array([1, 0, -1], dtype=np.float64),
@@ -5035,7 +5035,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 1 / 3,
     },
     "flosp2hm": {
-        "criterion": partial(
+        "fun": partial(
             flosp2,
             a=np.array([1, 0, -1], dtype=np.float64),
             b=np.array([1, 0, -1], dtype=np.float64),
@@ -5047,7 +5047,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 1 / 3,
     },
     "flosp2th": {
-        "criterion": partial(
+        "fun": partial(
             flosp2,
             a=np.array([0, 1, 0], dtype=np.float64),
             b=np.array([0, 1, 1], dtype=np.float64),
@@ -5059,7 +5059,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "flosp2tl": {
-        "criterion": partial(
+        "fun": partial(
             flosp2,
             a=np.array([0, 1, 0], dtype=np.float64),
             b=np.array([0, 1, 1], dtype=np.float64),
@@ -5071,7 +5071,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "flosp2tm": {
-        "criterion": partial(
+        "fun": partial(
             flosp2,
             a=np.array([0, 1, 0], dtype=np.float64),
             b=np.array([0, 1, 1], dtype=np.float64),
@@ -5083,49 +5083,49 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "freurone": {
-        "criterion": freurone,
+        "fun": freurone,
         "start_x": [0.5, -2] + [0] * 98,
         "solution_x": solution_x_freurone,
         "start_criterion": 9.95565e4,
         "solution_criterion": 1.196458e4,
     },
     "hatfldg": {
-        "criterion": hatfldg,
+        "fun": hatfldg,
         "start_x": [1] * 25,
         "solution_x": [0] * 11 + [-1, 1] + [0] * 12,
         "start_criterion": 27,
         "solution_criterion": 0,
     },
     "hydcar20": {
-        "criterion": partial(hydcar, n=20, m=3, k=9),
+        "fun": partial(hydcar, n=20, m=3, k=9),
         "start_x": get_start_points_hydcar20(),
         "solution_x": solution_x_hydcar20,
         "start_criterion": 1341.663,
         "solution_criterion": 0,
     },
     "hydcar6": {
-        "criterion": partial(hydcar, n=6, m=3, k=2),
+        "fun": partial(hydcar, n=6, m=3, k=2),
         "start_x": get_start_points_hydcar6(),
         "solution_x": solution_x_hydcar6,
         "start_criterion": 704.1073,
         "solution_criterion": 0,
     },
     "integreq": {
-        "criterion": integreq,
+        "fun": integreq,
         "start_x": (np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1)).tolist(),
         "solution_x": solution_x_integreq,
         "start_criterion": 0.5730503,
         "solution_criterion": 0,
     },
     "luksan11": {
-        "criterion": luksan11,
+        "fun": luksan11,
         "start_x": [-0.8] * 100,
         "solution_x": [1] * 100,
         "start_criterion": 626.0640,
         "solution_criterion": 0,
     },
     "luksan12": {
-        "criterion": luksan12,
+        "fun": luksan12,
         "start_x": [-1] * 98,
         "solution_x": None,
         "start_criterion": 3.2160e4,
@@ -5136,7 +5136,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         # That is why we disable this test function for the time being.
     },
     "luksan13": {
-        "criterion": luksan13,
+        "fun": luksan13,
         "start_x": [-1] * 98,
         "solution_x": solution_x_luksan13,
         "start_criterion": 6.4352e4,
@@ -5145,112 +5145,112 @@ CARTIS_ROBERTS_PROBLEMS = {
         # according to table 3 in their paper, the minimum is at 25188.86
     },
     "luksan14": {
-        "criterion": luksan14,
+        "fun": luksan14,
         "start_x": [-1] * 98,
         "solution_x": solution_x_luksan14,
         "start_criterion": 2.6880e4,
         "solution_criterion": 123.9235,
     },
     "luksan15": {
-        "criterion": luksan15,
+        "fun": luksan15,
         "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
         "solution_x": solution_x_luksan15,
         "start_criterion": 2.701585e4,
         "solution_criterion": 3.569697,
     },
     "luksan16": {
-        "criterion": luksan16,
+        "fun": luksan16,
         "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
         "solution_x": solution_x_luksan16,
         "start_criterion": 1.306848e4,
         "solution_criterion": 3.569697,
     },
     "luksan17": {
-        "criterion": luksan17,
+        "fun": luksan17,
         "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
         "solution_x": None,  # multiple argmins
         "start_criterion": 1.687370e6,
         "solution_criterion": 0.4931613,
     },
     "luksan21": {
-        "criterion": luksan21,
+        "fun": luksan21,
         "start_x": [ih * (ih - 1) for ih in np.arange(1, 101) * (1 / 101)],
         "solution_x": solution_x_luksan21,
         "start_criterion": 99.98751,
         "solution_criterion": 0,
     },
     "luksan22": {
-        "criterion": luksan22,
+        "fun": luksan22,
         "start_x": [-1.2 if i % 2 == 0 else 1 for i in range(100)],
         "solution_x": solution_x_luksan22,
         "start_criterion": 2.487686e4,
         "solution_criterion": 872.9230,
     },
     "methanb8": {
-        "criterion": methane,
+        "fun": methane,
         "start_x": get_start_points_methanb8(),
         "solution_x": solution_x_methane,
         "start_criterion": 1.043105,
         "solution_criterion": 0,
     },
     "methanl8": {
-        "criterion": methane,
+        "fun": methane,
         "start_x": get_start_points_methanl8(),
         "solution_x": solution_x_methane,
         "start_criterion": 4345.100,
         "solution_criterion": 0,
     },
     "morebvne": {
-        "criterion": morebvne,
+        "fun": morebvne,
         "start_x": [t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
         "solution_x": solution_x_morebvne,
         "start_criterion": 3.633100e-4,
         "solution_criterion": 0,
     },
     "msqrta": {
-        "criterion": msqrta,
+        "fun": msqrta,
         "start_x": get_start_points_msqrta(10),
         "solution_x": solution_x_msqrta,
         "start_criterion": 212.7162,
         "solution_criterion": 0,
     },
     "msqrtb": {
-        "criterion": msqrta,
+        "fun": msqrta,
         "start_x": get_start_points_msqrta(10, flag=2),
         "solution_x": solution_x_msqrtb,
         "start_criterion": 205.0753,
         "solution_criterion": 0,
     },
     "oscigrne": {
-        "criterion": oscigrne,
+        "fun": oscigrne,
         "start_x": [-2] + [1] * 99,
         "solution_x": solution_x_oscigrne,
         "start_criterion": 6.120720e8,
         "solution_criterion": 0,
     },
     "penalty_1": {
-        "criterion": penalty_1,
+        "fun": penalty_1,
         "start_x": list(range(1, 101)),
         "solution_x": None,
         "start_criterion": 1.144806e11,
         "solution_criterion": 9.025000e-9,
     },
     "penalty_2": {
-        "criterion": penalty_2,
+        "fun": penalty_2,
         "start_x": [0.5] * 100,
         "solution_x": solution_x_penalty2,
         "start_criterion": 1.591383e6,
         "solution_criterion": 0.9809377,
     },
     "powellse": {
-        "criterion": powell_singular,
+        "fun": powell_singular,
         "start_x": [3.0, -1.0, 0.0, 1] * 25,
         "solution_x": [0] * 100,
         "start_criterion": 41875,
         "solution_criterion": 0,
     },
     "qr3d": {
-        "criterion": partial(qr3d, m=5),
+        "fun": partial(qr3d, m=5),
         "start_x": get_start_points_qr3d(5),
         "solution_x": solution_x_qr3d,
         "start_criterion": 1.2,
@@ -5259,7 +5259,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
     },
     "qr3dbd": {
-        "criterion": partial(qr3dbd, m=5),
+        "fun": partial(qr3dbd, m=5),
         "start_x": get_start_points_qr3dbd(5),
         "solution_x": solution_x_qr3dbd,
         "start_criterion": 1.2,
@@ -5268,21 +5268,21 @@ CARTIS_ROBERTS_PROBLEMS = {
         + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
     },
     "spmsqrt": {
-        "criterion": spmsqrt,
+        "fun": spmsqrt,
         "start_x": get_start_points_spmsqrt(34),
         "solution_x": solution_x_spmsqrt,
         "start_criterion": 74.33542,
         "solution_criterion": 0,
     },
     "semicn2u": {
-        "criterion": semicon2,
+        "fun": semicon2,
         "start_x": [0] * 100,
         "solution_x": solution_x_semicon2,
         "start_criterion": 2.025037e4,
         "solution_criterion": 0,
     },
     "semicon2": {
-        "criterion": semicon2,
+        "fun": semicon2,
         "start_x": [0] * 100,
         "solution_x": solution_x_semicon2,
         "start_criterion": 2.025037e4,
@@ -5291,28 +5291,28 @@ CARTIS_ROBERTS_PROBLEMS = {
         "upper_bounds": 0.2 * 700 * np.ones(100),
     },
     "vardimne": {
-        "criterion": vardimne,
+        "fun": vardimne,
         "start_x": [1 - i / 100 for i in range(1, 101)],
         "solution_x": [1] * 100,
         "start_criterion": 1.310584e14,
         "solution_criterion": 0,
     },
     "watsonne": {
-        "criterion": watson,
+        "fun": watson,
         "start_x": [0] * 31,
         "solution_x": solution_x_watson,
         "start_criterion": 30,
         "solution_criterion": 0,
     },
     "yatpsq_1": {
-        "criterion": partial(yatpsq_1, dim_in=10),
+        "fun": partial(yatpsq_1, dim_in=10),
         "start_x": [6] * 100 + [0] * 20,
         "solution_x": solution_x_yatpsq_1,
         "start_criterion": 2.073643e6,
         "solution_criterion": 0,
     },
     "yatpsq_2": {
-        "criterion": partial(yatpsq_2, dim_in=10),
+        "fun": partial(yatpsq_2, dim_in=10),
         "start_x": [10] * 100 + [0] * 20,
         "solution_x": solution_x_yatpsq_2,
         "start_criterion": 1.831687e5,

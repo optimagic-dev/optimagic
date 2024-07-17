@@ -10,7 +10,7 @@ from numpy.testing import assert_array_almost_equal
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
 def test_cartis_roberts_function_at_start_x(name, specification):  # noqa: ARG001
-    _criterion = specification["criterion"]
+    _criterion = specification["fun"]
     _x = np.array(specification["start_x"])
     assert isinstance(specification["start_x"], list)
     _contributions = _criterion(_x)
@@ -22,7 +22,7 @@ def test_cartis_roberts_function_at_start_x(name, specification):  # noqa: ARG00
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
 def test_cartis_roberts_function_at_solution_x(name, specification):  # noqa: ARG001
-    _criterion = specification["criterion"]
+    _criterion = specification["fun"]
     _x = specification["solution_x"]
     if _x is not None:
         assert isinstance(_x, list)
