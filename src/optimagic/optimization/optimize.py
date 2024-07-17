@@ -35,6 +35,7 @@ from optimagic.parameters.conversion import (
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from optimagic.shared.process_user_function import process_func_of_params
+from optimagic.optimization.scipy_aliases import map_method_to_algorithm
 
 
 def maximize(
@@ -66,6 +67,7 @@ def maximize(
     skip_checks=False,
     # scipy aliases
     x0=None,
+    method=None,
     # deprecated arguments
     criterion=None,
     criterion_kwargs=None,
@@ -104,6 +106,7 @@ def maximize(
         skip_checks=skip_checks,
         # scipy aliases
         x0=x0,
+        method=method,
         # deprecated arguments
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
@@ -143,6 +146,7 @@ def minimize(
     skip_checks=False,
     # scipy aliases
     x0=None,
+    method=None,
     # deprecated arguments
     criterion=None,
     criterion_kwargs=None,
@@ -182,6 +186,7 @@ def minimize(
         skip_checks=skip_checks,
         # scipy aliases
         x0=x0,
+        method=method,
         # deprecated arguments
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
@@ -222,6 +227,7 @@ def _optimize(
     skip_checks,
     # scipy aliases
     x0,
+    method,
     # deprecated arguments
     criterion,
     criterion_kwargs,
@@ -257,7 +263,7 @@ def _optimize(
         )
         raise MissingInputError(msg)
 
-    if algorithm is None:
+    if algorithm is None and method is None:
         msg = (
             "Missing algorithm. Please provide an algorithm as the third positional "
             "argument or as the keyword argument `algorithm`."
@@ -352,6 +358,16 @@ def _optimize(
             raise AliasError(msg)
         else:
             params = x0
+
+    if method is not None:
+        if algorithm is not None:
+            msg = (
+                "method is an alias for algorithm to select the scipy optimizers under "
+                "their original name. Do not use both method and algorithm."
+            )
+            raise AliasError(msg)
+        else:
+            algorithm = map_method_to_algorithm(method)
 
     # ==================================================================================
     # Set default values and check options
