@@ -131,7 +131,7 @@ test_cases = list(
             "scipy_lbfgsb",
             {
                 "algorithm": "scipy_lbfgsb",
-                "criterion_and_derivative": logit_loglike_and_derivative,
+                "fun_and_jac": logit_loglike_and_derivative,
             },
         ],  # optimize_options
         [None, logit_jacobian, False],  # jacobian
@@ -160,8 +160,8 @@ def test_estimate_ml_with_logit_no_constraints(
 
     kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
 
-    if "criterion_and_derivative" in optimize_options:
-        optimize_options["criterion_and_derivative_kwargs"] = kwargs
+    if "fun_and_jac" in optimize_options:
+        optimize_options["fun_and_jac_kwargs"] = kwargs
 
     got = estimate_ml(
         loglike=logit_loglike,
@@ -268,8 +268,8 @@ def test_estimate_ml_with_logit_constraints(
         "algo_options": {"convergence.relative_criterion_tolerance": 1e-12},
     }
 
-    if "criterion_and_derivative" in optimize_options:
-        optimize_options["criterion_and_derivative_kwargs"] = kwargs
+    if "fun_and_jac" in optimize_options:
+        optimize_options["fun_and_jac_kwargs"] = kwargs
 
     got = estimate_ml(
         loglike=logit_loglike,

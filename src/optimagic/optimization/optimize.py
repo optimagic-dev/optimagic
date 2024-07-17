@@ -263,7 +263,7 @@ def _optimize(
             "renamed to `fun`. Please use `fun` instead of `criterion`. Using "
             "`criterion` will become an error in optimagic version 0.6.0 and later."
         )
-        warnings.warn(msg, DeprecationWarning)
+        warnings.warn(msg, FutureWarning)
 
         if fun is None:
             fun = criterion
@@ -275,7 +275,7 @@ def _optimize(
             "`criterion_kwargs`. Using `criterion_kwargs` will become an error in "
             "optimagic version 0.6.0 and later."
         )
-        warnings.warn(msg, DeprecationWarning)
+        warnings.warn(msg, FutureWarning)
 
         if fun_kwargs is None:
             fun_kwargs = criterion_kwargs
@@ -286,7 +286,7 @@ def _optimize(
             "been renamed to `jac`. Please use `jac` instead of `derivative`. Using "
             "`derivative` will become an error in optimagic version 0.6.0 and later."
         )
-        warnings.warn(msg, DeprecationWarning)
+        warnings.warn(msg, FutureWarning)
 
         if jac is None:
             jac = derivative
@@ -298,7 +298,7 @@ def _optimize(
             "`derivative_kwargs`. Using `derivative_kwargs` will become an error in "
             "optimagic version 0.6.0 and later."
         )
-        warnings.warn(msg, DeprecationWarning)
+        warnings.warn(msg, FutureWarning)
 
         if jac_kwargs is None:
             jac_kwargs = derivative_kwargs
@@ -310,7 +310,7 @@ def _optimize(
             "instead of `criterion_and_derivative`. Using `criterion_and_derivative` "
             "will become an error in optimagic version 0.6.0 and later."
         )
-        warnings.warn(msg, DeprecationWarning)
+        warnings.warn(msg, FutureWarning)
 
         if fun_and_jac is None:
             fun_and_jac = criterion_and_derivative
@@ -323,7 +323,7 @@ def _optimize(
             "`criterion_and_derivative_kwargs`. Using `criterion_and_derivative_kwargs`"
             " will become an error in optimagic version 0.6.0 and later."
         )
-        warnings.warn(msg, DeprecationWarning)
+        warnings.warn(msg, FutureWarning)
 
         if fun_and_jac_kwargs is None:
             fun_and_jac_kwargs = criterion_and_derivative_kwargs
