@@ -22,8 +22,7 @@ optimizers from SciPy, NlOpt and many other Python packages.
 
 *optimagic*'s `minimize` function works just like SciPy's, so you don't have to adjust
 your code. You simply get more optimizers for free. On top you get powerful diagnostic
-tools, parallel numerical derivatives and more. If you want to see what *optimagic* can
-do, check out this [tutorial](tutorials/optimization_overview.ipynb)
+tools, parallel numerical derivatives and more.
 
 *optimagic* was formerly called *estimagic*, because it also provides functionality to
 perform statistical inference on estimated parameters. *estimagic* is now a subpackage
