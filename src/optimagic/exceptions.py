@@ -27,6 +27,10 @@ class MissingInputError(OptimagicError):
     """Exception for missing user provided input."""
 
 
+class AliasError(OptimagicError):
+    """Exception for aliasing errors."""
+
+
 class InvalidKwargsError(OptimagicError):
     """Exception for invalid user provided keyword arguments."""
 

@@ -7,6 +7,7 @@ from optimagic.exceptions import (
     InvalidFunctionError,
     InvalidKwargsError,
     MissingInputError,
+    AliasError,
 )
 from optimagic.logging.create_tables import (
     make_optimization_iteration_table,
@@ -63,6 +64,8 @@ def maximize(
     multistart_options=None,
     collect_history=True,
     skip_checks=False,
+    # scipy aliases
+    x0=None,
     # deprecated arguments
     criterion=None,
     criterion_kwargs=None,
@@ -99,6 +102,8 @@ def maximize(
         multistart_options=multistart_options,
         collect_history=collect_history,
         skip_checks=skip_checks,
+        # scipy aliases
+        x0=x0,
         # deprecated arguments
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
@@ -136,6 +141,8 @@ def minimize(
     multistart_options=None,
     collect_history=True,
     skip_checks=False,
+    # scipy aliases
+    x0=None,
     # deprecated arguments
     criterion=None,
     criterion_kwargs=None,
@@ -173,6 +180,8 @@ def minimize(
         multistart_options=multistart_options,
         collect_history=collect_history,
         skip_checks=skip_checks,
+        # scipy aliases
+        x0=x0,
         # deprecated arguments
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
@@ -211,6 +220,8 @@ def _optimize(
     multistart_options,
     collect_history,
     skip_checks,
+    # scipy aliases
+    x0,
     # deprecated arguments
     criterion,
     criterion_kwargs,
@@ -239,7 +250,7 @@ def _optimize(
         )
         raise MissingInputError(msg)
 
-    if params is None:
+    if params is None and x0 is None:
         msg = (
             "Missing start parameters. Please provide start parameters as the second "
             "positional argument or as the keyword argument `params`."
@@ -327,6 +338,20 @@ def _optimize(
 
         if fun_and_jac_kwargs is None:
             fun_and_jac_kwargs = criterion_and_derivative_kwargs
+
+    # ==================================================================================
+    # handle scipy aliases
+    # ==================================================================================
+
+    if x0 is not None:
+        if params is not None:
+            msg = (
+                "x0 is an alias for params (for better compatibility with scipy). "
+                "Do not use both x0 and params."
+            )
+            raise AliasError(msg)
+        else:
+            params = x0
 
     # ==================================================================================
     # Set default values and check options
