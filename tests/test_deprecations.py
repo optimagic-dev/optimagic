@@ -275,3 +275,70 @@ def test_estimagic_params_plot_is_deprecated():
     res = om.minimize(lambda x: x @ x, np.arange(3), algorithm="scipy_lbfgsb")
     with pytest.warns(FutureWarning, match=msg):
         params_plot(res)
+
+
+def test_criterion_is_depracated():
+    msg = "the `criterion` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            criterion=lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+        )
+
+
+def test_criterion_kwargs_is_deprecated():
+    msg = "the `criterion_kwargs` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x, a: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            criterion_kwargs={"a": 1},
+        )
+
+
+def test_derivative_is_deprecated():
+    msg = "the `derivative` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            derivative=lambda x: 2 * x,
+        )
+
+
+def test_derivative_kwargs_is_deprecated():
+    msg = "the `derivative_kwargs` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            jac=lambda x, a: 2 * x,
+            derivative_kwargs={"a": 1},
+        )
+
+
+def test_criterion_and_derivative_is_deprecated():
+    msg = "the `criterion_and_derivative` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            criterion_and_derivative=lambda x: (x @ x, 2 * x),
+        )
+
+
+def test_criterion_and_derivative_kwargs_is_deprecated():
+    msg = "the `criterion_and_derivative_kwargs` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            fun_and_jac=lambda x, a: (x @ x, 2 * x),
+            criterion_and_derivative_kwargs={"a": 1},
+        )
