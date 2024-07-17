@@ -83,3 +83,14 @@ If you use optimagic for your research, please do not forget to cite it.
   Url    = {https://github.com/OpenSourceEconomics/optimagic}
 }
 ```
+
+## Acknowledgements
+
+We thank all institutions that have funded or supported optimagic (formerly estimagic)
+
+<img src="docs/source/_static/images/aai-institute-logo.svg" width="185">
+<img src="docs/source/_static/images/numfocus_logo.png" width="200">
+<img src="docs/source/_static/images/tra_logo.png" width="240">
+
+<img src="docs/source/_static/images/hoover_logo.png" width="192">
+<img src="docs/source/_static/images/transferlab-logo.svg" width="400">
