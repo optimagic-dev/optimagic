@@ -95,3 +95,58 @@ def test_method_and_algorithm_do_not_work_together_in_maximize():
             algorithm="scipy_lbfgsb",
             method="L-BFGS-B",
         )
+
+
+def test_exception_for_hess():
+    msg = "The hess argument is not yet supported"
+    with pytest.raises(NotImplementedError, match=msg):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            hess=lambda x: np.eye(len(x)),
+        )
+
+
+def test_exception_for_hessp():
+    msg = "The hessp argument is not yet supported"
+    with pytest.raises(NotImplementedError, match=msg):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            hessp=lambda x, p: np.eye(len(x)) @ p,
+        )
+
+
+def test_exception_for_callback():
+    msg = "The callback argument is not yet supported"
+    with pytest.raises(NotImplementedError, match=msg):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            callback=lambda x: print(x),
+        )
+
+
+def test_exception_for_options():
+    msg = "The options argument is not supported"
+    with pytest.raises(NotImplementedError, match=msg):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            options={"maxiter": 100},
+        )
+
+
+def test_exception_for_tol():
+    msg = "The tol argument is not supported"
+    with pytest.raises(NotImplementedError, match=msg):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            tol=1e-6,
+        )

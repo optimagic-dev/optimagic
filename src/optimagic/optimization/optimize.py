@@ -68,6 +68,13 @@ def maximize(
     # scipy aliases
     x0=None,
     method=None,
+    # scipy arguments that are not yet supported
+    hess=None,
+    hessp=None,
+    callback=None,
+    # scipy arguments that will never be supported
+    options=None,
+    tol=None,
     # deprecated arguments
     criterion=None,
     criterion_kwargs=None,
@@ -107,6 +114,13 @@ def maximize(
         # scipy aliases
         x0=x0,
         method=method,
+        # scipy arguments that are not yet supported
+        hess=hess,
+        hessp=hessp,
+        callback=callback,
+        # scipy arguments that will never be supported
+        options=options,
+        tol=tol,
         # deprecated arguments
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
@@ -147,6 +161,13 @@ def minimize(
     # scipy aliases
     x0=None,
     method=None,
+    # scipy arguments that are not yet supported
+    hess=None,
+    hessp=None,
+    callback=None,
+    # scipy arguments that will never be supported
+    options=None,
+    tol=None,
     # deprecated arguments
     criterion=None,
     criterion_kwargs=None,
@@ -187,6 +208,13 @@ def minimize(
         # scipy aliases
         x0=x0,
         method=method,
+        # scipy arguments that are not yet supported
+        hess=hess,
+        hessp=hessp,
+        callback=callback,
+        # scipy arguments that will never be supported
+        options=options,
+        tol=tol,
         # deprecated arguments
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
@@ -228,6 +256,13 @@ def _optimize(
     # scipy aliases
     x0,
     method,
+    # scipy arguments that are not yet supported
+    hess,
+    hessp,
+    callback,
+    # scipy arguments that will never be supported
+    options,
+    tol,
     # deprecated arguments
     criterion,
     criterion_kwargs,
@@ -368,6 +403,55 @@ def _optimize(
             raise AliasError(msg)
         else:
             algorithm = map_method_to_algorithm(method)
+
+    # ==================================================================================
+    # Handle scipy arguments that are not yet implemented
+    # ==================================================================================
+
+    if hess is not None:
+        msg = (
+            "The hess argument is not yet supported in optimagic. Creat an issue on "
+            "https://github.com/OpenSourceEconomics/optimagic/ if you have urgent need "
+            "for this feature."
+        )
+        raise NotImplementedError(msg)
+
+    if hessp is not None:
+        msg = (
+            "The hessp argument is not yet supported in optimagic. Creat an issue on "
+            "https://github.com/OpenSourceEconomics/optimagic/ if you have urgent need "
+            "for this feature."
+        )
+        raise NotImplementedError(msg)
+
+    if callback is not None:
+        msg = (
+            "The callback argument is not yet supported in optimagic. Creat an issue "
+            "on https://github.com/OpenSourceEconomics/optimagic/ if you have urgent "
+            "need for this feature."
+        )
+        raise NotImplementedError(msg)
+
+    # ==================================================================================
+    # Handle scipy arguments that will never be supported
+    # ==================================================================================
+
+    if options is not None:
+        # TODO: Add link to a how-to guide or tutorial for this
+        msg = (
+            "The options argument is not supported in optimagic. Please use the "
+            "algo_options argument instead."
+        )
+        raise NotImplementedError(msg)
+
+    if tol is not None:
+        # TODO: Add link to a how-to guide or tutorial for this
+        msg = (
+            "The tol argument is not supported in optimagic. Please use "
+            "algo_options or configured algorithms instead to set convergence criteria "
+            "for your optimizer."
+        )
+        raise NotImplementedError(msg)
 
     # ==================================================================================
     # Set default values and check options
