@@ -5,9 +5,9 @@ import numpy as np
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-    CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-    STOPPING_MAX_ITERATIONS,
+    CONVERGENCE_SECOND_BEST_FTOL_ABS,
+    CONVERGENCE_SECOND_BEST_XTOL_ABS,
+    STOPPING_MAXITER,
 )
 
 
@@ -25,9 +25,9 @@ def neldermead_parallel(
     init_simplex_method="gao_han",
     n_cores=1,
     adaptive=True,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
-    convergence_absolute_params_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,  # noqa: E501
+    stopping_maxiter=STOPPING_MAXITER,
+    convergence_ftol_abs=CONVERGENCE_SECOND_BEST_FTOL_ABS,  # noqa: E501
+    convergence_xtol_abs=CONVERGENCE_SECOND_BEST_XTOL_ABS,  # noqa: E501
     batch_evaluator="joblib",
 ):
     """Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
@@ -52,15 +52,14 @@ def neldermead_parallel(
         for simplex size.
         The default is True.
 
-    stopping_max_iterations (int): Maximum number of algorithm iterations.
+    stopping_maxiter (int): Maximum number of algorithm iterations.
         The default is STOPPING_MAX_ITERATIONS.
 
-    convergence_absolute_criterion_tolerance (float): maximal difference between
+    convergence_ftol_abs (float): maximal difference between
         function value evaluated on simplex points.
-        The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE.
 
-    convergence_absolute_params_tolerance (float): maximal distance between points in
-        the simplex. The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
+    convergence_xtol_abs (float): maximal distance between points in
+        the simplex.
 
     batch_evaluator (string or callable): See :ref:`batch_evaluators` for
         details. Default "joblib".
@@ -232,16 +231,14 @@ def neldermead_parallel(
 
         # termination criteria
         if (
-            np.max(np.abs(f_s[0, :] - f_s[1:, :]))
-            <= convergence_absolute_criterion_tolerance
-            and np.max(np.abs(s[0, :] - s[1:,]))
-            <= convergence_absolute_params_tolerance
+            np.max(np.abs(f_s[0, :] - f_s[1:, :])) <= convergence_ftol_abs
+            and np.max(np.abs(s[0, :] - s[1:,])) <= convergence_xtol_abs
         ):
             optimal = True
             converge = True
             reason_to_stop = "Termination codition satisfied"
         elif (
-            iterations >= stopping_max_iterations
+            iterations >= stopping_maxiter
         ):  # if maximum amount of iteration is exceeded
             optimal = True
             converge = False

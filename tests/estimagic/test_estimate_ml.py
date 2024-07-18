@@ -265,7 +265,7 @@ def test_estimate_ml_with_logit_constraints(
 
     optimize_options = {
         "algorithm": "scipy_lbfgsb",
-        "algo_options": {"convergence.relative_criterion_tolerance": 1e-12},
+        "algo_options": {"convergence.ftol_rel": 1e-12},
     }
 
     if "fun_and_jac" in optimize_options:

@@ -9,12 +9,12 @@ import numpy as np
 from optimagic.config import IS_NLOPT_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    STOPPING_MAX_CRITERION_EVALUATIONS,
-    STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    CONVERGENCE_FTOL_ABS,
+    CONVERGENCE_XTOL_ABS,
+    CONVERGENCE_FTOL_REL,
+    CONVERGENCE_XTOL_REL,
+    STOPPING_MAXFUN,
+    STOPPING_MAXFUN_GLOBAL,
 )
 from optimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
@@ -36,11 +36,11 @@ def nlopt_bobyqa(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the BOBYQA algorithm.
 
@@ -55,11 +55,11 @@ def nlopt_bobyqa(
         upper_bounds,
         derivative=None,
         algorithm=nlopt.LN_BOBYQA,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -77,11 +77,11 @@ def nlopt_neldermead(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=0,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=0,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the Nelder-Mead simplex algorithm.
 
@@ -97,11 +97,11 @@ def nlopt_neldermead(
         upper_bounds,
         algorithm=nlopt.LN_NELDERMEAD,
         derivative=None,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -117,11 +117,11 @@ def nlopt_praxis(
     criterion,
     x,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using principal-axis method.
 
@@ -136,11 +136,11 @@ def nlopt_praxis(
         upper_bounds=None,
         algorithm=nlopt.LN_PRAXIS,
         derivative=None,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -159,11 +159,11 @@ def nlopt_cobyla(
     upper_bounds,
     *,
     nonlinear_constraints=(),
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the cobyla method.
 
@@ -180,11 +180,11 @@ def nlopt_cobyla(
         algorithm=nlopt.LN_COBYLA,
         derivative=None,
         nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -202,11 +202,11 @@ def nlopt_sbplx(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the "Subplex" algorithm.
 
@@ -221,11 +221,11 @@ def nlopt_sbplx(
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LN_SBPLX,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -243,11 +243,11 @@ def nlopt_newuoa(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the NEWUOA algorithm.
 
@@ -266,11 +266,11 @@ def nlopt_newuoa(
         lower_bounds,
         upper_bounds,
         algorithm=algo,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -289,11 +289,11 @@ def nlopt_tnewton(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the "TNEWTON" algorithm.
 
@@ -309,11 +309,11 @@ def nlopt_tnewton(
         upper_bounds,
         algorithm=nlopt.LD_TNEWTON,
         derivative=derivative,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -332,11 +332,11 @@ def nlopt_lbfgs(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the "LBFGS" algorithm.
 
@@ -352,11 +352,11 @@ def nlopt_lbfgs(
         upper_bounds,
         algorithm=nlopt.LD_TNEWTON,
         derivative=derivative,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -375,11 +375,11 @@ def nlopt_ccsaq(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using CCSAQ algorithm.
 
@@ -394,11 +394,11 @@ def nlopt_ccsaq(
         upper_bounds,
         algorithm=nlopt.LD_CCSAQ,
         derivative=derivative,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -418,11 +418,11 @@ def nlopt_mma(
     upper_bounds,
     *,
     nonlinear_constraints=(),
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Minimize a scalar function using the method of moving asymptotes (MMA).
 
@@ -441,11 +441,11 @@ def nlopt_mma(
         algorithm=nlopt.LD_MMA,
         derivative=derivative,
         nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -464,11 +464,11 @@ def nlopt_var(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
     rank_1_update=True,
 ):
     """Minimize a scalar function limited memory switching variable-metric method.
@@ -488,11 +488,11 @@ def nlopt_var(
         upper_bounds,
         algorithm=algo,
         derivative=derivative,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     return out
@@ -512,11 +512,11 @@ def nlopt_slsqp(
     upper_bounds,
     *,
     nonlinear_constraints=(),
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN,
 ):
     """Optimize a scalar function based on SLSQP method.
 
@@ -532,11 +532,11 @@ def nlopt_slsqp(
         algorithm=nlopt.LD_SLSQP,
         derivative=derivative,
         nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
     return out
 
@@ -554,11 +554,11 @@ def nlopt_direct(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
     locally_biased=False,
     random_search=False,
     unscaled_bounds=False,
@@ -587,11 +587,11 @@ def nlopt_direct(
         lower_bounds,
         upper_bounds,
         algorithm=algo,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     # this is a global optimizer
@@ -612,11 +612,11 @@ def nlopt_esch(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
 ):
     """Optimize a scalar function using the ESCH algorithm.
 
@@ -630,11 +630,11 @@ def nlopt_esch(
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.GN_ESCH,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     # this is a global optimizer
@@ -656,11 +656,11 @@ def nlopt_isres(
     upper_bounds,
     *,
     nonlinear_constraints=(),
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
 ):
     """Optimize a scalar function using the ISRES algorithm.
 
@@ -675,11 +675,11 @@ def nlopt_isres(
         upper_bounds,
         algorithm=nlopt.GN_ISRES,
         nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
     )
 
     # this is a global optimizer
@@ -700,11 +700,11 @@ def nlopt_crs2_lm(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
     population_size=None,
 ):
     """Optimize a scalar function using the CRS2_LM algorithm.
@@ -721,11 +721,11 @@ def nlopt_crs2_lm(
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.GN_CRS2_LM,
-        convergence_xtol_rel=convergence_relative_params_tolerance,
-        convergence_xtol_abs=convergence_absolute_params_tolerance,
-        convergence_ftol_rel=convergence_relative_criterion_tolerance,
-        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
-        stopping_max_eval=stopping_max_criterion_evaluations,
+        convergence_xtol_rel=convergence_xtol_rel,
+        convergence_xtol_abs=convergence_xtol_abs,
+        convergence_ftol_rel=convergence_ftol_rel,
+        convergence_ftol_abs=convergence_ftol_abs,
+        stopping_max_eval=stopping_maxfun,
         population_size=population_size,
     )
 
@@ -823,12 +823,12 @@ def _process_nlopt_results(nlopt_obj, solution_x):
             "Optimizer stopped because maximum value of criterion function was reached"
         ),
         3: (
-            "Optimizer stopped because convergence_relative_criterion_tolerance or "
-            "convergence_absolute_criterion_tolerance was reached"
+            "Optimizer stopped because convergence_ftol_rel or "
+            "convergence_ftol_abs was reached"
         ),
         4: (
-            "Optimizer stopped because convergence_relative_params_tolerance or "
-            "convergence_absolute_params_tolerance was reached"
+            "Optimizer stopped because convergence_xtol_rel or "
+            "convergence_xtol_abs was reached"
         ),
         5: "Optimizer stopped because max_criterion_evaluations was reached",
         6: "Optimizer stopped because max running time was reached",

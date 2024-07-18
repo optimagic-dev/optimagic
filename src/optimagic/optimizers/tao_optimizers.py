@@ -9,10 +9,10 @@ from optimagic.config import IS_PETSC4PY_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
-    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
-    CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
-    STOPPING_MAX_ITERATIONS,
+    CONVERGENCE_GTOL_ABS,
+    CONVERGENCE_GTOL_REL,
+    CONVERGENCE_GTOL_SCALED,
+    STOPPING_MAXITER,
 )
 from optimagic.utilities import calculate_trustregion_initial_radius
 
@@ -32,11 +32,11 @@ def tao_pounders(
     lower_bounds,
     upper_bounds,
     *,
-    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
-    convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
-    convergence_scaled_gradient_tolerance=CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
+    convergence_gtol_abs=CONVERGENCE_GTOL_ABS,
+    convergence_gtol_rel=CONVERGENCE_GTOL_REL,
+    convergence_gtol_scaled=CONVERGENCE_GTOL_SCALED,
     trustregion_initial_radius=None,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
+    stopping_maxiter=STOPPING_MAXITER,
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 
@@ -102,21 +102,9 @@ def tao_pounders(
     # scaled_gradient_tolerance manually we manually set absolute_gradient_tolerance and
     # or relative_gradient_tolerance to zero once a subset of these two is turned off
     # and scaled_gradient_tolerance is still turned on.
-    default_gatol = (
-        convergence_absolute_gradient_tolerance
-        if convergence_absolute_gradient_tolerance
-        else -1
-    )
-    default_gttol = (
-        convergence_scaled_gradient_tolerance
-        if convergence_scaled_gradient_tolerance
-        else -1
-    )
-    default_grtol = (
-        convergence_relative_gradient_tolerance
-        if convergence_relative_gradient_tolerance
-        else -1
-    )
+    default_gatol = convergence_gtol_abs if convergence_gtol_abs else -1
+    default_gttol = convergence_gtol_scaled if convergence_gtol_scaled else -1
+    default_grtol = convergence_gtol_rel if convergence_gtol_rel else -1
     # Set tolerances for default convergence tests.
     tao.setTolerances(
         gatol=default_gatol,
@@ -126,28 +114,18 @@ def tao_pounders(
 
     # Set user defined convergence tests. Beware that specifying multiple tests could
     # overwrite others or lead to unclear behavior.
-    if stopping_max_iterations is not None:
-        tao.setConvergenceTest(functools.partial(_max_iters, stopping_max_iterations))
-    elif (
-        convergence_scaled_gradient_tolerance is False
-        and convergence_absolute_gradient_tolerance is False
-    ):
-        tao.setConvergenceTest(
-            functools.partial(_grtol_conv, convergence_relative_gradient_tolerance)
-        )
-    elif (
-        convergence_relative_gradient_tolerance is False
-        and convergence_scaled_gradient_tolerance is False
-    ):
-        tao.setConvergenceTest(
-            functools.partial(_gatol_conv, convergence_absolute_gradient_tolerance)
-        )
-    elif convergence_scaled_gradient_tolerance is False:
+    if stopping_maxiter is not None:
+        tao.setConvergenceTest(functools.partial(_max_iters, stopping_maxiter))
+    elif convergence_gtol_scaled is False and convergence_gtol_abs is False:
+        tao.setConvergenceTest(functools.partial(_grtol_conv, convergence_gtol_rel))
+    elif convergence_gtol_rel is False and convergence_gtol_scaled is False:
+        tao.setConvergenceTest(functools.partial(_gatol_conv, convergence_gtol_abs))
+    elif convergence_gtol_scaled is False:
         tao.setConvergenceTest(
             functools.partial(
                 _grtol_gatol_conv,
-                convergence_relative_gradient_tolerance,
-                convergence_absolute_gradient_tolerance,
+                convergence_gtol_rel,
+                convergence_gtol_abs,
             )
         )
 

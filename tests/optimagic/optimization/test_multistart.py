@@ -226,7 +226,7 @@ def test_with_ackley():
         "params": np.full(dim, -10),
         "lower_bounds": np.full(dim, -32),
         "upper_bounds": np.full(dim, 32),
-        "algo_options": {"stopping.max_criterion_evaluations": 1000},
+        "algo_options": {"stopping.maxfun": 1000},
     }
 
     minimize(

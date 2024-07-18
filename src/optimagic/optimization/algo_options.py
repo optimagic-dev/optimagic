@@ -14,7 +14,7 @@ The order is the following:
 =====================================================================================
 """
 
-CONVERGENCE_RELATIVE_CRITERION_TOLERANCE = 2e-9
+CONVERGENCE_FTOL_REL = 2e-9
 """float: Stop when the relative improvement between two iterations is below this.
 
     The exact definition of relative improvement depends on the optimizer and should
@@ -24,14 +24,14 @@ CONVERGENCE_RELATIVE_CRITERION_TOLERANCE = 2e-9
 
 """
 
-CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE = 0
+CONVERGENCE_FTOL_ABS = 0
 """float: Stop when the absolute improvement between two iterations is below this.
 
     Disabled by default because it is very problem specific.
 
 """
 
-CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE = 1e-5
+CONVERGENCE_GTOL_ABS = 1e-5
 """float: Stop when the gradient are smaller than this.
 
     For some algorithms this criterion refers to all entries, for others to some norm.
@@ -43,7 +43,7 @@ CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE = 1e-5
 
 """
 
-CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE = 1e-8
+CONVERGENCE_GTOL_REL = 1e-8
 """float: Stop when the gradient, divided by the absolute value of the criterion
     function is smaller than this. For some algorithms this criterion refers to
     all entries, for others to some norm.For bound constrained optimizers this
@@ -52,7 +52,7 @@ CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE = 1e-8
 
 """
 
-CONVERGENCE_SCALED_GRADIENT_TOLERANCE = 1e-8
+CONVERGENCE_GTOL_SCALED = 1e-8
 """float: Stop when all entries (or for some algorithms the norm) of the gradient,
     divided by the norm of the gradient at start parameters is smaller than this.
     For bound constrained optimizers this typically refers to a projected gradient.
@@ -61,7 +61,7 @@ CONVERGENCE_SCALED_GRADIENT_TOLERANCE = 1e-8
 
 """
 
-CONVERGENCE_RELATIVE_PARAMS_TOLERANCE = 1e-5
+CONVERGENCE_XTOL_REL = 1e-5
 """float: Stop when the relative change in parameters is smaller than this.
     The exact definition of relative change and whether this refers to the maximum
     change or the average change depends on the algorithm and should be documented
@@ -69,7 +69,7 @@ CONVERGENCE_RELATIVE_PARAMS_TOLERANCE = 1e-5
 
 """
 
-CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE = 0
+CONVERGENCE_XTOL_ABS = 0
 """float: Stop when the absolute change in parameters between two iterations is smaller
     than this. Whether this refers to the maximum change or the average change depends
     on the algorithm and should be documented there.
@@ -79,7 +79,7 @@ CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE = 0
 
 """
 
-CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE = 1.0
+CONVERGENCE_NOISE_CORRECTED_FTOL = 1.0
 """float: Stop when the evaluations on the set of interpolation points all fall within
     this factor of the noise level. The default is 1, i.e. when all evaluations are
     within the noise level. If you want to not use this criterion but still flag your
@@ -94,7 +94,7 @@ CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE = 1e-8
 """float: Stop when the lower trust region radius falls below this value."""
 
 
-STOPPING_MAX_CRITERION_EVALUATIONS = 1_000_000
+STOPPING_MAXFUN = 1_000_000
 """int:
     If the maximum number of function evaluation is reached, the optimization stops
     but we do not count this as successful convergence. The function evaluations used
@@ -103,7 +103,7 @@ STOPPING_MAX_CRITERION_EVALUATIONS = 1_000_000
 """
 
 
-STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL = 1_000
+STOPPING_MAXFUN_GLOBAL = 1_000
 """int:
     If the maximum number of function evaluation is reached, the optimization stops
     but we do not count this as successful convergence. The function evaluations used
@@ -113,7 +113,7 @@ STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL = 1_000
 """
 
 
-STOPPING_MAX_ITERATIONS = 1_000_000
+STOPPING_MAXITER = 1_000_000
 """int:
     If the maximum number of iterations is reached, the
     optimization stops, but we do not count this as successful convergence.
@@ -123,14 +123,14 @@ STOPPING_MAX_ITERATIONS = 1_000_000
 
 """
 
-CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
+CONVERGENCE_SECOND_BEST_FTOL_ABS = 1e-08
 """float: absolute criterion tolerance optimagic requires if no other stopping
 criterion apart from max iterations etc. is available
 this is taken from scipy (SLSQP's value, smaller than Nelder-Mead).
 
 """
 
-CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 1e-08
+CONVERGENCE_SECOND_BEST_XTOL_ABS = 1e-08
 """float: The absolute parameter tolerance optimagic requires if no other stopping
 criterion apart from max iterations etc. is available. This is taken from pybobyqa.
 

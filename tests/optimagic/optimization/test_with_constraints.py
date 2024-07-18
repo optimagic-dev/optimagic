@@ -173,7 +173,7 @@ def test_constrained_minimization(
         algorithm=algorithm,
         jac=derivative,
         constraints=constraints,
-        algo_options={"convergence.relative_criterion_tolerance": 1e-12},
+        algo_options={"convergence.ftol_rel": 1e-12},
     )
 
     if params_type == "pandas":
@@ -213,7 +213,7 @@ def test_three_independent_constraints():
         params=params,
         algorithm="scipy_lbfgsb",
         constraints=constraints,
-        algo_options={"convergence.relative_criterion_tolerance": 1e-12},
+        algo_options={"convergence.ftol_rel": 1e-12},
     )
     expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
 

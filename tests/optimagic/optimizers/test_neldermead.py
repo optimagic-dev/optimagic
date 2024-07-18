@@ -128,7 +128,7 @@ def test_fides_stop_after_one_iteration():
     res = neldermead_parallel(
         criterion=sphere,
         x=np.array([1, -5, 3]),
-        stopping_max_iterations=1,
+        stopping_maxiter=1,
     )
     assert not res["success"]
     assert res["n_iterations"] == 1

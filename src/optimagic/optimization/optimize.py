@@ -40,6 +40,7 @@ from optimagic.shared.process_user_function import (
 )
 from optimagic.optimization.scipy_aliases import map_method_to_algorithm
 from optimagic import deprecations
+from optimagic.deprecations import replace_and_warn_about_deprecated_algo_options
 
 
 def maximize(
@@ -345,6 +346,8 @@ def _optimize(
             if fun_and_jac_kwargs is None
             else fun_and_jac_kwargs
         )
+
+    algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
     # ==================================================================================
     # handle scipy aliases

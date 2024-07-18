@@ -10,8 +10,8 @@ from optimagic.config import IS_PYGMO_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    CONVERGENCE_XTOL_REL,
+    STOPPING_MAXFUN_GLOBAL,
     get_population_size,
 )
 
@@ -39,7 +39,7 @@ def pygmo_gaco(
     n_cores=1,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     kernel_size=63,
     speed_parameter_q=1.0,
     oracle=0.0,
@@ -47,7 +47,7 @@ def pygmo_gaco(
     threshold=1,
     speed_of_std_values_convergence=7,
     stopping_max_n_without_improvements=100000,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
     focus=0.0,
     cache=False,
 ):
@@ -71,7 +71,7 @@ def pygmo_gaco(
             )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "ker": kernel_size,
         "q": speed_parameter_q,
         "oracle": oracle,
@@ -79,7 +79,7 @@ def pygmo_gaco(
         "threshold": threshold,
         "n_gen_mark": int(speed_of_std_values_convergence),
         "impstop": stopping_max_n_without_improvements,
-        "evalstop": stopping_max_criterion_evaluations,
+        "evalstop": stopping_maxfun,
         "focus": focus,
         "memory": cache,
     }
@@ -116,7 +116,7 @@ def pygmo_bee_colony(
     lower_bounds,
     upper_bounds,
     *,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     seed=None,
     discard_start_params=False,
     max_n_trials=1,
@@ -137,7 +137,7 @@ def pygmo_bee_colony(
         discard_start_params=discard_start_params,
         algo_specific_options={
             "limit": max_n_trials,
-            "gen": int(stopping_max_iterations),
+            "gen": int(stopping_maxiter),
         },
     )
 
@@ -168,12 +168,12 @@ def pygmo_de(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     weight_coefficient=0.8,
     crossover_probability=0.9,
     mutation_variant="rand/1/exp",
     convergence_criterion_tolerance=1e-6,
-    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_relative_params_tolerance=CONVERGENCE_XTOL_REL,
 ):
     """Minimize a scalar function using the differential evolution algorithm.
 
@@ -203,7 +203,7 @@ def pygmo_de(
     )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "F": weight_coefficient,
         "CR": crossover_probability,
         "variant": mutation_variant,
@@ -244,7 +244,7 @@ def pygmo_sea(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=10_000,  # Each generation will compute the objective once
+    stopping_maxiter=10_000,  # Each generation will compute the objective once
 ):
     r"""Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
 
@@ -261,7 +261,7 @@ def pygmo_sea(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
-        algo_specific_options={"gen": int(stopping_max_iterations)},
+        algo_specific_options={"gen": int(stopping_maxiter)},
     )
 
     res = _minimize_pygmo(
@@ -291,7 +291,7 @@ def pygmo_sga(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     crossover_probability=0.9,
     crossover_strategy="exponential",
     eta_c=None,
@@ -364,7 +364,7 @@ def pygmo_sga(
         param_s = 2
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "cr": crossover_probability,
         "eta_c": eta_c,
         "m": mutation_probability,
@@ -409,7 +409,7 @@ def pygmo_sade(
     seed=None,
     discard_start_params=False,
     jde=True,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     mutation_variant="rand/1/exp",
     keep_adapted_params=False,
     ftol=1e-6,
@@ -451,7 +451,7 @@ def pygmo_sade(
     )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "variant": mutation_variant,
         "variant_adptv": 1 if jde else 2,
         "ftol": ftol,
@@ -492,7 +492,7 @@ def pygmo_cmaes(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     backward_horizon=None,
     variance_loss_compensation=None,
     learning_rate_rank_one_update=None,
@@ -515,7 +515,7 @@ def pygmo_cmaes(
     )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "cc": _replace_none(var=backward_horizon, none_value=-1.0),
         "cs": _replace_none(var=variance_loss_compensation, none_value=-1.0),
         "c1": _replace_none(var=learning_rate_rank_one_update, none_value=-1.0),
@@ -621,7 +621,7 @@ def pygmo_pso(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     omega=0.7298,
     force_of_previous_best=2.05,
     force_of_best_in_neighborhood=2.05,
@@ -667,7 +667,7 @@ def pygmo_pso(
     }
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "omega": omega,
         "eta1": force_of_previous_best,
         "eta2": force_of_best_in_neighborhood,
@@ -715,7 +715,7 @@ def pygmo_pso_gen(
     n_cores=1,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     omega=0.7298,
     force_of_previous_best=2.05,
     force_of_best_in_neighborhood=2.05,
@@ -762,7 +762,7 @@ def pygmo_pso_gen(
     )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "omega": omega,
         "eta1": force_of_previous_best,
         "eta2": force_of_best_in_neighborhood,
@@ -865,7 +865,7 @@ def pygmo_xnes(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     learning_rate_mean_update=1.0,
     learning_rate_step_size_update=None,
     learning_rate_cov_matrix_update=None,
@@ -887,7 +887,7 @@ def pygmo_xnes(
     )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "eta_mu": _replace_none(learning_rate_mean_update, -1),
         "eta_sigma": _replace_none(learning_rate_step_size_update, -1),
         "eta_b": _replace_none(learning_rate_cov_matrix_update, -1),
@@ -931,7 +931,7 @@ def pygmo_gwo(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
 ):
     """Minimize a scalar function using the Grey Wolf Optimizer.
 
@@ -948,7 +948,7 @@ def pygmo_gwo(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
-        algo_specific_options={"gen": int(stopping_max_iterations)},
+        algo_specific_options={"gen": int(stopping_maxiter)},
     )
 
     res = _minimize_pygmo(
@@ -978,7 +978,7 @@ def pygmo_compass_search(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
     start_range=0.1,
     stop_range=0.01,
     reduction_coeff=0.5,
@@ -1000,7 +1000,7 @@ def pygmo_compass_search(
         population_size = 100
 
     algo_specific_options = {
-        "max_fevals": stopping_max_criterion_evaluations,
+        "max_fevals": stopping_maxfun,
         "start_range": start_range,
         "stop_range": stop_range,
         "reduction_coeff": reduction_coeff,
@@ -1039,7 +1039,7 @@ def pygmo_ihs(
     population_size=None,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     choose_from_memory_probability=0.85,
     min_pitch_adjustment_rate=0.35,
     max_pitch_adjustment_rate=0.99,
@@ -1062,7 +1062,7 @@ def pygmo_ihs(
     )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "phmcr": choose_from_memory_probability,
         "ppar_min": min_pitch_adjustment_rate,
         "ppar_max": max_pitch_adjustment_rate,
@@ -1104,7 +1104,7 @@ def pygmo_de1220(
     seed=None,
     discard_start_params=False,
     jde=True,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
     allowed_variants=None,
     keep_adapted_params=False,
     ftol=1e-6,
@@ -1151,7 +1151,7 @@ def pygmo_de1220(
     )
 
     algo_specific_options = {
-        "gen": int(stopping_max_iterations),
+        "gen": int(stopping_maxiter),
         "variant_adptv": 1 if jde else 2,
         "ftol": ftol,
         "xtol": xtol,

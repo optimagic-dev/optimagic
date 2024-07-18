@@ -18,13 +18,13 @@ from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
     CLIP_CRITERION_IF_OVERFLOWING,
     CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
-    CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,
+    CONVERGENCE_NOISE_CORRECTED_FTOL,
     CONVERGENCE_SLOW_PROGRESS,
     INITIAL_DIRECTIONS,
     INTERPOLATION_ROUNDING_ERROR,
     RANDOM_DIRECTIONS_ORTHOGONAL,
     RESET_OPTIONS,
-    STOPPING_MAX_CRITERION_EVALUATIONS,
+    STOPPING_MAXFUN,
     THRESHOLD_FOR_SAFETY_STEP,
     TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,
@@ -59,8 +59,8 @@ def nag_dfols(
     *,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     convergence_minimal_trustregion_radius_tolerance=CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,  # noqa: E501
-    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,  # noqa: E501
-    convergence_scaled_criterion_tolerance=0.0,
+    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_FTOL,  # noqa: E501
+    convergence_ftol_scaled=0.0,
     convergence_slow_progress=None,
     initial_directions=INITIAL_DIRECTIONS,
     interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
@@ -68,7 +68,7 @@ def nag_dfols(
     noise_multiplicative_level=None,
     noise_n_evals_per_point=None,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    stopping_maxfun=STOPPING_MAXFUN,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
     trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
@@ -186,7 +186,7 @@ def nag_dfols(
             "n_extra_interpolation_points_per_hard_reset"
         ]
         - trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"],
-        "model.rel_tol": convergence_scaled_criterion_tolerance,
+        "model.rel_tol": convergence_ftol_scaled,
         "regression.num_extra_steps": trustregion_n_extra_points_to_replace_successful,
         "regression.momentum_extra_steps": trustregion_use_momentum,
         "regression.increase_num_extra_steps_with_restart": trustregion_reset_options[
@@ -226,7 +226,7 @@ def nag_dfols(
         criterion,
         x0=x,
         bounds=(lower_bounds, upper_bounds),
-        maxfun=stopping_max_criterion_evaluations,
+        maxfun=stopping_maxfun,
         rhobeg=trustregion_initial_radius,
         npt=trustregion_n_interpolation_points,
         rhoend=convergence_minimal_trustregion_radius_tolerance,
@@ -255,7 +255,7 @@ def nag_pybobyqa(
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     convergence_criterion_value=None,
     convergence_minimal_trustregion_radius_tolerance=CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,  # noqa: E501
-    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,  # noqa: E501
+    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_FTOL,  # noqa: E501
     convergence_slow_progress=None,
     initial_directions=INITIAL_DIRECTIONS,
     interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
@@ -264,7 +264,7 @@ def nag_pybobyqa(
     noise_n_evals_per_point=None,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
     seek_global_optimum=False,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    stopping_max_criterion_evaluations=STOPPING_MAXFUN,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
     trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
