@@ -39,6 +39,7 @@ from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
 )
 from optimagic.optimization.scipy_aliases import map_method_to_algorithm
+from optimagic import deprecations
 
 
 def maximize(
@@ -318,75 +319,32 @@ def _optimize(
     # ==================================================================================
 
     if criterion is not None:
-        msg = (
-            "To align optimagic with scipy.optimize, the `criterion` argument has been "
-            "renamed to `fun`. Please use `fun` instead of `criterion`. Using "
-            "`criterion` will become an error in optimagic version 0.6.0 and later."
-        )
-        warnings.warn(msg, FutureWarning)
-
-        if fun is None:
-            fun = criterion
+        deprecations.throw_criterion_future_warning()
+        fun = criterion if fun is None else fun
 
     if criterion_kwargs is not None:
-        msg = (
-            "To align optimagic with scipy.optimize, the `criterion_kwargs` argument "
-            "has been renamed to `fun_kwargs`. Please use `fun_kwargs` instead of "
-            "`criterion_kwargs`. Using `criterion_kwargs` will become an error in "
-            "optimagic version 0.6.0 and later."
-        )
-        warnings.warn(msg, FutureWarning)
-
-        if fun_kwargs is None:
-            fun_kwargs = criterion_kwargs
+        deprecations.throw_criterion_kwargs_future_warning()
+        fun_kwargs = criterion_kwargs if fun_kwargs is None else fun_kwargs
 
     if derivative is not None:
-        msg = (
-            "To align optimagic with scipy.optimize, the `derivative` argument has "
-            "been renamed to `jac`. Please use `jac` instead of `derivative`. Using "
-            "`derivative` will become an error in optimagic version 0.6.0 and later."
-        )
-        warnings.warn(msg, FutureWarning)
-
-        if jac is None:
-            jac = derivative
+        deprecations.throw_derivative_future_warning()
+        jac = derivative if jac is None else jac
 
     if derivative_kwargs is not None:
-        msg = (
-            "To align optimagic with scipy.optimize, the `derivative_kwargs` argument "
-            "has been renamed to `jac_kwargs`. Please use `jac_kwargs` instead of "
-            "`derivative_kwargs`. Using `derivative_kwargs` will become an error in "
-            "optimagic version 0.6.0 and later."
-        )
-        warnings.warn(msg, FutureWarning)
-
-        if jac_kwargs is None:
-            jac_kwargs = derivative_kwargs
+        deprecations.throw_derivative_kwargs_future_warning()
+        jac_kwargs = derivative_kwargs if jac_kwargs is None else jac_kwargs
 
     if criterion_and_derivative is not None:
-        msg = (
-            "To align optimagic with scipy.optimize, the `criterion_and_derivative` "
-            "argument has been renamed to `fun_and_jac`. Please use `fun_and_jac` "
-            "instead of `criterion_and_derivative`. Using `criterion_and_derivative` "
-            "will become an error in optimagic version 0.6.0 and later."
-        )
-        warnings.warn(msg, FutureWarning)
-
-        if fun_and_jac is None:
-            fun_and_jac = criterion_and_derivative
+        deprecations.throw_criterion_and_derivative_future_warning()
+        fun_and_jac = criterion_and_derivative if fun_and_jac is None else fun_and_jac
 
     if criterion_and_derivative_kwargs is not None:
-        msg = (
-            "To align optimagic with scipy.optimize, the "
-            "`criterion_and_derivative_kwargs` argument has been renamed to "
-            "`fun_and_jac_kwargs`. Please use `fun_and_jac_kwargs` instead of "
-            "`criterion_and_derivative_kwargs`. Using `criterion_and_derivative_kwargs`"
-            " will become an error in optimagic version 0.6.0 and later."
+        deprecations.throw_criterion_and_derivative_kwargs_future_warning()
+        fun_and_jac_kwargs = (
+            criterion_and_derivative_kwargs
+            if fun_and_jac_kwargs is None
+            else fun_and_jac_kwargs
         )
-        warnings.warn(msg, FutureWarning)
-
-        if fun_and_jac_kwargs is None:
-            fun_and_jac_kwargs = criterion_and_derivative_kwargs
 
     # ==================================================================================
     # handle scipy aliases

@@ -224,6 +224,7 @@ module = [
     "optimagic.decorators",
     "optimagic.exceptions",
     "optimagic.utilities",
+    "optimagic.deprecations",
 
     "estimagic",
     "estimagic.examples",
