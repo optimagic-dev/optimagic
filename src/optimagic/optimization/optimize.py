@@ -34,7 +34,10 @@ from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.shared.process_user_function import process_func_of_params
+from optimagic.shared.process_user_function import (
+    process_func_of_params,
+    get_kwargs_from_args,
+)
 from optimagic.optimization.scipy_aliases import map_method_to_algorithm
 
 
@@ -68,6 +71,7 @@ def maximize(
     # scipy aliases
     x0=None,
     method=None,
+    args=None,
     # scipy arguments that are not yet supported
     hess=None,
     hessp=None,
@@ -114,6 +118,7 @@ def maximize(
         # scipy aliases
         x0=x0,
         method=method,
+        args=args,
         # scipy arguments that are not yet supported
         hess=hess,
         hessp=hessp,
@@ -161,6 +166,7 @@ def minimize(
     # scipy aliases
     x0=None,
     method=None,
+    args=None,
     # scipy arguments that are not yet supported
     hess=None,
     hessp=None,
@@ -208,6 +214,7 @@ def minimize(
         # scipy aliases
         x0=x0,
         method=method,
+        args=args,
         # scipy arguments that are not yet supported
         hess=hess,
         hessp=hessp,
@@ -256,6 +263,7 @@ def _optimize(
     # scipy aliases
     x0,
     method,
+    args,
     # scipy arguments that are not yet supported
     hess,
     hessp,
@@ -403,6 +411,23 @@ def _optimize(
             raise AliasError(msg)
         else:
             algorithm = map_method_to_algorithm(method)
+
+    if args is not None:
+        if (
+            fun_kwargs is not None
+            or jac_kwargs is not None
+            or fun_and_jac_kwargs is not None
+        ):
+            msg = (
+                "args is an alternative to fun_kwargs, jac_kwargs and "
+                "fun_and_jac_kwargs that optimagic supports for compatibility "
+                "with scipy. Do not use args in conjunction with any of the other "
+                "arguments."
+            )
+            raise AliasError(msg)
+        else:
+            kwargs = get_kwargs_from_args(args, fun, offset=1)
+            fun_kwargs, jac_kwargs, fun_and_jac_kwargs = kwargs, kwargs, kwargs
 
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented

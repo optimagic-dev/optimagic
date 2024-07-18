@@ -150,3 +150,34 @@ def test_exception_for_tol():
             algorithm="scipy_lbfgsb",
             tol=1e-6,
         )
+
+
+def test_args_works_in_minimize():
+    res = om.minimize(
+        fun=lambda x, a: ((x - a) ** 2).sum(),
+        x0=np.arange(3),
+        args=(1,),
+        algorithm="scipy_lbfgsb",
+    )
+    aaae(res.params, np.ones(3))
+
+
+def test_args_works_in_maximize():
+    res = om.maximize(
+        fun=lambda x, a: -((x - a) ** 2).sum(),
+        x0=np.arange(3),
+        args=(1,),
+        algorithm="scipy_lbfgsb",
+    )
+    aaae(res.params, np.ones(3))
+
+
+def test_args_does_not_work_with_together_with_any_kwargs():
+    with pytest.raises(AliasError, match="args is an alternative"):
+        om.minimize(
+            fun=lambda x, a: ((x - a) ** 2).sum(),
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            args=(1,),
+            fun_kwargs={"a": 1},
+        )

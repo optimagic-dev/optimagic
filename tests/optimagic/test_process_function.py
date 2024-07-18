@@ -1,6 +1,9 @@
 import pytest
 from optimagic.exceptions import InvalidKwargsError
-from optimagic.shared.process_user_function import process_func_of_params
+from optimagic.shared.process_user_function import (
+    process_func_of_params,
+    get_kwargs_from_args,
+)
 
 
 def test_process_func_of_params():
@@ -26,3 +29,13 @@ def test_process_func_of_params_too_few_kwargs():
 
     with pytest.raises(InvalidKwargsError):
         process_func_of_params(f, {"c": 3})
+
+
+def test_get_kwargs_from_args():
+    def f(a, b, c=3, d=4):
+        return a + b + c
+
+    got = get_kwargs_from_args([1, 2], f, offset=1)
+    expected = {"b": 1, "c": 2}
+
+    assert got == expected
