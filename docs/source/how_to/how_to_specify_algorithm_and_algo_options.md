@@ -35,7 +35,6 @@ algo_options = {
     "trustregion.shrinking_factor.not_successful": 0.4,
     "trustregion.shrinking_factor.lower_radius": 0.2,
     "trustregion.shrinking_factor.upper_radius": 0.8,
-    "convergence.scaled_criterion_tolerance": 0.0,
     "convergence.noise_corrected_criterion_tolerance": 1.1,
 }
 ```
