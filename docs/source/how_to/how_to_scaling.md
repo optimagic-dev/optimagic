@@ -50,7 +50,7 @@ start_params["lower_bound"] = 0
 start_params["upper_bound"] = 2 * np.arange(5) + 1
 
 res = om.minimize(
-    criterion=sphere,
+    fun=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
     scaling=True,
@@ -99,7 +99,7 @@ start_params["lower_bound"] = 0
 start_params["upper_bound"] = 2 * np.arange(5) + 1
 
 res = om.minimize(
-    criterion=sphere,
+    fun=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
     scaling=True,
@@ -134,7 +134,7 @@ start_params["lower_bound"] = 0
 start_params["upper_bound"] = 2 * np.arange(5) + 1
 
 res = om.minimize(
-    criterion=sphere,
+    fun=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
     scaling=True,

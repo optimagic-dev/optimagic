@@ -37,7 +37,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
 
 
         om.minimize(
-            criterion=sphere,
+            fun=sphere,
             params=np.arange(3),
             algorithm="scipy_lbfgsb",
         )
@@ -66,7 +66,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
         )
 
         om.minimize(
-            criterion=sphere,
+            fun=sphere,
             params=params,
             algorithm="scipy_lbfgsb",
         )
@@ -103,7 +103,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
 
 
         res = om.minimize(
-            criterion=sphere,
+            fun=sphere,
             params={"a": 0, "b": 1, "c": pd.Series([2, 3, 4])},
             algorithm="scipy_neldermead",
         )
@@ -131,7 +131,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
 
 
         om.minimize(
-            criterion=sphere,
+            fun=sphere,
             params=3,
             algorithm="scipy_lbfgsb",
         )
