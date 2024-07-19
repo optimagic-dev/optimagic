@@ -1,6 +1,6 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
 
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 import numpy as np
 from scipy.linalg import cho_solve, solve_triangular
@@ -9,15 +9,15 @@ from scipy.optimize._trustregion_exact import estimate_smallest_singular_value
 
 
 class HessianInfo(NamedTuple):
-    hessian_plus_lambda: Union[np.ndarray, None] = None  # shape (n_params, n_params)
-    upper_triangular: Union[np.ndarray, None] = None  # shape (n_params, n_params)
+    hessian_plus_lambda: np.ndarray | None = None  # shape (n_params, n_params)
+    upper_triangular: np.ndarray | None = None  # shape (n_params, n_params)
     already_factorized: bool = False
 
 
 class DampingFactors(NamedTuple):
-    candidate: Union[float, None] = None
-    lower_bound: Union[float, None] = None
-    upper_bound: Union[float, None] = None
+    candidate: float | None = None
+    lower_bound: float | None = None
+    upper_bound: float | None = None
 
 
 def gqtpar(model, x_candidate, *, k_easy=0.1, k_hard=0.2, maxiter=200):

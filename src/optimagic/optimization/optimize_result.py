@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,7 @@ import pandas as pd
 from optimagic.utilities import to_pickle
 from optimagic.shared.compat import pd_df_map
 import warnings
+from optimagic.typing import PyTree
 
 
 @dataclass
@@ -16,25 +17,22 @@ class OptimizeResult:
     **Attributes**
 
     Attributes:
-        params (Any): The optimal parameters.
-        fun (float): The optimal criterion value.
-        start_fun (float): The criterion value at the start parameters.
-        start_params (Any): The start parameters.
-        algorithm (str): The algorithm used for the optimization.
-        direction (str): Maximize or minimize.
-        n_free (int): Number of free parameters.
-        message (Union[str, None] = None): Message returned by the underlying algorithm.
-        success (Union[bool, None] = None): Whether the optimization was successful.
-        n_criterion_evaluations (Union[int, None] = None): Number of criterion
-            evaluations.
-        n_derivative_evaluations (Union[int, None] = None): Number of
-            derivative evaluations.
-        n_iterations (Union[int, None] = None): Number of iterations until termination.
-        history (Union[Dict, None] = None): Optimization history.
-        convergence_report (Union[Dict, None] = None): The convergence report.
-        multistart_info (Union[Dict, None] = None): Multistart information.
-        algorithm_output (Dict = field(default_factory=dict)): Additional algorithm
-            specific information.
+        params: The optimal parameters.
+        fun: The optimal criterion value.
+        start_fun: The criterion value at the start parameters.
+        start_params: The start parameters.
+        algorithm: The algorithm used for the optimization.
+        direction: Maximize or minimize.
+        n_free: Number of free parameters.
+        message: Message returned by the underlying algorithm.
+        success: Whether the optimization was successful.
+        n_fun_evals: Number of criterion evaluations.
+        n_jac_evals: Number of derivative evaluations.
+        n_iterations: Number of iterations until termination.
+        history: Optimization history.
+        convergence_report: The convergence report.
+        multistart_info: Multistart information.
+        algorithm_output: Additional algorithm specific information.
 
     """
 
@@ -46,18 +44,24 @@ class OptimizeResult:
     direction: str
     n_free: int
 
-    message: Union[str, None] = None
-    success: Union[bool, None] = None
-    n_fun_evals: Union[int, None] = None
-    n_jac_evals: Union[int, None] = None
-    n_iterations: Union[int, None] = None
+    message: str | None = None
+    success: bool | None = None
+    n_fun_evals: int | None = None
+    n_jac_evals: int | None = None
+    n_iterations: int | None = None
+    status: int | None = None
+    jac: PyTree | None = None
 
-    history: Union[Dict, None] = None
+    history: Dict | None = None
 
-    convergence_report: Union[Dict, None] = None
+    convergence_report: Dict | None = None
 
-    multistart_info: Union[Dict, None] = None
+    multistart_info: Dict | None = None
     algorithm_output: Dict = field(default_factory=dict)
+
+    # ==================================================================================
+    # Deprecations
+    # ==================================================================================
 
     @property
     def criterion(self):
@@ -91,6 +95,18 @@ class OptimizeResult:
         )
         warnings.warn(msg, FutureWarning)
         return self.n_jac_evals
+
+    # ==================================================================================
+    # Scipy aliases
+    # ==================================================================================
+
+    @property
+    def x(self):
+        return self.params
+
+    @property
+    def x0(self):
+        return self.start_params
 
     def __repr__(self):
         first_line = (
