@@ -195,7 +195,7 @@ module = [
     "optimagic.parameters.conversion",
     "optimagic.parameters.kernel_transformations",
     "optimagic.parameters.nonlinear_constraints",
-    "optimagic.parameters.parameter_bounds",
+    "optimagic.parameters.bounds",
     "optimagic.parameters.parameter_groups",
     "optimagic.parameters.process_constraints",
     "optimagic.parameters.process_selectors",
