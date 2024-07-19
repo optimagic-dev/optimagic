@@ -15,7 +15,7 @@ from optimagic.differentiation import finite_differences
 from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
-from optimagic.parameters.parameter_bounds import get_bounds
+from optimagic.parameters.bounds import get_bounds
 from optimagic.parameters.tree_registry import get_registry
 
 

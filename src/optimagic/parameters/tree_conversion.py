@@ -5,7 +5,7 @@ from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.block_trees import block_tree_to_matrix
-from optimagic.parameters.parameter_bounds import get_bounds
+from optimagic.parameters.bounds import get_bounds
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.utilities import isscalar
 
