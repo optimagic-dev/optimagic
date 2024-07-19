@@ -25,6 +25,7 @@ from estimagic import utilities
 from estimagic import OptimizeLogReader, OptimizeResult
 from estimagic import criterion_plot, params_plot
 import optimagic as om
+import warnings
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0
@@ -342,3 +343,30 @@ def test_criterion_and_derivative_kwargs_is_deprecated():
             fun_and_jac=lambda x, a: (x @ x, 2 * x),
             criterion_and_derivative_kwargs={"a": 1},
         )
+
+
+ALGO_OPTIONS = [
+    {"convergence_absolute_criterion_tolerance": 1e-8},
+    {"convergence_relative_criterion_tolerance": 1e-8},
+    {"convergence_absolute_params_tolerance": 1e-8},
+    {"convergence_relative_params_tolerance": 1e-8},
+    {"convergence_absolute_gradient_tolerance": 1e-8},
+    {"convergence_relative_gradient_tolerance": 1e-8},
+    {"convergence_scaled_gradient_tolerance": 1e-8},
+    {"stopping_max_iterations": 1_000},
+    {"stopping_max_criterion_evaluations": 1_000},
+]
+
+
+@pytest.mark.parametrize("algo_option", ALGO_OPTIONS)
+def test_old_convergence_criteria_are_deprecated(algo_option):
+    msg = "The following keys in `algo_options` are deprecated"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        with pytest.warns(FutureWarning, match=msg):
+            om.minimize(
+                lambda x: x @ x,
+                params=np.arange(3),
+                algorithm="scipy_lbfgsb",
+                algo_options=algo_option,
+            )

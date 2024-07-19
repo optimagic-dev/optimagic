@@ -1,4 +1,6 @@
 from optimagic.utilities import propose_alternatives
+import functools
+from optimagic.exceptions import InvalidFunctionError
 
 
 def map_method_to_algorithm(method):
@@ -41,3 +43,24 @@ def map_method_to_algorithm(method):
         )
         raise ValueError(msg)
     return algo
+
+
+def split_fun_and_jac(fun_and_jac, target="fun"):
+
+    index = 0 if target == "fun" else 1
+
+    @functools.wraps(fun_and_jac)
+    def fun(*args, **kwargs):
+        raw = fun_and_jac(*args, **kwargs)
+        try:
+            out = raw[index]
+        except TypeError as e:
+            msg = (
+                "If you set `jac=True`, `fun` needs to return a tuple where the first "
+                "entry is the value of your objective function and the second entry "
+                "is its derivative."
+            )
+            raise InvalidFunctionError(msg) from e
+        return out
+
+    return fun

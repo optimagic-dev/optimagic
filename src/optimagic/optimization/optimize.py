@@ -38,7 +38,10 @@ from optimagic.shared.process_user_function import (
     process_func_of_params,
     get_kwargs_from_args,
 )
-from optimagic.optimization.scipy_aliases import map_method_to_algorithm
+from optimagic.optimization.scipy_aliases import (
+    map_method_to_algorithm,
+    split_fun_and_jac,
+)
 from optimagic import deprecations
 from optimagic.deprecations import replace_and_warn_about_deprecated_algo_options
 
@@ -389,6 +392,15 @@ def _optimize(
         else:
             kwargs = get_kwargs_from_args(args, fun, offset=1)
             fun_kwargs, jac_kwargs, fun_and_jac_kwargs = kwargs, kwargs, kwargs
+
+    # jac is not an alias but we need to handle the case where `jac=True`, i.e. fun is
+    # actually fun_and_jac. This is not recommended in optimagic because then optimizers
+    # cannot evaluate fun in isolation but we can easily support it for compatibility.
+    if jac is True:
+        jac = None
+        if fun_and_jac is None:
+            fun_and_jac = fun
+            fun = split_fun_and_jac(fun_and_jac, target="fun")
 
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented

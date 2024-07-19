@@ -181,3 +181,23 @@ def test_args_does_not_work_with_together_with_any_kwargs():
             args=(1,),
             fun_kwargs={"a": 1},
         )
+
+
+def test_jac_equal_true_works_in_minimize():
+    res = om.minimize(
+        fun=lambda x: (x @ x, 2 * x),
+        params=np.arange(3),
+        algorithm="scipy_lbfgsb",
+        jac=True,
+    )
+    aaae(res.params, np.zeros(3))
+
+
+def test_jac_equal_true_works_in_maximize():
+    res = om.maximize(
+        fun=lambda x: (-x @ x, -2 * x),
+        params=np.arange(3),
+        algorithm="scipy_lbfgsb",
+        jac=True,
+    )
+    aaae(res.params, np.zeros(3))
