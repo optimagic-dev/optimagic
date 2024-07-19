@@ -41,13 +41,13 @@ def test_optimizations_with_scaling(algorithm, scaling_options):
     constraints = [{"loc": [3, 4], "type": "fixed"}]
 
     res = minimize(
-        criterion=sos_scalar_criterion,
+        fun=sos_scalar_criterion,
         params=params,
         constraints=constraints,
         algorithm=algorithm,
         scaling=True,
         scaling_options=scaling_options,
-        derivative=sos_gradient,
+        jac=sos_gradient,
     )
 
     expected_solution = np.array([0, 0, 0, 3, 4])

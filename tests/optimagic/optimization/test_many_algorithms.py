@@ -39,7 +39,7 @@ def sos(x):
 @pytest.mark.parametrize("algorithm", LOCAL_ALGORITHMS)
 def test_algorithm_on_sum_of_squares(algorithm):
     res = minimize(
-        criterion=sos,
+        fun=sos,
         params=np.arange(3),
         algorithm=algorithm,
         collect_history=True,
@@ -52,7 +52,7 @@ def test_algorithm_on_sum_of_squares(algorithm):
 @pytest.mark.parametrize("algorithm", BOUNDED_ALGORITHMS)
 def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
     res = minimize(
-        criterion=sos,
+        fun=sos,
         params=np.array([3, 2, -3]),
         lower_bounds=np.array([1, -np.inf, -np.inf]),
         upper_bounds=np.array([np.inf, np.inf, -1]),
@@ -75,7 +75,7 @@ skip_msg = (
 @pytest.mark.parametrize("algorithm", GLOBAL_ALGORITHMS_AVAILABLE)
 def test_global_algorithms_on_sum_of_squares(algorithm):
     res = minimize(
-        criterion=sos,
+        fun=sos,
         params=np.array([0.35, 0.35]),
         lower_bounds=np.array([0.2, -0.5]),
         upper_bounds=np.array([1, 0.5]),

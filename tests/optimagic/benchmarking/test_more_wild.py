@@ -8,7 +8,7 @@ from optimagic.benchmarking.more_wild import (
 
 @pytest.mark.parametrize("name, specification", list(MORE_WILD_PROBLEMS.items()))
 def test_more_wild_function_at_start_x(name, specification):  # noqa: ARG001
-    _criterion = specification["criterion"]
+    _criterion = specification["fun"]
     assert isinstance(specification["start_x"], list)
     _x = np.array(specification["start_x"])
     _contributions = _criterion(_x)

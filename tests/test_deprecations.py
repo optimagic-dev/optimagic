@@ -25,6 +25,7 @@ from estimagic import utilities
 from estimagic import OptimizeLogReader, OptimizeResult
 from estimagic import criterion_plot, params_plot
 import optimagic as om
+import warnings
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0
@@ -121,7 +122,7 @@ def example_db(tmp_path):
         return x @ x
 
     om.minimize(
-        criterion=_crit,
+        fun=_crit,
         params={"a": 1, "b": 2, "c": 3},
         algorithm="scipy_lbfgsb",
         logging=path,
@@ -142,8 +143,8 @@ def test_estimagic_optimize_result_is_deprecated():
     with pytest.warns(FutureWarning, match=msg):
         OptimizeResult(
             params=res.params,
-            criterion=res.criterion,
-            start_criterion=res.start_criterion,
+            fun=res.fun,
+            start_fun=res.start_fun,
             start_params=res.start_params,
             algorithm=res.algorithm,
             direction=res.direction,
@@ -275,3 +276,115 @@ def test_estimagic_params_plot_is_deprecated():
     res = om.minimize(lambda x: x @ x, np.arange(3), algorithm="scipy_lbfgsb")
     with pytest.warns(FutureWarning, match=msg):
         params_plot(res)
+
+
+def test_criterion_is_depracated():
+    msg = "the `criterion` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            criterion=lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+        )
+
+
+def test_criterion_kwargs_is_deprecated():
+    msg = "the `criterion_kwargs` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x, a: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            criterion_kwargs={"a": 1},
+        )
+
+
+def test_derivative_is_deprecated():
+    msg = "the `derivative` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            derivative=lambda x: 2 * x,
+        )
+
+
+def test_derivative_kwargs_is_deprecated():
+    msg = "the `derivative_kwargs` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            jac=lambda x, a: 2 * x,
+            derivative_kwargs={"a": 1},
+        )
+
+
+def test_criterion_and_derivative_is_deprecated():
+    msg = "the `criterion_and_derivative` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            criterion_and_derivative=lambda x: (x @ x, 2 * x),
+        )
+
+
+def test_criterion_and_derivative_kwargs_is_deprecated():
+    msg = "the `criterion_and_derivative_kwargs` argument has been renamed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            fun_and_jac=lambda x, a: (x @ x, 2 * x),
+            criterion_and_derivative_kwargs={"a": 1},
+        )
+
+
+ALGO_OPTIONS = [
+    {"convergence_absolute_criterion_tolerance": 1e-8},
+    {"convergence_relative_criterion_tolerance": 1e-8},
+    {"convergence_absolute_params_tolerance": 1e-8},
+    {"convergence_relative_params_tolerance": 1e-8},
+    {"convergence_absolute_gradient_tolerance": 1e-8},
+    {"convergence_relative_gradient_tolerance": 1e-8},
+    {"convergence_scaled_gradient_tolerance": 1e-8},
+    {"stopping_max_iterations": 1_000},
+    {"stopping_max_criterion_evaluations": 1_000},
+]
+
+
+@pytest.mark.parametrize("algo_option", ALGO_OPTIONS)
+def test_old_convergence_criteria_are_deprecated(algo_option):
+    msg = "The following keys in `algo_options` are deprecated"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        with pytest.warns(FutureWarning, match=msg):
+            om.minimize(
+                lambda x: x @ x,
+                params=np.arange(3),
+                algorithm="scipy_lbfgsb",
+                algo_options=algo_option,
+            )
+
+
+def test_deprecated_attributes_of_optimize_result():
+    res = om.minimize(lambda x: x @ x, np.arange(3), algorithm="scipy_lbfgsb")
+
+    msg = "attribute is deprecated"
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.n_criterion_evaluations
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.n_derivative_evaluations
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.criterion
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.start_criterion

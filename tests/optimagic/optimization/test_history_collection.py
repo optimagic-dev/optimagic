@@ -29,7 +29,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
     logging = tmp_path / "log.db"
 
     collected_hist = minimize(
-        criterion=lambda x: {"root_contributions": x, "value": x @ x},
+        fun=lambda x: {"root_contributions": x, "value": x @ x},
         params=np.arange(5),
         algorithm=algorithm,
         lower_bounds=lb,
@@ -68,7 +68,7 @@ def _dummy_optimizer(criterion, x, n_cores, batch_size, batch_evaluator):
     out = {
         "solution_x": xs[-1],
         "solution_criterion": 5,
-        "n_criterion_evaluations": 15,
+        "n_fun_evals": 15,
         "n_iterations": 3,
         "success": True,
     }
@@ -112,7 +112,7 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
     }
 
     res = minimize(
-        criterion=_fake_criterion,
+        fun=_fake_criterion,
         params=np.arange(5),
         algorithm=_dummy_optimizer,
         algo_options=options,

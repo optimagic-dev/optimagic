@@ -69,11 +69,11 @@ def test_valid_derivative_versions(
 
     if direction == "minimize":
         res = minimize(
-            criterion=sos_dict_criterion,
+            fun=sos_dict_criterion,
             params=start_params,
             algorithm=algorithm,
-            derivative=derivative,
-            criterion_and_derivative=criterion_and_derivative,
+            jac=derivative,
+            fun_and_jac=criterion_and_derivative,
             error_handling="raise",
         )
     else:
@@ -84,11 +84,11 @@ def test_valid_derivative_versions(
             else switch_sign(criterion_and_derivative)
         )
         res = maximize(
-            criterion=switch_sign(sos_dict_criterion),
+            fun=switch_sign(sos_dict_criterion),
             params=start_params,
             algorithm=algorithm,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
+            jac=deriv,
+            fun_and_jac=crit_and_deriv,
             error_handling="raise",
         )
 
@@ -107,11 +107,11 @@ def test_invalid_derivative_versions(
     if direction == "minimize":
         with pytest.raises(ValueError):
             minimize(
-                criterion=sos_dict_criterion,
+                fun=sos_dict_criterion,
                 params=start_params,
                 algorithm=algorithm,
-                derivative=derivative,
-                criterion_and_derivative=criterion_and_derivative,
+                jac=derivative,
+                fun_and_jac=criterion_and_derivative,
             )
     else:
         deriv = derivative if derivative is None else switch_sign(derivative)
@@ -122,11 +122,11 @@ def test_invalid_derivative_versions(
         )
         with pytest.raises(ValueError):
             maximize(
-                criterion=switch_sign(sos_dict_criterion),
+                fun=switch_sign(sos_dict_criterion),
                 params=start_params,
                 algorithm=algorithm,
-                derivative=deriv,
-                criterion_and_derivative=crit_and_deriv,
+                jac=deriv,
+                fun_and_jac=crit_and_deriv,
             )
 
 
@@ -135,10 +135,10 @@ def test_dict_derivative():
     start_params["value"] = [1, 2, 3]
 
     res = minimize(
-        criterion=sos_dict_criterion,
+        fun=sos_dict_criterion,
         params=start_params,
         algorithm="scipy_lbfgsb",
-        derivative=sos_dict_derivative,
+        jac=sos_dict_derivative,
     )
 
     aaae(res.params["value"].to_numpy(), np.zeros(3))

@@ -39,7 +39,7 @@ def run_benchmark(
             dictionary that maps a name for optimizer settings
             (e.g. ``"lbfgsb_strict_criterion"``) to a dictionary of keyword arguments
             for arguments for ``minimize`` (e.g. ``{"algorithm": "scipy_lbfgsb",
-            "algo_options": {"convergence.relative_criterion_tolerance": 1e-12}}``).
+            "algo_options": {"convergence.ftol_rel": 1e-12}}``).
             Alternatively, the values can just be an algorithm which is then benchmarked
             at default settings.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
@@ -115,12 +115,12 @@ def _process_optimize_options(raw_options, max_evals, disable_convergence):
 
     default_algo_options = {}
     if max_evals is not None:
-        default_algo_options["stopping.max_criterion_evaluations"] = max_evals
-        default_algo_options["stopping.max_iterations"] = max_evals
+        default_algo_options["stopping.maxfun"] = max_evals
+        default_algo_options["stopping.maxiter"] = max_evals
     if disable_convergence:
-        default_algo_options["convergence.relative_criterion_tolerance"] = 1e-14
-        default_algo_options["convergence.relative_params_tolerance"] = 1e-14
-        default_algo_options["convergence.relative_gradient_tolerance"] = 1e-14
+        default_algo_options["convergence.ftol_rel"] = 1e-14
+        default_algo_options["convergence.xtol_rel"] = 1e-14
+        default_algo_options["convergence.gtol_rel"] = 1e-14
 
     out_options = {}
     for name, _option in dict_options.items():
@@ -181,7 +181,7 @@ def _process_one_result(optimize_result, problem):
 
     """
     _registry = get_registry(extended=True)
-    _criterion = problem["noise_free_criterion"]
+    _criterion = problem["noise_free_fun"]
     _start_x = problem["inputs"]["params"]
     _start_crit_value = _criterion(_start_x)
     if isinstance(_start_crit_value, np.ndarray):

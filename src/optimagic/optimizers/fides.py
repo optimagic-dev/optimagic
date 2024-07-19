@@ -8,12 +8,12 @@ from optimagic.config import IS_FIDES_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
-    CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
-    STOPPING_MAX_ITERATIONS,
+    CONVERGENCE_FTOL_ABS,
+    CONVERGENCE_GTOL_ABS,
+    CONVERGENCE_XTOL_ABS,
+    CONVERGENCE_FTOL_REL,
+    CONVERGENCE_GTOL_REL,
+    STOPPING_MAXITER,
 )
 
 if IS_FIDES_INSTALLED:
@@ -33,12 +33,12 @@ def fides(
     upper_bounds,
     *,
     hessian_update_strategy="bfgs",
-    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
-    convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
+    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
+    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
+    convergence_gtol_abs=CONVERGENCE_GTOL_ABS,
+    convergence_gtol_rel=CONVERGENCE_GTOL_REL,
+    stopping_maxiter=STOPPING_MAXITER,
     stopping_max_seconds=np.inf,
     trustregion_initial_radius=1.0,
     trustregion_stepback_strategy="truncate",
@@ -64,19 +64,19 @@ def fides(
     fides_options = {
         "delta_init": trustregion_initial_radius,
         "eta": trustregion_increase_threshold,
-        "fatol": convergence_absolute_criterion_tolerance,
-        "frtol": convergence_relative_criterion_tolerance,
+        "fatol": convergence_ftol_abs,
+        "frtol": convergence_ftol_rel,
         "gamma1": trustregion_decrease_factor,
         "gamma2": trustregion_increase_factor,
-        "gatol": convergence_absolute_gradient_tolerance,
-        "grtol": convergence_relative_gradient_tolerance,
-        "maxiter": stopping_max_iterations,
+        "gatol": convergence_gtol_abs,
+        "grtol": convergence_gtol_rel,
+        "maxiter": stopping_maxiter,
         "maxtime": stopping_max_seconds,
         "mu": trustregion_decrease_threshold,
         "stepback_strategy": trustregion_stepback_strategy,
         "subspace_solver": trustregion_subspace_dimension,
         "theta_max": trustregion_max_stepback_fraction,
-        "xtol": convergence_absolute_params_tolerance,
+        "xtol": convergence_xtol_abs,
     }
 
     hessian_instance = _create_hessian_updater_from_user_input(hessian_update_strategy)

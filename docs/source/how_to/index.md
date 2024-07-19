@@ -21,7 +21,6 @@ how_to_scaling
 how_to_logging
 how_to_errors_during_optimization
 how_to_slice_plot
-how_to_batch_evaluators
 how_to_benchmarking
 how_to_first_derivative
 how_to_second_derivative

@@ -49,7 +49,7 @@ def test_valid_criterion_versions(criterion, algorithm):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]
     res = minimize(
-        criterion=criterion,
+        fun=criterion,
         params=start_params,
         algorithm=algorithm,
     )
@@ -64,7 +64,7 @@ def test_invalid_criterion_versions(criterion, algorithm):
 
     with pytest.raises(InvalidFunctionError):
         minimize(
-            criterion=criterion,
+            fun=criterion,
             params=start_params,
             algorithm=algorithm,
         )

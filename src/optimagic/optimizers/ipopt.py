@@ -6,8 +6,8 @@ from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    STOPPING_MAX_ITERATIONS,
+    CONVERGENCE_FTOL_REL,
+    STOPPING_MAXITER,
 )
 from optimagic.optimizers.scipy_optimizers import process_scipy_result
 
@@ -31,14 +31,14 @@ def ipopt(
     # nonlinear constraints
     nonlinear_constraints=(),
     # convergence criteria
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
     dual_inf_tol=1.0,
     constr_viol_tol=0.0001,
     compl_inf_tol=0.0001,
     s_max=100.0,
     mu_target=0.0,
     # stopping criteria
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
+    stopping_maxiter=STOPPING_MAXITER,
     stopping_max_wall_time_seconds=1e20,
     stopping_max_cpu_time=1e20,
     # acceptable heuristic
@@ -225,7 +225,7 @@ def ipopt(
             "The 'ipopt' algorithm requires the cyipopt package to be installed. "
             "You can it with: `conda install -c conda-forge cyipopt`."
         )
-    if acceptable_tol <= convergence_relative_criterion_tolerance:
+    if acceptable_tol <= convergence_ftol_rel:
         raise ValueError(
             "The acceptable tolerance must be larger than the desired tolerance."
         )
@@ -246,9 +246,7 @@ def ipopt(
     # The default value is actually 1e2*tol, where tol is the general
     # termination tolerance.
     if resto_failure_feasibility_threshold is None:
-        resto_failure_feasibility_threshold = (
-            1e2 * convergence_relative_criterion_tolerance
-        )
+        resto_failure_feasibility_threshold = 1e2 * convergence_ftol_rel
 
     # convert None to str none section
     linear_solver_options_with_none = [
@@ -333,7 +331,7 @@ def ipopt(
         # disable derivative checker
         "derivative_test": "none",
         "s_max": float(s_max),
-        "max_iter": stopping_max_iterations,
+        "max_iter": stopping_maxiter,
         "max_wall_time": float(stopping_max_wall_time_seconds),
         "max_cpu_time": stopping_max_cpu_time,
         "dual_inf_tol": dual_inf_tol,
@@ -498,7 +496,7 @@ def ipopt(
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         jac=derivative,
         constraints=nonlinear_constraints,
-        tol=convergence_relative_criterion_tolerance,
+        tol=convergence_ftol_rel,
         options=options,
     )
 

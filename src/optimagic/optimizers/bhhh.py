@@ -15,8 +15,8 @@ def bhhh(
     criterion_and_derivative,
     x,
     *,
-    convergence_absolute_gradient_tolerance=1e-8,
-    stopping_max_iterations=200,
+    converence_gtol_abs=1e-8,
+    stopping_maxiter=200,
 ):
     """Minimize a likelihood function using the BHHH algorithm.
 
@@ -27,8 +27,8 @@ def bhhh(
     result_dict = bhhh_internal(
         criterion_and_derivative,
         x=x,
-        convergence_absolute_gradient_tolerance=convergence_absolute_gradient_tolerance,
-        stopping_max_iterations=stopping_max_iterations,
+        convergence_gtol_abs=converence_gtol_abs,
+        stopping_maxiter=stopping_maxiter,
     )
 
     return result_dict
@@ -37,8 +37,8 @@ def bhhh(
 def bhhh_internal(
     criterion_and_derivative,
     x,
-    convergence_absolute_gradient_tolerance,
-    stopping_max_iterations,
+    convergence_gtol_abs,
+    stopping_maxiter,
 ):
     """Minimize a likelihood function using the BHHH algorithm.
 
@@ -72,7 +72,7 @@ def bhhh_internal(
     step_size = initial_step_size
 
     niter = 1
-    while niter < stopping_max_iterations:
+    while niter < stopping_maxiter:
         niter += 1
 
         x_candidate = x_accepted + step_size * direction
@@ -114,7 +114,7 @@ def bhhh_internal(
             # Reset stepsize
             step_size = initial_step_size
 
-        if gtol < convergence_absolute_gradient_tolerance:
+        if gtol < convergence_gtol_abs:
             break
 
     result_dict = {

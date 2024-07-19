@@ -372,9 +372,9 @@ def get_msm_optimization_functions(
         jacobian_kwargs (dict): Additional keyword arguments for jacobian.
 
     Returns:
-        dict: Dictionary containing at least the entry "criterion". If enough inputs
-            are provided it also contains the entries "derivative" and
-            "criterion_and_derivative". All values are functions that take params
+        dict: Dictionary containing at least the entry "fun". If enough inputs
+            are provided it also contains the entries "jac" and
+            "fun_and_jac". All values are functions that take params
             as only argument.
 
     """
@@ -400,7 +400,7 @@ def get_msm_optimization_functions(
         registry=registry,
     )
 
-    out = {"criterion": criterion}
+    out = {"fun": criterion}
 
     if _jacobian is not None:
         raise NotImplementedError(

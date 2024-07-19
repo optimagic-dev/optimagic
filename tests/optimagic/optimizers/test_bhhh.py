@@ -129,8 +129,8 @@ def test_maximum_likelihood(criterion_and_derivative, result_statsmodels, reques
     result_bhhh = bhhh_internal(
         criterion_and_derivative,
         x=x,
-        convergence_absolute_gradient_tolerance=1e-8,
-        stopping_max_iterations=200,
+        convergence_gtol_abs=1e-8,
+        stopping_maxiter=200,
     )
 
     aaae(result_bhhh["solution_x"], result_expected.params, decimal=4)

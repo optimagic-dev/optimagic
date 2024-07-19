@@ -1,13 +1,13 @@
 """Collection of linear trust-region subsolvers."""
 
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 import numpy as np
 
 
 class LinearModel(NamedTuple):
-    intercept: Union[float, None] = None
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
+    intercept: float | None = None
+    linear_terms: np.ndarray | None = None  # shape (n_params, n_params)
 
 
 def minimize_trsbox_linear(

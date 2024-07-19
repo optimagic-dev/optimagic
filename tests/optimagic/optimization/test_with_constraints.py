@@ -168,12 +168,12 @@ def test_constrained_minimization(
         params = np.array(START_INFO[constraint_name])
 
     res = minimize(
-        criterion=criterion,
+        fun=criterion,
         params=params,
         algorithm=algorithm,
-        derivative=derivative,
+        jac=derivative,
         constraints=constraints,
-        algo_options={"convergence.relative_criterion_tolerance": 1e-12},
+        algo_options={"convergence.ftol_rel": 1e-12},
     )
 
     if params_type == "pandas":
@@ -191,7 +191,7 @@ def test_constrained_minimization(
 def test_fix_that_differs_from_start_value_raises_an_error():
     with pytest.raises(InvalidParamsError):
         minimize(
-            criterion=lambda x: x @ x,
+            fun=lambda x: x @ x,
             params=np.arange(3),
             algorithm="scipy_lbfgsb",
             constraints=[{"loc": [1], "type": "fixed", "value": 10}],
@@ -209,11 +209,11 @@ def test_three_independent_constraints():
     ]
 
     res = minimize(
-        criterion=lambda x: x @ x,
+        fun=lambda x: x @ x,
         params=params,
         algorithm="scipy_lbfgsb",
         constraints=constraints,
-        algo_options={"convergence.relative_criterion_tolerance": 1e-12},
+        algo_options={"convergence.ftol_rel": 1e-12},
     )
     expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
 
@@ -235,7 +235,7 @@ def test_incompatible_constraints_raise_errors(constraints):
 
     with pytest.raises(InvalidConstraintError):
         minimize(
-            criterion=lambda x: x @ x,
+            fun=lambda x: x @ x,
             params=params,
             algorithm="scipy_lbfgsb",
             constraints=constraints,
@@ -258,7 +258,7 @@ def test_bug_from_copenhagen_presentation():
         return out
 
     res = maximize(
-        criterion=u,
+        fun=u,
         params=start_params,
         algorithm="scipy_lbfgsb",
         constraints=[
@@ -279,7 +279,7 @@ def test_constraint_inheritance():
     equality constraint, no matter to which set they were applied originally."""
     for loc in [[0, 1], [2, 3]]:
         res = minimize(
-            criterion=lambda x: x @ x,
+            fun=lambda x: x @ x,
             params=np.array([0.1, 0.9, 0.9, 0.1]),
             algorithm="scipy_lbfgsb",
             constraints=[
@@ -314,8 +314,8 @@ def test_covariance_constraint_in_2_by_2_case():
     kwargs = {"y": spector_data.endog, "x": x_df.to_numpy()}
 
     result = maximize(
-        criterion=logit_loglike,
-        criterion_kwargs=kwargs,
+        fun=logit_loglike,
+        fun_kwargs=kwargs,
         params=start_params,
         algorithm="scipy_lbfgsb",
         constraints={"loc": [1, 2, 3], "type": "covariance"},

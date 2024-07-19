@@ -16,7 +16,7 @@ def test_missing_criterion_kwargs():
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
 
     with pytest.raises(InvalidKwargsError):
-        minimize(f, params, "scipy_lbfgsb", criterion_kwargs={"bla": 3})
+        minimize(f, params, "scipy_lbfgsb", fun_kwargs={"bla": 3})
 
 
 def test_missing_derivative_kwargs():
@@ -29,9 +29,7 @@ def test_missing_derivative_kwargs():
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
 
     with pytest.raises(InvalidKwargsError):
-        minimize(
-            f, params, "scipy_lbfgsb", derivative=grad, derivative_kwargs={"bla": 3}
-        )
+        minimize(f, params, "scipy_lbfgsb", jac=grad, jac_kwargs={"bla": 3})
 
 
 def test_missing_criterion_and_derivative_kwargs():
@@ -48,8 +46,8 @@ def test_missing_criterion_and_derivative_kwargs():
             f,
             params,
             "scipy_lbfgsb",
-            criterion_and_derivative=f_and_grad,
-            criterion_and_derivative_kwargs={"bla": 3},
+            fun_and_jac=f_and_grad,
+            fun_and_jac_kwargs={"bla": 3},
         )
 
 
@@ -61,7 +59,7 @@ def test_typo_in_criterion_kwarg():
 
     snippet = "Did you mean"
     with pytest.raises(InvalidKwargsError, match=snippet):
-        minimize(f, params, "scipy_lbfgsb", criterion_kwargs={"bla": 3, "foa": 4})
+        minimize(f, params, "scipy_lbfgsb", fun_kwargs={"bla": 3, "foa": 4})
 
 
 def test_criterion_with_runtime_error_derivative_free():

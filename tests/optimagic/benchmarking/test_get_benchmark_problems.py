@@ -26,7 +26,7 @@ def test_get_problems(name, additive_noise, multiplicative_noise, scaling):
     )
     first_name = list(problems)[0]
     first = problems[first_name]
-    func = first["inputs"]["criterion"]
+    func = first["inputs"]["fun"]
     params = first["inputs"]["params"]
 
     first_eval = func(params)["value"]

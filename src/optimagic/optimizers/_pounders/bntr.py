@@ -1,7 +1,7 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
 
 from functools import reduce
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 import numpy as np
 from optimagic.optimizers._pounders._conjugate_gradient import (
@@ -16,11 +16,11 @@ EPSILON = np.finfo(float).eps ** (2 / 3)
 
 
 class ActiveBounds(NamedTuple):
-    lower: Union[np.ndarray, None] = None
-    upper: Union[np.ndarray, None] = None
-    fixed: Union[np.ndarray, None] = None
-    active: Union[np.ndarray, None] = None
-    inactive: Union[np.ndarray, None] = None
+    lower: np.ndarray | None = None
+    upper: np.ndarray | None = None
+    fixed: np.ndarray | None = None
+    active: np.ndarray | None = None
+    inactive: np.ndarray | None = None
 
 
 def bntr(

@@ -22,11 +22,11 @@ test_cases_no_contribs_needed = [
     {"hessian_update_strategy": "sr1"},
     {"hessian_update_strategy": "DFP"},
     {"hessian_update_strategy": "bb"},
-    {"convergence_relative_criterion_tolerance": 1e-6},
-    {"convergence_absolute_params_tolerance": 1e-6},
-    {"convergence_absolute_gradient_tolerance": 1e-6},
-    {"convergence_relative_gradient_tolerance": 1e-6},
-    {"stopping_max_iterations": 100},
+    {"convergence_ftol_rel": 1e-6},
+    {"convergence_xtol_abs": 1e-6},
+    {"convergence_gtol_abs": 1e-6},
+    {"convergence_gtol_rel": 1e-6},
+    {"stopping_maxiter": 100},
     {"stopping_max_seconds": 200},
     {"trustregion_initial_radius": 20, "trustregion_stepback_strategy": "truncate"},
     {"trustregion_subspace_dimension": "full"},
@@ -81,7 +81,7 @@ def test_fides_stop_after_one_iteration():
         x=np.array([1, -5, 3]),
         lower_bounds=np.array([-10, -10, -10]),
         upper_bounds=np.array([10, 10, 10]),
-        stopping_max_iterations=1,
+        stopping_maxiter=1,
     )
     assert not res["success"]
     assert res["n_iterations"] == 1

@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
 
 from optimagic.utilities import to_pickle
 from optimagic.shared.compat import pd_df_map
+import warnings
+from optimagic.typing import PyTree
 
 
 @dataclass
@@ -15,50 +17,121 @@ class OptimizeResult:
     **Attributes**
 
     Attributes:
-        params (Any): The optimal parameters.
-        criterion (float): The optimal criterion value.
-        start_criterion (float): The criterion value at the start parameters.
-        start_params (Any): The start parameters.
-        algorithm (str): The algorithm used for the optimization.
-        direction (str): Maximize or minimize.
-        n_free (int): Number of free parameters.
-        message (Union[str, None] = None): Message returned by the underlying algorithm.
-        success (Union[bool, None] = None): Whether the optimization was successful.
-        n_criterion_evaluations (Union[int, None] = None): Number of criterion
-            evaluations.
-        n_derivative_evaluations (Union[int, None] = None): Number of
-            derivative evaluations.
-        n_iterations (Union[int, None] = None): Number of iterations until termination.
-        history (Union[Dict, None] = None): Optimization history.
-        convergence_report (Union[Dict, None] = None): The convergence report.
-        multistart_info (Union[Dict, None] = None): Multistart information.
-        algorithm_output (Dict = field(default_factory=dict)): Additional algorithm
-            specific information.
+        params: The optimal parameters.
+        fun: The optimal criterion value.
+        start_fun: The criterion value at the start parameters.
+        start_params: The start parameters.
+        algorithm: The algorithm used for the optimization.
+        direction: Maximize or minimize.
+        n_free: Number of free parameters.
+        message: Message returned by the underlying algorithm.
+        success: Whether the optimization was successful.
+        n_fun_evals: Number of criterion evaluations.
+        n_jac_evals: Number of derivative evaluations.
+        n_iterations: Number of iterations until termination.
+        history: Optimization history.
+        convergence_report: The convergence report.
+        multistart_info: Multistart information.
+        algorithm_output: Additional algorithm specific information.
 
     """
 
     params: Any
-    criterion: float
-    start_criterion: float
+    fun: float
+    start_fun: float
     start_params: Any
     algorithm: str
     direction: str
     n_free: int
 
-    message: Union[str, None] = None
-    success: Union[bool, None] = None
-    n_criterion_evaluations: Union[int, None] = None
-    n_derivative_evaluations: Union[int, None] = None
-    n_iterations: Union[int, None] = None
+    message: str | None = None
+    success: bool | None = None
+    n_fun_evals: int | None = None
+    n_jac_evals: int | None = None
+    n_hess_evals: int | None = None
+    n_iterations: int | None = None
+    status: int | None = None
+    jac: PyTree | None = None
+    hess: PyTree | None = None
+    hess_inv: PyTree | None = None
+    max_constaint_violation: float | None = None
 
-    history: Union[Dict, None] = None
+    history: Dict | None = None
 
-    convergence_report: Union[Dict, None] = None
+    convergence_report: Dict | None = None
 
-    multistart_info: Union[Dict, None] = None
+    multistart_info: Dict | None = None
     algorithm_output: Dict = field(default_factory=dict)
 
-    def __repr__(self):
+    # ==================================================================================
+    # Deprecations
+    # ==================================================================================
+
+    @property
+    def criterion(self) -> float:
+        msg = "The criterion attribute is deprecated. Use the fun attribute instead."
+        warnings.warn(msg, FutureWarning)
+        return self.fun
+
+    @property
+    def start_criterion(self) -> float:
+        msg = (
+            "The start_criterion attribute is deprecated. Use the start_fun attribute "
+            "instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        return self.start_fun
+
+    @property
+    def n_criterion_evaluations(self) -> int | None:
+        msg = (
+            "The n_criterion_evaluations attribute is deprecated. Use the n_fun_evals "
+            "attribute instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        return self.n_fun_evals
+
+    @property
+    def n_derivative_evaluations(self) -> int | None:
+        msg = (
+            "The n_derivative_evaluations attribute is deprecated. Use the n_jac_evals "
+            "attribute instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        return self.n_jac_evals
+
+    # ==================================================================================
+    # Scipy aliases
+    # ==================================================================================
+
+    @property
+    def x(self) -> PyTree:
+        return self.params
+
+    @property
+    def x0(self) -> PyTree:
+        return self.start_params
+
+    @property
+    def nfev(self) -> int | None:
+        return self.n_fun_evals
+
+    @property
+    def nit(self) -> int | None:
+        return self.n_iterations
+
+    @property
+    def njev(self) -> int | None:
+        return self.n_jac_evals
+
+    @property
+    def nhev(self) -> int | None:
+        return self.n_hess_evals
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __repr__(self) -> str:
         first_line = (
             f"{self.direction.title()} with {self.n_free} free parameters terminated"
         )
@@ -68,8 +141,8 @@ class OptimizeResult:
             first_line += f" {snippet}"
 
         counters = [
-            ("criterion evaluations", self.n_criterion_evaluations),
-            ("derivative evaluations", self.n_derivative_evaluations),
+            ("criterion evaluations", self.n_fun_evals),
+            ("derivative evaluations", self.n_jac_evals),
             ("iterations", self.n_iterations),
         ]
 
@@ -93,10 +166,10 @@ class OptimizeResult:
         else:
             message = None
 
-        if self.start_criterion is not None and self.criterion is not None:
+        if self.start_fun is not None and self.fun is not None:
             improvement = (
-                f"The value of criterion improved from {self.start_criterion} to "
-                f"{self.criterion}."
+                f"The value of criterion improved from {self.start_fun} to "
+                f"{self.fun}."
             )
         else:
             improvement = None

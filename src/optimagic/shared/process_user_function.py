@@ -91,3 +91,20 @@ def get_arguments_without_default(func):
 
     no_default = set(no_default)
     return no_default
+
+
+def get_kwargs_from_args(args, func, offset=0):
+    """Convert positional arguments to a dict of keyword arguments.
+
+    Args:
+        args (list, tuple): Positional arguments.
+        func (callable): Function to be called.
+        offset (int, optional): Number of arguments to skip. Defaults to 0.
+
+    Returns:
+        dict: Keyword arguments.
+
+    """
+    names = list(inspect.signature(func).parameters)[offset:]
+    kwargs = {name: arg for name, arg in zip(names, args)}
+    return kwargs

@@ -12,39 +12,21 @@
 [![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![image](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![image](https://pepy.tech/badge/estimagic/month)](https://pepy.tech/project/estimagic)
+[![image](https://img.shields.io/badge/NumFOCUS-affiliated%20project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects)
+[![image](https://img.shields.io/twitter/follow/aiidateam.svg?style=social&label=Follow)](https://x.com/optimagic)
 
 ## Introduction
 
-optimagic is a Python package for nonlinear optimization with or without constraints. It
-is particularly suited to solve difficult nonlinear estimation problems. On top, it
-provides functionality to perform statistical inference on estimated parameters.
+*optimagic* is a Python package for numerical optimization. It is a unified interface to
+optimizers from SciPy, NlOpt and many other Python packages.
 
-### Optimization
+*optimagic*'s `minimize` function works just like SciPy's, so you don't have to adjust
+your code. You simply get more optimizers for free. On top you get powerful diagnostic
+tools, parallel numerical derivatives and more.
 
-- optimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more.
-- optimagic implements constraints efficiently via reparametrization, so you can solve
-  constrained problems with any optimizer that supports bounds.
-- The parameters of an optimization problem can be arbitrary pytrees
-- The complete history of parameters and function evaluations can be saved in a database
-  for maximum reproducibility.
-- Painless and efficient multistart optimization.
-- The progress of the optimization can be displayed in `criterion_plot` and
-  `params_plot` while the optimization is still running.
-
-### Estimation and Inference
-
-- You can estimate a model using method of simulated moments (MSM), calculate standard
-  errors and do sensitivity analysis with just one function call.
-- Asymptotic standard errors for maximum likelihood estimation.
-- estimagic also provides bootstrap confidence intervals and standard errors. Of course
-  the bootstrap procedures are parallelized.
-
-### Numerical differentiation
-
-- optimagic can calculate precise numerical derivatives using
-  [Richardson extrapolations](https://en.wikipedia.org/wiki/Richardson_extrapolation).
-- Function evaluations needed for numerical derivatives can be done in parallel with
-  pre-implemented or user provided batch evaluators.
+*optimagic* was formerly called *estimagic*, because it also provides functionality to
+perform statistical inference on estimated parameters. *estimagic* is now a subpackage
+of *optimagic*.
 
 ## Installation
 
@@ -101,3 +83,14 @@ If you use optimagic for your research, please do not forget to cite it.
   Url    = {https://github.com/OpenSourceEconomics/optimagic}
 }
 ```
+
+## Acknowledgements
+
+We thank all institutions that have funded or supported optimagic (formerly estimagic)
+
+<img src="docs/source/_static/images/aai-institute-logo.svg" width="185">
+<img src="docs/source/_static/images/numfocus_logo.png" width="200">
+<img src="docs/source/_static/images/tra_logo.png" width="240">
+
+<img src="docs/source/_static/images/hoover_logo.png" width="192">
+<img src="docs/source/_static/images/transferlab-logo.svg" width="400">

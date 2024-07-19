@@ -34,7 +34,7 @@ you can impose and how you specify them in optimagic:
 
     >>> import numpy as np
     >>> import optimagic as om
-    >>> def criterion(params):
+    >>> def fun(params):
     ...     offset = np.linspace(1, 0, len(params))
     ...     x = params - offset
     ...     return x @ x
@@ -48,7 +48,7 @@ The unconstrained optimum of a six-dimensional version of this problem is:
 .. code-block:: python
 
     >>> res = om.minimize(
-    ...    criterion=criterion,
+    ...    fun=fun,
     ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     ...    algorithm="scipy_lbfgsb",
     ...    )
@@ -78,7 +78,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 5], "type": "fixed"},
@@ -105,7 +105,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [1, 2, 3], "type": "increasing"},
@@ -144,7 +144,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [3, 0, 4], "type": "decreasing"},
@@ -176,7 +176,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 5], "type": "equality"},
@@ -201,7 +201,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"locs": [[0, 1], [2, 3]], "type": "pairwise_equality"},
@@ -226,7 +226,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.array([0.3, 0.2, 0.25, 0.25, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 1, 2, 3], "type": "probability"},
@@ -257,7 +257,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 1, 2], "type": "covariance"},
@@ -295,7 +295,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={"loc": [0, 1, 2], "type": "sdcorr"},
@@ -342,7 +342,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
         ...    constraints={
@@ -388,7 +388,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     .. code-block:: python
 
         >>> res = om.minimize(
-        ...    criterion=criterion,
+        ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_slsqp",
         ...    constraints={
@@ -422,7 +422,7 @@ constraints simultaneously, simple pass in a list of constraints. For example:
 .. code-block:: python
 
     >>> res = om.minimize(
-    ...    criterion=criterion,
+    ...    fun=fun,
     ...    params=np.ones(6),
     ...    algorithm="scipy_lbfgsb",
     ...    constraints=[
@@ -493,7 +493,7 @@ Below we show how to use each of these selection methods in simple examples
     .. code-block:: python
 
         res = om.minimize(
-            criterion=some_criterion,
+            fun=some_fun,
             params=params,
             algorithm="scipy_lbfgsb",
             constraints={"loc": "cutoffs", "type": "increasing"},
@@ -536,7 +536,7 @@ Below we show how to use each of these selection methods in simple examples
     .. code-block:: python
 
         res = om.minimize(
-            criterion=some_criterion,
+            fun=some_fun,
             params=params,
             algorithm="scipy_lbfgsb",
             constraints={"query": "category == 'betas' | name == 'a'", "type": "fixed"},
@@ -567,7 +567,7 @@ Below we show how to use each of these selection methods in simple examples
     .. code-block:: python
 
         res = om.minimize(
-            criterion=some_criterion,
+            fun=some_fun,
             params=params,
             algorithm="scipy_lbfgsb",
             constraints={"selector": lambda params: params["b"]["d"], "type": "fixed"},
@@ -587,7 +587,7 @@ Below we show how to use each of these selection methods in simple examples
 
 
         res = om.minimize(
-            criterion=some_criterion,
+            fun=some_fun,
             params=params,
             algorithm="scipy_lbfgsb",
             constraints={"selector": my_selector, "type": "fixed"},

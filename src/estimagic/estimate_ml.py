@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -166,8 +166,8 @@ def estimate_ml(
         opt_res = None
     else:
         opt_res = maximize(
-            criterion=loglike,
-            criterion_kwargs=loglike_kwargs,
+            fun=loglike,
+            fun_kwargs=loglike_kwargs,
             params=params,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
@@ -359,14 +359,14 @@ class LikelihoodResult:
     _free_estimates: FreeParams
     _converter: Converter
     _has_constraints: bool
-    _optimize_result: Union[OptimizeResult, None] = None
+    _optimize_result: OptimizeResult | None = None
     _jacobian: Any = None
-    _no_jacobian_reason: Union[str, None] = None
+    _no_jacobian_reason: str | None = None
     _hessian: Any = None
-    _no_hessian_reason: Union[str, None] = None
-    _internal_jacobian: Union[np.ndarray, None] = None
-    _internal_hessian: Union[np.ndarray, None] = None
-    _design_info: Union[pd.DataFrame, None] = None
+    _no_hessian_reason: str | None = None
+    _internal_jacobian: np.ndarray | None = None
+    _internal_hessian: np.ndarray | None = None
+    _design_info: pd.DataFrame | None = None
     _cache: Dict = field(default_factory=dict)
 
     def __post_init__(self):

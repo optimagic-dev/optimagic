@@ -1,6 +1,6 @@
 """Auxiliary functions for the pounders algorithm."""
 
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 import numpy as np
 from scipy.linalg import qr_multiply
@@ -14,16 +14,14 @@ from optimagic.optimizers._pounders.gqtpar import (
 
 
 class ResidualModel(NamedTuple):
-    intercepts: Union[np.ndarray, None] = None  # shape (n_residuals,)
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_residuals, n_params)
-    square_terms: Union[np.ndarray, None] = (
-        None  # shape (n_residuals, n_params, n_params)
-    )
+    intercepts: np.ndarray | None = None  # shape (n_residuals,)
+    linear_terms: np.ndarray | None = None  # shape (n_residuals, n_params)
+    square_terms: np.ndarray | None = None  # shape (n_residuals, n_params, n_params)
 
 
 class MainModel(NamedTuple):
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_params,)
-    square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
+    linear_terms: np.ndarray | None = None  # shape (n_params,)
+    square_terms: np.ndarray | None = None  # shape (n_params, n_params)
 
 
 def create_initial_residual_model(history, accepted_index, delta):

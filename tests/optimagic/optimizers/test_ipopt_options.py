@@ -8,8 +8,8 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 test_cases = [
     {},
-    {"convergence_relative_criterion_tolerance": 1e-7},
-    {"stopping_max_iterations": 1_100_000},
+    {"convergence_ftol_rel": 1e-7},
+    {"stopping_maxiter": 1_100_000},
     {"mu_target": 1e-8},
     {"s_max": 200},
     {"stopping_max_wall_time_seconds": 200},
