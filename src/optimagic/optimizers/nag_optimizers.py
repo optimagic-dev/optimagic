@@ -662,7 +662,7 @@ def _process_nag_result(nag_result_obj, len_x):
     """
     processed = {
         "solution_criterion": nag_result_obj.f,
-        "n_criterion_evaluations": nag_result_obj.nx,
+        "n_fun_evals": nag_result_obj.nx,
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,

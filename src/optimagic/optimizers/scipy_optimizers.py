@@ -669,7 +669,7 @@ def scipy_brute(
     out = {
         "solution_x": res[0],
         "solution_criterion": res[1],
-        "n_criterion_evaluations": res[2].size,
+        "n_fun_evals": res[2].size,
         "n_iterations": res[2].size,
         "success": True,
         "message": "brute force optimization terminated successfully",
