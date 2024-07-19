@@ -5,7 +5,7 @@ from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.block_trees import block_tree_to_matrix
-from optimagic.parameters.bounds import get_bounds
+from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.utilities import isscalar
 
@@ -55,7 +55,7 @@ def get_tree_converter(
     _registry = get_registry(extended=True)
     _params_vec, _params_treedef = tree_flatten(params, registry=_registry)
     _params_vec = np.array(_params_vec).astype(float)
-    _lower, _upper = get_bounds(
+    _lower, _upper = get_internal_bounds(
         params=params,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -63,7 +63,7 @@ def get_tree_converter(
     )
 
     if add_soft_bounds:
-        _soft_lower, _soft_upper = get_bounds(
+        _soft_lower, _soft_upper = get_internal_bounds(
             params=params,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,

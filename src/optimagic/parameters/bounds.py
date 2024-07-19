@@ -4,9 +4,70 @@ from pybaum import tree_just_flatten as tree_leaves
 
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import get_registry
+from dataclasses import dataclass
+from optimagic.typing import PyTree
+from scipy.optimize import Bounds as ScipyBounds
+from typing import Sequence
 
 
-def get_bounds(
+@dataclass
+class Bounds:
+    lower: PyTree | None = None
+    upper: PyTree | None = None
+    soft_lower: PyTree | None = None
+    soft_upper: PyTree | None = None
+
+
+def pre_process_bounds(
+    bounds: None | Bounds | ScipyBounds | Sequence[tuple],
+) -> Bounds | None:
+    """Convert all valid types of specifying bounds to optimagic.Bounds.
+
+    This just harmonizes multiple ways of specifying bounds into a single format.
+    It does not check that bounds are valid or compatible with params.
+
+    Args:
+        bounds: The user provided bounds.
+
+    Returns:
+        optimagic.Bounds: The bounds in the optimagic format.
+
+    Raises:
+        InvalidBoundsError: If bounds cannot be processed, e.g. because they do not have
+            the correct type.
+
+    """
+    if isinstance(bounds, ScipyBounds):
+        bounds = Bounds(lower=bounds.lb, upper=bounds.ub)
+    elif isinstance(bounds, Bounds) or bounds is None:
+        pass
+    else:
+        try:
+            bounds = _process_bounds_sequence(bounds)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            raise InvalidBoundsError(
+                f"Invalid bounds of type: {type(bounds)}. Bounds must be "
+                "optimagic.Bounds, scipy.optimize.Bounds or a Sequence of tuples with "
+                "lower and upper bounds."
+            ) from e
+    return bounds
+
+
+def _process_bounds_sequence(bounds: Sequence[tuple]) -> Bounds:
+    lower = np.full(len(bounds), -np.inf)
+    upper = np.full(len(bounds), np.inf)
+
+    for i, (lb, ub) in enumerate(bounds):
+        if lb is not None:
+            lower[i] = lb
+        if ub is not None:
+            upper[i] = ub
+    return Bounds(lower=lower, upper=upper)
+
+
+def get_internal_bounds(
     params,
     lower_bounds=None,
     upper_bounds=None,
@@ -15,9 +76,12 @@ def get_bounds(
     registry=None,
     add_soft_bounds=False,
 ):
-    """Consolidate lower/upper bounds with bounds available in params.
+    """Create consolidated and flattened bounds for params.
 
-    Updates bounds defined in params. If no bounds are available the entry is set to
+    If params is a DataFrame with value column, the user provided bounds are
+    extended with bounds from the params DataFrame.
+
+    If no bounds are available the entry is set to
     -np.inf for the lower bound and np.inf for the upper bound. If a bound is defined in
     params and lower_bounds or upper_bounds, the bound from lower_bounds or upper_bounds
     will be used.

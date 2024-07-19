@@ -15,7 +15,7 @@ from optimagic.differentiation import finite_differences
 from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
-from optimagic.parameters.bounds import get_bounds
+from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import get_registry
 
 
@@ -133,7 +133,7 @@ def first_derivative(
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
 
-    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
+    lower_bounds, upper_bounds = get_internal_bounds(params, lower_bounds, upper_bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -407,7 +407,7 @@ def second_derivative(
                 returned if return_info is True.
 
     """
-    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
+    lower_bounds, upper_bounds = get_internal_bounds(params, lower_bounds, upper_bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
