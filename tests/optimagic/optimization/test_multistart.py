@@ -56,7 +56,7 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
     assert all(isinstance(entry, float) for entry in ms_info["exploration_results"])
     assert all(isinstance(entry, OptimizeResult) for entry in ms_info["local_optima"])
     assert all(isinstance(entry, pd.DataFrame) for entry in ms_info["start_parameters"])
-    assert np.allclose(res.criterion, 0)
+    assert np.allclose(res.fun, 0)
     aaae(res.params["value"], np.zeros(4))
 
 

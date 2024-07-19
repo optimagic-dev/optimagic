@@ -31,14 +31,14 @@ def convergence_report():
 def base_inputs():
     out = {
         "params": np.ones(3),
-        "criterion": 500,
-        "start_criterion": 1000,
+        "fun": 500,
+        "start_fun": 1000,
         "start_params": np.full(3, 10),
         "direction": "minimize",
         "message": "OPTIMIZATION TERMINATED SUCCESSFULLY",
         "success": True,
-        "n_criterion_evaluations": 100,
-        "n_derivative_evaluations": 0,
+        "n_fun_evals": 100,
+        "n_jac_evals": 0,
         "n_iterations": 80,
         "history": {"criterion": list(range(10))},
         "algorithm": "scipy_lbfgsb",

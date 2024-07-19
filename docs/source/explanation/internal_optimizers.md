@@ -56,8 +56,8 @@ should return a dictionary with the following entries:
 - solution_x: The best parameter achieved so far
 - solution_criterion: The value of the criterion at solution_x. This can be a scalar or
   dictionary.
-- n_criterion_evaluations: The number of criterion evaluations.
-- n_derivative_evaluations: The number of derivative evaluations.
+- n_fun_evals: The number of criterion evaluations.
+- n_jac_evals: The number of derivative evaluations.
 - n_iterations: The number of iterations
 - success: True if convergence was achieved
 - message: A string with additional information.

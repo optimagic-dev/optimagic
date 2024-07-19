@@ -232,8 +232,8 @@ def _process_pounders_results(residuals_out, tao):
         "solution_criterion": tao.function,
         "solution_derivative": None,
         "solution_hessian": None,
-        "n_criterion_evaluations": tao.getIterationNumber(),
-        "n_derivative_evaluations": None,
+        "n_fun_evals": tao.getIterationNumber(),
+        "n_jac_evals": None,
         "n_iterations": None,
         "success": bool(convergence_code >= 0),
         "reached_convergence_criterion": (

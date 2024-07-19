@@ -37,7 +37,7 @@ def process_internal_optimizer_result(
                 skip_checks=skip_checks,
             )
 
-            crit_hist = [opt.criterion for opt in info["local_optima"]]
+            crit_hist = [opt.fun for opt in info["local_optima"]]
             params_hist = [opt.params for opt in info["local_optima"]]
             time_hist = [np.nan for opt in info["local_optima"]]
             hist = {"criterion": crit_hist, "params": params_hist, "runtime": time_hist}
@@ -54,11 +54,11 @@ def process_internal_optimizer_result(
                 [opt.n_iterations for opt in info["local_optima"]]
             )
 
-            res.n_criterion_evaluations = _sum_or_none(
-                [opt.n_criterion_evaluations for opt in info["local_optima"]]
+            res.n_fun_evals = _sum_or_none(
+                [opt.n_fun_evals for opt in info["local_optima"]]
             )
-            res.n_derivative_evaluations = _sum_or_none(
-                [opt.n_derivative_evaluations for opt in info["local_optima"]]
+            res.n_jac_evals = _sum_or_none(
+                [opt.n_jac_evals for opt in info["local_optima"]]
             )
 
             res.multistart_info = info
@@ -78,8 +78,8 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
         _criterion = -_criterion
 
     optional_entries = [
-        "n_criterion_evaluations",
-        "n_derivative_evaluations",
+        "n_fun_evals",
+        "n_jac_evals",
         "n_iterations",
         "success",
         "message",
@@ -107,7 +107,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
 
     out = OptimizeResult(
         params=_params,
-        criterion=_criterion,
+        fun=_criterion,
         **fixed_kwargs,
         **optional_kwargs,
         algorithm_output=algo_output,
@@ -126,7 +126,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
     for res, start in zip(info["local_optima"], starts):
         kwargs = fixed_kwargs.copy()
         kwargs["start_params"] = start
-        kwargs["start_criterion"] = None
+        kwargs["start_fun"] = None
         processed = _process_one_result(
             res,
             converter=converter,
@@ -155,7 +155,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
 def _dummy_result_from_traceback(candidate, fixed_kwargs):  # noqa: ARG001
     out = OptimizeResult(
         params=None,
-        criterion=None,
+        fun=None,
         **fixed_kwargs,
     )
     return out

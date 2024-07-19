@@ -17,7 +17,7 @@ def test_sign_is_switched_back_after_maximization():
         algorithm="scipy_lbfgsb",
     )
 
-    assert np.allclose(res.criterion, 1)
+    assert np.allclose(res.fun, 1)
 
 
 def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():

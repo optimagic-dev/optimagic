@@ -143,8 +143,8 @@ def test_estimagic_optimize_result_is_deprecated():
     with pytest.warns(FutureWarning, match=msg):
         OptimizeResult(
             params=res.params,
-            criterion=res.criterion,
-            start_criterion=res.start_criterion,
+            fun=res.fun,
+            start_fun=res.start_fun,
             start_params=res.start_params,
             algorithm=res.algorithm,
             direction=res.direction,
@@ -370,3 +370,21 @@ def test_old_convergence_criteria_are_deprecated(algo_option):
                 algorithm="scipy_lbfgsb",
                 algo_options=algo_option,
             )
+
+
+def test_deprecated_attributes_of_optimize_result():
+    res = om.minimize(lambda x: x @ x, np.arange(3), algorithm="scipy_lbfgsb")
+
+    msg = "attribute is deprecated"
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.n_criterion_evaluations
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.n_derivative_evaluations
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.criterion
+
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.start_criterion

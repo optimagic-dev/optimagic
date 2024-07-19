@@ -6,6 +6,7 @@ import pandas as pd
 
 from optimagic.utilities import to_pickle
 from optimagic.shared.compat import pd_df_map
+import warnings
 
 
 @dataclass
@@ -16,8 +17,8 @@ class OptimizeResult:
 
     Attributes:
         params (Any): The optimal parameters.
-        criterion (float): The optimal criterion value.
-        start_criterion (float): The criterion value at the start parameters.
+        fun (float): The optimal criterion value.
+        start_fun (float): The criterion value at the start parameters.
         start_params (Any): The start parameters.
         algorithm (str): The algorithm used for the optimization.
         direction (str): Maximize or minimize.
@@ -38,8 +39,8 @@ class OptimizeResult:
     """
 
     params: Any
-    criterion: float
-    start_criterion: float
+    fun: float
+    start_fun: float
     start_params: Any
     algorithm: str
     direction: str
@@ -47,8 +48,8 @@ class OptimizeResult:
 
     message: Union[str, None] = None
     success: Union[bool, None] = None
-    n_criterion_evaluations: Union[int, None] = None
-    n_derivative_evaluations: Union[int, None] = None
+    n_fun_evals: Union[int, None] = None
+    n_jac_evals: Union[int, None] = None
     n_iterations: Union[int, None] = None
 
     history: Union[Dict, None] = None
@@ -57,6 +58,39 @@ class OptimizeResult:
 
     multistart_info: Union[Dict, None] = None
     algorithm_output: Dict = field(default_factory=dict)
+
+    @property
+    def criterion(self):
+        msg = "The criterion attribute is deprecated. Use the fun attribute instead."
+        warnings.warn(msg, FutureWarning)
+        return self.fun
+
+    @property
+    def start_criterion(self):
+        msg = (
+            "The start_criterion attribute is deprecated. Use the start_fun attribute "
+            "instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        return self.start_fun
+
+    @property
+    def n_criterion_evaluations(self):
+        msg = (
+            "The n_criterion_evaluations attribute is deprecated. Use the n_fun_evals "
+            "attribute instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        return self.n_fun_evals
+
+    @property
+    def n_derivative_evaluations(self):
+        msg = (
+            "The n_derivative_evaluations attribute is deprecated. Use the n_jac_evals "
+            "attribute instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        return self.n_jac_evals
 
     def __repr__(self):
         first_line = (
@@ -68,8 +102,8 @@ class OptimizeResult:
             first_line += f" {snippet}"
 
         counters = [
-            ("criterion evaluations", self.n_criterion_evaluations),
-            ("derivative evaluations", self.n_derivative_evaluations),
+            ("criterion evaluations", self.n_fun_evals),
+            ("derivative evaluations", self.n_jac_evals),
             ("iterations", self.n_iterations),
         ]
 
@@ -93,10 +127,10 @@ class OptimizeResult:
         else:
             message = None
 
-        if self.start_criterion is not None and self.criterion is not None:
+        if self.start_fun is not None and self.fun is not None:
             improvement = (
-                f"The value of criterion improved from {self.start_criterion} to "
-                f"{self.criterion}."
+                f"The value of criterion improved from {self.start_fun} to "
+                f"{self.fun}."
             )
         else:
             improvement = None

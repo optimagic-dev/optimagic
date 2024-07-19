@@ -68,7 +68,7 @@ def _dummy_optimizer(criterion, x, n_cores, batch_size, batch_evaluator):
     out = {
         "solution_x": xs[-1],
         "solution_criterion": 5,
-        "n_criterion_evaluations": 15,
+        "n_fun_evals": 15,
         "n_iterations": 3,
         "success": True,
     }

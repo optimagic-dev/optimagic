@@ -761,7 +761,7 @@ def _optimize(
     )
 
     fixed_result_kwargs = {
-        "start_criterion": _scalar_start_criterion,
+        "start_fun": _scalar_start_criterion,
         "start_params": params,
         "algorithm": algo_info.name,
         "direction": direction,
