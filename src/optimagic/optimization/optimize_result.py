@@ -48,9 +48,13 @@ class OptimizeResult:
     success: bool | None = None
     n_fun_evals: int | None = None
     n_jac_evals: int | None = None
+    n_hess_evals: int | None = None
     n_iterations: int | None = None
     status: int | None = None
     jac: PyTree | None = None
+    hess: PyTree | None = None
+    hess_inv: PyTree | None = None
+    max_constaint_violation: float | None = None
 
     history: Dict | None = None
 
@@ -64,13 +68,13 @@ class OptimizeResult:
     # ==================================================================================
 
     @property
-    def criterion(self):
+    def criterion(self) -> float:
         msg = "The criterion attribute is deprecated. Use the fun attribute instead."
         warnings.warn(msg, FutureWarning)
         return self.fun
 
     @property
-    def start_criterion(self):
+    def start_criterion(self) -> float:
         msg = (
             "The start_criterion attribute is deprecated. Use the start_fun attribute "
             "instead."
@@ -79,7 +83,7 @@ class OptimizeResult:
         return self.start_fun
 
     @property
-    def n_criterion_evaluations(self):
+    def n_criterion_evaluations(self) -> int | None:
         msg = (
             "The n_criterion_evaluations attribute is deprecated. Use the n_fun_evals "
             "attribute instead."
@@ -88,7 +92,7 @@ class OptimizeResult:
         return self.n_fun_evals
 
     @property
-    def n_derivative_evaluations(self):
+    def n_derivative_evaluations(self) -> int | None:
         msg = (
             "The n_derivative_evaluations attribute is deprecated. Use the n_jac_evals "
             "attribute instead."
@@ -101,14 +105,30 @@ class OptimizeResult:
     # ==================================================================================
 
     @property
-    def x(self):
+    def x(self) -> PyTree:
         return self.params
 
     @property
-    def x0(self):
+    def x0(self) -> PyTree:
         return self.start_params
 
-    def __repr__(self):
+    @property
+    def nfev(self) -> int | None:
+        return self.n_fun_evals
+
+    @property
+    def nit(self) -> int | None:
+        return self.n_iterations
+
+    @property
+    def njev(self) -> int | None:
+        return self.n_jac_evals
+
+    @property
+    def nhev(self) -> int | None:
+        return self.n_hess_evals
+
+    def __repr__(self) -> str:
         first_line = (
             f"{self.direction.title()} with {self.n_free} free parameters terminated"
         )
