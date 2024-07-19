@@ -128,6 +128,9 @@ class OptimizeResult:
     def nhev(self) -> int | None:
         return self.n_hess_evals
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def __repr__(self) -> str:
         first_line = (
             f"{self.direction.title()} with {self.n_free} free parameters terminated"

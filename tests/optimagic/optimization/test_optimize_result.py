@@ -68,3 +68,9 @@ def test_to_pickle(base_inputs, convergence_report, tmp_path):
         **base_inputs,
     )
     res.to_pickle(tmp_path / "bla.pkl")
+
+
+def test_dict_access(base_inputs):
+    res = OptimizeResult(**base_inputs)
+    assert res["fun"] == 500
+    assert res["nfev"] == 100
