@@ -158,6 +158,10 @@ class RobustPickler:
 
     @staticmethod
     def dumps(
-        obj, protocol=None, *, fix_imports=True, buffer_callback=None  # noqa: ARG004
+        obj,
+        protocol=None,
+        *,
+        fix_imports=True,
+        buffer_callback=None,  # noqa: ARG004
     ):
         return cloudpickle.dumps(obj, protocol=protocol)
