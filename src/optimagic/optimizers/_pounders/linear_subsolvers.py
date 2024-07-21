@@ -98,7 +98,7 @@ def improve_geomtery_trsbox_linear(
     upper_bounds,
     trustregion_radius,
     *,
-    zero_treshold=1e-14
+    zero_treshold=1e-14,
 ):
     """Maximize a Lagrange polynomial of degree one to improve geometry of the model.
 

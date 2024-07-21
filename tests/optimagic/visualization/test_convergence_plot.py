@@ -45,7 +45,7 @@ def test_convergence_plot_options(options, grid):
         results=results,
         problem_subset=["bard_good_start"],
         combine_plots_in_grid=grid,
-        **options
+        **options,
     )
 
 
