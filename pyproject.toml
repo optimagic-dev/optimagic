@@ -1,14 +1,96 @@
+# ======================================================================================
+# Project metadata
+# ======================================================================================
+[project]
+name = "optimagic"
+description = "Tools to solve difficult numerical optimization problems."
+requires-python = ">=3.8"
+dependencies = [
+    "cloudpickle",
+    "joblib",
+    "numpy<2.0",
+    "pandas",
+    "plotly",
+    "pybaum>=0.1.2",
+    "scipy>=1.2.1",
+    "sqlalchemy>=1.3",
+]
+dynamic = ["version"]
+keywords = [
+    "econometrics",
+    "statistics",
+    "estimation",
+    "extremum estimation",
+    "optimization",
+    "inference",
+    "numerical differentiation",
+    "finite differences",
+    "derivative free optimization",
+    "method of simulated moments",
+    "maximum likelihood",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+]
+authors = [
+    { name = "Janos Gabler", email = "janos.gabler@gmail.com" },
+]
+maintainers = [
+    { name = "Janos Gabler", email = "janos.gabler@gmail.com" },
+    { name = "Tim Mensinger", email = "mensingertim@gmail.com" },
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.license]
+text = "MIT"
+
+[project.urls]
+Repository = "https://github.com/opensourceeconomics/optimagic"
+Github = "https://github.com/opensourceeconomics/optimagic"
+Tracker = "https://github.com/OpenSourceEconomics/optimagic/issues"
+
+
+# ======================================================================================
+# Build system configuration
+# ======================================================================================
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch_vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/optimagic/_version.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["tests"]
+only-packages = true
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src"]
+sources = ["src"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 
-[tool.setuptools_scm]
-write_to = "src/optimagic/_version.py"
-
-
+# ======================================================================================
+# Ruff configuration
+# ======================================================================================
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 fix = true
 
 select = [
@@ -72,7 +154,9 @@ black = 1
 [tool.pytask]
 infer_latex_dependencies = true
 
-
+# ======================================================================================
+# Pytest configuration
+# ======================================================================================
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore:Using or importing the ABCs from 'collections'",
@@ -107,7 +191,9 @@ line_length = 88
 sequence_style = "block_style"
 none_representation = "null"
 
-
+# ======================================================================================
+# Mypy configuration
+# ======================================================================================
 [tool.mypy]
 files = ["src", "tests"]
 check_untyped_defs = true
