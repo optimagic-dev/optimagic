@@ -47,6 +47,7 @@ from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
+from optimagic.parameters.bounds import Bounds
 
 
 def maximize(
@@ -876,8 +877,7 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     # only define the ones that deviate from the normal defaults
     default_numdiff_options = {
         "method": "forward",
-        "lower_bounds": lower_bounds,
-        "upper_bounds": upper_bounds,
+        "bounds": Bounds(lower=lower_bounds, upper=upper_bounds),
         "error_handling": default_error_handling,
         "return_info": False,
     }

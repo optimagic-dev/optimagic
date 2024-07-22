@@ -87,8 +87,7 @@ def _process_nonlinear_constraint(
 
     # process numdiff_options for numerical derivative
     options = numdiff_options.copy()
-    options.pop("lower_bounds", None)
-    options.pop("upper_bounds", None)
+    options.pop("bounds", None)
 
     if "derivative" in c:
         if not callable(c["derivative"]):
