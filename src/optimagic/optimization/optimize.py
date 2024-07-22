@@ -43,7 +43,10 @@ from optimagic.optimization.scipy_aliases import (
     split_fun_and_jac,
 )
 from optimagic import deprecations
-from optimagic.deprecations import replace_and_warn_about_deprecated_algo_options
+from optimagic.deprecations import (
+    replace_and_warn_about_deprecated_algo_options,
+    replace_and_warn_about_deprecated_bounds,
+)
 
 
 def maximize(
@@ -51,12 +54,9 @@ def maximize(
     params=None,
     algorithm=None,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
-    fun_kwargs=None,
+    bounds=None,
     constraints=None,
+    fun_kwargs=None,
     algo_options=None,
     jac=None,
     jac_kwargs=None,
@@ -91,17 +91,18 @@ def maximize(
     derivative_kwargs=None,
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
 ):
     """Maximize criterion using algorithm subject to constraints."""
     return _optimize(
         direction="maximize",
         fun=fun,
         params=params,
+        bounds=bounds,
         algorithm=algorithm,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
         fun_kwargs=fun_kwargs,
         constraints=constraints,
         algo_options=algo_options,
@@ -138,6 +139,10 @@ def maximize(
         derivative_kwargs=derivative_kwargs,
         criterion_and_derivative=criterion_and_derivative,
         criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
     )
 
 
@@ -146,11 +151,7 @@ def minimize(
     params=None,
     algorithm=None,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
-    fun_kwargs=None,
+    bounds=None,
     constraints=None,
     algo_options=None,
     jac=None,
@@ -186,6 +187,11 @@ def minimize(
     derivative_kwargs=None,
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
+    fun_kwargs=None,
 ):
     """Minimize criterion using algorithm subject to constraints."""
 
@@ -194,10 +200,7 @@ def minimize(
         fun=fun,
         params=params,
         algorithm=algorithm,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
+        bounds=bounds,
         fun_kwargs=fun_kwargs,
         constraints=constraints,
         algo_options=algo_options,
@@ -234,6 +237,10 @@ def minimize(
         derivative_kwargs=derivative_kwargs,
         criterion_and_derivative=criterion_and_derivative,
         criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
     )
 
 
@@ -243,10 +250,7 @@ def _optimize(
     params,
     algorithm,
     *,
-    lower_bounds,
-    upper_bounds,
-    soft_lower_bounds,
-    soft_upper_bounds,
+    bounds,
     fun_kwargs,
     constraints,
     algo_options,
@@ -283,6 +287,10 @@ def _optimize(
     derivative_kwargs,
     criterion_and_derivative,
     criterion_and_derivative_kwargs,
+    lower_bounds,
+    upper_bounds,
+    soft_lower_bounds,
+    soft_upper_bounds,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
@@ -351,6 +359,14 @@ def _optimize(
         )
 
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
+
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
+        bounds=bounds,
+    )
 
     # ==================================================================================
     # handle scipy aliases
