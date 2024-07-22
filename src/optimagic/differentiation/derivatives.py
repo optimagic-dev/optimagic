@@ -18,6 +18,7 @@ from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_bl
 from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.parameters.bounds import Bounds
 
 
 class Evals(NamedTuple):
@@ -144,7 +145,7 @@ def first_derivative(
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
 
-    lower_bounds, upper_bounds = get_internal_bounds(params, bounds=bounds)
+    internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -168,8 +169,7 @@ def first_derivative(
         target="first_derivative",
         base_steps=base_steps,
         scaling_factor=scaling_factor,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
         min_steps=min_steps,
     )
@@ -431,7 +431,7 @@ def second_derivative(
     )
     # ==================================================================================
 
-    lower_bounds, upper_bounds = get_internal_bounds(params, bounds=bounds)
+    internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -457,8 +457,7 @@ def second_derivative(
         target="second_derivative",
         base_steps=base_steps,
         scaling_factor=scaling_factor,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
         min_steps=min_steps,
     )

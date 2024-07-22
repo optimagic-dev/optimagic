@@ -8,6 +8,7 @@ from optimagic.differentiation.generate_steps import (
     generate_steps,
 )
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 
 
 def test_scalars_as_base_steps():
@@ -181,8 +182,7 @@ def test_generate_steps_binding_min_step():
         n_steps=2,
         target="first_derivative",
         base_steps=np.array([0.1, 0.2, 0.3]),
-        lower_bounds=np.full(3, -np.inf),
-        upper_bounds=np.full(3, 2.5),
+        bounds=Bounds(lower=np.full(3, -np.inf), upper=np.full(3, 2.5)),
         step_ratio=2.0,
         min_steps=np.full(3, 1e-8),
         scaling_factor=1.0,
@@ -202,8 +202,7 @@ def test_generate_steps_min_step_equals_base_step():
         n_steps=2,
         target="first_derivative",
         base_steps=np.array([0.1, 0.2, 0.3]),
-        lower_bounds=np.full(3, -np.inf),
-        upper_bounds=np.full(3, 2.5),
+        bounds=Bounds(lower=np.full(3, -np.inf), upper=np.full(3, 2.5)),
         step_ratio=2.0,
         min_steps=None,
         scaling_factor=1.0,
