@@ -1,12 +1,11 @@
 from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.bounds import Bounds
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 
 
 def count_free_params(
     params,
     constraints=None,
-    bounds: Bounds | None = None,
+    bounds=None,
     # deprecated
     lower_bounds=None,
     upper_bounds=None,
@@ -46,7 +45,7 @@ def count_free_params(
 def check_constraints(
     params,
     constraints,
-    bounds: Bounds | None = None,
+    bounds=None,
     # deprecated
     lower_bounds=None,
     upper_bounds=None,

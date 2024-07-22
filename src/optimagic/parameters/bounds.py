@@ -150,7 +150,7 @@ def get_internal_bounds(
 
 def _update_bounds_and_flatten(
     nan_tree: PyTree, bounds: PyTree, kind: str
-) -> NDArray[float]:
+) -> NDArray[np.float64]:
     """Flatten bounds array and update it with bounds from params.
 
     Args:
@@ -176,7 +176,7 @@ def _update_bounds_and_flatten(
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree))
 
-        invalid = {"names": [], "bounds": []}
+        invalid = {"names": [], "bounds": []}  # type: ignore
         for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds):
             # if a bounds leaf is None we treat it as saying the the corresponding
             # subtree of params has no bounds.
