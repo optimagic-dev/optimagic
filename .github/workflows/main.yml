@@ -106,8 +106,9 @@ jobs:
         with:
           environment-file: ./.envs/testenv-linux.yml
           environment-name: optimagic
-          cache-env: true
-          extra-specs: python=3.12
+          cache-environment: true
+          create-args: |
+            python=3.12
       - name: run sphinx
         shell: bash -l {0}
         run: |-
@@ -126,8 +127,8 @@ jobs:
         with:
           environment-file: ./.envs/testenv-linux.yml
           environment-name: optimagic
-          cache-env: true
-          extra-specs: |
+          cache-environment: true
+          create-args: |
             python=3.10
       - name: Run mypy
         shell: bash -l {0}
