@@ -107,5 +107,19 @@ repos:
           - --wrap
           - '88'
         files: (docs/.)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        files: src|tests
+        additional_dependencies:
+          - packaging
+          - pandas-stubs
+          - sqlalchemy-stubs
+          - types-cffi
+          - types-openpyxl
+          - types-jinja2
+        args:
+          - --config=pyproject.toml
 ci:
   autoupdate_schedule: monthly
