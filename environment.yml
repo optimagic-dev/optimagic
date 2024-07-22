@@ -33,7 +33,7 @@ dependencies:
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
   - seaborn  # dev, tests
-  - mypy  # dev, tests
+  - mypy>=1.11.0  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - furo  # dev, docs

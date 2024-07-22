@@ -18,11 +18,11 @@ NUM_AGENTS = 2_000
 
 def get_random_params(
     length,
-    rng,
+    rng,  # noqa: ARG001
     low=0,
     high=1,
     lower_bound=-np.inf,
-    upper_bound=np.inf,  # noqa: ARG001
+    upper_bound=np.inf,
 ):
     params = pd.DataFrame(
         {

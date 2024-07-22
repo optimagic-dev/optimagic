@@ -219,7 +219,7 @@ def _fast_params_from_internal(x, return_type="tree"):
 def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
     def _fast_derivative_to_internal(
         derivative_eval,
-        x,
+        x,  # noqa: ARG001
         jac_is_flat=True,  # noqa: ARG001
     ):
         # make signature compatible with non-fast path

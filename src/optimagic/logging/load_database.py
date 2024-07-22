@@ -161,7 +161,7 @@ class RobustPickler:
         obj,
         protocol=None,
         *,
-        fix_imports=True,
+        fix_imports=True,  # noqa: ARG001
         buffer_callback=None,  # noqa: ARG004
     ):
         return cloudpickle.dumps(obj, protocol=protocol)

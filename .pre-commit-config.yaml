@@ -108,7 +108,7 @@ repos:
           - '88'
         files: (docs/.)
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.11.0
     hooks:
       - id: mypy
         files: src|tests
@@ -119,6 +119,7 @@ repos:
           - types-cffi
           - types-openpyxl
           - types-jinja2
+          - numpy<2.0
         args:
           - --config=pyproject.toml
 ci:
