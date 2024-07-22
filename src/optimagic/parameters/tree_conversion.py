@@ -12,13 +12,10 @@ from optimagic.utilities import isscalar
 
 def get_tree_converter(
     params,
-    lower_bounds,
-    upper_bounds,
+    bounds,
     func_eval,
     primary_key,
     derivative_eval=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
     add_soft_bounds=False,
 ):
     """Get flatten and unflatten functions for criterion and its derivative.
@@ -57,19 +54,15 @@ def get_tree_converter(
     _params_vec = np.array(_params_vec).astype(float)
     _lower, _upper = get_internal_bounds(
         params=params,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         registry=_registry,
     )
 
     if add_soft_bounds:
         _soft_lower, _soft_upper = get_internal_bounds(
             params=params,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
+            bounds=bounds,
             registry=_registry,
-            soft_lower_bounds=soft_lower_bounds,
-            soft_upper_bounds=soft_upper_bounds,
             add_soft_bounds=add_soft_bounds,
         )
     else:

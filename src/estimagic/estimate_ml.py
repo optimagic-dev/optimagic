@@ -37,6 +37,8 @@ from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
 from optimagic.utilities import get_rng, to_pickle
+from optimagic.parameters.bounds import Bounds
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 
 
 def estimate_ml(
@@ -44,8 +46,7 @@ def estimate_ml(
     params,
     optimize_options,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
+    bounds=None,
     constraints=None,
     logging=False,
     log_options=None,
@@ -56,6 +57,9 @@ def estimate_ml(
     hessian=None,
     hessian_kwargs=None,
     design_info=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Do a maximum likelihood (ml) estimation.
 
@@ -133,6 +137,16 @@ def estimate_ml(
 
     """
     # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+
+    # ==================================================================================
     # Check and process inputs
     # ==================================================================================
     is_optimized = optimize_options is False
@@ -169,8 +183,7 @@ def estimate_ml(
             fun=loglike,
             fun_kwargs=loglike_kwargs,
             params=params,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
+            bounds=bounds,
             constraints=constraints,
             logging=logging,
             log_options=log_options,
@@ -219,8 +232,7 @@ def estimate_ml(
     converter, internal_estimates = get_converter(
         params=estimates,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=loglike_eval,
         primary_key="contributions",
         scaling=False,
@@ -247,8 +259,10 @@ def estimate_ml(
         jac_res = first_derivative(
             func=func,
             params=internal_estimates.values,
-            lower_bounds=internal_estimates.lower_bounds,
-            upper_bounds=internal_estimates.upper_bounds,
+            bounds=Bounds(
+                lower=internal_estimates.lower_bounds,
+                upper=internal_estimates.upper_bounds,
+            ),
             **numdiff_options,
         )
 
@@ -290,8 +304,10 @@ def estimate_ml(
         hess_res = second_derivative(
             func=func,
             params=internal_estimates.values,
-            lower_bounds=internal_estimates.lower_bounds,
-            upper_bounds=internal_estimates.upper_bounds,
+            bounds=Bounds(
+                lower=internal_estimates.lower_bounds,
+                upper=internal_estimates.upper_bounds,
+            ),
             **numdiff_options,
         )
         int_hess = hess_res["derivative"]

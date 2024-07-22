@@ -69,8 +69,7 @@ def test_criterion_and_derivative_template(
     converter, _ = get_converter(
         params=base_inputs["params"],
         constraints=None,
-        lower_bounds=None,
-        upper_bounds=None,
+        bounds=None,
         func_eval=crit(base_inputs["params"]),
         primary_key="value",
         scaling=False,
@@ -118,8 +117,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
     converter, _ = get_converter(
         params=base_inputs["params"],
         constraints=None,
-        lower_bounds=None,
-        upper_bounds=None,
+        bounds=None,
         func_eval=sos_scalar_criterion(base_inputs["params"]),
         primary_key="value",
         scaling=False,

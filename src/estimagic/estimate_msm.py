@@ -46,6 +46,8 @@ from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
 from optimagic.utilities import get_rng, to_pickle
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.parameters.bounds import Bounds
 
 
 def estimate_msm(
@@ -55,8 +57,7 @@ def estimate_msm(
     params,
     optimize_options,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
+    bounds=None,
     constraints=None,
     logging=False,
     log_options=None,
@@ -65,6 +66,9 @@ def estimate_msm(
     numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Do a method of simulated moments or indirect inference estimation.
 
@@ -148,6 +152,15 @@ def estimate_msm(
 
     """
     # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+    # ==================================================================================
     # Check and process inputs
     # ==================================================================================
 
@@ -213,8 +226,7 @@ def estimate_msm(
         )
 
         opt_res = minimize(
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
+            bounds=bounds,
             constraints=constraints,
             logging=logging,
             log_options=log_options,
@@ -269,8 +281,7 @@ def estimate_msm(
     converter, internal_estimates = get_converter(
         params=estimates,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=func_eval,
         primary_key="contributions",
         scaling=False,
@@ -296,8 +307,10 @@ def estimate_msm(
         int_jac = first_derivative(
             func=func,
             params=internal_estimates.values,
-            lower_bounds=internal_estimates.lower_bounds,
-            upper_bounds=internal_estimates.upper_bounds,
+            bounds=Bounds(
+                lower=internal_estimates.lower_bounds,
+                upper=internal_estimates.upper_bounds,
+            ),
             **numdiff_options,
         )["derivative"]
 

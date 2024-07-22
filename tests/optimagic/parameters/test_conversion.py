@@ -7,14 +7,14 @@ from optimagic.parameters.conversion import (
     get_converter,
 )
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 
 
 def test_get_converter_fast_case():
     converter, internal = get_converter(
         params=np.arange(3),
         constraints=None,
-        lower_bounds=None,
-        upper_bounds=None,
+        bounds=None,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
@@ -36,11 +36,14 @@ def test_get_converter_fast_case():
 
 
 def test_get_converter_with_constraints_and_bounds():
+    bounds = Bounds(
+        lower=np.array([-1, -np.inf, -np.inf]),
+        upper=np.array([np.inf, 10, np.inf]),
+    )
     converter, internal = get_converter(
         params=np.arange(3),
         constraints=[{"loc": 2, "type": "fixed"}],
-        lower_bounds=np.array([-1, -np.inf, -np.inf]),
-        upper_bounds=np.array([np.inf, 10, np.inf]),
+        bounds=bounds,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
@@ -62,11 +65,15 @@ def test_get_converter_with_constraints_and_bounds():
 
 
 def test_get_converter_with_scaling():
+
+    bounds = Bounds(
+        lower=np.arange(3) - 1,
+        upper=np.arange(3) + 1,
+    )
     converter, internal = get_converter(
         params=np.arange(3),
         constraints=None,
-        lower_bounds=np.arange(3) - 1,
-        upper_bounds=np.arange(3) + 1,
+        bounds=bounds,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
@@ -92,8 +99,7 @@ def test_get_converter_with_trees():
     converter, internal = get_converter(
         params=params,
         constraints=None,
-        lower_bounds=None,
-        upper_bounds=None,
+        bounds=None,
         func_eval={"contributions": {"d": 1, "e": 2}},
         derivative_eval={"a": 0, "b": 2, "c": 4},
         primary_key="value",

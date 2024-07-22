@@ -17,6 +17,7 @@ from optimagic.differentiation.richardson_extrapolation import richardson_extrap
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 
 
 class Evals(NamedTuple):
@@ -28,13 +29,12 @@ def first_derivative(
     func,
     params,
     *,
+    bounds=None,
     func_kwargs=None,
     method="central",
     n_steps=1,
     base_steps=None,
     scaling_factor=1,
-    lower_bounds=None,
-    upper_bounds=None,
     step_ratio=2,
     min_steps=None,
     f0=None,
@@ -44,6 +44,9 @@ def first_derivative(
     return_func_value=False,
     return_info=False,
     key=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
 
@@ -61,6 +64,7 @@ def first_derivative(
     Args:
         func (callable): Function of which the derivative is calculated.
         params (pytree): A pytree. See :ref:`params`.
+        bounds (Bounds): Lower and upper bounds for the parameters.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
@@ -77,8 +81,6 @@ def first_derivative(
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        lower_bounds (pytree): To be written.
-        upper_bounds (pytree): To be written.
         step_ratio (float, numpy.array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. The step ratio is only used if n_steps > 1.
@@ -130,10 +132,19 @@ def first_derivative(
                 1.
 
     """
+    # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
 
-    lower_bounds, upper_bounds = get_internal_bounds(params, lower_bounds, upper_bounds)
+    lower_bounds, upper_bounds = get_internal_bounds(params, bounds=bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -283,13 +294,12 @@ def second_derivative(
     func,
     params,
     *,
+    bounds=None,
     func_kwargs=None,
     method="central_cross",
     n_steps=1,
     base_steps=None,
     scaling_factor=1,
-    lower_bounds=None,
-    upper_bounds=None,
     step_ratio=2,
     min_steps=None,
     f0=None,
@@ -299,6 +309,9 @@ def second_derivative(
     return_func_value=False,
     return_info=False,
     key=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Evaluate second derivative of func at params according to method and step
     options.
@@ -407,7 +420,18 @@ def second_derivative(
                 returned if return_info is True.
 
     """
-    lower_bounds, upper_bounds = get_internal_bounds(params, lower_bounds, upper_bounds)
+
+    # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+    # ==================================================================================
+
+    lower_bounds, upper_bounds = get_internal_bounds(params, bounds=bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs

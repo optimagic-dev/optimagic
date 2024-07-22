@@ -1,7 +1,16 @@
 from optimagic.parameters.conversion import get_converter
+from optimagic.parameters.bounds import Bounds
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 
 
-def count_free_params(params, constraints=None, lower_bounds=None, upper_bounds=None):
+def count_free_params(
+    params,
+    constraints=None,
+    bounds: Bounds | None = None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
+):
     """Count the (free) parameters of an optimization problem.
 
     Args:
@@ -15,11 +24,16 @@ def count_free_params(params, constraints=None, lower_bounds=None, upper_bounds=
         int: Number of (free) parameters
 
     """
+    bounds = replace_and_warn_about_deprecated_bounds(
+        bounds=bounds,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
+
     _, internal_params = get_converter(
         params=params,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=3,
         primary_key="value",
         scaling=False,
@@ -29,7 +43,14 @@ def count_free_params(params, constraints=None, lower_bounds=None, upper_bounds=
     return int(internal_params.free_mask.sum())
 
 
-def check_constraints(params, constraints, lower_bounds=None, upper_bounds=None):
+def check_constraints(
+    params,
+    constraints,
+    bounds: Bounds | None = None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
+):
     """Raise an error if constraints are invalid or not satisfied in params.
 
     Args:
@@ -44,11 +65,15 @@ def check_constraints(params, constraints, lower_bounds=None, upper_bounds=None)
         InvalidConstraintError: If constraints are invalid.
 
     """
+    bounds = replace_and_warn_about_deprecated_bounds(
+        bounds=bounds,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
     get_converter(
         params=params,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=3,
         primary_key="value",
         scaling=False,

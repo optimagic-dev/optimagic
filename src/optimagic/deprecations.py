@@ -101,9 +101,9 @@ def replace_and_warn_about_deprecated_algo_options(algo_options):
 def replace_and_warn_about_deprecated_bounds(
     lower_bounds,
     upper_bounds,
-    soft_lower_bounds,
-    soft_upper_bounds,
     bounds,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
 ):
     old_bounds = {
         "lower": lower_bounds,

@@ -363,9 +363,9 @@ def _optimize(
     bounds = replace_and_warn_about_deprecated_bounds(
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        bounds=bounds,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
-        bounds=bounds,
     )
 
     # ==================================================================================
@@ -631,15 +631,12 @@ def _optimize(
     converter, internal_params = get_converter(
         params=params,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=first_crit_eval,
         primary_key=algo_info.primary_criterion_entry,
         scaling=scaling,
         scaling_options=scaling_options,
         derivative_eval=used_deriv,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=multistart,
     )
 

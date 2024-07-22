@@ -11,13 +11,13 @@ from optimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 
 
 def slice_plot(
     func,
     params,
-    lower_bounds=None,
-    upper_bounds=None,
+    bounds=None,
     func_kwargs=None,
     selector=None,
     n_cores=DEFAULT_N_CORES,
@@ -33,6 +33,9 @@ def slice_plot(
     return_dict=False,
     make_subplot_kwargs=None,
     batch_evaluator="joblib",
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Plot criterion along coordinates at given and random values.
 
@@ -84,6 +87,11 @@ def slice_plot(
             plots for each parameter or a plotly Figure combining the individual plots.
 
     """
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
 
     layout_kwargs = None
     if title is not None:
@@ -99,8 +107,7 @@ def slice_plot(
     converter, internal_params = get_converter(
         params=params,
         constraints=None,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=func_eval,
         primary_key="value",
         scaling=False,
