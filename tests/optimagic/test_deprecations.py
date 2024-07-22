@@ -26,6 +26,7 @@ from estimagic import OptimizeLogReader, OptimizeResult
 from estimagic import criterion_plot, params_plot
 import optimagic as om
 import warnings
+from optimagic.parameters.bounds import Bounds
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0
@@ -92,8 +93,7 @@ def test_estimagic_slice_plot_is_deprecated():
         slice_plot(
             func=lambda x: x @ x,
             params=np.arange(3),
-            lower_bounds=np.zeros(3),
-            upper_bounds=np.ones(3) * 5,
+            bounds=Bounds(lower=np.zeros(3), upper=np.ones(3) * 5),
         )
 
 

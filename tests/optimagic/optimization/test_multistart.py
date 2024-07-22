@@ -14,6 +14,7 @@ from optimagic.logging.read_log import read_steps_table
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 
 criteria = [sos_scalar_criterion, sos_dict_criterion]
 
@@ -174,8 +175,7 @@ def test_multistart_with_numpy_params():
         fun=lambda params: params @ params,
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
-        soft_lower_bounds=np.full(5, -10),
-        soft_upper_bounds=np.full(5, 10),
+        bounds=Bounds(soft_lower=np.full(5, -10), soft_upper=np.full(5, 10)),
         multistart=True,
     )
 
@@ -200,8 +200,7 @@ def test_with_scaling():
     res = minimize(
         fun=_crit,
         params=np.full(5, 10),
-        soft_lower_bounds=np.full(5, -1),
-        soft_upper_bounds=np.full(5, 11),
+        bounds=Bounds(soft_lower=np.full(5, -1), soft_upper=np.full(5, 11)),
         algorithm="scipy_lbfgsb",
         multistart=True,
     )
@@ -224,8 +223,7 @@ def test_with_ackley():
     kwargs = {
         "fun": ackley,
         "params": np.full(dim, -10),
-        "lower_bounds": np.full(dim, -32),
-        "upper_bounds": np.full(dim, 32),
+        "bounds": Bounds(lower=np.full(dim, -32), upper=np.full(dim, 32)),
         "algo_options": {"stopping.maxfun": 1000},
     }
 
@@ -245,8 +243,7 @@ def test_multistart_with_least_squares_optimizers():
     est = minimize(
         fun=sos_dict_criterion,
         params=np.array([-1, 1.0]),
-        lower_bounds=np.full(2, -10.0),
-        upper_bounds=np.full(2, 10.0),
+        bounds=Bounds(soft_lower=np.full(2, -10), soft_upper=np.full(2, 10)),
         algorithm="scipy_ls_trf",
         multistart=True,
         multistart_options={"n_samples": 3, "share_optimizations": 1.0},
