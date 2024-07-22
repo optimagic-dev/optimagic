@@ -30,7 +30,7 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
   build-n-publish-estimagic:
-    name: Build and publish optimagic Python 🐍 distributions 📦 to PyPI
+    name: Build and publish estimagic Python 🐍 distributions 📦 to PyPI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +45,7 @@ jobs:
           build
           toml
           --user
-      - name: Update name entry in pyproject.toml to estimagic
+      - name: Set name entry in pyproject.toml to estimagic
         run: >-
           python .scripts/update-name-in-pyproject.py
       - name: Build a binary wheel and a source tarball
