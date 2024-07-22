@@ -5,10 +5,11 @@ from pybaum import tree_just_flatten as tree_leaves
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import get_registry
 from dataclasses import dataclass
-from optimagic.typing import PyTree
+from optimagic.typing import PyTree, PyTreeRegistry
 from scipy.optimize import Bounds as ScipyBounds
 from typing import Sequence
 from numpy.typing import NDArray
+from typing import Any
 
 
 @dataclass
@@ -20,7 +21,7 @@ class Bounds:
 
 
 def pre_process_bounds(
-    bounds: None | Bounds | ScipyBounds | Sequence[tuple],
+    bounds: None | Bounds | ScipyBounds | Sequence[tuple[float, float]],
 ) -> Bounds | None:
     """Convert all valid types of specifying bounds to optimagic.Bounds.
 
@@ -31,7 +32,7 @@ def pre_process_bounds(
         bounds: The user provided bounds.
 
     Returns:
-        optimagic.Bounds: The bounds in the optimagic format.
+        The bounds in the optimagic format.
 
     Raises:
         InvalidBoundsError: If bounds cannot be processed, e.g. because they do not have
@@ -56,7 +57,7 @@ def pre_process_bounds(
     return bounds
 
 
-def _process_bounds_sequence(bounds: Sequence[tuple]) -> Bounds:
+def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
     lower = np.full(len(bounds), -np.inf)
     upper = np.full(len(bounds), np.inf)
 
@@ -69,45 +70,43 @@ def _process_bounds_sequence(bounds: Sequence[tuple]) -> Bounds:
 
 
 def get_internal_bounds(
-    params,
-    bounds=None,
-    registry=None,
-    add_soft_bounds=False,
-):
+    params: PyTree,
+    bounds: Bounds | None = None,
+    registry: PyTreeRegistry | None = None,
+    add_soft_bounds: bool = False,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Create consolidated and flattened bounds for params.
 
     If params is a DataFrame with value column, the user provided bounds are
     extended with bounds from the params DataFrame.
 
-    If no bounds are available the entry is set to
-    -np.inf for the lower bound and np.inf for the upper bound. If a bound is defined in
-    params and lower_bounds or upper_bounds, the bound from lower_bounds or upper_bounds
-    will be used.
+    If no bounds are available the entry is set to minus np.inf for the lower bound and
+    np.inf for the upper bound.
+
+    The bounds provided in `bounds` override bounds provided in params if both are
+    specified (in the case where params is a DataFrame with bounds as a column).
 
     Args:
-        params (pytree): The parameter pytree.
-        lower_bounds (pytree): Must be a subtree of params.
-        upper_bounds (pytree): Must be a subtree of params.
-        registry (dict): pybaum registry.
+        params: The parameter pytree.
+        bounds: The lower and upper bounds.
+        registry: pybaum registry.
 
     Returns:
-        np.ndarray: Consolidated and flattened lower_bounds.
-        np.ndarray: Consolidated and flattened upper_bounds.
+        Consolidated and flattened lower_bounds.
+        Consolidated and flattened upper_bounds.
 
     """
     bounds = Bounds() if bounds is None else bounds
 
     fast_path = _is_fast_path(
         params=params,
-        lower_bounds=bounds.lower,
-        upper_bounds=bounds.upper,
+        bounds=bounds,
         add_soft_bounds=add_soft_bounds,
     )
     if fast_path:
         return _get_fast_path_bounds(
             params=params,
-            lower_bounds=bounds.lower,
-            upper_bounds=bounds.upper,
+            bounds=bounds,
         )
 
     registry = get_registry(extended=True) if registry is None else registry
@@ -201,7 +200,7 @@ def _update_bounds_and_flatten(
     return updated
 
 
-def _is_fast_path(params, lower_bounds, upper_bounds, add_soft_bounds):
+def _is_fast_path(params: PyTree, bounds: Bounds, add_soft_bounds: bool) -> bool:
     out = True
     if add_soft_bounds:
         out = False
@@ -209,31 +208,33 @@ def _is_fast_path(params, lower_bounds, upper_bounds, add_soft_bounds):
     if not _is_1d_array(params):
         out = False
 
-    for bound in lower_bounds, upper_bounds:
+    for bound in bounds.lower, bounds.upper:
         if not (_is_1d_array(bound) or bound is None):
             out = False
     return out
 
 
-def _is_1d_array(candidate):
+def _is_1d_array(candidate: Any) -> bool:
     return isinstance(candidate, np.ndarray) and candidate.ndim == 1
 
 
-def _get_fast_path_bounds(params, lower_bounds, upper_bounds):
-    if lower_bounds is None:
+def _get_fast_path_bounds(
+    params: PyTree, bounds: Bounds
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    if bounds.lower is None:
         # faster than np.full
-        lower_bounds = np.array([-np.inf] * len(params))
+        bounds.lower = np.array([-np.inf] * len(params))
     else:
-        lower_bounds = lower_bounds.astype(float)
+        bounds.lower = bounds.lower.astype(float)
 
-    if upper_bounds is None:
+    if bounds.upper is None:
         # faster than np.full
-        upper_bounds = np.array([np.inf] * len(params))
+        bounds.upper = np.array([np.inf] * len(params))
     else:
-        upper_bounds = upper_bounds.astype(float)
+        bounds.upper = bounds.upper.astype(float)
 
-    if (lower_bounds > upper_bounds).any():
+    if (bounds.lower > bounds.upper).any():
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
         raise InvalidBoundsError(msg)
 
-    return lower_bounds, upper_bounds
+    return bounds.lower, bounds.upper
