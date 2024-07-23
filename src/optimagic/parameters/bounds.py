@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 from pybaum import leaf_names, tree_map
 from pybaum import tree_just_flatten as tree_leaves
