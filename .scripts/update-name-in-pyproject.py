@@ -1,7 +1,7 @@
 import toml
 from pathlib import Path
 
-file_path = Path("pyproject.toml")
+file_path = Path(__file__).parent.parent.resolve() / "pyproject.toml"
 
 with file_path.open("r") as f:
     config = toml.load(f)
