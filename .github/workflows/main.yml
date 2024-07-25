@@ -115,3 +115,23 @@ jobs:
           micromamba activate optimagic
           cd docs/source
           python -m doctest -v how_to/how_to_constraints.md
+  run-mypy:
+    name: Run mypy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: create build environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: ./.envs/testenv-linux.yml
+          environment-name: optimagic
+          cache-environment: true
+          create-args: |
+            python=3.10
+      - name: Run mypy
+        shell: bash -l {0}
+        run: |-
+          micromamba activate optimagic
+          mypy
