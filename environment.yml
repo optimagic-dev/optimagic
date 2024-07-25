@@ -7,7 +7,6 @@ dependencies:
   - python=3.10  # dev
   - cyipopt<=1.2.0  # dev
   - jupyterlab  # dev, docs
-  - nb_black  # dev, docs
   - nlopt  # dev, tests
   - pdbpp  # dev
   - pip  # dev, tests, docs
@@ -40,8 +39,6 @@ dependencies:
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
-      - black  # dev
-      - blackcellmagic  # dev
       - fides==0.7.4  # dev, tests
       - gif  # dev
       - gif[matplotlib]  # dev

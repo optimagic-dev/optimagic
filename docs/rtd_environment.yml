@@ -8,7 +8,6 @@ dependencies:
   - pip
   - setuptools_scm
   - toml
-  - black
   - sphinx
   - sphinxcontrib-bibtex
   - sphinx-copybutton
