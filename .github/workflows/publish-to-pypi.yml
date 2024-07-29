@@ -47,7 +47,7 @@ jobs:
           --user
       - name: Set name entry in pyproject.toml to estimagic
         run: >-
-          python .scripts/update-name-in-pyproject.py
+          python .tools/update-name-in-pyproject.py
       - name: Build a binary wheel and a source tarball
         run: >-
           python -m
