@@ -14,7 +14,7 @@ repos:
     hooks:
       - id: update-environment-files
         name: check environment file updates
-        entry: python .envs/update_envs.py
+        entry: python .tools/update_envs.py
         language: python
         always_run: true
         require_serial: true

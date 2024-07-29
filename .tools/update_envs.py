@@ -51,7 +51,7 @@ def main():
     ):
         # Specify newline to avoid wrong line endings on Windows.
         # See: https://stackoverflow.com/a/69869641
-        Path(f".envs/testenv-{name}.yml").write_text(
+        Path(f".tools/envs/testenv-{name}.yml").write_text(
             "\n".join(env) + "\n", newline="\n"
         )
 

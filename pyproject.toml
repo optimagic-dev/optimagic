@@ -176,7 +176,7 @@ markers = [
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
     "jax: Tests that require jax to be installed and are skipped on non-Linux systems.",
 ]
-norecursedirs = ["docs", ".envs"]
+norecursedirs = ["docs", ".tools"]
 
 
 # ======================================================================================
