@@ -48,6 +48,7 @@ def main():
     for name, env in zip(
         ["linux", "others", "pandas"],
         [test_env_linux, test_env_others, test_env_pandas],
+        strict=False,
     ):
         # Specify newline to avoid wrong line endings on Windows.
         # See: https://stackoverflow.com/a/69869641

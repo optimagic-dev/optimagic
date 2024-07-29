@@ -133,7 +133,7 @@ def _replace_pairwise_equality_by_equality(constraints):
     for constr in pairwise_constraints:
         equality_constraints = [
             {"index": list(elements), "type": "equality"}
-            for elements in zip(*constr["indices"])
+            for elements in zip(*constr["indices"], strict=False)
         ]
         constraints += equality_constraints
 
@@ -200,7 +200,7 @@ def _replace_increasing_and_decreasing_by_linear(constraints):
 
     linear_constraints = []
     for iloc in increasing_ilocs:
-        for smaller, larger in zip(iloc, iloc[1:]):
+        for smaller, larger in zip(iloc, iloc[1:], strict=False):
             linear_constr = {
                 "index": [smaller, larger],
                 "type": "linear",

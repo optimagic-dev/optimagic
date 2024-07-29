@@ -176,7 +176,7 @@ def calculate_estimation_summary(
     # and use the index information stored in estimates_flat to form the correct (multi)
     # index for the resulting leaf.
     summary_flat = []
-    for index_leaf, params_leaf in zip(indices_flat, estimates_flat):
+    for index_leaf, params_leaf in zip(indices_flat, estimates_flat, strict=False):
         if np.isscalar(params_leaf):
             loc = [index_leaf]
             index = [0]

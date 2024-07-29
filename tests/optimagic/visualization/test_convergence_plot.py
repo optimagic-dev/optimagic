@@ -23,7 +23,9 @@ profile_options = [
 ]
 
 
-@pytest.mark.parametrize("options, grid", zip(profile_options, [True, False]))
+@pytest.mark.parametrize(
+    "options, grid", zip(profile_options, [True, False], strict=False)
+)
 def test_convergence_plot_options(options, grid):
     problems = get_benchmark_problems("example")
     stop_after_10 = {

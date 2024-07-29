@@ -664,7 +664,7 @@ def _convert_evaluation_data_to_frame(steps, evals):
     n_steps, dim_f, dim_x = evals.pos.shape
 
     dfs = []
-    for direction, step_arr, eval_arr in zip((1, -1), steps, evals):
+    for direction, step_arr, eval_arr in zip((1, -1), steps, evals, strict=False):
         df_steps = pd.DataFrame(step_arr, columns=range(dim_x))
         df_steps = df_steps.reset_index()
         df_steps = df_steps.rename(columns={"index": "step_number"})

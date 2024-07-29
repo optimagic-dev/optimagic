@@ -49,7 +49,9 @@ def process_nonlinear_constraints(
         constraint_evals.append(_eval)
 
     processed = []
-    for _constraint, _eval in zip(nonlinear_constraints, constraint_evals):
+    for _constraint, _eval in zip(
+        nonlinear_constraints, constraint_evals, strict=False
+    ):
         _processed_constraint = _process_nonlinear_constraint(
             _constraint,
             constraint_eval=_eval,

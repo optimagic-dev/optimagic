@@ -206,7 +206,7 @@ def test_equality_as_inequality_constraints(constraints, expected):
     if expected == "same":
         assert got == constraints
 
-    for g, c in zip(got, constraints):
+    for g, c in zip(got, constraints, strict=False):
         if c["type"] == "eq":
             assert g["n_constr"] == 2 * c["n_constr"]
         assert g["type"] == "ineq"
@@ -247,7 +247,7 @@ def test_process_nonlinear_constraints():
         },
     ]
 
-    for g, e in zip(got, expected):
+    for g, e in zip(got, expected, strict=False):
         assert g["type"] == e["type"]
         assert g["n_constr"] == e["n_constr"]
         for value in [0.1, 0.2, 1.2, -2.0]:

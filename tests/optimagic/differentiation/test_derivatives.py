@@ -176,7 +176,7 @@ def test_nan_skipping_batch_evaluator():
         error_handling="continue",
         batch_evaluator="joblib",
     )
-    for arr_calc, arr_exp in zip(calculated, expected):
+    for arr_calc, arr_exp in zip(calculated, expected, strict=False):
         if np.isnan(arr_exp).all():
             assert np.isnan(arr_calc).all()
         else:

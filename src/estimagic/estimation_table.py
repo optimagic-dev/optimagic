@@ -679,7 +679,7 @@ def _build_estimation_table_body(
     )
     to_convert = []
     if show_stars:
-        for df, mod in zip(dfs, models):
+        for df, mod in zip(dfs, models, strict=False):
             to_convert.append(
                 pd.concat([df, mod["params"].reindex(df.index)["p_value"]], axis=1)
             )
@@ -1214,7 +1214,7 @@ def _process_frame_indices(
     if show_col_names:
         if show_col_groups:
             df.columns = pd.MultiIndex.from_tuples(
-                [(i, j) for i, j in zip(column_groups, column_names)]
+                [(i, j) for i, j in zip(column_groups, column_names, strict=False)]
             )
         else:
             df.columns = column_names

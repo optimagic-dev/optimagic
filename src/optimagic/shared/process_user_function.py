@@ -22,7 +22,7 @@ def process_func_of_params(func, kwargs, name="your function", skip_checks=False
             "The following user provided keyword arguments are not compatible with "
             f"{name}:\n\n"
         )
-        for arg, prop in zip(ignored, proposals):
+        for arg, prop in zip(ignored, proposals, strict=False):
             msg += f"{arg}: Did you mean {prop}?"
 
         raise InvalidKwargsError(msg)
@@ -106,5 +106,5 @@ def get_kwargs_from_args(args, func, offset=0):
 
     """
     names = list(inspect.signature(func).parameters)[offset:]
-    kwargs = {name: arg for name, arg in zip(names, args)}
+    kwargs = {name: arg for name, arg in zip(names, args, strict=False)}
     return kwargs
