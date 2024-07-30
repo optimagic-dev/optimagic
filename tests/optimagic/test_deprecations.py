@@ -25,6 +25,7 @@ from estimagic import utilities
 from estimagic import OptimizeLogReader, OptimizeResult
 from estimagic import criterion_plot, params_plot
 import optimagic as om
+import estimagic as em
 import warnings
 from optimagic.parameters.bounds import Bounds
 
@@ -388,3 +389,119 @@ def test_deprecated_attributes_of_optimize_result():
 
     with pytest.warns(FutureWarning, match=msg):
         _ = res.start_criterion
+
+
+BOUNDS_KWARGS = [
+    {"lower_bounds": np.full(3, -1)},
+    {"upper_bounds": np.full(3, 2)},
+]
+
+SOFT_BOUNDS_KWARGS = [
+    {"soft_lower_bounds": np.full(3, -1)},
+    {"soft_upper_bounds": np.full(3, 1)},
+]
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS + SOFT_BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_minimize(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            **bounds_kwargs,
+        )
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS + SOFT_BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_maximize(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            **bounds_kwargs,
+        )
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_first_derivative(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(
+            lambda x: x @ x,
+            np.arange(3),
+            **bounds_kwargs,
+        )
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_second_derivative(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(
+            lambda x: x @ x,
+            np.arange(3),
+            **bounds_kwargs,
+        )
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_estimate_ml(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        em.estimate_ml(
+            loglike=lambda x: {"contributions": -(x**2), "value": -x @ x},
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            **bounds_kwargs,
+        )
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_estimate_msm(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            **bounds_kwargs,
+        )
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_count_free_params(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        om.count_free_params(
+            np.arange(3),
+            constraints=[{"loc": 0, "type": "fixed"}],
+            **bounds_kwargs,
+        )
+
+
+@pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS)
+def test_old_bounds_are_deprecated_in_check_constraints(bounds_kwargs):
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        om.check_constraints(
+            np.arange(3),
+            constraints=[{"loc": 0, "type": "fixed"}],
+            **bounds_kwargs,
+        )
+
+
+def test_old_bounds_are_deprecated_in_slice_plot():
+    msg = "Specifying bounds via the arguments"
+    with pytest.warns(FutureWarning, match=msg):
+        om.slice_plot(
+            lambda x: x @ x,
+            np.arange(3),
+            lower_bounds=np.full(3, -1),
+            upper_bounds=np.full(3, 2),
+        )
