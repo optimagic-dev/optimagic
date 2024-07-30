@@ -14,7 +14,6 @@ from optimagic.visualization.convergence_plot import convergence_plot
 from optimagic.visualization.history_plots import criterion_plot, params_plot
 from optimagic.visualization.profile_plot import profile_plot
 from optimagic.visualization.slice_plot import slice_plot
-import warnings
 
 try:
     from ._version import version as __version__
@@ -46,19 +45,3 @@ __all__ = [
     "OptimizeResult",
     "__version__",
 ]
-
-warnings.warn(
-    "estimagic has been renamed to optimagic. Please uninstall estimagic and install "
-    "optimagic instead. Don't worry, your estimagic imports will still work if you "
-    "install optimagic, and simple warnings will help you to adjust them for future "
-    "releases.\n\n"
-    "To make these changes using pip, run:\n"
-    "-------------------------------------\n"
-    "$ pip uninstall estimagic\n"
-    "$ pip install optimagic\n\n"
-    "For conda users, use:\n"
-    "---------------------\n"
-    "$ conda remove estimagic\n"
-    "$ conda install -c conda-forge optimagic\n",
-    FutureWarning,
-)
