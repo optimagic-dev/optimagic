@@ -48,6 +48,9 @@ jobs:
       - name: Set name entry in pyproject.toml to estimagic
         run: >-
           python .tools/update_name_pyproject.py
+      - name: Add FutureWarning to init files
+        run: >-
+          python .tools/update_init_files.py
       - name: Build a binary wheel and a source tarball
         run: >-
           python -m
