@@ -178,7 +178,7 @@ def test_documentation_example(algorithm):
             "func": lambda x: np.prod(x),
             "value": 1.0,
         },
-        **kwargs
+        **kwargs,
     )
 
 

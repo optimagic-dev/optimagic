@@ -36,7 +36,6 @@ import warnings
 from optimagic import __version__
 from dataclasses import dataclass
 
-
 MSG = (
     "estimagic.{name} has been deprecated in version 0.5.0. Use optimagic.{name} "
     "instead. This function will be removed in version 0.6.0."

@@ -20,7 +20,7 @@ def main():
     # create standard testing environments
 
     test_env = [line for line in lines if _keep_line(line, "tests")]
-    test_env.append("      - -e ../")  # add local installation
+    test_env.append("      - -e ../../")  # add local installation
 
     # find index to insert additional dependencies
     _insert_idx = [i for i, line in enumerate(lines) if "dependencies:" in line][0] + 1
@@ -42,16 +42,17 @@ def main():
     # create docs testing environment
 
     docs_env = [line for line in lines if _keep_line(line, "docs")]
-    docs_env.append("      - -e ../")  # add local installation
+    docs_env.append("      - -e ../../")  # add local installation
 
     # write environments
     for name, env in zip(
         ["linux", "others", "pandas"],
         [test_env_linux, test_env_others, test_env_pandas],
+        strict=False,
     ):
         # Specify newline to avoid wrong line endings on Windows.
         # See: https://stackoverflow.com/a/69869641
-        Path(f".envs/testenv-{name}.yml").write_text(
+        Path(f".tools/envs/testenv-{name}.yml").write_text(
             "\n".join(env) + "\n", newline="\n"
         )
 

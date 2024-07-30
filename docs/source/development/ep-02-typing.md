@@ -1222,7 +1222,6 @@ class ScipyNelderMead(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalProblem, x0: NDArray[float]
     ) -> InternalOptimizeResult:
-
         options = {
             "maxiter": self.stopping_max_iterations,
             "maxfev": self.stopping_max_criterion_evaluations,
@@ -1540,7 +1539,6 @@ FvalType = TypeVar("FvalType", bound=float | NDArray[float])
 
 
 class BenchmarkNoise(ABC):
-
     @abstractmethod
     def draw_noise(
         self, fval: FvalType, params: NDArray, size: int, rng: np.random.Generator

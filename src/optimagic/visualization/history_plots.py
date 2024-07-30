@@ -60,7 +60,7 @@ def criterion_plot(
             names = range(len(results)) if names is None else names
             if len(names) != len(results):
                 raise ValueError("len(results) needs to be equal to len(names).")
-            results = dict(zip(names, results))
+            results = dict(zip(names, results, strict=False))
         else:
             name = 0 if names is None else names
             if isinstance(name, list):
@@ -248,7 +248,7 @@ def params_plot(
         names = [names[i] for i in selected]
         hist_arr = hist_arr[selected]
 
-    for name, data in zip(names, hist_arr):
+    for name, data in zip(names, hist_arr, strict=False):
         if max_evaluations is not None and len(data) > max_evaluations:
             plot_data = data[:max_evaluations]
         else:

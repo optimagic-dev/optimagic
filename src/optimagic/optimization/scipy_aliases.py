@@ -46,7 +46,6 @@ def map_method_to_algorithm(method):
 
 
 def split_fun_and_jac(fun_and_jac, target="fun"):
-
     index = 0 if target == "fun" else 1
 
     @functools.wraps(fun_and_jac)

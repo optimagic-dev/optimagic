@@ -152,7 +152,7 @@ stopping_criterion = ["x_and_y", "x_or_y", "x", "y"]
 x_precision = [1e-4, 1e-6]
 y_precision = [1e-4, 1e-6]
 CONVERGENCE_REPORT_OPTIONS = [
-    dict(zip(keys, value))
+    dict(zip(keys, value, strict=False))
     for value in product(stopping_criterion, x_precision, y_precision)
 ]
 
@@ -178,7 +178,8 @@ def test_convergence_report(options, benchmark_example):
 keys = ["runtime_measure", "stopping_criterion"]
 runtime_measure = ["n_evaluations", "walltime", "n_batches"]
 RANK_REPORT_OPTIONS = [
-    dict(zip(keys, value)) for value in product(runtime_measure, stopping_criterion)
+    dict(zip(keys, value, strict=False))
+    for value in product(runtime_measure, stopping_criterion)
 ]
 
 

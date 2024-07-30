@@ -42,11 +42,17 @@ def matrix_to_block_tree(matrix, outer_tree, inner_tree):
 
     blocks = []
     for leaf_outer, s1, submat in zip(
-        flat_outer, shapes_outer, np.split(matrix, block_bounds_outer, axis=0)
+        flat_outer,
+        shapes_outer,
+        np.split(matrix, block_bounds_outer, axis=0),
+        strict=False,
     ):
         row = []
         for leaf_inner, s2, block_values in zip(
-            flat_inner, shapes_inner, np.split(submat, block_bounds_inner, axis=1)
+            flat_inner,
+            shapes_inner,
+            np.split(submat, block_bounds_inner, axis=1),
+            strict=False,
         ):
             raw_block = block_values.reshape((*s1, *s2))
             block = _convert_raw_block_to_pandas(raw_block, leaf_outer, leaf_inner)
@@ -98,14 +104,16 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
     block_bounds_p = np.cumsum([int(np.prod(s)) for s in shapes_p[:-1]])
 
     sub_block_trees = []
-    for s0, subarr in zip(shapes_f, np.split(hessian, block_bounds_f, axis=0)):
+    for s0, subarr in zip(
+        shapes_f, np.split(hessian, block_bounds_f, axis=0), strict=False
+    ):
         blocks = []
         for leaf_outer, s1, submat in zip(
-            flat_p, shapes_p, np.split(subarr, block_bounds_p, axis=1)
+            flat_p, shapes_p, np.split(subarr, block_bounds_p, axis=1), strict=False
         ):
             row = []
             for leaf_inner, s2, block_values in zip(
-                flat_p, shapes_p, np.split(submat, block_bounds_p, axis=2)
+                flat_p, shapes_p, np.split(submat, block_bounds_p, axis=2), strict=False
             ):
                 _shape = [k for k in (*s0, *s1, *s2) if k != 1]
                 raw_block = block_values.reshape(_shape)
@@ -157,7 +165,7 @@ def block_tree_to_matrix(block_tree, outer_tree, inner_tree):
     ]
 
     block_rows = []
-    for s1, row in zip(size_outer, block_rows_raw):
+    for s1, row in zip(size_outer, block_rows_raw, strict=False):
         shapes = [(s1, s2) for s2 in size_inner]
         row_np = [_convert_to_numpy(leaf, only_pandas=False) for leaf in row]
         row_reshaped = _reshape_list(row_np, shapes)
@@ -207,13 +215,13 @@ def block_tree_to_hessian(block_hessian, f_tree, params_tree):
     ]
 
     inner_matrices = []
-    for outer_block_dim, list_inner_blocks in zip(size_f, outer_blocks):
+    for outer_block_dim, list_inner_blocks in zip(size_f, outer_blocks, strict=False):
         block_rows_raw = [
             list_inner_blocks[n_blocks_p * i : n_blocks_p * (i + 1)]
             for i in range(n_blocks_p)
         ]
         block_rows = []
-        for s1, row in zip(size_p, block_rows_raw):
+        for s1, row in zip(size_p, block_rows_raw, strict=False):
             shapes = [(outer_block_dim, s1, s2) for s2 in size_p]
             row_np = [_convert_to_numpy(leaf, only_pandas=False) for leaf in row]
             row_np_3d = [leaf[np.newaxis] if leaf.ndim < 3 else leaf for leaf in row_np]
@@ -310,7 +318,9 @@ def _reshape_list(list_to_reshape, shapes):
     """
     if len(list_to_reshape) != len(shapes):
         raise ValueError("Arguments must have the same number of elements.")
-    reshaped = [a.reshape(shape) for a, shape in zip(list_to_reshape, shapes)]
+    reshaped = [
+        a.reshape(shape) for a, shape in zip(list_to_reshape, shapes, strict=False)
+    ]
     return reshaped
 
 

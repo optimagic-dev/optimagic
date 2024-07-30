@@ -158,7 +158,7 @@ def run_multistart_optimization(
 
         arguments = [
             {**problem_functions, "x": x, "step_id": step}
-            for x, step in zip(starts, scheduled_steps)
+            for x, step in zip(starts, scheduled_steps, strict=False)
         ]
 
         batch_results = batch_evaluator(
@@ -275,7 +275,7 @@ def draw_exploration_sample(
     if sampling_distribution not in valid_distributions:
         raise ValueError(f"Unsupported distribution: {sampling_distribution}")
 
-    for name, bound in zip(["lower", "upper"], [lower, upper]):
+    for name, bound in zip(["lower", "upper"], [lower, upper], strict=False):
         if not np.isfinite(bound).all():
             raise ValueError(
                 f"multistart optimization requires finite {name}_bounds or "

@@ -189,7 +189,13 @@ def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, no
 
 
 def _check_convergence(
-    rnorm, rnorm0, abstol, ttol, divtol, converged, diverged  # noqa: ARG001
+    rnorm,
+    rnorm0,
+    abstol,  # noqa: ARG001
+    ttol,
+    divtol,
+    converged,
+    diverged,
 ):
     """Check for convergence."""
     if rnorm <= ttol:

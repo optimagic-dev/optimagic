@@ -84,7 +84,7 @@ def run_benchmark(
     )
 
     processing_arguments = []
-    for name, raw_result in zip(keys, raw_results):
+    for name, raw_result in zip(keys, raw_results, strict=False):
         processing_arguments.append(
             {"optimize_result": raw_result, "problem": problems[name[0]]}
         )
@@ -97,7 +97,7 @@ def run_benchmark(
         unpack_symbol="**",
     )
 
-    results = dict(zip(keys, results))
+    results = dict(zip(keys, results, strict=False))
 
     return results
 
