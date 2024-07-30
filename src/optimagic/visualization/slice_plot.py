@@ -12,6 +12,7 @@ from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.parameters.bounds import pre_process_bounds
 
 
 def slice_plot(
@@ -92,6 +93,8 @@ def slice_plot(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
+
+    bounds = pre_process_bounds(bounds)
 
     layout_kwargs = None
     if title is not None:

@@ -18,7 +18,7 @@ from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_bl
 from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
-from optimagic.parameters.bounds import Bounds
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
 
 
 class Evals(NamedTuple):
@@ -141,6 +141,10 @@ def first_derivative(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
+
+    # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
 
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
@@ -430,6 +434,8 @@ def second_derivative(
         bounds=bounds,
     )
     # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
 
     internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 

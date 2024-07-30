@@ -37,7 +37,7 @@ from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
 from optimagic.utilities import get_rng, to_pickle
-from optimagic.parameters.bounds import Bounds
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 
 
@@ -149,6 +149,9 @@ def estimate_ml(
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
+
     is_optimized = optimize_options is False
 
     if not is_optimized:

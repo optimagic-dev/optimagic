@@ -47,7 +47,7 @@ from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
-from optimagic.parameters.bounds import Bounds
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
 
 
 def maximize(
@@ -418,6 +418,8 @@ def _optimize(
         if fun_and_jac is None:
             fun_and_jac = fun
             fun = split_fun_and_jac(fun_and_jac, target="fun")
+
+    bounds = pre_process_bounds(bounds)
 
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented

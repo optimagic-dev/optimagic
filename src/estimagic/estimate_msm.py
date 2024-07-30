@@ -47,7 +47,7 @@ from optimagic.shared.check_option_dicts import (
 )
 from optimagic.utilities import get_rng, to_pickle
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
-from optimagic.parameters.bounds import Bounds
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
 
 
 def estimate_msm(
@@ -163,6 +163,8 @@ def estimate_msm(
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
 
     if weights not in ["diagonal", "optimal", "identity"]:
         raise NotImplementedError("Custom weighting matrices are not yet implemented.")
