@@ -256,7 +256,7 @@ def _get_history_collecting_batch_evaluator(batch_evaluator, container, batch_si
             _start_batch = container[-1]["batches"] + 1 if container else 0
             _offsets = np.arange(len(_hist)).repeat(batch_size)[: len(_hist)]
             _batch_info = _offsets + _start_batch
-            for batch, hist_entry in zip(_batch_info, _hist):
+            for batch, hist_entry in zip(_batch_info, _hist, strict=False):
                 hist_entry["batches"] = batch
 
             container.extend(_hist)

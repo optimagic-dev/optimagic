@@ -123,7 +123,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
     starts = [converter.params_from_internal(x) for x in info["start_parameters"]]
 
     optima = []
-    for res, start in zip(info["local_optima"], starts):
+    for res, start in zip(info["local_optima"], starts, strict=False):
         kwargs = fixed_kwargs.copy()
         kwargs["start_params"] = start
         kwargs["start_fun"] = None

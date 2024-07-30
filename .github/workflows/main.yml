@@ -29,7 +29,7 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./.envs/testenv-linux.yml
+          environment-file: ./.tools/envs/testenv-linux.yml
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
@@ -60,7 +60,7 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./.envs/testenv-others.yml
+          environment-file: ./.tools/envs/testenv-others.yml
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
@@ -87,7 +87,7 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./.envs/testenv-pandas.yml
+          environment-file: ./.tools/envs/testenv-pandas.yml
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
@@ -104,10 +104,11 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./.envs/testenv-linux.yml
+          environment-file: ./.tools/envs/testenv-linux.yml
           environment-name: optimagic
-          cache-env: true
-          extra-specs: python=3.12
+          cache-environment: true
+          create-args: |
+            python=3.12
       - name: run sphinx
         shell: bash -l {0}
         run: |-
@@ -124,10 +125,10 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./.envs/testenv-linux.yml
+          environment-file: ./.tools/envs/testenv-linux.yml
           environment-name: optimagic
-          cache-env: true
-          extra-specs: |
+          cache-environment: true
+          create-args: |
             python=3.10
       - name: Run mypy
         shell: bash -l {0}

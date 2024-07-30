@@ -484,9 +484,7 @@ def render_html(
     html_str = body_styler.to_html(**default_options).split("</tbody>\n</table>")[0]
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
-            </td></tr>""".format(
-            n_levels + n_columns
-        )
+            </td></tr>""".format(n_levels + n_columns)
         stats_str += (
             footer.style.to_html(**default_options)
             .split("</thead>\n")[1]
@@ -681,7 +679,7 @@ def _build_estimation_table_body(
     )
     to_convert = []
     if show_stars:
-        for df, mod in zip(dfs, models):
+        for df, mod in zip(dfs, models, strict=False):
             to_convert.append(
                 pd.concat([df, mod["params"].reindex(df.index)["p_value"]], axis=1)
             )
@@ -1216,7 +1214,7 @@ def _process_frame_indices(
     if show_col_names:
         if show_col_groups:
             df.columns = pd.MultiIndex.from_tuples(
-                [(i, j) for i, j in zip(column_groups, column_names)]
+                [(i, j) for i, j in zip(column_groups, column_names, strict=False)]
             )
         else:
             df.columns = column_names
@@ -1317,15 +1315,11 @@ def _generate_notes_html(
     n_columns = len(df.columns)
     significance_levels = sorted(significance_levels)
     notes_text = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
-        </td></tr>""".format(
-        n_columns + n_levels
-    )
+        </td></tr>""".format(n_columns + n_levels)
     if append_notes:
         notes_text += """
         <tr><td style="text-align: left">{}</td><td colspan="{}"
-        style="text-align: right">""".format(
-            notes_label, n_columns + n_levels - 1
-        )
+        style="text-align: right">""".format(notes_label, n_columns + n_levels - 1)
         for i in range(len(significance_levels) - 1):
             stars = "*" * (len(significance_levels) - i)
             notes_text += f"<sup>{stars}</sup>p&lt;{significance_levels[i]}; "
@@ -1343,23 +1337,17 @@ def _generate_notes_html(
                     )
                 notes_text += """
                     <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
-                    """.format(
-                    n_columns + n_levels - 1, custom_notes[0]
-                )
+                    """.format(n_columns + n_levels - 1, custom_notes[0])
                 if len(custom_notes) > 1:
                     for i in range(1, len(custom_notes)):
                         notes_text += """
                         <tr><td></td><td colspan="{}"style="text-align: right">
                         {}</td></tr>
-                        """.format(
-                            n_columns + n_levels - 1, custom_notes[i]
-                        )
+                        """.format(n_columns + n_levels - 1, custom_notes[i])
             elif isinstance(custom_notes, str):
                 notes_text += """
                     <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
-                    """.format(
-                    n_columns + n_levels - 1, custom_notes
-                )
+                    """.format(n_columns + n_levels - 1, custom_notes)
             else:
                 raise TypeError(
                     f"""Custom notes can be either a string or a list of strings,

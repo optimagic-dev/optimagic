@@ -118,8 +118,7 @@ def profile_plot(
         (
             "n_batches",
             True,
-        ): "Multiple of Minimal Number of Batches<br>"
-        "Needed to Solve the Problem",
+        ): "Multiple of Minimal Number of Batches<br>Needed to Solve the Problem",
         ("n_evaluations", False): "Number of Function Evaluations",
         ("walltime", False): "Wall Time Needed to Solve the Problem",
         ("n_batches", False): "Number of Batches",

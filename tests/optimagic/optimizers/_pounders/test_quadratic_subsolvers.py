@@ -469,7 +469,7 @@ def test_bounded_newton_trustregion(
         lower_bounds,
         upper_bounds,
         x_candidate=np.zeros_like(x_expected),
-        **options
+        **options,
     )
     aaae(result["x"], x_expected, decimal=5)
 

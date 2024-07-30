@@ -98,14 +98,14 @@ def test_cov_to_sds_and_corr():
 def test_number_of_triangular_elements_to_dimension():
     inputs = [6, 10, 15, 21]
     expected = [3, 4, 5, 6]
-    for inp, exp in zip(inputs, expected):
+    for inp, exp in zip(inputs, expected, strict=False):
         assert number_of_triangular_elements_to_dimension(inp) == exp
 
 
 def test_dimension_to_number_of_triangular_elements():
     inputs = [3, 4, 5, 6]
     expected = [6, 10, 15, 21]
-    for inp, exp in zip(inputs, expected):
+    for inp, exp in zip(inputs, expected, strict=False):
         assert dimension_to_number_of_triangular_elements(inp) == exp
 
 
@@ -127,7 +127,7 @@ seeds = [58822, 3181, 98855, 44002, 47631, 97741, 10655, 4600, 1151, 58189]
 dims = [8] * 6 + [10, 12, 15, 20]
 
 
-@pytest.mark.parametrize("dim, seed", zip(dims, seeds))
+@pytest.mark.parametrize("dim, seed", zip(dims, seeds, strict=False))
 def test_robust_cholesky_with_zero_variance(dim, seed):
     cov = random_cov(dim, seed)
     chol = robust_cholesky(cov)
@@ -246,5 +246,5 @@ def test_propose_alternatives():
     possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
     inputs = [["scipy_L-BFGS-B", 1], ["L-BFGS-B", 2]]
     expected = [["scipy_slsqp"], ["scipy_slsqp", "scipy_lbfgsb"]]
-    for inp, exp in zip(inputs, expected):
+    for inp, exp in zip(inputs, expected, strict=False):
         assert propose_alternatives(inp[0], possibilities, number=inp[1]) == exp

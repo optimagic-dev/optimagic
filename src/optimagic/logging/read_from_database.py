@@ -167,11 +167,11 @@ def _execute_read_statement(database, table_name, statement, return_type):
     columns = database.metadata.tables[table_name].columns.keys()
 
     if return_type == "list_of_dicts":
-        result = [dict(zip(columns, row)) for row in raw_result]
+        result = [dict(zip(columns, row, strict=False)) for row in raw_result]
 
     elif return_type == "dict_of_lists":
         raw_result = transpose_nested_list(raw_result)
-        result = dict(zip(columns, raw_result))
+        result = dict(zip(columns, raw_result, strict=False))
         if result == {}:
             result = {col: [] for col in columns}
     else:
@@ -197,7 +197,7 @@ def transpose_nested_list(nested_list):
         [[1, 3], [2, 4]]
 
     """
-    return list(map(list, zip(*nested_list)))
+    return list(map(list, zip(*nested_list, strict=False)))
 
 
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
@@ -232,4 +232,7 @@ def dict_of_lists_to_list_of_dicts(dict_of_lists):
         [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]
 
     """
-    return [dict(zip(dict_of_lists, t)) for t in zip(*dict_of_lists.values())]
+    return [
+        dict(zip(dict_of_lists, t, strict=False))
+        for t in zip(*dict_of_lists.values(), strict=False)
+    ]

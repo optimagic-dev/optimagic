@@ -101,9 +101,9 @@ def test_get_batched_optimization_sample():
     assert len(calculated[1]) == 1
     assert len(calculated) == 2
 
-    for calc_batch, exp_batch in zip(calculated, expected):
+    for calc_batch, exp_batch in zip(calculated, expected, strict=False):
         assert isinstance(calc_batch, list)
-        for calc_entry, exp_entry in zip(calc_batch, exp_batch):
+        for calc_entry, exp_entry in zip(calc_batch, exp_batch, strict=False):
             assert isinstance(calc_entry, np.ndarray)
             assert calc_entry.tolist() == exp_entry
 

@@ -200,7 +200,7 @@ def solve_subproblem(
     gtol_abs_conjugate_gradient,
     gtol_rel_conjugate_gradient,
     k_easy,
-    k_hard
+    k_hard,
 ):
     """Solve the quadratic subproblem.
 
