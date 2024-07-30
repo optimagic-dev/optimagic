@@ -3,6 +3,7 @@ import pytest
 from optimagic import first_derivative
 from optimagic.parameters.conversion import InternalParams
 from optimagic.parameters.scale_conversion import get_scale_converter
+from optimagic.options import ScalingOptions
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 
@@ -34,15 +35,14 @@ def test_get_scale_converter_active(method, expected):
         names=list("abcdef"),
     )
 
-    scaling_options = {
-        "method": method,
-        "clipping_value": 0.5,
-    }
+    scaling = ScalingOptions(
+        method=method,
+        clipping_value=0.5,
+    )
 
     converter, scaled = get_scale_converter(
         internal_params=params,
-        scaling=True,
-        scaling_options=scaling_options,
+        scaling=scaling,
     )
 
     aaae(scaled.values, expected.values)
@@ -72,7 +72,6 @@ def test_scale_conversion_fast_path():
     converter, scaled = get_scale_converter(
         internal_params=params,
         scaling=False,
-        scaling_options=None,
     )
 
     aae(params.values, scaled.values)

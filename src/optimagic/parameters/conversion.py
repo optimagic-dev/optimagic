@@ -18,7 +18,6 @@ def get_converter(
     func_eval,
     primary_key,
     scaling,
-    scaling_options,
     derivative_eval=None,
     soft_lower_bounds=None,
     soft_upper_bounds=None,
@@ -46,8 +45,8 @@ def get_converter(
         primary_key (str): One of "value", "contributions" and "root_contributions".
             Used to determine how the function and derivative output has to be
             transformed for the optimzer.
-        scaling (bool): Whether scaling should be performed.
-        scaling_options (dict): User provided scaling options.
+        scaling (bool | ScalingOptions): Scaling options. If False, no scaling is
+            performed.
         derivative_eval (dict, pytree or None): Evaluation of the derivative of
             func at params. Used for consistency checks.
         soft_lower_bounds (pytree): As lower_bounds
@@ -105,7 +104,6 @@ def get_converter(
     scale_converter, scaled_params = get_scale_converter(
         internal_params=internal_params,
         scaling=scaling,
-        scaling_options=scaling_options,
     )
 
     def _params_to_internal(params):

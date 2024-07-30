@@ -60,6 +60,16 @@ def throw_criterion_and_derivative_kwargs_future_warning():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_scaling_options_future_warning():
+    msg = (
+        "The `scaling_options` argument will be deprecated in favor of `scaling` in "
+        "optimagic version 0.6.0 and later. You can simply pass the scaling options to "
+        "`scaling` instead of `scaling_options`. Using `scaling_options` will become "
+        "an error in optimagic version 0.6.0 and later."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_algo_options(algo_options):
     if not isinstance(algo_options, dict):
         return algo_options

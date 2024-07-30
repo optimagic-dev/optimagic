@@ -44,6 +44,7 @@ from optimagic.optimization.scipy_aliases import (
 )
 from optimagic import deprecations
 from optimagic.deprecations import replace_and_warn_about_deprecated_algo_options
+from optimagic.options import ScalingOptions
 
 
 def maximize(
@@ -350,6 +351,9 @@ def _optimize(
             else fun_and_jac_kwargs
         )
 
+    if scaling_options is not None:
+        deprecations.throw_scaling_options_future_warning()
+
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
     # ==================================================================================
@@ -452,7 +456,7 @@ def _optimize(
         raise NotImplementedError(msg)
 
     # ==================================================================================
-    # Set default values and check options
+    # Set default values, consolidate deprecated options, and check options
     # ==================================================================================
     fun_kwargs = _setdefault(fun_kwargs, {})
     constraints = _setdefault(constraints, [])
@@ -461,11 +465,12 @@ def _optimize(
     fun_and_jac_kwargs = _setdefault(fun_and_jac_kwargs, {})
     numdiff_options = _setdefault(numdiff_options, {})
     log_options = _setdefault(log_options, {})
-    scaling_options = _setdefault(scaling_options, {})
     error_penalty = _setdefault(error_penalty, {})
     multistart_options = _setdefault(multistart_options, {})
     if logging:
         logging = Path(logging)
+
+    scaling = _consolidate_scaling_options(scaling, scaling_options)
 
     if not skip_checks:
         check_optimize_kwargs(
@@ -486,7 +491,6 @@ def _optimize(
             error_handling=error_handling,
             error_penalty=error_penalty,
             scaling=scaling,
-            scaling_options=scaling_options,
             multistart=multistart,
             multistart_options=multistart_options,
         )
@@ -620,7 +624,6 @@ def _optimize(
         func_eval=first_crit_eval,
         primary_key=algo_info.primary_criterion_entry,
         scaling=scaling,
-        scaling_options=scaling_options,
         derivative_eval=used_deriv,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
@@ -876,6 +879,34 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 def _setdefault(candidate, default):
     out = default if candidate is None else candidate
     return out
+
+
+def _consolidate_scaling_options(scaling, scaling_options):
+    """Consolidate scaling options."""
+    if isinstance(scaling, ScalingOptions) and scaling_options is not None:
+        msg = (
+            "You can not provide options through scaling and scaling_options. The "
+            "scaling_options argument is deprecated in favor of the scaling argument."
+            "You can pass options to the scaling argument directly using the "
+            "ScalingOptions class."
+        )
+        raise ValueError(msg)
+
+    if isinstance(scaling, bool):
+        if scaling and scaling_options is None:
+            scaling = ScalingOptions()
+        elif scaling:
+            try:
+                scaling = ScalingOptions(**scaling_options)
+            except TypeError as e:
+                msg = (
+                    "The scaling_options argument contains invalid keys, and is "
+                    "deprecated in favor of the scaling argument. You can pass options "
+                    "to the scaling argument directly using the ScalingOptions class."
+                )
+                raise ValueError(msg) from e
+
+    return scaling
 
 
 def _fill_multistart_options_with_defaults(options, params, x, params_to_internal):

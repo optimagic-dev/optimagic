@@ -1,25 +1,30 @@
 from functools import partial
-from typing import NamedTuple, Callable
+from typing import NamedTuple, Callable, Literal
 
 import numpy as np
 
 from optimagic.parameters.space_conversion import InternalParams
+from optimagic.options import ScalingOptions
+
+
+class ScaleConverter(NamedTuple):
+    params_to_internal: Callable
+    params_from_internal: Callable
+    derivative_to_internal: Callable
+    derivative_from_internal: Callable
 
 
 def get_scale_converter(
-    internal_params,
-    scaling,
-    scaling_options,
-):
+    internal_params: InternalParams,
+    scaling: Literal[False] | ScalingOptions,
+) -> tuple[ScaleConverter, InternalParams]:
     """Get a converter between scaled and unscaled parameters.
 
     Args:
         internal_params (InternalParams): NamedTuple of internal and possibly
             reparametrized but not yet scaled parameter values and bounds.
-        func (callable): The criterion function. Possibly used to calculate a scaling
-            factor.
-        scaling (bool): Whether scaling should be done.
-        scaling_options (dict): User provided scaling options.
+        scaling (Literal[False] | ScalingOptions): Scaling options. If False, no scaling
+            is performed.
 
     Returns:
         ScaleConverter: NamedTuple with methods to convert between scaled and unscaled
@@ -39,12 +44,11 @@ def get_scale_converter(
     if not scaling:
         return _fast_path_scale_converter(), internal_params
 
-    scaling_options = {} if scaling_options is None else scaling_options
-    valid_keys = {"method", "clipping_value", "magnitude"}
-    scaling_options = {k: v for k, v in scaling_options.items() if k in valid_keys}
-
     factor, offset = calculate_scaling_factor_and_offset(
-        internal_params=internal_params, **scaling_options
+        internal_params=internal_params,
+        method=scaling.method,
+        clipping_value=scaling.clipping_value,
+        magnitude=scaling.magnitude,
     )
 
     _params_to_internal = partial(
@@ -94,13 +98,6 @@ def get_scale_converter(
     return converter, params
 
 
-class ScaleConverter(NamedTuple):
-    params_to_internal: Callable
-    params_from_internal: Callable
-    derivative_to_internal: Callable
-    derivative_from_internal: Callable
-
-
 def _fast_path_scale_converter():
     converter = ScaleConverter(
         params_to_internal=lambda x: x,
@@ -113,9 +110,9 @@ def _fast_path_scale_converter():
 
 def calculate_scaling_factor_and_offset(
     internal_params,
-    method="start_values",
-    clipping_value=0.1,
-    magnitude=1,
+    method,
+    clipping_value,
+    magnitude,
 ):
     x = internal_params.values
     lower_bounds = internal_params.lower_bounds

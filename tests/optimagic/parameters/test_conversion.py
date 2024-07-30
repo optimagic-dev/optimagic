@@ -1,4 +1,5 @@
 import numpy as np
+from optimagic.options import ScalingOptions
 import pytest
 from optimagic.parameters.conversion import (
     _is_fast_deriv_eval,
@@ -19,7 +20,6 @@ def test_get_converter_fast_case():
         derivative_eval=2 * np.arange(3),
         primary_key="value",
         scaling=False,
-        scaling_options=None,
     )
 
     aaae(internal.values, np.arange(3))
@@ -45,7 +45,6 @@ def test_get_converter_with_constraints_and_bounds():
         derivative_eval=2 * np.arange(3),
         primary_key="value",
         scaling=False,
-        scaling_options=None,
     )
 
     aaae(internal.values, np.arange(2))
@@ -70,8 +69,7 @@ def test_get_converter_with_scaling():
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
-        scaling=True,
-        scaling_options={"method": "start_values", "clipping_value": 0.5},
+        scaling=ScalingOptions(method="start_values", clipping_value=0.5),
     )
 
     aaae(internal.values, np.array([0, 1, 1]))
@@ -98,7 +96,6 @@ def test_get_converter_with_trees():
         derivative_eval={"a": 0, "b": 2, "c": 4},
         primary_key="value",
         scaling=False,
-        scaling_options=None,
     )
 
     aaae(internal.values, np.arange(3))
