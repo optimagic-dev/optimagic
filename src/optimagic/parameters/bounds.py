@@ -175,10 +175,10 @@ def _update_bounds_and_flatten(
         params_names = leaf_names(nan_tree, registry=registry, separator=seperator)
         bounds_names = leaf_names(bounds, registry=registry, separator=seperator)
 
-        flat_nan_dict = dict(zip(params_names, flat_nan_tree))
+        flat_nan_dict = dict(zip(params_names, flat_nan_tree, strict=False))
 
         invalid = {"names": [], "bounds": []}  # type: ignore
-        for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds):
+        for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds, strict=False):
             # if a bounds leaf is None we treat it as saying the the corresponding
             # subtree of params has no bounds.
             if bounds_leaf is not None:
