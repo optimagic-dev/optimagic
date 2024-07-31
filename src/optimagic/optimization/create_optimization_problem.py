@@ -1,32 +1,31 @@
 from dataclasses import dataclass
-from typing import Callable, Literal, Any
-from optimagic.typing import PyTree
-from optimagic.parameters.bounds import Bounds, pre_process_bounds
-
 from pathlib import Path
+from typing import Any, Callable, Literal
 
+from optimagic import deprecations
+from optimagic.decorators import AlgoInfo
+from optimagic.deprecations import (
+    replace_and_warn_about_deprecated_algo_options,
+    replace_and_warn_about_deprecated_bounds,
+)
 from optimagic.exceptions import (
-    MissingInputError,
     AliasError,
+    MissingInputError,
 )
 from optimagic.optimization.check_arguments import check_optimize_kwargs
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
 )
-from optimagic.shared.process_user_function import (
-    process_func_of_params,
-    get_kwargs_from_args,
-)
 from optimagic.optimization.scipy_aliases import (
     map_method_to_algorithm,
     split_fun_and_jac,
 )
-from optimagic import deprecations
-from optimagic.deprecations import (
-    replace_and_warn_about_deprecated_algo_options,
-    replace_and_warn_about_deprecated_bounds,
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.shared.process_user_function import (
+    get_kwargs_from_args,
+    process_func_of_params,
 )
-from optimagic.decorators import AlgoInfo
+from optimagic.typing import PyTree
 
 
 @dataclass(frozen=True)

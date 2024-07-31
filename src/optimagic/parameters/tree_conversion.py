@@ -1,4 +1,4 @@
-from typing import NamedTuple, Callable
+from typing import Callable, NamedTuple
 
 import numpy as np
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten

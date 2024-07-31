@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal
 from optimagic.benchmarking.cartis_roberts import (
     CARTIS_ROBERTS_PROBLEMS,
     get_start_points_bdvalues,
     get_start_points_msqrta,
 )
-from numpy.testing import assert_array_almost_equal
 
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))

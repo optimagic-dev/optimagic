@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.derivatives import (
     Evals,
     _consolidate_one_step_derivatives,
@@ -26,10 +27,9 @@ from optimagic.examples.numdiff_functions import (
     logit_loglikeobs,
     logit_loglikeobs_jacobian,
 )
-from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
-from optimagic.parameters.bounds import Bounds
 
 
 @pytest.fixture()

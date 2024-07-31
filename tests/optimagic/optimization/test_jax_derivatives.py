@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.config import IS_JAX_INSTALLED
 from optimagic.optimization.optimize import minimize
-from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_JAX_INSTALLED:
     import jax

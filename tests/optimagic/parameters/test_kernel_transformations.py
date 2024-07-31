@@ -1,13 +1,13 @@
 from functools import partial
 from itertools import product
 
-import optimagic.parameters.kernel_transformations as kt
 import numpy as np
+import optimagic.parameters.kernel_transformations as kt
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.parameters.kernel_transformations import cov_matrix_to_sdcorr_params
 from optimagic.utilities import get_rng
-from numpy.testing import assert_array_almost_equal as aaae
 
 to_test = list(product(range(10, 30, 5), [1234, 5471]))
 

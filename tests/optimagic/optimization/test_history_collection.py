@@ -2,12 +2,12 @@ import sys
 
 import numpy as np
 import pytest
-from optimagic.logging.read_log import OptimizeLogReader
-from optimagic.algorithms import AVAILABLE_ALGORITHMS
-from optimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
+from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.decorators import mark_minimizer
+from optimagic.logging.read_log import OptimizeLogReader
+from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
 OPTIMIZERS = []

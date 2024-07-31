@@ -8,11 +8,11 @@ from pybaum import tree_just_flatten
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
-from optimagic.parameters.bounds import pre_process_bounds
 
 
 def slice_plot(

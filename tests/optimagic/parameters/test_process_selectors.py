@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal as aae
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.process_selectors import process_selectors
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import get_registry
-from numpy.testing import assert_array_equal as aae
 from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 

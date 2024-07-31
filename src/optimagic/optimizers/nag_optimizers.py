@@ -16,7 +16,6 @@ from optimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import STOPPING_MAXFUN
-
 from optimagic.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:

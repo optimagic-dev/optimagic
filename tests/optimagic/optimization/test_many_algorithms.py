@@ -10,9 +10,9 @@ import sys
 
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
 from optimagic.optimization.optimize import minimize
-from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.parameters.bounds import Bounds
 
 LOCAL_ALGORITHMS = {

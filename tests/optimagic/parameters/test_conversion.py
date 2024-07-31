@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     _is_fast_deriv_eval,
     _is_fast_func_eval,
     _is_fast_path,
     get_converter,
 )
-from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.parameters.bounds import Bounds
 
 
 def test_get_converter_fast_case():

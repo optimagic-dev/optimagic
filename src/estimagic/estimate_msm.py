@@ -9,12 +9,33 @@ from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.differentiation.derivatives import first_derivative
+from optimagic.exceptions import InvalidFunctionError
+from optimagic.optimization.optimize import minimize
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.conversion import Converter, get_converter
+from optimagic.parameters.space_conversion import InternalParams
+from optimagic.parameters.tree_registry import get_registry
+from optimagic.shared.check_option_dicts import (
+    check_numdiff_options,
+    check_optimization_options,
+)
+from optimagic.utilities import get_rng, to_pickle
 from pybaum import leaf_names, tree_just_flatten
 
-from optimagic.differentiation.derivatives import first_derivative
-from estimagic.msm_weighting import get_weighting_matrix
-from optimagic.exceptions import InvalidFunctionError
 from estimagic.msm_covs import cov_optimal, cov_robust
+from estimagic.msm_sensitivity import (
+    calculate_actual_sensitivity_to_noise,
+    calculate_actual_sensitivity_to_removal,
+    calculate_fundamental_sensitivity_to_noise,
+    calculate_fundamental_sensitivity_to_removal,
+    calculate_sensitivity_to_bias,
+    calculate_sensitivity_to_weighting,
+)
+from estimagic.msm_weighting import get_weighting_matrix
 from estimagic.shared_covs import (
     FreeParams,
     calculate_ci,
@@ -27,27 +48,6 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.optimize import minimize
-from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
-from optimagic.parameters.conversion import Converter, get_converter
-from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import get_registry
-from estimagic.msm_sensitivity import (
-    calculate_actual_sensitivity_to_noise,
-    calculate_actual_sensitivity_to_removal,
-    calculate_fundamental_sensitivity_to_noise,
-    calculate_fundamental_sensitivity_to_removal,
-    calculate_sensitivity_to_bias,
-    calculate_sensitivity_to_weighting,
-)
-from optimagic.shared.check_option_dicts import (
-    check_numdiff_options,
-    check_optimization_options,
-)
-from optimagic.utilities import get_rng, to_pickle
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
-from optimagic.parameters.bounds import Bounds, pre_process_bounds
 
 
 def estimate_msm(

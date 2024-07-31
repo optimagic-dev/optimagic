@@ -1,17 +1,17 @@
 """Test suite for the internal pounders interface."""
 
 import sys
-
 from functools import partial
 from itertools import product
 
 import numpy as np
 import pandas as pd
 import pytest
-from optimagic.batch_evaluators import joblib_batch_evaluator
-from tests.optimagic.optimizers._pounders.test_pounders_unit import FIXTURES_DIR
-from optimagic.optimizers.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.batch_evaluators import joblib_batch_evaluator
+from optimagic.optimizers.pounders import internal_solve_pounders
+
+from tests.optimagic.optimizers._pounders.test_pounders_unit import FIXTURES_DIR
 
 
 def load_history(start_vec, solver_sub):

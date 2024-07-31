@@ -1,4 +1,5 @@
 import warnings
+
 from optimagic.parameters.bounds import Bounds
 
 

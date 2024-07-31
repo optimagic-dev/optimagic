@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any, Sequence
+
 import numpy as np
+from numpy.typing import NDArray
 from pybaum import leaf_names, tree_map
 from pybaum import tree_just_flatten as tree_leaves
+from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import get_registry
-from dataclasses import dataclass
 from optimagic.typing import PyTree, PyTreeRegistry
-from scipy.optimize import Bounds as ScipyBounds
-from typing import Sequence
-from numpy.typing import NDArray
-from typing import Any
 
 
 @dataclass(frozen=True)

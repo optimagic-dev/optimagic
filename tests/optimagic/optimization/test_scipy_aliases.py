@@ -1,8 +1,8 @@
-import optimagic as om
 import numpy as np
+import optimagic as om
+import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.exceptions import AliasError
-import pytest
 
 
 def test_x0_works_in_minimize():

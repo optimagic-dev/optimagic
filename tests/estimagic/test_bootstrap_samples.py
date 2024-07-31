@@ -7,8 +7,8 @@ from estimagic.bootstrap_samples import (
     get_bootstrap_indices,
     get_bootstrap_samples,
 )
-from optimagic.utilities import get_rng
 from numpy.testing import assert_array_equal as aae
+from optimagic.utilities import get_rng
 from pandas.testing import assert_frame_equal as afe
 
 

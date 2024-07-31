@@ -1,7 +1,7 @@
 import numpy as np
-from optimagic.parameters.check_constraints import _iloc
 import pytest
 from optimagic.exceptions import InvalidParamsError
+from optimagic.parameters.check_constraints import _iloc
 from optimagic.parameters.constraint_tools import check_constraints
 
 

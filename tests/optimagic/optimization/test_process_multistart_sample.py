@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from optimagic.optimization.process_multistart_sample import process_multistart_sample
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.optimization.process_multistart_sample import process_multistart_sample
 
 samples = [
     (

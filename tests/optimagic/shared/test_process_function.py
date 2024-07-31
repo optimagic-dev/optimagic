@@ -1,8 +1,8 @@
 import pytest
 from optimagic.exceptions import InvalidKwargsError
 from optimagic.shared.process_user_function import (
-    process_func_of_params,
     get_kwargs_from_args,
+    process_func_of_params,
 )
 
 

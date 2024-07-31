@@ -9,11 +9,11 @@ TO-DO:
 """
 
 import numpy as np
+from pybaum import tree_just_flatten
 
 from optimagic import batch_evaluators
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.optimization.optimize import minimize
-from pybaum import tree_just_flatten
 from optimagic.parameters.tree_registry import get_registry
 
 

@@ -1,6 +1,5 @@
 import numpy as np
 
-
 CONVERGENCE_FTOL_REL = 2e-9
 """float: Stop when the relative improvement between two iterations is below this.
 

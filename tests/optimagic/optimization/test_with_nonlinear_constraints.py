@@ -3,10 +3,10 @@ import warnings
 
 import numpy as np
 import pytest
-from optimagic import maximize, minimize
-from optimagic.config import IS_CYIPOPT_INSTALLED
-from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic import maximize, minimize
+from optimagic.algorithms import AVAILABLE_ALGORITHMS
+from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.parameters.bounds import Bounds
 
 NLC_ALGORITHMS = [

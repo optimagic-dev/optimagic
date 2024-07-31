@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.decorators import AlgoInfo
 from optimagic.examples.criterion_functions import (
     sos_criterion_and_gradient,
@@ -16,7 +17,6 @@ from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from optimagic.parameters.conversion import get_converter
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 def reparametrize_from_internal(x):

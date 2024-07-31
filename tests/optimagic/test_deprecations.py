@@ -4,29 +4,33 @@ This also serves as an internal overview of deprecated functions.
 
 """
 
-import pytest
-import numpy as np
-
-from estimagic import minimize
-from estimagic import maximize
-from estimagic import first_derivative
-from estimagic import second_derivative
-from estimagic import get_benchmark_problems
-from estimagic import run_benchmark
-from estimagic import convergence_report
-from estimagic import rank_report
-from estimagic import traceback_report
-from estimagic import profile_plot
-from estimagic import convergence_plot
-from estimagic import slice_plot
-from estimagic import check_constraints
-from estimagic import count_free_params
-from estimagic import utilities
-from estimagic import OptimizeLogReader, OptimizeResult
-from estimagic import criterion_plot, params_plot
-import optimagic as om
-import estimagic as em
 import warnings
+
+import estimagic as em
+import numpy as np
+import optimagic as om
+import pytest
+from estimagic import (
+    OptimizeLogReader,
+    OptimizeResult,
+    check_constraints,
+    convergence_plot,
+    convergence_report,
+    count_free_params,
+    criterion_plot,
+    first_derivative,
+    get_benchmark_problems,
+    maximize,
+    minimize,
+    params_plot,
+    profile_plot,
+    rank_report,
+    run_benchmark,
+    second_derivative,
+    slice_plot,
+    traceback_report,
+    utilities,
+)
 from optimagic.parameters.bounds import Bounds
 
 # ======================================================================================

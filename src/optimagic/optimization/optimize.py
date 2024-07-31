@@ -28,6 +28,10 @@ from optimagic.logging.create_tables import (
 )
 from optimagic.logging.load_database import load_database
 from optimagic.logging.write_to_database import append_row
+from optimagic.optimization.create_optimization_problem import (
+    OptimizationProblem,
+    create_optimization_problem,
+)
 from optimagic.optimization.error_penalty import get_error_penalty_function
 from optimagic.optimization.get_algorithm import (
     get_final_algorithm,
@@ -35,25 +39,20 @@ from optimagic.optimization.get_algorithm import (
 from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
-from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
-from optimagic.optimization.process_multistart_sample import process_multistart_sample
-from optimagic.optimization.process_results import process_internal_optimizer_result
 from optimagic.optimization.multistart import (
     WEIGHT_FUNCTIONS,
     run_multistart_optimization,
 )
+from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.optimization.process_multistart_sample import process_multistart_sample
+from optimagic.optimization.process_results import process_internal_optimizer_result
+from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     aggregate_func_output_to_value,
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-
-from optimagic.parameters.bounds import Bounds
-from optimagic.optimization.create_optimization_problem import (
-    create_optimization_problem,
-    OptimizationProblem,
-)
-from optimagic.optimization.optimize_result import OptimizeResult
 
 
 def maximize(

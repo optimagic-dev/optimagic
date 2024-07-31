@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from optimagic.exceptions import InvalidBoundsError
-from optimagic.parameters.bounds import get_internal_bounds, Bounds, pre_process_bounds
 from numpy.testing import assert_array_equal
+from optimagic.exceptions import InvalidBoundsError
+from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 
 
 @pytest.fixture()

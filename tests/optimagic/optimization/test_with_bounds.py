@@ -1,6 +1,6 @@
-from optimagic.optimization.optimize import minimize, maximize
-from scipy.optimize import Bounds as ScipyBounds
 import numpy as np
+from optimagic.optimization.optimize import maximize, minimize
+from scipy.optimize import Bounds as ScipyBounds
 
 
 def test_minimize_with_scipy_bounds():

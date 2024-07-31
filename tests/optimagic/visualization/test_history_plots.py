@@ -3,8 +3,8 @@ import itertools
 import numpy as np
 import pytest
 from optimagic.optimization.optimize import minimize
-from optimagic.visualization.history_plots import criterion_plot, params_plot
 from optimagic.parameters.bounds import Bounds
+from optimagic.visualization.history_plots import criterion_plot, params_plot
 
 
 @pytest.fixture()

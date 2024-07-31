@@ -1,40 +1,38 @@
+import warnings
+from dataclasses import dataclass
+
+from optimagic import OptimizeLogReader as _OptimizeLogReader
+from optimagic import OptimizeResult as _OptimizeResult
+from optimagic import __version__
+from optimagic import check_constraints as _check_constraints
+from optimagic import convergence_plot as _convergence_plot
+from optimagic import convergence_report as _convergence_report
+from optimagic import count_free_params as _count_free_params
+from optimagic import criterion_plot as _criterion_plot
+from optimagic import first_derivative as _first_derivative
+from optimagic import get_benchmark_problems as _get_benchmark_problems
+from optimagic import maximize as _maximize
+from optimagic import minimize as _minimize
+from optimagic import params_plot as _params_plot
+from optimagic import profile_plot as _profile_plot
+from optimagic import rank_report as _rank_report
+from optimagic import run_benchmark as _run_benchmark
+from optimagic import second_derivative as _second_derivative
+from optimagic import slice_plot as _slice_plot
+from optimagic import traceback_report as _traceback_report
+from optimagic.decorators import deprecated
+
+from estimagic import utilities
+from estimagic.bootstrap import BootstrapResult, bootstrap
 from estimagic.estimate_ml import LikelihoodResult, estimate_ml
 from estimagic.estimate_msm import MomentsResult, estimate_msm
-from estimagic.msm_weighting import get_moments_cov
-from estimagic.bootstrap import BootstrapResult, bootstrap
 from estimagic.estimation_table import (
     estimation_table,
     render_html,
     render_latex,
 )
 from estimagic.lollipop_plot import lollipop_plot
-
-from optimagic import minimize as _minimize
-from optimagic import maximize as _maximize
-from optimagic import first_derivative as _first_derivative
-from optimagic import second_derivative as _second_derivative
-from optimagic import run_benchmark as _run_benchmark
-from optimagic import get_benchmark_problems as _get_benchmark_problems
-from optimagic import convergence_report as _convergence_report
-from optimagic import rank_report as _rank_report
-from optimagic import traceback_report as _traceback_report
-from optimagic import profile_plot as _profile_plot
-from optimagic import convergence_plot as _convergence_plot
-from optimagic import slice_plot as _slice_plot
-from optimagic import check_constraints as _check_constraints
-from optimagic import count_free_params as _count_free_params
-from optimagic import criterion_plot as _criterion_plot
-from optimagic import params_plot as _params_plot
-
-from estimagic import utilities
-from optimagic import OptimizeLogReader as _OptimizeLogReader
-from optimagic import OptimizeResult as _OptimizeResult
-
-from optimagic.decorators import deprecated
-import warnings
-
-from optimagic import __version__
-from dataclasses import dataclass
+from estimagic.msm_weighting import get_moments_cov
 
 MSG = (
     "estimagic.{name} has been deprecated in version 0.5.0. Use optimagic.{name} "

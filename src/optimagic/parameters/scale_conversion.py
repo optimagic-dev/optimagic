@@ -1,5 +1,5 @@
 from functools import partial
-from typing import NamedTuple, Callable
+from typing import Callable, NamedTuple
 
 import numpy as np
 

@@ -2,6 +2,7 @@ import functools
 
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.optimization.error_penalty import (
     _penalty_contributions,
@@ -13,7 +14,6 @@ from optimagic.optimization.error_penalty import (
     get_error_penalty_function,
 )
 from optimagic.utilities import get_rng
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.mark.parametrize("seed", range(10))

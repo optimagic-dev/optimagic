@@ -9,9 +9,9 @@ from estimagic.estimate_ml import estimate_ml
 from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
 from estimagic.examples.logit import logit_loglike_and_derivative as llad
 from numpy.testing import assert_array_equal
+from optimagic.parameters.bounds import Bounds
 from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel
-from optimagic.parameters.bounds import Bounds
 
 
 def aaae(obj1, obj2, decimal=3):
