@@ -105,11 +105,13 @@ def estimate_msm(
             ``optimize_options`` you signal that ``params`` are already
             the optimal parameters and no numerical optimization is needed. If you pass
             a str as optimize_options it is used as the ``algorithm`` option.
-        lower_bounds (pytree): A pytree with the same structure as params with lower
-            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
-            bound.
-        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
-            no upper bound.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
         simulate_moments_kwargs (dict): Additional keyword arguments for
             ``simulate_moments``.
         weights (str): One of "diagonal" (default), "identity" or "optimal".

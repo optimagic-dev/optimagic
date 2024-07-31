@@ -43,16 +43,20 @@ def slice_plot(
     Generates plots for each parameter and optionally combines them into a figure
     with subplots.
 
+    # TODO: Use soft bounds to create the grid (if available).
+
     Args:
         criterion (callable): criterion function that takes params and returns a
             scalar value or dictionary with the entry "value".
         params (pytree): A pytree with parameters.
-        lower_bounds (pytree): A pytree with same structure as params. Must be
-            specified and finite for all parameters unless params is a DataFrame
-            containing with "lower_bound" column.
-        upper_bounds (pytree): A pytree with same structure as params. Must be
-            specified and finite for all parameters unless params is a DataFrame
-            containing with "lower_bound" column.
+        bounds: Lower and upper bounds on the parameters. The bounds are used to create
+            a grid over which slice plots are drawn. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are not used for
+            slice_plots. Each bound type mirrors the structure of params. Check our
+            how-to guide on bounds for examples. If params is a flat numpy array, you
+            can also provide bounds via any format that is supported by
+            scipy.optimize.minimize.
         selector (callable): Function that takes params and returns a subset
             of params for which we actually want to generate the plot.
         n_cores (int): Number of cores.

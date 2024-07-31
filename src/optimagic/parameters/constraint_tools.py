@@ -17,8 +17,13 @@ def count_free_params(
         params (pytree): The parameters.
         constraints (list): The constraints for the optimization problem. If constraints
             are provided, only the free parameters are counted.
-        lower_bounds (pytree): Lower bounds for params.
-        upper_bounds (pytree): Upper bounds for params.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
 
     Returns:
         int: Number of (free) parameters
@@ -58,9 +63,13 @@ def check_constraints(
     Args:
         params (pytree): The parameters.
         constraints (list): The constraints for the optimization problem.
-        lower_bounds (pytree): Lower bounds for params.
-        upper_bounds (pytree): Upper bounds for params.
-
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
 
     Raises:
         InvalidParamsError: If constraints are valid but not satisfied.

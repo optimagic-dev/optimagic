@@ -102,9 +102,18 @@ def maximize(
     soft_lower_bounds=None,
     soft_upper_bounds=None,
 ):
-    """Maximize criterion using algorithm subject to constraints.
+    """Maximize fun using algorithm subject to constraints.
 
     TODO: Write docstring after enhancement proposals are implemented.
+
+    Args:
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
 
     """
     problem = create_optimization_problem(
@@ -208,6 +217,15 @@ def minimize(
     """Minimize criterion using algorithm subject to constraints.
 
     TODO: Write docstring after enhancement proposals are implemented.
+
+    Args:
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
 
     """
 

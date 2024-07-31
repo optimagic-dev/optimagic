@@ -65,7 +65,13 @@ def first_derivative(
     Args:
         func (callable): Function of which the derivative is calculated.
         params (pytree): A pytree. See :ref:`params`.
-        bounds (Bounds): Lower and upper bounds for the parameters.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are not used during
+            numerical differentiation. Each bound type mirrors the structure of params.
+            Check our how-to guide on bounds for examples. If params is a flat numpy
+            array, you can also provide bounds via any format that is supported by
+            scipy.optimize.minimize.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
@@ -338,6 +344,13 @@ def second_derivative(
             :class:`pandas.DataFrame` with parameters at which the derivative is
             calculated. If it is a DataFrame, it can contain the columns "lower_bound"
             and "upper_bound" for bounds. See :ref:`params`.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are not used during
+            numerical differentiation. Each bound type mirrors the structure of params.
+            Check our how-to guide on bounds for examples. If params is a flat numpy
+            array, you can also provide bounds via any format that is supported by
+            scipy.optimize.minimize.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of {"forward", "backward", "central_average", "central_cross"}
             These correspond to the finite difference approximations defined in
@@ -358,12 +371,6 @@ def second_derivative(
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        lower_bounds (numpy.ndarray): 1d array with lower bounds for each parameter. If
-            params is a DataFrame and has the columns "lower_bound", this will be taken
-            as lower_bounds if now lower_bounds have been provided explicitly.
-        upper_bounds (numpy.ndarray): 1d array with upper bounds for each parameter. If
-            params is a DataFrame and has the columns "upper_bound", this will be taken
-            as upper_bounds if no upper_bounds have been provided explicitly.
         step_ratio (float, numpy.array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. The step ratio is only used if n_steps > 1.
@@ -392,6 +399,7 @@ def second_derivative(
             returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
+
 
     Returns:
         result (dict): Result dictionary with keys:
