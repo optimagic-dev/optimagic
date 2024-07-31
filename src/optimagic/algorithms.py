@@ -40,7 +40,5 @@ for module in MODULES:
 
 
 GLOBAL_ALGORITHMS = [
-    name
-    for name, func in ALL_ALGORITHMS.items()
-    if func._algorithm_info.is_global  # type: ignore
+    name for name, func in ALL_ALGORITHMS.items() if func._algorithm_info.is_global
 ]
