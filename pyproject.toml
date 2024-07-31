@@ -136,6 +136,8 @@ extend-ignore = [
   "PLR5501",
   # For calls to warnings.warn(): No explicit `stacklevel` keyword argument found
   "B028",
+  # Incompatible with formatting
+  "ISC001",
 ]
 
 [tool.ruff.lint.per-file-ignores]
