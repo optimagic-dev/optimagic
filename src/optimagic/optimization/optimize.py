@@ -3,11 +3,12 @@
 This module defines the public functions `maximize` and `minimize` that will be called
 by users.
 
-Internally, `maximize` and `minimize` just pass all arguments through to `_optimize`
-and add a `direction` argument.
+Internally, `maximize` and `minimize` just call `create_optimization_problem` with
+all arguments and add the `direction`. In `create_optimization_problem`, the user input
+is consolidated and converted to stricter types.  The resulting `OptimizationProblem`
+is then passed to `_optimize` which handles the optimization logic.
 
-`optimize` processes the input arguments and converts them to stricter types. It then
-calls `_internal_optimize` which does the actual optimization.
+`_optimize` processes the optimization problem and performs the actual optimization.
 
 """
 

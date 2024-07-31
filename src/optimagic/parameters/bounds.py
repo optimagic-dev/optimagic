@@ -92,6 +92,9 @@ def get_internal_bounds(
         params: The parameter pytree.
         bounds: The lower and upper bounds.
         registry: pybaum registry.
+        add_soft_bounds: If True, the element-wise maximum (minimum) of the lower and
+            soft_lower (upper and soft_upper) bounds are taken. If False, the lower
+            (upper) bounds are returned.
 
     Returns:
         Consolidated and flattened lower_bounds.

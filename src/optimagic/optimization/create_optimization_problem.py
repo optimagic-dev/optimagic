@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable, Literal, Any
 from optimagic.typing import PyTree
-from optimagic.parameters.bounds import Bounds
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
 
 from pathlib import Path
 
@@ -26,7 +26,6 @@ from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
-from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.decorators import AlgoInfo
 
 
@@ -34,13 +33,13 @@ from optimagic.decorators import AlgoInfo
 class OptimizationProblem:
     """Collect everything that defines the optimization problem.
 
-    The attributes are very close to the arguments of `maximize` and `minimize` but
-    they are converted to stricter types. For example, the bounds argument that can
-    be a sequence of tuples, a scipy.optimize.Bounds object or an optimagic.Bounds
-    when calling `maximize` or `minimize` is converted to an optimagic.Bounds object.
+    The attributes are very close to the arguments of `maximize` and `minimize` but they
+    are converted to stricter types. For example, the bounds argument that can be a
+    sequence of tuples, a scipy.optimize.Bounds object or an optimagic.Bounds when
+    calling `maximize` or `minimize` is converted to an optimagic.Bounds object.
 
-    All deprecated arguments are removed and all scipy aliases are replaced
-    by their optimagic counterparts.
+    All deprecated arguments are removed and all scipy aliases are replaced by their
+    optimagic counterparts.
 
     All user provided functions are partialled if corresponding `kwargs` dictionaries
     were provided.
@@ -66,7 +65,7 @@ class OptimizationProblem:
     # TODO: logging will become None | Logger and log_options will be removed
     logging: bool | Path | None
     log_options: dict[str, Any] | None
-    # TODO: error_handling will become None | ErrorHandlingOptions and error_penalt
+    # TODO: error_handling will become None | ErrorHandlingOptions and error_penalty
     # will be removed
     error_handling: Literal["raise", "continue"]
     error_penalty: dict[str, Any] | None
