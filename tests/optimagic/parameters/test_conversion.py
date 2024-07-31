@@ -65,7 +65,6 @@ def test_get_converter_with_constraints_and_bounds():
 
 
 def test_get_converter_with_scaling():
-
     bounds = Bounds(
         lower=np.arange(3) - 1,
         upper=np.arange(3) + 1,
