@@ -14,7 +14,7 @@ from numpy.typing import NDArray
 from typing import Any
 
 
-@dataclass
+@dataclass(frozen=True)
 class Bounds:
     lower: PyTree | None = None
     upper: PyTree | None = None
@@ -228,18 +228,18 @@ def _get_fast_path_bounds(
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     if bounds.lower is None:
         # faster than np.full
-        bounds.lower = np.array([-np.inf] * len(params))
+        lower_bounds = np.array([-np.inf] * len(params))
     else:
-        bounds.lower = bounds.lower.astype(float)
+        lower_bounds = bounds.lower.astype(float)
 
     if bounds.upper is None:
         # faster than np.full
-        bounds.upper = np.array([np.inf] * len(params))
+        upper_bounds = np.array([np.inf] * len(params))
     else:
-        bounds.upper = bounds.upper.astype(float)
+        upper_bounds = bounds.upper.astype(float)
 
-    if (bounds.lower > bounds.upper).any():
+    if (lower_bounds > upper_bounds).any():
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
         raise InvalidBoundsError(msg)
 
-    return bounds.lower, bounds.upper
+    return lower_bounds, upper_bounds
