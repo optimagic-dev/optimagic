@@ -111,7 +111,11 @@ repos:
     rev: 0.7.1
     hooks:
       - id: nbstripout
-        exclude: (estimation_tables_overview.ipynb|bootstrap_montecarlo_comparison.ipynb)
+        exclude: |
+          (?x)^(
+            docs/source/estimagic/tutorials/estimation_tables_overview.ipynb|
+            docs/source/estimagic/explanation/bootstrap_montecarlo_comparison.ipynb|
+          )$
         args:
           - --drop-empty-cells
           - --drop-empty-cells
