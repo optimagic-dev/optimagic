@@ -248,6 +248,7 @@ module = [
     "optimagic.optimization.process_results",
     "optimagic.optimization.tiktak",
     "optimagic.optimization.scipy_aliases",
+    "optimagic.optimization.create_optimization_problem",
 
     "optimagic.optimizers._pounders",
     "optimagic.optimizers._pounders.pounders_auxiliary",
