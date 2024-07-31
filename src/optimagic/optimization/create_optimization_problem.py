@@ -30,7 +30,7 @@ from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.decorators import AlgoInfo
 
 
-@dataclass
+@dataclass(frozen=True)
 class OptimizationProblem:
     """Collect everything that defines the optimization problem.
 

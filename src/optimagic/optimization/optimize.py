@@ -99,7 +99,11 @@ def maximize(
     soft_lower_bounds=None,
     soft_upper_bounds=None,
 ):
-    """Maximize criterion using algorithm subject to constraints."""
+    """Maximize criterion using algorithm subject to constraints.
+
+    TODO: Write docstring after enhancement proposals are implemented.
+
+    """
     problem = create_optimization_problem(
         direction="maximize",
         fun=fun,
@@ -198,7 +202,11 @@ def minimize(
     soft_upper_bounds=None,
     fun_kwargs=None,
 ):
-    """Minimize criterion using algorithm subject to constraints."""
+    """Minimize criterion using algorithm subject to constraints.
+
+    TODO: Write docstring after enhancement proposals are implemented.
+
+    """
 
     problem = create_optimization_problem(
         direction="minimize",
@@ -253,43 +261,19 @@ def minimize(
 def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     """Solve an optimization problem."""
     # ==================================================================================
-    # unpack the problem
-    # ==================================================================================
-
-    fun = problem.fun
-    params = problem.params
-    raw_algo = problem.algorithm
-    algo_options = problem.algo_options
-    algo_info = problem.algo_info
-    bounds = problem.bounds
-    constraints = problem.constraints
-    jac = problem.jac
-    fun_and_jac = problem.fun_and_jac
-    numdiff_options = problem.numdiff_options
-    logging = problem.logging
-    log_options = problem.log_options
-    error_handling = problem.error_handling
-    error_penalty = problem.error_penalty
-    scaling = problem.scaling
-    scaling_options = problem.scaling_options
-    multistart = problem.multistart
-    multistart_options = problem.multistart_options
-    collect_history = problem.collect_history
-    skip_checks = problem.skip_checks
-    direction = problem.direction
-
-    # ==================================================================================
     # Split constraints into nonlinear and reparametrization parts
     # ==================================================================================
+    constraints = problem.constraints
     if isinstance(constraints, dict):
         constraints = [constraints]
 
     nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
 
-    algo_kwargs = set(algo_info.arguments)
+    algo_kwargs = set(problem.algo_info.arguments)
     if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
         raise ValueError(
-            f"Algorithm {algo_info.name} does not support nonlinear constraints."
+            f"Algorithm {problem.algo_info.name} does not support nonlinear "
+            "constraints."
         )
 
     # the following constraints will be handled via reparametrization
@@ -299,7 +283,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Do first evaluation of user provided functions
     # ==================================================================================
     try:
-        first_crit_eval = fun(params)
+        first_crit_eval = problem.fun(problem.params)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
@@ -307,27 +291,27 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         raise InvalidFunctionError(msg) from e
 
     # do first derivative evaluation (if given)
-    if jac is not None:
+    if problem.jac is not None:
         try:
-            first_deriv_eval = jac(params)
+            first_deriv_eval = problem.jac(problem.params)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
             msg = "Error while evaluating derivative at start params."
             raise InvalidFunctionError(msg) from e
 
-    if fun_and_jac is not None:
+    if problem.fun_and_jac is not None:
         try:
-            first_crit_and_deriv_eval = fun_and_jac(params)
+            first_crit_and_deriv_eval = problem.fun_and_jac(problem.params)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
             msg = "Error while evaluating criterion_and_derivative at start params."
             raise InvalidFunctionError(msg) from e
 
-    if jac is not None:
+    if problem.jac is not None:
         used_deriv = first_deriv_eval
-    elif fun_and_jac is not None:
+    elif problem.fun_and_jac is not None:
         used_deriv = first_crit_and_deriv_eval[1]
     else:
         used_deriv = None
@@ -336,29 +320,33 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
-        params=params,
+        params=problem.params,
         constraints=constraints,
-        bounds=bounds,
+        bounds=problem.bounds,
         func_eval=first_crit_eval,
-        primary_key=algo_info.primary_criterion_entry,
-        scaling=scaling,
-        scaling_options=scaling_options,
+        primary_key=problem.algo_info.primary_criterion_entry,
+        scaling=problem.scaling,
+        scaling_options=problem.scaling_options,
         derivative_eval=used_deriv,
-        add_soft_bounds=multistart,
+        add_soft_bounds=problem.multistart,
     )
 
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
-    if logging:
+    if problem.logging:
         # TODO: We want to remove the optimization_problem table completely but we
         # probably do need to store the start parameters in the database because it is
         # used by the log reader.
         problem_data = {
             "direction": problem.direction,
-            "params": params,
+            "params": problem.params,
         }
-        database = _create_and_initialize_database(logging, log_options, problem_data)
+        database = _create_and_initialize_database(
+            logging=problem.logging,
+            log_options=problem.log_options,
+            problem_data=problem_data,
+        )
     else:
         database = None
 
@@ -366,35 +354,35 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Do some things that require internal parameters or bounds
     # ==================================================================================
 
-    if converter.has_transforming_constraints and multistart:
+    if converter.has_transforming_constraints and problem.multistart:
         raise NotImplementedError(
             "multistart optimizations are not yet compatible with transforming "
             "constraints."
         )
 
     numdiff_options = _fill_numdiff_options_with_defaults(
-        numdiff_options=numdiff_options,
+        numdiff_options=problem.numdiff_options,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
     )
 
     # get error penalty function
     error_penalty_func = get_error_penalty_function(
-        error_handling=error_handling,
+        error_handling=problem.error_handling,
         start_x=internal_params.values,
         start_criterion=converter.func_to_internal(first_crit_eval),
-        error_penalty=error_penalty,
-        primary_key=algo_info.primary_criterion_entry,
-        direction=direction,
+        error_penalty=problem.error_penalty,
+        primary_key=problem.algo_info.primary_criterion_entry,
+        direction=problem.direction,
     )
 
     # process nonlinear constraints:
     internal_constraints = process_nonlinear_constraints(
         nonlinear_constraints=nonlinear_constraints,
-        params=params,
+        params=problem.params,
         converter=converter,
         numdiff_options=numdiff_options,
-        skip_checks=skip_checks,
+        skip_checks=problem.skip_checks,
     )
 
     x = internal_params.values
@@ -402,31 +390,31 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # get the internal algorithm
     # ==================================================================================
     internal_algorithm = get_final_algorithm(
-        raw_algorithm=raw_algo,
-        algo_info=algo_info,
+        raw_algorithm=problem.algorithm,
+        algo_info=problem.algo_info,
         valid_kwargs=algo_kwargs,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
         nonlinear_constraints=internal_constraints,
-        algo_options=algo_options,
-        logging=logging,
+        algo_options=problem.algo_options,
+        logging=problem.logging,
         database=database,
-        collect_history=collect_history,
+        collect_history=problem.collect_history,
     )
     # ==================================================================================
     # partial arguments into the internal_criterion_and_derivative_template
     # ==================================================================================
     to_partial = {
-        "direction": direction,
-        "criterion": fun,
+        "direction": problem.direction,
+        "criterion": problem.fun,
         "converter": converter,
-        "derivative": jac,
-        "criterion_and_derivative": fun_and_jac,
+        "derivative": problem.jac,
+        "criterion_and_derivative": problem.fun_and_jac,
         "numdiff_options": numdiff_options,
-        "logging": logging,
+        "logging": problem.logging,
         "database": database,
-        "algo_info": algo_info,
-        "error_handling": error_handling,
+        "algo_info": problem.algo_info,
+        "error_handling": problem.error_handling,
         "error_penalty_func": error_penalty_func,
     }
 
@@ -446,35 +434,35 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     # Do actual optimization
     # ==================================================================================
-    if not multistart:
+    if not problem.multistart:
         steps = [{"type": "optimization", "name": "optimization"}]
 
         step_ids = log_scheduled_steps_and_get_ids(
             steps=steps,
-            logging=logging,
+            logging=problem.logging,
             database=database,
         )
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
         multistart_options = _fill_multistart_options_with_defaults(
-            options=multistart_options,
-            params=params,
+            options=problem.multistart_options,
+            params=problem.params,
             x=x,
             params_to_internal=converter.params_to_internal,
         )
 
         raw_res = run_multistart_optimization(
             local_algorithm=internal_algorithm,
-            primary_key=algo_info.primary_criterion_entry,
+            primary_key=problem.algo_info.primary_criterion_entry,
             problem_functions=problem_functions,
             x=x,
             lower_sampling_bounds=internal_params.soft_lower_bounds,
             upper_sampling_bounds=internal_params.soft_upper_bounds,
             options=multistart_options,
-            logging=logging,
+            logging=problem.logging,
             database=database,
-            error_handling=error_handling,
+            error_handling=problem.error_handling,
         )
 
     # ==================================================================================
@@ -483,23 +471,23 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
     _scalar_start_criterion = aggregate_func_output_to_value(
         converter.func_to_internal(first_crit_eval),
-        algo_info.primary_criterion_entry,
+        problem.algo_info.primary_criterion_entry,
     )
 
     fixed_result_kwargs = {
         "start_fun": _scalar_start_criterion,
-        "start_params": params,
-        "algorithm": algo_info.name,
-        "direction": direction,
+        "start_params": problem.params,
+        "algorithm": problem.algo_info.name,
+        "direction": problem.direction,
         "n_free": internal_params.free_mask.sum(),
     }
 
     res = process_internal_optimizer_result(
         raw_res,
         converter=converter,
-        primary_key=algo_info.primary_criterion_entry,
+        primary_key=problem.algo_info.primary_criterion_entry,
         fixed_kwargs=fixed_result_kwargs,
-        skip_checks=skip_checks,
+        skip_checks=problem.skip_checks,
     )
 
     return res
