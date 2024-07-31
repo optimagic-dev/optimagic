@@ -115,8 +115,10 @@ def replace_and_warn_about_deprecated_bounds(
     old_present = [k for k, v in old_bounds.items() if v is not None]
 
     if old_present:
+        substring = ", ".join(f"{b}_bound" for b in old_present)
+        substring = substring.replace(", ", ", and ", -1)
         msg = (
-            f"Specifying bounds via the arguments {', '.join(old_present)} is "
+            f"Specifying bounds via the arguments {substring} is "
             "deprecated and will be removed in optimagic version 0.6.0 and later. "
             "Please use the `bounds` argument instead."
         )
