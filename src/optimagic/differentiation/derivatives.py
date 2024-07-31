@@ -11,11 +11,12 @@ from pybaum import tree_just_flatten as tree_leaves
 
 from optimagic import batch_evaluators
 from optimagic.config import DEFAULT_N_CORES
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation import finite_differences
 from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
-from optimagic.parameters.parameter_bounds import get_bounds
+from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import get_registry
 
 
@@ -28,13 +29,12 @@ def first_derivative(
     func,
     params,
     *,
+    bounds=None,
     func_kwargs=None,
     method="central",
     n_steps=1,
     base_steps=None,
     scaling_factor=1,
-    lower_bounds=None,
-    upper_bounds=None,
     step_ratio=2,
     min_steps=None,
     f0=None,
@@ -44,6 +44,9 @@ def first_derivative(
     return_func_value=False,
     return_info=False,
     key=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
 
@@ -61,6 +64,13 @@ def first_derivative(
     Args:
         func (callable): Function of which the derivative is calculated.
         params (pytree): A pytree. See :ref:`params`.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are not used during
+            numerical differentiation. Each bound type mirrors the structure of params.
+            Check our how-to guide on bounds for examples. If params is a flat numpy
+            array, you can also provide bounds via any format that is supported by
+            scipy.optimize.minimize.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
@@ -77,8 +87,6 @@ def first_derivative(
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        lower_bounds (pytree): To be written.
-        upper_bounds (pytree): To be written.
         step_ratio (float, numpy.array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. The step ratio is only used if n_steps > 1.
@@ -130,10 +138,23 @@ def first_derivative(
                 1.
 
     """
+    # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+
+    # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
+
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
 
-    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
+    internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -157,8 +178,7 @@ def first_derivative(
         target="first_derivative",
         base_steps=base_steps,
         scaling_factor=scaling_factor,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
         min_steps=min_steps,
     )
@@ -283,13 +303,12 @@ def second_derivative(
     func,
     params,
     *,
+    bounds=None,
     func_kwargs=None,
     method="central_cross",
     n_steps=1,
     base_steps=None,
     scaling_factor=1,
-    lower_bounds=None,
-    upper_bounds=None,
     step_ratio=2,
     min_steps=None,
     f0=None,
@@ -299,6 +318,9 @@ def second_derivative(
     return_func_value=False,
     return_info=False,
     key=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Evaluate second derivative of func at params according to method and step
     options.
@@ -321,6 +343,13 @@ def second_derivative(
             :class:`pandas.DataFrame` with parameters at which the derivative is
             calculated. If it is a DataFrame, it can contain the columns "lower_bound"
             and "upper_bound" for bounds. See :ref:`params`.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are not used during
+            numerical differentiation. Each bound type mirrors the structure of params.
+            Check our how-to guide on bounds for examples. If params is a flat numpy
+            array, you can also provide bounds via any format that is supported by
+            scipy.optimize.minimize.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of {"forward", "backward", "central_average", "central_cross"}
             These correspond to the finite difference approximations defined in
@@ -341,12 +370,6 @@ def second_derivative(
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        lower_bounds (numpy.ndarray): 1d array with lower bounds for each parameter. If
-            params is a DataFrame and has the columns "lower_bound", this will be taken
-            as lower_bounds if now lower_bounds have been provided explicitly.
-        upper_bounds (numpy.ndarray): 1d array with upper bounds for each parameter. If
-            params is a DataFrame and has the columns "upper_bound", this will be taken
-            as upper_bounds if no upper_bounds have been provided explicitly.
         step_ratio (float, numpy.array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. The step ratio is only used if n_steps > 1.
@@ -375,6 +398,7 @@ def second_derivative(
             returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
+
 
     Returns:
         result (dict): Result dictionary with keys:
@@ -407,7 +431,20 @@ def second_derivative(
                 returned if return_info is True.
 
     """
-    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
+
+    # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+    # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
+
+    internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -433,8 +470,7 @@ def second_derivative(
         target="second_derivative",
         base_steps=base_steps,
         scaling_factor=scaling_factor,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
         min_steps=min_steps,
     )

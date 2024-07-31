@@ -4,9 +4,9 @@
 </div>
 
 ```{raw} html
-<img src="_static/images/estimagic_logo.svg" class="only-light center" style="display:block; margin-left:auto; margin-right:auto; width:300px; height:auto;"/>
+<img src="_static/images/optimagic_logo.svg" class="only-light center" style="display:block; margin-left:auto; margin-right:auto; width:300px; height:auto;"/>
 
-<img src="_static/images/estimagic_logo_dark_mode.svg" class="only-dark center" style="display:block; margin-left:auto; margin-right:auto; width:300px; height:auto;"/>
+<img src="_static/images/optimagic_logo_dark_mode.svg" class="only-dark center" style="display:block; margin-left:auto; margin-right:auto; width:300px; height:auto;"/>
 ```
 
 <br>

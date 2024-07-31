@@ -2,12 +2,13 @@ import sys
 
 import numpy as np
 import pytest
-from optimagic.logging.read_log import OptimizeLogReader
-from optimagic.algorithms import AVAILABLE_ALGORITHMS
-from optimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
+from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.decorators import mark_minimizer
+from optimagic.logging.read_log import OptimizeLogReader
+from optimagic.optimization.optimize import minimize
+from optimagic.parameters.bounds import Bounds
 
 OPTIMIZERS = []
 BOUNDED = []
@@ -32,8 +33,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
         fun=lambda x: {"root_contributions": x, "value": x @ x},
         params=np.arange(5),
         algorithm=algorithm,
-        lower_bounds=lb,
-        upper_bounds=ub,
+        bounds=Bounds(lower=lb, upper=ub),
         algo_options={"n_cores": 2, "stopping.max_iterations": 3},
         logging=logging,
         log_options={"if_database_exists": "replace", "fast_logging": True},

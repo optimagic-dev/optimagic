@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from optimagic.optimization.convergence_report import get_convergence_report
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.optimization.convergence_report import get_convergence_report
 
 
 def test_get_convergence_report_minimize():

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal
 from optimagic import second_derivative
 from optimagic.parameters.block_trees import (
     block_tree_to_hessian,
@@ -9,7 +10,6 @@ from optimagic.parameters.block_trees import (
     matrix_to_block_tree,
 )
 from optimagic.parameters.tree_registry import get_registry
-from numpy.testing import assert_array_equal
 from pybaum import tree_equal
 from pybaum import tree_just_flatten as tree_leaves
 

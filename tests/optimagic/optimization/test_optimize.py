@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from optimagic.examples.criterion_functions import sos_scalar_criterion
-from optimagic.exceptions import InvalidKwargsError, InvalidFunctionError
+from optimagic.exceptions import InvalidFunctionError, InvalidKwargsError
 from optimagic.optimization.optimize import maximize, minimize
 
 

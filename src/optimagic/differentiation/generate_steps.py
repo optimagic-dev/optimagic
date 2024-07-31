@@ -16,8 +16,7 @@ def generate_steps(
     target,
     base_steps,
     scaling_factor,
-    lower_bounds,
-    upper_bounds,
+    bounds,
     step_ratio,
     min_steps,
 ):
@@ -92,11 +91,11 @@ def generate_steps(
     min_steps = base_steps if min_steps is None else min_steps
 
     assert (
-        upper_bounds - lower_bounds >= 2 * min_steps
+        bounds.upper - bounds.lower >= 2 * min_steps
     ).all(), "min_steps is too large to fit into bounds."
 
-    upper_step_bounds = upper_bounds - x
-    lower_step_bounds = lower_bounds - x
+    upper_step_bounds = bounds.upper - x
+    lower_step_bounds = bounds.lower - x
 
     pos = step_ratio ** np.arange(n_steps) * base_steps.reshape(-1, 1)
     neg = -pos.copy()
@@ -106,7 +105,7 @@ def generate_steps(
             x, pos, neg, method, lower_step_bounds, upper_step_bounds
         )
 
-    if np.isfinite(lower_bounds).any() or np.isfinite(upper_bounds).any():
+    if np.isfinite(bounds.lower).any() or np.isfinite(bounds.upper).any():
         pos, neg = _rescale_to_accomodate_bounds(
             base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
         )

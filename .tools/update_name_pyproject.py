@@ -1,5 +1,6 @@
-import toml
 from pathlib import Path
+
+import toml
 
 file_path = Path(__file__).parent.parent.resolve() / "pyproject.toml"
 

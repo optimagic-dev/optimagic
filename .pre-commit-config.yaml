@@ -108,7 +108,7 @@ repos:
           - '88'
         files: (docs/.)
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.11.0
     hooks:
       - id: mypy
         files: src|tests

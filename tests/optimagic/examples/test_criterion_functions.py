@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_allclose, assert_array_equal
 from optimagic.examples.criterion_functions import (
     rosenbrock_criterion_and_gradient,
     rosenbrock_dict_criterion,
@@ -15,7 +16,6 @@ from optimagic.examples.criterion_functions import (
     trid_gradient,
     trid_scalar_criterion,
 )
-from numpy.testing import assert_allclose, assert_array_equal
 
 
 # Fix input params to test every criterion function

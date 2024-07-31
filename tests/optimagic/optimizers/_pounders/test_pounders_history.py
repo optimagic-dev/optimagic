@@ -2,8 +2,8 @@
 
 import numpy as np
 import pytest
-from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 
 ENTRIES = [
     (np.arange(3), [np.arange(5)]),

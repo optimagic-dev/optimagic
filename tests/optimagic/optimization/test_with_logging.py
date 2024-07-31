@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.examples.criterion_functions import (
     sos_dict_criterion,
     sos_dict_derivative,
@@ -17,7 +18,6 @@ from optimagic.examples.criterion_functions import (
 from optimagic.exceptions import TableExistsError
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
-from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_just_flatten
 
 

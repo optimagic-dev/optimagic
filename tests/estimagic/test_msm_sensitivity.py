@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.config import EXAMPLE_DIR
-from optimagic.differentiation.derivatives import first_derivative
 from estimagic.msm_covs import cov_optimal
 from estimagic.msm_sensitivity import (
     calculate_actual_sensitivity_to_noise,
@@ -13,6 +12,7 @@ from estimagic.msm_sensitivity import (
     calculate_sensitivity_to_weighting,
 )
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.differentiation.derivatives import first_derivative
 from scipy import stats
 
 

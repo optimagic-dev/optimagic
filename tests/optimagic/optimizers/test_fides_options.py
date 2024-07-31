@@ -2,12 +2,12 @@
 
 import numpy as np
 import pytest
-from optimagic.config import IS_FIDES_INSTALLED
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.config import IS_FIDES_INSTALLED
 
 if IS_FIDES_INSTALLED:
-    from optimagic.optimizers.fides import fides
     from fides.hessian_approximation import FX, SR1, Broyden
+    from optimagic.optimizers.fides import fides
 else:
     FX = lambda: None
     SR1 = lambda: None

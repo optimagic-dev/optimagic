@@ -1,6 +1,7 @@
-from optimagic.utilities import propose_alternatives
 import functools
+
 from optimagic.exceptions import InvalidFunctionError
+from optimagic.utilities import propose_alternatives
 
 
 def map_method_to_algorithm(method):

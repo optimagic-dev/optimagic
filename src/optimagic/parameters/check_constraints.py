@@ -9,7 +9,6 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
-
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.utilities import cov_params_to_matrix, sdcorr_params_to_matrix
 

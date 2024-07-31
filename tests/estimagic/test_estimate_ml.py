@@ -9,6 +9,7 @@ from estimagic.estimate_ml import estimate_ml
 from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
 from estimagic.examples.logit import logit_loglike_and_derivative as llad
 from numpy.testing import assert_array_equal
+from optimagic.parameters.bounds import Bounds
 from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel
 
@@ -388,7 +389,7 @@ def test_estimate_ml_general_pytree(normal_inputs):
         params=start_params,
         loglike_kwargs=kwargs,
         optimize_options="scipy_lbfgsb",
-        lower_bounds={"sd": 0.0001},
+        bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
         constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
     )
@@ -415,7 +416,7 @@ def test_to_pickle(normal_inputs, tmp_path):
         params=start_params,
         loglike_kwargs=kwargs,
         optimize_options="scipy_lbfgsb",
-        lower_bounds={"sd": 0.0001},
+        bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
         constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
     )
@@ -433,7 +434,7 @@ def test_caching(normal_inputs):
         params=start_params,
         loglike_kwargs=kwargs,
         optimize_options="scipy_lbfgsb",
-        lower_bounds={"sd": 0.0001},
+        bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
         constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
     )

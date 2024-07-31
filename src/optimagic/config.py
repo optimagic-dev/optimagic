@@ -1,8 +1,8 @@
 from pathlib import Path
-import pandas as pd
-from packaging import version
 
+import pandas as pd
 import plotly.express as px
+from packaging import version
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 

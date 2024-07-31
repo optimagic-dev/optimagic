@@ -8,6 +8,8 @@ from pybaum import tree_just_flatten
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
@@ -16,8 +18,7 @@ from optimagic.visualization.plotting_utilities import combine_plots, get_layout
 def slice_plot(
     func,
     params,
-    lower_bounds=None,
-    upper_bounds=None,
+    bounds=None,
     func_kwargs=None,
     selector=None,
     n_cores=DEFAULT_N_CORES,
@@ -33,22 +34,29 @@ def slice_plot(
     return_dict=False,
     make_subplot_kwargs=None,
     batch_evaluator="joblib",
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Plot criterion along coordinates at given and random values.
 
     Generates plots for each parameter and optionally combines them into a figure
     with subplots.
 
+    # TODO: Use soft bounds to create the grid (if available).
+
     Args:
         criterion (callable): criterion function that takes params and returns a
             scalar value or dictionary with the entry "value".
         params (pytree): A pytree with parameters.
-        lower_bounds (pytree): A pytree with same structure as params. Must be
-            specified and finite for all parameters unless params is a DataFrame
-            containing with "lower_bound" column.
-        upper_bounds (pytree): A pytree with same structure as params. Must be
-            specified and finite for all parameters unless params is a DataFrame
-            containing with "lower_bound" column.
+        bounds: Lower and upper bounds on the parameters. The bounds are used to create
+            a grid over which slice plots are drawn. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are not used for
+            slice_plots. Each bound type mirrors the structure of params. Check our
+            how-to guide on bounds for examples. If params is a flat numpy array, you
+            can also provide bounds via any format that is supported by
+            scipy.optimize.minimize.
         selector (callable): Function that takes params and returns a subset
             of params for which we actually want to generate the plot.
         n_cores (int): Number of cores.
@@ -84,6 +92,13 @@ def slice_plot(
             plots for each parameter or a plotly Figure combining the individual plots.
 
     """
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+
+    bounds = pre_process_bounds(bounds)
 
     layout_kwargs = None
     if title is not None:
@@ -99,8 +114,7 @@ def slice_plot(
     converter, internal_params = get_converter(
         params=params,
         constraints=None,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=func_eval,
         primary_key="value",
         scaling=False,

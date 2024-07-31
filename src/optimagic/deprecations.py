@@ -1,5 +1,8 @@
 import warnings
 
+from optimagic.parameters.bounds import Bounds
+from optimagic.parameters.scaling import ScalingOptions
+
 
 def throw_criterion_future_warning():
     msg = (
@@ -97,46 +100,50 @@ def replace_and_warn_about_deprecated_algo_options(algo_options):
     return out
 
 
-def replace_and_warn_about_deprecated_scaling_options(scaling, scaling_options):
-    if scaling_options is not None:
-        pass
+def replace_and_warn_about_deprecated_bounds(
+    lower_bounds,
+    upper_bounds,
+    bounds,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
+):
+    old_bounds = {
+        "lower": lower_bounds,
+        "upper": upper_bounds,
+        "soft_lower": soft_lower_bounds,
+        "soft_upper": soft_upper_bounds,
+    }
 
-    return scaling
+    old_present = [k for k, v in old_bounds.items() if v is not None]
 
-def _throw_scaling_options_future_warning():
-    msg = (
-        "The `scaling_options` argument will be deprecated in favor of `scaling` in "
-        "optimagic version 0.6.0 and later. You can simply pass the scaling options to "
-        "`scaling` instead of `scaling_options`. Using `scaling_options` will become "
-        "an error in optimagic version 0.6.0 and later."
-    )
-    warnings.warn(msg, FutureWarning)
-
-
-def _consolidate_scaling_options(scaling, scaling_options):
-    """Consolidate scaling options."""
-    if isinstance(scaling, ScalingOptions) and scaling_options is not None:
+    if old_present:
+        substring = ", ".join(f"{b}_bound" for b in old_present)
+        substring = substring.replace(", ", ", and ", -1)
         msg = (
-            "You can not provide options through scaling and scaling_options. The "
-            "scaling_options argument is deprecated in favor of the scaling argument."
-            "You can pass options to the scaling argument directly using the "
-            "ScalingOptions class."
+            f"Specifying bounds via the arguments {substring} is "
+            "deprecated and will be removed in optimagic version 0.6.0 and later. "
+            "Please use the `bounds` argument instead."
         )
-        raise ValueError(msg)
+        warnings.warn(msg, FutureWarning)
 
-    if isinstance(scaling, bool):
-        if scaling and scaling_options is None:
-            scaling = ScalingOptions()
-        elif scaling:
-            try:
-                scaling = ScalingOptions(**scaling_options)
-            except TypeError as e:
-                msg = (
-                    "The scaling_options argument contains invalid keys, and is "
-                    "deprecated in favor of the scaling argument. You can pass options "
-                    "to the scaling argument directly using the ScalingOptions class."
-                )
-                raise ValueError(msg) from e
+    if bounds is None and old_present:
+        bounds = Bounds(**old_bounds)
+
+    return bounds
+
+
+def replace_and_warn_about_deprecated_scaling_options(scaling, scaling_options):
+    old_present = scaling_options is not None
+
+    if old_present:
+        msg = (
+            "Specifying scaling options via the argument `scaling_options` is "
+            "deprecated and will be removed in optimagic version 0.6.0 and later. "
+            "You can pass these options directly to the `scaling` argument instead."
+        )
+        warnings.warn(msg, FutureWarning)
+
+    if scaling is None and old_present:
+        scaling = ScalingOptions(**scaling_options)
 
     return scaling
-

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from optimagic.optimization.history_tools import get_history_arrays
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.optimization.history_tools import get_history_arrays
 
 
 @pytest.fixture()

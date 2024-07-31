@@ -8,6 +8,7 @@ import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
 from estimagic.estimation_table import (
     _apply_number_format,
+    _center_align_integers_and_non_numeric_strings,
     _check_order_of_model_names,
     _convert_frame_to_string_series,
     _create_group_to_col_position,
@@ -23,7 +24,6 @@ from estimagic.estimation_table import (
     estimation_table,
     render_html,
     render_latex,
-    _center_align_integers_and_non_numeric_strings,
 )
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase

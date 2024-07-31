@@ -1,10 +1,10 @@
 from functools import partial
-from typing import NamedTuple, Callable, Literal
+from typing import Callable, Literal, NamedTuple
 
 import numpy as np
 
-from optimagic.parameters.space_conversion import InternalParams
 from optimagic.parameters.scaling import ScalingOptions
+from optimagic.parameters.space_conversion import InternalParams
 
 
 class ScaleConverter(NamedTuple):

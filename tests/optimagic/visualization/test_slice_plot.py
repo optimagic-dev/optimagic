@@ -1,18 +1,20 @@
 import numpy as np
 import pytest
+from optimagic.parameters.bounds import Bounds
 from optimagic.visualization.slice_plot import slice_plot
 
 
 @pytest.fixture()
 def fixed_inputs():
     params = {"alpha": 0, "beta": 0, "gamma": 0, "delta": 0}
-    lower_bounds = {name: -5 for name in params}
-    upper_bounds = {name: i + 2 for i, name in enumerate(params)}
+    bounds = Bounds(
+        lower={name: -5 for name in params},
+        upper={name: i + 2 for i, name in enumerate(params)},
+    )
 
     out = {
         "params": params,
-        "lower_bounds": lower_bounds,
-        "upper_bounds": upper_bounds,
+        "bounds": bounds,
     }
     return out
 

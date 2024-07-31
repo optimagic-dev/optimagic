@@ -198,8 +198,8 @@ html_title = "optimagic"
 html_theme_options = {
     "sidebar_hide_name": True,
     "navigation_with_keys": True,
-    "light_logo": "images/estimagic_logo.svg",
-    "dark_logo": "images/estimagic_logo_dark_mode.svg",
+    "light_logo": "images/optimagic_logo.svg",
+    "dark_logo": "images/optimagic_logo_dark_mode.svg",
     "light_css_variables": {
         "color-brand-primary": "#f04f43",
         "color-brand-content": "#f04f43",

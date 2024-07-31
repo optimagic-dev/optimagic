@@ -10,9 +10,10 @@ import sys
 
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
 from optimagic.optimization.optimize import minimize
-from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 
 LOCAL_ALGORITHMS = {
     key: value
@@ -54,8 +55,9 @@ def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
     res = minimize(
         fun=sos,
         params=np.array([3, 2, -3]),
-        lower_bounds=np.array([1, -np.inf, -np.inf]),
-        upper_bounds=np.array([np.inf, np.inf, -1]),
+        bounds=Bounds(
+            lower=np.array([1, -np.inf, -np.inf]), upper=np.array([np.inf, np.inf, -1])
+        ),
         algorithm=algorithm,
         collect_history=True,
         skip_checks=True,
@@ -77,8 +79,7 @@ def test_global_algorithms_on_sum_of_squares(algorithm):
     res = minimize(
         fun=sos,
         params=np.array([0.35, 0.35]),
-        lower_bounds=np.array([0.2, -0.5]),
-        upper_bounds=np.array([1, 0.5]),
+        bounds=Bounds(lower=np.array([0.2, -0.5]), upper=np.array([1, 0.5])),
         algorithm=algorithm,
         collect_history=False,
         skip_checks=True,

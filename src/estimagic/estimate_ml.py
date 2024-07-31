@@ -5,9 +5,21 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.exceptions import InvalidFunctionError, NotAvailableError
+from optimagic.optimization.optimize import maximize
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.conversion import Converter, get_converter
+from optimagic.parameters.space_conversion import InternalParams
+from optimagic.shared.check_option_dicts import (
+    check_numdiff_options,
+    check_optimization_options,
+)
+from optimagic.utilities import get_rng, to_pickle
+
 from estimagic.ml_covs import (
     cov_cluster_robust,
     cov_hessian,
@@ -27,16 +39,6 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.optimization.optimize import maximize
-from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
-from optimagic.parameters.conversion import Converter, get_converter
-from optimagic.parameters.space_conversion import InternalParams
-from optimagic.shared.check_option_dicts import (
-    check_numdiff_options,
-    check_optimization_options,
-)
-from optimagic.utilities import get_rng, to_pickle
 
 
 def estimate_ml(
@@ -44,8 +46,7 @@ def estimate_ml(
     params,
     optimize_options,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
+    bounds=None,
     constraints=None,
     logging=False,
     log_options=None,
@@ -56,6 +57,9 @@ def estimate_ml(
     hessian=None,
     hessian_kwargs=None,
     design_info=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Do a maximum likelihood (ml) estimation.
 
@@ -85,11 +89,13 @@ def estimate_ml(
             you signal that ``params`` are already the optimal parameters and no
             numerical optimization is needed. If you pass a str as optimize_options it
             is used as the ``algorithm`` option.
-        lower_bounds (pytree): A pytree with the same structure as params with lower
-            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
-            bound.
-        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
-            no upper bound.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
         constraints (list, dict): List with constraint dictionaries or single dict.
             See :ref:`constraints`.
         logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
@@ -133,8 +139,21 @@ def estimate_ml(
 
     """
     # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+
+    # ==================================================================================
     # Check and process inputs
     # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
+
     is_optimized = optimize_options is False
 
     if not is_optimized:
@@ -169,8 +188,7 @@ def estimate_ml(
             fun=loglike,
             fun_kwargs=loglike_kwargs,
             params=params,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
+            bounds=bounds,
             constraints=constraints,
             logging=logging,
             log_options=log_options,
@@ -219,8 +237,7 @@ def estimate_ml(
     converter, internal_estimates = get_converter(
         params=estimates,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=loglike_eval,
         primary_key="contributions",
         scaling=False,
@@ -246,8 +263,10 @@ def estimate_ml(
         jac_res = first_derivative(
             func=func,
             params=internal_estimates.values,
-            lower_bounds=internal_estimates.lower_bounds,
-            upper_bounds=internal_estimates.upper_bounds,
+            bounds=Bounds(
+                lower=internal_estimates.lower_bounds,
+                upper=internal_estimates.upper_bounds,
+            ),
             **numdiff_options,
         )
 
@@ -289,8 +308,10 @@ def estimate_ml(
         hess_res = second_derivative(
             func=func,
             params=internal_estimates.values,
-            lower_bounds=internal_estimates.lower_bounds,
-            upper_bounds=internal_estimates.upper_bounds,
+            bounds=Bounds(
+                lower=internal_estimates.lower_bounds,
+                upper=internal_estimates.upper_bounds,
+            ),
             **numdiff_options,
         )
         int_hess = hess_res["derivative"]

@@ -1,38 +1,35 @@
+from optimagic.decorators import deprecated
+from optimagic.utilities import (
+    calculate_trustregion_initial_radius as _calculate_trustregion_initial_radius,
+)
 from optimagic.utilities import (
     chol_params_to_lower_triangular_matrix as _chol_params_to_lower_triangular_matrix,
 )
-from optimagic.utilities import cov_params_to_matrix as _cov_params_to_matrix
 from optimagic.utilities import cov_matrix_to_params as _cov_matrix_to_params
+from optimagic.utilities import (
+    cov_matrix_to_sdcorr_params as _cov_matrix_to_sdcorr_params,
+)
+from optimagic.utilities import cov_params_to_matrix as _cov_params_to_matrix
+from optimagic.utilities import cov_to_sds_and_corr as _cov_to_sds_and_corr
+from optimagic.utilities import (
+    dimension_to_number_of_triangular_elements as _dimension_to_number_of_triangular_elements,  # noqa: E501
+)
+from optimagic.utilities import get_rng as _get_rng
+from optimagic.utilities import hash_array as _hash_array
+from optimagic.utilities import isscalar as _isscalar
+from optimagic.utilities import (
+    number_of_triangular_elements_to_dimension as _number_of_triangular_elements_to_dimension,  # noqa: E501
+)
+from optimagic.utilities import propose_alternatives as _propose_alternatives
+from optimagic.utilities import read_pickle as _read_pickle
+from optimagic.utilities import robust_cholesky as _robust_cholesky
+from optimagic.utilities import robust_inverse as _robust_inverse
+from optimagic.utilities import sdcorr_params_to_matrix as _sdcorr_params_to_matrix
 from optimagic.utilities import (
     sdcorr_params_to_sds_and_corr as _sdcorr_params_to_sds_and_corr,
 )
 from optimagic.utilities import sds_and_corr_to_cov as _sds_and_corr_to_cov
-from optimagic.utilities import cov_to_sds_and_corr as _cov_to_sds_and_corr
-from optimagic.utilities import sdcorr_params_to_matrix as _sdcorr_params_to_matrix
-from optimagic.utilities import (
-    cov_matrix_to_sdcorr_params as _cov_matrix_to_sdcorr_params,
-)
-from optimagic.utilities import (
-    number_of_triangular_elements_to_dimension as _number_of_triangular_elements_to_dimension,  # noqa: E501
-)
-from optimagic.utilities import (
-    dimension_to_number_of_triangular_elements as _dimension_to_number_of_triangular_elements,  # noqa: E501
-)
-from optimagic.utilities import propose_alternatives as _propose_alternatives
-from optimagic.utilities import robust_cholesky as _robust_cholesky
-from optimagic.utilities import robust_inverse as _robust_inverse
-from optimagic.utilities import hash_array as _hash_array
-from optimagic.utilities import (
-    calculate_trustregion_initial_radius as _calculate_trustregion_initial_radius,
-)
 from optimagic.utilities import to_pickle as _to_pickle
-from optimagic.utilities import read_pickle as _read_pickle
-from optimagic.utilities import isscalar as _isscalar
-from optimagic.utilities import get_rng as _get_rng
-
-
-from optimagic.decorators import deprecated
-
 
 MSG = (
     "estimagic.utilities.{name} has been deprecated in version 0.5.0. Use optimagic."

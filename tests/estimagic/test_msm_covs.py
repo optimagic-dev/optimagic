@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.msm_covs import cov_optimal, cov_robust
-from optimagic.utilities import get_rng
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.utilities import get_rng
 from pandas.testing import assert_frame_equal
 
 rng = get_rng(seed=1234)

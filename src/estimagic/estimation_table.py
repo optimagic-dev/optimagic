@@ -3,11 +3,10 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from warnings import warn
-from optimagic.shared.compat import pd_df_map
 
 import numpy as np
 import pandas as pd
-
+from optimagic.shared.compat import pd_df_map
 
 suppress_performance_warnings = np.testing.suppress_warnings()
 suppress_performance_warnings.filter(category=pd.errors.PerformanceWarning)

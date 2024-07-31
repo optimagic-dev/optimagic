@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.derivatives import (
     Evals,
     _consolidate_one_step_derivatives,
@@ -26,7 +27,7 @@ from optimagic.examples.numdiff_functions import (
     logit_loglikeobs,
     logit_loglikeobs_jacobian,
 )
-from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
 
@@ -47,14 +48,18 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
 
+    bounds = Bounds(
+        lower=np.full(fix["params_np"].shape, -np.inf),
+        upper=np.full(fix["params_np"].shape, np.inf),
+    )
+
     calculated = first_derivative(
         func=func,
         method=method,
         params=fix["params_np"],
         n_steps=1,
         base_steps=None,
-        lower_bounds=np.full(fix["params_np"].shape, -np.inf),
-        upper_bounds=np.full(fix["params_np"].shape, np.inf),
+        bounds=bounds,
         min_steps=1e-8,
         step_ratio=2.0,
         f0=func(fix["params_np"]),
