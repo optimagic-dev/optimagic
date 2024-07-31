@@ -4,10 +4,12 @@ import numpy as np
 import pytest
 from optimagic.optimization.optimize import minimize
 from optimagic.visualization.history_plots import criterion_plot, params_plot
+from optimagic.parameters.bounds import Bounds
 
 
 @pytest.fixture()
 def minimize_result():
+    bounds = Bounds(soft_lower=np.full(5, -1), soft_upper=np.full(5, 6))
     out = {}
     for multistart in [True, False]:
         res = []
@@ -16,8 +18,7 @@ def minimize_result():
                 fun=lambda x: x @ x,
                 params=np.arange(5),
                 algorithm=algorithm,
-                soft_lower_bounds=np.full(5, -1),
-                soft_upper_bounds=np.full(5, 6),
+                bounds=bounds,
                 multistart=multistart,
                 multistart_options={
                     "n_samples": 1000,
@@ -94,13 +95,13 @@ def test_criterion_plot_wrong_results():
 
 
 def test_criterion_plot_different_input_types():
+    bounds = Bounds(soft_lower=np.full(5, -1), soft_upper=np.full(5, 6))
     # logged result
     minimize(
         fun=lambda x: x @ x,
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
-        soft_lower_bounds=np.full(5, -1),
-        soft_upper_bounds=np.full(5, 6),
+        bounds=bounds,
         multistart=True,
         multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
         log_options={"fast_logging": True},
@@ -111,8 +112,7 @@ def test_criterion_plot_different_input_types():
         fun=lambda x: x @ x,
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
-        soft_lower_bounds=np.full(5, -1),
-        soft_upper_bounds=np.full(5, 6),
+        bounds=bounds,
         multistart=True,
         multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
     )

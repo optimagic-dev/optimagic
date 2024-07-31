@@ -19,6 +19,7 @@ from functools import partial
 
 import numpy as np
 from optimagic.config import IS_NUMBA_INSTALLED
+from optimagic.parameters.bounds import Bounds
 
 if IS_NUMBA_INSTALLED:
     from numba import njit
@@ -4953,7 +4954,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": None,
         "start_criterion": 3.0935,
         "solution_criterion": 0,
-        "lower_bounds": np.concatenate([np.zeros(50), 1e-6 * np.ones(50)]),
+        "bounds": Bounds(lower=np.concatenate([np.zeros(50), 1e-6 * np.ones(50)])),
     },
     "chemrctb": {
         "fun": chemrctb,
@@ -4961,7 +4962,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": solution_x_chemrctb,
         "start_criterion": 1.446513,
         "solution_criterion": 1.404424e-3,
-        "lower_bounds": 1e-6 * np.ones(100),
+        "bounds": Bounds(lower=1e-6 * np.ones(100)),
     },
     "chnrsbne": {
         "fun": chnrsbne,
@@ -4997,7 +4998,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": [*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
         "start_criterion": 285,
         "solution_criterion": 0,
-        "lower_bounds": np.zeros(110),
+        "bounds": Bounds(lower=np.zeros(110)),
     },
     "eigenb": {
         "fun": partial(
@@ -5255,8 +5256,10 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": solution_x_qr3d,
         "start_criterion": 1.2,
         "solution_criterion": 0,
-        "lower_bounds": [-np.inf] * 25
-        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
+        "bounds": Bounds(
+            lower=[-np.inf] * 25
+            + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
+        ),
     },
     "qr3dbd": {
         "fun": partial(qr3dbd, m=5),
@@ -5264,8 +5267,10 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": solution_x_qr3dbd,
         "start_criterion": 1.2,
         "solution_criterion": 0,
-        "lower_bounds": [-np.inf] * 25
-        + [0 if i == j else -np.inf for i in range(5) for j in range(5)],
+        "bounds": Bounds(
+            lower=[-np.inf] * 25
+            + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
+        ),
     },
     "spmsqrt": {
         "fun": spmsqrt,
@@ -5287,8 +5292,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": solution_x_semicon2,
         "start_criterion": 2.025037e4,
         "solution_criterion": 0,
-        "lower_bounds": -5 * np.ones(100),
-        "upper_bounds": 0.2 * 700 * np.ones(100),
+        "bounds": Bounds(lower=-5 * np.ones(100), upper=0.2 * 700 * np.ones(100)),
     },
     "vardimne": {
         "fun": vardimne,

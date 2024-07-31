@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 from optimagic.parameters.tree_conversion import get_tree_converter
 from numpy.testing import assert_array_equal as aae
+from optimagic.parameters.bounds import Bounds
 
 
 @pytest.fixture()
@@ -31,10 +32,12 @@ FUNC_EVALS = [
 
 @pytest.mark.parametrize("func_eval", FUNC_EVALS)
 def test_tree_converter_primary_key_is_value(params, upper_bounds, func_eval):
+    bounds = Bounds(
+        upper=upper_bounds,
+    )
     converter, flat_params = get_tree_converter(
         params=params,
-        lower_bounds=None,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=func_eval,
         derivative_eval=params,
         primary_key="value",
@@ -73,8 +76,7 @@ def test_tree_conversion_fast_path(primary_entry):
 
     converter, flat_params = get_tree_converter(
         params=np.arange(3),
-        lower_bounds=None,
-        upper_bounds=None,
+        bounds=None,
         func_eval=func_eval,
         derivative_eval=derivative_eval,
         primary_key=primary_entry,

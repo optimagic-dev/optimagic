@@ -1,3 +1,17 @@
+"""Public functions for optimization.
+
+This module defines the public functions `maximize` and `minimize` that will be called
+by users.
+
+Internally, `maximize` and `minimize` just call `create_optimization_problem` with
+all arguments and add the `direction`. In `create_optimization_problem`, the user input
+is consolidated and converted to stricter types.  The resulting `OptimizationProblem`
+is then passed to `_optimize` which handles the optimization logic.
+
+`_optimize` processes the optimization problem and performs the actual optimization.
+
+"""
+
 import functools
 import warnings
 from pathlib import Path
@@ -6,8 +20,6 @@ from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.exceptions import (
     InvalidFunctionError,
     InvalidKwargsError,
-    MissingInputError,
-    AliasError,
 )
 from optimagic.logging.create_tables import (
     make_optimization_iteration_table,
@@ -16,11 +28,9 @@ from optimagic.logging.create_tables import (
 )
 from optimagic.logging.load_database import load_database
 from optimagic.logging.write_to_database import append_row
-from optimagic.optimization.check_arguments import check_optimize_kwargs
 from optimagic.optimization.error_penalty import get_error_penalty_function
 from optimagic.optimization.get_algorithm import (
     get_final_algorithm,
-    process_user_algorithm,
 )
 from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
@@ -28,22 +38,22 @@ from optimagic.optimization.internal_criterion_template import (
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.process_multistart_sample import process_multistart_sample
 from optimagic.optimization.process_results import process_internal_optimizer_result
-from optimagic.optimization.tiktak import WEIGHT_FUNCTIONS, run_multistart_optimization
+from optimagic.optimization.multistart import (
+    WEIGHT_FUNCTIONS,
+    run_multistart_optimization,
+)
 from optimagic.parameters.conversion import (
     aggregate_func_output_to_value,
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.shared.process_user_function import (
-    process_func_of_params,
-    get_kwargs_from_args,
+
+from optimagic.parameters.bounds import Bounds
+from optimagic.optimization.create_optimization_problem import (
+    create_optimization_problem,
+    OptimizationProblem,
 )
-from optimagic.optimization.scipy_aliases import (
-    map_method_to_algorithm,
-    split_fun_and_jac,
-)
-from optimagic import deprecations
-from optimagic.deprecations import replace_and_warn_about_deprecated_algo_options
+from optimagic.optimization.optimize_result import OptimizeResult
 
 
 def maximize(
@@ -51,12 +61,9 @@ def maximize(
     params=None,
     algorithm=None,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
-    fun_kwargs=None,
+    bounds=None,
     constraints=None,
+    fun_kwargs=None,
     algo_options=None,
     jac=None,
     jac_kwargs=None,
@@ -91,17 +98,31 @@ def maximize(
     derivative_kwargs=None,
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
 ):
-    """Maximize criterion using algorithm subject to constraints."""
-    return _optimize(
+    """Maximize fun using algorithm subject to constraints.
+
+    TODO: Write docstring after enhancement proposals are implemented.
+
+    Args:
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
+
+    """
+    problem = create_optimization_problem(
         direction="maximize",
         fun=fun,
         params=params,
+        bounds=bounds,
         algorithm=algorithm,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
         fun_kwargs=fun_kwargs,
         constraints=constraints,
         algo_options=algo_options,
@@ -138,7 +159,13 @@ def maximize(
         derivative_kwargs=derivative_kwargs,
         criterion_and_derivative=criterion_and_derivative,
         criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
     )
+
+    return _optimize(problem)
 
 
 def minimize(
@@ -146,11 +173,7 @@ def minimize(
     params=None,
     algorithm=None,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
-    fun_kwargs=None,
+    bounds=None,
     constraints=None,
     algo_options=None,
     jac=None,
@@ -186,18 +209,33 @@ def minimize(
     derivative_kwargs=None,
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
+    fun_kwargs=None,
 ):
-    """Minimize criterion using algorithm subject to constraints."""
+    """Minimize criterion using algorithm subject to constraints.
 
-    return _optimize(
+    TODO: Write docstring after enhancement proposals are implemented.
+
+    Args:
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
+
+    """
+
+    problem = create_optimization_problem(
         direction="minimize",
         fun=fun,
         params=params,
         algorithm=algorithm,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
+        bounds=bounds,
         fun_kwargs=fun_kwargs,
         constraints=constraints,
         algo_options=algo_options,
@@ -234,349 +272,40 @@ def minimize(
         derivative_kwargs=derivative_kwargs,
         criterion_and_derivative=criterion_and_derivative,
         criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
     )
+    return _optimize(problem)
 
 
-def _optimize(
-    direction,
-    fun,
-    params,
-    algorithm,
-    *,
-    lower_bounds,
-    upper_bounds,
-    soft_lower_bounds,
-    soft_upper_bounds,
-    fun_kwargs,
-    constraints,
-    algo_options,
-    jac,
-    jac_kwargs,
-    fun_and_jac,
-    fun_and_jac_kwargs,
-    numdiff_options,
-    logging,
-    log_options,
-    error_handling,
-    error_penalty,
-    scaling,
-    scaling_options,
-    multistart,
-    multistart_options,
-    collect_history,
-    skip_checks,
-    # scipy aliases
-    x0,
-    method,
-    args,
-    # scipy arguments that are not yet supported
-    hess,
-    hessp,
-    callback,
-    # scipy arguments that will never be supported
-    options,
-    tol,
-    # deprecated arguments
-    criterion,
-    criterion_kwargs,
-    derivative,
-    derivative_kwargs,
-    criterion_and_derivative,
-    criterion_and_derivative_kwargs,
-):
-    """Minimize or maximize criterion using algorithm subject to constraints.
-
-    Arguments are the same as in maximize and minimize, with an additional direction
-    argument. Direction is a string that can take the values "maximize" and "minimize".
-
-    Returns are the same as in maximize and minimize.
-
-    """
-    # ==================================================================================
-    # error handling needed as long as fun is an optional argument (i.e. until
-    # criterion is fully removed).
-    # ==================================================================================
-
-    if fun is None and criterion is None:
-        msg = (
-            "Missing objective function. Please provide an objective function as the "
-            "first positional argument or as the keyword argument `fun`."
-        )
-        raise MissingInputError(msg)
-
-    if params is None and x0 is None:
-        msg = (
-            "Missing start parameters. Please provide start parameters as the second "
-            "positional argument or as the keyword argument `params`."
-        )
-        raise MissingInputError(msg)
-
-    if algorithm is None and method is None:
-        msg = (
-            "Missing algorithm. Please provide an algorithm as the third positional "
-            "argument or as the keyword argument `algorithm`."
-        )
-        raise MissingInputError(msg)
-
-    # ==================================================================================
-    # deprecations
-    # ==================================================================================
-
-    if criterion is not None:
-        deprecations.throw_criterion_future_warning()
-        fun = criterion if fun is None else fun
-
-    if criterion_kwargs is not None:
-        deprecations.throw_criterion_kwargs_future_warning()
-        fun_kwargs = criterion_kwargs if fun_kwargs is None else fun_kwargs
-
-    if derivative is not None:
-        deprecations.throw_derivative_future_warning()
-        jac = derivative if jac is None else jac
-
-    if derivative_kwargs is not None:
-        deprecations.throw_derivative_kwargs_future_warning()
-        jac_kwargs = derivative_kwargs if jac_kwargs is None else jac_kwargs
-
-    if criterion_and_derivative is not None:
-        deprecations.throw_criterion_and_derivative_future_warning()
-        fun_and_jac = criterion_and_derivative if fun_and_jac is None else fun_and_jac
-
-    if criterion_and_derivative_kwargs is not None:
-        deprecations.throw_criterion_and_derivative_kwargs_future_warning()
-        fun_and_jac_kwargs = (
-            criterion_and_derivative_kwargs
-            if fun_and_jac_kwargs is None
-            else fun_and_jac_kwargs
-        )
-
-    algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
-
-    # ==================================================================================
-    # handle scipy aliases
-    # ==================================================================================
-
-    if x0 is not None:
-        if params is not None:
-            msg = (
-                "x0 is an alias for params (for better compatibility with scipy). "
-                "Do not use both x0 and params."
-            )
-            raise AliasError(msg)
-        else:
-            params = x0
-
-    if method is not None:
-        if algorithm is not None:
-            msg = (
-                "method is an alias for algorithm to select the scipy optimizers under "
-                "their original name. Do not use both method and algorithm."
-            )
-            raise AliasError(msg)
-        else:
-            algorithm = map_method_to_algorithm(method)
-
-    if args is not None:
-        if (
-            fun_kwargs is not None
-            or jac_kwargs is not None
-            or fun_and_jac_kwargs is not None
-        ):
-            msg = (
-                "args is an alternative to fun_kwargs, jac_kwargs and "
-                "fun_and_jac_kwargs that optimagic supports for compatibility "
-                "with scipy. Do not use args in conjunction with any of the other "
-                "arguments."
-            )
-            raise AliasError(msg)
-        else:
-            kwargs = get_kwargs_from_args(args, fun, offset=1)
-            fun_kwargs, jac_kwargs, fun_and_jac_kwargs = kwargs, kwargs, kwargs
-
-    # jac is not an alias but we need to handle the case where `jac=True`, i.e. fun is
-    # actually fun_and_jac. This is not recommended in optimagic because then optimizers
-    # cannot evaluate fun in isolation but we can easily support it for compatibility.
-    if jac is True:
-        jac = None
-        if fun_and_jac is None:
-            fun_and_jac = fun
-            fun = split_fun_and_jac(fun_and_jac, target="fun")
-
-    # ==================================================================================
-    # Handle scipy arguments that are not yet implemented
-    # ==================================================================================
-
-    if hess is not None:
-        msg = (
-            "The hess argument is not yet supported in optimagic. Creat an issue on "
-            "https://github.com/OpenSourceEconomics/optimagic/ if you have urgent need "
-            "for this feature."
-        )
-        raise NotImplementedError(msg)
-
-    if hessp is not None:
-        msg = (
-            "The hessp argument is not yet supported in optimagic. Creat an issue on "
-            "https://github.com/OpenSourceEconomics/optimagic/ if you have urgent need "
-            "for this feature."
-        )
-        raise NotImplementedError(msg)
-
-    if callback is not None:
-        msg = (
-            "The callback argument is not yet supported in optimagic. Creat an issue "
-            "on https://github.com/OpenSourceEconomics/optimagic/ if you have urgent "
-            "need for this feature."
-        )
-        raise NotImplementedError(msg)
-
-    # ==================================================================================
-    # Handle scipy arguments that will never be supported
-    # ==================================================================================
-
-    if options is not None:
-        # TODO: Add link to a how-to guide or tutorial for this
-        msg = (
-            "The options argument is not supported in optimagic. Please use the "
-            "algo_options argument instead."
-        )
-        raise NotImplementedError(msg)
-
-    if tol is not None:
-        # TODO: Add link to a how-to guide or tutorial for this
-        msg = (
-            "The tol argument is not supported in optimagic. Please use "
-            "algo_options or configured algorithms instead to set convergence criteria "
-            "for your optimizer."
-        )
-        raise NotImplementedError(msg)
-
-    # ==================================================================================
-    # Set default values and check options
-    # ==================================================================================
-    fun_kwargs = _setdefault(fun_kwargs, {})
-    constraints = _setdefault(constraints, [])
-    algo_options = _setdefault(algo_options, {})
-    jac_kwargs = _setdefault(jac_kwargs, {})
-    fun_and_jac_kwargs = _setdefault(fun_and_jac_kwargs, {})
-    numdiff_options = _setdefault(numdiff_options, {})
-    log_options = _setdefault(log_options, {})
-    scaling_options = _setdefault(scaling_options, {})
-    error_penalty = _setdefault(error_penalty, {})
-    multistart_options = _setdefault(multistart_options, {})
-    if logging:
-        logging = Path(logging)
-
-    if not skip_checks:
-        check_optimize_kwargs(
-            direction=direction,
-            criterion=fun,
-            criterion_kwargs=fun_kwargs,
-            params=params,
-            algorithm=algorithm,
-            constraints=constraints,
-            algo_options=algo_options,
-            derivative=jac,
-            derivative_kwargs=jac_kwargs,
-            criterion_and_derivative=fun_and_jac,
-            criterion_and_derivative_kwargs=fun_and_jac_kwargs,
-            numdiff_options=numdiff_options,
-            logging=logging,
-            log_options=log_options,
-            error_handling=error_handling,
-            error_penalty=error_penalty,
-            scaling=scaling,
-            scaling_options=scaling_options,
-            multistart=multistart,
-            multistart_options=multistart_options,
-        )
-    # ==================================================================================
-    # Get the algorithm info
-    # ==================================================================================
-    raw_algo, algo_info = process_user_algorithm(algorithm)
-
-    algo_kwargs = set(algo_info.arguments)
-
-    if algo_info.primary_criterion_entry == "root_contributions":
-        if direction == "maximize":
-            msg = (
-                "Optimizers that exploit a least squares structure like {} can only be "
-                "used for minimization."
-            )
-            raise ValueError(msg.format(algo_info.name))
-
+def _optimize(problem: OptimizationProblem) -> OptimizeResult:
+    """Solve an optimization problem."""
     # ==================================================================================
     # Split constraints into nonlinear and reparametrization parts
     # ==================================================================================
+    constraints = problem.constraints
     if isinstance(constraints, dict):
         constraints = [constraints]
 
     nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
 
+    algo_kwargs = set(problem.algo_info.arguments)
     if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
         raise ValueError(
-            f"Algorithm {algo_info.name} does not support nonlinear constraints."
+            f"Algorithm {problem.algo_info.name} does not support nonlinear "
+            "constraints."
         )
 
     # the following constraints will be handled via reparametrization
     constraints = [c for c in constraints if c["type"] != "nonlinear"]
 
     # ==================================================================================
-    # prepare logging
-    # ==================================================================================
-    if logging:
-        problem_data = {
-            "direction": direction,
-            # "criterion"-criterion,
-            "criterion_kwargs": fun_kwargs,
-            "algorithm": algorithm,
-            "constraints": constraints,
-            "algo_options": algo_options,
-            # "derivative"-derivative,
-            "derivative_kwargs": jac_kwargs,
-            # "criterion_and_derivative"-criterion_and_derivative,
-            "criterion_and_derivative_kwargs": fun_and_jac_kwargs,
-            "numdiff_options": numdiff_options,
-            "log_options": log_options,
-            "error_handling": error_handling,
-            "error_penalty": error_penalty,
-            "params": params,
-        }
-
-    # ==================================================================================
-    # partial the kwargs into corresponding functions
-    # ==================================================================================
-    fun = process_func_of_params(
-        func=fun,
-        kwargs=fun_kwargs,
-        name="criterion",
-        skip_checks=skip_checks,
-    )
-    if isinstance(jac, dict):
-        jac = jac.get(algo_info.primary_criterion_entry)
-    if jac is not None:
-        jac = process_func_of_params(
-            func=jac,
-            kwargs=jac_kwargs,
-            name="derivative",
-            skip_checks=skip_checks,
-        )
-    if isinstance(fun_and_jac, dict):
-        fun_and_jac = fun_and_jac.get(algo_info.primary_criterion_entry)
-
-    if fun_and_jac is not None:
-        fun_and_jac = process_func_of_params(
-            func=fun_and_jac,
-            kwargs=fun_and_jac_kwargs,
-            name="criterion_and_derivative",
-            skip_checks=skip_checks,
-        )
-
-    # ==================================================================================
     # Do first evaluation of user provided functions
     # ==================================================================================
     try:
-        first_crit_eval = fun(params)
+        first_crit_eval = problem.fun(problem.params)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
@@ -584,27 +313,27 @@ def _optimize(
         raise InvalidFunctionError(msg) from e
 
     # do first derivative evaluation (if given)
-    if jac is not None:
+    if problem.jac is not None:
         try:
-            first_deriv_eval = jac(params)
+            first_deriv_eval = problem.jac(problem.params)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
             msg = "Error while evaluating derivative at start params."
             raise InvalidFunctionError(msg) from e
 
-    if fun_and_jac is not None:
+    if problem.fun_and_jac is not None:
         try:
-            first_crit_and_deriv_eval = fun_and_jac(params)
+            first_crit_and_deriv_eval = problem.fun_and_jac(problem.params)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
             msg = "Error while evaluating criterion_and_derivative at start params."
             raise InvalidFunctionError(msg) from e
 
-    if jac is not None:
+    if problem.jac is not None:
         used_deriv = first_deriv_eval
-    elif fun_and_jac is not None:
+    elif problem.fun_and_jac is not None:
         used_deriv = first_crit_and_deriv_eval[1]
     else:
         used_deriv = None
@@ -613,26 +342,33 @@ def _optimize(
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
-        params=params,
+        params=problem.params,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=problem.bounds,
         func_eval=first_crit_eval,
-        primary_key=algo_info.primary_criterion_entry,
-        scaling=scaling,
-        scaling_options=scaling_options,
+        primary_key=problem.algo_info.primary_criterion_entry,
+        scaling=problem.scaling,
+        scaling_options=problem.scaling_options,
         derivative_eval=used_deriv,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
-        add_soft_bounds=multistart,
+        add_soft_bounds=problem.multistart,
     )
 
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
-    if logging:
-        problem_data["free_mask"] = internal_params.free_mask
-        database = _create_and_initialize_database(logging, log_options, problem_data)
+    if problem.logging:
+        # TODO: We want to remove the optimization_problem table completely but we
+        # probably do need to store the start parameters in the database because it is
+        # used by the log reader.
+        problem_data = {
+            "direction": problem.direction,
+            "params": problem.params,
+        }
+        database = _create_and_initialize_database(
+            logging=problem.logging,
+            log_options=problem.log_options,
+            problem_data=problem_data,
+        )
     else:
         database = None
 
@@ -640,35 +376,35 @@ def _optimize(
     # Do some things that require internal parameters or bounds
     # ==================================================================================
 
-    if converter.has_transforming_constraints and multistart:
+    if converter.has_transforming_constraints and problem.multistart:
         raise NotImplementedError(
             "multistart optimizations are not yet compatible with transforming "
             "constraints."
         )
 
     numdiff_options = _fill_numdiff_options_with_defaults(
-        numdiff_options=numdiff_options,
+        numdiff_options=problem.numdiff_options,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
     )
 
     # get error penalty function
     error_penalty_func = get_error_penalty_function(
-        error_handling=error_handling,
+        error_handling=problem.error_handling,
         start_x=internal_params.values,
         start_criterion=converter.func_to_internal(first_crit_eval),
-        error_penalty=error_penalty,
-        primary_key=algo_info.primary_criterion_entry,
-        direction=direction,
+        error_penalty=problem.error_penalty,
+        primary_key=problem.algo_info.primary_criterion_entry,
+        direction=problem.direction,
     )
 
     # process nonlinear constraints:
     internal_constraints = process_nonlinear_constraints(
         nonlinear_constraints=nonlinear_constraints,
-        params=params,
+        params=problem.params,
         converter=converter,
         numdiff_options=numdiff_options,
-        skip_checks=skip_checks,
+        skip_checks=problem.skip_checks,
     )
 
     x = internal_params.values
@@ -676,31 +412,31 @@ def _optimize(
     # get the internal algorithm
     # ==================================================================================
     internal_algorithm = get_final_algorithm(
-        raw_algorithm=raw_algo,
-        algo_info=algo_info,
+        raw_algorithm=problem.algorithm,
+        algo_info=problem.algo_info,
         valid_kwargs=algo_kwargs,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
         nonlinear_constraints=internal_constraints,
-        algo_options=algo_options,
-        logging=logging,
+        algo_options=problem.algo_options,
+        logging=problem.logging,
         database=database,
-        collect_history=collect_history,
+        collect_history=problem.collect_history,
     )
     # ==================================================================================
     # partial arguments into the internal_criterion_and_derivative_template
     # ==================================================================================
     to_partial = {
-        "direction": direction,
-        "criterion": fun,
+        "direction": problem.direction,
+        "criterion": problem.fun,
         "converter": converter,
-        "derivative": jac,
-        "criterion_and_derivative": fun_and_jac,
+        "derivative": problem.jac,
+        "criterion_and_derivative": problem.fun_and_jac,
         "numdiff_options": numdiff_options,
-        "logging": logging,
+        "logging": problem.logging,
         "database": database,
-        "algo_info": algo_info,
-        "error_handling": error_handling,
+        "algo_info": problem.algo_info,
+        "error_handling": problem.error_handling,
         "error_penalty_func": error_penalty_func,
     }
 
@@ -720,35 +456,35 @@ def _optimize(
     # ==================================================================================
     # Do actual optimization
     # ==================================================================================
-    if not multistart:
+    if not problem.multistart:
         steps = [{"type": "optimization", "name": "optimization"}]
 
         step_ids = log_scheduled_steps_and_get_ids(
             steps=steps,
-            logging=logging,
+            logging=problem.logging,
             database=database,
         )
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
         multistart_options = _fill_multistart_options_with_defaults(
-            options=multistart_options,
-            params=params,
+            options=problem.multistart_options,
+            params=problem.params,
             x=x,
             params_to_internal=converter.params_to_internal,
         )
 
         raw_res = run_multistart_optimization(
             local_algorithm=internal_algorithm,
-            primary_key=algo_info.primary_criterion_entry,
+            primary_key=problem.algo_info.primary_criterion_entry,
             problem_functions=problem_functions,
             x=x,
             lower_sampling_bounds=internal_params.soft_lower_bounds,
             upper_sampling_bounds=internal_params.soft_upper_bounds,
             options=multistart_options,
-            logging=logging,
+            logging=problem.logging,
             database=database,
-            error_handling=error_handling,
+            error_handling=problem.error_handling,
         )
 
     # ==================================================================================
@@ -757,23 +493,23 @@ def _optimize(
 
     _scalar_start_criterion = aggregate_func_output_to_value(
         converter.func_to_internal(first_crit_eval),
-        algo_info.primary_criterion_entry,
+        problem.algo_info.primary_criterion_entry,
     )
 
     fixed_result_kwargs = {
         "start_fun": _scalar_start_criterion,
-        "start_params": params,
-        "algorithm": algo_info.name,
-        "direction": direction,
+        "start_params": problem.params,
+        "algorithm": problem.algo_info.name,
+        "direction": problem.direction,
         "n_free": internal_params.free_mask.sum(),
     }
 
     res = process_internal_optimizer_result(
         raw_res,
         converter=converter,
-        primary_key=algo_info.primary_criterion_entry,
+        primary_key=problem.algo_info.primary_criterion_entry,
         fixed_kwargs=fixed_result_kwargs,
-        skip_checks=skip_checks,
+        skip_checks=problem.skip_checks,
     )
 
     return res
@@ -863,8 +599,7 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     # only define the ones that deviate from the normal defaults
     default_numdiff_options = {
         "method": "forward",
-        "lower_bounds": lower_bounds,
-        "upper_bounds": upper_bounds,
+        "bounds": Bounds(lower=lower_bounds, upper=upper_bounds),
         "error_handling": default_error_handling,
         "return_info": False,
     }

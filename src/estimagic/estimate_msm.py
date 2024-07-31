@@ -46,6 +46,8 @@ from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
 from optimagic.utilities import get_rng, to_pickle
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
 
 
 def estimate_msm(
@@ -55,8 +57,7 @@ def estimate_msm(
     params,
     optimize_options,
     *,
-    lower_bounds=None,
-    upper_bounds=None,
+    bounds=None,
     constraints=None,
     logging=False,
     log_options=None,
@@ -65,6 +66,9 @@ def estimate_msm(
     numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
+    # deprecated
+    lower_bounds=None,
+    upper_bounds=None,
 ):
     """Do a method of simulated moments or indirect inference estimation.
 
@@ -101,11 +105,13 @@ def estimate_msm(
             ``optimize_options`` you signal that ``params`` are already
             the optimal parameters and no numerical optimization is needed. If you pass
             a str as optimize_options it is used as the ``algorithm`` option.
-        lower_bounds (pytree): A pytree with the same structure as params with lower
-            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
-            bound.
-        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
-            no upper bound.
+        bounds: Lower and upper bounds on the parameters. The most general and preferred
+            way to specify bounds is an `optimagic.Bounds` object that collects lower,
+            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            sampling based optimizers but are not enforced during optimization. Each
+            bound type mirrors the structure of params. Check our how-to guide on bounds
+            for examples. If params is a flat numpy array, you can also provide bounds
+            via any format that is supported by scipy.optimize.minimize.
         simulate_moments_kwargs (dict): Additional keyword arguments for
             ``simulate_moments``.
         weights (str): One of "diagonal" (default), "identity" or "optimal".
@@ -148,8 +154,19 @@ def estimate_msm(
 
     """
     # ==================================================================================
+    # handle deprecations
+    # ==================================================================================
+
+    bounds = replace_and_warn_about_deprecated_bounds(
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        bounds=bounds,
+    )
+    # ==================================================================================
     # Check and process inputs
     # ==================================================================================
+
+    bounds = pre_process_bounds(bounds)
 
     if weights not in ["diagonal", "optimal", "identity"]:
         raise NotImplementedError("Custom weighting matrices are not yet implemented.")
@@ -213,8 +230,7 @@ def estimate_msm(
         )
 
         opt_res = minimize(
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
+            bounds=bounds,
             constraints=constraints,
             logging=logging,
             log_options=log_options,
@@ -269,8 +285,7 @@ def estimate_msm(
     converter, internal_estimates = get_converter(
         params=estimates,
         constraints=constraints,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=func_eval,
         primary_key="contributions",
         scaling=False,
@@ -296,8 +311,10 @@ def estimate_msm(
         int_jac = first_derivative(
             func=func,
             params=internal_estimates.values,
-            lower_bounds=internal_estimates.lower_bounds,
-            upper_bounds=internal_estimates.upper_bounds,
+            bounds=Bounds(
+                lower=internal_estimates.lower_bounds,
+                upper=internal_estimates.upper_bounds,
+            ),
             **numdiff_options,
         )["derivative"]
 

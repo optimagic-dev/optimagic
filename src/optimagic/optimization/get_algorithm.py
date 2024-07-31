@@ -26,7 +26,6 @@ def process_user_algorithm(algorithm):
     Returns:
         callable: the raw internal algorithm
         AlgoInfo: Attributes of the algorithm
-        set: The free arguments of the algorithm.
 
     """
     if isinstance(algorithm, str):

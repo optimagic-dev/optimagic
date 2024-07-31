@@ -14,6 +14,7 @@ from optimagic.visualization.convergence_plot import convergence_plot
 from optimagic.visualization.history_plots import criterion_plot, params_plot
 from optimagic.visualization.profile_plot import profile_plot
 from optimagic.visualization.slice_plot import slice_plot
+from optimagic.parameters.bounds import Bounds
 
 try:
     from ._version import version as __version__
@@ -43,5 +44,6 @@ __all__ = [
     "check_constraints",
     "OptimizeLogReader",
     "OptimizeResult",
+    "Bounds",
     "__version__",
 ]

@@ -7,6 +7,7 @@ from optimagic import maximize, minimize
 from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.parameters.bounds import Bounds
 
 NLC_ALGORITHMS = [
     name
@@ -89,8 +90,7 @@ def nlc_2d_example():
         "criterion": criterion,
         "params": np.array([0, np.sqrt(2)]),
         "derivative": derivative,
-        "lower_bounds": np.zeros(2),
-        "upper_bounds": 2 * np.ones(2),
+        "bounds": Bounds(lower=np.zeros(2), upper=2 * np.ones(2)),
     }
 
     kwargs = {
@@ -128,8 +128,7 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
 
     solution_x, kwargs = nlc_2d_example
     if algorithm == "scipy_cobyla":
-        del kwargs[constr_type]["lower_bounds"]
-        del kwargs[constr_type]["upper_bounds"]
+        del kwargs[constr_type]["bounds"]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -160,13 +159,11 @@ def test_documentation_example(algorithm):
         pytest.skip(reason="Slow.")
 
     kwargs = {
-        "lower_bounds": np.zeros(6),
-        "upper_bounds": 2 * np.ones(6),
+        "bounds": Bounds(lower=np.zeros(6), upper=2 * np.ones(6)),
     }
 
     if algorithm == "scipy_cobyla":
-        del kwargs["lower_bounds"]
-        del kwargs["upper_bounds"]
+        del kwargs["bounds"]
 
     minimize(
         fun=criterion,

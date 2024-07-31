@@ -1,4 +1,5 @@
 import warnings
+from optimagic.parameters.bounds import Bounds
 
 
 def throw_criterion_future_warning():
@@ -95,3 +96,35 @@ def replace_and_warn_about_deprecated_algo_options(algo_options):
         out[replacements[k]] = algo_options[k]
 
     return out
+
+
+def replace_and_warn_about_deprecated_bounds(
+    lower_bounds,
+    upper_bounds,
+    bounds,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
+):
+    old_bounds = {
+        "lower": lower_bounds,
+        "upper": upper_bounds,
+        "soft_lower": soft_lower_bounds,
+        "soft_upper": soft_upper_bounds,
+    }
+
+    old_present = [k for k, v in old_bounds.items() if v is not None]
+
+    if old_present:
+        substring = ", ".join(f"{b}_bound" for b in old_present)
+        substring = substring.replace(", ", ", and ", -1)
+        msg = (
+            f"Specifying bounds via the arguments {substring} is "
+            "deprecated and will be removed in optimagic version 0.6.0 and later. "
+            "Please use the `bounds` argument instead."
+        )
+        warnings.warn(msg, FutureWarning)
+
+    if bounds is None and old_present:
+        bounds = Bounds(**old_bounds)
+
+    return bounds

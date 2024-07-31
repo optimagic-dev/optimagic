@@ -13,15 +13,12 @@ from optimagic.parameters.tree_conversion import get_tree_converter
 def get_converter(
     params,
     constraints,
-    lower_bounds,
-    upper_bounds,
+    bounds,
     func_eval,
     primary_key,
     scaling,
     scaling_options,
     derivative_eval=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
     add_soft_bounds=False,
 ):
     """Get a converter between external and internal params and internal params.
@@ -74,20 +71,16 @@ def get_converter(
     if fast_path:
         return _get_fast_path_converter(
             params=params,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
+            bounds=bounds,
             primary_key=primary_key,
         )
 
     tree_converter, internal_params = get_tree_converter(
         params=params,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
+        bounds=bounds,
         func_eval=func_eval,
         derivative_eval=derivative_eval,
         primary_key=primary_key,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=add_soft_bounds,
     )
 
@@ -216,7 +209,7 @@ def _fast_params_from_internal(x, return_type="tree"):
         return x
 
 
-def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
+def _get_fast_path_converter(params, bounds, primary_key):
     def _fast_derivative_to_internal(
         derivative_eval,
         x,  # noqa: ARG001
@@ -233,15 +226,15 @@ def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
         has_transforming_constraints=False,
     )
 
-    if lower_bounds is None:
+    if bounds is None or bounds.lower is None:
         lower_bounds = np.full(len(params), -np.inf)
     else:
-        lower_bounds = lower_bounds.astype(float)
+        lower_bounds = bounds.lower.astype(float)
 
-    if upper_bounds is None:
+    if bounds is None or bounds.upper is None:
         upper_bounds = np.full(len(params), np.inf)
     else:
-        upper_bounds = upper_bounds.astype(float)
+        upper_bounds = bounds.upper.astype(float)
 
     internal_params = InternalParams(
         values=params.astype(float),

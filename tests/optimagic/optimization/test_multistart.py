@@ -3,253 +3,183 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from optimagic.decorators import switch_sign
-from optimagic.examples.criterion_functions import (
-    sos_dict_criterion,
-    sos_scalar_criterion,
+from optimagic.optimization.multistart import (
+    _linear_weights,
+    _tiktak_weights,
+    draw_exploration_sample,
+    get_batched_optimization_sample,
+    run_explorations,
+    update_convergence_state,
 )
-from optimagic.logging.load_database import load_database
-from optimagic.logging.read_from_database import read_new_rows
-from optimagic.logging.read_log import read_steps_table
-from optimagic.optimization.optimize import maximize, minimize
-from optimagic.optimization.optimize_result import OptimizeResult
 from numpy.testing import assert_array_almost_equal as aaae
-
-criteria = [sos_scalar_criterion, sos_dict_criterion]
 
 
 @pytest.fixture()
 def params():
-    params = pd.DataFrame()
-    params["value"] = np.arange(4)
-    params["soft_lower_bound"] = [-5] * 4
-    params["soft_upper_bound"] = [10] * 4
-    return params
+    df = pd.DataFrame(index=["a", "b", "c"])
+    df["value"] = [0, 1, 2.0]
+    df["soft_lower_bound"] = [-1, 0, np.nan]
+    df["upper_bound"] = [2, 2, np.nan]
+    return df
 
 
-test_cases = product(criteria, ["maximize", "minimize"])
+@pytest.fixture()
+def constraints():
+    return [{"type": "fixed", "loc": "c", "value": 2}]
 
 
-@pytest.mark.parametrize("criterion, direction", test_cases)
-def test_multistart_minimize_with_sum_of_squares_at_defaults(
-    criterion, direction, params
-):
-    if direction == "minimize":
-        res = minimize(
-            fun=criterion,
-            params=params,
-            algorithm="scipy_lbfgsb",
-            multistart=True,
-        )
-    else:
-        res = maximize(
-            fun=switch_sign(sos_dict_criterion),
-            params=params,
-            algorithm="scipy_lbfgsb",
-            multistart=True,
-        )
-
-    assert hasattr(res, "multistart_info")
-    ms_info = res.multistart_info
-    assert len(ms_info["exploration_sample"]) == 40
-    assert len(ms_info["exploration_results"]) == 40
-    assert all(isinstance(entry, float) for entry in ms_info["exploration_results"])
-    assert all(isinstance(entry, OptimizeResult) for entry in ms_info["local_optima"])
-    assert all(isinstance(entry, pd.DataFrame) for entry in ms_info["start_parameters"])
-    assert np.allclose(res.fun, 0)
-    aaae(res.params["value"], np.zeros(4))
+dim = 2
+distributions = ["uniform", "triangular"]
+rules = ["sobol", "halton", "latin_hypercube", "random"]
+lower = [np.zeros(dim), np.ones(dim) * 0.5, -np.ones(dim)]
+upper = [np.ones(dim), np.ones(dim) * 0.75, np.ones(dim) * 2]
+test_cases = list(product(distributions, rules, lower, upper))
 
 
-def test_multistart_with_existing_sample(params):
-    sample = pd.DataFrame(
-        np.arange(20).reshape(5, 4) / 10,
-        columns=params.index,
-    )
-    options = {"sample": sample}
+@pytest.mark.parametrize("dist, rule, lower, upper", test_cases)
+def test_draw_exploration_sample(dist, rule, lower, upper):
+    results = []
 
-    res = minimize(
-        fun=sos_dict_criterion,
-        params=params,
-        algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
-    )
-
-    calc_sample = _params_list_to_aray(res.multistart_info["exploration_sample"])
-    aaae(calc_sample, options["sample"])
-
-
-def test_convergence_via_max_discoveries_works(params):
-    options = {
-        "convergence_relative_params_tolerance": np.inf,
-        "convergence_max_discoveries": 2,
-    }
-
-    res = maximize(
-        fun=switch_sign(sos_dict_criterion),
-        params=params,
-        algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
-    )
-
-    assert len(res.multistart_info["local_optima"]) == 2
-
-
-def test_steps_are_logged_as_skipped_if_convergence(params):
-    options = {
-        "convergence_relative_params_tolerance": np.inf,
-        "convergence_max_discoveries": 2,
-    }
-
-    minimize(
-        fun=sos_dict_criterion,
-        params=params,
-        algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
-        logging="logging.db",
-    )
-
-    steps_table = read_steps_table("logging.db")
-    expected_status = ["complete", "complete", "complete", "skipped", "skipped"]
-    assert steps_table["status"].tolist() == expected_status
-
-
-def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
-    options = {"convergence_max_discoveries": np.inf}
-
-    minimize(
-        fun=sos_dict_criterion,
-        params=params,
-        algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
-        logging="logging.db",
-    )
-
-    database = load_database(path_or_database="logging.db")
-    iterations, _ = read_new_rows(
-        database=database,
-        table_name="optimization_iterations",
-        last_retrieved=0,
-        return_type="dict_of_lists",
-    )
-
-    present_steps = set(iterations["step"])
-
-    assert present_steps == {1, 2, 3, 4, 5}
-
-
-def test_with_non_transforming_constraints(params):
-    res = minimize(
-        fun=sos_dict_criterion,
-        params=params,
-        constraints=[{"loc": [0, 1], "type": "fixed", "value": [0, 1]}],
-        algorithm="scipy_lbfgsb",
-        multistart=True,
-    )
-
-    aaae(res.params["value"].to_numpy(), np.array([0, 1, 0, 0]))
-
-
-def test_error_is_raised_with_transforming_constraints(params):
-    with pytest.raises(NotImplementedError):
-        minimize(
-            fun=sos_dict_criterion,
-            params=params,
-            constraints=[{"loc": [0, 1], "type": "probability"}],
-            algorithm="scipy_lbfgsb",
-            multistart=True,
+    for _ in range(2):
+        results.append(
+            draw_exploration_sample(
+                x=np.ones_like(lower) * 0.5,
+                lower=lower,
+                upper=upper,
+                n_samples=3,
+                sampling_distribution=dist,
+                sampling_method=rule,
+                seed=1234,
+            )
         )
 
-
-def _params_list_to_aray(params_list):
-    data = [params["value"].tolist() for params in params_list]
-    return np.array(data)
-
-
-def test_multistart_with_numpy_params():
-    res = minimize(
-        fun=lambda params: params @ params,
-        params=np.arange(5),
-        algorithm="scipy_lbfgsb",
-        soft_lower_bounds=np.full(5, -10),
-        soft_upper_bounds=np.full(5, 10),
-        multistart=True,
-    )
-
-    aaae(res.params, np.zeros(5))
+    aaae(results[0], results[1])
+    calculated = results[0]
+    assert calculated.shape == (3, 2)
 
 
-def test_with_invalid_bounds():
-    with pytest.raises(ValueError):
-        minimize(
-            fun=lambda x: x @ x,
-            params=np.arange(5),
-            algorithm="scipy_neldermead",
-            multistart=True,
-        )
-
-
-def test_with_scaling():
-    def _crit(params):
-        x = params - np.arange(len(params))
-        return x @ x
-
-    res = minimize(
-        fun=_crit,
-        params=np.full(5, 10),
-        soft_lower_bounds=np.full(5, -1),
-        soft_upper_bounds=np.full(5, 11),
-        algorithm="scipy_lbfgsb",
-        multistart=True,
-    )
-
-    aaae(res.params, np.arange(5))
-
-
-def test_with_ackley():
-    def ackley(x):
-        out = (
-            -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2)))
-            - np.exp(np.mean(np.cos(2 * np.pi * x)))
-            + 20
-            + np.exp(1)
-        )
+def test_run_explorations():
+    def _dummy(x, **kwargs):
+        assert set(kwargs) == {
+            "task",
+            "algo_info",
+            "error_handling",
+            "fixed_log_data",
+        }
+        if x.sum() == 5:
+            out = np.nan
+        else:
+            out = -x.sum()
         return out
 
-    dim = 5
+    calculated = run_explorations(
+        func=_dummy,
+        primary_key="value",
+        sample=np.arange(6).reshape(3, 2),
+        batch_evaluator="joblib",
+        n_cores=1,
+        step_id=0,
+        error_handling="raise",
+    )
 
-    kwargs = {
-        "fun": ackley,
-        "params": np.full(dim, -10),
-        "lower_bounds": np.full(dim, -32),
-        "upper_bounds": np.full(dim, 32),
-        "algo_options": {"stopping.maxfun": 1000},
+    exp_values = np.array([-9, -1])
+    exp_sample = np.array([[4, 5], [0, 1]])
+
+    aaae(calculated["sorted_values"], exp_values)
+    aaae(calculated["sorted_sample"], exp_sample)
+
+
+def test_get_batched_optimization_sample():
+    calculated = get_batched_optimization_sample(
+        sorted_sample=np.arange(12).reshape(6, 2),
+        n_optimizations=5,
+        batch_size=4,
+    )
+    expected = [[[0, 1], [2, 3], [4, 5], [6, 7]], [[8, 9]]]
+
+    assert len(calculated[0]) == 4
+    assert len(calculated[1]) == 1
+    assert len(calculated) == 2
+
+    for calc_batch, exp_batch in zip(calculated, expected, strict=False):
+        assert isinstance(calc_batch, list)
+        for calc_entry, exp_entry in zip(calc_batch, exp_batch, strict=False):
+            assert isinstance(calc_entry, np.ndarray)
+            assert calc_entry.tolist() == exp_entry
+
+
+def test_linear_weights():
+    calculated = _linear_weights(5, 10, 0.4, 0.8)
+    expected = 0.6
+    assert np.allclose(calculated, expected)
+
+
+def test_tiktak_weights():
+    assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
+    assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
+
+
+@pytest.fixture()
+def current_state():
+    state = {
+        "best_x": np.ones(3),
+        "best_y": 5,
+        "best_res": None,
+        "x_history": [np.arange(3) - 1e-20, np.ones(3)],
+        "y_history": [6, 5],
+        "result_history": [],
+        "start_history": [],
     }
 
-    minimize(
-        **kwargs,
-        algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options={
-            "n_samples": 200,
-            "share_optimizations": 0.1,
-            "convergence_max_discoveries": 10,
-        },
+    return state
+
+
+@pytest.fixture()
+def starts():
+    return [np.zeros(3)]
+
+
+@pytest.fixture()
+def results():
+    return [{"solution_x": np.arange(3) + 1e-10, "solution_criterion": 4}]
+
+
+def test_update_state_converged(current_state, starts, results):
+    criteria = {
+        "xtol": 1e-3,
+        "max_discoveries": 2,
+    }
+
+    new_state, is_converged = update_convergence_state(
+        current_state=current_state,
+        starts=starts,
+        results=results,
+        convergence_criteria=criteria,
+        primary_key="value",
     )
 
+    aaae(new_state["best_x"], np.arange(3))
+    assert new_state["best_y"] == 4
+    assert new_state["y_history"] == [6, 5, 4]
+    assert new_state["result_history"][0]["solution_criterion"] == 4
+    aaae(new_state["start_history"][0], np.zeros(3))
+    assert new_state["best_res"].keys() == results[0].keys()
 
-def test_multistart_with_least_squares_optimizers():
-    est = minimize(
-        fun=sos_dict_criterion,
-        params=np.array([-1, 1.0]),
-        lower_bounds=np.full(2, -10.0),
-        upper_bounds=np.full(2, 10.0),
-        algorithm="scipy_ls_trf",
-        multistart=True,
-        multistart_options={"n_samples": 3, "share_optimizations": 1.0},
+    assert is_converged
+
+
+def test_update_state_not_converged(current_state, starts, results):
+    criteria = {
+        "xtol": 1e-3,
+        "max_discoveries": 5,
+    }
+
+    _, is_converged = update_convergence_state(
+        current_state=current_state,
+        starts=starts,
+        results=results,
+        convergence_criteria=criteria,
+        primary_key="value",
     )
 
-    aaae(est.params, np.zeros(2))
+    assert not is_converged
