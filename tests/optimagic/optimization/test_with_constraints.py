@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import statsmodels.api as sm
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.examples.criterion_functions import (
     rosenbrock_dict_criterion,
     rosenbrock_gradient,
@@ -27,7 +28,6 @@ from optimagic.examples.criterion_functions import (
 )
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.optimization.optimize import maximize, minimize
-from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.parameters.bounds import Bounds
 
 

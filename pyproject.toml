@@ -95,6 +95,8 @@ fix = true
 
 [tool.ruff.lint]
 select = [
+  # isort
+  "I",
   # pyflakes
   "F",
   # pycodestyle

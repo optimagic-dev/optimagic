@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from optimagic.optimizers._pounders.pounders_auxiliary import MainModel
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.optimizers._pounders._conjugate_gradient import (
     minimize_trust_cg,
 )
@@ -16,7 +16,7 @@ from optimagic.optimizers._pounders.bntr import (
 from optimagic.optimizers._pounders.gqtpar import (
     gqtpar,
 )
-from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.optimizers._pounders.pounders_auxiliary import MainModel
 
 # ======================================================================================
 # Subsolver BNTR

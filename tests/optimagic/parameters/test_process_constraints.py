@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import pytest
 from optimagic.exceptions import InvalidConstraintError
+from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.constraint_tools import check_constraints
 from optimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
-from optimagic.parameters.bounds import Bounds
 
 
 def test_replace_pairwise_equality_by_equality():

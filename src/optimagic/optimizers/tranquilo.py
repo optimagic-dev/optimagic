@@ -1,9 +1,10 @@
 from optimagic.config import IS_TRANQUILO_INSTALLED
 
-
 if IS_TRANQUILO_INSTALLED:
-    from tranquilo.tranquilo import _tranquilo
     from functools import partial
+
+    from tranquilo.tranquilo import _tranquilo
+
     from optimagic.decorators import mark_minimizer
 
     tranquilo = mark_minimizer(

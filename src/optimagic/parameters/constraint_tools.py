@@ -1,6 +1,6 @@
-from optimagic.parameters.conversion import get_converter
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.parameters.bounds import pre_process_bounds
+from optimagic.parameters.conversion import get_converter
 
 
 def count_free_params(

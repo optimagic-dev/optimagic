@@ -3,8 +3,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.bootstrap_ci import calculate_ci
-from estimagic.bootstrap_ci import check_inputs
+from estimagic.bootstrap_ci import calculate_ci, check_inputs
 from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 

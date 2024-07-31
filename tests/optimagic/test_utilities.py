@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.config import IS_JAX_INSTALLED
 from optimagic.utilities import (
     calculate_trustregion_initial_radius,
@@ -23,7 +24,6 @@ from optimagic.utilities import (
     sds_and_corr_to_cov,
     to_pickle,
 )
-from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_JAX_INSTALLED:
     import jax.numpy as jnp

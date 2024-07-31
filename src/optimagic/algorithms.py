@@ -1,16 +1,16 @@
 import inspect
 
 from optimagic.optimizers import (
-    pounders,
-    scipy_optimizers,
     bhhh,
-    neldermead,
     fides,
-    tao_optimizers,
-    nag_optimizers,
     ipopt,
-    pygmo_optimizers,
+    nag_optimizers,
+    neldermead,
     nlopt_optimizers,
+    pounders,
+    pygmo_optimizers,
+    scipy_optimizers,
+    tao_optimizers,
     tranquilo,
 )
 

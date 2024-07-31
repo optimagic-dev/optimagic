@@ -1,8 +1,8 @@
 import pandas as pd
+
 from optimagic.benchmarking.process_benchmark_results import (
     process_benchmark_results,
 )
-
 from optimagic.visualization.profile_plot import create_solution_times
 
 

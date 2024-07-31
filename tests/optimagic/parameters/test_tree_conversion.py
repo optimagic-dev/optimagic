@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from optimagic.parameters.tree_conversion import get_tree_converter
 from numpy.testing import assert_array_equal as aae
 from optimagic.parameters.bounds import Bounds
+from optimagic.parameters.tree_conversion import get_tree_converter
 
 
 @pytest.fixture()

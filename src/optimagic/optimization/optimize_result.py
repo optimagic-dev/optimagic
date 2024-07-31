@@ -1,13 +1,13 @@
+import warnings
 from dataclasses import dataclass, field
 from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
 
-from optimagic.utilities import to_pickle
 from optimagic.shared.compat import pd_df_map
-import warnings
 from optimagic.typing import PyTree
+from optimagic.utilities import to_pickle
 
 
 @dataclass

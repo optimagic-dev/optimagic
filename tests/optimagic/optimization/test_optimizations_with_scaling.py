@@ -5,9 +5,9 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.config import IS_PYBOBYQA_INSTALLED
 from optimagic.optimization.optimize import minimize
-from numpy.testing import assert_array_almost_equal as aaae
 
 ALGORITHMS = ["scipy_lbfgsb"]
 

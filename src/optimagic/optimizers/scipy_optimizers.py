@@ -43,13 +43,13 @@ from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
-    CONVERGENCE_GTOL_ABS,
-    CONVERGENCE_XTOL_ABS,
     CONVERGENCE_FTOL_REL,
+    CONVERGENCE_GTOL_ABS,
     CONVERGENCE_GTOL_REL,
-    CONVERGENCE_XTOL_REL,
     CONVERGENCE_SECOND_BEST_FTOL_ABS,
     CONVERGENCE_SECOND_BEST_XTOL_ABS,
+    CONVERGENCE_XTOL_ABS,
+    CONVERGENCE_XTOL_REL,
     LIMITED_MEMORY_STORAGE_LENGTH,
     MAX_LINE_SEARCH_STEPS,
     STOPPING_MAXFUN,

@@ -3,6 +3,7 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.decorators import switch_sign
 from optimagic.examples.criterion_functions import (
     sos_dict_criterion,
@@ -13,7 +14,6 @@ from optimagic.logging.read_from_database import read_new_rows
 from optimagic.logging.read_log import read_steps_table
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
-from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.parameters.bounds import Bounds
 
 criteria = [sos_scalar_criterion, sos_dict_criterion]

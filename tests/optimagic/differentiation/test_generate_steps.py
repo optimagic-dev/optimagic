@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.generate_steps import (
     _calculate_or_validate_base_steps,
     _fillna,
@@ -7,7 +8,6 @@ from optimagic.differentiation.generate_steps import (
     _set_unused_side_to_nan,
     generate_steps,
 )
-from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.parameters.bounds import Bounds
 
 

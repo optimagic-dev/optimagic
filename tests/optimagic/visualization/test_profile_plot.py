@@ -4,9 +4,9 @@ import pytest
 from optimagic import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.visualization.profile_plot import (
-    create_solution_times,
     _determine_alpha_grid,
     _find_switch_points,
+    create_solution_times,
     profile_plot,
 )
 

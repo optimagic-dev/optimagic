@@ -10,8 +10,8 @@ from optimagic.config import IS_NLOPT_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
-    CONVERGENCE_XTOL_ABS,
     CONVERGENCE_FTOL_REL,
+    CONVERGENCE_XTOL_ABS,
     CONVERGENCE_XTOL_REL,
     STOPPING_MAXFUN,
     STOPPING_MAXFUN_GLOBAL,

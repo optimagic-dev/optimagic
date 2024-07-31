@@ -18,6 +18,7 @@ Implementation is based on
 from functools import partial
 
 import numpy as np
+
 from optimagic.config import IS_NUMBA_INSTALLED
 from optimagic.parameters.bounds import Bounds
 

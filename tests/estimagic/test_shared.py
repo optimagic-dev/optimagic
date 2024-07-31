@@ -12,9 +12,9 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.utilities import get_rng
-from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import leaf_names, tree_equal
 
 

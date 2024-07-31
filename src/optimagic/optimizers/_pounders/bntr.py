@@ -4,6 +4,7 @@ from functools import reduce
 from typing import NamedTuple
 
 import numpy as np
+
 from optimagic.optimizers._pounders._conjugate_gradient import (
     minimize_trust_cg,
 )

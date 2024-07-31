@@ -2,13 +2,14 @@
 
 from collections import namedtuple
 from functools import partial
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 import yaml
+from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.batch_evaluators import joblib_batch_evaluator
-from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 from optimagic.optimizers._pounders.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
     create_initial_residual_model,
@@ -21,8 +22,7 @@ from optimagic.optimizers._pounders.pounders_auxiliary import (
     update_residual_model,
     update_residual_model_with_new_accepted_x,
 )
-from numpy.testing import assert_array_almost_equal as aaae
-from pathlib import Path
+from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 

@@ -2,6 +2,7 @@ import pickle
 
 import numpy as np
 import pytest
+from numpy.testing import assert_array_equal
 from optimagic.logging.create_tables import (
     make_optimization_iteration_table,
     make_optimization_problem_table,
@@ -14,7 +15,6 @@ from optimagic.logging.read_from_database import (
     read_table,
 )
 from optimagic.logging.write_to_database import append_row, update_row
-from numpy.testing import assert_array_equal
 
 
 @pytest.fixture()

@@ -1,14 +1,14 @@
-import pytest
 from itertools import product
-import numpy as np
 
+import numpy as np
+import pytest
 from optimagic import (
+    OptimizeResult,
     convergence_report,
+    get_benchmark_problems,
     rank_report,
     traceback_report,
 )
-from optimagic import OptimizeResult
-from optimagic import get_benchmark_problems
 
 
 @pytest.fixture

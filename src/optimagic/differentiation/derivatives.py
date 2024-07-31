@@ -11,14 +11,13 @@ from pybaum import tree_just_flatten as tree_leaves
 
 from optimagic import batch_evaluators
 from optimagic.config import DEFAULT_N_CORES
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation import finite_differences
 from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
-from optimagic.parameters.bounds import get_internal_bounds
+from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
-from optimagic.parameters.bounds import Bounds, pre_process_bounds
 
 
 class Evals(NamedTuple):

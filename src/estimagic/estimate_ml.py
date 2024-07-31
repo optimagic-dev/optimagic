@@ -5,9 +5,21 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-
+from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.exceptions import InvalidFunctionError, NotAvailableError
+from optimagic.optimization.optimize import maximize
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.conversion import Converter, get_converter
+from optimagic.parameters.space_conversion import InternalParams
+from optimagic.shared.check_option_dicts import (
+    check_numdiff_options,
+    check_optimization_options,
+)
+from optimagic.utilities import get_rng, to_pickle
+
 from estimagic.ml_covs import (
     cov_cluster_robust,
     cov_hessian,
@@ -27,18 +39,6 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.optimization.optimize import maximize
-from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
-from optimagic.parameters.conversion import Converter, get_converter
-from optimagic.parameters.space_conversion import InternalParams
-from optimagic.shared.check_option_dicts import (
-    check_numdiff_options,
-    check_optimization_options,
-)
-from optimagic.utilities import get_rng, to_pickle
-from optimagic.parameters.bounds import Bounds, pre_process_bounds
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 
 
 def estimate_ml(
