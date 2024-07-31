@@ -1,5 +1,5 @@
 import numpy as np
-from optimagic.options import ScalingOptions
+from optimagic.parameters.scaling import ScalingOptions
 import pytest
 from optimagic.parameters.conversion import (
     _is_fast_deriv_eval,

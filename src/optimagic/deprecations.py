@@ -60,16 +60,6 @@ def throw_criterion_and_derivative_kwargs_future_warning():
     warnings.warn(msg, FutureWarning)
 
 
-def throw_scaling_options_future_warning():
-    msg = (
-        "The `scaling_options` argument will be deprecated in favor of `scaling` in "
-        "optimagic version 0.6.0 and later. You can simply pass the scaling options to "
-        "`scaling` instead of `scaling_options`. Using `scaling_options` will become "
-        "an error in optimagic version 0.6.0 and later."
-    )
-    warnings.warn(msg, FutureWarning)
-
-
 def replace_and_warn_about_deprecated_algo_options(algo_options):
     if not isinstance(algo_options, dict):
         return algo_options
@@ -105,3 +95,48 @@ def replace_and_warn_about_deprecated_algo_options(algo_options):
         out[replacements[k]] = algo_options[k]
 
     return out
+
+
+def replace_and_warn_about_deprecated_scaling_options(scaling, scaling_options):
+    if scaling_options is not None:
+        pass
+
+    return scaling
+
+def _throw_scaling_options_future_warning():
+    msg = (
+        "The `scaling_options` argument will be deprecated in favor of `scaling` in "
+        "optimagic version 0.6.0 and later. You can simply pass the scaling options to "
+        "`scaling` instead of `scaling_options`. Using `scaling_options` will become "
+        "an error in optimagic version 0.6.0 and later."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def _consolidate_scaling_options(scaling, scaling_options):
+    """Consolidate scaling options."""
+    if isinstance(scaling, ScalingOptions) and scaling_options is not None:
+        msg = (
+            "You can not provide options through scaling and scaling_options. The "
+            "scaling_options argument is deprecated in favor of the scaling argument."
+            "You can pass options to the scaling argument directly using the "
+            "ScalingOptions class."
+        )
+        raise ValueError(msg)
+
+    if isinstance(scaling, bool):
+        if scaling and scaling_options is None:
+            scaling = ScalingOptions()
+        elif scaling:
+            try:
+                scaling = ScalingOptions(**scaling_options)
+            except TypeError as e:
+                msg = (
+                    "The scaling_options argument contains invalid keys, and is "
+                    "deprecated in favor of the scaling argument. You can pass options "
+                    "to the scaling argument directly using the ScalingOptions class."
+                )
+                raise ValueError(msg) from e
+
+    return scaling
+

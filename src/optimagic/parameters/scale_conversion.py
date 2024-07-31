@@ -4,7 +4,7 @@ from typing import NamedTuple, Callable, Literal
 import numpy as np
 
 from optimagic.parameters.space_conversion import InternalParams
-from optimagic.options import ScalingOptions
+from optimagic.parameters.scaling import ScalingOptions
 
 
 class ScaleConverter(NamedTuple):

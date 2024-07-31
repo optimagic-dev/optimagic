@@ -4,7 +4,7 @@ import itertools
 
 import numpy as np
 import pandas as pd
-from optimagic.options import ScalingOptions
+from optimagic.parameters.scaling import ScalingOptions
 import pytest
 from optimagic.config import IS_PYBOBYQA_INSTALLED
 from optimagic.optimization.optimize import minimize

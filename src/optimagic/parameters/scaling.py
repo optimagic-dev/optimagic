@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 
-@dataclass
+@dataclass(frozen=True)
 class ScalingOptions:
     method: Literal["start_values", "bound"] = "start_values"
     clipping_value: float = 0.1

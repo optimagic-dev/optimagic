@@ -2,7 +2,7 @@ import typing
 from pathlib import Path
 
 from optimagic.shared.check_option_dicts import check_numdiff_options
-from optimagic.options import ScalingOptions
+from optimagic.parameters.scaling import ScalingOptions
 
 
 def check_optimize_kwargs(**kwargs):

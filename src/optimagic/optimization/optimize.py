@@ -44,7 +44,7 @@ from optimagic.optimization.scipy_aliases import (
 )
 from optimagic import deprecations
 from optimagic.deprecations import replace_and_warn_about_deprecated_algo_options
-from optimagic.options import ScalingOptions
+from optimagic.parameters.scaling import ScalingOptions
 
 
 def maximize(
@@ -350,9 +350,6 @@ def _optimize(
             if fun_and_jac_kwargs is None
             else fun_and_jac_kwargs
         )
-
-    if scaling_options is not None:
-        deprecations.throw_scaling_options_future_warning()
 
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
@@ -879,34 +876,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 def _setdefault(candidate, default):
     out = default if candidate is None else candidate
     return out
-
-
-def _consolidate_scaling_options(scaling, scaling_options):
-    """Consolidate scaling options."""
-    if isinstance(scaling, ScalingOptions) and scaling_options is not None:
-        msg = (
-            "You can not provide options through scaling and scaling_options. The "
-            "scaling_options argument is deprecated in favor of the scaling argument."
-            "You can pass options to the scaling argument directly using the "
-            "ScalingOptions class."
-        )
-        raise ValueError(msg)
-
-    if isinstance(scaling, bool):
-        if scaling and scaling_options is None:
-            scaling = ScalingOptions()
-        elif scaling:
-            try:
-                scaling = ScalingOptions(**scaling_options)
-            except TypeError as e:
-                msg = (
-                    "The scaling_options argument contains invalid keys, and is "
-                    "deprecated in favor of the scaling argument. You can pass options "
-                    "to the scaling argument directly using the ScalingOptions class."
-                )
-                raise ValueError(msg) from e
-
-    return scaling
 
 
 def _fill_multistart_options_with_defaults(options, params, x, params_to_internal):
