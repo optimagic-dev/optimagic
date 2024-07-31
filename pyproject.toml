@@ -246,7 +246,7 @@ module = [
     "optimagic.optimization.optimize",
     "optimagic.optimization.process_multistart_sample",
     "optimagic.optimization.process_results",
-    "optimagic.optimization.tiktak",
+    "optimagic.optimization.multistart",
     "optimagic.optimization.scipy_aliases",
     "optimagic.optimization.create_optimization_problem",
 

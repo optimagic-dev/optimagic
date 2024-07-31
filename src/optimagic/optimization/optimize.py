@@ -37,7 +37,10 @@ from optimagic.optimization.internal_criterion_template import (
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.process_multistart_sample import process_multistart_sample
 from optimagic.optimization.process_results import process_internal_optimizer_result
-from optimagic.optimization.tiktak import WEIGHT_FUNCTIONS, run_multistart_optimization
+from optimagic.optimization.multistart import (
+    WEIGHT_FUNCTIONS,
+    run_multistart_optimization,
+)
 from optimagic.parameters.conversion import (
     aggregate_func_output_to_value,
     get_converter,

@@ -45,6 +45,8 @@ class OptimizationProblem:
     All user provided functions are partialled if corresponding `kwargs` dictionaries
     were provided.
 
+    # TODO: Document attributes after other todos are resolved.
+
     """
 
     fun: Callable[[PyTree], float | PyTree]
