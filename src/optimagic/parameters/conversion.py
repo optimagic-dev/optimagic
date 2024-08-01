@@ -260,7 +260,7 @@ def _is_fast_path(
     if not _is_fast_func_eval(func_eval, primary_key):
         return False
 
-    if scaling is None:
+    if scaling is not None:
         return False
 
     if not _is_fast_deriv_eval(derivative_eval, primary_key):
