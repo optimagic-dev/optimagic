@@ -13,7 +13,6 @@ from optimagic.exceptions import (
     AliasError,
     MissingInputError,
 )
-from optimagic.optimization.check_arguments import check_optimize_kwargs
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
 )
@@ -23,6 +22,7 @@ from optimagic.optimization.scipy_aliases import (
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
+from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
     process_func_of_params,
@@ -53,7 +53,7 @@ class OptimizationProblem:
     params: PyTree
     # TODO: algorithm will become an Algorithm object; algo_options and algo_info will
     # be removed and become part of Algorithm
-    algorithm: Callable
+    algorithm: Callable | str
     algo_options: dict[str, Any] | None
     algo_info: AlgoInfo
     bounds: Bounds | None
@@ -318,33 +318,6 @@ def create_optimization_problem(
         logging = Path(logging)
 
     # ==================================================================================
-    # Check types of arguments
-    # ==================================================================================
-    # TODO: This should probably be inlined
-
-    if not skip_checks:
-        check_optimize_kwargs(
-            direction=direction,
-            criterion=fun,
-            criterion_kwargs=fun_kwargs,
-            params=params,
-            algorithm=algorithm,
-            constraints=constraints,
-            algo_options=algo_options,
-            derivative=jac,
-            derivative_kwargs=jac_kwargs,
-            criterion_and_derivative=fun_and_jac,
-            criterion_and_derivative_kwargs=fun_and_jac_kwargs,
-            numdiff_options=numdiff_options,
-            logging=logging,
-            log_options=log_options,
-            error_handling=error_handling,
-            error_penalty=error_penalty,
-            scaling=scaling,
-            multistart=multistart,
-            multistart_options=multistart_options,
-        )
-    # ==================================================================================
     # Get the algorithm info
     # ==================================================================================
     raw_algo, algo_info = process_user_algorithm(algorithm)
@@ -385,6 +358,46 @@ def create_optimization_problem(
             name="criterion_and_derivative",
             skip_checks=skip_checks,
         )
+
+    # ==================================================================================
+    # Check types of arguments
+    # ==================================================================================
+
+    if not skip_checks:
+        argument_and_type = {
+            "fun": (fun, Callable),
+            "params": (params, PyTree),
+            "algorithm": (algorithm, Callable | str),
+            "algo_options": (algo_options, dict | None),
+            "algo_info": (algo_info, AlgoInfo),
+            "bounds": (bounds, Bounds | None),
+            "constraints": (constraints, list | dict),
+            "jac": (jac, Callable | None),
+            "fun_and_jac": (fun_and_jac, Callable | None),
+            "numdiff_options": (numdiff_options, dict | None),
+            "logging": (logging, bool | Path | None),
+            "log_options": (log_options, dict | None),
+            "error_handling": (error_handling, str),
+            "error_penalty": (error_penalty, dict | None),
+            "scaling": (scaling, ScalingOptions | None),
+            "multistart": (multistart, bool),
+            "multistart_options": (multistart_options, dict | None),
+            "collect_history": (collect_history, bool),
+            "skip_checks": (skip_checks, bool),
+            "direction": (direction, str),
+        }
+
+        for arg_name, (arg, arg_type) in argument_and_type.items():
+            if arg_type != Any and not isinstance(arg, arg_type):
+                raise ValueError(f"{arg_name} must be of type {arg_type}")
+
+        if direction not in ["minimize", "maximize"]:
+            raise ValueError("direction must be 'minimize' or 'maximize'")
+
+        if error_handling not in ["raise", "continue"]:
+            raise ValueError("error_handling must be 'raise' or 'continue'")
+
+        check_numdiff_options(numdiff_options, "optimization")
 
     # ==================================================================================
     # create the problem object
