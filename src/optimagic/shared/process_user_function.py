@@ -11,7 +11,7 @@ from optimagic.typing import (
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
-from optimagic.utilities import isscalar, propose_alternatives
+from optimagic.utilities import propose_alternatives
 
 
 def process_func_of_params(func, kwargs, name="your function", skip_checks=False):
@@ -146,16 +146,8 @@ def convert_output_to_scalar_function_value(raw):
         out = raw
     elif isinstance(raw, FunctionValue):
         out = ScalarFunctionValue(value=raw.value, info=raw.info)
-    elif isscalar(raw):
-        out = ScalarFunctionValue(value=raw)
     else:
-        raise InvalidFunctionError(
-            "scalar objective functions need to return a float, FunctionValue "
-            "or ScalarFunctionValue, not: {type(raw)}. If you meant to provide a "
-            "scalar objective function, make sure it returns one of the above. If "
-            "you meant to provide a least_squares or likelihood function, use "
-            "mark.least_squares or mark.likelihood."
-        )
+        out = ScalarFunctionValue(value=raw)
     return out
 
 

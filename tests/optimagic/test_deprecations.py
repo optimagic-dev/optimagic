@@ -31,7 +31,18 @@ from estimagic import (
     traceback_report,
     utilities,
 )
+from optimagic.deprecations import (
+    convert_dict_to_function_value,
+    infer_problem_type_from_dict_output,
+    is_dict_output,
+)
+from optimagic.mark import ProblemType
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0
@@ -509,3 +520,38 @@ def test_old_bounds_are_deprecated_in_slice_plot():
             lower_bounds=np.full(3, -1),
             upper_bounds=np.full(3, 2),
         )
+
+
+def test_is_dict_output():
+    assert is_dict_output({"value": 1})
+    assert not is_dict_output(1)
+
+
+def test_infer_problem_type_from_dict_output():
+    assert infer_problem_type_from_dict_output({"value": 1}) == ProblemType.SCALAR
+    assert (
+        infer_problem_type_from_dict_output({"value": 1, "root_contributions": 2})
+        == ProblemType.LEAST_SQUARES
+    )
+    assert (
+        infer_problem_type_from_dict_output({"value": 1, "contributions": 2})
+        == ProblemType.LIKELIHOOD
+    )
+
+
+def test_convert_value_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 1})
+    assert isinstance(got, ScalarFunctionValue)
+    assert got.value == 1
+
+
+def test_convert_root_contributions_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 5, "root_contributions": [1, 2]})
+    assert isinstance(got, LeastSquaresFunctionValue)
+    assert got.value == [1, 2]
+
+
+def test_convert_contributions_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 5, "contributions": [1, 4]})
+    assert isinstance(got, LikelihoodFunctionValue)
+    assert got.value == [1, 4]
