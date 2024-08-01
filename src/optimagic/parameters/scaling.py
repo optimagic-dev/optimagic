@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
+from typing_extensions import NotRequired
+
 from optimagic.exceptions import InvalidScalingOptionsError
 
 
@@ -12,9 +14,9 @@ class ScalingOptions:
 
 
 class ScalingOptionsDict(TypedDict):
-    method: Literal["start_values", "bounds"]
-    clipping_value: float
-    magnitude: float
+    method: NotRequired[Literal["start_values", "bounds"]]
+    clipping_value: NotRequired[float]
+    magnitude: NotRequired[float]
 
 
 def pre_process_scaling(

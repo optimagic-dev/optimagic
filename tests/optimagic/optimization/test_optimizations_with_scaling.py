@@ -25,46 +25,21 @@ def sos_gradient(params):
 
 
 SCALING_OPTIONS = [
-    {"method": "start_values"},
-    {"method": "bounds"},
+    ScalingOptions(method="start_values"),
+    ScalingOptions(method="bounds"),
 ]
 
 PARAMETRIZATION = list(itertools.product(ALGORITHMS, SCALING_OPTIONS))
 
 
-@pytest.mark.parametrize("algorithm, scaling_options", PARAMETRIZATION)
-def test_optimizations_with_scaling_via_dict_options(algorithm, scaling_options):
+@pytest.mark.parametrize("algorithm, scaling", PARAMETRIZATION)
+def test_optimizations_with_scaling(algorithm, scaling):
     params = pd.DataFrame()
     params["value"] = np.arange(5)
     params["lower_bound"] = [-1, 0, 0, 0, 0]
     params["upper_bound"] = np.full(5, 10)
 
     constraints = [{"loc": [3, 4], "type": "fixed"}]
-
-    res = minimize(
-        fun=sos_scalar_criterion,
-        params=params,
-        constraints=constraints,
-        algorithm=algorithm,
-        scaling=True,
-        scaling_options=scaling_options,
-        jac=sos_gradient,
-    )
-
-    expected_solution = np.array([0, 0, 0, 3, 4])
-    aaae(res.params["value"].to_numpy(), expected_solution)
-
-
-@pytest.mark.parametrize("algorithm, scaling_options", PARAMETRIZATION)
-def test_optimizations_with_scaling(algorithm, scaling_options):
-    params = pd.DataFrame()
-    params["value"] = np.arange(5)
-    params["lower_bound"] = [-1, 0, 0, 0, 0]
-    params["upper_bound"] = np.full(5, 10)
-
-    constraints = [{"loc": [3, 4], "type": "fixed"}]
-
-    scaling = ScalingOptions(**scaling_options)
 
     res = minimize(
         fun=sos_scalar_criterion,
