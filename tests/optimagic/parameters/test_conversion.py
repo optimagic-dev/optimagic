@@ -120,7 +120,7 @@ def fast_kwargs():
         "constraints": None,
         "func_eval": 3,
         "primary_key": "value",
-        "scaling": False,
+        "scaling": None,
         "derivative_eval": np.arange(3),
         "add_soft_bounds": False,
     }

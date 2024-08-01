@@ -509,3 +509,25 @@ def test_old_bounds_are_deprecated_in_slice_plot():
             lower_bounds=np.full(3, -1),
             upper_bounds=np.full(3, 2),
         )
+
+
+def test_old_scaling_options_are_deprecated_in_minimize():
+    msg = "Specifying scaling options via the argument `scaling_options` is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            scaling_options={"method": "start_values", "magnitude": 1},
+        )
+
+
+def test_old_scaling_options_are_deprecated_in_maximize():
+    msg = "Specifying scaling options via the argument `scaling_options` is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            scaling_options={"method": "start_values", "magnitude": 1},
+        )
