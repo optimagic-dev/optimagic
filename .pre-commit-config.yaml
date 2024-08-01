@@ -68,7 +68,7 @@ repos:
           - --blank
         exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.4
+    rev: v0.5.5
     hooks:
       # Run the linter.
       - id: ruff
@@ -107,8 +107,19 @@ repos:
           - --wrap
           - '88'
         files: (docs/.)
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+      - id: nbstripout
+        exclude: |
+          (?x)^(
+            docs/source/estimagic/tutorials/estimation_tables_overview.ipynb|
+            docs/source/estimagic/explanation/bootstrap_montecarlo_comparison.ipynb|
+          )$
+        args:
+          - --drop-empty-cells
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.0
+    rev: v1.11.1
     hooks:
       - id: mypy
         files: src|tests
