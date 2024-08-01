@@ -7,6 +7,7 @@ from optimagic.decorators import AlgoInfo
 from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
+    replace_and_warn_about_deprecated_scaling_options,
 )
 from optimagic.exceptions import (
     AliasError,
@@ -21,6 +22,7 @@ from optimagic.optimization.scipy_aliases import (
     split_fun_and_jac,
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
     process_func_of_params,
@@ -54,7 +56,7 @@ class OptimizationProblem:
     algorithm: Callable
     algo_options: dict[str, Any] | None
     algo_info: AlgoInfo
-    bounds: Bounds
+    bounds: Bounds | None
     # TODO: constraints will become list[Constraint] | None
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
@@ -68,10 +70,7 @@ class OptimizationProblem:
     # will be removed
     error_handling: Literal["raise", "continue"]
     error_penalty: dict[str, Any] | None
-    # TODO: scaling will become None | ScalingOptions and scaling_options will be
-    # removed
-    scaling: bool
-    scaling_options: dict[str, Any] | None
+    scaling: ScalingOptions | None
     # TODO: multistart will become None | MultistartOptions and multistart_options will
     # be removed
     multistart: bool
@@ -197,6 +196,10 @@ def create_optimization_problem(
         soft_upper_bounds=soft_upper_bounds,
     )
 
+    scaling = replace_and_warn_about_deprecated_scaling_options(
+        scaling, scaling_options
+    )
+
     # ==================================================================================
     # handle scipy aliases
     # ==================================================================================
@@ -248,6 +251,8 @@ def create_optimization_problem(
             fun = split_fun_and_jac(fun_and_jac, target="fun")
 
     bounds = pre_process_bounds(bounds)
+
+    scaling = pre_process_scaling(scaling)
 
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented
@@ -309,7 +314,6 @@ def create_optimization_problem(
     numdiff_options = {} if numdiff_options is None else numdiff_options
     log_options = {} if log_options is None else log_options
     error_penalty = {} if error_penalty is None else error_penalty
-    scaling_options = {} if scaling_options is None else scaling_options
     multistart_options = {} if multistart_options is None else multistart_options
     if logging:
         logging = Path(logging)
@@ -338,7 +342,6 @@ def create_optimization_problem(
             error_handling=error_handling,
             error_penalty=error_penalty,
             scaling=scaling,
-            scaling_options=scaling_options,
             multistart=multistart,
             multistart_options=multistart_options,
         )
@@ -404,7 +407,6 @@ def create_optimization_problem(
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,
-        scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
         collect_history=collect_history,

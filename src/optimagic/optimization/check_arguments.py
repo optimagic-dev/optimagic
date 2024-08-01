@@ -1,8 +1,8 @@
 import typing
 from pathlib import Path
 
-from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.parameters.scaling import ScalingOptions
+from optimagic.shared.check_option_dicts import check_numdiff_options
 
 
 def check_optimize_kwargs(**kwargs):
@@ -23,7 +23,7 @@ def check_optimize_kwargs(**kwargs):
         "error_handling": str,
         "error_penalty": dict,
         "cache_size": (int, float),
-        "scaling": (bool, ScalingOptions),
+        "scaling": (type(None), ScalingOptions),
         "multistart": bool,
         "multistart_options": dict,
     }

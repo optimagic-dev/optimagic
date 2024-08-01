@@ -74,7 +74,6 @@ def maximize(
     error_handling="raise",
     error_penalty=None,
     scaling=False,
-    scaling_options=None,
     multistart=False,
     multistart_options=None,
     collect_history=True,
@@ -101,6 +100,7 @@ def maximize(
     upper_bounds=None,
     soft_lower_bounds=None,
     soft_upper_bounds=None,
+    scaling_options=None,
 ):
     """Maximize fun using algorithm subject to constraints.
 
@@ -135,7 +135,6 @@ def maximize(
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,
-        scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
         collect_history=collect_history,
@@ -162,6 +161,7 @@ def maximize(
         upper_bounds=upper_bounds,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
+        scaling_options=scaling_options,
     )
     return _optimize(problem)
 
@@ -173,6 +173,7 @@ def minimize(
     *,
     bounds=None,
     constraints=None,
+    fun_kwargs=None,
     algo_options=None,
     jac=None,
     jac_kwargs=None,
@@ -184,7 +185,6 @@ def minimize(
     error_handling="raise",
     error_penalty=None,
     scaling=False,
-    scaling_options=None,
     multistart=False,
     multistart_options=None,
     collect_history=True,
@@ -211,7 +211,7 @@ def minimize(
     upper_bounds=None,
     soft_lower_bounds=None,
     soft_upper_bounds=None,
-    fun_kwargs=None,
+    scaling_options=None,
 ):
     """Minimize criterion using algorithm subject to constraints.
 
