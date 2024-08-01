@@ -53,8 +53,7 @@ res = om.minimize(
     fun=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
-    scaling=True,
-    scaling_options={"method": "start_values", "clipping_value": 0.1},
+    scaling=om.ScalingOptions(method="start_values", clipping_value=0.1),
 )
 ```
 
@@ -102,8 +101,7 @@ res = om.minimize(
     fun=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
-    scaling=True,
-    scaling_options={"method": "bounds", "clipping_value": 0.0},
+    scaling=om.ScalingOptions(method="bounds", clipping_value=0.0),
 )
 ```
 
@@ -137,8 +135,7 @@ res = om.minimize(
     fun=sphere,
     params=start_params,
     algorithm="scipy_lbfgsb",
-    scaling=True,
-    scaling_options={"method": "bounds", clipping_value: 0.0, "magnitude": 5},
+    scaling=om.ScalingOptions(method="bounds", clipping_value=0.0, magnitude=5),
 )
 ```
 
