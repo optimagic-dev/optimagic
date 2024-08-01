@@ -100,7 +100,6 @@ def create_optimization_problem(
     error_handling,
     error_penalty,
     scaling,
-    scaling_options,
     multistart,
     multistart_options,
     collect_history,
@@ -127,6 +126,7 @@ def create_optimization_problem(
     upper_bounds,
     soft_lower_bounds,
     soft_upper_bounds,
+    scaling_options,
 ):
     # ==================================================================================
     # error handling needed as long as fun is an optional argument (i.e. until
@@ -250,10 +250,6 @@ def create_optimization_problem(
             fun_and_jac = fun
             fun = split_fun_and_jac(fun_and_jac, target="fun")
 
-    bounds = pre_process_bounds(bounds)
-
-    scaling = pre_process_scaling(scaling)
-
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented
     # ==================================================================================
@@ -306,6 +302,9 @@ def create_optimization_problem(
     # ==================================================================================
     # Set default values and check options
     # ==================================================================================
+    bounds = pre_process_bounds(bounds)
+    scaling = pre_process_scaling(scaling)
+
     fun_kwargs = {} if fun_kwargs is None else fun_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options

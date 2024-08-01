@@ -1,7 +1,6 @@
 import warnings
 
 from optimagic.parameters.bounds import Bounds
-from optimagic.parameters.scaling import ScalingOptions
 
 
 def throw_criterion_future_warning():
@@ -144,6 +143,6 @@ def replace_and_warn_about_deprecated_scaling_options(scaling, scaling_options):
         warnings.warn(msg, FutureWarning)
 
     if scaling is None and old_present:
-        scaling = ScalingOptions(**scaling_options)
+        scaling = scaling_options
 
     return scaling

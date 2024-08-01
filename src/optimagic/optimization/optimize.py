@@ -247,7 +247,6 @@ def minimize(
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,
-        scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
         collect_history=collect_history,
@@ -274,6 +273,7 @@ def minimize(
         upper_bounds=upper_bounds,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
+        scaling_options=scaling_options,
     )
     return _optimize(problem)
 
