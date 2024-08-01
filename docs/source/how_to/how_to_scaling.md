@@ -156,8 +156,8 @@ exactly \[0, 1\] for all parameters.
 
 ### Default values
 
-Scaling is disabled by default. If enabled, but no `scaling_options` are provided, we
-use the `"start_values"` method with a `"clipping_value"` of 0.1. This is the default
-method because it can be used for all optimization problems and has low computational
-cost. We strongly recommend you read the above guidelines and choose the method that is
-most suitable for your problom.
+Scaling is disabled by default. By passing `scaling=True`, we enable scaling at the
+default values. We use the `"start_values"` method with a `"clipping_value"` of 0.1 and
+a magnitude of 1.0. This is the default method because it can be used for all
+optimization problems and has low computational cost. We strongly recommend you read the
+above guidelines and choose the method that is most suitable for your problem.
