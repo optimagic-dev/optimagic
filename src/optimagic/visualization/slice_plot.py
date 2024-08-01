@@ -117,7 +117,6 @@ def slice_plot(
         bounds=bounds,
         func_eval=func_eval,
         primary_key="value",
-        scaling=False,
     )
 
     n_params = len(internal_params.values)

@@ -7,7 +7,6 @@ from optimagic.decorators import AlgoInfo
 from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
-    replace_and_warn_about_deprecated_scaling_options,
 )
 from optimagic.exceptions import (
     AliasError,
@@ -186,6 +185,10 @@ def create_optimization_problem(
             else fun_and_jac_kwargs
         )
 
+    if scaling_options is not None:
+        deprecations.throw_scaling_options_future_warning()
+        scaling = scaling_options if scaling is None else scaling
+
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
     bounds = replace_and_warn_about_deprecated_bounds(
@@ -194,10 +197,6 @@ def create_optimization_problem(
         bounds=bounds,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
-    )
-
-    scaling = replace_and_warn_about_deprecated_scaling_options(
-        scaling, scaling_options
     )
 
     # ==================================================================================

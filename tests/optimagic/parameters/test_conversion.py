@@ -19,7 +19,6 @@ def test_get_converter_fast_case():
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
-        scaling=False,
     )
 
     aaae(internal.values, np.arange(3))
@@ -47,7 +46,6 @@ def test_get_converter_with_constraints_and_bounds():
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
-        scaling=False,
     )
 
     aaae(internal.values, np.arange(2))
@@ -100,7 +98,6 @@ def test_get_converter_with_trees():
         func_eval={"contributions": {"d": 1, "e": 2}},
         derivative_eval={"a": 0, "b": 2, "c": 4},
         primary_key="value",
-        scaling=False,
     )
 
     aaae(internal.values, np.arange(3))
@@ -151,7 +148,7 @@ SLOW = [
     ("constraints", [{}]),
     ("func_eval", np.array([1])),
     ("func_eval", {"a": 1}),
-    ("scaling", True),
+    ("scaling", ScalingOptions()),
     ("derivative_eval", {"bla": 3}),
     ("derivative_eval", np.arange(3).reshape(1, 3)),
     ("add_soft_bounds", True),

@@ -24,7 +24,7 @@ def get_scale_converter(
     Args:
         internal_params: NamedTuple of internal and possibly reparametrized but not yet
             scaled parameter values and bounds.
-        scaling: Scaling options. If False, no scaling is performed.
+        scaling: Scaling options. If None, no scaling is performed.
 
     Returns:
         ScaleConverter: NamedTuple with methods to convert between scaled and unscaled
@@ -46,7 +46,7 @@ def get_scale_converter(
 
     factor, offset = calculate_scaling_factor_and_offset(
         internal_params=internal_params,
-        scaling=scaling,
+        options=scaling,
     )
 
     _params_to_internal = partial(
@@ -110,22 +110,22 @@ def _fast_path_scale_converter() -> ScaleConverter:
 
 def calculate_scaling_factor_and_offset(
     internal_params: InternalParams,
-    scaling: ScalingOptions,
+    options: ScalingOptions,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64] | None]:
     x = internal_params.values
     lower_bounds = internal_params.lower_bounds
     upper_bounds = internal_params.upper_bounds
 
-    if scaling.method == "start_values":
-        raw_factor = np.clip(np.abs(x), scaling.clipping_value, np.inf)
+    if options.method == "start_values":
+        raw_factor = np.clip(np.abs(x), options.clipping_value, np.inf)
         scaling_offset = None
-    elif scaling.method == "bounds":
+    elif options.method == "bounds":
         raw_factor = upper_bounds - lower_bounds
         scaling_offset = lower_bounds
     else:
-        raise ValueError(f"Invalid scaling method: {scaling.method}")
+        raise ValueError(f"Invalid scaling method: {options.method}")
 
-    scaling_factor = raw_factor / scaling.magnitude
+    scaling_factor = raw_factor / options.magnitude
 
     return scaling_factor, scaling_offset
 

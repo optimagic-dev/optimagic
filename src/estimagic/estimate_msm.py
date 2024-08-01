@@ -288,7 +288,6 @@ def estimate_msm(
         bounds=bounds,
         func_eval=func_eval,
         primary_key="contributions",
-        scaling=False,
         derivative_eval=jacobian_eval,
     )
 

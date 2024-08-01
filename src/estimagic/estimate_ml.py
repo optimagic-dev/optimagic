@@ -240,7 +240,6 @@ def estimate_ml(
         bounds=bounds,
         func_eval=loglike_eval,
         primary_key="contributions",
-        scaling=False,
         derivative_eval=jacobian_eval,
     )
 

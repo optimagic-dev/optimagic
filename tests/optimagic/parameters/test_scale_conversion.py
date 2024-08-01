@@ -71,7 +71,7 @@ def test_scale_conversion_fast_path():
 
     converter, scaled = get_scale_converter(
         internal_params=params,
-        scaling=False,
+        scaling=None,
     )
 
     aae(params.values, scaled.values)

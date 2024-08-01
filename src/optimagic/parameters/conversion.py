@@ -16,7 +16,7 @@ def get_converter(
     bounds,
     func_eval,
     primary_key,
-    scaling,
+    scaling=None,
     derivative_eval=None,
     add_soft_bounds=False,
 ):
@@ -118,7 +118,7 @@ def get_converter(
             out = x_external
         else:
             msg = (
-                "Invalid return type: {return_type}. Must be one of 'tree', 'flat', "
+                f"Invalid return type: {return_type}. Must be one of 'tree', 'flat', "
                 "'tree_and_flat'"
             )
             raise ValueError(msg)
@@ -260,7 +260,7 @@ def _is_fast_path(
     if not _is_fast_func_eval(func_eval, primary_key):
         return False
 
-    if scaling:
+    if scaling is None:
         return False
 
     if not _is_fast_deriv_eval(derivative_eval, primary_key):

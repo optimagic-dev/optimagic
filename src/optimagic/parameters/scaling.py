@@ -1,32 +1,30 @@
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
-from typing_extensions import NotRequired
-
 from optimagic.exceptions import InvalidScalingOptionsError
 
 
 @dataclass(frozen=True)
 class ScalingOptions:
-    method: Literal["start_values", "bound"] = "start_values"
+    method: Literal["start_values", "bounds"] = "start_values"
     clipping_value: float = 0.1
     magnitude: float = 1.0
 
 
 class ScalingOptionsDict(TypedDict):
-    method: NotRequired[Literal["start_values", "bound"]]
-    clipping_value: NotRequired[float]
-    magnitude: NotRequired[float]
+    method: Literal["start_values", "bounds"]
+    clipping_value: float
+    magnitude: float
 
 
 def pre_process_scaling(
     scaling: bool | ScalingOptions | ScalingOptionsDict | None,
 ) -> ScalingOptions | None:
-    """Convert all valid types of specifying scaling options to
-    optimagic.ScalingOptions.
+    """Convert all valid types of scaling options to optimagic.ScalingOptions.
 
     This just harmonizes multiple ways of specifying scaling options into a single
-    format. It does not check that scaling options are valid.
+    format. It performs runtime type checks, but it does not check whether scaling
+    options are consistent with other option choices.
 
     Args:
         scaling: The user provided scaling options.
@@ -55,4 +53,24 @@ def pre_process_scaling(
                 "of the keys {'method', 'clipping_value', 'magnitude'}, None, or a "
                 "boolean."
             ) from e
+
+    if isinstance(scaling, ScalingOptions):
+        if scaling.method not in ("start_values", "bounds"):
+            raise InvalidScalingOptionsError(
+                f"Invalid scaling method: {scaling.method}. Valid methods are "
+                "'start_values' and 'bounds'."
+            )
+
+        if not isinstance(scaling.clipping_value, (int, float)):
+            raise InvalidScalingOptionsError(
+                f"Invalid clipping value: {scaling.clipping_value}. Clipping value "
+                "must be a number."
+            )
+
+        if not isinstance(scaling.magnitude, (int, float)) or scaling.magnitude <= 0:
+            raise InvalidScalingOptionsError(
+                f"Invalid scaling magnitude: {scaling.magnitude}. Scaling magnitude "
+                "must be a positive number."
+            )
+
     return scaling
