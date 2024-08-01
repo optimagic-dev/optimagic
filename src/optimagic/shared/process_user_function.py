@@ -1,10 +1,17 @@
 """Process user provided functions."""
 
 import inspect
-from functools import partial
+from functools import partial, wraps
 
 from optimagic.exceptions import InvalidFunctionError, InvalidKwargsError
-from optimagic.utilities import propose_alternatives
+from optimagic.mark import ProblemType
+from optimagic.typing import (
+    FunctionValue,
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
+from optimagic.utilities import isscalar, propose_alternatives
 
 
 def process_func_of_params(func, kwargs, name="your function", skip_checks=False):
@@ -27,7 +34,9 @@ def process_func_of_params(func, kwargs, name="your function", skip_checks=False
 
         raise InvalidKwargsError(msg)
 
-    out = partial(func, **kept)
+    # wraps preserves static fields that might have been added to the function via
+    # mark decorators.
+    out = wraps(func)(partial(func, **kept))
 
     if not skip_checks:
         unpartialled_args = get_unpartialled_arguments(out)
@@ -108,3 +117,63 @@ def get_kwargs_from_args(args, func, offset=0):
     names = list(inspect.signature(func).parameters)[offset:]
     kwargs = {name: arg for name, arg in zip(names, args, strict=False)}
     return kwargs
+
+
+def infer_problem_type(func):
+    """Infer the problem type from type hints or attributes left by mark decorators.
+
+    The problem type is either inferred from a `._problem_type` attribute or from type
+    hints. If neither is present, we assume the problem type is scalar. This assumption
+    is motivated by compatibility with the `scipy.optimize` interface.
+
+    """
+    return_type = inspect.signature(func).return_annotation
+    if hasattr(func, "_problem_type"):
+        out = func._problem_type
+    elif return_type in (ScalarFunctionValue, float):
+        out = ProblemType.SCALAR
+    elif return_type == LeastSquaresFunctionValue:
+        out = ProblemType.LEAST_SQUARES
+    elif return_type == LikelihoodFunctionValue:
+        out = ProblemType.LIKELIHOOD
+    else:
+        out = ProblemType.SCALAR
+    return out
+
+
+def convert_output_to_scalar_function_value(raw):
+    if isinstance(raw, ScalarFunctionValue):
+        out = raw
+    elif isinstance(raw, FunctionValue):
+        out = ScalarFunctionValue(value=raw.value, info=raw.info)
+    elif isscalar(raw):
+        out = ScalarFunctionValue(value=raw)
+    else:
+        raise InvalidFunctionError(
+            "scalar objective functions need to return a float, FunctionValue "
+            "or ScalarFunctionValue, not: {type(raw)}. If you meant to provide a "
+            "scalar objective function, make sure it returns one of the above. If "
+            "you meant to provide a least_squares or likelihood function, use "
+            "mark.least_squares or mark.likelihood."
+        )
+    return out
+
+
+def convert_output_to_least_squares_function_value(raw):
+    if isinstance(raw, LeastSquaresFunctionValue):
+        out = raw
+    elif isinstance(raw, FunctionValue):
+        out = LeastSquaresFunctionValue(value=raw.value, info=raw.info)
+    else:
+        out = LeastSquaresFunctionValue(value=raw)
+    return out
+
+
+def convert_output_to_likelihood_function_value(raw):
+    if isinstance(raw, LikelihoodFunctionValue):
+        out = raw
+    elif isinstance(raw, FunctionValue):
+        out = LikelihoodFunctionValue(value=raw.value, info=raw.info)
+    else:
+        out = LikelihoodFunctionValue(value=raw)
+    return out

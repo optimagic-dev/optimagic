@@ -95,6 +95,6 @@ def test_criterion_fails_at_start_values():
         raise RuntimeError()
 
     params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
-    snippet = "Error while evaluating criterion at start params."
+    snippet = "Error while evaluating fun at start params."
     with pytest.raises(InvalidFunctionError, match=snippet):
         minimize(just_fail, params, "scipy_lbfgsb")

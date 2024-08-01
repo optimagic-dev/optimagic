@@ -1,6 +1,12 @@
 import warnings
 
+from optimagic.mark import ProblemType
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
 
 
 def throw_criterion_future_warning():
@@ -129,3 +135,53 @@ def replace_and_warn_about_deprecated_bounds(
         bounds = Bounds(**old_bounds)
 
     return bounds
+
+
+def convert_dict_to_function_value(candidate):
+    """Convert the deprecated dictionary output to a suitable FunctionValue object.
+
+    No warning is raised here because this function will be called repeatedly!
+
+    """
+    special_keys = ["value", "contributions", "root_contributions"]
+
+    if is_dict_output(candidate):
+        info = {k: v for k, v in candidate.items() if k not in special_keys}
+        if "root_contributions" in candidate:
+            out = LeastSquaresFunctionValue(candidate["root_contributions"], info)
+        elif "contributions" in candidate:
+            out = LikelihoodFunctionValue(candidate["contributions"], info)
+        else:
+            out = ScalarFunctionValue(candidate["value"], info)
+    else:
+        out = candidate
+
+    return out
+
+
+def is_dict_output(candidate):
+    """Check if the output is a dictionary with special keys."""
+    special_keys = ["value", "contributions", "root_contributions"]
+    return isinstance(candidate, dict) and any(k in candidate for k in special_keys)
+
+
+def throw_dict_output_warning():
+    msg = (
+        "Returning a dictionary with the special keys 'value', 'contributions', or "
+        "'root_contributions' is deprecated and will be removed in optimagic version "
+        "0.6.0 and later. Please use the optimagic.mark.scalar, optimagic.mark."
+        "least_squares, or optimagic.mark.likelihood decorators to indicate the type "
+        "of problem you are solving. Use optimagic.FunctionValue objects to return "
+        "additional information for the logging."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def infer_problem_type_from_dict_output(output):
+    if "root_contributions" in output:
+        out = ProblemType.LEAST_SQUARES
+    elif "contributions" in output:
+        out = ProblemType.LIKELIHOOD
+    else:
+        out = ProblemType.SCALAR
+    return out

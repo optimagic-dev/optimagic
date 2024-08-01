@@ -1,4 +1,4 @@
-from optimagic import utilities
+from optimagic import mark, utilities
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,
@@ -46,5 +46,6 @@ __all__ = [
     "OptimizeLogReader",
     "OptimizeResult",
     "Bounds",
+    "mark",
     "__version__",
 ]

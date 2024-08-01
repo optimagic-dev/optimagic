@@ -10,8 +10,10 @@ from optimagic.deprecations import (
 )
 from optimagic.exceptions import (
     AliasError,
+    InvalidFunctionError,
     MissingInputError,
 )
+from optimagic.mark import ProblemType
 from optimagic.optimization.check_arguments import check_optimize_kwargs
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
@@ -22,10 +24,14 @@ from optimagic.optimization.scipy_aliases import (
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.shared.process_user_function import (
+    convert_output_to_least_squares_function_value,
+    convert_output_to_likelihood_function_value,
+    convert_output_to_scalar_function_value,
     get_kwargs_from_args,
+    infer_problem_type,
     process_func_of_params,
 )
-from optimagic.typing import PyTree
+from optimagic.typing import FunctionValue, PyTree
 
 
 @dataclass(frozen=True)
@@ -79,6 +85,8 @@ class OptimizationProblem:
     collect_history: bool
     skip_checks: bool
     direction: Literal["minimize", "maximize"]
+    problem_type: ProblemType
+    fun_eval: FunctionValue
 
 
 def create_optimization_problem(
@@ -342,21 +350,9 @@ def create_optimization_problem(
             multistart=multistart,
             multistart_options=multistart_options,
         )
-    # ==================================================================================
-    # Get the algorithm info
-    # ==================================================================================
-    raw_algo, algo_info = process_user_algorithm(algorithm)
-
-    if algo_info.primary_criterion_entry == "root_contributions":
-        if direction == "maximize":
-            msg = (
-                "Optimizers that exploit a least squares structure like {} can only be "
-                "used for minimization."
-            )
-            raise ValueError(msg.format(algo_info.name))
 
     # ==================================================================================
-    # partial the kwargs into corresponding functions
+    # evaluate fun for the first time
     # ==================================================================================
     fun = process_func_of_params(
         func=fun,
@@ -364,6 +360,56 @@ def create_optimization_problem(
         name="criterion",
         skip_checks=skip_checks,
     )
+
+    # This should be done as late as possible; It has to be done here to infer the
+    # problem type until the decorator approach becomes mandatory.
+    # TODO: Move this into `_optimize` and there as late as soon as we reach 0.6.0
+    try:
+        fun_eval = fun(params, **fun_kwargs)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        msg = "Error while evaluating fun at start params."
+        raise InvalidFunctionError(msg) from e
+
+    if deprecations.is_dict_output(fun_eval):
+        deprecations.throw_dict_output_warning()
+
+    # ==================================================================================
+    # infer the problem type
+    # ==================================================================================
+
+    if deprecations.is_dict_output(fun_eval):
+        problem_type = deprecations.infer_problem_type_from_dict_output(fun_eval)
+    else:
+        problem_type = infer_problem_type(fun)
+
+    # ==================================================================================
+    # process the fun_eval; Can be removed once the first evaluation gets moved to
+    # a later point where the `enforce` decorator has already been applied.
+    # ==================================================================================
+    if deprecations.is_dict_output(fun_eval):
+        fun_eval = deprecations.convert_dict_to_function_value(fun_eval)
+    elif problem_type == ProblemType.SCALAR:
+        fun_eval = convert_output_to_scalar_function_value(fun_eval)
+    elif problem_type == ProblemType.LEAST_SQUARES:
+        fun_eval = convert_output_to_least_squares_function_value(fun_eval)
+    else:
+        fun_eval = convert_output_to_likelihood_function_value(fun_eval)
+
+    # ==================================================================================
+    # Get the algorithm info
+    # ==================================================================================
+    raw_algo, algo_info = process_user_algorithm(algorithm)
+
+    # TODO: Should this error already be raised if the problem_type is least_squares?
+    if algo_info.primary_criterion_entry == "root_contributions":
+        if direction == "maximize":
+            raise ValueError("Least-squares problems cannot be maximized.")
+    # ==================================================================================
+    # partial the kwargs into corresponding functions
+    # ==================================================================================
+
     if isinstance(jac, dict):
         jac = jac.get(algo_info.primary_criterion_entry)
     if jac is not None:
@@ -410,6 +456,8 @@ def create_optimization_problem(
         collect_history=collect_history,
         skip_checks=skip_checks,
         direction=direction,
+        problem_type=problem_type,
+        fun_eval=fun_eval,
     )
 
     return problem
