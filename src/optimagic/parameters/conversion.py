@@ -42,7 +42,7 @@ def get_converter(
         primary_key (str): One of "value", "contributions" and "root_contributions".
             Used to determine how the function and derivative output has to be
             transformed for the optimzer.
-        scaling (bool | ScalingOptions): Scaling options. If False, no scaling is
+        scaling (ScalingOptions | None): Scaling options. If None, no scaling is
             performed.
         derivative_eval (dict, pytree or None): Evaluation of the derivative of
             func at params. Used for consistency checks.

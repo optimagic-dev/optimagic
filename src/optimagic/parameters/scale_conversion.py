@@ -1,30 +1,30 @@
 from functools import partial
-from typing import Callable, Literal, NamedTuple
+from typing import Callable, NamedTuple
 
 import numpy as np
+from numpy.typing import NDArray
 
 from optimagic.parameters.scaling import ScalingOptions
 from optimagic.parameters.space_conversion import InternalParams
 
 
 class ScaleConverter(NamedTuple):
-    params_to_internal: Callable
-    params_from_internal: Callable
-    derivative_to_internal: Callable
-    derivative_from_internal: Callable
+    params_to_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
+    params_from_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
+    derivative_to_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
+    derivative_from_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
 
 
 def get_scale_converter(
     internal_params: InternalParams,
-    scaling: Literal[False] | ScalingOptions,
+    scaling: ScalingOptions | None,
 ) -> tuple[ScaleConverter, InternalParams]:
     """Get a converter between scaled and unscaled parameters.
 
     Args:
-        internal_params (InternalParams): NamedTuple of internal and possibly
-            reparametrized but not yet scaled parameter values and bounds.
-        scaling (Literal[False] | ScalingOptions): Scaling options. If False, no scaling
-            is performed.
+        internal_params: NamedTuple of internal and possibly reparametrized but not yet
+            scaled parameter values and bounds.
+        scaling: Scaling options. If False, no scaling is performed.
 
     Returns:
         ScaleConverter: NamedTuple with methods to convert between scaled and unscaled
@@ -41,14 +41,12 @@ def get_scale_converter(
 
     """
     # fast path
-    if not scaling:
+    if scaling is None:
         return _fast_path_scale_converter(), internal_params
 
     factor, offset = calculate_scaling_factor_and_offset(
         internal_params=internal_params,
-        method=scaling.method,
-        clipping_value=scaling.clipping_value,
-        magnitude=scaling.magnitude,
+        scaling=scaling,
     )
 
     _params_to_internal = partial(
@@ -63,10 +61,12 @@ def get_scale_converter(
         scaling_offset=offset,
     )
 
-    def _derivative_to_internal(derivative):
+    def _derivative_to_internal(derivative: NDArray[np.float64]) -> NDArray[np.float64]:
         return derivative * factor
 
-    def _derivative_from_internal(derivative):
+    def _derivative_from_internal(
+        derivative: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
         return derivative / factor
 
     converter = ScaleConverter(
@@ -98,7 +98,7 @@ def get_scale_converter(
     return converter, params
 
 
-def _fast_path_scale_converter():
+def _fast_path_scale_converter() -> ScaleConverter:
     converter = ScaleConverter(
         params_to_internal=lambda x: x,
         params_from_internal=lambda x: x,
@@ -109,40 +109,41 @@ def _fast_path_scale_converter():
 
 
 def calculate_scaling_factor_and_offset(
-    internal_params,
-    method,
-    clipping_value,
-    magnitude,
-):
+    internal_params: InternalParams,
+    scaling: ScalingOptions,
+) -> tuple[NDArray[np.float64], NDArray[np.float64] | None]:
     x = internal_params.values
     lower_bounds = internal_params.lower_bounds
     upper_bounds = internal_params.upper_bounds
 
-    if method == "start_values":
-        raw_factor = np.clip(np.abs(x), clipping_value, np.inf)
+    if scaling.method == "start_values":
+        raw_factor = np.clip(np.abs(x), scaling.clipping_value, np.inf)
         scaling_offset = None
-    elif method == "bounds":
+    elif scaling.method == "bounds":
         raw_factor = upper_bounds - lower_bounds
         scaling_offset = lower_bounds
-
     else:
-        raise ValueError(f"Invalid scaling method: {method}")
+        raise ValueError(f"Invalid scaling method: {scaling.method}")
 
-    scaling_factor = raw_factor / magnitude
+    scaling_factor = raw_factor / scaling.magnitude
 
     return scaling_factor, scaling_offset
 
 
-def scale_to_internal(vec, scaling_factor, scaling_offset):
+def scale_to_internal(
+    vec: NDArray[np.float64],
+    scaling_factor: NDArray[np.float64] | None,
+    scaling_offset: NDArray[np.float64] | None,
+) -> NDArray[np.float64]:
     """Scale a parameter vector from external scale to internal one.
 
     Args:
-        vec (np.ndarray): Internal parameter vector with external scale.
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+        vec: Internal parameter vector with external scale.
+        scaling_factor: If None, no scaling factor is used.
+        scaling_offset: If None, no scaling offset is used.
 
     Returns:
-        np.ndarray: vec with internal scale
+        vec with internal scale
 
     """
     if scaling_offset is not None:
@@ -154,16 +155,20 @@ def scale_to_internal(vec, scaling_factor, scaling_offset):
     return vec
 
 
-def scale_from_internal(vec, scaling_factor, scaling_offset):
+def scale_from_internal(
+    vec: NDArray[np.float64],
+    scaling_factor: NDArray[np.float64] | None,
+    scaling_offset: NDArray[np.float64] | None,
+) -> NDArray[np.float64]:
     """Scale a parameter vector from internal scale to external one.
 
     Args:
-        vec (np.ndarray): Internal parameter vector with external scale.
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+        vec: Internal parameter vector with external scale.
+        scaling_factor: If None, no scaling factor is used.
+        scaling_offset: If None, no scaling offset is used.
 
     Returns:
-        np.ndarray: vec with external scale
+        vec with external scale
 
     """
     if scaling_factor is not None:
