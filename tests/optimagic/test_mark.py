@@ -1,5 +1,5 @@
 import optimagic as om
-from optimagic.mark import ProblemType
+from optimagic.typing import ProblemType
 
 
 def test_scalar():

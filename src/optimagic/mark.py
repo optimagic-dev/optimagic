@@ -1,19 +1,10 @@
-from enum import Enum
 from typing import Callable, TypeVar
 
 from optimagic.optimization.fun_value import FunctionValue
-from optimagic.typing import PyTree
+from optimagic.typing import ProblemType, PyTree
 
 ScalarFuncT = TypeVar("ScalarFuncT", bound=Callable[..., float | FunctionValue])
 VectorFuncT = TypeVar("VectorFuncT", bound=Callable[..., PyTree | FunctionValue])
-
-
-class ProblemType(Enum):
-    """Enum class for function types."""
-
-    SCALAR = "scalar"
-    LEAST_SQUARES = "least_squares"
-    LIKELIHOOD = "likelihood"
 
 
 def scalar(func: ScalarFuncT) -> ScalarFuncT:

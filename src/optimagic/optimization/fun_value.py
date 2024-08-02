@@ -2,8 +2,13 @@ import functools
 from dataclasses import dataclass
 from typing import Any, Callable, ParamSpec
 
+import numpy as np
+from numpy.typing import NDArray
+from pybaum import tree_just_flatten
+
 from optimagic.exceptions import InvalidFunctionError
-from optimagic.typing import PyTree, Scalar
+from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import OptimizerType, PyTree, Scalar
 from optimagic.utilities import isscalar
 
 
@@ -28,6 +33,16 @@ class ScalarFunctionValue(FunctionValue):
                 "decorators."
             )
 
+    def internal_value(self, optimizer_type: OptimizerType) -> float:
+        if optimizer_type == OptimizerType.SCALAR:
+            val = float(self.value)
+        else:
+            raise InvalidFunctionError(
+                f"You are using a {optimizer_type.value} optimizer but provided a "
+                "scalar objective function."
+            )
+        return val
+
 
 @dataclass(frozen=True)
 class LeastSquaresFunctionValue(FunctionValue):
@@ -44,6 +59,21 @@ class LeastSquaresFunctionValue(FunctionValue):
                 "decorator."
             )
 
+    def internal_value(
+        self, optimizer_type: OptimizerType
+    ) -> float | NDArray[np.float64]:
+        resid = _get_flat_value(self.value)
+
+        val: float | NDArray[np.float64]
+
+        if optimizer_type == OptimizerType.LEAST_SQUARES:
+            val = resid
+        elif optimizer_type == OptimizerType.LIKELIHOOD:
+            val = resid**2
+        else:
+            val = float(resid @ resid)
+        return val
+
 
 @dataclass(frozen=True)
 class LikelihoodFunctionValue(FunctionValue):
@@ -58,6 +88,38 @@ class LikelihoodFunctionValue(FunctionValue):
                 "objective function, make sure it does not have a scalar value. If you "
                 "meant to provide a scalar function, use the mark.scalar decorator."
             )
+
+    def internal_value(
+        self, optimizer_type: OptimizerType
+    ) -> float | NDArray[np.float64]:
+        loglikes = _get_flat_value(self.value)
+
+        val: float | NDArray[np.float64]
+
+        if optimizer_type == OptimizerType.LIKELIHOOD:
+            val = loglikes
+        elif optimizer_type == OptimizerType.SCALAR:
+            val = float(np.sum(loglikes))
+        else:
+            raise InvalidFunctionError(
+                "You are using a least_squares optimizer but provided a "
+                "likelihood objective function."
+            )
+        return val
+
+
+def _get_flat_value(value: PyTree) -> NDArray[np.float64]:
+    """Flatten a PyTree value to a 1d numpy array with multiple fast paths."""
+    if isinstance(value, np.ndarray) and value.ndim == 1:
+        flat = value
+    elif isinstance(value, np.ndarray):
+        flat = value.flatten()
+    else:
+        registry = get_registry(extended=True)
+        flat = tree_just_flatten(value, registry=registry)
+
+    flat_arr = np.asarray(flat, dtype=np.float64)
+    return flat_arr
 
 
 def convert_output_to_scalar_function_value(

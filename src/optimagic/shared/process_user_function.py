@@ -4,12 +4,12 @@ import inspect
 from functools import partial, wraps
 
 from optimagic.exceptions import InvalidFunctionError, InvalidKwargsError
-from optimagic.mark import ProblemType
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
+from optimagic.typing import ProblemType
 from optimagic.utilities import propose_alternatives
 
 

@@ -13,7 +13,6 @@ from optimagic.exceptions import (
     InvalidFunctionError,
     MissingInputError,
 )
-from optimagic.mark import ProblemType
 from optimagic.optimization.fun_value import (
     FunctionValue,
     convert_output_to_least_squares_function_value,
@@ -35,7 +34,7 @@ from optimagic.shared.process_user_function import (
     infer_problem_type,
     process_func_of_params,
 )
-from optimagic.typing import PyTree
+from optimagic.typing import ProblemType, PyTree
 
 
 @dataclass(frozen=True)

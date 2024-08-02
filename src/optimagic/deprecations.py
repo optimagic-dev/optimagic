@@ -2,13 +2,13 @@ import warnings
 from functools import wraps
 from typing import Any, Callable, ParamSpec
 
-from optimagic.mark import ProblemType
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import ProblemType
 
 
 def throw_criterion_future_warning():

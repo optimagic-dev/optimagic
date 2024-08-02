@@ -11,6 +11,7 @@ from optimagic.optimization.fun_value import (
     enforce_likelihood,
     enforce_scalar,
 )
+from optimagic.typing import OptimizerType
 
 
 def test_enforce_scalar_with_scalar_return():
@@ -128,3 +129,53 @@ def test_enforce_likelihood_invalid_return():
 
     with pytest.raises(InvalidFunctionError):
         f(np.ones(3))
+
+
+SCALAR_VALUES = [
+    ScalarFunctionValue(5),
+]
+
+LS_VALUES = [
+    LeastSquaresFunctionValue(np.array([1, 2])),
+    LeastSquaresFunctionValue({"a": 1, "b": 2}),
+]
+
+LIKELIHOOD_VALUES = [
+    LikelihoodFunctionValue(np.array([1, 4])),
+    LikelihoodFunctionValue({"a": 1, "b": 4}),
+]
+
+
+@pytest.mark.parametrize("value", SCALAR_VALUES + LS_VALUES + LIKELIHOOD_VALUES)
+def test_values_for_scalar_optimizers(value):
+    got = value.internal_value(OptimizerType.SCALAR)
+    assert isinstance(got, float)
+    assert got == 5.0
+
+
+@pytest.mark.parametrize("value", LS_VALUES)
+def test_values_for_least_squares_optimizers(value):
+    got = value.internal_value(OptimizerType.LEAST_SQUARES)
+    assert isinstance(got, np.ndarray)
+    assert got.dtype == np.float64
+    aae(got, np.array([1.0, 2]))
+
+
+@pytest.mark.parametrize("value", LS_VALUES + LIKELIHOOD_VALUES)
+def test_values_for_likelihood_optimizers(value):
+    got = value.internal_value(OptimizerType.LIKELIHOOD)
+    assert isinstance(got, np.ndarray)
+    assert got.dtype == np.float64
+    aae(got, np.array([1.0, 4]))
+
+
+@pytest.mark.parametrize("value", SCALAR_VALUES + LIKELIHOOD_VALUES)
+def test_invalid_values_for_least_squares_optimizers(value):
+    with pytest.raises(InvalidFunctionError):
+        SCALAR_VALUES[0].internal_value(OptimizerType.LEAST_SQUARES)
+
+
+@pytest.mark.parametrize("value", SCALAR_VALUES)
+def test_invalid_values_for_likelihood_optimizers(value):
+    with pytest.raises(InvalidFunctionError):
+        SCALAR_VALUES[0].internal_value(OptimizerType.LIKELIHOOD)

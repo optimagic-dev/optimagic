@@ -3,7 +3,6 @@ import pytest
 from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.exceptions import InvalidKwargsError
-from optimagic.mark import ProblemType
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -14,6 +13,7 @@ from optimagic.shared.process_user_function import (
     infer_problem_type,
     process_func_of_params,
 )
+from optimagic.typing import ProblemType
 
 
 def test_process_func_of_params():
