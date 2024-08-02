@@ -47,8 +47,8 @@ def pre_process_scaling(
         The scaling options in the optimagic format.
 
     Raises:
-        InvalidScalingOptionsError: If scaling options cannot be processed, e.g. because
-            they do not have the correct type.
+        InvalidScalingError: If scaling options cannot be processed, e.g. because they
+            do not have the correct type.
 
     """
     if isinstance(scaling, bool):
@@ -69,22 +69,29 @@ def pre_process_scaling(
             ) from e
 
     if isinstance(scaling, ScalingOptions):
-        if scaling.method not in ("start_values", "bounds"):
-            raise InvalidScalingError(
-                f"Invalid scaling method: {scaling.method}. Valid methods are "
-                "'start_values' and 'bounds'."
-            )
-
-        if not isinstance(scaling.clipping_value, (int, float)):
-            raise InvalidScalingError(
-                f"Invalid clipping value: {scaling.clipping_value}. Clipping value "
-                "must be a number."
-            )
-
-        if not isinstance(scaling.magnitude, (int, float)) or scaling.magnitude <= 0:
-            raise InvalidScalingError(
-                f"Invalid scaling magnitude: {scaling.magnitude}. Scaling magnitude "
-                "must be a positive number."
-            )
+        _validate_attribute_types_and_values(scaling)
 
     return scaling
+
+
+def _validate_attribute_types_and_values(options: ScalingOptions) -> None:
+    if options.method not in ("start_values", "bounds"):
+        raise InvalidScalingError(
+            f"Invalid scaling method: {options.method}. Valid methods are "
+            "'start_values' and 'bounds'."
+        )
+
+    if (
+        not isinstance(options.clipping_value, int | float)
+        or options.clipping_value <= 0
+    ):
+        raise InvalidScalingError(
+            f"Invalid clipping value: {options.clipping_value}. Clipping value "
+            "must be a positive number."
+        )
+
+    if not isinstance(options.magnitude, int | float) or options.magnitude <= 0:
+        raise InvalidScalingError(
+            f"Invalid scaling magnitude: {options.magnitude}. Scaling magnitude "
+            "must be a positive number."
+        )
