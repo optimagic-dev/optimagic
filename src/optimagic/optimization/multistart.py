@@ -39,7 +39,7 @@ def run_multistart_optimization(
     database,
     error_handling,
 ):
-    steps = determine_steps(options["n_samples"], options["n_optimizations"])
+    steps = determine_steps(options.n_samples, n_optimizations=options.n_optimizations)
 
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
@@ -47,18 +47,18 @@ def run_multistart_optimization(
         database=database,
     )
 
-    if options["sample"] is not None:
-        sample = options["sample"]
+    if options.sample is not None:
+        sample = options.sample
     else:
         sample = draw_exploration_sample(
             x=x,
             lower=lower_sampling_bounds,
             upper=upper_sampling_bounds,
             # -1 because we add start parameters
-            n_samples=options["n_samples"] - 1,
-            sampling_distribution=options["sampling_distribution"],
-            sampling_method=options["sampling_method"],
-            seed=options["seed"],
+            n_samples=options.n_samples - 1,
+            sampling_distribution=options.sampling_distribution,
+            sampling_method=options.sampling_method,
+            seed=options.seed,
         )
 
         sample = np.vstack([x.reshape(1, -1), sample])
@@ -79,10 +79,10 @@ def run_multistart_optimization(
         criterion,
         primary_key=primary_key,
         sample=sample,
-        batch_evaluator=options["batch_evaluator"],
-        n_cores=options["n_cores"],
+        batch_evaluator=options.batch_evaluator,
+        n_cores=options.n_cores,
         step_id=scheduled_steps[0],
-        error_handling=options["exploration_error_handling"],
+        error_handling=options.exploration_error_handling,
     )
 
     if logging:
@@ -97,14 +97,14 @@ def run_multistart_optimization(
     sorted_sample = exploration_res["sorted_sample"]
     sorted_values = exploration_res["sorted_values"]
 
-    n_optimizations = options["n_optimizations"]
+    n_optimizations = options.n_optimizations
     if n_optimizations > len(sorted_sample):
         n_skipped_steps = n_optimizations - len(sorted_sample)
         n_optimizations = len(sorted_sample)
         warnings.warn(
             "There are less valid starting points than requested optimizations. "
             "The number of optimizations has been reduced from "
-            f"{options['n_optimizations']} to {len(sorted_sample)}."
+            f"{options.n_optimizations} to {len(sorted_sample)}."
         )
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
@@ -120,7 +120,7 @@ def run_multistart_optimization(
     batched_sample = get_batched_optimization_sample(
         sorted_sample=sorted_sample,
         n_optimizations=n_optimizations,
-        batch_size=options["batch_size"],
+        batch_size=options.batch_size,
     )
 
     state = {
@@ -134,8 +134,8 @@ def run_multistart_optimization(
     }
 
     convergence_criteria = {
-        "xtol": options["convergence_relative_params_tolerance"],
-        "max_discoveries": options["convergence_max_discoveries"],
+        "xtol": options.convergence_relative_params_tolerance,
+        "max_discoveries": options.convergence_max_discoveries,
     }
 
     problem_functions = {
@@ -143,12 +143,12 @@ def run_multistart_optimization(
         for name, func in problem_functions.items()
     }
 
-    batch_evaluator = options["batch_evaluator"]
+    batch_evaluator = options.batch_evaluator
 
     weight_func = partial(
-        options["mixing_weight_method"],
-        min_weight=options["mixing_weight_bounds"][0],
-        max_weight=options["mixing_weight_bounds"][1],
+        options.mixing_weight_method,
+        min_weight=options.mixing_weight_bounds[0],
+        max_weight=options.mixing_weight_bounds[1],
     )
 
     opt_counter = 0
@@ -165,8 +165,8 @@ def run_multistart_optimization(
             func=local_algorithm,
             arguments=arguments,
             unpack_symbol="**",
-            n_cores=options["n_cores"],
-            error_handling=options["optimization_error_handling"],
+            n_cores=options.n_cores,
+            error_handling=options.optimization_error_handling,
         )
 
         state, is_converged = update_convergence_state(

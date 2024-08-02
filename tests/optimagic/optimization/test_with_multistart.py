@@ -1,6 +1,7 @@
 from itertools import product
 
 import numpy as np
+import optimagic as om
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
@@ -66,49 +67,46 @@ def test_multistart_with_existing_sample(params):
         np.arange(20).reshape(5, 4) / 10,
         columns=params.index,
     )
-    options = {"sample": sample}
+    options = om.MultistartOptions(sample=sample)
 
     res = minimize(
         fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
     )
 
     calc_sample = _params_list_to_aray(res.multistart_info["exploration_sample"])
-    aaae(calc_sample, options["sample"])
+    aaae(calc_sample, options.sample)
 
 
 def test_convergence_via_max_discoveries_works(params):
-    options = {
-        "convergence_relative_params_tolerance": np.inf,
-        "convergence_max_discoveries": 2,
-    }
+    options = om.MultistartOptions(
+        convergence_relative_params_tolerance=np.inf,
+        convergence_max_discoveries=2,
+    )
 
     res = maximize(
         fun=switch_sign(sos_dict_criterion),
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
     )
 
     assert len(res.multistart_info["local_optima"]) == 2
 
 
 def test_steps_are_logged_as_skipped_if_convergence(params):
-    options = {
-        "convergence_relative_params_tolerance": np.inf,
-        "convergence_max_discoveries": 2,
-    }
+    options = om.MultistartOptions(
+        convergence_relative_params_tolerance=np.inf,
+        convergence_max_discoveries=2,
+    )
 
     minimize(
         fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
         logging="logging.db",
     )
 
@@ -118,14 +116,13 @@ def test_steps_are_logged_as_skipped_if_convergence(params):
 
 
 def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
-    options = {"convergence_max_discoveries": np.inf}
+    options = om.MultistartOptions(convergence_max_discoveries=np.inf)
 
     minimize(
         fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
         logging="logging.db",
     )
 
@@ -230,12 +227,11 @@ def test_with_ackley():
     minimize(
         **kwargs,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options={
-            "n_samples": 200,
-            "share_optimizations": 0.1,
-            "convergence_max_discoveries": 10,
-        },
+        multistart=om.MultistartOptions(
+            n_samples=200,
+            share_optimizations=0.1,
+            convergence_max_discoveries=10,
+        ),
     )
 
 
@@ -245,8 +241,7 @@ def test_multistart_with_least_squares_optimizers():
         params=np.array([-1, 1.0]),
         bounds=Bounds(soft_lower=np.full(2, -10), soft_upper=np.full(2, 10)),
         algorithm="scipy_ls_trf",
-        multistart=True,
-        multistart_options={"n_samples": 3, "share_optimizations": 1.0},
+        multistart=om.MultistartOptions(n_samples=3, share_optimizations=1.0),
     )
 
     aaae(est.params, np.zeros(2))

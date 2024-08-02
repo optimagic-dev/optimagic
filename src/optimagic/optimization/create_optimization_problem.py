@@ -20,6 +20,7 @@ from optimagic.optimization.scipy_aliases import (
     split_fun_and_jac,
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.multistart import MultistartOptions, pre_process_multistart
 from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
 from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (
@@ -70,10 +71,7 @@ class OptimizationProblem:
     error_handling: Literal["raise", "continue"]
     error_penalty: dict[str, Any] | None
     scaling: ScalingOptions | None
-    # TODO: multistart will become None | MultistartOptions and multistart_options will
-    # be removed
-    multistart: bool
-    multistart_options: dict[str, Any] | None
+    multistart: MultistartOptions | None
     collect_history: bool
     skip_checks: bool
     direction: Literal["minimize", "maximize"]
@@ -100,7 +98,6 @@ def create_optimization_problem(
     error_penalty,
     scaling,
     multistart,
-    multistart_options,
     collect_history,
     skip_checks,
     # scipy aliases
@@ -126,6 +123,7 @@ def create_optimization_problem(
     soft_lower_bounds,
     soft_upper_bounds,
     scaling_options,
+    multistart_options,
 ):
     # ==================================================================================
     # error handling needed as long as fun is an optional argument (i.e. until
@@ -188,6 +186,10 @@ def create_optimization_problem(
     if scaling_options is not None:
         deprecations.throw_scaling_options_future_warning()
         scaling = scaling_options if scaling is None else scaling
+
+    if multistart_options is not None:
+        deprecations.throw_multistart_options_future_warning()
+        multistart = multistart_options if multistart is None else multistart
 
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
@@ -303,6 +305,7 @@ def create_optimization_problem(
     # ==================================================================================
     bounds = pre_process_bounds(bounds)
     scaling = pre_process_scaling(scaling)
+    multistart = pre_process_multistart(multistart)
 
     fun_kwargs = {} if fun_kwargs is None else fun_kwargs
     constraints = [] if constraints is None else constraints
@@ -405,11 +408,8 @@ def create_optimization_problem(
         if not isinstance(scaling, ScalingOptions | None):
             raise ValueError("scaling must be a ScalingOptions object or None")
 
-        if not isinstance(multistart, bool):
-            raise ValueError("multistart must be a boolean")
-
-        if not isinstance(multistart_options, dict | None):
-            raise ValueError("multistart_options must be a dictionary or None")
+        if not isinstance(multistart, MultistartOptions | None):
+            raise ValueError("multistart must be a MultistartOptions object or None")
 
         if not isinstance(collect_history, bool):
             raise ValueError("collect_history must be a boolean")
@@ -446,7 +446,6 @@ def create_optimization_problem(
         error_penalty=error_penalty,
         scaling=scaling,
         multistart=multistart,
-        multistart_options=multistart_options,
         collect_history=collect_history,
         skip_checks=skip_checks,
         direction=direction,

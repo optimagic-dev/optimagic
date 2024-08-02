@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Callable, Literal, Sequence, TypedDict, get_args
 
 import numpy as np
+import pandas as pd
 from typing_extensions import NotRequired
 
 from optimagic.exceptions import InvalidMultistartError
@@ -126,7 +127,8 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             f"must be one of {get_args(MultistartSamplingMethod)}."
         )
 
-    if not isinstance(options.sample, Sequence | None):
+    if not isinstance(options.sample, Sequence | None | pd.DataFrame):
+        # TODO: Remove pd.DataFrame
         raise InvalidMultistartError(
             f"Invalid sample: {options.sample}. Sample must be a sequence of PyTrees."
         )
@@ -157,7 +159,7 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
         )
 
     if (
-        not isinstance(options.convergence_max_discoveries, int)
+        not isinstance(options.convergence_max_discoveries, int | float)
         or options.convergence_max_discoveries < 1
     ):
         raise InvalidMultistartError(

@@ -34,7 +34,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
         params=np.arange(5),
         algorithm=algorithm,
         bounds=Bounds(lower=lb, upper=ub),
-        algo_options={"n_cores": 2, "stopping.max_iterations": 3},
+        algo_options={"n_cores": 2, "stopping_maxiter": 3},
         logging=logging,
         log_options={"if_database_exists": "replace", "fast_logging": True},
     ).history
