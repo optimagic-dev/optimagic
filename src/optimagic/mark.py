@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import Callable, TypeVar
 
-from optimagic.typing import FunctionValue, PyTree
+from optimagic.optimization.fun_value import FunctionValue
+from optimagic.typing import PyTree
 
 ScalarFuncT = TypeVar("ScalarFuncT", bound=Callable[..., float | FunctionValue])
 VectorFuncT = TypeVar("VectorFuncT", bound=Callable[..., PyTree | FunctionValue])

@@ -5,8 +5,7 @@ from functools import partial, wraps
 
 from optimagic.exceptions import InvalidFunctionError, InvalidKwargsError
 from optimagic.mark import ProblemType
-from optimagic.typing import (
-    FunctionValue,
+from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
     ScalarFunctionValue,
@@ -138,34 +137,4 @@ def infer_problem_type(func):
         out = ProblemType.LIKELIHOOD
     else:
         out = ProblemType.SCALAR
-    return out
-
-
-def convert_output_to_scalar_function_value(raw):
-    if isinstance(raw, ScalarFunctionValue):
-        out = raw
-    elif isinstance(raw, FunctionValue):
-        out = ScalarFunctionValue(value=raw.value, info=raw.info)
-    else:
-        out = ScalarFunctionValue(value=raw)
-    return out
-
-
-def convert_output_to_least_squares_function_value(raw):
-    if isinstance(raw, LeastSquaresFunctionValue):
-        out = raw
-    elif isinstance(raw, FunctionValue):
-        out = LeastSquaresFunctionValue(value=raw.value, info=raw.info)
-    else:
-        out = LeastSquaresFunctionValue(value=raw)
-    return out
-
-
-def convert_output_to_likelihood_function_value(raw):
-    if isinstance(raw, LikelihoodFunctionValue):
-        out = raw
-    elif isinstance(raw, FunctionValue):
-        out = LikelihoodFunctionValue(value=raw.value, info=raw.info)
-    else:
-        out = LikelihoodFunctionValue(value=raw)
     return out

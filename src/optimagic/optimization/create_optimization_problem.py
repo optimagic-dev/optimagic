@@ -15,6 +15,12 @@ from optimagic.exceptions import (
 )
 from optimagic.mark import ProblemType
 from optimagic.optimization.check_arguments import check_optimize_kwargs
+from optimagic.optimization.fun_value import (
+    FunctionValue,
+    convert_output_to_least_squares_function_value,
+    convert_output_to_likelihood_function_value,
+    convert_output_to_scalar_function_value,
+)
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
 )
@@ -24,14 +30,11 @@ from optimagic.optimization.scipy_aliases import (
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.shared.process_user_function import (
-    convert_output_to_least_squares_function_value,
-    convert_output_to_likelihood_function_value,
-    convert_output_to_scalar_function_value,
     get_kwargs_from_args,
     infer_problem_type,
     process_func_of_params,
 )
-from optimagic.typing import FunctionValue, PyTree
+from optimagic.typing import PyTree
 
 
 @dataclass(frozen=True)

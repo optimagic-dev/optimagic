@@ -607,11 +607,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     return numdiff_options
 
 
-def _setdefault(candidate, default):
-    out = default if candidate is None else candidate
-    return out
-
-
 def _fill_multistart_options_with_defaults(options, params, x, params_to_internal):
     """Fill options for multistart optimization with defaults."""
     defaults = {

@@ -37,12 +37,12 @@ from optimagic.deprecations import (
     is_dict_output,
 )
 from optimagic.mark import ProblemType
-from optimagic.parameters.bounds import Bounds
-from optimagic.typing import (
+from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
+from optimagic.parameters.bounds import Bounds
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0

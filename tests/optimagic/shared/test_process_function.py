@@ -4,15 +4,15 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.exceptions import InvalidKwargsError
 from optimagic.mark import ProblemType
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
     infer_problem_type,
     process_func_of_params,
-)
-from optimagic.typing import (
-    LeastSquaresFunctionValue,
-    LikelihoodFunctionValue,
-    ScalarFunctionValue,
 )
 
 

@@ -1,12 +1,14 @@
 import warnings
+from functools import wraps
+from typing import Any, Callable, ParamSpec
 
 from optimagic.mark import ProblemType
-from optimagic.parameters.bounds import Bounds
-from optimagic.typing import (
+from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
+from optimagic.parameters.bounds import Bounds
 
 
 def throw_criterion_future_warning():
@@ -185,3 +187,26 @@ def infer_problem_type_from_dict_output(output):
     else:
         out = ProblemType.SCALAR
     return out
+
+
+P = ParamSpec("P")
+
+
+def replace_dict_output(func: Callable[P, Any]) -> Callable[P, Any]:
+    """Replace the deprecated dictionary output by a suitable FunctionValue.
+
+    This has no effect if the function does not return a dictionary with at least one of
+    the special keys "value", "contributions" or "root_contributions".
+
+    This decorator does not add a warning because the function will be evaluated many
+    times and the warning would pop up too often.
+
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
+        raw = func(*args, **kwargs)
+        out = convert_dict_to_function_value(raw)
+        return out
+
+    return wrapper

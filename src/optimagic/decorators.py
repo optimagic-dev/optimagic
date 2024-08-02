@@ -18,23 +18,9 @@ https://realpython.com/primer-on-python-decorators/
 import functools
 import inspect
 import warnings
-from functools import wraps
-from typing import Any, Callable, NamedTuple, ParamSpec
+from typing import NamedTuple
 
-from optimagic.deprecations import convert_dict_to_function_value
 from optimagic.exceptions import get_traceback
-from optimagic.shared.process_user_function import (
-    convert_output_to_least_squares_function_value,
-    convert_output_to_likelihood_function_value,
-    convert_output_to_scalar_function_value,
-)
-from optimagic.typing import (
-    FunctionValue,
-    LeastSquaresFunctionValue,
-    LikelihoodFunctionValue,
-    PyTree,
-    ScalarFunctionValue,
-)
 
 
 def catch(
@@ -270,89 +256,3 @@ def deprecated(func, msg):
         return decorator_deprecated(func)
     else:
         return decorator_deprecated
-
-
-P = ParamSpec("P")
-
-
-def enforce_scalar(
-    func: Callable[P, float | FunctionValue],
-) -> Callable[P, ScalarFunctionValue]:
-    """Make valid scalar objective functions return a ScalarFunctionValue.
-
-    This has no effect if the function already returns a ScalarFunctionValue but
-    converts a float or FunctionValue to a ScalarFunctionValue.
-
-    Whereas the mark.scalar decorator works for objective functions and derivatives,
-    this is only meant for objective functions.
-
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ScalarFunctionValue:
-        raw = func(*args, **kwargs)
-        return convert_output_to_scalar_function_value(raw)
-
-    return wrapper
-
-
-def enforce_least_squares(
-    func: Callable[P, PyTree | FunctionValue],
-) -> Callable[P, LeastSquaresFunctionValue]:
-    """Make valid least squares functions return a LeastSquaresFunctionValue.
-
-    This has no effect if the function already returns a LeastSquaresFunctionValue but
-    converts a PyTree or FunctionValue to a LeastSquaresFunctionValue.
-
-    Whereas the mark.least_squares decorator works for objective functions and
-    derivatives, this is only meant for objective functions.
-
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> LeastSquaresFunctionValue:
-        raw = func(*args, **kwargs)
-        return convert_output_to_least_squares_function_value(raw)
-
-    return wrapper
-
-
-def enforce_likelihood(
-    func: Callable[P, PyTree | FunctionValue],
-) -> Callable[P, LikelihoodFunctionValue]:
-    """Make valid likelihood functions return a LikelihoodFunctionValue.
-
-    This has no effect if the function already returns a LikelihoodFunctionValue but
-    converts a PyTree or FunctionValue to a LikelihoodFunctionValue.
-
-    Whereas the mark.likelihood decorator works for objective functions and derivatives,
-    this is only meant for objective functions.
-
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> LikelihoodFunctionValue:
-        raw = func(*args, **kwargs)
-        return convert_output_to_likelihood_function_value(raw)
-
-    return wrapper
-
-
-def replace_dict_output(func: Callable[P, Any]) -> Callable[P, Any]:
-    """Replace the deprecated dictionary output by a suitable FunctionValue.
-
-    This has no effect if the function does not return a dictionary with at least one of
-    the special keys "value", "contributions" or "root_contributions".
-
-    This decorator does not add a warning because the function will be evaluated many
-    times and the warning would pop up too often.
-
-    """
-
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
-        raw = func(*args, **kwargs)
-        out = convert_dict_to_function_value(raw)
-        return out
-
-    return wrapper
