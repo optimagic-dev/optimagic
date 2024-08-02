@@ -1,5 +1,4 @@
-from functools import partial
-from typing import Callable, NamedTuple
+from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import NDArray
@@ -8,11 +7,42 @@ from optimagic.parameters.scaling import ScalingOptions
 from optimagic.parameters.space_conversion import InternalParams
 
 
-class ScaleConverter(NamedTuple):
-    params_to_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
-    params_from_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
-    derivative_to_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
-    derivative_from_internal: Callable[[NDArray[np.float64]], NDArray[np.float64]]
+@dataclass(frozen=True)
+class ScaleConverter:
+    factor: NDArray[np.float64] | None
+    offset: NDArray[np.float64] | None
+
+    def params_to_internal(self, vec: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Scale a parameter vector from external scale to internal one."""
+        if self.offset is not None:
+            vec = vec - self.offset
+        if self.factor is not None:
+            vec = vec / self.factor
+        return vec
+
+    def params_from_internal(self, vec: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Scale a parameter vector from internal scale to external one."""
+        if self.factor is not None:
+            vec = vec * self.factor
+        if self.offset is not None:
+            vec = vec + self.offset
+        return vec
+
+    def derivative_to_internal(
+        self, derivative: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
+        """Scale a derivative vector from external scale to internal one."""
+        if self.factor is not None:
+            derivative = derivative * self.factor
+        return derivative
+
+    def derivative_from_internal(
+        self, derivative: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
+        """Scale a derivative vector from internal scale to external one."""
+        if self.factor is not None:
+            derivative = derivative / self.factor
+        return derivative
 
 
 def get_scale_converter(
@@ -27,9 +57,9 @@ def get_scale_converter(
         scaling: Scaling options. If None, no scaling is performed.
 
     Returns:
-        ScaleConverter: NamedTuple with methods to convert between scaled and unscaled
+        ScaleConverter: Dataclass with methods to convert between scaled and unscaled
             internal parameters and derivatives.
-        InternalParams: NamedTuple with entries:
+        InternalParams: Dataclass with entries:
             - value (np.ndarray): Internal parameter values.
             - lower_bounds (np.ndarray): Lower bounds on the internal params.
             - upper_bounds (np.ndarray): Upper bounds on the internal params.
@@ -42,39 +72,14 @@ def get_scale_converter(
     """
     # fast path
     if scaling is None:
-        return _fast_path_scale_converter(), internal_params
+        return ScaleConverter(factor=None, offset=None), internal_params
 
     factor, offset = calculate_scaling_factor_and_offset(
         internal_params=internal_params,
         options=scaling,
     )
 
-    _params_to_internal = partial(
-        scale_to_internal,
-        scaling_factor=factor,
-        scaling_offset=offset,
-    )
-
-    _params_from_internal = partial(
-        scale_from_internal,
-        scaling_factor=factor,
-        scaling_offset=offset,
-    )
-
-    def _derivative_to_internal(derivative: NDArray[np.float64]) -> NDArray[np.float64]:
-        return derivative * factor
-
-    def _derivative_from_internal(
-        derivative: NDArray[np.float64],
-    ) -> NDArray[np.float64]:
-        return derivative / factor
-
-    converter = ScaleConverter(
-        params_to_internal=_params_to_internal,
-        params_from_internal=_params_from_internal,
-        derivative_to_internal=_derivative_to_internal,
-        derivative_from_internal=_derivative_from_internal,
-    )
+    converter = ScaleConverter(factor=factor, offset=offset)
 
     if internal_params.soft_lower_bounds is not None:
         _soft_lower = converter.params_to_internal(internal_params.soft_lower_bounds)
@@ -98,16 +103,6 @@ def get_scale_converter(
     return converter, params
 
 
-def _fast_path_scale_converter() -> ScaleConverter:
-    converter = ScaleConverter(
-        params_to_internal=lambda x: x,
-        params_from_internal=lambda x: x,
-        derivative_to_internal=lambda x: x,
-        derivative_from_internal=lambda x: x,
-    )
-    return converter
-
-
 def calculate_scaling_factor_and_offset(
     internal_params: InternalParams,
     options: ScalingOptions,
@@ -128,53 +123,3 @@ def calculate_scaling_factor_and_offset(
     scaling_factor = raw_factor / options.magnitude
 
     return scaling_factor, scaling_offset
-
-
-def scale_to_internal(
-    vec: NDArray[np.float64],
-    scaling_factor: NDArray[np.float64] | None,
-    scaling_offset: NDArray[np.float64] | None,
-) -> NDArray[np.float64]:
-    """Scale a parameter vector from external scale to internal one.
-
-    Args:
-        vec: Internal parameter vector with external scale.
-        scaling_factor: If None, no scaling factor is used.
-        scaling_offset: If None, no scaling offset is used.
-
-    Returns:
-        vec with internal scale
-
-    """
-    if scaling_offset is not None:
-        vec = vec - scaling_offset
-
-    if scaling_factor is not None:
-        vec = vec / scaling_factor
-
-    return vec
-
-
-def scale_from_internal(
-    vec: NDArray[np.float64],
-    scaling_factor: NDArray[np.float64] | None,
-    scaling_offset: NDArray[np.float64] | None,
-) -> NDArray[np.float64]:
-    """Scale a parameter vector from internal scale to external one.
-
-    Args:
-        vec: Internal parameter vector with external scale.
-        scaling_factor: If None, no scaling factor is used.
-        scaling_offset: If None, no scaling offset is used.
-
-    Returns:
-        vec with external scale
-
-    """
-    if scaling_factor is not None:
-        vec = vec * scaling_factor
-
-    if scaling_offset is not None:
-        vec = vec + scaling_offset
-
-    return vec

@@ -33,8 +33,9 @@ n_internal the length of the internal parameter vector.
 
 """
 
+from dataclasses import dataclass
 from functools import partial
-from typing import Callable, NamedTuple
+from typing import Callable
 
 import numpy as np
 
@@ -52,13 +53,13 @@ def get_space_converter(
     for bounds.
 
     Args:
-        internal_params (InternalParams): NamedTuple with internal parameter values and
+        internal_params (InternalParams): Dataclass with internal parameter values and
             bounds.
         internal_constraints (list): List of constraints with processed selector fields.
 
     Returns:
         SpaceConverter: The space converter.
-        InternalParams: NamedTuple with entries:
+        InternalParams: Dataclass with entries:
             - value (np.ndarray): Internal parameter values.
             - lower_bounds (np.ndarray): Lower bounds on the internal params.
             - upper_bounds (np.ndarray): Upper bounds on the internal params.
@@ -148,7 +149,8 @@ def get_space_converter(
     return converter, params
 
 
-class SpaceConverter(NamedTuple):
+@dataclass(frozen=True)
+class SpaceConverter:
     params_to_internal: Callable
     params_from_internal: Callable
     derivative_to_internal: Callable
@@ -509,7 +511,8 @@ def post_replace_jacobian(post_replacements):
     return jacobian
 
 
-class InternalParams(NamedTuple):
+@dataclass(frozen=True)
+class InternalParams:
     values: np.ndarray
     lower_bounds: np.ndarray
     upper_bounds: np.ndarray

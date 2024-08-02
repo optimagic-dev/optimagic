@@ -1,6 +1,7 @@
 """Aggregate the multiple parameter and function output conversions into on."""
 
-from typing import Callable, NamedTuple
+from dataclasses import dataclass, replace
+from typing import Callable
 
 import numpy as np
 
@@ -141,7 +142,7 @@ def get_converter(
     def _func_to_internal(func_eval):
         return tree_converter.func_flatten(func_eval)
 
-    internal_params = scaled_params._replace(free_mask=internal_params.free_mask)
+    internal_params = replace(scaled_params, free_mask=internal_params.free_mask)
 
     converter = Converter(
         params_to_internal=_params_to_internal,
@@ -154,7 +155,8 @@ def get_converter(
     return converter, internal_params
 
 
-class Converter(NamedTuple):
+@dataclass(frozen=True)
+class Converter:
     params_to_internal: Callable
     params_from_internal: Callable
     derivative_to_internal: Callable
