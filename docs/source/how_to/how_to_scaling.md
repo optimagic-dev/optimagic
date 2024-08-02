@@ -11,24 +11,52 @@ and cons of each approach.
 ## What does well scaled mean
 
 In short, an optimization problem is well scaled if a fixed step in any direction yields
-a roughly similar sized change in the criterion function.
+a roughly similar sized change in the objective function.
 
 In practice, this can never be achieved perfectly (at least for nonlinear problems).
 However, one can easily improve over simply ignoring the problem altogether.
 
+## TL;DR
+
+To activate scaling at the default options, pass `scaling=True` to the `minimize` or
+`maximize` function. This uses the start values heuristic explained below. The default
+options are discussed in the section {ref}`scaling-default-values`.
+
+```{code-block} python
+---
+emphasize-lines: 13
+---
+import numpy as np
+import optimagic as om
+
+
+def fun(x):
+    return x @ x
+
+
+res = om.minimize(
+    fun=fun,
+    x0=np.arange(5),
+    algorithm="scipy_lbfgsb",
+    scaling=True,
+)
+```
+
 ## Heuristics to improve scaling
+
+(scaling-start-values-heuristic)=
 
 ### Divide by absolute value of start parameters
 
 In many applications, parameters with very large start values will vary over a wide
 range and a change in that parameter will only lead to a relatively small change in the
-criterion function. If this is the case, the scaling of the optimization problem can be
+objective function. If this is the case, the scaling of the optimization problem can be
 improved by simply dividing all parameter vectors by the start parameters.
 
 **Advantages:**
 
-- straightforward
-- works with any type of constraints
+- Straightforward
+- Works with any type of constraints
 
 **Disadvantages:**
 
@@ -37,24 +65,15 @@ improved by simply dividing all parameter vectors by the start parameters.
 
 **How to specify this scaling:**
 
-```python
-import optimagic as om
-
-
-def sphere(params):
-    return (params["value"] ** 2).sum()
-
-
-start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
-start_params["lower_bound"] = 0
-start_params["upper_bound"] = 2 * np.arange(5) + 1
-
+```{code-block} python
+---
+emphasize-lines: 5
+---
 res = om.minimize(
-    fun=sphere,
-    params=start_params,
+    fun=fun,
+    x0=np.arange(5),
     algorithm="scipy_lbfgsb",
-    scaling=True,
-    scaling_options={"method": "start_values", "clipping_value": 0.1},
+    scaling=om.ScalingOptions(method="start_values", clipping_value=0.1),
 )
 ```
 
@@ -66,9 +85,9 @@ others are soft and derived from simple considerations (e.g. if a time discount 
 were smaller than 0.7, we would not observe anyone to pursue a university degree in a
 structural model of educational choices; or if an infection probability was higher than
 20% for distant contacts, the covid pandemic would have been over after a month). For
-parameters that strongly influence the criterion function, the bounds stemming from
+parameters that strongly influence the objective function, the bounds stemming from
 these considerations are typically tighter than for parameters that have a small effect
-on the criterion function.
+on the objective function.
 
 Thus, a natural approach to improve the scaling of the optimization problem is to re-map
 all parameters such that the bounds are \[0, 1\] for all parameters. This has the
@@ -77,9 +96,9 @@ changes become the same.
 
 **Advantages:**
 
-- straightforward
-- works well in many practical applications
-- scaling is independent of start values
+- Straightforward
+- Works well in many practical applications
+- Scaling is independent of start values
 - No problems with division by zero
 
 **Disadvantages:**
@@ -89,21 +108,16 @@ changes become the same.
 
 **How to specify this scaling:**
 
-```python
-def sphere(params):
-    return (params["value"] ** 2).sum()
-
-
-start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
-start_params["lower_bound"] = 0
-start_params["upper_bound"] = 2 * np.arange(5) + 1
-
+```{code-block} python
+---
+emphasize-lines: 5,6
+---
 res = om.minimize(
-    fun=sphere,
-    params=start_params,
+    fun=fun,
+    x0=np.arange(5),
     algorithm="scipy_lbfgsb",
-    scaling=True,
-    scaling_options={"method": "bounds", "clipping_value": 0.0},
+    bounds=om.Bounds(lower=np.zeros(5), upper=2 * np.arange(5) + 1),
+    scaling=om.ScalingOptions(method="bounds", clipping_value=0.0),
 )
 ```
 
@@ -124,21 +138,16 @@ effectively make the trust region radius smaller.
 Setting the magnitude means simply adding one more entry to the scaling options. For
 example, if you want to scale by bounds and increase the magnitude by a factor of five:
 
-```python
-def sphere(params):
-    return (params["value"] ** 2).sum()
-
-
-start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
-start_params["lower_bound"] = 0
-start_params["upper_bound"] = 2 * np.arange(5) + 1
-
+```{code-block} python
+---
+emphasize-lines: 6
+---
 res = om.minimize(
-    fun=sphere,
-    params=start_params,
+    fun=fun,
+    x0=np.arange(5),
     algorithm="scipy_lbfgsb",
-    scaling=True,
-    scaling_options={"method": "bounds", clipping_value: 0.0, "magnitude": 5},
+    bounds=om.Bounds(lower=np.zeros(5), upper=2 * np.arange(5) + 1),
+    scaling=om.ScalingOptions(method="bounds", clipping_value=0.0, magnitude=5),
 )
 ```
 
@@ -157,10 +166,12 @@ to a strictly non-zero number for the `"start_values"` and `"gradient"` approach
 tight bounds. However, this means that the bounds of the re-scaled problem are not
 exactly \[0, 1\] for all parameters.
 
+(scaling-default-values)=
+
 ### Default values
 
-Scaling is disabled by default. If enabled, but no `scaling_options` are provided, we
-use the `"start_values"` method with a `"clipping_value"` of 0.1. This is the default
-method because it can be used for all optimization problems and has low computational
-cost. We strongly recommend you read the above guidelines and choose the method that is
-most suitable for your problom.
+Scaling is disabled by default. By passing `scaling=True`, we enable scaling at the
+default values. We use the `"start_values"` method with a `"clipping_value"` of 0.1 and
+a magnitude of 1.0. This is the default method because it can be used for all
+optimization problems and has low computational cost. We strongly recommend you read the
+above guidelines and choose the method that is most suitable for your problem.

@@ -87,7 +87,7 @@ extlinks = {
 intersphinx_mapping = {
     "numpy": ("https://docs.scipy.org/doc/numpy", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    "python": ("https://docs.python.org/3.6", None),
+    "python": ("https://docs.python.org/3.12", None),
 }
 
 linkcheck_ignore = [

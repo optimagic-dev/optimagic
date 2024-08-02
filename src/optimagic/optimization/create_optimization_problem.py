@@ -12,7 +12,6 @@ from optimagic.exceptions import (
     AliasError,
     MissingInputError,
 )
-from optimagic.optimization.check_arguments import check_optimize_kwargs
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
 )
@@ -21,6 +20,8 @@ from optimagic.optimization.scipy_aliases import (
     split_fun_and_jac,
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
+from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
     process_func_of_params,
@@ -51,10 +52,10 @@ class OptimizationProblem:
     params: PyTree
     # TODO: algorithm will become an Algorithm object; algo_options and algo_info will
     # be removed and become part of Algorithm
-    algorithm: Callable
+    algorithm: Callable | str
     algo_options: dict[str, Any] | None
     algo_info: AlgoInfo
-    bounds: Bounds
+    bounds: Bounds | None
     # TODO: constraints will become list[Constraint] | None
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
@@ -68,10 +69,7 @@ class OptimizationProblem:
     # will be removed
     error_handling: Literal["raise", "continue"]
     error_penalty: dict[str, Any] | None
-    # TODO: scaling will become None | ScalingOptions and scaling_options will be
-    # removed
-    scaling: bool
-    scaling_options: dict[str, Any] | None
+    scaling: ScalingOptions | None
     # TODO: multistart will become None | MultistartOptions and multistart_options will
     # be removed
     multistart: bool
@@ -101,7 +99,6 @@ def create_optimization_problem(
     error_handling,
     error_penalty,
     scaling,
-    scaling_options,
     multistart,
     multistart_options,
     collect_history,
@@ -128,6 +125,7 @@ def create_optimization_problem(
     upper_bounds,
     soft_lower_bounds,
     soft_upper_bounds,
+    scaling_options,
 ):
     # ==================================================================================
     # error handling needed as long as fun is an optional argument (i.e. until
@@ -186,6 +184,10 @@ def create_optimization_problem(
             if fun_and_jac_kwargs is None
             else fun_and_jac_kwargs
         )
+
+    if scaling_options is not None:
+        deprecations.throw_scaling_options_future_warning()
+        scaling = scaling_options if scaling is None else scaling
 
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
@@ -247,8 +249,6 @@ def create_optimization_problem(
             fun_and_jac = fun
             fun = split_fun_and_jac(fun_and_jac, target="fun")
 
-    bounds = pre_process_bounds(bounds)
-
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented
     # ==================================================================================
@@ -301,6 +301,9 @@ def create_optimization_problem(
     # ==================================================================================
     # Set default values and check options
     # ==================================================================================
+    bounds = pre_process_bounds(bounds)
+    scaling = pre_process_scaling(scaling)
+
     fun_kwargs = {} if fun_kwargs is None else fun_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
@@ -309,39 +312,10 @@ def create_optimization_problem(
     numdiff_options = {} if numdiff_options is None else numdiff_options
     log_options = {} if log_options is None else log_options
     error_penalty = {} if error_penalty is None else error_penalty
-    scaling_options = {} if scaling_options is None else scaling_options
     multistart_options = {} if multistart_options is None else multistart_options
     if logging:
         logging = Path(logging)
 
-    # ==================================================================================
-    # Check types of arguments
-    # ==================================================================================
-    # TODO: This should probably be inlined
-
-    if not skip_checks:
-        check_optimize_kwargs(
-            direction=direction,
-            criterion=fun,
-            criterion_kwargs=fun_kwargs,
-            params=params,
-            algorithm=algorithm,
-            constraints=constraints,
-            algo_options=algo_options,
-            derivative=jac,
-            derivative_kwargs=jac_kwargs,
-            criterion_and_derivative=fun_and_jac,
-            criterion_and_derivative_kwargs=fun_and_jac_kwargs,
-            numdiff_options=numdiff_options,
-            logging=logging,
-            log_options=log_options,
-            error_handling=error_handling,
-            error_penalty=error_penalty,
-            scaling=scaling,
-            scaling_options=scaling_options,
-            multistart=multistart,
-            multistart_options=multistart_options,
-        )
     # ==================================================================================
     # Get the algorithm info
     # ==================================================================================
@@ -385,6 +359,73 @@ def create_optimization_problem(
         )
 
     # ==================================================================================
+    # Check types of arguments
+    # ==================================================================================
+
+    if not skip_checks:
+        if params is None:
+            raise ValueError("params cannot be None")
+
+        if not isinstance(fun, Callable):
+            raise ValueError("fun must be a callable")
+
+        if not isinstance(algorithm, Callable | str):
+            raise ValueError("algorithm must be a callable or a string")
+
+        if not isinstance(algo_options, dict | None):
+            raise ValueError("algo_options must be a dictionary or None")
+
+        if not isinstance(algo_info, AlgoInfo):
+            raise ValueError("algo_info must be an AlgoInfo object")
+
+        if not isinstance(bounds, Bounds | None):
+            raise ValueError("bounds must be a Bounds object or None")
+
+        if not isinstance(constraints, list | dict):
+            raise ValueError("constraints must be a list or a dictionary")
+
+        if not isinstance(jac, Callable | None):
+            raise ValueError("jac must be a callable or None")
+
+        if not isinstance(fun_and_jac, Callable | None):
+            raise ValueError("fun_and_jac must be a callable or None")
+
+        if not isinstance(numdiff_options, dict | None):
+            raise ValueError("numdiff_options must be a dictionary or None")
+
+        if not isinstance(logging, bool | Path | None):
+            raise ValueError("logging must be a boolean, a path or None")
+
+        if not isinstance(log_options, dict | None):
+            raise ValueError("log_options must be a dictionary or None")
+
+        if not isinstance(error_penalty, dict | None):
+            raise ValueError("error_penalty must be a dictionary or None")
+
+        if not isinstance(scaling, ScalingOptions | None):
+            raise ValueError("scaling must be a ScalingOptions object or None")
+
+        if not isinstance(multistart, bool):
+            raise ValueError("multistart must be a boolean")
+
+        if not isinstance(multistart_options, dict | None):
+            raise ValueError("multistart_options must be a dictionary or None")
+
+        if not isinstance(collect_history, bool):
+            raise ValueError("collect_history must be a boolean")
+
+        if not isinstance(direction, str) or direction not in ["minimize", "maximize"]:
+            raise ValueError("direction must be 'minimize' or 'maximize'")
+
+        if not isinstance(error_handling, str) or error_handling not in [
+            "raise",
+            "continue",
+        ]:
+            raise ValueError("error_handling must be 'raise' or 'continue'")
+
+        check_numdiff_options(numdiff_options, "optimization")
+
+    # ==================================================================================
     # create the problem object
     # ==================================================================================
 
@@ -404,7 +445,6 @@ def create_optimization_problem(
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,
-        scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
         collect_history=collect_history,
