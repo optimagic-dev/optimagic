@@ -471,7 +471,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
-        multistart_options = _get_internal_multistart_options(
+        multistart_options = _set_runtime_defaults_of_multistart_options(
             options=problem.multistart,
             params=problem.params,
             x=x,
@@ -612,43 +612,41 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     return numdiff_options
 
 
-def _get_internal_multistart_options(
+def _set_runtime_defaults_of_multistart_options(
     options: MultistartOptions,
     params: PyTree,
     x: NDArray[np.float64],
     params_to_internal: Callable[[PyTree], NDArray[np.float64]],
 ) -> MultistartOptions:
-    internal = asdict(options)
+    updated = asdict(options)
 
     if options.n_samples is None:
-        internal["n_samples"] = 10 * len(x)
+        updated["n_samples"] = 10 * len(x)
 
     if options.batch_size is None:
-        internal["batch_size"] = options.n_cores
+        updated["batch_size"] = options.n_cores
     else:
         if options.batch_size < options.n_cores:
             raise ValueError("batch_size must be at least as large as n_cores.")
 
-    internal["batch_evaluator"] = process_batch_evaluator(options.batch_evaluator)
+    updated["batch_evaluator"] = process_batch_evaluator(options.batch_evaluator)
 
     if isinstance(options.mixing_weight_method, str):
-        internal["mixing_weight_method"] = WEIGHT_FUNCTIONS[
-            options.mixing_weight_method
-        ]
+        updated["mixing_weight_method"] = WEIGHT_FUNCTIONS[options.mixing_weight_method]
 
     if len(x) <= 200:
-        internal["sampling_method"] = "sobol"
+        updated["sampling_method"] = "sobol"
     else:
-        internal["sampling_method"] = "random"
+        updated["sampling_method"] = "random"
 
     if options.sample is not None:
-        internal["sample"] = process_multistart_sample(
+        updated["sample"] = process_multistart_sample(
             options.sample, params, params_to_internal
         )
-        internal["n_samples"] = len(options.sample)
+        updated["n_samples"] = len(options.sample)
 
-    internal["n_optimizations"] = max(
-        1, int(internal["n_samples"] * internal["share_optimizations"])
+    updated["n_optimizations"] = max(
+        1, int(updated["n_samples"] * updated["share_optimizations"])
     )
 
-    return MultistartOptions(**internal)
+    return MultistartOptions(**updated)
