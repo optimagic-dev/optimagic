@@ -59,15 +59,7 @@ def get_scale_converter(
     Returns:
         ScaleConverter: Dataclass with methods to convert between scaled and unscaled
             internal parameters and derivatives.
-        InternalParams: Dataclass with entries:
-            - value (np.ndarray): Internal parameter values.
-            - lower_bounds (np.ndarray): Lower bounds on the internal params.
-            - upper_bounds (np.ndarray): Upper bounds on the internal params.
-            - soft_lower_bounds (np.ndarray): Soft lower bounds on the internal params.
-            - soft_upper_bounds (np.ndarray): Soft upper bounds on the internal params.
-            - name (list): List of names of the external parameters.
-            - free_mask (np.ndarray): Boolean mask representing which external parameter
-              is free.
+        InternalParams: Dataclass with internal parameter values and bounds.
 
     """
     # fast path

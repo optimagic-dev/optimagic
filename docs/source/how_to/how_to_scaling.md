@@ -22,7 +22,10 @@ To activate scaling at the default options, pass `scaling=True` to the `minimize
 `maximize` function. This uses the start values heuristic explained below. The default
 options are discussed in the section {ref}`scaling-default-values`.
 
-```python
+```{code-block} python
+---
+emphasize-lines: 13
+---
 import numpy as np
 import optimagic as om
 
@@ -31,7 +34,12 @@ def fun(x):
     return x @ x
 
 
-res = om.minimize(fun=fun, x0=np.arange(5), algorithm="scipy_lbfgsb", scaling=True)
+res = om.minimize(
+    fun=fun,
+    x0=np.arange(5),
+    algorithm="scipy_lbfgsb",
+    scaling=True,
+)
 ```
 
 ## Heuristics to improve scaling
@@ -57,14 +65,10 @@ improved by simply dividing all parameter vectors by the start parameters.
 
 **How to specify this scaling:**
 
-```python
-import optimagic as om
-
-
-def fun(x):
-    return x @ x
-
-
+```{code-block} python
+---
+emphasize-lines: 5
+---
 res = om.minimize(
     fun=fun,
     x0=np.arange(5),
@@ -104,11 +108,10 @@ changes become the same.
 
 **How to specify this scaling:**
 
-```python
-def fun(x):
-    return x @ x
-
-
+```{code-block} python
+---
+emphasize-lines: 5,6
+---
 res = om.minimize(
     fun=fun,
     x0=np.arange(5),
@@ -135,11 +138,10 @@ effectively make the trust region radius smaller.
 Setting the magnitude means simply adding one more entry to the scaling options. For
 example, if you want to scale by bounds and increase the magnitude by a factor of five:
 
-```python
-def fun(x):
-    return x @ x
-
-
+```{code-block} python
+---
+emphasize-lines: 6
+---
 res = om.minimize(
     fun=fun,
     x0=np.arange(5),
