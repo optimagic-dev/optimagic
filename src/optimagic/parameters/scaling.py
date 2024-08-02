@@ -8,7 +8,7 @@ from optimagic.exceptions import InvalidScalingError
 
 @dataclass(frozen=True)
 class ScalingOptions:
-    """Data class for specifying scaling options in optimization problems.
+    """Scaling options in optimization problems.
 
     Attributes:
         method: The method used for scaling. Can be "start_values" or "bounds". Default
