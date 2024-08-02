@@ -51,6 +51,10 @@ class InvalidScalingError(OptimagicError):
     """Exception for invalid user provided scaling."""
 
 
+class InvalidMultistartError(OptimagicError):
+    """Exception for invalid user provided multistart options."""
+
+
 class NotInstalledError(OptimagicError):
     """Exception when optional dependencies are needed but not installed."""
 

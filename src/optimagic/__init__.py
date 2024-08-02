@@ -12,6 +12,7 @@ from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.constraint_tools import check_constraints, count_free_params
+from optimagic.parameters.multistart import MultistartOptions
 from optimagic.parameters.scaling import ScalingOptions
 from optimagic.visualization.convergence_plot import convergence_plot
 from optimagic.visualization.history_plots import criterion_plot, params_plot
@@ -48,5 +49,6 @@ __all__ = [
     "OptimizeResult",
     "Bounds",
     "ScalingOptions",
+    "MultistartOptions",
     "__version__",
 ]
