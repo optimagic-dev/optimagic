@@ -363,37 +363,64 @@ def create_optimization_problem(
     # ==================================================================================
 
     if not skip_checks:
-        argument_and_type = {
-            "fun": (fun, Callable),
-            "params": (params, PyTree),
-            "algorithm": (algorithm, Callable | str),
-            "algo_options": (algo_options, dict | None),
-            "algo_info": (algo_info, AlgoInfo),
-            "bounds": (bounds, Bounds | None),
-            "constraints": (constraints, list | dict),
-            "jac": (jac, Callable | None),
-            "fun_and_jac": (fun_and_jac, Callable | None),
-            "numdiff_options": (numdiff_options, dict | None),
-            "logging": (logging, bool | Path | None),
-            "log_options": (log_options, dict | None),
-            "error_handling": (error_handling, str),
-            "error_penalty": (error_penalty, dict | None),
-            "scaling": (scaling, ScalingOptions | None),
-            "multistart": (multistart, bool),
-            "multistart_options": (multistart_options, dict | None),
-            "collect_history": (collect_history, bool),
-            "skip_checks": (skip_checks, bool),
-            "direction": (direction, str),
-        }
+        if params is None:
+            raise ValueError("params cannot be None")
 
-        for arg_name, (arg, arg_type) in argument_and_type.items():
-            if arg_type != Any and not isinstance(arg, arg_type):
-                raise ValueError(f"{arg_name} must be of type {arg_type}")
+        if not isinstance(fun, Callable):
+            raise ValueError("fun must be a callable")
 
-        if direction not in ["minimize", "maximize"]:
+        if not isinstance(algorithm, Callable | str):
+            raise ValueError("algorithm must be a callable or a string")
+
+        if not isinstance(algo_options, dict | None):
+            raise ValueError("algo_options must be a dictionary or None")
+
+        if not isinstance(algo_info, AlgoInfo):
+            raise ValueError("algo_info must be an AlgoInfo object")
+
+        if not isinstance(bounds, Bounds | None):
+            raise ValueError("bounds must be a Bounds object or None")
+
+        if not isinstance(constraints, list | dict):
+            raise ValueError("constraints must be a list or a dictionary")
+
+        if not isinstance(jac, Callable | None):
+            raise ValueError("jac must be a callable or None")
+
+        if not isinstance(fun_and_jac, Callable | None):
+            raise ValueError("fun_and_jac must be a callable or None")
+
+        if not isinstance(numdiff_options, dict | None):
+            raise ValueError("numdiff_options must be a dictionary or None")
+
+        if not isinstance(logging, bool | Path | None):
+            raise ValueError("logging must be a boolean, a path or None")
+
+        if not isinstance(log_options, dict | None):
+            raise ValueError("log_options must be a dictionary or None")
+
+        if not isinstance(error_penalty, dict | None):
+            raise ValueError("error_penalty must be a dictionary or None")
+
+        if not isinstance(scaling, ScalingOptions | None):
+            raise ValueError("scaling must be a ScalingOptions object or None")
+
+        if not isinstance(multistart, bool):
+            raise ValueError("multistart must be a boolean")
+
+        if not isinstance(multistart_options, dict | None):
+            raise ValueError("multistart_options must be a dictionary or None")
+
+        if not isinstance(collect_history, bool):
+            raise ValueError("collect_history must be a boolean")
+
+        if not isinstance(direction, str) or direction not in ["minimize", "maximize"]:
             raise ValueError("direction must be 'minimize' or 'maximize'")
 
-        if error_handling not in ["raise", "continue"]:
+        if not isinstance(error_handling, str) or error_handling not in [
+            "raise",
+            "continue",
+        ]:
             raise ValueError("error_handling must be 'raise' or 'continue'")
 
         check_numdiff_options(numdiff_options, "optimization")

@@ -1,5 +1,5 @@
 import pytest
-from optimagic.exceptions import InvalidScalingOptionsError
+from optimagic.exceptions import InvalidScalingError
 from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
 
 
@@ -34,30 +34,30 @@ def test_pre_process_scaling_dict_case():
 
 
 def test_pre_process_scaling_invalid_type():
-    with pytest.raises(InvalidScalingOptionsError, match="Invalid scaling options"):
+    with pytest.raises(InvalidScalingError, match="Invalid scaling options"):
         pre_process_scaling(scaling="invalid")
 
 
 def test_pre_process_scaling_invalid_dict_key():
-    with pytest.raises(InvalidScalingOptionsError, match="Invalid scaling options"):
+    with pytest.raises(InvalidScalingError, match="Invalid scaling options"):
         pre_process_scaling(scaling={"wrong_key": "start_values"})
 
 
 def test_pre_process_scaling_invalid_method_value():
-    with pytest.raises(InvalidScalingOptionsError, match="Invalid scaling method:"):
+    with pytest.raises(InvalidScalingError, match="Invalid scaling method:"):
         pre_process_scaling(scaling={"method": "invalid"})
 
 
 def test_pre_process_scaling_invalid_clipping_value_type():
-    with pytest.raises(InvalidScalingOptionsError, match="Invalid clipping value:"):
+    with pytest.raises(InvalidScalingError, match="Invalid clipping value:"):
         pre_process_scaling(scaling={"clipping_value": "invalid"})
 
 
 def test_pre_process_scaling_invalid_magnitude_value_type():
-    with pytest.raises(InvalidScalingOptionsError, match="Invalid scaling magnitude:"):
+    with pytest.raises(InvalidScalingError, match="Invalid scaling magnitude:"):
         pre_process_scaling(scaling={"magnitude": "invalid"})
 
 
 def test_pre_process_scaling_invalid_magnitude_value_range():
-    with pytest.raises(InvalidScalingOptionsError, match="Invalid scaling magnitude:"):
+    with pytest.raises(InvalidScalingError, match="Invalid scaling magnitude:"):
         pre_process_scaling(scaling={"magnitude": -1})

@@ -3,7 +3,7 @@ from typing import Literal, TypedDict
 
 from typing_extensions import NotRequired
 
-from optimagic.exceptions import InvalidScalingOptionsError
+from optimagic.exceptions import InvalidScalingError
 
 
 @dataclass(frozen=True)
@@ -49,7 +49,7 @@ def pre_process_scaling(
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
-            raise InvalidScalingOptionsError(
+            raise InvalidScalingError(
                 f"Invalid scaling options of type: {type(scaling)}. Scaling options "
                 "must be of type optimagic.ScalingOptions, a dictionary with a subset "
                 "of the keys {'method', 'clipping_value', 'magnitude'}, None, or a "
@@ -58,19 +58,19 @@ def pre_process_scaling(
 
     if isinstance(scaling, ScalingOptions):
         if scaling.method not in ("start_values", "bounds"):
-            raise InvalidScalingOptionsError(
+            raise InvalidScalingError(
                 f"Invalid scaling method: {scaling.method}. Valid methods are "
                 "'start_values' and 'bounds'."
             )
 
         if not isinstance(scaling.clipping_value, (int, float)):
-            raise InvalidScalingOptionsError(
+            raise InvalidScalingError(
                 f"Invalid clipping value: {scaling.clipping_value}. Clipping value "
                 "must be a number."
             )
 
         if not isinstance(scaling.magnitude, (int, float)) or scaling.magnitude <= 0:
-            raise InvalidScalingOptionsError(
+            raise InvalidScalingError(
                 f"Invalid scaling magnitude: {scaling.magnitude}. Scaling magnitude "
                 "must be a positive number."
             )

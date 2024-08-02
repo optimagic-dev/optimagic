@@ -47,8 +47,8 @@ class InvalidBoundsError(OptimagicError):
     """Exception for invalid user provided bounds."""
 
 
-class InvalidScalingOptionsError(OptimagicError):
-    """Exception for invalid user provided scaling options."""
+class InvalidScalingError(OptimagicError):
+    """Exception for invalid user provided scaling."""
 
 
 class NotInstalledError(OptimagicError):
