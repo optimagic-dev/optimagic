@@ -5,6 +5,7 @@ channels:
   - nodefaults
 dependencies:
   - python=3.10
+  - typing-extensions
   - pip
   - setuptools_scm
   - toml

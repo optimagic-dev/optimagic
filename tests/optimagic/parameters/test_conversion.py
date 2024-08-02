@@ -8,6 +8,7 @@ from optimagic.parameters.conversion import (
     _is_fast_path,
     get_converter,
 )
+from optimagic.parameters.scaling import ScalingOptions
 
 
 def test_get_converter_fast_case():
@@ -18,8 +19,6 @@ def test_get_converter_fast_case():
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
-        scaling=False,
-        scaling_options=None,
     )
 
     aaae(internal.values, np.arange(3))
@@ -47,8 +46,6 @@ def test_get_converter_with_constraints_and_bounds():
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
-        scaling=False,
-        scaling_options=None,
     )
 
     aaae(internal.values, np.arange(2))
@@ -76,8 +73,7 @@ def test_get_converter_with_scaling():
         func_eval=3,
         derivative_eval=2 * np.arange(3),
         primary_key="value",
-        scaling=True,
-        scaling_options={"method": "start_values", "clipping_value": 0.5},
+        scaling=ScalingOptions(method="start_values", clipping_value=0.5),
     )
 
     aaae(internal.values, np.array([0, 1, 1]))
@@ -102,8 +98,6 @@ def test_get_converter_with_trees():
         func_eval={"contributions": {"d": 1, "e": 2}},
         derivative_eval={"a": 0, "b": 2, "c": 4},
         primary_key="value",
-        scaling=False,
-        scaling_options=None,
     )
 
     aaae(internal.values, np.arange(3))
@@ -126,7 +120,7 @@ def fast_kwargs():
         "constraints": None,
         "func_eval": 3,
         "primary_key": "value",
-        "scaling": False,
+        "scaling": None,
         "derivative_eval": np.arange(3),
         "add_soft_bounds": False,
     }
@@ -154,7 +148,7 @@ SLOW = [
     ("constraints", [{}]),
     ("func_eval", np.array([1])),
     ("func_eval", {"a": 1}),
-    ("scaling", True),
+    ("scaling", ScalingOptions()),
     ("derivative_eval", {"bla": 3}),
     ("derivative_eval", np.arange(3).reshape(1, 3)),
     ("add_soft_bounds", True),

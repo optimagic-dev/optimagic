@@ -1,6 +1,7 @@
 """Aggregate the multiple parameter and function output conversions into on."""
 
-from typing import Callable, NamedTuple
+from dataclasses import dataclass, replace
+from typing import Callable
 
 import numpy as np
 
@@ -16,8 +17,7 @@ def get_converter(
     bounds,
     func_eval,
     primary_key,
-    scaling,
-    scaling_options,
+    scaling=None,
     derivative_eval=None,
     add_soft_bounds=False,
 ):
@@ -43,8 +43,8 @@ def get_converter(
         primary_key (str): One of "value", "contributions" and "root_contributions".
             Used to determine how the function and derivative output has to be
             transformed for the optimzer.
-        scaling (bool): Whether scaling should be performed.
-        scaling_options (dict): User provided scaling options.
+        scaling (ScalingOptions | None): Scaling options. If None, no scaling is
+            performed.
         derivative_eval (dict, pytree or None): Evaluation of the derivative of
             func at params. Used for consistency checks.
         soft_lower_bounds (pytree): As lower_bounds
@@ -98,7 +98,6 @@ def get_converter(
     scale_converter, scaled_params = get_scale_converter(
         internal_params=internal_params,
         scaling=scaling,
-        scaling_options=scaling_options,
     )
 
     def _params_to_internal(params):
@@ -120,7 +119,7 @@ def get_converter(
             out = x_external
         else:
             msg = (
-                "Invalid return type: {return_type}. Must be one of 'tree', 'flat', "
+                f"Invalid return type: {return_type}. Must be one of 'tree', 'flat', "
                 "'tree_and_flat'"
             )
             raise ValueError(msg)
@@ -143,7 +142,7 @@ def get_converter(
     def _func_to_internal(func_eval):
         return tree_converter.func_flatten(func_eval)
 
-    internal_params = scaled_params._replace(free_mask=internal_params.free_mask)
+    internal_params = replace(scaled_params, free_mask=internal_params.free_mask)
 
     converter = Converter(
         params_to_internal=_params_to_internal,
@@ -156,7 +155,8 @@ def get_converter(
     return converter, internal_params
 
 
-class Converter(NamedTuple):
+@dataclass(frozen=True)
+class Converter:
     params_to_internal: Callable
     params_from_internal: Callable
     derivative_to_internal: Callable
@@ -262,7 +262,7 @@ def _is_fast_path(
     if not _is_fast_func_eval(func_eval, primary_key):
         return False
 
-    if scaling:
+    if scaling is not None:
         return False
 
     if not _is_fast_deriv_eval(derivative_eval, primary_key):

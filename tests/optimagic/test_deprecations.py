@@ -555,3 +555,25 @@ def test_convert_contributions_dict_to_function_value():
     got = convert_dict_to_function_value({"value": 5, "contributions": [1, 4]})
     assert isinstance(got, LikelihoodFunctionValue)
     assert got.value == [1, 4]
+
+
+def test_old_scaling_options_are_deprecated_in_minimize():
+    msg = "Specifying scaling options via the argument `scaling_options` is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            scaling_options={"method": "start_values", "magnitude": 1},
+        )
+
+
+def test_old_scaling_options_are_deprecated_in_maximize():
+    msg = "Specifying scaling options via the argument `scaling_options` is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            scaling_options={"method": "start_values", "magnitude": 1},
+        )
