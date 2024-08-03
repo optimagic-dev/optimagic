@@ -48,8 +48,38 @@ MultistartSamplingMethod = Literal["sobol", "random", "halton", "latin_hypercube
 class MultistartOptions:
     """Multistart options in optimization problems.
 
-    A description of the attributes will be written once the multistart code is
-    refactored.
+    Attributes:
+        n_samples: The number of points at which the objective function is evaluated
+            during the exploration phase. If None, n_samples is set to 100 times the
+            number of parameters.
+        share_optimizations: The fraction of the exploration sample that is used to
+            run the optimization (relative to n_samples).
+        sampling_distribution: The distribution from which the exploration sample is
+            drawn. Allowed are "uniform" and "triangular".
+        sampling_method: The method used to draw the exploration sample. Allowed are
+            "sobol", "random", "halton", and "latin_hypercube".
+        sample: A sequence of PyTrees that are used as the initial parameters for the
+            optimization. If None, a sample is drawn from the sampling distribution.
+        mixing_weight_method: The method used to determine the mixing weight, i,e, how
+            start parameters for local optimizations are calculated. Allowed are
+            "tiktak" and "linear", or a custom callable.
+        mixing_weight_bounds: The lower and upper bounds for the mixing weight.
+        convergence_max_discoveries: The maximum number of discoveries for convergence.
+            Determines after how many re-descoveries of the currently best local
+            optima the multistart algorithm stops.
+        convergence_relative_params_tolerance: The relative tolerance in parameters
+            for convergence. Determines the maximum relative distance two parameter
+            vecctors can have to be considered equal.
+        n_cores: The number of cores to use for parallelization.
+        batch_evaluator: The evaluator to use for batch evaluation. Allowed are "joblib"
+            and "pathos", or a custom callable.
+        batch_size: The batch size for batch evaluation. Must be larger than n_cores
+            or None.
+        seed: The seed for the random number generator.
+        exploration_error_handling: The error handling for exploration errors. Allowed
+            are "raise" and "continue".
+        optimization_error_handling: The error handling for optimization errors. Allowed
+            are "raise" and "continue".
 
     Raises:
         InvalidMultistartError: If the multistart options cannot be processed, e.g.
