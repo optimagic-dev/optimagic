@@ -183,6 +183,16 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "optimizations must be a positive integer or None."
         )
 
+    if (
+        options.n_samples is not None
+        and options.n_optimizations is not None
+        and options.n_samples < options.n_optimizations
+    ):
+        raise InvalidMultistartError(
+            f"Invalid number of samples: {options.n_samples}. Number of samples "
+            "must be at least as large as the number of optimizations."
+        )
+
     if options.sampling_distribution not in ("uniform", "triangular"):
         raise InvalidMultistartError(
             f"Invalid sampling distribution: {options.sampling_distribution}. Sampling "
@@ -329,7 +339,13 @@ def get_internal_multistart_options_from_public(
     """
     x = params_to_internal(params)
 
-    n_samples = 100 * len(x) if options.n_samples is None else options.n_samples
+    if options.sample is not None:
+        sample = np.array([params_to_internal(x) for x in list(options.sample)])
+        n_samples = len(options.sample)
+    else:
+        sample = None
+        n_samples = options.n_samples  # type: ignore
+
     batch_size = options.n_cores if options.batch_size is None else options.batch_size
     batch_evaluator = process_batch_evaluator(options.batch_evaluator)
 
@@ -343,11 +359,11 @@ def get_internal_multistart_options_from_public(
         max_weight=options.mixing_weight_bounds[1],
     )
 
-    if options.sample is not None:
-        sample = np.array([params_to_internal(x) for x in list(options.sample)])
-        n_samples = len(options.sample)
-    else:
-        sample = None
+    if n_samples is None:
+        if options.n_optimizations is None:
+            n_samples = 100 * len(x)
+        else:
+            n_samples = 10 * options.n_optimizations
 
     if options.n_optimizations is None:
         n_optimizations = max(1, int(0.1 * n_samples))

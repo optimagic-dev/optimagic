@@ -84,6 +84,11 @@ def test_multistart_options_invalid_n_optimizations(value):
         MultistartOptions(n_optimizations=value)
 
 
+def test_multistart_options_n_optimizations_less_than_n_samples():
+    with pytest.raises(InvalidMultistartError, match="Invalid number of samples"):
+        MultistartOptions(n_samples=1, n_optimizations=2)
+
+
 def test_multistart_options_invalid_sampling_distribution():
     with pytest.raises(InvalidMultistartError, match="Invalid sampling distribution"):
         MultistartOptions(sampling_distribution="invalid")
