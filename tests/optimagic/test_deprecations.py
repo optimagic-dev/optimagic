@@ -531,3 +531,25 @@ def test_old_scaling_options_are_deprecated_in_maximize():
             algorithm="scipy_lbfgsb",
             scaling_options={"method": "start_values", "magnitude": 1},
         )
+
+
+def test_old_multistart_options_are_deprecated_in_minimize():
+    msg = "Specifying multistart options via the argument `multistart_options` is"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            multistart_options={"n_samples": 10},
+        )
+
+
+def test_old_multistart_options_are_deprecated_in_maximize():
+    msg = "Specifying multistart options via the argument `multistart_options` is"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            multistart_options={"n_samples": 10},
+        )

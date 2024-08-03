@@ -185,11 +185,13 @@ def create_optimization_problem(
 
     if scaling_options is not None:
         deprecations.throw_scaling_options_future_warning()
-        scaling = scaling_options if scaling is None else scaling
+        if scaling is True and scaling_options is not None:
+            scaling = scaling_options
 
     if multistart_options is not None:
         deprecations.throw_multistart_options_future_warning()
-        multistart = multistart_options if multistart is None else multistart
+        if multistart is True and multistart_options is not None:
+            multistart = multistart_options
 
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
