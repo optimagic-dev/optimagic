@@ -18,11 +18,18 @@ class ScalingOptions:
         magnitude: A factor by which the scaled parameters are multiplied to adjust
             their magnitude. Must be a positive number. Default is 1.0.
 
+    Raises:
+        InvalidScalingError: If scaling options cannot be processed, e.g. because they
+            do not have the correct type.
+
     """
 
     method: Literal["start_values", "bounds"] = "start_values"
     clipping_value: float = 0.1
     magnitude: float = 1.0
+
+    def __post_init__(self) -> None:
+        _validate_attribute_types_and_values(self)
 
 
 class ScalingOptionsDict(TypedDict):
@@ -67,9 +74,6 @@ def pre_process_scaling(
                 "of the keys {'method', 'clipping_value', 'magnitude'}, None, or a "
                 "boolean."
             ) from e
-
-    if isinstance(scaling, ScalingOptions):
-        _validate_attribute_types_and_values(scaling)
 
     return scaling
 
