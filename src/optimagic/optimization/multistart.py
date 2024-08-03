@@ -323,7 +323,7 @@ def get_multistart_info_from_options(
     n_optimizations = max(1, int(n_samples * options.share_optimizations))
 
     return MultistartInfo(
-        # Attributes taken from options
+        # Attributes taken directly from MultistartOptions
         share_optimizations=options.share_optimizations,
         sampling_distribution=options.sampling_distribution,
         convergence_relative_params_tolerance=options.convergence_relative_params_tolerance,
@@ -332,7 +332,7 @@ def get_multistart_info_from_options(
         seed=options.seed,
         exploration_error_handling=options.exploration_error_handling,
         optimization_error_handling=options.optimization_error_handling,
-        # Updates attributes
+        # Updated attributes
         n_samples=n_samples,
         sampling_method=sampling_method,
         sample=sample,
