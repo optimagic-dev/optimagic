@@ -14,14 +14,8 @@ is then passed to `_optimize` which handles the optimization logic.
 
 import functools
 import warnings
-from dataclasses import asdict
 from pathlib import Path
-from typing import Callable
 
-import numpy as np
-from numpy.typing import NDArray
-
-from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.exceptions import (
     InvalidFunctionError,
     InvalidKwargsError,
@@ -45,21 +39,18 @@ from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from optimagic.optimization.multistart import (
-    WEIGHT_FUNCTIONS,
+    get_multistart_info_from_options,
     run_multistart_optimization,
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.process_multistart_sample import process_multistart_sample
 from optimagic.optimization.process_results import process_internal_optimizer_result
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     aggregate_func_output_to_value,
     get_converter,
 )
-from optimagic.parameters.multistart import MultistartOptions
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.typing import PyTree
 
 
 def maximize(
@@ -471,10 +462,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
-        multistart_options = _set_runtime_defaults_of_multistart_options(
+        multistart_info = get_multistart_info_from_options(
             options=problem.multistart,
             params=problem.params,
-            x=x,
             params_to_internal=converter.params_to_internal,
         )
 
@@ -485,7 +475,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             x=x,
             lower_sampling_bounds=internal_params.soft_lower_bounds,
             upper_sampling_bounds=internal_params.soft_upper_bounds,
-            options=multistart_options,
+            options=multistart_info,
             logging=problem.logging,
             database=database,
             error_handling=problem.error_handling,
@@ -610,43 +600,3 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 
     numdiff_options = {**default_numdiff_options, **numdiff_options}
     return numdiff_options
-
-
-def _set_runtime_defaults_of_multistart_options(
-    options: MultistartOptions,
-    params: PyTree,
-    x: NDArray[np.float64],
-    params_to_internal: Callable[[PyTree], NDArray[np.float64]],
-) -> MultistartOptions:
-    updated = asdict(options)
-
-    if options.n_samples is None:
-        updated["n_samples"] = 10 * len(x)
-
-    if options.batch_size is None:
-        updated["batch_size"] = options.n_cores
-    else:
-        if options.batch_size < options.n_cores:
-            raise ValueError("batch_size must be at least as large as n_cores.")
-
-    updated["batch_evaluator"] = process_batch_evaluator(options.batch_evaluator)
-
-    if isinstance(options.mixing_weight_method, str):
-        updated["mixing_weight_method"] = WEIGHT_FUNCTIONS[options.mixing_weight_method]
-
-    if len(x) <= 200:
-        updated["sampling_method"] = "sobol"
-    else:
-        updated["sampling_method"] = "random"
-
-    if options.sample is not None:
-        updated["sample"] = process_multistart_sample(
-            options.sample, params, params_to_internal
-        )
-        updated["n_samples"] = len(options.sample)
-
-    updated["n_optimizations"] = max(
-        1, int(updated["n_samples"] * updated["share_optimizations"])
-    )
-
-    return MultistartOptions(**updated)

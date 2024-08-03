@@ -15,12 +15,12 @@ from optimagic.exceptions import (
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
 )
+from optimagic.optimization.multistart import MultistartOptions, pre_process_multistart
 from optimagic.optimization.scipy_aliases import (
     map_method_to_algorithm,
     split_fun_and_jac,
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
-from optimagic.parameters.multistart import MultistartOptions, pre_process_multistart
 from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
 from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (

@@ -10,9 +10,22 @@ from optimagic.parameters.scaling import (
 
 
 def test_scaling_options_and_dict_have_same_attributes():
+    """Test that ScalingOptions and ScalingOptionsDict have same values and types.
+
+    As there is no easy way to not read the NotRequired types in 3.10, we need to
+    activate include_extras=True to get the NotRequired types from the dict in Python
+    3.11 and above. Once we drop support for Python 3.10, we can remove the
+    include_extras=True argument and the removal of the NotRequired types.
+
+    """
     types_from_scaling_options = get_type_hints(ScalingOptions)
+    types_from_scaling_options_dict = get_type_hints(
+        ScalingOptionsDict, include_extras=True
+    )
     types_from_scaling_options_dict = {
-        k: get_args(v)[0] for k, v in get_type_hints(ScalingOptionsDict).items()
+        # Remove typing.NotRequired from the types
+        k: get_args(v)[0]
+        for k, v in types_from_scaling_options_dict.items()
     }
     assert types_from_scaling_options == types_from_scaling_options_dict
 

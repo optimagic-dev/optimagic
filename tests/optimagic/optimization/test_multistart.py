@@ -1,10 +1,13 @@
 from itertools import product
+from typing import get_args, get_type_hints
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.optimization.multistart import (
+    MultistartOptions,
+    MultistartOptionsDict,
     _linear_weights,
     _tiktak_weights,
     draw_exploration_sample,
@@ -12,6 +15,23 @@ from optimagic.optimization.multistart import (
     run_explorations,
     update_convergence_state,
 )
+
+# ======================================================================================
+# Multistart Options Handling
+# ======================================================================================
+
+
+def test_multistart_options_and_dict_have_same_attributes():
+    types_from_multistart_options = get_type_hints(MultistartOptions)
+    types_from_multistart_options_dict = {
+        k: get_args(v)[0] for k, v in get_type_hints(MultistartOptionsDict).items()
+    }
+    assert types_from_multistart_options == types_from_multistart_options_dict
+
+
+# ======================================================================================
+# Multistart Optimization
+# ======================================================================================
 
 
 @pytest.fixture()

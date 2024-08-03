@@ -12,19 +12,310 @@ First implemented in Python by Alisdair McKay (
 """
 
 import warnings
+from dataclasses import asdict, dataclass
 from functools import partial
+from typing import Callable, Literal, Sequence, TypedDict, get_args
 
 import numpy as np
+import pandas as pd
+from numpy.typing import NDArray
 from scipy.stats import qmc, triang
+from typing_extensions import NotRequired
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.decorators import AlgoInfo
+from optimagic.exceptions import InvalidMultistartError
 from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
     update_step_status,
 )
+from optimagic.optimization.process_multistart_sample import process_multistart_sample
 from optimagic.parameters.conversion import aggregate_func_output_to_value
+from optimagic.typing import PyTree
 from optimagic.utilities import get_rng
+
+# ======================================================================================
+# Multistart Options Handling
+# ======================================================================================
+
+MultistartSamplingMethod = Literal[
+    "sobol", "random", "halton", "hammersley", "korobov", "latin_hypercube"
+]
+
+
+@dataclass
+class MultistartOptions:
+    """Multistart options in optimization problems.
+
+    A description of the attributes will be written once the multistart code is
+    refactored.
+
+    """
+
+    n_samples: int | None = None
+    share_optimizations: float = 0.1
+    sampling_distribution: Literal["uniform", "triangular"] = "uniform"
+    sampling_method: MultistartSamplingMethod = "sobol"
+    sample: Sequence[PyTree] | None = None
+    mixing_weight_method: Literal["tiktak", "linear"] = "tiktak"
+    mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
+    convergence_relative_params_tolerance: float = 0.01
+    convergence_max_discoveries: int = 2
+    n_cores: int = 1
+    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"
+    batch_size: int | None = None
+    seed: int | np.random.Generator | None = None
+    exploration_error_handling: Literal["raise", "continue"] = "continue"
+    optimization_error_handling: Literal["raise", "continue"] = "continue"
+
+
+class MultistartOptionsDict(TypedDict):
+    n_samples: NotRequired[int | None]
+    share_optimizations: NotRequired[float]
+    sampling_distribution: NotRequired[Literal["uniform", "triangular"]]
+    sampling_method: NotRequired[MultistartSamplingMethod]
+    sample: NotRequired[Sequence[PyTree] | None]
+    mixing_weight_method: NotRequired[Literal["tiktak", "linear"]]
+    mixing_weight_bounds: NotRequired[tuple[float, float]]
+    convergence_relative_params_tolerance: NotRequired[float]
+    convergence_max_discoveries: NotRequired[int]
+    n_cores: NotRequired[int]
+    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]
+    batch_size: NotRequired[int | None]
+    seed: NotRequired[int | np.random.Generator | None]
+    exploration_error_handling: NotRequired[Literal["raise", "continue"]]
+    optimization_error_handling: NotRequired[Literal["raise", "continue"]]
+
+
+@dataclass
+class MultistartInfo:
+    """Multistart info used internally in optimagic."""
+
+    n_samples: int
+    share_optimizations: float
+    # TODO: Sampling distribution and method can potentially be combined
+    sampling_distribution: Literal["uniform", "triangular"]
+    sampling_method: MultistartSamplingMethod
+    sample: Sequence[PyTree] | None
+    # TODO: Following two can be combined into weight_func
+    mixing_weight_method: Literal["tiktak", "linear"]
+    mixing_weight_bounds: tuple[float, float]
+    convergence_relative_params_tolerance: float
+    convergence_max_discoveries: int
+    n_cores: int
+    # TODO: Add type hint for batch_evaluator
+    batch_evaluator: Callable
+    batch_size: int
+    seed: int | np.random.Generator | None
+    exploration_error_handling: Literal["raise", "continue"]
+    optimization_error_handling: Literal["raise", "continue"]
+    n_optimizations: int
+
+
+def get_multistart_info_from_options(
+    options: MultistartOptions,
+    params: PyTree,
+    params_to_internal: Callable[[PyTree], NDArray[np.float64]],
+) -> MultistartInfo:
+    """Get multistart info from multistart options.
+
+    Args:
+        options: The pre-processed multistart options.
+        params: The parameters of the optimization problem.
+        params_to_internal: A function that converts parameters to internal parameters.
+
+    Returns:
+        MultistartOptions: The updated options with runtime defaults.
+
+    """
+    updated = asdict(options)
+
+    x = params_to_internal(params)
+
+    if options.n_samples is None:
+        updated["n_samples"] = 10 * len(x)
+
+    if options.batch_size is None:
+        updated["batch_size"] = options.n_cores
+    else:
+        if options.batch_size < options.n_cores:
+            raise ValueError("batch_size must be at least as large as n_cores.")
+
+    updated["batch_evaluator"] = process_batch_evaluator(options.batch_evaluator)
+
+    if isinstance(options.mixing_weight_method, str):
+        updated["mixing_weight_method"] = WEIGHT_FUNCTIONS[options.mixing_weight_method]
+
+    if len(x) <= 200:
+        updated["sampling_method"] = "sobol"
+    else:
+        updated["sampling_method"] = "random"
+
+    if options.sample is not None:
+        updated["sample"] = process_multistart_sample(
+            options.sample, params, params_to_internal
+        )
+        updated["n_samples"] = len(options.sample)
+
+    updated["n_optimizations"] = max(
+        1, int(updated["n_samples"] * updated["share_optimizations"])
+    )
+
+    return MultistartInfo(**updated)
+
+
+def pre_process_multistart(
+    multistart: bool | MultistartOptions | MultistartOptionsDict | None,
+) -> MultistartOptions | None:
+    """Convert all valid types of multistart to a optimagic.MultistartOptions.
+
+    This just harmonizes multiple ways of specifying multistart options into a single
+    format. It performs runime type checks, but it does not check whether multistart
+    options are consistent with other option choices.
+
+    Args:
+        multistart: The user provided multistart options.
+        n_params: The number of parameters in the optimization problem.
+
+    Returns:
+        The multistart options in the optimagic format.
+
+    Raises:
+        InvalidMultistartError: If the multistart options cannot be processed, e.g.
+            because they do not have the correct type.
+
+    """
+    if isinstance(multistart, bool):
+        multistart = MultistartOptions() if multistart else None
+    elif isinstance(multistart, MultistartOptions) or multistart is None:
+        pass
+    else:
+        try:
+            multistart = MultistartOptions(**multistart)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            raise InvalidMultistartError(
+                f"Invalid multistart options of type: {type(multistart)}. Multistart "
+                "options must be of type optimagic.MultistartOptions, a dictionary "
+                "with valid keys, None, or a boolean."
+            ) from e
+
+    if isinstance(multistart, MultistartOptions):
+        _validate_attribute_types_and_values(multistart)
+
+    return multistart
+
+
+def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
+    if not isinstance(options.n_samples, int | None):
+        raise InvalidMultistartError(
+            f"Invalid number of samples: {options.n_samples}. Number of samples "
+            "must be a positive integer."
+        )
+
+    if not isinstance(options.share_optimizations, int | float):
+        raise InvalidMultistartError(
+            f"Invalid share of optimizations: {options.share_optimizations}. Share of "
+            "optimizations must be a float or int."
+        )
+
+    if options.sampling_distribution not in ("uniform", "triangular"):
+        raise InvalidMultistartError(
+            f"Invalid sampling distribution: {options.sampling_distribution}. Sampling "
+            "distribution must be 'uniform' or 'triangular'."
+        )
+
+    if options.sampling_method not in get_args(MultistartSamplingMethod):
+        raise InvalidMultistartError(
+            f"Invalid sampling method: {options.sampling_method}. Sampling method "
+            f"must be one of {get_args(MultistartSamplingMethod)}."
+        )
+
+    if not isinstance(options.sample, Sequence | None | pd.DataFrame):
+        # TODO: Remove pd.DataFrame
+        raise InvalidMultistartError(
+            f"Invalid sample: {options.sample}. Sample must be a sequence of PyTrees."
+        )
+
+    if not callable(
+        options.mixing_weight_method
+    ) and options.mixing_weight_method not in ("tiktak", "linear"):
+        raise InvalidMultistartError(
+            f"Invalid mixing weight method: {options.mixing_weight_method}. Mixing "
+            "weight method must be Callable or one of 'tiktak' or 'linear'."
+        )
+
+    if (
+        not isinstance(options.mixing_weight_bounds, tuple)
+        or len(options.mixing_weight_bounds) != 2
+        or set(type(x) for x in options.mixing_weight_bounds) != {float}
+    ):
+        raise InvalidMultistartError(
+            f"Invalid mixing weight bounds: {options.mixing_weight_bounds}. Mixing "
+            "weight bounds must be a tuple of two floats."
+        )
+
+    if not isinstance(options.convergence_relative_params_tolerance, int | float):
+        raise InvalidMultistartError(
+            "Invalid relative params tolerance:"
+            f"{options.convergence_relative_params_tolerance}. Relative params "
+            "tolerance must be a number."
+        )
+
+    if (
+        not isinstance(options.convergence_max_discoveries, int | float)
+        or options.convergence_max_discoveries < 1
+    ):
+        raise InvalidMultistartError(
+            f"Invalid max discoveries: {options.convergence_max_discoveries}. Max "
+            "discoveries must be a positive integer."
+        )
+
+    if not isinstance(options.n_cores, int) or options.n_cores < 1:
+        raise InvalidMultistartError(
+            f"Invalid number of cores: {options.n_cores}. Number of cores "
+            "must be a positive integer."
+        )
+
+    if not callable(options.batch_evaluator) and options.batch_evaluator not in (
+        "joblib",
+        "pathos",
+    ):
+        raise InvalidMultistartError(
+            f"Invalid batch evaluator: {options.batch_evaluator}. Batch evaluator "
+            "must be a Callable or one of 'joblib' or 'pathos'."
+        )
+
+    if not isinstance(options.batch_size, int | None):
+        raise InvalidMultistartError(
+            f"Invalid batch size: {options.batch_size}. Batch size "
+            "must be a positive integer."
+        )
+
+    if not isinstance(options.seed, int | np.random.Generator | None):
+        raise InvalidMultistartError(
+            f"Invalid seed: {options.seed}. Seed "
+            "must be an integer, a numpy random generator, or None."
+        )
+
+    if options.exploration_error_handling not in ("raise", "continue"):
+        raise InvalidMultistartError(
+            f"Invalid exploration error handling: {options.exploration_error_handling}."
+            " Exploration error handling must be 'raise' or 'continue'."
+        )
+
+    if options.optimization_error_handling not in ("raise", "continue"):
+        raise InvalidMultistartError(
+            "Invalid optimization error handling:"
+            f"{options.optimization_error_handling}. Optimization error handling must "
+            "be 'raise' or 'continue'."
+        )
+
+
+# ======================================================================================
+# Multistart Optimization
+# ======================================================================================
 
 
 def run_multistart_optimization(
