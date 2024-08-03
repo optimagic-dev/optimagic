@@ -462,7 +462,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
-        multistart_info = get_internal_multistart_options_from_public(
+        multistart_options = get_internal_multistart_options_from_public(
             options=problem.multistart,
             params=problem.params,
             params_to_internal=converter.params_to_internal,
@@ -475,7 +475,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             x=x,
             lower_sampling_bounds=internal_params.soft_lower_bounds,
             upper_sampling_bounds=internal_params.soft_upper_bounds,
-            options=multistart_info,
+            options=multistart_options,
             logging=problem.logging,
             database=database,
             error_handling=problem.error_handling,
