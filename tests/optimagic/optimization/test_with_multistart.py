@@ -167,11 +167,6 @@ def test_error_is_raised_with_transforming_constraints(params):
         )
 
 
-def _params_list_to_aray(params_list):
-    data = [params["value"].tolist() for params in params_list]
-    return np.array(data)
-
-
 def test_multistart_with_numpy_params():
     res = minimize(
         fun=lambda params: params @ params,
