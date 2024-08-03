@@ -63,10 +63,7 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
 
 
 def test_multistart_with_existing_sample(params):
-    sample = pd.DataFrame(
-        np.arange(20).reshape(5, 4) / 10,
-        columns=params.index,
-    )
+    sample = [params.assign(value=x) for x in np.arange(20).reshape(5, 4) / 10]
     options = om.MultistartOptions(sample=sample)
 
     res = minimize(
@@ -76,8 +73,12 @@ def test_multistart_with_existing_sample(params):
         multistart=options,
     )
 
-    calc_sample = _params_list_to_aray(res.multistart_info["exploration_sample"])
-    aaae(calc_sample, options.sample)
+    assert all(
+        got.equals(expected)
+        for expected, got in zip(
+            sample, res.multistart_info["exploration_sample"], strict=False
+        )
+    )
 
 
 def test_convergence_via_max_discoveries_works(params):
@@ -247,7 +248,7 @@ def test_with_ackley():
         algorithm="scipy_lbfgsb",
         multistart=om.MultistartOptions(
             n_samples=200,
-            share_optimizations=0.1,
+            n_optimizations=20,
             convergence_max_discoveries=10,
         ),
     )
@@ -259,7 +260,7 @@ def test_multistart_with_least_squares_optimizers():
         params=np.array([-1, 1.0]),
         bounds=Bounds(soft_lower=np.full(2, -10), soft_upper=np.full(2, 10)),
         algorithm="scipy_ls_trf",
-        multistart=om.MultistartOptions(n_samples=3, share_optimizations=1.0),
+        multistart=om.MultistartOptions(n_samples=3, n_optimizations=3),
     )
 
     aaae(est.params, np.zeros(2))
@@ -289,7 +290,7 @@ def test_with_ackley_using_dict_options():
         algorithm="scipy_lbfgsb",
         multistart={
             "n_samples": 200,
-            "share_optimizations": 0.1,
+            "n_optimizations": 20,
             "convergence_max_discoveries": 10,
         },
     )

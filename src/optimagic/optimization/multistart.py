@@ -17,7 +17,6 @@ from functools import partial
 from typing import Callable, Literal, Sequence, TypedDict, get_args
 
 import numpy as np
-import pandas as pd
 from numpy.typing import NDArray
 from scipy.stats import qmc, triang
 from typing_extensions import NotRequired
@@ -29,7 +28,6 @@ from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
     update_step_status,
 )
-from optimagic.optimization.process_multistart_sample import process_multistart_sample
 from optimagic.parameters.conversion import aggregate_func_output_to_value
 from optimagic.typing import PyTree
 from optimagic.utilities import get_rng
@@ -52,15 +50,14 @@ class MultistartOptions:
         n_samples: The number of points at which the objective function is evaluated
             during the exploration phase. If None, n_samples is set to 100 times the
             number of parameters.
-        share_optimizations: The fraction of the exploration sample that is used to
-            run the optimization (relative to n_samples). Defaults to 0.1.
+        n_optimizations: The number of local optimizations to run. Defaults to 10% of
+            n_samples.
         sampling_distribution: The distribution from which the exploration sample is
             drawn. Allowed are "uniform" and "triangular". Defaults to "uniform".
         sampling_method: The method used to draw the exploration sample. Allowed are
             "sobol", "random", "halton", and "latin_hypercube". Defaults to "random".
-        sample: A sequence of PyTrees, a pandas DataFrame, a numpy array or None that
-            are used as the initial parameters for the optimization. If None, a sample
-            is drawn from the sampling distribution.
+        sample: A sequence of PyTrees or None. If None, a sample is drawn from the
+            sampling distribution.
         mixing_weight_method: The method used to determine the mixing weight, i,e, how
             start parameters for local optimizations are calculated. Allowed are
             "tiktak" and "linear", or a custom callable. Defaults to "tiktak".
@@ -90,10 +87,10 @@ class MultistartOptions:
     """
 
     n_samples: int | None = None
-    share_optimizations: float = 0.1
+    n_optimizations: int | None = None
     sampling_distribution: Literal["uniform", "triangular"] = "uniform"
     sampling_method: MultistartSamplingMethod = "random"
-    sample: Sequence[PyTree] | pd.DataFrame | NDArray[np.float64] | None = None
+    sample: Sequence[PyTree] | None = None
     mixing_weight_method: Literal["tiktak", "linear"] = "tiktak"
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
     convergence_relative_params_tolerance: float = 0.01
@@ -111,10 +108,10 @@ class MultistartOptions:
 
 class MultistartOptionsDict(TypedDict):
     n_samples: NotRequired[int | None]
-    share_optimizations: NotRequired[float]
+    n_optimizations: NotRequired[int | None]
     sampling_distribution: NotRequired[Literal["uniform", "triangular"]]
     sampling_method: NotRequired[MultistartSamplingMethod]
-    sample: NotRequired[Sequence[PyTree] | pd.DataFrame | NDArray[np.float64] | None]
+    sample: NotRequired[Sequence[PyTree] | None]
     mixing_weight_method: NotRequired[Literal["tiktak", "linear"]]
     mixing_weight_bounds: NotRequired[tuple[float, float]]
     convergence_relative_params_tolerance: NotRequired[float]
@@ -178,14 +175,12 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "must be a positive integer or None."
         )
 
-    if (
-        not isinstance(options.share_optimizations, int | float)
-        or options.share_optimizations < 0
-        or options.share_optimizations > 1
+    if options.n_optimizations is not None and (
+        not isinstance(options.n_optimizations, int) or options.n_optimizations < 0
     ):
         raise InvalidMultistartError(
-            f"Invalid share of optimizations: {options.share_optimizations}. Share of "
-            "optimizations must be a float or int."
+            f"Invalid number of optimizations: {options.n_optimizations}. Number of "
+            "optimizations must be a positive integer or None."
         )
 
     if options.sampling_distribution not in ("uniform", "triangular"):
@@ -200,10 +195,10 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             f"must be one of {get_args(MultistartSamplingMethod)}."
         )
 
-    if not isinstance(options.sample, Sequence | None | pd.DataFrame | NDArray):
+    if not isinstance(options.sample, Sequence | None):
         raise InvalidMultistartError(
-            f"Invalid sample: {options.sample}. Sample must be a sequence of PyTrees, "
-            "a pandas DataFrame, a numpy array or None."
+            f"Invalid sample: {options.sample}. Sample must be a sequence of "
+            "parameters."
         )
 
     if not callable(
@@ -292,7 +287,6 @@ class MultistartInfo:
     """Multistart info used internally in optimagic."""
 
     n_samples: int
-    share_optimizations: float
     # TODO: Sampling distribution and method can potentially be combined
     sampling_distribution: Literal["uniform", "triangular"]
     sampling_method: MultistartSamplingMethod
@@ -343,19 +337,20 @@ def get_multistart_info_from_options(
         max_weight=options.mixing_weight_bounds[1],
     )
 
-    sampling_method: MultistartSamplingMethod = "sobol" if len(x) <= 200 else "random"
-
     if options.sample is not None:
-        sample = process_multistart_sample(options.sample, params, params_to_internal)
+        sample = np.array([params_to_internal(x) for x in list(options.sample)])
         n_samples = len(options.sample)
     else:
         sample = None
 
-    n_optimizations = max(1, int(n_samples * options.share_optimizations))
+    if options.n_optimizations is None:
+        n_optimizations = max(1, int(0.1 * n_samples))
+    else:
+        n_optimizations = options.n_optimizations
 
     return MultistartInfo(
         # Attributes taken directly from MultistartOptions
-        share_optimizations=options.share_optimizations,
+        sampling_method=options.sampling_method,
         sampling_distribution=options.sampling_distribution,
         convergence_relative_params_tolerance=options.convergence_relative_params_tolerance,
         convergence_max_discoveries=options.convergence_max_discoveries,
@@ -365,7 +360,6 @@ def get_multistart_info_from_options(
         optimization_error_handling=options.optimization_error_handling,
         # Updated attributes
         n_samples=n_samples,
-        sampling_method=sampling_method,
         sample=sample,
         weight_func=weight_func,
         n_optimizations=n_optimizations,

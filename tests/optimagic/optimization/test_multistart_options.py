@@ -78,10 +78,10 @@ def test_multistart_options_invalid_n_samples_value(value):
         MultistartOptions(n_samples=value)
 
 
-@pytest.mark.parametrize("value", ["invalid", -1, 2])
-def test_multistart_options_invalid_share_optimizations(value):
-    with pytest.raises(InvalidMultistartError, match="Invalid share of optimizations"):
-        MultistartOptions(share_optimizations=value)
+@pytest.mark.parametrize("value", ["invalid", -1])
+def test_multistart_options_invalid_n_optimizations(value):
+    with pytest.raises(InvalidMultistartError, match="Invalid number of optimizations"):
+        MultistartOptions(n_optimizations=value)
 
 
 def test_multistart_options_invalid_sampling_distribution():
