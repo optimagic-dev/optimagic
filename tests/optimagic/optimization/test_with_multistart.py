@@ -245,3 +245,33 @@ def test_multistart_with_least_squares_optimizers():
     )
 
     aaae(est.params, np.zeros(2))
+
+
+def test_with_ackley_using_dict_options():
+    def ackley(x):
+        out = (
+            -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2)))
+            - np.exp(np.mean(np.cos(2 * np.pi * x)))
+            + 20
+            + np.exp(1)
+        )
+        return out
+
+    dim = 5
+
+    kwargs = {
+        "fun": ackley,
+        "params": np.full(dim, -10),
+        "bounds": Bounds(lower=np.full(dim, -32), upper=np.full(dim, 32)),
+        "algo_options": {"stopping.maxfun": 1000},
+    }
+
+    minimize(
+        **kwargs,
+        algorithm="scipy_lbfgsb",
+        multistart={
+            "n_samples": 200,
+            "share_optimizations": 0.1,
+            "convergence_max_discoveries": 10,
+        },
+    )

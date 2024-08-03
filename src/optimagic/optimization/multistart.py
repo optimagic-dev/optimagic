@@ -225,12 +225,11 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
         )
 
     if options.batch_size is not None and (
-        not isinstance(options.batch_size, int)
-        or options.batch_size < min(1, options.n_cores)
+        not isinstance(options.batch_size, int) or options.batch_size < options.n_cores
     ):
         raise InvalidMultistartError(
             f"Invalid batch size: {options.batch_size}. Batch size "
-            "must be a positive integer between 1 and n_cores, or None."
+            "must be a positive integer larger than n_cores, or None."
         )
 
     if not isinstance(options.seed, int | np.random.Generator | None):

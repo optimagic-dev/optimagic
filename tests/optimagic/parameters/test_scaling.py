@@ -70,7 +70,7 @@ def test_pre_process_scaling_invalid_dict_key():
         pre_process_scaling(scaling={"wrong_key": "start_values"})
 
 
-def test_pre_process_scaling_invalid_clipping_value_type():
+def test_pre_process_scaling_invalid_dict_value():
     with pytest.raises(InvalidScalingError, match="Invalid clipping value:"):
         pre_process_scaling(scaling={"clipping_value": "invalid"})
 

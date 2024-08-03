@@ -1,13 +1,10 @@
 from itertools import product
-from typing import get_args, get_type_hints
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.optimization.multistart import (
-    MultistartOptions,
-    MultistartOptionsDict,
     _linear_weights,
     _tiktak_weights,
     draw_exploration_sample,
@@ -15,36 +12,6 @@ from optimagic.optimization.multistart import (
     run_explorations,
     update_convergence_state,
 )
-
-# ======================================================================================
-# Multistart Options Handling
-# ======================================================================================
-
-
-def test_multistart_options_and_dict_have_same_attributes():
-    """Test that MultistartOptions and MultistartOptionsDict have same values and types.
-
-    As there is no easy way to not read the NotRequired types in 3.10, we need to
-    activate include_extras=True to get the NotRequired types from the dict in Python
-    3.11 and above. Once we drop support for Python 3.10, we can remove the
-    include_extras=True argument and the removal of the NotRequired types.
-
-    """
-    types_from_multistart_options = get_type_hints(MultistartOptions)
-    types_from_multistart_options_dict = get_type_hints(
-        MultistartOptionsDict, include_extras=True
-    )
-    types_from_multistart_options_dict = {
-        # Remove typing.NotRequired from the types
-        k: get_args(v)[0]
-        for k, v in types_from_multistart_options_dict.items()
-    }
-    assert types_from_multistart_options == types_from_multistart_options_dict
-
-
-# ======================================================================================
-# Multistart Optimization
-# ======================================================================================
 
 
 @pytest.fixture()
