@@ -12,7 +12,7 @@ First implemented in Python by Alisdair McKay (
 """
 
 import warnings
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from functools import partial
 from typing import Callable, Literal, Sequence, TypedDict, get_args
 
@@ -41,9 +41,7 @@ from optimagic.utilities import get_rng
 # Public Options
 # ======================================================================================
 
-MultistartSamplingMethod = Literal[
-    "sobol", "random", "halton", "hammersley", "korobov", "latin_hypercube"
-]
+MultistartSamplingMethod = Literal["sobol", "random", "halton", "latin_hypercube"]
 
 
 @dataclass
@@ -227,11 +225,12 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
         )
 
     if options.batch_size is not None and (
-        not isinstance(options.batch_size, int) or options.batch_size < 1
+        not isinstance(options.batch_size, int)
+        or options.batch_size < min(1, options.n_cores)
     ):
         raise InvalidMultistartError(
             f"Invalid batch size: {options.batch_size}. Batch size "
-            "must be a positive integer or None."
+            "must be a positive integer between 1 and n_cores, or None."
         )
 
     if not isinstance(options.seed, int | np.random.Generator | None):
@@ -268,9 +267,7 @@ class MultistartInfo:
     sampling_distribution: Literal["uniform", "triangular"]
     sampling_method: MultistartSamplingMethod
     sample: Sequence[PyTree] | None
-    # TODO: Following two can be combined into weight_func
-    mixing_weight_method: Literal["tiktak", "linear"]
-    mixing_weight_bounds: tuple[float, float]
+    weight_func: Callable
     convergence_relative_params_tolerance: float
     convergence_max_discoveries: int
     n_cores: int
@@ -299,40 +296,51 @@ def get_multistart_info_from_options(
         MultistartOptions: The updated options with runtime defaults.
 
     """
-    updated = asdict(options)
-
     x = params_to_internal(params)
 
-    if options.n_samples is None:
-        updated["n_samples"] = 10 * len(x)
-
-    if options.batch_size is None:
-        updated["batch_size"] = options.n_cores
-    else:
-        if options.batch_size < options.n_cores:
-            raise ValueError("batch_size must be at least as large as n_cores.")
-
-    updated["batch_evaluator"] = process_batch_evaluator(options.batch_evaluator)
+    n_samples = 10 * len(x) if options.n_samples is None else options.n_samples
+    batch_size = options.n_cores if options.batch_size is None else options.batch_size
+    batch_evaluator = process_batch_evaluator(options.batch_evaluator)
 
     if isinstance(options.mixing_weight_method, str):
-        updated["mixing_weight_method"] = WEIGHT_FUNCTIONS[options.mixing_weight_method]
-
-    if len(x) <= 200:
-        updated["sampling_method"] = "sobol"
+        _weight_method = WEIGHT_FUNCTIONS[options.mixing_weight_method]
     else:
-        updated["sampling_method"] = "random"
-
-    if options.sample is not None:
-        updated["sample"] = process_multistart_sample(
-            options.sample, params, params_to_internal
-        )
-        updated["n_samples"] = len(options.sample)
-
-    updated["n_optimizations"] = max(
-        1, int(updated["n_samples"] * updated["share_optimizations"])
+        _weight_method = options.mixing_weight_method
+    weight_func = partial(
+        _weight_method,
+        min_weight=options.mixing_weight_bounds[0],
+        max_weight=options.mixing_weight_bounds[1],
     )
 
-    return MultistartInfo(**updated)
+    sampling_method: MultistartSamplingMethod = "sobol" if len(x) <= 200 else "random"
+
+    if options.sample is not None:
+        sample = process_multistart_sample(options.sample, params, params_to_internal)
+        n_samples = len(options.sample)
+    else:
+        sample = None
+
+    n_optimizations = max(1, int(n_samples * options.share_optimizations))
+
+    return MultistartInfo(
+        # Attributes taken from options
+        share_optimizations=options.share_optimizations,
+        sampling_distribution=options.sampling_distribution,
+        convergence_relative_params_tolerance=options.convergence_relative_params_tolerance,
+        convergence_max_discoveries=options.convergence_max_discoveries,
+        n_cores=options.n_cores,
+        seed=options.seed,
+        exploration_error_handling=options.exploration_error_handling,
+        optimization_error_handling=options.optimization_error_handling,
+        # Updates attributes
+        n_samples=n_samples,
+        sampling_method=sampling_method,
+        sample=sample,
+        weight_func=weight_func,
+        n_optimizations=n_optimizations,
+        batch_evaluator=batch_evaluator,
+        batch_size=batch_size,
+    )
 
 
 # ======================================================================================
@@ -458,15 +466,9 @@ def run_multistart_optimization(
 
     batch_evaluator = options.batch_evaluator
 
-    weight_func = partial(
-        options.mixing_weight_method,
-        min_weight=options.mixing_weight_bounds[0],
-        max_weight=options.mixing_weight_bounds[1],
-    )
-
     opt_counter = 0
     for batch in batched_sample:
-        weight = weight_func(opt_counter, n_optimizations)
+        weight = options.weight_func(opt_counter, n_optimizations)
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
         arguments = [
