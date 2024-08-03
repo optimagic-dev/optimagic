@@ -66,13 +66,8 @@ def test_pre_process_scaling_invalid_type():
 
 
 def test_pre_process_scaling_invalid_dict_key():
-    with pytest.raises(InvalidScalingError, match="Invalid scaling options"):
+    with pytest.raises(InvalidScalingError, match="Invalid scaling options of type:"):
         pre_process_scaling(scaling={"wrong_key": "start_values"})
-
-
-def test_pre_process_scaling_invalid_method_value():
-    with pytest.raises(InvalidScalingError, match="Invalid scaling method:"):
-        pre_process_scaling(scaling={"method": "invalid"})
 
 
 def test_pre_process_scaling_invalid_clipping_value_type():
@@ -80,11 +75,21 @@ def test_pre_process_scaling_invalid_clipping_value_type():
         pre_process_scaling(scaling={"clipping_value": "invalid"})
 
 
-def test_pre_process_scaling_invalid_magnitude_value_type():
-    with pytest.raises(InvalidScalingError, match="Invalid scaling magnitude:"):
-        pre_process_scaling(scaling={"magnitude": "invalid"})
+def test_scaling_options_invalid_method_value():
+    with pytest.raises(InvalidScalingError, match="Invalid scaling method:"):
+        ScalingOptions(method="invalid")
 
 
-def test_pre_process_scaling_invalid_magnitude_value_range():
+def test_scaling_options_invalid_clipping_value_type():
+    with pytest.raises(InvalidScalingError, match="Invalid clipping value:"):
+        ScalingOptions(clipping_value="invalid")
+
+
+def test_scaling_options_invalid_magnitude_value_type():
     with pytest.raises(InvalidScalingError, match="Invalid scaling magnitude:"):
-        pre_process_scaling(scaling={"magnitude": -1})
+        ScalingOptions(magnitude="invalid")
+
+
+def test_scaling_options_invalid_magnitude_value_range():
+    with pytest.raises(InvalidScalingError, match="Invalid scaling magnitude:"):
+        ScalingOptions(magnitude=-1)

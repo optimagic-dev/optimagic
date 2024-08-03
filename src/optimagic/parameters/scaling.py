@@ -68,6 +68,8 @@ def pre_process_scaling(
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
+            if isinstance(e, InvalidScalingError):
+                raise e
             raise InvalidScalingError(
                 f"Invalid scaling options of type: {type(scaling)}. Scaling options "
                 "must be of type optimagic.ScalingOptions, a dictionary with a subset "
