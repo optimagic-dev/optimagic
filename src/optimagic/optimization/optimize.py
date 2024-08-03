@@ -39,7 +39,7 @@ from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from optimagic.optimization.multistart import (
-    get_multistart_info_from_options,
+    get_internal_multistart_options_from_public,
     run_multistart_optimization,
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
@@ -462,7 +462,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
-        multistart_info = get_multistart_info_from_options(
+        multistart_info = get_internal_multistart_options_from_public(
             options=problem.multistart,
             params=problem.params,
             params_to_internal=converter.params_to_internal,

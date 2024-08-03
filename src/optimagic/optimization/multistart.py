@@ -283,8 +283,14 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
 
 
 @dataclass
-class MultistartInfo:
-    """Multistart info used internally in optimagic."""
+class InternalMultistartOptions:
+    """Multistart options used internally in optimagic.
+
+    Compared to `MultistartOptions`, this data class has stricter types and combines
+    some of the attributes. It is generated at runtime using a `MultistartOptions`
+    instance and the function `get_internal_multistart_options_from_public`.
+
+    """
 
     n_samples: int
     # TODO: Sampling distribution and method can potentially be combined
@@ -305,12 +311,12 @@ class MultistartInfo:
     n_optimizations: int
 
 
-def get_multistart_info_from_options(
+def get_internal_multistart_options_from_public(
     options: MultistartOptions,
     params: PyTree,
     params_to_internal: Callable[[PyTree], NDArray[np.float64]],
-) -> MultistartInfo:
-    """Get multistart info from multistart options.
+) -> InternalMultistartOptions:
+    """Get internal multistart options from public multistart options.
 
     Args:
         options: The pre-processed multistart options.
@@ -318,7 +324,7 @@ def get_multistart_info_from_options(
         params_to_internal: A function that converts parameters to internal parameters.
 
     Returns:
-        MultistartOptions: The updated options with runtime defaults.
+        InternalMultistartOptions: The updated options with runtime defaults.
 
     """
     x = params_to_internal(params)
@@ -348,7 +354,7 @@ def get_multistart_info_from_options(
     else:
         n_optimizations = options.n_optimizations
 
-    return MultistartInfo(
+    return InternalMultistartOptions(
         # Attributes taken directly from MultistartOptions
         sampling_method=options.sampling_method,
         sampling_distribution=options.sampling_distribution,
