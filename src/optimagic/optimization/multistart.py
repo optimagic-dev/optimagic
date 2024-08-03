@@ -58,8 +58,9 @@ class MultistartOptions:
             drawn. Allowed are "uniform" and "triangular". Defaults to "uniform".
         sampling_method: The method used to draw the exploration sample. Allowed are
             "sobol", "random", "halton", and "latin_hypercube". Defaults to "random".
-        sample: A sequence of PyTrees that are used as the initial parameters for the
-            optimization. If None, a sample is drawn from the sampling distribution.
+        sample: A sequence of PyTrees, a pandas DataFrame, a numpy array or None that
+            are used as the initial parameters for the optimization. If None, a sample
+            is drawn from the sampling distribution.
         mixing_weight_method: The method used to determine the mixing weight, i,e, how
             start parameters for local optimizations are calculated. Allowed are
             "tiktak" and "linear", or a custom callable. Defaults to "tiktak".
@@ -92,7 +93,7 @@ class MultistartOptions:
     share_optimizations: float = 0.1
     sampling_distribution: Literal["uniform", "triangular"] = "uniform"
     sampling_method: MultistartSamplingMethod = "random"
-    sample: Sequence[PyTree] | None = None
+    sample: Sequence[PyTree] | pd.DataFrame | NDArray[np.float64] | None = None
     mixing_weight_method: Literal["tiktak", "linear"] = "tiktak"
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
     convergence_relative_params_tolerance: float = 0.01
@@ -113,7 +114,7 @@ class MultistartOptionsDict(TypedDict):
     share_optimizations: NotRequired[float]
     sampling_distribution: NotRequired[Literal["uniform", "triangular"]]
     sampling_method: NotRequired[MultistartSamplingMethod]
-    sample: NotRequired[Sequence[PyTree] | None]
+    sample: NotRequired[Sequence[PyTree] | pd.DataFrame | NDArray[np.float64] | None]
     mixing_weight_method: NotRequired[Literal["tiktak", "linear"]]
     mixing_weight_bounds: NotRequired[tuple[float, float]]
     convergence_relative_params_tolerance: NotRequired[float]
@@ -199,11 +200,10 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             f"must be one of {get_args(MultistartSamplingMethod)}."
         )
 
-    if not isinstance(options.sample, Sequence | None | pd.DataFrame):
-        # TODO: Remove pd.DataFrame
+    if not isinstance(options.sample, Sequence | None | pd.DataFrame | NDArray):
         raise InvalidMultistartError(
-            f"Invalid sample: {options.sample}. Sample must be a sequence of PyTrees "
-            "or None."
+            f"Invalid sample: {options.sample}. Sample must be a sequence of PyTrees, "
+            "a pandas DataFrame, a numpy array or None."
         )
 
     if not callable(
@@ -296,12 +296,13 @@ class MultistartInfo:
     # TODO: Sampling distribution and method can potentially be combined
     sampling_distribution: Literal["uniform", "triangular"]
     sampling_method: MultistartSamplingMethod
-    sample: Sequence[PyTree] | None
+    sample: NDArray[np.float64] | None
+    # TODO: Add more informative type hint for weight_func
     weight_func: Callable
     convergence_relative_params_tolerance: float
     convergence_max_discoveries: int
     n_cores: int
-    # TODO: Add type hint for batch_evaluator
+    # TODO: Add more informative type hint for batch_evaluator
     batch_evaluator: Callable
     batch_size: int
     seed: int | np.random.Generator | None
