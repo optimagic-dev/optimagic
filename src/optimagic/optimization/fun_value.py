@@ -8,7 +8,7 @@ from pybaum import tree_just_flatten
 
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import OptimizerType, PyTree, Scalar
+from optimagic.typing import OptimizerType, ProblemType, PyTree, Scalar
 from optimagic.utilities import isscalar
 
 
@@ -161,64 +161,46 @@ def convert_output_to_likelihood_function_value(
 P = ParamSpec("P")
 
 
-def enforce_least_squares(
-    func: Callable[P, PyTree | FunctionValue],
-) -> Callable[P, LeastSquaresFunctionValue]:
-    """Make valid least squares functions return a LeastSquaresFunctionValue.
+def enforce_return_type(
+    problem_type: ProblemType,
+) -> Callable[
+    [Callable[P, Scalar | PyTree | FunctionValue]], Callable[P, FunctionValue]
+]:
+    """Enforce a strict return type for objective functions based on problem_type.
 
-    This has no effect if the function already returns a LeastSquaresFunctionValue but
-    converts a PyTree or FunctionValue to a LeastSquaresFunctionValue.
-
-    Whereas the mark.least_squares decorator works for objective functions and
-    derivatives, this is only meant for objective functions.
-
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> LeastSquaresFunctionValue:
-        raw = func(*args, **kwargs)
-        return convert_output_to_least_squares_function_value(raw)
-
-    return wrapper
-
-
-def enforce_likelihood(
-    func: Callable[P, PyTree | FunctionValue],
-) -> Callable[P, LikelihoodFunctionValue]:
-    """Make valid likelihood functions return a LikelihoodFunctionValue.
-
-    This has no effect if the function already returns a LikelihoodFunctionValue but
-    converts a PyTree or FunctionValue to a LikelihoodFunctionValue.
-
-    Whereas the mark.likelihood decorator works for objective functions and derivatives,
-    this is only meant for objective functions.
+    This has no effect if the function already returns the strictest possible type for
+    the problem_type but converts everything else to that type.
 
     """
 
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> LikelihoodFunctionValue:
-        raw = func(*args, **kwargs)
-        return convert_output_to_likelihood_function_value(raw)
+    def decorator_enforce(
+        func: Callable[P, Scalar | PyTree | FunctionValue],
+    ) -> Callable[P, FunctionValue]:
+        if problem_type == ProblemType.SCALAR:
 
-    return wrapper
+            @functools.wraps(func)
+            def wrapper_enforce(
+                *args: P.args, **kwargs: P.kwargs
+            ) -> ScalarFunctionValue:
+                raw = func(*args, **kwargs)
+                return convert_output_to_scalar_function_value(raw)
+        elif problem_type == ProblemType.LEAST_SQUARES:
 
+            @functools.wraps(func)
+            def wrapper_enforce(
+                *args: P.args, **kwargs: P.kwargs
+            ) -> LeastSquaresFunctionValue:
+                raw = func(*args, **kwargs)
+                return convert_output_to_least_squares_function_value(raw)
+        elif problem_type == ProblemType.LIKELIHOOD:
 
-def enforce_scalar(
-    func: Callable[P, float | FunctionValue],
-) -> Callable[P, ScalarFunctionValue]:
-    """Make valid scalar objective functions return a ScalarFunctionValue.
+            @functools.wraps(func)
+            def wrapper_enforce(
+                *args: P.args, **kwargs: P.kwargs
+            ) -> LikelihoodFunctionValue:
+                raw = func(*args, **kwargs)
+                return convert_output_to_likelihood_function_value(raw)
 
-    This has no effect if the function already returns a ScalarFunctionValue but
-    converts a float or FunctionValue to a ScalarFunctionValue.
+        return wrapper_enforce
 
-    Whereas the mark.scalar decorator works for objective functions and derivatives,
-    this is only meant for objective functions.
-
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ScalarFunctionValue:
-        raw = func(*args, **kwargs)
-        return convert_output_to_scalar_function_value(raw)
-
-    return wrapper
+    return decorator_enforce

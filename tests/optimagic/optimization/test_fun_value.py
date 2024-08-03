@@ -7,15 +7,13 @@ from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
     ScalarFunctionValue,
-    enforce_least_squares,
-    enforce_likelihood,
-    enforce_scalar,
+    enforce_return_type,
 )
-from optimagic.typing import OptimizerType
+from optimagic.typing import OptimizerType, ProblemType
 
 
 def test_enforce_scalar_with_scalar_return():
-    @enforce_scalar
+    @enforce_return_type(ProblemType.SCALAR)
     def f(x):
         return 3
 
@@ -25,7 +23,7 @@ def test_enforce_scalar_with_scalar_return():
 
 
 def test_enforce_scalar_with_function_value_return():
-    @enforce_scalar
+    @enforce_return_type(ProblemType.SCALAR)
     def f(x):
         return FunctionValue(3)
 
@@ -35,7 +33,7 @@ def test_enforce_scalar_with_function_value_return():
 
 
 def test_enforce_scalar_trivial_case():
-    @enforce_scalar
+    @enforce_return_type(ProblemType.SCALAR)
     def f(x):
         return ScalarFunctionValue(3)
 
@@ -45,7 +43,7 @@ def test_enforce_scalar_trivial_case():
 
 
 def test_enforce_scalar_invalid_return():
-    @enforce_scalar
+    @enforce_return_type(ProblemType.SCALAR)
     def f(x):
         return x
 
@@ -54,7 +52,7 @@ def test_enforce_scalar_invalid_return():
 
 
 def test_enforce_least_squares_with_vector_return():
-    @enforce_least_squares
+    @enforce_return_type(ProblemType.LEAST_SQUARES)
     def f(x):
         return np.ones(3)
 
@@ -64,7 +62,7 @@ def test_enforce_least_squares_with_vector_return():
 
 
 def test_enforce_least_squares_with_function_value_return():
-    @enforce_least_squares
+    @enforce_return_type(ProblemType.LEAST_SQUARES)
     def f(x):
         return FunctionValue(np.ones(3))
 
@@ -74,7 +72,7 @@ def test_enforce_least_squares_with_function_value_return():
 
 
 def test_enforce_least_squares_trivial_case():
-    @enforce_least_squares
+    @enforce_return_type(ProblemType.LEAST_SQUARES)
     def f(x):
         return LeastSquaresFunctionValue(np.ones(3))
 
@@ -84,7 +82,7 @@ def test_enforce_least_squares_trivial_case():
 
 
 def test_enforce_least_squares_invalid_return():
-    @enforce_least_squares
+    @enforce_return_type(ProblemType.LEAST_SQUARES)
     def f(x):
         return 3
 
@@ -93,7 +91,7 @@ def test_enforce_least_squares_invalid_return():
 
 
 def test_enforce_likelihood_with_vector_return():
-    @enforce_likelihood
+    @enforce_return_type(ProblemType.LIKELIHOOD)
     def f(x):
         return np.ones(3)
 
@@ -103,7 +101,7 @@ def test_enforce_likelihood_with_vector_return():
 
 
 def test_enforce_likelihood_with_function_value_return():
-    @enforce_likelihood
+    @enforce_return_type(ProblemType.LIKELIHOOD)
     def f(x):
         return FunctionValue(np.ones(3))
 
@@ -113,7 +111,7 @@ def test_enforce_likelihood_with_function_value_return():
 
 
 def test_enforce_likelihood_trivial_case():
-    @enforce_likelihood
+    @enforce_return_type(ProblemType.LIKELIHOOD)
     def f(x):
         return LikelihoodFunctionValue(np.ones(3))
 
@@ -123,7 +121,7 @@ def test_enforce_likelihood_trivial_case():
 
 
 def test_enforce_likelihood_invalid_return():
-    @enforce_likelihood
+    @enforce_return_type(ProblemType.LIKELIHOOD)
     def f(x):
         return 3
 
