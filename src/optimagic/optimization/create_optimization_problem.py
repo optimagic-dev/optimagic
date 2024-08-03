@@ -32,7 +32,7 @@ from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
     infer_problem_type,
-    process_func_of_params,
+    partial_func_of_params,
 )
 from optimagic.typing import ProblemType, PyTree
 
@@ -329,7 +329,7 @@ def create_optimization_problem(
     # ==================================================================================
     # evaluate fun for the first time
     # ==================================================================================
-    fun = process_func_of_params(
+    fun = partial_func_of_params(
         func=fun,
         kwargs=fun_kwargs,
         name="criterion",
@@ -388,7 +388,7 @@ def create_optimization_problem(
     if isinstance(jac, dict):
         jac = jac.get(algo_info.primary_criterion_entry)
     if jac is not None:
-        jac = process_func_of_params(
+        jac = partial_func_of_params(
             func=jac,
             kwargs=jac_kwargs,
             name="derivative",
@@ -398,7 +398,7 @@ def create_optimization_problem(
         fun_and_jac = fun_and_jac.get(algo_info.primary_criterion_entry)
 
     if fun_and_jac is not None:
-        fun_and_jac = process_func_of_params(
+        fun_and_jac = partial_func_of_params(
             func=fun_and_jac,
             kwargs=fun_and_jac_kwargs,
             name="criterion_and_derivative",

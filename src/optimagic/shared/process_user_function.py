@@ -13,7 +13,7 @@ from optimagic.typing import ProblemType
 from optimagic.utilities import propose_alternatives
 
 
-def process_func_of_params(func, kwargs, name="your function", skip_checks=False):
+def partial_func_of_params(func, kwargs, name="your function", skip_checks=False):
     # fast path
     if skip_checks and kwargs in (None, {}):
         return func

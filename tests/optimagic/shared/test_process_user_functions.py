@@ -11,34 +11,34 @@ from optimagic.optimization.fun_value import (
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
     infer_problem_type,
-    process_func_of_params,
+    partial_func_of_params,
 )
 from optimagic.typing import ProblemType
 
 
-def test_process_func_of_params():
+def test_partial_func_of_params():
     def f(params, b, c):
         return params + b + c
 
-    func = process_func_of_params(f, {"b": 2, "c": 3})
+    func = partial_func_of_params(f, {"b": 2, "c": 3})
 
     assert func(1) == 6
 
 
-def test_process_func_of_params_too_many_kwargs():
+def test_partial_func_of_params_too_many_kwargs():
     def f(params, b, c):
         return params + b + c
 
     with pytest.raises(InvalidKwargsError):
-        process_func_of_params(f, {"params": 1, "b": 2, "c": 3})
+        partial_func_of_params(f, {"params": 1, "b": 2, "c": 3})
 
 
-def test_process_func_of_params_too_few_kwargs():
+def test_partial_func_of_params_too_few_kwargs():
     def f(params, b, c):
         return params + b + c
 
     with pytest.raises(InvalidKwargsError):
-        process_func_of_params(f, {"c": 3})
+        partial_func_of_params(f, {"c": 3})
 
 
 def test_get_kwargs_from_args():
