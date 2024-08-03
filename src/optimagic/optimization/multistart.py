@@ -53,24 +53,25 @@ class MultistartOptions:
             during the exploration phase. If None, n_samples is set to 100 times the
             number of parameters.
         share_optimizations: The fraction of the exploration sample that is used to
-            run the optimization (relative to n_samples).
+            run the optimization (relative to n_samples). Defaults to 0.1.
         sampling_distribution: The distribution from which the exploration sample is
-            drawn. Allowed are "uniform" and "triangular".
+            drawn. Allowed are "uniform" and "triangular". Defaults to "uniform".
         sampling_method: The method used to draw the exploration sample. Allowed are
-            "sobol", "random", "halton", and "latin_hypercube".
+            "sobol", "random", "halton", and "latin_hypercube". Defaults to "random".
         sample: A sequence of PyTrees that are used as the initial parameters for the
             optimization. If None, a sample is drawn from the sampling distribution.
         mixing_weight_method: The method used to determine the mixing weight, i,e, how
             start parameters for local optimizations are calculated. Allowed are
-            "tiktak" and "linear", or a custom callable.
+            "tiktak" and "linear", or a custom callable. Defaults to "tiktak".
         mixing_weight_bounds: The lower and upper bounds for the mixing weight.
+            Defaults to (0.1, 0.995).
         convergence_max_discoveries: The maximum number of discoveries for convergence.
             Determines after how many re-descoveries of the currently best local
-            optima the multistart algorithm stops.
+            optima the multistart algorithm stops. Defaults to 2.
         convergence_relative_params_tolerance: The relative tolerance in parameters
             for convergence. Determines the maximum relative distance two parameter
-            vecctors can have to be considered equal.
-        n_cores: The number of cores to use for parallelization.
+            vecctors can have to be considered equal. Defaults to 0.01.
+        n_cores: The number of cores to use for parallelization. Defaults to 1.
         batch_evaluator: The evaluator to use for batch evaluation. Allowed are "joblib"
             and "pathos", or a custom callable.
         batch_size: The batch size for batch evaluation. Must be larger than n_cores
@@ -90,7 +91,7 @@ class MultistartOptions:
     n_samples: int | None = None
     share_optimizations: float = 0.1
     sampling_distribution: Literal["uniform", "triangular"] = "uniform"
-    sampling_method: MultistartSamplingMethod = "sobol"
+    sampling_method: MultistartSamplingMethod = "random"
     sample: Sequence[PyTree] | None = None
     mixing_weight_method: Literal["tiktak", "linear"] = "tiktak"
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
@@ -327,7 +328,7 @@ def get_multistart_info_from_options(
     """
     x = params_to_internal(params)
 
-    n_samples = 10 * len(x) if options.n_samples is None else options.n_samples
+    n_samples = 100 * len(x) if options.n_samples is None else options.n_samples
     batch_size = options.n_cores if options.batch_size is None else options.batch_size
     batch_evaluator = process_batch_evaluator(options.batch_evaluator)
 
@@ -601,7 +602,7 @@ def draw_exploration_sample(
         sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
             "random". Default is sobol for problems with up to 200 parameters
             and random for problems with more than 200 parameters.
-        seed (int): Random seed.
+        seed (int | np.random.Generator | None): Random seed.
 
     Returns:
         np.ndarray: Numpy array of shape (n_samples, n_params).

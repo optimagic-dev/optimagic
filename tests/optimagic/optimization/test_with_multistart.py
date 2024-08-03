@@ -53,8 +53,8 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
 
     assert hasattr(res, "multistart_info")
     ms_info = res.multistart_info
-    assert len(ms_info["exploration_sample"]) == 40
-    assert len(ms_info["exploration_results"]) == 40
+    assert len(ms_info["exploration_sample"]) == 400
+    assert len(ms_info["exploration_results"]) == 400
     assert all(isinstance(entry, float) for entry in ms_info["exploration_results"])
     assert all(isinstance(entry, OptimizeResult) for entry in ms_info["local_optima"])
     assert all(isinstance(entry, pd.DataFrame) for entry in ms_info["start_parameters"])
@@ -98,6 +98,7 @@ def test_convergence_via_max_discoveries_works(params):
 
 def test_steps_are_logged_as_skipped_if_convergence(params):
     options = om.MultistartOptions(
+        n_samples=10 * len(params),
         convergence_relative_params_tolerance=np.inf,
         convergence_max_discoveries=2,
     )
@@ -116,7 +117,10 @@ def test_steps_are_logged_as_skipped_if_convergence(params):
 
 
 def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
-    options = om.MultistartOptions(convergence_max_discoveries=np.inf)
+    options = om.MultistartOptions(
+        convergence_max_discoveries=np.inf,
+        n_samples=10 * len(params),
+    )
 
     minimize(
         fun=sos_dict_criterion,
@@ -174,6 +178,20 @@ def test_multistart_with_numpy_params():
         algorithm="scipy_lbfgsb",
         bounds=Bounds(soft_lower=np.full(5, -10), soft_upper=np.full(5, 10)),
         multistart=True,
+    )
+
+    aaae(res.params, np.zeros(5))
+
+
+def test_multistart_with_rng_seed():
+    rng = np.random.default_rng(12345)
+
+    res = minimize(
+        fun=lambda params: params @ params,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+        bounds=Bounds(soft_lower=np.full(5, -10), soft_upper=np.full(5, 10)),
+        multistart=om.MultistartOptions(seed=rng),
     )
 
     aaae(res.params, np.zeros(5))
