@@ -90,7 +90,7 @@ def test_run_explorations():
 def test_get_batched_optimization_sample():
     calculated = get_batched_optimization_sample(
         sorted_sample=np.arange(12).reshape(6, 2),
-        n_optimizations=5,
+        stopping_maxopt=5,
         batch_size=4,
     )
     expected = [[[0, 1], [2, 3], [4, 5], [6, 7]], [[8, 9]]]

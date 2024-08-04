@@ -44,7 +44,7 @@ def run_multistart_optimization(
     database,
     error_handling,
 ):
-    steps = determine_steps(options.n_samples, n_optimizations=options.n_optimizations)
+    steps = determine_steps(options.n_samples, stopping_maxopt=options.stopping_maxopt)
 
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
@@ -102,14 +102,14 @@ def run_multistart_optimization(
     sorted_sample = exploration_res["sorted_sample"]
     sorted_values = exploration_res["sorted_values"]
 
-    n_optimizations = options.n_optimizations
-    if n_optimizations > len(sorted_sample):
-        n_skipped_steps = n_optimizations - len(sorted_sample)
-        n_optimizations = len(sorted_sample)
+    stopping_maxopt = options.stopping_maxopt
+    if stopping_maxopt > len(sorted_sample):
+        n_skipped_steps = stopping_maxopt - len(sorted_sample)
+        stopping_maxopt = len(sorted_sample)
         warnings.warn(
             "There are less valid starting points than requested optimizations. "
             "The number of optimizations has been reduced from "
-            f"{options.n_optimizations} to {len(sorted_sample)}."
+            f"{options.stopping_maxopt} to {len(sorted_sample)}."
         )
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
@@ -124,7 +124,7 @@ def run_multistart_optimization(
 
     batched_sample = get_batched_optimization_sample(
         sorted_sample=sorted_sample,
-        n_optimizations=n_optimizations,
+        stopping_maxopt=stopping_maxopt,
         batch_size=options.batch_size,
     )
 
@@ -152,7 +152,7 @@ def run_multistart_optimization(
 
     opt_counter = 0
     for batch in batched_sample:
-        weight = options.weight_func(opt_counter, n_optimizations)
+        weight = options.weight_func(opt_counter, stopping_maxopt)
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
         arguments = [
@@ -198,7 +198,7 @@ def run_multistart_optimization(
     return raw_res
 
 
-def determine_steps(n_samples, n_optimizations):
+def determine_steps(n_samples, stopping_maxopt):
     """Determine the number and type of steps for the multistart optimization.
 
     This is mainly used to write them to the log. The number of steps is also
@@ -206,7 +206,7 @@ def determine_steps(n_samples, n_optimizations):
 
     Args:
         n_samples (int): Number of exploration points for the multistart optimization.
-        n_optimizations (int): Number of local optimizations.
+        stopping_maxopt (int): Number of local optimizations.
 
 
     Returns:
@@ -221,7 +221,7 @@ def determine_steps(n_samples, n_optimizations):
     }
 
     steps = [exploration_step]
-    for i in range(n_optimizations):
+    for i in range(stopping_maxopt):
         optimization_step = {
             "type": "optimization",
             "status": "scheduled",
@@ -386,7 +386,7 @@ def run_explorations(
     return out
 
 
-def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
+def get_batched_optimization_sample(sorted_sample, stopping_maxopt, batch_size):
     """Create a batched sample of internal parameters for the optimization phase.
 
     Note that in the end the optimizations will not be started from those parameter
@@ -396,7 +396,7 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
     Args:
         sorted_sample (np.ndarray): 2d numpy array with containing sorted internal
             parameter vectors.
-        n_optimizations (int): Number of optimizations to run. If sample is shorter
+        stopping_maxopt (int): Number of optimizations to run. If sample is shorter
             than that, optimizations are run on all entries of the sample.
         batch_size (int): Batch size.
 
@@ -405,12 +405,12 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
             The inner lists have length ``batch_size`` or shorter.
 
     """
-    n_batches = int(np.ceil(n_optimizations / batch_size))
+    n_batches = int(np.ceil(stopping_maxopt / batch_size))
 
     start = 0
     batched = []
     for _ in range(n_batches):
-        stop = min(start + batch_size, len(sorted_sample), n_optimizations)
+        stop = min(start + batch_size, len(sorted_sample), stopping_maxopt)
         batched.append(list(sorted_sample[start:stop]))
         start = stop
     return batched

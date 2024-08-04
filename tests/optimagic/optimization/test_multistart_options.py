@@ -58,14 +58,14 @@ def test_multistart_options_invalid_n_samples_value(value):
 
 
 @pytest.mark.parametrize("value", ["invalid", -1])
-def test_multistart_options_invalid_n_optimizations(value):
+def test_multistart_options_invalid_stopping_maxopt(value):
     with pytest.raises(InvalidMultistartError, match="Invalid number of optimizations"):
-        MultistartOptions(n_optimizations=value)
+        MultistartOptions(stopping_maxopt=value)
 
 
-def test_multistart_options_n_optimizations_less_than_n_samples():
+def test_multistart_options_stopping_maxopt_less_than_n_samples():
     with pytest.raises(InvalidMultistartError, match="Invalid number of samples"):
-        MultistartOptions(n_samples=1, n_optimizations=2)
+        MultistartOptions(n_samples=1, stopping_maxopt=2)
 
 
 def test_multistart_options_invalid_sampling_distribution():

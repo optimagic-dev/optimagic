@@ -27,8 +27,9 @@ class MultistartOptions:
         n_samples: The number of points at which the objective function is evaluated
             during the exploration phase. If None, n_samples is set to 100 times the
             number of parameters.
-        n_optimizations: The number of local optimizations to run. Defaults to 10% of
-            n_samples.
+        stopping_maxopt: The maximum number of local optimizations to run. Defaults to
+            10% of n_samples. This number may not be reached if multistart converges
+            earlier.
         sampling_distribution: The distribution from which the exploration sample is
             drawn. Allowed are "uniform" and "triangular". Defaults to "uniform".
         sampling_method: The method used to draw the exploration sample. Allowed are
@@ -62,7 +63,7 @@ class MultistartOptions:
     """
 
     n_samples: int | None = None
-    n_optimizations: int | None = None
+    stopping_maxopt: int | None = None
     sampling_distribution: MultistartSamplingDistribution = "uniform"
     sampling_method: MultistartSamplingMethod = "random"
     sample: Sequence[PyTree] | None = None
@@ -85,7 +86,7 @@ class MultistartOptions:
 
 class MultistartOptionsDict(TypedDict):
     n_samples: NotRequired[int | None]
-    n_optimizations: NotRequired[int | None]
+    stopping_maxopt: NotRequired[int | None]
     sampling_distribution: NotRequired[MultistartSamplingDistribution]
     sampling_method: NotRequired[MultistartSamplingMethod]
     sample: NotRequired[Sequence[PyTree] | None]
@@ -153,18 +154,18 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "must be a positive integer or None."
         )
 
-    if options.n_optimizations is not None and (
-        not isinstance(options.n_optimizations, int) or options.n_optimizations < 0
+    if options.stopping_maxopt is not None and (
+        not isinstance(options.stopping_maxopt, int) or options.stopping_maxopt < 0
     ):
         raise InvalidMultistartError(
-            f"Invalid number of optimizations: {options.n_optimizations}. Number of "
+            f"Invalid number of optimizations: {options.stopping_maxopt}. Number of "
             "optimizations must be a positive integer or None."
         )
 
     if (
         options.n_samples is not None
-        and options.n_optimizations is not None
-        and options.n_samples < options.n_optimizations
+        and options.stopping_maxopt is not None
+        and options.n_samples < options.stopping_maxopt
     ):
         raise InvalidMultistartError(
             f"Invalid number of samples: {options.n_samples}. Number of samples "
@@ -309,7 +310,7 @@ class InternalMultistartOptions:
     batch_size: int
     seed: int | np.random.Generator | None
     error_handling: Literal["raise", "continue"]
-    n_optimizations: int
+    stopping_maxopt: int
 
 
 def get_internal_multistart_options_from_public(
@@ -352,15 +353,15 @@ def get_internal_multistart_options_from_public(
     )
 
     if n_samples is None:
-        if options.n_optimizations is None:
+        if options.stopping_maxopt is None:
             n_samples = 100 * len(x)
         else:
-            n_samples = 10 * options.n_optimizations
+            n_samples = 10 * options.stopping_maxopt
 
-    if options.n_optimizations is None:
-        n_optimizations = max(1, int(0.1 * n_samples))
+    if options.stopping_maxopt is None:
+        stopping_maxopt = max(1, int(0.1 * n_samples))
     else:
-        n_optimizations = options.n_optimizations
+        stopping_maxopt = options.stopping_maxopt
 
     return InternalMultistartOptions(
         # Attributes taken directly from MultistartOptions
@@ -375,7 +376,7 @@ def get_internal_multistart_options_from_public(
         n_samples=n_samples,
         sample=sample,
         weight_func=weight_func,
-        n_optimizations=n_optimizations,
+        stopping_maxopt=stopping_maxopt,
         batch_evaluator=batch_evaluator,
         batch_size=batch_size,
     )

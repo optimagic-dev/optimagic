@@ -243,7 +243,7 @@ def test_with_ackley():
         algorithm="scipy_lbfgsb",
         multistart=om.MultistartOptions(
             n_samples=200,
-            n_optimizations=20,
+            stopping_maxopt=20,
             convergence_max_discoveries=10,
         ),
     )
@@ -255,7 +255,7 @@ def test_multistart_with_least_squares_optimizers():
         params=np.array([-1, 1.0]),
         bounds=Bounds(soft_lower=np.full(2, -10), soft_upper=np.full(2, 10)),
         algorithm="scipy_ls_trf",
-        multistart=om.MultistartOptions(n_samples=3, n_optimizations=3),
+        multistart=om.MultistartOptions(n_samples=3, stopping_maxopt=3),
     )
 
     aaae(est.params, np.zeros(2))
@@ -285,7 +285,7 @@ def test_with_ackley_using_dict_options():
         algorithm="scipy_lbfgsb",
         multistart={
             "n_samples": 200,
-            "n_optimizations": 20,
+            "stopping_maxopt": 20,
             "convergence_max_discoveries": 10,
         },
     )
