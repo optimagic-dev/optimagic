@@ -5,6 +5,7 @@ from optimagic.optimization.multistart_options import (
     MultistartOptions,
     _linear_weights,
     _tiktak_weights,
+    get_internal_multistart_options_from_public,
     pre_process_multistart,
 )
 
@@ -141,3 +142,21 @@ def test_linear_weights():
 def test_tiktak_weights():
     assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
     assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
+
+
+def test_get_internal_multistart_options_from_public_defaults():
+    options = MultistartOptions()
+
+    got = get_internal_multistart_options_from_public(
+        options,
+        params=np.arange(5),
+        params_to_internal=lambda x: x,
+    )
+
+    assert got.convergence_xtol_rel == options.convergence_xtol_rel
+    assert got.convergence_max_discoveries == options.convergence_max_discoveries
+    assert got.n_cores == options.n_cores
+    assert got.error_handling == options.error_handling
+    assert got.n_samples == 500
+    assert got.stopping_maxopt == 50
+    assert got.batch_size == 1

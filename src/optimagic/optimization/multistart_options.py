@@ -318,6 +318,25 @@ class InternalMultistartOptions:
     error_handling: Literal["raise", "continue"]
     stopping_maxopt: int
 
+    def __post_init__(self) -> None:
+        must_be_at_least_1 = [
+            "n_samples",
+            "stopping_maxopt",
+            "n_cores",
+            "batch_size",
+            "convergence_max_discoveries",
+        ]
+
+        for attr in must_be_at_least_1:
+            if getattr(self, attr) < 1:
+                raise InvalidMultistartError(f"{attr} must be at least 1.")
+
+        if self.batch_size < self.n_cores:
+            raise InvalidMultistartError("batch_size must be at least n_cores.")
+
+        if self.convergence_xtol_rel < 0:
+            raise InvalidMultistartError("convergence_xtol_rel must be at least 0.")
+
 
 def get_internal_multistart_options_from_public(
     options: MultistartOptions,
