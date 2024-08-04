@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -60,7 +60,7 @@ class OptimizeResult:
 
     convergence_report: Dict | None = None
 
-    multistart_info: Dict | None = None
+    multistart_info: Optional["MultistartInfo"] = None
     algorithm_output: Dict = field(default_factory=dict)
 
     # ==================================================================================
@@ -196,6 +196,27 @@ class OptimizeResult:
 
         """
         to_pickle(self, path=path)
+
+
+@dataclass(frozen=True)
+class MultistartInfo:
+    """Information about the multistart optimization.
+
+    Attributes:
+        start_parameters: List of start parameters for each optimization.
+        local_optima: List of optimization results.
+        exploration_sample: List of parameters used for exploration.
+        exploration_results: List of function values corresponding to exploration.
+
+    """
+
+    start_parameters: list[PyTree]
+    local_optima: list[OptimizeResult]
+    exploration_sample: list[PyTree]
+    exploration_results: list[float]
+
+    def __getitem__(self, item):
+        return getattr(self, item)
 
 
 def _format_convergence_report(report, algorithm):

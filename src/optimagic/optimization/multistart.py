@@ -182,13 +182,15 @@ def run_multistart_optimization(
                     )
             break
 
-    raw_res = state["best_res"]
-    raw_res["multistart_info"] = {
+    multistart_info = {
         "start_parameters": state["start_history"],
         "local_optima": state["result_history"],
         "exploration_sample": sorted_sample,
         "exploration_results": exploration_res["sorted_values"],
     }
+
+    raw_res = state["best_res"]
+    raw_res["multistart_info"] = multistart_info
 
     return raw_res
 
