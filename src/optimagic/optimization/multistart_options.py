@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable, Literal, Sequence, TypedDict, get_args
+from typing import Callable, Literal, Sequence, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,10 +13,6 @@ from optimagic.typing import PyTree
 # ======================================================================================
 # Public Options
 # ======================================================================================
-
-MultistartSamplingMethod = Literal["sobol", "random", "halton", "latin_hypercube"]
-MultistartMixingWeightMethod = Literal["tiktak", "linear"]
-MultistartSamplingDistribution = Literal["uniform", "triangular"]
 
 
 @dataclass(frozen=True)
@@ -64,11 +60,11 @@ class MultistartOptions:
 
     n_samples: int | None = None
     stopping_maxopt: int | None = None
-    sampling_distribution: MultistartSamplingDistribution = "uniform"
-    sampling_method: MultistartSamplingMethod = "random"
+    sampling_distribution: Literal["uniform", "triangular"] = "uniform"
+    sampling_method: Literal["sobol", "random", "halton", "latin_hypercube"] = "random"
     sample: Sequence[PyTree] | None = None
     mixing_weight_method: (
-        MultistartMixingWeightMethod | Callable[[int, int, float, float], float]
+        Literal["tiktak", "linear"] | Callable[[int, int, float, float], float]
     ) = "tiktak"
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
     convergence_xtol_rel: float = 0.01
@@ -79,6 +75,11 @@ class MultistartOptions:
     batch_size: int | None = None
     seed: int | np.random.Generator | None = None
     error_handling: Literal["raise", "continue"] = "continue"
+    # Deprecated attributes
+    # share_optimization ...
+    # convergence_relative_params_tolerance
+    # optimization_error_handling
+    # error_handling .. .
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
@@ -87,11 +88,13 @@ class MultistartOptions:
 class MultistartOptionsDict(TypedDict):
     n_samples: NotRequired[int | None]
     stopping_maxopt: NotRequired[int | None]
-    sampling_distribution: NotRequired[MultistartSamplingDistribution]
-    sampling_method: NotRequired[MultistartSamplingMethod]
+    sampling_distribution: NotRequired[Literal["uniform", "triangular"]]
+    sampling_method: NotRequired[
+        Literal["sobol", "random", "halton", "latin_hypercube"]
+    ]
     sample: NotRequired[Sequence[PyTree] | None]
     mixing_weight_method: NotRequired[
-        MultistartMixingWeightMethod | Callable[[int, int, float, float], float]
+        Literal["tiktak", "linear"] | Callable[[int, int, float, float], float]
     ]
     mixing_weight_bounds: NotRequired[tuple[float, float]]
     convergence_xtol_rel: NotRequired[float]
@@ -172,16 +175,16 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "must be at least as large as the number of optimizations."
         )
 
-    if options.sampling_distribution not in get_args(MultistartSamplingDistribution):
+    if options.sampling_distribution not in ("uniform", "triangular"):
         raise InvalidMultistartError(
             f"Invalid sampling distribution: {options.sampling_distribution}. Sampling "
-            f"distribution must be one of {get_args(MultistartSamplingDistribution)}."
+            f"distribution must be one of ('uniform', 'triangular')."
         )
 
-    if options.sampling_method not in get_args(MultistartSamplingMethod):
+    if options.sampling_method not in ("sobol", "random", "halton", "latin_hypercube"):
         raise InvalidMultistartError(
             f"Invalid sampling method: {options.sampling_method}. Sampling method "
-            f"must be one of {get_args(MultistartSamplingMethod)}."
+            f"must be one of ('sobol', 'random', 'halton', 'latin_hypercube')."
         )
 
     if not isinstance(options.sample, Sequence | None):
@@ -192,11 +195,10 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
 
     if not callable(
         options.mixing_weight_method
-    ) and options.mixing_weight_method not in get_args(MultistartMixingWeightMethod):
+    ) and options.mixing_weight_method not in ("tiktak", "linear"):
         raise InvalidMultistartError(
             f"Invalid mixing weight method: {options.mixing_weight_method}. Mixing "
-            "weight method must be Callable or one of "
-            f"{get_args(MultistartMixingWeightMethod)}."
+            "weight method must be Callable or one of ('tiktak', 'linear')."
         )
 
     if (
@@ -287,16 +289,6 @@ WEIGHT_FUNCTIONS = {
 
 
 @dataclass(frozen=True)
-class InternalMultistartSamplingOptions:
-    """Sampling options used internally for multistart."""
-
-    distribution: MultistartSamplingDistribution
-    method: MultistartSamplingMethod
-    sample: NDArray[np.float64] | None
-    seed: int | np.random.Generator | None
-
-
-@dataclass(frozen=True)
 class InternalMultistartOptions:
     """Multistart options used internally in optimagic.
 
@@ -307,10 +299,13 @@ class InternalMultistartOptions:
     """
 
     n_samples: int
-    sampling: InternalMultistartSamplingOptions
     weight_func: Callable[[int, int], float]
     convergence_xtol_rel: float
     convergence_max_discoveries: int
+    sampling_distribution: Literal["uniform", "triangular"]
+    sampling_method: Literal["sobol", "random", "halton", "latin_hypercube"]
+    sample: NDArray[np.float64] | None
+    seed: int | np.random.Generator | None
     n_cores: int
     # TODO: Add more informative type hint for batch_evaluator
     batch_evaluator: Callable  # type: ignore
@@ -388,24 +383,20 @@ def get_internal_multistart_options_from_public(
     else:
         stopping_maxopt = options.stopping_maxopt
 
-    sampling_options = InternalMultistartSamplingOptions(
-        distribution=options.sampling_distribution,
-        method=options.sampling_method,
-        sample=sample,
-        seed=options.seed,
-    )
-
     return InternalMultistartOptions(
         # Attributes taken directly from MultistartOptions
         convergence_xtol_rel=options.convergence_xtol_rel,
         convergence_max_discoveries=options.convergence_max_discoveries,
         n_cores=options.n_cores,
         error_handling=options.error_handling,
+        sampling_distribution=options.sampling_distribution,
+        sampling_method=options.sampling_method,
+        seed=options.seed,
         # Updated attributes
+        sample=sample,
         n_samples=n_samples,
         weight_func=weight_func,
         stopping_maxopt=stopping_maxopt,
         batch_evaluator=batch_evaluator,
         batch_size=batch_size,
-        sampling=sampling_options,
     )

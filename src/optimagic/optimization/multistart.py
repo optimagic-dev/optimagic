@@ -13,6 +13,7 @@ First implemented in Python by Alisdair McKay (
 
 import warnings
 from functools import partial
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -20,7 +21,6 @@ from scipy.stats import qmc, triang
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.decorators import AlgoInfo
-from optimagic.optimization.multistart_options import InternalMultistartSamplingOptions
 from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
     update_step_status,
@@ -49,8 +49,8 @@ def run_multistart_optimization(
         database=database,
     )
 
-    if options.sampling.sample is not None:
-        sample = options.sampling.sample
+    if options.sample is not None:
+        sample = options.sample
     else:
         sample = _draw_exploration_sample(
             x=x,
@@ -58,7 +58,9 @@ def run_multistart_optimization(
             upper=upper_sampling_bounds,
             # -1 because we add start parameters
             n_samples=options.n_samples - 1,
-            options=options.sampling,
+            distribution=options.sampling_distribution,
+            method=options.sampling_method,
+            seed=options.seed,
         )
 
         sample = np.vstack([x.reshape(1, -1), sample])
@@ -233,7 +235,9 @@ def _draw_exploration_sample(
     lower: NDArray[np.float64],
     upper: NDArray[np.float64],
     n_samples: int,
-    options: InternalMultistartSamplingOptions,
+    distribution: Literal["uniform", "triangular"],
+    method: Literal["sobol", "random", "halton", "latin_hypercube"],
+    seed: int | np.random.Generator | None,
 ) -> NDArray[np.float64]:
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
@@ -245,7 +249,11 @@ def _draw_exploration_sample(
         lower: Vector of internal lower bounds of shape (n_params,).
         upper: Vector of internal upper bounds of shape (n_params,).
         n_samples: Number of sample points.
-        options: InternalMultistartSamplingOptions
+        distribution: The distribution from which the exploration sample is
+            drawn. Allowed are "uniform" and "triangular". Defaults to "uniform".
+        method: The method used to draw the exploration sample. Allowed are
+            "sobol", "random", "halton", and "latin_hypercube". Defaults to "sobol".
+        seed: Random number seed or generator.
 
     Returns:
         Array of shape (n_samples, n_params). Each row represents a vector of parameter
@@ -259,30 +267,30 @@ def _draw_exploration_sample(
                 f"soft_{name}_bounds for all parameters."
             )
 
-    if options.method == "sobol":
+    if method == "sobol":
         # Draw `n` points from the open interval (lower, upper)^d.
         # Note that scipy uses the half-open interval [lower, upper)^d internally.
         # We apply a burn-in phase of 1, i.e. we skip the first point in the sequence
         # and thus exclude the lower bound.
-        sampler = qmc.Sobol(d=len(lower), scramble=False, seed=options.seed)
+        sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
         _ = sampler.fast_forward(1)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif options.method == "halton":
-        sampler = qmc.Halton(d=len(lower), scramble=False, seed=options.seed)
+    elif method == "halton":
+        sampler = qmc.Halton(d=len(lower), scramble=False, seed=seed)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif options.method == "latin_hypercube":
-        sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=options.seed)
+    elif method == "latin_hypercube":
+        sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=seed)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif options.method == "random":
-        rng = get_rng(options.seed)
+    elif method == "random":
+        rng = get_rng(seed)
         sample_unscaled = rng.uniform(size=(n_samples, len(lower)))
 
-    if options.distribution == "uniform":
+    if distribution == "uniform":
         sample_scaled = qmc.scale(sample_unscaled, lower, upper)
-    elif options.distribution == "triangular":
+    elif distribution == "triangular":
         sample_scaled = triang.ppf(
             sample_unscaled,
             c=(x - lower) / (upper - lower),

@@ -207,6 +207,7 @@ class MultistartInfo:
         local_optima: List of optimization results.
         exploration_sample: List of parameters used for exploration.
         exploration_results: List of function values corresponding to exploration.
+        n_optimizations: Number of local optimizations that were run.
 
     """
 
@@ -217,6 +218,10 @@ class MultistartInfo:
 
     def __getitem__(self, item):
         return getattr(self, item)
+
+    @property
+    def n_optimizations(self) -> int:
+        return len(self.local_optima)
 
 
 def _format_convergence_report(report, algorithm):
