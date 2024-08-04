@@ -320,7 +320,6 @@ def create_optimization_problem(
     numdiff_options = {} if numdiff_options is None else numdiff_options
     log_options = {} if log_options is None else log_options
     error_penalty = {} if error_penalty is None else error_penalty
-    multistart_options = {} if multistart_options is None else multistart_options
     if logging:
         logging = Path(logging)
 

@@ -153,10 +153,10 @@ def test_get_internal_multistart_options_from_public_defaults():
         params_to_internal=lambda x: x,
     )
 
-    assert got.convergence_xtol_rel == options.convergence_xtol_rel
+    assert got.convergence_xtol_rel == 0.01
     assert got.convergence_max_discoveries == options.convergence_max_discoveries
     assert got.n_cores == options.n_cores
-    assert got.error_handling == options.error_handling
+    assert got.error_handling == "continue"
     assert got.n_samples == 500
     assert got.stopping_maxopt == 50
     assert got.batch_size == 1

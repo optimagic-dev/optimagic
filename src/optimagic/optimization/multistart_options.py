@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import warnings
+from dataclasses import dataclass, replace
 from functools import partial
 from typing import Callable, Literal, Sequence, TypedDict
 
@@ -67,19 +68,19 @@ class MultistartOptions:
         Literal["tiktak", "linear"] | Callable[[int, int, float, float], float]
     ) = "tiktak"
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
-    convergence_xtol_rel: float = 0.01
+    convergence_xtol_rel: float | None = None
     convergence_max_discoveries: int = 2
     n_cores: int = 1
     # TODO: Add more informative type hint for batch_evaluator
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"  # type: ignore
     batch_size: int | None = None
     seed: int | np.random.Generator | None = None
-    error_handling: Literal["raise", "continue"] = "continue"
+    error_handling: Literal["raise", "continue"] | None = None
     # Deprecated attributes
-    # share_optimization ...
-    # convergence_relative_params_tolerance
-    # optimization_error_handling
-    # error_handling .. .
+    share_optimization: float | None = None
+    convergence_relative_params_tolerance: float | None = None
+    optimization_error_handling: Literal["raise", "continue"] | None = None
+    exploration_error_handling: Literal["raise", "continue"] | None = None
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
@@ -97,13 +98,18 @@ class MultistartOptionsDict(TypedDict):
         Literal["tiktak", "linear"] | Callable[[int, int, float, float], float]
     ]
     mixing_weight_bounds: NotRequired[tuple[float, float]]
-    convergence_xtol_rel: NotRequired[float]
+    convergence_xtol_rel: NotRequired[float | None]
     convergence_max_discoveries: NotRequired[int]
     n_cores: NotRequired[int]
     batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
     batch_size: NotRequired[int | None]
     seed: NotRequired[int | np.random.Generator | None]
-    error_handling: NotRequired[Literal["raise", "continue"]]
+    error_handling: NotRequired[Literal["raise", "continue"] | None]
+    # Deprecated attributes
+    share_optimization: NotRequired[float | None]
+    convergence_relative_params_tolerance: NotRequired[float | None]
+    optimization_error_handling: NotRequired[Literal["raise", "continue"] | None]
+    exploration_error_handling: NotRequired[Literal["raise", "continue"] | None]
 
 
 def pre_process_multistart(
@@ -144,6 +150,9 @@ def pre_process_multistart(
                 "options must be of type optimagic.MultistartOptions, a dictionary "
                 "with valid keys, None, or a boolean."
             ) from e
+
+    if multistart is not None:
+        multistart = _replace_and_warn_about_deprecated_attributes(multistart)
 
     return multistart
 
@@ -211,7 +220,10 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "weight bounds must be a tuple of two numbers."
         )
 
-    if not isinstance(options.convergence_xtol_rel, int | float):
+    if options.convergence_xtol_rel is not None and (
+        not isinstance(options.convergence_xtol_rel, int | float)
+        or options.convergence_xtol_rel < 0
+    ):
         raise InvalidMultistartError(
             "Invalid relative params tolerance:"
             f"{options.convergence_xtol_rel}. Relative params "
@@ -256,11 +268,63 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "must be an integer, a numpy random generator, or None."
         )
 
-    if options.error_handling not in ("raise", "continue"):
+    if options.error_handling is not None and options.error_handling not in (
+        "raise",
+        "continue",
+    ):
         raise InvalidMultistartError(
             f"Invalid error handling: {options.error_handling}. Error handling must be "
             "'raise' or 'continue'."
         )
+
+
+def _replace_and_warn_about_deprecated_attributes(
+    options: MultistartOptions,
+) -> MultistartOptions:
+    replacements: MultistartOptionsDict = {}
+
+    if options.share_optimization is not None:
+        msg = (
+            "The share_optimization attribute is deprecated and will be removed in "
+            "version 0.6.0. Use stopping_maxopt instead to specify the number of "
+            "optimizations directly."
+        )
+        warnings.warn(msg, FutureWarning)
+
+    if options.convergence_relative_params_tolerance is not None:
+        msg = (
+            "The convergence_relative_params_tolerance attribute is deprecated and "
+            "will be removed in version 0.6.0. Use convergence_xtol_rel instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        if options.convergence_xtol_rel is None:
+            replacements["convergence_xtol_rel"] = (
+                options.convergence_relative_params_tolerance
+            )
+
+    if options.optimization_error_handling is not None:
+        msg = (
+            "The optimization_error_handling attribute is deprecated and will be "
+            "removed in version 0.6.0. Setting this attribute also sets the error "
+            "handling for exploration. Use the new error_handling attribute to set "
+            "the error handling for both optimization and exploration."
+        )
+        warnings.warn(msg, FutureWarning)
+        if options.error_handling is None:
+            replacements["error_handling"] = options.optimization_error_handling
+
+    if options.exploration_error_handling is not None:
+        msg = (
+            "The exploration_error_handling attribute is deprecated and will be "
+            "removed in version 0.6.0. Setting this attribute also sets the error "
+            "handling for exploration. Use the new error_handling attribute to set "
+            "the error handling for both optimization and exploration."
+        )
+        warnings.warn(msg, FutureWarning)
+        if options.error_handling is None:
+            replacements["error_handling"] = options.exploration_error_handling
+
+    return replace(options, **replacements)
 
 
 # ======================================================================================
@@ -378,17 +442,31 @@ def get_internal_multistart_options_from_public(
         else:
             n_samples = 10 * options.stopping_maxopt
 
+    if options.share_optimization is None:
+        share_optimization = 0.1
+    else:
+        share_optimization = options.share_optimization
+
     if options.stopping_maxopt is None:
-        stopping_maxopt = max(1, int(0.1 * n_samples))
+        stopping_maxopt = max(1, int(share_optimization * n_samples))
     else:
         stopping_maxopt = options.stopping_maxopt
 
+    # Set defaults resulting from deprecated attributes
+    if options.error_handling is not None:
+        error_handling = options.error_handling
+    else:
+        error_handling = "continue"
+
+    if options.convergence_xtol_rel is None:
+        convergence_xtol_rel = 0.01
+    else:
+        convergence_xtol_rel = options.convergence_xtol_rel
+
     return InternalMultistartOptions(
         # Attributes taken directly from MultistartOptions
-        convergence_xtol_rel=options.convergence_xtol_rel,
         convergence_max_discoveries=options.convergence_max_discoveries,
         n_cores=options.n_cores,
-        error_handling=options.error_handling,
         sampling_distribution=options.sampling_distribution,
         sampling_method=options.sampling_method,
         seed=options.seed,
@@ -396,6 +474,8 @@ def get_internal_multistart_options_from_public(
         sample=sample,
         n_samples=n_samples,
         weight_func=weight_func,
+        error_handling=error_handling,
+        convergence_xtol_rel=convergence_xtol_rel,
         stopping_maxopt=stopping_maxopt,
         batch_evaluator=batch_evaluator,
         batch_size=batch_size,
