@@ -89,9 +89,9 @@ def test_multistart_options_invalid_mixing_weight_bounds(value):
         MultistartOptions(mixing_weight_bounds=value)
 
 
-def test_multistart_options_invalid_convergence_relative_params_tolerance():
+def test_multistart_options_invalid_convergence_xtol_rel():
     with pytest.raises(InvalidMultistartError, match="Invalid relative params"):
-        MultistartOptions(convergence_relative_params_tolerance="invalid")
+        MultistartOptions(convergence_xtol_rel="invalid")
 
 
 @pytest.mark.parametrize("value", ["invalid", -1])

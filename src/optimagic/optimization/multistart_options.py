@@ -43,7 +43,7 @@ class MultistartOptions:
         convergence_max_discoveries: The maximum number of discoveries for convergence.
             Determines after how many re-descoveries of the currently best local
             optima the multistart algorithm stops. Defaults to 2.
-        convergence_relative_params_tolerance: The relative tolerance in parameters
+        convergence_xtol_rel: The relative tolerance in parameters
             for convergence. Determines the maximum relative distance two parameter
             vecctors can have to be considered equal. Defaults to 0.01.
         n_cores: The number of cores to use for parallelization. Defaults to 1.
@@ -70,7 +70,7 @@ class MultistartOptions:
         MultistartMixingWeightMethod | Callable[[int, int, float, float], float]
     ) = "tiktak"
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
-    convergence_relative_params_tolerance: float = 0.01
+    convergence_xtol_rel: float = 0.01
     convergence_max_discoveries: int = 2
     n_cores: int = 1
     # TODO: Add more informative type hint for batch_evaluator
@@ -93,7 +93,7 @@ class MultistartOptionsDict(TypedDict):
         MultistartMixingWeightMethod | Callable[[int, int, float, float], float]
     ]
     mixing_weight_bounds: NotRequired[tuple[float, float]]
-    convergence_relative_params_tolerance: NotRequired[float]
+    convergence_xtol_rel: NotRequired[float]
     convergence_max_discoveries: NotRequired[int]
     n_cores: NotRequired[int]
     batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
@@ -208,10 +208,10 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "weight bounds must be a tuple of two numbers."
         )
 
-    if not isinstance(options.convergence_relative_params_tolerance, int | float):
+    if not isinstance(options.convergence_xtol_rel, int | float):
         raise InvalidMultistartError(
             "Invalid relative params tolerance:"
-            f"{options.convergence_relative_params_tolerance}. Relative params "
+            f"{options.convergence_xtol_rel}. Relative params "
             "tolerance must be a number."
         )
 
@@ -301,7 +301,7 @@ class InternalMultistartOptions:
     sampling_method: MultistartSamplingMethod
     sample: NDArray[np.float64] | None
     weight_func: Callable[[int, int], float]
-    convergence_relative_params_tolerance: float
+    convergence_xtol_rel: float
     convergence_max_discoveries: int
     n_cores: int
     # TODO: Add more informative type hint for batch_evaluator
@@ -366,7 +366,7 @@ def get_internal_multistart_options_from_public(
         # Attributes taken directly from MultistartOptions
         sampling_method=options.sampling_method,
         sampling_distribution=options.sampling_distribution,
-        convergence_relative_params_tolerance=options.convergence_relative_params_tolerance,
+        convergence_xtol_rel=options.convergence_xtol_rel,
         convergence_max_discoveries=options.convergence_max_discoveries,
         n_cores=options.n_cores,
         seed=options.seed,

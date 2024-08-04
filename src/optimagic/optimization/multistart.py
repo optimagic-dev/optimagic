@@ -139,7 +139,7 @@ def run_multistart_optimization(
     }
 
     convergence_criteria = {
-        "xtol": options.convergence_relative_params_tolerance,
+        "xtol": options.convergence_xtol_rel,
         "max_discoveries": options.convergence_max_discoveries,
     }
 

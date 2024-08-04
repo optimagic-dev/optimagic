@@ -83,7 +83,7 @@ def test_multistart_with_existing_sample(params):
 
 def test_convergence_via_max_discoveries_works(params):
     options = om.MultistartOptions(
-        convergence_relative_params_tolerance=np.inf,
+        convergence_xtol_rel=np.inf,
         convergence_max_discoveries=2,
     )
 
@@ -100,7 +100,7 @@ def test_convergence_via_max_discoveries_works(params):
 def test_steps_are_logged_as_skipped_if_convergence(params):
     options = om.MultistartOptions(
         n_samples=10 * len(params),
-        convergence_relative_params_tolerance=np.inf,
+        convergence_xtol_rel=np.inf,
         convergence_max_discoveries=2,
     )
 
