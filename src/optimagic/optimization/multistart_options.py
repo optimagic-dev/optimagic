@@ -19,7 +19,7 @@ MultistartMixingWeightMethod = Literal["tiktak", "linear"]
 MultistartSamplingDistribution = Literal["uniform", "triangular"]
 
 
-@dataclass
+@dataclass(frozen=True)
 class MultistartOptions:
     """Multistart options in optimization problems.
 
@@ -286,7 +286,7 @@ WEIGHT_FUNCTIONS = {
 }
 
 
-@dataclass
+@dataclass(frozen=True)
 class InternalMultistartSamplingOptions:
     """Sampling options used internally for multistart."""
 
@@ -296,7 +296,7 @@ class InternalMultistartSamplingOptions:
     seed: int | np.random.Generator | None
 
 
-@dataclass
+@dataclass(frozen=True)
 class InternalMultistartOptions:
     """Multistart options used internally in optimagic.
 
