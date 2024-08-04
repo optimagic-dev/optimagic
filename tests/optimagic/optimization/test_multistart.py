@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.optimization.multistart import (
-    draw_exploration_sample,
+    _draw_exploration_sample,
     get_batched_optimization_sample,
     run_explorations,
     update_convergence_state,
@@ -40,7 +40,7 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
 
     for _ in range(2):
         results.append(
-            draw_exploration_sample(
+            _draw_exploration_sample(
                 x=np.ones_like(lower) * 0.5,
                 lower=lower,
                 upper=upper,

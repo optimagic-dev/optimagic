@@ -15,6 +15,8 @@ from optimagic.typing import PyTree
 # ======================================================================================
 
 MultistartSamplingMethod = Literal["sobol", "random", "halton", "latin_hypercube"]
+MultistartMixingWeightMethod = Literal["tiktak", "linear"]
+MultistartSamplingDistribution = Literal["uniform", "triangular"]
 
 
 @dataclass
@@ -61,11 +63,11 @@ class MultistartOptions:
 
     n_samples: int | None = None
     n_optimizations: int | None = None
-    sampling_distribution: Literal["uniform", "triangular"] = "uniform"
+    sampling_distribution: MultistartSamplingDistribution = "uniform"
     sampling_method: MultistartSamplingMethod = "random"
     sample: Sequence[PyTree] | None = None
     mixing_weight_method: (
-        Literal["tiktak", "linear"] | Callable[[int, int, float, float], float]
+        MultistartMixingWeightMethod | Callable[[int, int, float, float], float]
     ) = "tiktak"
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
     convergence_relative_params_tolerance: float = 0.01
@@ -84,11 +86,11 @@ class MultistartOptions:
 class MultistartOptionsDict(TypedDict):
     n_samples: NotRequired[int | None]
     n_optimizations: NotRequired[int | None]
-    sampling_distribution: NotRequired[Literal["uniform", "triangular"]]
+    sampling_distribution: NotRequired[MultistartSamplingDistribution]
     sampling_method: NotRequired[MultistartSamplingMethod]
     sample: NotRequired[Sequence[PyTree] | None]
     mixing_weight_method: NotRequired[
-        Literal["tiktak", "linear"] | Callable[[int, int, float, float], float]
+        MultistartMixingWeightMethod | Callable[[int, int, float, float], float]
     ]
     mixing_weight_bounds: NotRequired[tuple[float, float]]
     convergence_relative_params_tolerance: NotRequired[float]
@@ -169,10 +171,10 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "must be at least as large as the number of optimizations."
         )
 
-    if options.sampling_distribution not in ("uniform", "triangular"):
+    if options.sampling_distribution not in get_args(MultistartSamplingDistribution):
         raise InvalidMultistartError(
             f"Invalid sampling distribution: {options.sampling_distribution}. Sampling "
-            "distribution must be 'uniform' or 'triangular'."
+            f"distribution must be one of {get_args(MultistartSamplingDistribution)}."
         )
 
     if options.sampling_method not in get_args(MultistartSamplingMethod):
@@ -189,10 +191,11 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
 
     if not callable(
         options.mixing_weight_method
-    ) and options.mixing_weight_method not in ("tiktak", "linear"):
+    ) and options.mixing_weight_method not in get_args(MultistartMixingWeightMethod):
         raise InvalidMultistartError(
             f"Invalid mixing weight method: {options.mixing_weight_method}. Mixing "
-            "weight method must be Callable or one of 'tiktak' or 'linear'."
+            "weight method must be Callable or one of "
+            f"{get_args(MultistartMixingWeightMethod)}."
         )
 
     if (

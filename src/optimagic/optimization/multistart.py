@@ -15,10 +15,15 @@ import warnings
 from functools import partial
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.stats import qmc, triang
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.decorators import AlgoInfo
+from optimagic.optimization.multistart_options import (
+    MultistartSamplingDistribution,
+    MultistartSamplingMethod,
+)
 from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
     update_step_status,
@@ -50,7 +55,7 @@ def run_multistart_optimization(
     if options.sample is not None:
         sample = options.sample
     else:
-        sample = draw_exploration_sample(
+        sample = _draw_exploration_sample(
             x=x,
             lower=lower_sampling_bounds,
             upper=upper_sampling_bounds,
@@ -226,49 +231,34 @@ def determine_steps(n_samples, n_optimizations):
     return steps
 
 
-def draw_exploration_sample(
-    x,
-    lower,
-    upper,
-    n_samples,
-    sampling_distribution,
-    sampling_method,
-    seed,
-):
+def _draw_exploration_sample(
+    x: NDArray[np.float64],
+    lower: NDArray[np.float64],
+    upper: NDArray[np.float64],
+    n_samples: int,
+    sampling_distribution: MultistartSamplingDistribution,
+    sampling_method: MultistartSamplingMethod,
+    seed: int | np.random.Generator | None,
+) -> NDArray[np.float64]:
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
     The sample is created randomly or using a low discrepancy sequence. Different
     distributions are available.
 
     Args:
-        x (np.ndarray): Internal parameter vector of shape (n_params,).
-        lower (np.ndarray): Vector of internal lower bounds of shape (n_params,).
-        upper (np.ndarray): Vector of internal upper bounds of shape (n_params,).
-        n_samples (int): Number of sample points on which one function evaluation
-            shall be performed. Default is 10 * n_params.
-        sampling_distribution (str): One of "uniform", "triangular". Default is
-            "uniform", as in the original tiktak algorithm.
-        sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
-            "random". Default is sobol for problems with up to 200 parameters
-            and random for problems with more than 200 parameters.
-        seed (int | np.random.Generator | None): Random seed.
+        x: Internal parameter vector of shape (n_params,).
+        lower: Vector of internal lower bounds of shape (n_params,).
+        upper: Vector of internal upper bounds of shape (n_params,).
+        n_samples: Number of sample points.
+        sampling_distribution: One of "uniform", "triangular".
+        sampling_method: One of "sobol", "halton", "latin_hypercube" or "random".
+        seed: Random seed or random number generator.
 
     Returns:
-        np.ndarray: Numpy array of shape (n_samples, n_params).
-            Each row represents a vector of parameter values.
+        Array of shape (n_samples, n_params). Each row represents a vector of parameter
+            values.
 
     """
-    valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
-    valid_distributions = ["uniform", "triangular"]
-
-    if sampling_method not in valid_rules:
-        raise ValueError(
-            f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
-        )
-
-    if sampling_distribution not in valid_distributions:
-        raise ValueError(f"Unsupported distribution: {sampling_distribution}")
-
     for name, bound in zip(["lower", "upper"], [lower, upper], strict=False):
         if not np.isfinite(bound).all():
             raise ValueError(
