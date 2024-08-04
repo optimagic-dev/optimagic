@@ -458,10 +458,10 @@ def get_internal_multistart_options_from_public(
     else:
         error_handling = "continue"
 
-    if options.convergence_xtol_rel is None:
-        convergence_xtol_rel = 0.01
-    else:
+    if options.convergence_xtol_rel is not None:
         convergence_xtol_rel = options.convergence_xtol_rel
+    else:
+        convergence_xtol_rel = 0.01
 
     return InternalMultistartOptions(
         # Attributes taken directly from MultistartOptions

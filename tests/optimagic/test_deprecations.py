@@ -553,3 +553,51 @@ def test_old_multistart_options_are_deprecated_in_maximize():
             algorithm="scipy_lbfgsb",
             multistart_options={"n_samples": 10},
         )
+
+
+def test_multistart_option_share_optimization_attribute_is_deprecated():
+    msg = "The share_optimization attribute is deprecated and will be removed in"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"share_optimization": 0.1},
+        )
+
+
+def test_multistart_option_convergence_relative_params_tol_attribute_is_deprecated():
+    msg = "The convergence_relative_params_tolerance attribute is deprecated and will"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"convergence_relative_params_tolerance": 0.01},
+        )
+
+
+def test_multistart_option_optimization_error_handling_attribute_is_deprecated():
+    msg = "The optimization_error_handling attribute is deprecated and will be removed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"optimization_error_handling": "continue"},
+        )
+
+
+def test_multistart_option_exploration_error_handling_attribute_is_deprecated():
+    msg = "The exploration_error_handling attribute is deprecated and will be removed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"exploration_error_handling": "continue"},
+        )
