@@ -20,10 +20,7 @@ from scipy.stats import qmc, triang
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.decorators import AlgoInfo
-from optimagic.optimization.multistart_options import (
-    MultistartSamplingDistribution,
-    MultistartSamplingMethod,
-)
+from optimagic.optimization.multistart_options import InternalMultistartSamplingOptions
 from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
     update_step_status,
@@ -52,8 +49,8 @@ def run_multistart_optimization(
         database=database,
     )
 
-    if options.sample is not None:
-        sample = options.sample
+    if options.sampling.sample is not None:
+        sample = options.sampling.sample
     else:
         sample = _draw_exploration_sample(
             x=x,
@@ -61,9 +58,7 @@ def run_multistart_optimization(
             upper=upper_sampling_bounds,
             # -1 because we add start parameters
             n_samples=options.n_samples - 1,
-            sampling_distribution=options.sampling_distribution,
-            sampling_method=options.sampling_method,
-            seed=options.seed,
+            options=options.sampling,
         )
 
         sample = np.vstack([x.reshape(1, -1), sample])
@@ -236,9 +231,7 @@ def _draw_exploration_sample(
     lower: NDArray[np.float64],
     upper: NDArray[np.float64],
     n_samples: int,
-    sampling_distribution: MultistartSamplingDistribution,
-    sampling_method: MultistartSamplingMethod,
-    seed: int | np.random.Generator | None,
+    options: InternalMultistartSamplingOptions,
 ) -> NDArray[np.float64]:
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
@@ -250,9 +243,7 @@ def _draw_exploration_sample(
         lower: Vector of internal lower bounds of shape (n_params,).
         upper: Vector of internal upper bounds of shape (n_params,).
         n_samples: Number of sample points.
-        sampling_distribution: One of "uniform", "triangular".
-        sampling_method: One of "sobol", "halton", "latin_hypercube" or "random".
-        seed: Random seed or random number generator.
+        options: InternalMultistartSamplingOptions
 
     Returns:
         Array of shape (n_samples, n_params). Each row represents a vector of parameter
@@ -266,30 +257,30 @@ def _draw_exploration_sample(
                 f"soft_{name}_bounds for all parameters."
             )
 
-    if sampling_method == "sobol":
+    if options.method == "sobol":
         # Draw `n` points from the open interval (lower, upper)^d.
         # Note that scipy uses the half-open interval [lower, upper)^d internally.
         # We apply a burn-in phase of 1, i.e. we skip the first point in the sequence
         # and thus exclude the lower bound.
-        sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
+        sampler = qmc.Sobol(d=len(lower), scramble=False, seed=options.seed)
         _ = sampler.fast_forward(1)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif sampling_method == "halton":
-        sampler = qmc.Halton(d=len(lower), scramble=False, seed=seed)
+    elif options.method == "halton":
+        sampler = qmc.Halton(d=len(lower), scramble=False, seed=options.seed)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif sampling_method == "latin_hypercube":
-        sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=seed)
+    elif options.method == "latin_hypercube":
+        sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=options.seed)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif sampling_method == "random":
-        rng = get_rng(seed)
+    elif options.method == "random":
+        rng = get_rng(options.seed)
         sample_unscaled = rng.uniform(size=(n_samples, len(lower)))
 
-    if sampling_distribution == "uniform":
+    if options.distribution == "uniform":
         sample_scaled = qmc.scale(sample_unscaled, lower, upper)
-    elif sampling_distribution == "triangular":
+    elif options.distribution == "triangular":
         sample_scaled = triang.ppf(
             sample_unscaled,
             c=(x - lower) / (upper - lower),

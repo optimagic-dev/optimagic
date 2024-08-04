@@ -10,6 +10,7 @@ from optimagic.optimization.multistart import (
     run_explorations,
     update_convergence_state,
 )
+from optimagic.optimization.multistart_options import InternalMultistartSamplingOptions
 
 
 @pytest.fixture()
@@ -38,6 +39,13 @@ test_cases = list(product(distributions, rules, lower, upper))
 def test_draw_exploration_sample(dist, rule, lower, upper):
     results = []
 
+    options = InternalMultistartSamplingOptions(
+        distribution=dist,
+        method=rule,
+        seed=1234,
+        sample=None,
+    )
+
     for _ in range(2):
         results.append(
             _draw_exploration_sample(
@@ -45,9 +53,7 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
                 lower=lower,
                 upper=upper,
                 n_samples=3,
-                sampling_distribution=dist,
-                sampling_method=rule,
-                seed=1234,
+                options=options,
             )
         )
 

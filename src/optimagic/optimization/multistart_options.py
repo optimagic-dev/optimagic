@@ -287,6 +287,16 @@ WEIGHT_FUNCTIONS = {
 
 
 @dataclass
+class InternalMultistartSamplingOptions:
+    """Sampling options used internally for multistart."""
+
+    distribution: MultistartSamplingDistribution
+    method: MultistartSamplingMethod
+    sample: NDArray[np.float64] | None
+    seed: int | np.random.Generator | None
+
+
+@dataclass
 class InternalMultistartOptions:
     """Multistart options used internally in optimagic.
 
@@ -297,10 +307,7 @@ class InternalMultistartOptions:
     """
 
     n_samples: int
-    # TODO: Sampling distribution and method can potentially be combined
-    sampling_distribution: Literal["uniform", "triangular"]
-    sampling_method: MultistartSamplingMethod
-    sample: NDArray[np.float64] | None
+    sampling: InternalMultistartSamplingOptions
     weight_func: Callable[[int, int], float]
     convergence_xtol_rel: float
     convergence_max_discoveries: int
@@ -308,7 +315,6 @@ class InternalMultistartOptions:
     # TODO: Add more informative type hint for batch_evaluator
     batch_evaluator: Callable  # type: ignore
     batch_size: int
-    seed: int | np.random.Generator | None
     error_handling: Literal["raise", "continue"]
     stopping_maxopt: int
 
@@ -363,20 +369,24 @@ def get_internal_multistart_options_from_public(
     else:
         stopping_maxopt = options.stopping_maxopt
 
+    sampling_options = InternalMultistartSamplingOptions(
+        distribution=options.sampling_distribution,
+        method=options.sampling_method,
+        sample=sample,
+        seed=options.seed,
+    )
+
     return InternalMultistartOptions(
         # Attributes taken directly from MultistartOptions
-        sampling_method=options.sampling_method,
-        sampling_distribution=options.sampling_distribution,
         convergence_xtol_rel=options.convergence_xtol_rel,
         convergence_max_discoveries=options.convergence_max_discoveries,
         n_cores=options.n_cores,
-        seed=options.seed,
         error_handling=options.error_handling,
         # Updated attributes
         n_samples=n_samples,
-        sample=sample,
         weight_func=weight_func,
         stopping_maxopt=stopping_maxopt,
         batch_evaluator=batch_evaluator,
         batch_size=batch_size,
+        sampling=sampling_options,
     )
