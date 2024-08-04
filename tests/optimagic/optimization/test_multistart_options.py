@@ -1,7 +1,10 @@
+import numpy as np
 import pytest
 from optimagic.exceptions import InvalidMultistartError
-from optimagic.optimization.multistart import (
+from optimagic.optimization.multistart_options import (
     MultistartOptions,
+    _linear_weights,
+    _tiktak_weights,
     pre_process_multistart,
 )
 
@@ -127,3 +130,14 @@ def test_multistart_options_invalid_seed():
 def test_multistart_options_invalid_error_handling():
     with pytest.raises(InvalidMultistartError, match="Invalid error handling"):
         MultistartOptions(error_handling="invalid")
+
+
+def test_linear_weights():
+    calculated = _linear_weights(5, 10, 0.4, 0.8)
+    expected = 0.6
+    assert np.allclose(calculated, expected)
+
+
+def test_tiktak_weights():
+    assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
+    assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))

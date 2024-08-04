@@ -5,8 +5,6 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.optimization.multistart import (
-    _linear_weights,
-    _tiktak_weights,
     draw_exploration_sample,
     get_batched_optimization_sample,
     run_explorations,
@@ -106,17 +104,6 @@ def test_get_batched_optimization_sample():
         for calc_entry, exp_entry in zip(calc_batch, exp_batch, strict=False):
             assert isinstance(calc_entry, np.ndarray)
             assert calc_entry.tolist() == exp_entry
-
-
-def test_linear_weights():
-    calculated = _linear_weights(5, 10, 0.4, 0.8)
-    expected = 0.6
-    assert np.allclose(calculated, expected)
-
-
-def test_tiktak_weights():
-    assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
-    assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
 
 
 @pytest.fixture()

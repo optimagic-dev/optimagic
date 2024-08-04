@@ -15,7 +15,10 @@ from optimagic.exceptions import (
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
 )
-from optimagic.optimization.multistart import MultistartOptions, pre_process_multistart
+from optimagic.optimization.multistart_options import (
+    MultistartOptions,
+    pre_process_multistart,
+)
 from optimagic.optimization.scipy_aliases import (
     map_method_to_algorithm,
     split_fun_and_jac,

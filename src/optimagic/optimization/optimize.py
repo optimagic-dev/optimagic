@@ -39,8 +39,10 @@ from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from optimagic.optimization.multistart import (
-    get_internal_multistart_options_from_public,
     run_multistart_optimization,
+)
+from optimagic.optimization.multistart_options import (
+    get_internal_multistart_options_from_public,
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult

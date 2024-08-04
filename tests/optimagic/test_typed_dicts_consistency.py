@@ -1,6 +1,9 @@
 from typing import get_args, get_type_hints
 
-from optimagic.optimization.multistart import MultistartOptions, MultistartOptionsDict
+from optimagic.optimization.multistart_options import (
+    MultistartOptions,
+    MultistartOptionsDict,
+)
 from optimagic.parameters.scaling import ScalingOptions, ScalingOptionsDict
 
 
