@@ -124,11 +124,6 @@ def test_multistart_options_invalid_seed():
         MultistartOptions(seed="invalid")
 
 
-def test_multistart_options_invalid_optimization_error_handling():
-    with pytest.raises(InvalidMultistartError, match="Invalid optimization error"):
-        MultistartOptions(optimization_error_handling="invalid")
-
-
-def test_multistart_options_invalid_exploration_error_handling():
-    with pytest.raises(InvalidMultistartError, match="Invalid exploration error"):
-        MultistartOptions(exploration_error_handling="invalid")
+def test_multistart_options_invalid_error_handling():
+    with pytest.raises(InvalidMultistartError, match="Invalid error handling"):
+        MultistartOptions(error_handling="invalid")

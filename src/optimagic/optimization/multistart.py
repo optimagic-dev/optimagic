@@ -75,10 +75,8 @@ class MultistartOptions:
         batch_size: The batch size for batch evaluation. Must be larger than n_cores
             or None.
         seed: The seed for the random number generator.
-        exploration_error_handling: The error handling for exploration errors. Allowed
-            are "raise" and "continue".
-        optimization_error_handling: The error handling for optimization errors. Allowed
-            are "raise" and "continue".
+        error_handling: The error handling for exploration and optimization errors.
+            Allowed are "raise" and "continue".
 
     Raises:
         InvalidMultistartError: If the multistart options cannot be processed, e.g.
@@ -99,8 +97,7 @@ class MultistartOptions:
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"
     batch_size: int | None = None
     seed: int | np.random.Generator | None = None
-    exploration_error_handling: Literal["raise", "continue"] = "continue"
-    optimization_error_handling: Literal["raise", "continue"] = "continue"
+    error_handling: Literal["raise", "continue"] = "continue"
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
@@ -120,8 +117,7 @@ class MultistartOptionsDict(TypedDict):
     batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]
     batch_size: NotRequired[int | None]
     seed: NotRequired[int | np.random.Generator | None]
-    exploration_error_handling: NotRequired[Literal["raise", "continue"]]
-    optimization_error_handling: NotRequired[Literal["raise", "continue"]]
+    error_handling: NotRequired[Literal["raise", "continue"]]
 
 
 def pre_process_multistart(
@@ -274,17 +270,10 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "must be an integer, a numpy random generator, or None."
         )
 
-    if options.exploration_error_handling not in ("raise", "continue"):
+    if options.error_handling not in ("raise", "continue"):
         raise InvalidMultistartError(
-            f"Invalid exploration error handling: {options.exploration_error_handling}."
-            " Exploration error handling must be 'raise' or 'continue'."
-        )
-
-    if options.optimization_error_handling not in ("raise", "continue"):
-        raise InvalidMultistartError(
-            "Invalid optimization error handling:"
-            f"{options.optimization_error_handling}. Optimization error handling must "
-            "be 'raise' or 'continue'."
+            f"Invalid error handling: {options.error_handling}. Error handling must be "
+            "'raise' or 'continue'."
         )
 
 
@@ -316,8 +305,7 @@ class InternalMultistartOptions:
     batch_evaluator: Callable
     batch_size: int
     seed: int | np.random.Generator | None
-    exploration_error_handling: Literal["raise", "continue"]
-    optimization_error_handling: Literal["raise", "continue"]
+    error_handling: Literal["raise", "continue"]
     n_optimizations: int
 
 
@@ -378,8 +366,7 @@ def get_internal_multistart_options_from_public(
         convergence_max_discoveries=options.convergence_max_discoveries,
         n_cores=options.n_cores,
         seed=options.seed,
-        exploration_error_handling=options.exploration_error_handling,
-        optimization_error_handling=options.optimization_error_handling,
+        error_handling=options.error_handling,
         # Updated attributes
         n_samples=n_samples,
         sample=sample,
@@ -450,7 +437,7 @@ def run_multistart_optimization(
         batch_evaluator=options.batch_evaluator,
         n_cores=options.n_cores,
         step_id=scheduled_steps[0],
-        error_handling=options.exploration_error_handling,
+        error_handling=options.error_handling,
     )
 
     if logging:
@@ -528,7 +515,7 @@ def run_multistart_optimization(
             arguments=arguments,
             unpack_symbol="**",
             n_cores=options.n_cores,
-            error_handling=options.optimization_error_handling,
+            error_handling=options.error_handling,
         )
 
         state, is_converged = update_convergence_state(
