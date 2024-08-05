@@ -1,6 +1,7 @@
 import itertools
 
 import numpy as np
+import optimagic as om
 import pytest
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
@@ -19,11 +20,9 @@ def minimize_result():
                 params=np.arange(5),
                 algorithm=algorithm,
                 bounds=bounds,
-                multistart=multistart,
-                multistart_options={
-                    "n_samples": 1000,
-                    "convergence.max_discoveries": 5,
-                },
+                multistart=om.MultistartOptions(
+                    n_samples=1000, convergence_max_discoveries=5
+                ),
             )
             res.append(_res)
         out[multistart] = res
@@ -102,8 +101,7 @@ def test_criterion_plot_different_input_types():
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         bounds=bounds,
-        multistart=True,
-        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
+        multistart=om.MultistartOptions(n_samples=1000, convergence_max_discoveries=5),
         log_options={"fast_logging": True},
         logging="test.db",
     )
@@ -113,8 +111,7 @@ def test_criterion_plot_different_input_types():
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         bounds=bounds,
-        multistart=True,
-        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
+        multistart=om.MultistartOptions(n_samples=1000, convergence_max_discoveries=5),
     )
 
     results = ["test.db", res]

@@ -16,7 +16,6 @@ import functools
 import warnings
 from pathlib import Path
 
-from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.exceptions import (
     InvalidFunctionError,
     InvalidKwargsError,
@@ -40,12 +39,13 @@ from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from optimagic.optimization.multistart import (
-    WEIGHT_FUNCTIONS,
     run_multistart_optimization,
+)
+from optimagic.optimization.multistart_options import (
+    get_internal_multistart_options_from_public,
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.process_multistart_sample import process_multistart_sample
 from optimagic.optimization.process_results import process_internal_optimizer_result
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
@@ -75,7 +75,6 @@ def maximize(
     error_penalty=None,
     scaling=False,
     multistart=False,
-    multistart_options=None,
     collect_history=True,
     skip_checks=False,
     # scipy aliases
@@ -101,6 +100,7 @@ def maximize(
     soft_lower_bounds=None,
     soft_upper_bounds=None,
     scaling_options=None,
+    multistart_options=None,
 ):
     """Maximize fun using algorithm subject to constraints.
 
@@ -136,7 +136,6 @@ def maximize(
         error_penalty=error_penalty,
         scaling=scaling,
         multistart=multistart,
-        multistart_options=multistart_options,
         collect_history=collect_history,
         skip_checks=skip_checks,
         # scipy aliases
@@ -162,6 +161,7 @@ def maximize(
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
         scaling_options=scaling_options,
+        multistart_options=multistart_options,
     )
     return _optimize(problem)
 
@@ -186,7 +186,6 @@ def minimize(
     error_penalty=None,
     scaling=False,
     multistart=False,
-    multistart_options=None,
     collect_history=True,
     skip_checks=False,
     # scipy aliases
@@ -212,6 +211,7 @@ def minimize(
     soft_lower_bounds=None,
     soft_upper_bounds=None,
     scaling_options=None,
+    multistart_options=None,
 ):
     """Minimize criterion using algorithm subject to constraints.
 
@@ -248,7 +248,6 @@ def minimize(
         error_penalty=error_penalty,
         scaling=scaling,
         multistart=multistart,
-        multistart_options=multistart_options,
         collect_history=collect_history,
         skip_checks=skip_checks,
         # scipy aliases
@@ -274,6 +273,7 @@ def minimize(
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
         scaling_options=scaling_options,
+        multistart_options=multistart_options,
     )
     return _optimize(problem)
 
@@ -347,7 +347,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         primary_key=problem.algo_info.primary_criterion_entry,
         scaling=problem.scaling,
         derivative_eval=used_deriv,
-        add_soft_bounds=problem.multistart,
+        add_soft_bounds=problem.multistart is not None,
     )
 
     # ==================================================================================
@@ -373,7 +373,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Do some things that require internal parameters or bounds
     # ==================================================================================
 
-    if converter.has_transforming_constraints and problem.multistart:
+    if converter.has_transforming_constraints and problem.multistart is not None:
         raise NotImplementedError(
             "multistart optimizations are not yet compatible with transforming "
             "constraints."
@@ -453,7 +453,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     # Do actual optimization
     # ==================================================================================
-    if not problem.multistart:
+    if problem.multistart is None:
         steps = [{"type": "optimization", "name": "optimization"}]
 
         step_ids = log_scheduled_steps_and_get_ids(
@@ -464,10 +464,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
-        multistart_options = _fill_multistart_options_with_defaults(
-            options=problem.multistart_options,
+        multistart_options = get_internal_multistart_options_from_public(
+            options=problem.multistart,
             params=problem.params,
-            x=x,
             params_to_internal=converter.params_to_internal,
         )
 
@@ -603,53 +602,3 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 
     numdiff_options = {**default_numdiff_options, **numdiff_options}
     return numdiff_options
-
-
-def _setdefault(candidate, default):
-    out = default if candidate is None else candidate
-    return out
-
-
-def _fill_multistart_options_with_defaults(options, params, x, params_to_internal):
-    """Fill options for multistart optimization with defaults."""
-    defaults = {
-        "sample": None,
-        "n_samples": 10 * len(x),
-        "share_optimizations": 0.1,
-        "sampling_distribution": "uniform",
-        "sampling_method": "sobol" if len(x) <= 200 else "random",
-        "mixing_weight_method": "tiktak",
-        "mixing_weight_bounds": (0.1, 0.995),
-        "convergence_relative_params_tolerance": 0.01,
-        "convergence_max_discoveries": 2,
-        "n_cores": 1,
-        "batch_evaluator": "joblib",
-        "seed": None,
-        "exploration_error_handling": "continue",
-        "optimization_error_handling": "continue",
-    }
-
-    options = {k.replace(".", "_"): v for k, v in options.items()}
-    out = {**defaults, **options}
-
-    if "batch_size" not in out:
-        out["batch_size"] = out["n_cores"]
-    else:
-        if out["batch_size"] < out["n_cores"]:
-            raise ValueError("batch_size must be at least as large as n_cores.")
-
-    out["batch_evaluator"] = process_batch_evaluator(out["batch_evaluator"])
-
-    if isinstance(out["mixing_weight_method"], str):
-        out["mixing_weight_method"] = WEIGHT_FUNCTIONS[out["mixing_weight_method"]]
-
-    if out["sample"] is not None:
-        out["sample"] = process_multistart_sample(
-            out["sample"], params, params_to_internal
-        )
-        out["n_samples"] = len(out["sample"])
-
-    out["n_optimizations"] = max(1, int(out["n_samples"] * out["share_optimizations"]))
-    del out["share_optimizations"]
-
-    return out
