@@ -555,8 +555,8 @@ def test_old_multistart_options_are_deprecated_in_maximize():
         )
 
 
-def test_multistart_option_share_optimization_attribute_is_deprecated():
-    msg = "The share_optimization attribute is deprecated and will be removed in"
+def test_multistart_option_share_optimization_option_is_deprecated():
+    msg = "The share_optimization option is deprecated and will be removed in"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,
@@ -567,8 +567,8 @@ def test_multistart_option_share_optimization_attribute_is_deprecated():
         )
 
 
-def test_multistart_option_convergence_relative_params_tol_attribute_is_deprecated():
-    msg = "The convergence_relative_params_tolerance attribute is deprecated and will"
+def test_multistart_option_convergence_relative_params_tolerance_option_is_deprecated():
+    msg = "The convergence_relative_params_tolerance option is deprecated and will"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,
@@ -579,8 +579,8 @@ def test_multistart_option_convergence_relative_params_tol_attribute_is_deprecat
         )
 
 
-def test_multistart_option_optimization_error_handling_attribute_is_deprecated():
-    msg = "The optimization_error_handling attribute is deprecated and will be removed"
+def test_multistart_option_optimization_error_handling_option_is_deprecated():
+    msg = "The optimization_error_handling option is deprecated and will be removed"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,
@@ -591,8 +591,8 @@ def test_multistart_option_optimization_error_handling_attribute_is_deprecated()
         )
 
 
-def test_multistart_option_exploration_error_handling_attribute_is_deprecated():
-    msg = "The exploration_error_handling attribute is deprecated and will be removed"
+def test_multistart_option_exploration_error_handling_option_is_deprecated():
+    msg = "The exploration_error_handling option is deprecated and will be removed"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,

@@ -1,4 +1,5 @@
 import warnings
+from dataclasses import replace
 
 from optimagic.parameters.bounds import Bounds
 
@@ -147,3 +148,59 @@ def replace_and_warn_about_deprecated_bounds(
         bounds = Bounds(**old_bounds)
 
     return bounds
+
+
+def replace_and_warn_about_deprecated_multistart_options(options):
+    """Replace deprecated multistart options and warn about them.
+
+    Args:
+        options (MultistartOptions): The multistart options to replace.
+
+    Returns:
+        MultistartOptions: The replaced multistart options.
+
+    """
+    replacements = {}
+
+    if options.share_optimization is not None:
+        msg = (
+            "The share_optimization option is deprecated and will be removed in "
+            "version 0.6.0. Use stopping_maxopt instead to specify the number of "
+            "optimizations directly."
+        )
+        warnings.warn(msg, FutureWarning)
+
+    if options.convergence_relative_params_tolerance is not None:
+        msg = (
+            "The convergence_relative_params_tolerance option is deprecated and will "
+            "be removed in version 0.6.0. Use convergence_xtol_rel instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        if options.convergence_xtol_rel is None:
+            replacements["convergence_xtol_rel"] = (
+                options.convergence_relative_params_tolerance
+            )
+
+    if options.optimization_error_handling is not None:
+        msg = (
+            "The optimization_error_handling option is deprecated and will be removed "
+            "in version 0.6.0. Setting this attribute also sets the error handling "
+            "for exploration. Use the new error_handling option to set the error "
+            "handling for both optimization and exploration."
+        )
+        warnings.warn(msg, FutureWarning)
+        if options.error_handling is None:
+            replacements["error_handling"] = options.optimization_error_handling
+
+    if options.exploration_error_handling is not None:
+        msg = (
+            "The exploration_error_handling option is deprecated and will be "
+            "removed in version 0.6.0. Setting this attribute also sets the error "
+            "handling for exploration. Use the new error_handling option to set the "
+            "error handling for both optimization and exploration."
+        )
+        warnings.warn(msg, FutureWarning)
+        if options.error_handling is None:
+            replacements["error_handling"] = options.exploration_error_handling
+
+    return replace(options, **replacements)

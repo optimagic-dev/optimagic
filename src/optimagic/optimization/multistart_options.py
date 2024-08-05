@@ -1,13 +1,13 @@
-import warnings
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from functools import partial
-from typing import Callable, Literal, Sequence, TypedDict
+from typing import Callable, Literal, Sequence, TypedDict, cast
 
 import numpy as np
 from numpy.typing import NDArray
 from typing_extensions import NotRequired
 
 from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic.deprecations import replace_and_warn_about_deprecated_multistart_options
 from optimagic.exceptions import InvalidMultistartError
 from optimagic.typing import PyTree
 
@@ -152,7 +152,10 @@ def pre_process_multistart(
             ) from e
 
     if multistart is not None:
-        multistart = _replace_and_warn_about_deprecated_attributes(multistart)
+        multistart = replace_and_warn_about_deprecated_multistart_options(multistart)
+        # The replace and warn function cannot be typed due to circular imports, but
+        # we know that the return type is MultistartOptions
+        multistart = cast(MultistartOptions, multistart)
 
     return multistart
 
@@ -276,55 +279,6 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             f"Invalid error handling: {options.error_handling}. Error handling must be "
             "'raise' or 'continue'."
         )
-
-
-def _replace_and_warn_about_deprecated_attributes(
-    options: MultistartOptions,
-) -> MultistartOptions:
-    replacements: MultistartOptionsDict = {}
-
-    if options.share_optimization is not None:
-        msg = (
-            "The share_optimization attribute is deprecated and will be removed in "
-            "version 0.6.0. Use stopping_maxopt instead to specify the number of "
-            "optimizations directly."
-        )
-        warnings.warn(msg, FutureWarning)
-
-    if options.convergence_relative_params_tolerance is not None:
-        msg = (
-            "The convergence_relative_params_tolerance attribute is deprecated and "
-            "will be removed in version 0.6.0. Use convergence_xtol_rel instead."
-        )
-        warnings.warn(msg, FutureWarning)
-        if options.convergence_xtol_rel is None:
-            replacements["convergence_xtol_rel"] = (
-                options.convergence_relative_params_tolerance
-            )
-
-    if options.optimization_error_handling is not None:
-        msg = (
-            "The optimization_error_handling attribute is deprecated and will be "
-            "removed in version 0.6.0. Setting this attribute also sets the error "
-            "handling for exploration. Use the new error_handling attribute to set "
-            "the error handling for both optimization and exploration."
-        )
-        warnings.warn(msg, FutureWarning)
-        if options.error_handling is None:
-            replacements["error_handling"] = options.optimization_error_handling
-
-    if options.exploration_error_handling is not None:
-        msg = (
-            "The exploration_error_handling attribute is deprecated and will be "
-            "removed in version 0.6.0. Setting this attribute also sets the error "
-            "handling for exploration. Use the new error_handling attribute to set "
-            "the error handling for both optimization and exploration."
-        )
-        warnings.warn(msg, FutureWarning)
-        if options.error_handling is None:
-            replacements["error_handling"] = options.exploration_error_handling
-
-    return replace(options, **replacements)
 
 
 # ======================================================================================
