@@ -363,7 +363,7 @@ def second_derivative(
     f0: PyTree | None = None,
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
-    batch_evaluator: str | Callable = "joblib",
+    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
     return_func_value: bool = False,
     key: str | None = None,
     # deprecated
@@ -372,7 +372,7 @@ def second_derivative(
     base_steps: NDArray[np.float64] | None = None,
     step_ratio: float | None = None,
     n_steps: int | None = None,
-    return_info: bool = False,
+    return_info: bool | None = None,
 ) -> NumdiffResult:
     """Evaluate second derivative of func at params according to method and step
     options.

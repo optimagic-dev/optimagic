@@ -1,5 +1,6 @@
 from functools import partial
 from pathlib import Path
+from typing import get_type_hints
 
 import numpy as np
 import pandas as pd
@@ -384,3 +385,15 @@ def test_numdiff_result_getitem():
     assert res["func_value"] == res.func_value
     assert_frame_equal(res["_func_evals"], res._func_evals)
     assert_frame_equal(res["_derivative_candidates"], res._derivative_candidates)
+
+
+def test_first_and_second_derivative_have_same_type_hints():
+    # exclude method from comparison, as the argument options differ here
+    exclude = ["method"]
+    first_hints = {
+        k: v for k, v in get_type_hints(first_derivative).items() if k not in exclude
+    }
+    second_hints = {
+        k: v for k, v in get_type_hints(second_derivative).items() if k not in exclude
+    }
+    assert first_hints == second_hints
