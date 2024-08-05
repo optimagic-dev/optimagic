@@ -556,7 +556,7 @@ def test_old_multistart_options_are_deprecated_in_maximize():
 
 
 def test_multistart_option_share_optimization_option_is_deprecated():
-    msg = "The share_optimization option is deprecated and will be removed in"
+    msg = "The `share_optimization` option is deprecated and will be removed in"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,
@@ -568,7 +568,7 @@ def test_multistart_option_share_optimization_option_is_deprecated():
 
 
 def test_multistart_option_convergence_relative_params_tolerance_option_is_deprecated():
-    msg = "The convergence_relative_params_tolerance option is deprecated and will"
+    msg = "The `convergence_relative_params_tolerance` option is deprecated and will"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,
@@ -580,7 +580,7 @@ def test_multistart_option_convergence_relative_params_tolerance_option_is_depre
 
 
 def test_multistart_option_optimization_error_handling_option_is_deprecated():
-    msg = "The optimization_error_handling option is deprecated and will be removed"
+    msg = "The `optimization_error_handling` option is deprecated and will be removed"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,
@@ -592,7 +592,7 @@ def test_multistart_option_optimization_error_handling_option_is_deprecated():
 
 
 def test_multistart_option_exploration_error_handling_option_is_deprecated():
-    msg = "The exploration_error_handling option is deprecated and will be removed"
+    msg = "The `exploration_error_handling` option is deprecated and will be removed"
     with pytest.warns(FutureWarning, match=msg):
         om.minimize(
             lambda x: x @ x,
@@ -601,3 +601,51 @@ def test_multistart_option_exploration_error_handling_option_is_deprecated():
             bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
             multistart={"exploration_error_handling": "continue"},
         )
+
+
+def test_base_steps_in_first_derivatives_is_deprecated():
+    msg = "The `base_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), base_steps=1e-3)
+
+
+def test_step_ratio_in_first_derivatives_is_deprecated():
+    msg = "The `step_ratio` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), step_ratio=2)
+
+
+def test_n_steps_in_first_derivatives_is_deprecated():
+    msg = "The `n_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), n_steps=2)
+
+
+def test_return_info_in_first_derivatives_is_deprecated():
+    msg = "The `return_info` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), return_info=True)
+
+
+def test_base_steps_in_second_derivatives_is_deprecated():
+    msg = "The `base_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), base_steps=1e-3)
+
+
+def test_step_ratio_in_second_derivatives_is_deprecated():
+    msg = "The `step_ratio` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), step_ratio=2)
+
+
+def test_n_steps_in_second_derivatives_is_deprecated():
+    msg = "The `n_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), n_steps=1)
+
+
+def test_return_info_in_second_derivatives_is_deprecated():
+    msg = "The `return_info` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), return_info=True)

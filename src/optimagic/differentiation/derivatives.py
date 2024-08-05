@@ -9,9 +9,12 @@ import pandas as pd
 from pybaum import tree_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
 
-from optimagic import batch_evaluators
+from optimagic import batch_evaluators, deprecations
 from optimagic.config import DEFAULT_N_CORES
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.deprecations import (
+    replace_and_warn_about_deprecated_base_steps,
+    replace_and_warn_about_deprecated_bounds,
+)
 from optimagic.differentiation import finite_differences
 from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
@@ -32,21 +35,22 @@ def first_derivative(
     bounds=None,
     func_kwargs=None,
     method="central",
-    n_steps=1,
-    base_steps=None,
+    steps=None,
     scaling_factor=1,
-    step_ratio=2,
     min_steps=None,
     f0=None,
     n_cores=DEFAULT_N_CORES,
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_info=False,
     key=None,
     # deprecated
     lower_bounds=None,
     upper_bounds=None,
+    base_steps=None,
+    step_ratio=None,
+    n_steps=None,
+    return_info=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
 
@@ -73,26 +77,20 @@ def first_derivative(
             scipy.optimize.minimize.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
-        n_steps (int): Number of steps needed. For central methods, this is
-            the number of steps per direction. It is 1 if no Richardson extrapolation
-            is used.
-        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
-            base_steps * scaling_factor is the absolute value of the first (and possibly
+        steps (numpy.ndarray, optional): 1d array of the same length as params.
+            steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
-            If base_steps * scaling_factor conflicts with bounds, the actual steps will
-            be adjusted. If base_steps is not provided, it will be determined according
+            If steps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If steps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
         scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
-            base_steps. If it is an numpy.ndarray, it needs to be as long as params.
+            steps. If it is an numpy.ndarray, it needs to be as long as params.
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        step_ratio (float, numpy.array): Ratio between two consecutive Richardson
-            extrapolation steps in the same direction. default 2.0. Has to be larger
-            than one. The step ratio is only used if n_steps > 1.
         min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
             accommodate bounds. Must have same length as params. By default min_steps is
-            equal to base_steps, i.e step size is not decreased beyond what is optimal
+            equal to steps, i.e step size is not decreased beyond what is optimal
             according to the rule of thumb.
         f0 (numpy.ndarray): 1d numpy array with func(x), optional.
         n_cores (int): Number of processes used to parallelize the function
@@ -109,10 +107,6 @@ def first_derivative(
         return_func_value (bool): If True, return function value at params, stored in
             output dict under "func_value". Default False. This is useful when using
             first_derivative during optimization.
-        return_info (bool): If True, return additional information on function
-            evaluations and internal derivative candidates, stored in output dict under
-            "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -147,6 +141,26 @@ def first_derivative(
         bounds=bounds,
     )
 
+    steps = replace_and_warn_about_deprecated_base_steps(
+        steps=steps,
+        base_steps=base_steps,
+    )
+
+    if step_ratio is not None:
+        deprecations.throw_derivatives_step_ratio_future_warning()
+    else:
+        step_ratio = 2
+
+    if n_steps is not None:
+        deprecations.throw_derivatives_n_steps_future_warning()
+    else:
+        n_steps = 1
+
+    if return_info is not None:
+        deprecations.throw_derivatives_return_info_future_warning()
+    else:
+        return_info = False
+
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
@@ -176,7 +190,7 @@ def first_derivative(
         method=method,
         n_steps=n_steps,
         target="first_derivative",
-        base_steps=base_steps,
+        base_steps=steps,
         scaling_factor=scaling_factor,
         bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
@@ -306,21 +320,22 @@ def second_derivative(
     bounds=None,
     func_kwargs=None,
     method="central_cross",
-    n_steps=1,
-    base_steps=None,
+    steps=None,
     scaling_factor=1,
-    step_ratio=2,
     min_steps=None,
     f0=None,
     n_cores=DEFAULT_N_CORES,
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_info=False,
     key=None,
     # deprecated
     lower_bounds=None,
     upper_bounds=None,
+    base_steps=None,
+    step_ratio=None,
+    n_steps=None,
+    return_info=None,
 ):
     """Evaluate second derivative of func at params according to method and step
     options.
@@ -356,26 +371,20 @@ def second_derivative(
             equations [7, x, 8, 9] in Rideout [2009], where ("backward", x) is not found
             in Rideout [2009] but is the natural extension of equation 7 to the backward
             case. Default "central_cross".
-        n_steps (int): Number of steps needed. For central methods, this is
-            the number of steps per direction. It is 1 if no Richardson extrapolation
-            is used.
-        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
-            base_steps * scaling_factor is the absolute value of the first (and possibly
+        steps (numpy.ndarray, optional): 1d array of the same length as params.
+            setps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
-            If base_steps * scaling_factor conflicts with bounds, the actual steps will
-            be adjusted. If base_steps is not provided, it will be determined according
+            If setps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If setps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
         scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
-            base_steps. If it is an numpy.ndarray, it needs to be as long as params.
+            setps. If it is an numpy.ndarray, it needs to be as long as params.
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        step_ratio (float, numpy.array): Ratio between two consecutive Richardson
-            extrapolation steps in the same direction. default 2.0. Has to be larger
-            than one. The step ratio is only used if n_steps > 1.
         min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
             accommodate bounds. Must have same length as params. By default min_steps is
-            equal to base_steps, i.e step size is not decreased beyond what is optimal
+            equal to setps, i.e step size is not decreased beyond what is optimal
             according to the rule of thumb.
         f0 (numpy.ndarray): 1d numpy array with func(x), optional.
         n_cores (int): Number of processes used to parallelize the function
@@ -392,10 +401,6 @@ def second_derivative(
         return_func_value (bool): If True, return function value at params, stored in
             output dict under "func_value". Default False. This is useful when using
             first_derivative during optimization.
-        return_info (bool): If True, return additional information on function
-            evaluations and internal derivative candidates, stored in output dict under
-            "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -440,6 +445,27 @@ def second_derivative(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
+
+    steps = replace_and_warn_about_deprecated_base_steps(
+        steps=steps,
+        base_steps=base_steps,
+    )
+
+    if step_ratio is not None:
+        deprecations.throw_derivatives_step_ratio_future_warning()
+    else:
+        step_ratio = 2
+
+    if n_steps is not None:
+        deprecations.throw_derivatives_n_steps_future_warning()
+    else:
+        n_steps = 1
+
+    if return_info is not None:
+        deprecations.throw_derivatives_return_info_future_warning()
+    else:
+        return_info = False
+
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
@@ -468,7 +494,7 @@ def second_derivative(
         method=("central" if "central" in method else method),
         n_steps=n_steps,
         target="second_derivative",
-        base_steps=base_steps,
+        base_steps=steps,
         scaling_factor=scaling_factor,
         bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
