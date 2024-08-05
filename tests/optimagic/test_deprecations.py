@@ -31,6 +31,7 @@ from estimagic import (
     traceback_report,
     utilities,
 )
+from optimagic.differentiation.derivatives import NumdiffResult
 from optimagic.parameters.bounds import Bounds
 
 # ======================================================================================
@@ -649,3 +650,17 @@ def test_return_info_in_second_derivatives_is_deprecated():
     msg = "The `return_info` argument is deprecated and will be removed alongside"
     with pytest.warns(FutureWarning, match=msg):
         om.second_derivative(lambda x: x @ x, np.arange(3), return_info=True)
+
+
+def test_numdiff_result_func_evals_is_deprecated():
+    msg = "The `func_evals` attribute is deprecated and will be removed in optimagic"
+    res = NumdiffResult(derivative=1)
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.func_evals
+
+
+def test_numdiff_result_derivative_candidates_is_deprecated():
+    msg = "The `derivative_candidates` attribute is deprecated and will be removed"
+    res = NumdiffResult(derivative=1)
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.derivative_candidates

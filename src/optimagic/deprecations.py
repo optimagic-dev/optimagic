@@ -105,6 +105,22 @@ def throw_derivatives_return_info_future_warning():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_numdiff_result_func_evals_future_warning():
+    msg = (
+        "The `func_evals` attribute is deprecated and will be removed in optimagic "
+        "version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def throw_numdiff_result_derivative_candidates_future_warning():
+    msg = (
+        "The `derivative_candidates` attribute is deprecated and will be removed in "
+        "optimagic version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_algo_options(algo_options):
     if not isinstance(algo_options, dict):
         return algo_options

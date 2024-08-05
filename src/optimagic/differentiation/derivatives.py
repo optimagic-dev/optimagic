@@ -1,8 +1,9 @@
 import functools
 import itertools
 import re
+from dataclasses import dataclass
 from itertools import product
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,57 @@ from optimagic.differentiation.richardson_extrapolation import richardson_extrap
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import PyTree
+
+
+@dataclass(frozen=True)
+class NumdiffResult:
+    """Result of a numerical differentiation.
+
+    The following relationship holds for vector-valued functions with vector-valued
+    parameters:
+
+    First Derivative:
+    -----------------
+
+    - f: R -> R leads to shape (1,), usually called derivative
+    - f: R^m -> R leads to shape (m, ), usually called Gradient
+    - f: R -> R^n leads to shape (n, 1), usually called Jacobian
+    - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
+
+    Second Derivative:
+    ------------------
+
+    - f: R -> R leads to shape (1,), usually called second derivative
+    - f: R^m -> R leads to shape (m, m), usually called Hessian
+    - f: R -> R^n leads to shape (n,), usually called Hessian
+    - f: R^m -> R^n leads to shape (n, m, m), usually called Hessian tensor
+
+    Attributes:
+        derivative: The estimated derivative at the parameters. The structure of the
+            derivative depends on the input parameters and the output of the function.
+        func_value: The value of the function at the parameters.
+
+    """
+
+    derivative: PyTree
+    func_value: PyTree | None = None
+    # deprecated
+    _func_evals: pd.DataFrame | dict[str, pd.DataFrame | None] | None = None
+    _derivative_candidates: pd.DataFrame | None = None
+
+    @property
+    def func_evals(self) -> pd.DataFrame | dict[str, pd.DataFrame | None] | None:
+        deprecations.throw_numdiff_result_func_evals_future_warning()
+        return self._func_evals
+
+    @property
+    def derivative_candidates(self) -> pd.DataFrame | None:
+        deprecations.throw_numdiff_result_derivative_candidates_future_warning()
+        return self._derivative_candidates
+
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
 
 
 class Evals(NamedTuple):
@@ -111,25 +163,7 @@ def first_derivative(
             func(params)[key].
 
     Returns:
-        result (dict): Result dictionary with keys:
-            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
-                estimated first derivative of func at params. The shape of the output
-                depends on the dimension of params and func(params):
-
-                - f: R -> R leads to shape (1,), usually called derivative
-                - f: R^m -> R leads to shape (m, ), usually called Gradient
-                - f: R -> R^n leads to shape (n, 1), usually called Jacobian
-                - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
-
-            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
-                value at params, returned if return_func_value is True.
-
-            - "func_evals" (pandas.DataFrame): Function evaluations produced by internal
-                derivative method, returned if return_info is True.
-
-            - "derivative_candidates" (pandas.DataFrame): Derivative candidates from
-                Richardson extrapolation, returned if return_info is True and n_steps >
-                1.
+        NumdiffResult: A numerical differentiation result.
 
     """
     # ==================================================================================
@@ -310,7 +344,7 @@ def first_derivative(
             steps, evals, updated_candidates, target="first_derivative"
         )
         result = {**result, **info}
-    return result
+    return NumdiffResult(**result)
 
 
 def second_derivative(
@@ -406,34 +440,7 @@ def second_derivative(
 
 
     Returns:
-        result (dict): Result dictionary with keys:
-            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
-                estimated second derivative of func at params. The shape of the output
-                depends on the dimension of params and func(params):
-
-                - f: R -> R leads to shape (1,), usually called second derivative
-                - f: R^m -> R leads to shape (m, m), usually called Hessian
-                - f: R -> R^n leads to shape (n,), usually called Hessian
-                - f: R^m -> R^n leads to shape (n, m, m), usually called Hessian tensor
-
-            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
-                value at params, returned if return_func_value is True.
-
-            - "func_evals_one_step" (pandas.DataFrame): Function evaluations produced by
-                internal derivative method when altering the params vector at one
-                dimension, returned if return_info is True.
-
-            - "func_evals_two_step" (pandas.DataFrame): This features is not implemented
-                yet and therefore set to None. Once implemented it will contain
-                function evaluations produced by internal derivative method when
-                altering the params vector at two dimensions, returned if return_info is
-                True.
-
-            - "func_evals_cross_step" (pandas.DataFrame): This features is not
-                implemented yet and therefore set to None. Once implemented it will
-                contain function evaluations produced by internal derivative method when
-                altering the params vector at two dimensions in different directions,
-                returned if return_info is True.
+        NumdiffResult: A numerical differentiation result.
 
     """
 
@@ -626,7 +633,7 @@ def second_derivative(
             steps, evals, updated_candidates, target="second_derivative"
         )
         result = {**result, **info}
-    return result
+    return NumdiffResult(**result)
 
 
 def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
@@ -1046,19 +1053,21 @@ def _collect_additional_info(steps, evals, updated_candidates, target):
     # save function evaluations to accessible data frame
     if target == "first_derivative":
         func_evals = _convert_evaluation_data_to_frame(steps, evals)
-        info["func_evals"] = func_evals
+        info["_func_evals"] = func_evals
     else:
         one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
-        info["func_evals_one_step"] = one_step
-        info["func_evals_two_step"] = None
-        info["func_evals_cross_step"] = None
+        info["_func_evals"] = {
+            "one_step": one_step,
+            "two_step": None,
+            "cross_step": None,
+        }
 
     if updated_candidates is not None:
         # combine derivative candidates in accessible data frame
         derivative_candidates = _convert_richardson_candidates_to_frame(
             *updated_candidates
         )
-        info["derivative_candidates"] = derivative_candidates
+        info["_derivative_candidates"] = derivative_candidates
 
     return info
 
