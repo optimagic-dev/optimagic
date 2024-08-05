@@ -3,10 +3,11 @@ import itertools
 import re
 from dataclasses import dataclass
 from itertools import product
-from typing import Any, NamedTuple
+from typing import Any, Callable, Literal, NamedTuple, cast
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from pybaum import tree_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
 
@@ -76,34 +77,34 @@ class NumdiffResult:
 
 
 class Evals(NamedTuple):
-    pos: np.ndarray
-    neg: np.ndarray
+    pos: NDArray[np.float64]
+    neg: NDArray[np.float64]
 
 
 def first_derivative(
-    func,
-    params,
+    func: Callable[[PyTree], PyTree],
+    params: PyTree,
     *,
-    bounds=None,
-    func_kwargs=None,
-    method="central",
-    steps=None,
-    scaling_factor=1,
-    min_steps=None,
-    f0=None,
-    n_cores=DEFAULT_N_CORES,
-    error_handling="continue",
-    batch_evaluator="joblib",
-    return_func_value=False,
-    key=None,
+    bounds: Bounds | None = None,
+    func_kwargs: dict[str, Any] | None = None,
+    method: Literal["central", "forward", "backward"] = "central",
+    steps: NDArray[np.float64] | None = None,
+    scaling_factor: NDArray[np.float64] | float = 1,
+    min_steps: NDArray[np.float64] | None = None,
+    f0: PyTree | None = None,
+    n_cores: int = DEFAULT_N_CORES,
+    error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
+    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
+    return_func_value: bool = False,
+    key: str | None = None,
     # deprecated
-    lower_bounds=None,
-    upper_bounds=None,
-    base_steps=None,
-    step_ratio=None,
-    n_steps=None,
-    return_info=None,
-):
+    lower_bounds: NDArray[np.float64] | None = None,
+    upper_bounds: NDArray[np.float64] | None = None,
+    base_steps: NDArray[np.float64] | None = None,
+    step_ratio: float | None = None,
+    n_steps: int | None = None,
+    return_info: bool | None = None,
+) -> NumdiffResult:
     """Evaluate first derivative of func at params according to method and step options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
@@ -118,8 +119,8 @@ def first_derivative(
     :func:`~optimagic.differentiation.generate_steps.generate_steps`.
 
     Args:
-        func (callable): Function of which the derivative is calculated.
-        params (pytree): A pytree. See :ref:`params`.
+        func: Function of which the derivative is calculated.
+        params: A pytree. See :ref:`params`.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
             way to specify bounds is an `optimagic.Bounds` object that collects lower,
             upper, soft_lower and soft_upper bounds. The soft bounds are not used during
@@ -127,40 +128,39 @@ def first_derivative(
             Check our how-to guide on bounds for examples. If params is a flat numpy
             array, you can also provide bounds via any format that is supported by
             scipy.optimize.minimize.
-        func_kwargs (dict): Additional keyword arguments for func, optional.
-        method (str): One of ["central", "forward", "backward"], default "central".
-        steps (numpy.ndarray, optional): 1d array of the same length as params.
+        func_kwargs: Additional keyword arguments for func, optional.
+        method: One of ["central", "forward", "backward"], default "central".
+        steps: 1d array of the same length as params.
             steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
             If steps * scaling_factor conflicts with bounds, the actual steps will
             be adjusted. If steps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
-        scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
-            steps. If it is an numpy.ndarray, it needs to be as long as params.
-            scaling_factor is useful if you want to increase or decrease the base_step
-            relative to the rule-of-thumb or user provided base_step, for example to
-            benchmark the effect of the step size. Default 1.
-        min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
-            accommodate bounds. Must have same length as params. By default min_steps is
-            equal to steps, i.e step size is not decreased beyond what is optimal
-            according to the rule of thumb.
-        f0 (numpy.ndarray): 1d numpy array with func(x), optional.
-        n_cores (int): Number of processes used to parallelize the function
-            evaluations. Default 1.
-        error_handling (str): One of "continue" (catch errors and continue to calculate
+        scaling_factor: Scaling factor which is applied to steps. If it is an
+            numpy.ndarray, it needs to be as long as params. scaling_factor is useful if
+            you want to increase or decrease the base_step relative to the rule-of-thumb
+            or user provided base_step, for example to benchmark the effect of the step
+            size. Default 1.
+        min_steps: Minimal possible step sizes that can be chosen to accommodate bounds.
+            Must have same length as params. By default min_steps is equal to steps, i.e
+            step size is not decreased beyond what is optimal according to the rule of
+            thumb.
+        f0: 1d numpy array with func(x), optional.
+        n_cores: Number of processes used to parallelize the function evaluations.
+            Default 1.
+        error_handling: One of "continue" (catch errors and continue to calculate
             derivative estimates. In this case, some derivative estimates can be
             missing but no errors are raised), "raise" (catch errors and continue
             to calculate derivative estimates at first but raise an error if all
             evaluations for one parameter failed) and "raise_strict" (raise an error
             as soon as a function evaluation fails).
-        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
-            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
-            as the optimagic batch_evaluators.
-        return_func_value (bool): If True, return function value at params, stored in
-            output dict under "func_value". Default False. This is useful when using
+        batch_evaluator: Name of a pre-implemented batch evaluator (currently 'joblib'
+            and 'pathos_mp') or Callable with the same interface as the optimagic batch
+            evaluators.
+        return_func_value: If True, return function value at params, stored in output
+            dict under "func_value". Default False. This is useful when using
             first_derivative during optimization.
-        key (str): If func returns a dictionary, take the derivative of
-            func(params)[key].
+        key: If func returns a dictionary, take the derivative of func(params)[key].
 
     Returns:
         NumdiffResult: A numerical differentiation result.
@@ -230,6 +230,7 @@ def first_derivative(
         step_ratio=step_ratio,
         min_steps=min_steps,
     )
+    steps = cast(NDArray[np.float64], steps)
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
     evaluation_points = []
@@ -299,9 +300,9 @@ def first_derivative(
     )
 
     # apply finite difference formulae
-    evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
-    evals = np.transpose(evals, axes=(0, 1, 3, 2))
-    evals = Evals(pos=evals[0], neg=evals[1])
+    evals_data = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
+    evals_data = np.transpose(evals_data, axes=(0, 1, 3, 2))
+    evals = Evals(pos=evals_data[0], neg=evals_data[1])
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:
