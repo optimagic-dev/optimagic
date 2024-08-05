@@ -349,29 +349,31 @@ def first_derivative(
 
 
 def second_derivative(
-    func,
-    params,
+    func: Callable[[PyTree], PyTree],
+    params: PyTree,
     *,
-    bounds=None,
-    func_kwargs=None,
-    method="central_cross",
-    steps=None,
-    scaling_factor=1,
-    min_steps=None,
-    f0=None,
-    n_cores=DEFAULT_N_CORES,
-    error_handling="continue",
-    batch_evaluator="joblib",
-    return_func_value=False,
-    key=None,
+    bounds: Bounds | None = None,
+    func_kwargs: dict[str, Any] | None = None,
+    method: Literal[
+        "forward", "backward", "central_average", "central_cross"
+    ] = "central_cross",
+    steps: NDArray[np.float64] | None = None,
+    scaling_factor: float | NDArray[np.float64] = 1,
+    min_steps: NDArray[np.float64] | None = None,
+    f0: PyTree | None = None,
+    n_cores: int = DEFAULT_N_CORES,
+    error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
+    batch_evaluator: str | Callable = "joblib",
+    return_func_value: bool = False,
+    key: str | None = None,
     # deprecated
-    lower_bounds=None,
-    upper_bounds=None,
-    base_steps=None,
-    step_ratio=None,
-    n_steps=None,
-    return_info=None,
-):
+    lower_bounds: NDArray[np.float64] | None = None,
+    upper_bounds: NDArray[np.float64] | None = None,
+    base_steps: NDArray[np.float64] | None = None,
+    step_ratio: float | None = None,
+    n_steps: int | None = None,
+    return_info: bool = False,
+) -> NumdiffResult:
     """Evaluate second derivative of func at params according to method and step
     options.
 
@@ -508,9 +510,14 @@ def second_derivative(
         step_ratio=step_ratio,
         min_steps=min_steps,
     )
+    steps = cast(NDArray[np.float64], steps)
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
-    evaluation_points = {"one_step": [], "two_step": [], "cross_step": []}
+    evaluation_points = {  # type: ignore
+        "one_step": [],
+        "two_step": [],
+        "cross_step": [],
+    }
     for step_arr in steps:
         # single direction steps
         for i, j in product(range(n_steps), range(len(x))):
