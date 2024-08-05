@@ -150,7 +150,7 @@ def test_with_non_transforming_constraints(params):
         params=params,
         constraints=[{"loc": [0, 1], "type": "fixed", "value": [0, 1]}],
         algorithm="scipy_lbfgsb",
-        multistart=True,
+        multistart=om.MultistartOptions(seed=12345),
     )
 
     aaae(res.params["value"].to_numpy(), np.array([0, 1, 0, 0]))
@@ -163,7 +163,7 @@ def test_error_is_raised_with_transforming_constraints(params):
             params=params,
             constraints=[{"loc": [0, 1], "type": "probability"}],
             algorithm="scipy_lbfgsb",
-            multistart=True,
+            multistart=om.MultistartOptions(seed=12345),
         )
 
 
@@ -173,7 +173,7 @@ def test_multistart_with_numpy_params():
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         bounds=Bounds(soft_lower=np.full(5, -10), soft_upper=np.full(5, 10)),
-        multistart=True,
+        multistart=om.MultistartOptions(seed=12345),
     )
 
     aaae(res.params, np.zeros(5))
