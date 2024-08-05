@@ -105,6 +105,14 @@ def throw_derivatives_return_info_future_warning():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_derivatives_return_func_value_future_warning():
+    msg = (
+        "The `return_func_value` argument is deprecated and will be removed in "
+        "optimagic version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def throw_numdiff_result_func_evals_future_warning():
     msg = (
         "The `func_evals` attribute is deprecated and will be removed in optimagic "

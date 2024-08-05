@@ -628,6 +628,12 @@ def test_return_info_in_first_derivatives_is_deprecated():
         om.first_derivative(lambda x: x @ x, np.arange(3), return_info=True)
 
 
+def test_return_func_value_in_first_derivatives_is_deprecated():
+    msg = "The `return_func_value` argument is deprecated and will be removed in"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), return_func_value=True)
+
+
 def test_base_steps_in_second_derivatives_is_deprecated():
     msg = "The `base_steps` argument is deprecated and will be removed alongside"
     with pytest.warns(FutureWarning, match=msg):
@@ -644,6 +650,12 @@ def test_n_steps_in_second_derivatives_is_deprecated():
     msg = "The `n_steps` argument is deprecated and will be removed alongside"
     with pytest.warns(FutureWarning, match=msg):
         om.second_derivative(lambda x: x @ x, np.arange(3), n_steps=1)
+
+
+def test_return_func_value_in_second_derivatives_is_deprecated():
+    msg = "The `return_func_value` argument is deprecated and will be removed in"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), return_func_value=True)
 
 
 def test_return_info_in_second_derivatives_is_deprecated():

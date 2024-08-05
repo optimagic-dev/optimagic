@@ -95,7 +95,6 @@ def first_derivative(
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
-    return_func_value: bool = False,
     key: str | None = None,
     # deprecated
     lower_bounds: NDArray[np.float64] | None = None,
@@ -104,6 +103,7 @@ def first_derivative(
     step_ratio: float | None = None,
     n_steps: int | None = None,
     return_info: bool | None = None,
+    return_func_value: bool | None = None,
 ) -> NumdiffResult:
     """Evaluate first derivative of func at params according to method and step options.
 
@@ -157,9 +157,6 @@ def first_derivative(
         batch_evaluator: Name of a pre-implemented batch evaluator (currently 'joblib'
             and 'pathos_mp') or Callable with the same interface as the optimagic batch
             evaluators.
-        return_func_value: If True, return function value at params, stored in output
-            dict under "func_value". Default False. This is useful when using
-            first_derivative during optimization.
         key: If func returns a dictionary, take the derivative of func(params)[key].
 
     Returns:
@@ -194,6 +191,11 @@ def first_derivative(
         deprecations.throw_derivatives_return_info_future_warning()
     else:
         return_info = False
+
+    if return_func_value is not None:
+        deprecations.throw_derivatives_return_func_value_future_warning()
+    else:
+        return_func_value = True
 
     # ==================================================================================
 
@@ -364,7 +366,6 @@ def second_derivative(
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
-    return_func_value: bool = False,
     key: str | None = None,
     # deprecated
     lower_bounds: NDArray[np.float64] | None = None,
@@ -373,6 +374,7 @@ def second_derivative(
     step_ratio: float | None = None,
     n_steps: int | None = None,
     return_info: bool | None = None,
+    return_func_value: bool | None = None,
 ) -> NumdiffResult:
     """Evaluate second derivative of func at params according to method and step
     options.
@@ -435,9 +437,6 @@ def second_derivative(
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the optimagic batch_evaluators.
-        return_func_value (bool): If True, return function value at params, stored in
-            output dict under "func_value". Default False. This is useful when using
-            first_derivative during optimization.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -475,6 +474,11 @@ def second_derivative(
         deprecations.throw_derivatives_return_info_future_warning()
     else:
         return_info = False
+
+    if return_func_value is not None:
+        deprecations.throw_derivatives_return_func_value_future_warning()
+    else:
+        return_func_value = True
 
     # ==================================================================================
 
