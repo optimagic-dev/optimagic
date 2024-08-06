@@ -1,53 +1,111 @@
 import functools
 import itertools
 import re
+from dataclasses import dataclass
 from itertools import product
-from typing import NamedTuple
+from typing import Any, Callable, Literal, NamedTuple, cast
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from pybaum import tree_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
 
-from optimagic import batch_evaluators
+from optimagic import batch_evaluators, deprecations
 from optimagic.config import DEFAULT_N_CORES
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.deprecations import (
+    replace_and_warn_about_deprecated_base_steps,
+    replace_and_warn_about_deprecated_bounds,
+)
 from optimagic.differentiation import finite_differences
 from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import PyTree
+
+
+@dataclass(frozen=True)
+class NumdiffResult:
+    """Result of a numerical differentiation.
+
+    The following relationship holds for vector-valued functions with vector-valued
+    parameters:
+
+    First Derivative:
+    -----------------
+
+    - f: R -> R leads to shape (1,), usually called derivative
+    - f: R^m -> R leads to shape (m, ), usually called Gradient
+    - f: R -> R^n leads to shape (n, 1), usually called Jacobian
+    - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
+
+    Second Derivative:
+    ------------------
+
+    - f: R -> R leads to shape (1,), usually called second derivative
+    - f: R^m -> R leads to shape (m, m), usually called Hessian
+    - f: R -> R^n leads to shape (n,), usually called Hessian
+    - f: R^m -> R^n leads to shape (n, m, m), usually called Hessian tensor
+
+    Attributes:
+        derivative: The estimated derivative at the parameters. The structure of the
+            derivative depends on the input parameters and the output of the function.
+        func_value: The value of the function at the parameters.
+
+    """
+
+    derivative: PyTree
+    func_value: PyTree | None = None
+    # deprecated
+    _func_evals: pd.DataFrame | dict[str, pd.DataFrame | None] | None = None
+    _derivative_candidates: pd.DataFrame | None = None
+
+    @property
+    def func_evals(self) -> pd.DataFrame | dict[str, pd.DataFrame | None] | None:
+        deprecations.throw_numdiff_result_func_evals_future_warning()
+        return self._func_evals
+
+    @property
+    def derivative_candidates(self) -> pd.DataFrame | None:
+        deprecations.throw_numdiff_result_derivative_candidates_future_warning()
+        return self._derivative_candidates
+
+    def __getitem__(self, key: str) -> Any:
+        deprecations.throw_dict_access_future_warning(key, "NumdiffResult")
+        return getattr(self, key)
 
 
 class Evals(NamedTuple):
-    pos: np.ndarray
-    neg: np.ndarray
+    pos: NDArray[np.float64]
+    neg: NDArray[np.float64]
 
 
 def first_derivative(
-    func,
-    params,
+    func: Callable[[PyTree], PyTree],
+    params: PyTree,
     *,
-    bounds=None,
-    func_kwargs=None,
-    method="central",
-    n_steps=1,
-    base_steps=None,
-    scaling_factor=1,
-    step_ratio=2,
-    min_steps=None,
-    f0=None,
-    n_cores=DEFAULT_N_CORES,
-    error_handling="continue",
-    batch_evaluator="joblib",
-    return_func_value=False,
-    return_info=False,
-    key=None,
+    bounds: Bounds | None = None,
+    func_kwargs: dict[str, Any] | None = None,
+    method: Literal["central", "forward", "backward"] = "central",
+    steps: NDArray[np.float64] | None = None,
+    scaling_factor: NDArray[np.float64] | float = 1,
+    min_steps: NDArray[np.float64] | None = None,
+    f0: PyTree | None = None,
+    n_cores: int = DEFAULT_N_CORES,
+    error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
+    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
+    key: str | None = None,
     # deprecated
-    lower_bounds=None,
-    upper_bounds=None,
-):
+    lower_bounds: NDArray[np.float64] | None = None,
+    upper_bounds: NDArray[np.float64] | None = None,
+    base_steps: NDArray[np.float64] | None = None,
+    step_ratio: float | None = None,
+    n_steps: int | None = None,
+    return_info: bool | None = None,
+    return_func_value: bool | None = None,
+) -> NumdiffResult:
     """Evaluate first derivative of func at params according to method and step options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
@@ -62,8 +120,8 @@ def first_derivative(
     :func:`~optimagic.differentiation.generate_steps.generate_steps`.
 
     Args:
-        func (callable): Function of which the derivative is calculated.
-        params (pytree): A pytree. See :ref:`params`.
+        func: Function of which the derivative is calculated.
+        params: A pytree. See :ref:`params`.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
             way to specify bounds is an `optimagic.Bounds` object that collects lower,
             upper, soft_lower and soft_upper bounds. The soft bounds are not used during
@@ -71,71 +129,39 @@ def first_derivative(
             Check our how-to guide on bounds for examples. If params is a flat numpy
             array, you can also provide bounds via any format that is supported by
             scipy.optimize.minimize.
-        func_kwargs (dict): Additional keyword arguments for func, optional.
-        method (str): One of ["central", "forward", "backward"], default "central".
-        n_steps (int): Number of steps needed. For central methods, this is
-            the number of steps per direction. It is 1 if no Richardson extrapolation
-            is used.
-        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
-            base_steps * scaling_factor is the absolute value of the first (and possibly
+        func_kwargs: Additional keyword arguments for func, optional.
+        method: One of ["central", "forward", "backward"], default "central".
+        steps: 1d array of the same length as params.
+            steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
-            If base_steps * scaling_factor conflicts with bounds, the actual steps will
-            be adjusted. If base_steps is not provided, it will be determined according
+            If steps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If steps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
-        scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
-            base_steps. If it is an numpy.ndarray, it needs to be as long as params.
-            scaling_factor is useful if you want to increase or decrease the base_step
-            relative to the rule-of-thumb or user provided base_step, for example to
-            benchmark the effect of the step size. Default 1.
-        step_ratio (float, numpy.array): Ratio between two consecutive Richardson
-            extrapolation steps in the same direction. default 2.0. Has to be larger
-            than one. The step ratio is only used if n_steps > 1.
-        min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
-            accommodate bounds. Must have same length as params. By default min_steps is
-            equal to base_steps, i.e step size is not decreased beyond what is optimal
-            according to the rule of thumb.
-        f0 (numpy.ndarray): 1d numpy array with func(x), optional.
-        n_cores (int): Number of processes used to parallelize the function
-            evaluations. Default 1.
-        error_handling (str): One of "continue" (catch errors and continue to calculate
+        scaling_factor: Scaling factor which is applied to steps. If it is an
+            numpy.ndarray, it needs to be as long as params. scaling_factor is useful if
+            you want to increase or decrease the base_step relative to the rule-of-thumb
+            or user provided base_step, for example to benchmark the effect of the step
+            size. Default 1.
+        min_steps: Minimal possible step sizes that can be chosen to accommodate bounds.
+            Must have same length as params. By default min_steps is equal to steps, i.e
+            step size is not decreased beyond what is optimal according to the rule of
+            thumb.
+        f0: 1d numpy array with func(x), optional.
+        n_cores: Number of processes used to parallelize the function evaluations.
+            Default 1.
+        error_handling: One of "continue" (catch errors and continue to calculate
             derivative estimates. In this case, some derivative estimates can be
             missing but no errors are raised), "raise" (catch errors and continue
             to calculate derivative estimates at first but raise an error if all
             evaluations for one parameter failed) and "raise_strict" (raise an error
             as soon as a function evaluation fails).
-        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
-            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
-            as the optimagic batch_evaluators.
-        return_func_value (bool): If True, return function value at params, stored in
-            output dict under "func_value". Default False. This is useful when using
-            first_derivative during optimization.
-        return_info (bool): If True, return additional information on function
-            evaluations and internal derivative candidates, stored in output dict under
-            "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default False.
-        key (str): If func returns a dictionary, take the derivative of
-            func(params)[key].
+        batch_evaluator: Name of a pre-implemented batch evaluator (currently 'joblib'
+            and 'pathos_mp') or Callable with the same interface as the optimagic batch
+            evaluators.
+        key: If func returns a dictionary, take the derivative of func(params)[key].
 
     Returns:
-        result (dict): Result dictionary with keys:
-            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
-                estimated first derivative of func at params. The shape of the output
-                depends on the dimension of params and func(params):
-
-                - f: R -> R leads to shape (1,), usually called derivative
-                - f: R^m -> R leads to shape (m, ), usually called Gradient
-                - f: R -> R^n leads to shape (n, 1), usually called Jacobian
-                - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
-
-            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
-                value at params, returned if return_func_value is True.
-
-            - "func_evals" (pandas.DataFrame): Function evaluations produced by internal
-                derivative method, returned if return_info is True.
-
-            - "derivative_candidates" (pandas.DataFrame): Derivative candidates from
-                Richardson extrapolation, returned if return_info is True and n_steps >
-                1.
+        NumdiffResult: A numerical differentiation result.
 
     """
     # ==================================================================================
@@ -146,6 +172,31 @@ def first_derivative(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
+
+    steps = replace_and_warn_about_deprecated_base_steps(
+        steps=steps,
+        base_steps=base_steps,
+    )
+
+    if step_ratio is not None:
+        deprecations.throw_derivatives_step_ratio_future_warning()
+    else:
+        step_ratio = 2
+
+    if n_steps is not None:
+        deprecations.throw_derivatives_n_steps_future_warning()
+    else:
+        n_steps = 1
+
+    if return_info is not None:
+        deprecations.throw_derivatives_return_info_future_warning()
+    else:
+        return_info = False
+
+    if return_func_value is not None:
+        deprecations.throw_derivatives_return_func_value_future_warning()
+    else:
+        return_func_value = True
 
     # ==================================================================================
 
@@ -176,12 +227,13 @@ def first_derivative(
         method=method,
         n_steps=n_steps,
         target="first_derivative",
-        base_steps=base_steps,
+        base_steps=steps,
         scaling_factor=scaling_factor,
         bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
         min_steps=min_steps,
     )
+    steps = cast(NDArray[np.float64], steps)
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
     evaluation_points = []
@@ -251,9 +303,9 @@ def first_derivative(
     )
 
     # apply finite difference formulae
-    evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
-    evals = np.transpose(evals, axes=(0, 1, 3, 2))
-    evals = Evals(pos=evals[0], neg=evals[1])
+    evals_data = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
+    evals_data = np.transpose(evals_data, axes=(0, 1, 3, 2))
+    evals = Evals(pos=evals_data[0], neg=evals_data[1])
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:
@@ -296,32 +348,35 @@ def first_derivative(
             steps, evals, updated_candidates, target="first_derivative"
         )
         result = {**result, **info}
-    return result
+    return NumdiffResult(**result)
 
 
 def second_derivative(
-    func,
-    params,
+    func: Callable[[PyTree], PyTree],
+    params: PyTree,
     *,
-    bounds=None,
-    func_kwargs=None,
-    method="central_cross",
-    n_steps=1,
-    base_steps=None,
-    scaling_factor=1,
-    step_ratio=2,
-    min_steps=None,
-    f0=None,
-    n_cores=DEFAULT_N_CORES,
-    error_handling="continue",
-    batch_evaluator="joblib",
-    return_func_value=False,
-    return_info=False,
-    key=None,
+    bounds: Bounds | None = None,
+    func_kwargs: dict[str, Any] | None = None,
+    method: Literal[
+        "forward", "backward", "central_average", "central_cross"
+    ] = "central_cross",
+    steps: NDArray[np.float64] | None = None,
+    scaling_factor: float | NDArray[np.float64] = 1,
+    min_steps: NDArray[np.float64] | None = None,
+    f0: PyTree | None = None,
+    n_cores: int = DEFAULT_N_CORES,
+    error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
+    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
+    key: str | None = None,
     # deprecated
-    lower_bounds=None,
-    upper_bounds=None,
-):
+    lower_bounds: NDArray[np.float64] | None = None,
+    upper_bounds: NDArray[np.float64] | None = None,
+    base_steps: NDArray[np.float64] | None = None,
+    step_ratio: float | None = None,
+    n_steps: int | None = None,
+    return_info: bool | None = None,
+    return_func_value: bool | None = None,
+) -> NumdiffResult:
     """Evaluate second derivative of func at params according to method and step
     options.
 
@@ -356,26 +411,20 @@ def second_derivative(
             equations [7, x, 8, 9] in Rideout [2009], where ("backward", x) is not found
             in Rideout [2009] but is the natural extension of equation 7 to the backward
             case. Default "central_cross".
-        n_steps (int): Number of steps needed. For central methods, this is
-            the number of steps per direction. It is 1 if no Richardson extrapolation
-            is used.
-        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
-            base_steps * scaling_factor is the absolute value of the first (and possibly
+        steps (numpy.ndarray, optional): 1d array of the same length as params.
+            setps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
-            If base_steps * scaling_factor conflicts with bounds, the actual steps will
-            be adjusted. If base_steps is not provided, it will be determined according
+            If setps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If setps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
         scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
-            base_steps. If it is an numpy.ndarray, it needs to be as long as params.
+            setps. If it is an numpy.ndarray, it needs to be as long as params.
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        step_ratio (float, numpy.array): Ratio between two consecutive Richardson
-            extrapolation steps in the same direction. default 2.0. Has to be larger
-            than one. The step ratio is only used if n_steps > 1.
         min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
             accommodate bounds. Must have same length as params. By default min_steps is
-            equal to base_steps, i.e step size is not decreased beyond what is optimal
+            equal to setps, i.e step size is not decreased beyond what is optimal
             according to the rule of thumb.
         f0 (numpy.ndarray): 1d numpy array with func(x), optional.
         n_cores (int): Number of processes used to parallelize the function
@@ -389,46 +438,12 @@ def second_derivative(
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the optimagic batch_evaluators.
-        return_func_value (bool): If True, return function value at params, stored in
-            output dict under "func_value". Default False. This is useful when using
-            first_derivative during optimization.
-        return_info (bool): If True, return additional information on function
-            evaluations and internal derivative candidates, stored in output dict under
-            "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
 
     Returns:
-        result (dict): Result dictionary with keys:
-            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
-                estimated second derivative of func at params. The shape of the output
-                depends on the dimension of params and func(params):
-
-                - f: R -> R leads to shape (1,), usually called second derivative
-                - f: R^m -> R leads to shape (m, m), usually called Hessian
-                - f: R -> R^n leads to shape (n,), usually called Hessian
-                - f: R^m -> R^n leads to shape (n, m, m), usually called Hessian tensor
-
-            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
-                value at params, returned if return_func_value is True.
-
-            - "func_evals_one_step" (pandas.DataFrame): Function evaluations produced by
-                internal derivative method when altering the params vector at one
-                dimension, returned if return_info is True.
-
-            - "func_evals_two_step" (pandas.DataFrame): This features is not implemented
-                yet and therefore set to None. Once implemented it will contain
-                function evaluations produced by internal derivative method when
-                altering the params vector at two dimensions, returned if return_info is
-                True.
-
-            - "func_evals_cross_step" (pandas.DataFrame): This features is not
-                implemented yet and therefore set to None. Once implemented it will
-                contain function evaluations produced by internal derivative method when
-                altering the params vector at two dimensions in different directions,
-                returned if return_info is True.
+        NumdiffResult: A numerical differentiation result.
 
     """
 
@@ -440,6 +455,32 @@ def second_derivative(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
+
+    steps = replace_and_warn_about_deprecated_base_steps(
+        steps=steps,
+        base_steps=base_steps,
+    )
+
+    if step_ratio is not None:
+        deprecations.throw_derivatives_step_ratio_future_warning()
+    else:
+        step_ratio = 2
+
+    if n_steps is not None:
+        deprecations.throw_derivatives_n_steps_future_warning()
+    else:
+        n_steps = 1
+
+    if return_info is not None:
+        deprecations.throw_derivatives_return_info_future_warning()
+    else:
+        return_info = False
+
+    if return_func_value is not None:
+        deprecations.throw_derivatives_return_func_value_future_warning()
+    else:
+        return_func_value = True
+
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
@@ -468,15 +509,20 @@ def second_derivative(
         method=("central" if "central" in method else method),
         n_steps=n_steps,
         target="second_derivative",
-        base_steps=base_steps,
+        base_steps=steps,
         scaling_factor=scaling_factor,
         bounds=Bounds(lower=internal_lb, upper=internal_ub),
         step_ratio=step_ratio,
         min_steps=min_steps,
     )
+    steps = cast(NDArray[np.float64], steps)
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
-    evaluation_points = {"one_step": [], "two_step": [], "cross_step": []}
+    evaluation_points = {  # type: ignore
+        "one_step": [],
+        "two_step": [],
+        "cross_step": [],
+    }
     for step_arr in steps:
         # single direction steps
         for i, j in product(range(n_steps), range(len(x))):
@@ -600,7 +646,7 @@ def second_derivative(
             steps, evals, updated_candidates, target="second_derivative"
         )
         result = {**result, **info}
-    return result
+    return NumdiffResult(**result)
 
 
 def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
@@ -1020,19 +1066,21 @@ def _collect_additional_info(steps, evals, updated_candidates, target):
     # save function evaluations to accessible data frame
     if target == "first_derivative":
         func_evals = _convert_evaluation_data_to_frame(steps, evals)
-        info["func_evals"] = func_evals
+        info["_func_evals"] = func_evals
     else:
         one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
-        info["func_evals_one_step"] = one_step
-        info["func_evals_two_step"] = None
-        info["func_evals_cross_step"] = None
+        info["_func_evals"] = {
+            "one_step": one_step,
+            "two_step": None,
+            "cross_step": None,
+        }
 
     if updated_candidates is not None:
         # combine derivative candidates in accessible data frame
         derivative_candidates = _convert_richardson_candidates_to_frame(
             *updated_candidates
         )
-        info["derivative_candidates"] = derivative_candidates
+        info["_derivative_candidates"] = derivative_candidates
 
     return info
 
