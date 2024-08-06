@@ -13,8 +13,10 @@ First implemented in Python by Alisdair McKay (
 
 import warnings
 from functools import partial
+from typing import Literal
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.stats import qmc, triang
 
 from optimagic.batch_evaluators import process_batch_evaluator
@@ -39,7 +41,7 @@ def run_multistart_optimization(
     database,
     error_handling,
 ):
-    steps = determine_steps(options["n_samples"], options["n_optimizations"])
+    steps = determine_steps(options.n_samples, stopping_maxopt=options.stopping_maxopt)
 
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
@@ -47,18 +49,18 @@ def run_multistart_optimization(
         database=database,
     )
 
-    if options["sample"] is not None:
-        sample = options["sample"]
+    if options.sample is not None:
+        sample = options.sample
     else:
-        sample = draw_exploration_sample(
+        sample = _draw_exploration_sample(
             x=x,
             lower=lower_sampling_bounds,
             upper=upper_sampling_bounds,
             # -1 because we add start parameters
-            n_samples=options["n_samples"] - 1,
-            sampling_distribution=options["sampling_distribution"],
-            sampling_method=options["sampling_method"],
-            seed=options["seed"],
+            n_samples=options.n_samples - 1,
+            distribution=options.sampling_distribution,
+            method=options.sampling_method,
+            seed=options.seed,
         )
 
         sample = np.vstack([x.reshape(1, -1), sample])
@@ -79,10 +81,10 @@ def run_multistart_optimization(
         criterion,
         primary_key=primary_key,
         sample=sample,
-        batch_evaluator=options["batch_evaluator"],
-        n_cores=options["n_cores"],
+        batch_evaluator=options.batch_evaluator,
+        n_cores=options.n_cores,
         step_id=scheduled_steps[0],
-        error_handling=options["exploration_error_handling"],
+        error_handling=options.error_handling,
     )
 
     if logging:
@@ -97,14 +99,14 @@ def run_multistart_optimization(
     sorted_sample = exploration_res["sorted_sample"]
     sorted_values = exploration_res["sorted_values"]
 
-    n_optimizations = options["n_optimizations"]
-    if n_optimizations > len(sorted_sample):
-        n_skipped_steps = n_optimizations - len(sorted_sample)
-        n_optimizations = len(sorted_sample)
+    stopping_maxopt = options.stopping_maxopt
+    if stopping_maxopt > len(sorted_sample):
+        n_skipped_steps = stopping_maxopt - len(sorted_sample)
+        stopping_maxopt = len(sorted_sample)
         warnings.warn(
             "There are less valid starting points than requested optimizations. "
             "The number of optimizations has been reduced from "
-            f"{options['n_optimizations']} to {len(sorted_sample)}."
+            f"{options.stopping_maxopt} to {len(sorted_sample)}."
         )
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
@@ -119,8 +121,8 @@ def run_multistart_optimization(
 
     batched_sample = get_batched_optimization_sample(
         sorted_sample=sorted_sample,
-        n_optimizations=n_optimizations,
-        batch_size=options["batch_size"],
+        stopping_maxopt=stopping_maxopt,
+        batch_size=options.batch_size,
     )
 
     state = {
@@ -134,8 +136,8 @@ def run_multistart_optimization(
     }
 
     convergence_criteria = {
-        "xtol": options["convergence_relative_params_tolerance"],
-        "max_discoveries": options["convergence_max_discoveries"],
+        "xtol": options.convergence_xtol_rel,
+        "max_discoveries": options.convergence_max_discoveries,
     }
 
     problem_functions = {
@@ -143,17 +145,11 @@ def run_multistart_optimization(
         for name, func in problem_functions.items()
     }
 
-    batch_evaluator = options["batch_evaluator"]
-
-    weight_func = partial(
-        options["mixing_weight_method"],
-        min_weight=options["mixing_weight_bounds"][0],
-        max_weight=options["mixing_weight_bounds"][1],
-    )
+    batch_evaluator = options.batch_evaluator
 
     opt_counter = 0
     for batch in batched_sample:
-        weight = weight_func(opt_counter, n_optimizations)
+        weight = options.weight_func(opt_counter, stopping_maxopt)
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
         arguments = [
@@ -165,8 +161,8 @@ def run_multistart_optimization(
             func=local_algorithm,
             arguments=arguments,
             unpack_symbol="**",
-            n_cores=options["n_cores"],
-            error_handling=options["optimization_error_handling"],
+            n_cores=options.n_cores,
+            error_handling=options.error_handling,
         )
 
         state, is_converged = update_convergence_state(
@@ -188,18 +184,20 @@ def run_multistart_optimization(
                     )
             break
 
-    raw_res = state["best_res"]
-    raw_res["multistart_info"] = {
+    multistart_info = {
         "start_parameters": state["start_history"],
         "local_optima": state["result_history"],
         "exploration_sample": sorted_sample,
         "exploration_results": exploration_res["sorted_values"],
     }
 
+    raw_res = state["best_res"]
+    raw_res["multistart_info"] = multistart_info
+
     return raw_res
 
 
-def determine_steps(n_samples, n_optimizations):
+def determine_steps(n_samples, stopping_maxopt):
     """Determine the number and type of steps for the multistart optimization.
 
     This is mainly used to write them to the log. The number of steps is also
@@ -207,7 +205,7 @@ def determine_steps(n_samples, n_optimizations):
 
     Args:
         n_samples (int): Number of exploration points for the multistart optimization.
-        n_optimizations (int): Number of local optimizations.
+        stopping_maxopt (int): Number of local optimizations.
 
 
     Returns:
@@ -222,7 +220,7 @@ def determine_steps(n_samples, n_optimizations):
     }
 
     steps = [exploration_step]
-    for i in range(n_optimizations):
+    for i in range(stopping_maxopt):
         optimization_step = {
             "type": "optimization",
             "status": "scheduled",
@@ -232,49 +230,36 @@ def determine_steps(n_samples, n_optimizations):
     return steps
 
 
-def draw_exploration_sample(
-    x,
-    lower,
-    upper,
-    n_samples,
-    sampling_distribution,
-    sampling_method,
-    seed,
-):
+def _draw_exploration_sample(
+    x: NDArray[np.float64],
+    lower: NDArray[np.float64],
+    upper: NDArray[np.float64],
+    n_samples: int,
+    distribution: Literal["uniform", "triangular"],
+    method: Literal["sobol", "random", "halton", "latin_hypercube"],
+    seed: int | np.random.Generator | None,
+) -> NDArray[np.float64]:
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
     The sample is created randomly or using a low discrepancy sequence. Different
     distributions are available.
 
     Args:
-        x (np.ndarray): Internal parameter vector of shape (n_params,).
-        lower (np.ndarray): Vector of internal lower bounds of shape (n_params,).
-        upper (np.ndarray): Vector of internal upper bounds of shape (n_params,).
-        n_samples (int): Number of sample points on which one function evaluation
-            shall be performed. Default is 10 * n_params.
-        sampling_distribution (str): One of "uniform", "triangular". Default is
-            "uniform", as in the original tiktak algorithm.
-        sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
-            "random". Default is sobol for problems with up to 200 parameters
-            and random for problems with more than 200 parameters.
-        seed (int): Random seed.
+        x: Internal parameter vector of shape (n_params,).
+        lower: Vector of internal lower bounds of shape (n_params,).
+        upper: Vector of internal upper bounds of shape (n_params,).
+        n_samples: Number of sample points.
+        distribution: The distribution from which the exploration sample is
+            drawn. Allowed are "uniform" and "triangular". Defaults to "uniform".
+        method: The method used to draw the exploration sample. Allowed are
+            "sobol", "random", "halton", and "latin_hypercube". Defaults to "sobol".
+        seed: Random number seed or generator.
 
     Returns:
-        np.ndarray: Numpy array of shape (n_samples, n_params).
-            Each row represents a vector of parameter values.
+        Array of shape (n_samples, n_params). Each row represents a vector of parameter
+            values.
 
     """
-    valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
-    valid_distributions = ["uniform", "triangular"]
-
-    if sampling_method not in valid_rules:
-        raise ValueError(
-            f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
-        )
-
-    if sampling_distribution not in valid_distributions:
-        raise ValueError(f"Unsupported distribution: {sampling_distribution}")
-
     for name, bound in zip(["lower", "upper"], [lower, upper], strict=False):
         if not np.isfinite(bound).all():
             raise ValueError(
@@ -282,7 +267,7 @@ def draw_exploration_sample(
                 f"soft_{name}_bounds for all parameters."
             )
 
-    if sampling_method == "sobol":
+    if method == "sobol":
         # Draw `n` points from the open interval (lower, upper)^d.
         # Note that scipy uses the half-open interval [lower, upper)^d internally.
         # We apply a burn-in phase of 1, i.e. we skip the first point in the sequence
@@ -291,21 +276,21 @@ def draw_exploration_sample(
         _ = sampler.fast_forward(1)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif sampling_method == "halton":
+    elif method == "halton":
         sampler = qmc.Halton(d=len(lower), scramble=False, seed=seed)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif sampling_method == "latin_hypercube":
+    elif method == "latin_hypercube":
         sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=seed)
         sample_unscaled = sampler.random(n=n_samples)
 
-    elif sampling_method == "random":
+    elif method == "random":
         rng = get_rng(seed)
         sample_unscaled = rng.uniform(size=(n_samples, len(lower)))
 
-    if sampling_distribution == "uniform":
+    if distribution == "uniform":
         sample_scaled = qmc.scale(sample_unscaled, lower, upper)
-    elif sampling_distribution == "triangular":
+    elif distribution == "triangular":
         sample_scaled = triang.ppf(
             sample_unscaled,
             c=(x - lower) / (upper - lower),
@@ -402,7 +387,7 @@ def run_explorations(
     return out
 
 
-def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
+def get_batched_optimization_sample(sorted_sample, stopping_maxopt, batch_size):
     """Create a batched sample of internal parameters for the optimization phase.
 
     Note that in the end the optimizations will not be started from those parameter
@@ -412,7 +397,7 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
     Args:
         sorted_sample (np.ndarray): 2d numpy array with containing sorted internal
             parameter vectors.
-        n_optimizations (int): Number of optimizations to run. If sample is shorter
+        stopping_maxopt (int): Number of optimizations to run. If sample is shorter
             than that, optimizations are run on all entries of the sample.
         batch_size (int): Batch size.
 
@@ -421,12 +406,12 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
             The inner lists have length ``batch_size`` or shorter.
 
     """
-    n_batches = int(np.ceil(n_optimizations / batch_size))
+    n_batches = int(np.ceil(stopping_maxopt / batch_size))
 
     start = 0
     batched = []
     for _ in range(n_batches):
-        stop = min(start + batch_size, len(sorted_sample), n_optimizations)
+        stop = min(start + batch_size, len(sorted_sample), stopping_maxopt)
         batched.append(list(sorted_sample[start:stop]))
         start = stop
     return batched
@@ -536,19 +521,3 @@ def update_convergence_state(
     }
 
     return new_state, is_converged
-
-
-def _tiktak_weights(iteration, n_iterations, min_weight, max_weight):
-    return np.clip(np.sqrt(iteration / n_iterations), min_weight, max_weight)
-
-
-def _linear_weights(iteration, n_iterations, min_weight, max_weight):
-    unscaled = iteration / n_iterations
-    span = max_weight - min_weight
-    return min_weight + unscaled * span
-
-
-WEIGHT_FUNCTIONS = {
-    "tiktak": _tiktak_weights,
-    "linear": _linear_weights,
-}

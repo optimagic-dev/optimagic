@@ -5,9 +5,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.optimization.multistart import (
-    _linear_weights,
-    _tiktak_weights,
-    draw_exploration_sample,
+    _draw_exploration_sample,
     get_batched_optimization_sample,
     run_explorations,
     update_convergence_state,
@@ -42,13 +40,13 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
 
     for _ in range(2):
         results.append(
-            draw_exploration_sample(
+            _draw_exploration_sample(
                 x=np.ones_like(lower) * 0.5,
                 lower=lower,
                 upper=upper,
                 n_samples=3,
-                sampling_distribution=dist,
-                sampling_method=rule,
+                distribution=dist,
+                method=rule,
                 seed=1234,
             )
         )
@@ -92,7 +90,7 @@ def test_run_explorations():
 def test_get_batched_optimization_sample():
     calculated = get_batched_optimization_sample(
         sorted_sample=np.arange(12).reshape(6, 2),
-        n_optimizations=5,
+        stopping_maxopt=5,
         batch_size=4,
     )
     expected = [[[0, 1], [2, 3], [4, 5], [6, 7]], [[8, 9]]]
@@ -106,17 +104,6 @@ def test_get_batched_optimization_sample():
         for calc_entry, exp_entry in zip(calc_batch, exp_batch, strict=False):
             assert isinstance(calc_entry, np.ndarray)
             assert calc_entry.tolist() == exp_entry
-
-
-def test_linear_weights():
-    calculated = _linear_weights(5, 10, 0.4, 0.8)
-    expected = 0.6
-    assert np.allclose(calculated, expected)
-
-
-def test_tiktak_weights():
-    assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
-    assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
 
 
 @pytest.fixture()

@@ -1,7 +1,7 @@
 import numpy as np
 
 from optimagic.optimization.convergence_report import get_convergence_report
-from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
 from optimagic.typing import SolverType
 from optimagic.utilities import isscalar
 
@@ -145,13 +145,12 @@ def _process_multistart_info(info, converter, solver_type, fixed_kwargs, skip_ch
     else:
         exploration_res = [switch_sign(res) for res in info["exploration_results"]]
 
-    out = {
-        "start_parameters": starts,
-        "local_optima": optima,
-        "exploration_sample": sample,
-        "exploration_results": exploration_res,
-    }
-    return out
+    return MultistartInfo(
+        start_parameters=starts,
+        local_optima=optima,
+        exploration_sample=sample,
+        exploration_results=exploration_res,
+    )
 
 
 def _dummy_result_from_traceback(candidate, fixed_kwargs):  # noqa: ARG001

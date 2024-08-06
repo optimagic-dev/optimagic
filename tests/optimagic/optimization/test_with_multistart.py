@@ -1,4 +1,5 @@
 import numpy as np
+import optimagic as om
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
@@ -54,63 +55,62 @@ def test_multistart_optimization_with_sum_of_squares_at_defaults(
 
     assert hasattr(res, "multistart_info")
     ms_info = res.multistart_info
-    assert len(ms_info["exploration_sample"]) == 40
-    assert len(ms_info["exploration_results"]) == 40
-    assert all(isinstance(entry, float) for entry in ms_info["exploration_results"])
-    assert all(isinstance(entry, OptimizeResult) for entry in ms_info["local_optima"])
-    assert all(isinstance(entry, pd.DataFrame) for entry in ms_info["start_parameters"])
+    assert len(ms_info.exploration_sample) == 400
+    assert len(ms_info.exploration_results) == 400
+    assert all(isinstance(entry, float) for entry in ms_info.exploration_results)
+    assert all(isinstance(entry, OptimizeResult) for entry in ms_info.local_optima)
+    assert all(isinstance(entry, pd.DataFrame) for entry in ms_info.start_parameters)
     assert np.allclose(res.fun, 0)
     aaae(res.params["value"], np.zeros(4))
 
 
 def test_multistart_with_existing_sample(params):
-    sample = pd.DataFrame(
-        np.arange(20).reshape(5, 4) / 10,
-        columns=params.index,
-    )
-    options = {"sample": sample}
+    sample = [params.assign(value=x) for x in np.arange(20).reshape(5, 4) / 10]
+    options = om.MultistartOptions(sample=sample)
 
     res = minimize(
         fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
     )
 
-    calc_sample = _params_list_to_aray(res.multistart_info["exploration_sample"])
-    aaae(calc_sample, options["sample"])
+    assert all(
+        got.equals(expected)
+        for expected, got in zip(
+            sample, res.multistart_info.exploration_sample, strict=False
+        )
+    )
 
 
 def test_convergence_via_max_discoveries_works(params):
-    options = {
-        "convergence_relative_params_tolerance": np.inf,
-        "convergence_max_discoveries": 2,
-    }
+    options = om.MultistartOptions(
+        convergence_xtol_rel=np.inf,
+        convergence_max_discoveries=2,
+    )
 
     res = maximize(
         fun=switch_sign(sos_scalar_criterion),
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
     )
 
-    assert len(res.multistart_info["local_optima"]) == 2
+    assert len(res.multistart_info.local_optima) == 2
 
 
 def test_steps_are_logged_as_skipped_if_convergence(params):
-    options = {
-        "convergence_relative_params_tolerance": np.inf,
-        "convergence_max_discoveries": 2,
-    }
+    options = om.MultistartOptions(
+        n_samples=10 * len(params),
+        convergence_xtol_rel=np.inf,
+        convergence_max_discoveries=2,
+    )
 
     minimize(
         fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
         logging="logging.db",
     )
 
@@ -120,14 +120,16 @@ def test_steps_are_logged_as_skipped_if_convergence(params):
 
 
 def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
-    options = {"convergence_max_discoveries": np.inf}
+    options = om.MultistartOptions(
+        convergence_max_discoveries=np.inf,
+        n_samples=10 * len(params),
+    )
 
     minimize(
         fun=sos_dict_criterion,
         params=params,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options=options,
+        multistart=options,
         logging="logging.db",
     )
 
@@ -167,11 +169,6 @@ def test_error_is_raised_with_transforming_constraints(params):
         )
 
 
-def _params_list_to_aray(params_list):
-    data = [params["value"].tolist() for params in params_list]
-    return np.array(data)
-
-
 def test_multistart_with_numpy_params():
     res = minimize(
         fun=lambda params: params @ params,
@@ -179,6 +176,20 @@ def test_multistart_with_numpy_params():
         algorithm="scipy_lbfgsb",
         bounds=Bounds(soft_lower=np.full(5, -10), soft_upper=np.full(5, 10)),
         multistart=True,
+    )
+
+    aaae(res.params, np.zeros(5))
+
+
+def test_multistart_with_rng_seed():
+    rng = np.random.default_rng(12345)
+
+    res = minimize(
+        fun=lambda params: params @ params,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+        bounds=Bounds(soft_lower=np.full(5, -10), soft_upper=np.full(5, 10)),
+        multistart=om.MultistartOptions(seed=rng),
     )
 
     aaae(res.params, np.zeros(5))
@@ -232,12 +243,11 @@ def test_with_ackley():
     minimize(
         **kwargs,
         algorithm="scipy_lbfgsb",
-        multistart=True,
-        multistart_options={
-            "n_samples": 200,
-            "share_optimizations": 0.1,
-            "convergence_max_discoveries": 10,
-        },
+        multistart=om.MultistartOptions(
+            n_samples=200,
+            stopping_maxopt=20,
+            convergence_max_discoveries=10,
+        ),
     )
 
 
@@ -247,8 +257,37 @@ def test_multistart_with_least_squares_optimizers():
         params=np.array([-1, 1.0]),
         bounds=Bounds(soft_lower=np.full(2, -10), soft_upper=np.full(2, 10)),
         algorithm="scipy_ls_trf",
-        multistart=True,
-        multistart_options={"n_samples": 3, "share_optimizations": 1.0},
+        multistart=om.MultistartOptions(n_samples=3, stopping_maxopt=3),
     )
 
     aaae(est.params, np.zeros(2))
+
+
+def test_with_ackley_using_dict_options():
+    def ackley(x):
+        out = (
+            -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2)))
+            - np.exp(np.mean(np.cos(2 * np.pi * x)))
+            + 20
+            + np.exp(1)
+        )
+        return out
+
+    dim = 5
+
+    kwargs = {
+        "fun": ackley,
+        "params": np.full(dim, -10),
+        "bounds": Bounds(lower=np.full(dim, -32), upper=np.full(dim, 32)),
+        "algo_options": {"stopping.maxfun": 1000},
+    }
+
+    minimize(
+        **kwargs,
+        algorithm="scipy_lbfgsb",
+        multistart={
+            "n_samples": 200,
+            "stopping_maxopt": 20,
+            "convergence_max_discoveries": 10,
+        },
+    )
