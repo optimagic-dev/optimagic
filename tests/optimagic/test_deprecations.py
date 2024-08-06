@@ -604,6 +604,19 @@ def test_multistart_option_exploration_error_handling_option_is_deprecated():
         )
 
 
+def test_deprecated_dict_access_of_multistart_info():
+    res = om.minimize(
+        lambda x: x @ x,
+        np.arange(3),
+        algorithm="scipy_lbfgsb",
+        multistart=True,
+        bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+    )
+    msg = "The dictionary access for 'local_optima' is deprecated and will be removed"
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.multistart_info["local_optima"]
+
+
 def test_base_steps_in_first_derivatives_is_deprecated():
     msg = "The `base_steps` argument is deprecated and will be removed alongside"
     with pytest.warns(FutureWarning, match=msg):
@@ -676,3 +689,10 @@ def test_numdiff_result_derivative_candidates_is_deprecated():
     res = NumdiffResult(derivative=1)
     with pytest.warns(FutureWarning, match=msg):
         _ = res.derivative_candidates
+
+
+def test_numdiff_result_dict_access_is_deprecated():
+    msg = "The dictionary access for 'derivative' is deprecated and will be removed"
+    res = NumdiffResult(derivative=1)
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res["derivative"]

@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 import pandas as pd
 
+from optimagic import deprecations
 from optimagic.shared.compat import pd_df_map
 from optimagic.typing import PyTree
 from optimagic.utilities import to_pickle
@@ -128,6 +129,7 @@ class OptimizeResult:
     def nhev(self) -> int | None:
         return self.n_hess_evals
 
+    # Enable attribute access using dictionary-style notation for scipy compatibility
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -216,8 +218,9 @@ class MultistartInfo:
     exploration_sample: list[PyTree]
     exploration_results: list[float]
 
-    def __getitem__(self, item):
-        return getattr(self, item)
+    def __getitem__(self, key):
+        deprecations.throw_dict_access_future_warning(key, "MultistartInfo")
+        return getattr(self, key)
 
     @property
     def n_optimizations(self) -> int:

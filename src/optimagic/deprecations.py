@@ -129,6 +129,15 @@ def throw_numdiff_result_derivative_candidates_future_warning():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_dict_access_future_warning(attribute, obj_name):
+    msg = (
+        f"The dictionary access for '{attribute}' is deprecated and will be removed "
+        "in optimagic version 0.6.0. Please use the new attribute access instead: "
+        f"`{obj_name}.{attribute}`."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_algo_options(algo_options):
     if not isinstance(algo_options, dict):
         return algo_options

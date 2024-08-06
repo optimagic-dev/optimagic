@@ -73,6 +73,7 @@ class NumdiffResult:
         return self._derivative_candidates
 
     def __getitem__(self, key: str) -> Any:
+        deprecations.throw_dict_access_future_warning(key, "NumdiffResult")
         return getattr(self, key)
 
 
