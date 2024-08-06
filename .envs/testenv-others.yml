@@ -23,7 +23,7 @@ dependencies:
   - sqlalchemy  # run, tests
   - tranquilo>=0.0.4  # dev, tests
   - seaborn  # dev, tests
-  - mypy  # dev, tests
+  - mypy>=1.11  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
