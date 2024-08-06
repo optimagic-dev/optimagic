@@ -14,10 +14,10 @@ from optimagic.exceptions import (
     MissingInputError,
 )
 from optimagic.optimization.fun_value import (
-    FunctionValue,
-    convert_output_to_least_squares_function_value,
-    convert_output_to_likelihood_function_value,
-    convert_output_to_scalar_function_value,
+    SpecificFunctionValue,
+    convert_fun_output_to_function_value,
+    enforce_return_type,
+    enforce_return_type_with_jac,
 )
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
@@ -34,7 +34,7 @@ from optimagic.shared.process_user_function import (
     infer_problem_type,
     partial_func_of_params,
 )
-from optimagic.typing import ProblemType, PyTree
+from optimagic.typing import ProblemType, PyTree, SolverType
 
 
 @dataclass(frozen=True)
@@ -56,7 +56,7 @@ class OptimizationProblem:
 
     """
 
-    fun: Callable[[PyTree], float | PyTree]
+    fun: Callable[[PyTree], SpecificFunctionValue]
     params: PyTree
     # TODO: algorithm will become an Algorithm object; algo_options and algo_info will
     # be removed and become part of Algorithm
@@ -67,7 +67,7 @@ class OptimizationProblem:
     # TODO: constraints will become list[Constraint] | None
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
-    fun_and_jac: Callable[[PyTree], tuple[float, PyTree]] | None
+    fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     # TODO: numdiff_options will become NumDiffOptions
     numdiff_options: dict[str, Any] | None
     # TODO: logging will become None | Logger and log_options will be removed
@@ -86,7 +86,7 @@ class OptimizationProblem:
     skip_checks: bool
     direction: Literal["minimize", "maximize"]
     problem_type: ProblemType
-    fun_eval: FunctionValue
+    fun_eval: SpecificFunctionValue
 
 
 def create_optimization_problem(
@@ -359,28 +359,26 @@ def create_optimization_problem(
     else:
         problem_type = infer_problem_type(fun)
 
+    if problem_type == ProblemType.LEAST_SQUARES and direction == "maximize":
+        raise ValueError("Least-squares problems cannot be maximized.")
+
     # ==================================================================================
     # process the fun_eval; Can be removed once the first evaluation gets moved to
     # a later point where the `enforce` decorator has already been applied.
     # ==================================================================================
     if deprecations.is_dict_output(fun_eval):
         fun_eval = deprecations.convert_dict_to_function_value(fun_eval)
-    elif problem_type == ProblemType.SCALAR:
-        fun_eval = convert_output_to_scalar_function_value(fun_eval)
-    elif problem_type == ProblemType.LEAST_SQUARES:
-        fun_eval = convert_output_to_least_squares_function_value(fun_eval)
+        fun = deprecations.replace_dict_output(fun)
     else:
-        fun_eval = convert_output_to_likelihood_function_value(fun_eval)
+        fun_eval = convert_fun_output_to_function_value(fun_eval, problem_type)
+
+    fun = enforce_return_type(problem_type)(fun)
 
     # ==================================================================================
     # Get the algorithm info
     # ==================================================================================
     raw_algo, algo_info = process_user_algorithm(algorithm)
 
-    # TODO: Should this error already be raised if the problem_type is least_squares?
-    if algo_info.primary_criterion_entry == "root_contributions":
-        if direction == "maximize":
-            raise ValueError("Least-squares problems cannot be maximized.")
     # ==================================================================================
     # partial the kwargs into corresponding functions
     # ==================================================================================
@@ -404,7 +402,19 @@ def create_optimization_problem(
             name="criterion_and_derivative",
             skip_checks=skip_checks,
         )
+        fun_and_jac = deprecations.replace_dict_output(fun_and_jac)
 
+        # TODO: the enforce decorator should probably also accept a solver type;
+        if algo_info.solver_type == SolverType.SCALAR:
+            fun_and_jac = enforce_return_type_with_jac(ProblemType.SCALAR)(fun_and_jac)
+        elif algo_info.solver_type == SolverType.LEAST_SQUARES:
+            fun_and_jac = enforce_return_type_with_jac(ProblemType.LEAST_SQUARES)(
+                fun_and_jac
+            )
+        elif algo_info.solver_type == SolverType.LIKELIHOOD:
+            fun_and_jac = enforce_return_type_with_jac(ProblemType.LIKELIHOOD)(
+                fun_and_jac
+            )
     # ==================================================================================
     # Check types of arguments
     # ==================================================================================

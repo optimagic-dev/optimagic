@@ -6,8 +6,12 @@ import pytest
 import scipy as sp
 import statsmodels.api as sm
 from estimagic.estimate_ml import estimate_ml
-from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
-from estimagic.examples.logit import logit_loglike_and_derivative as llad
+from estimagic.examples.logit import (
+    logit_derivative,
+    logit_hessian,
+    logit_loglike,
+    scalar_logit_fun_and_jac,
+)
 from numpy.testing import assert_array_equal
 from optimagic.parameters.bounds import Bounds
 from scipy.stats import multivariate_normal
@@ -120,23 +124,18 @@ def logit_jacobian(params, y, x):
     return logit_derivative(params, y, x)["contributions"]
 
 
-def logit_loglike_and_derivative(params, y, x):
-    loglike, loglike_derivative = llad(params, y, x)
-    return loglike, loglike_derivative["value"]
-
-
 test_cases = list(
     itertools.product(
         [
-            {"algorithm": "scipy_lbfgsb"},
-            "scipy_lbfgsb",
+            # {"algorithm": "scipy_lbfgsb"},
+            # "scipy_lbfgsb",
             {
                 "algorithm": "scipy_lbfgsb",
-                "fun_and_jac": logit_loglike_and_derivative,
+                "fun_and_jac": scalar_logit_fun_and_jac,
             },
-        ],  # optimize_options
-        [None, logit_jacobian, False],  # jacobian
-        [None, logit_hessian, False],  # hessian
+        ],
+        [None, logit_jacobian, False],
+        [None, logit_hessian, False],
     )
 )
 

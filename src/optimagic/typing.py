@@ -14,7 +14,7 @@ class ProblemType(Enum):
     LIKELIHOOD = "likelihood"
 
 
-class OptimizerType(Enum):
+class SolverType(Enum):
     """Enum class for optimizer types."""
 
     SCALAR = "scalar"

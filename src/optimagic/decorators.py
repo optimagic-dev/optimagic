@@ -18,9 +18,10 @@ https://realpython.com/primer-on-python-decorators/
 import functools
 import inspect
 import warnings
-from typing import NamedTuple
+from dataclasses import dataclass
 
 from optimagic.exceptions import get_traceback
+from optimagic.typing import SolverType
 
 
 def catch(
@@ -144,7 +145,8 @@ def switch_sign(func):
     return wrapper
 
 
-class AlgoInfo(NamedTuple):
+@dataclass
+class AlgoInfo:
     primary_criterion_entry: str
     name: str
     parallelizes: bool
@@ -153,6 +155,15 @@ class AlgoInfo(NamedTuple):
     arguments: list
     is_global: bool = False
     disable_history: bool = False
+
+    @property
+    def solver_type(self):
+        mapping = {
+            "value": SolverType.SCALAR,
+            "contributions": SolverType.LIKELIHOOD,
+            "root_contributions": SolverType.LEAST_SQUARES,
+        }
+        return mapping[self.primary_criterion_entry]
 
 
 def mark_minimizer(

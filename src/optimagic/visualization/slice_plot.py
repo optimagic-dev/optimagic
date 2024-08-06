@@ -1,3 +1,4 @@
+import warnings
 from functools import partial
 
 import numpy as np
@@ -6,12 +7,19 @@ import plotly.express as px
 from plotly import graph_objects as go
 from pybaum import tree_just_flatten
 
+from optimagic import deprecations
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.optimization.fun_value import (
+    convert_fun_output_to_function_value,
+    enforce_return_type,
+)
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.shared.process_user_function import infer_problem_type
+from optimagic.typing import SolverType
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
 
 
@@ -44,6 +52,7 @@ def slice_plot(
     with subplots.
 
     # TODO: Use soft bounds to create the grid (if available).
+    # TODO: Don't do a function evaluation outside the batch evaluator.
 
     Args:
         criterion (callable): criterion function that takes params and returns a
@@ -111,6 +120,34 @@ def slice_plot(
 
     func_eval = func(params)
 
+    # ==================================================================================
+    # handle deprecated function output
+    # ==================================================================================
+    if deprecations.is_dict_output(func_eval):
+        msg = (
+            "Functions that return dictionaries are deprecated in slice_plot and will "
+            "raise an error in version 0.6.0. Please pass a function that returns a "
+            "FunctionValue object instead and use the `mark` decorators to specify "
+            "whether it is a scalar, least-squares or likelihood function."
+        )
+        warnings.warn(msg, FutureWarning)
+        func = deprecations.replace_dict_output(func)
+
+    # ==================================================================================
+    # Infer the function type and enforce the return type
+    # ==================================================================================
+
+    if deprecations.is_dict_output(func_eval):
+        problem_type = deprecations.infer_problem_type_from_dict_output(func_eval)
+    else:
+        problem_type = infer_problem_type(func)
+
+    func_eval = convert_fun_output_to_function_value(func_eval, problem_type)
+
+    func = enforce_return_type(problem_type)(func)
+
+    # ==================================================================================
+
     converter, internal_params = get_converter(
         params=params,
         constraints=None,
@@ -165,11 +202,11 @@ def slice_plot(
 
     # add NaNs where an evaluation failed
     func_values = [
-        converter.func_to_internal(val) if not isinstance(val, str) else np.nan
+        np.nan if isinstance(val, str) else val.internal_value(SolverType.SCALAR)
         for val in func_values
     ]
 
-    func_values += [converter.func_to_internal(func_eval)] * len(selected)
+    func_values += [func_eval.internal_value(SolverType.SCALAR)] * len(selected)
     for pos in selected:
         meta = {
             "name": internal_params.names[pos],
@@ -212,7 +249,7 @@ def slice_plot(
         subfig.add_trace(
             go.Scatter(
                 x=[internal_params.values[pos]],
-                y=[converter.func_to_internal(func_eval)],
+                y=[func_eval.internal_value(SolverType.SCALAR)],
                 marker={"color": color},
             )
         )

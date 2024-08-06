@@ -9,7 +9,7 @@ import pandas as pd
 from pybaum import tree_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
 
-from optimagic import batch_evaluators
+from optimagic import batch_evaluators, deprecations
 from optimagic.config import DEFAULT_N_CORES
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation import finite_differences
@@ -43,8 +43,9 @@ def first_derivative(
     batch_evaluator="joblib",
     return_func_value=False,
     return_info=False,
-    key=None,
+    unpacker=None,
     # deprecated
+    key=None,
     lower_bounds=None,
     upper_bounds=None,
 ):
@@ -113,8 +114,9 @@ def first_derivative(
             evaluations and internal derivative candidates, stored in output dict under
             "func_evals" and "derivative_candidates". Derivative candidates are only
             returned if n_steps > 1. Default False.
-        key (str): If func returns a dictionary, take the derivative of
-            func(params)[key].
+        unpacker: A callable that takes the output of func and returns the part of the
+            output that is needed for the derivative calculation. If None, the output of
+            func is used as is. Default None.
 
     Returns:
         result (dict): Result dictionary with keys:
@@ -147,16 +149,31 @@ def first_derivative(
         bounds=bounds,
     )
 
+    if key is not None:
+        deprecations.throw_key_warning_in_derivatives()
+        if unpacker is None:
+            unpacker = lambda x: x[key]
+
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
+
+    if unpacker is None:
+        unpacker = lambda x: x
+    else:
+        raw_unpacker = unpacker
+
+        def unpacker(x):
+            if isinstance(x, float) and np.isnan(x):
+                return x
+            return raw_unpacker(x)
 
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
 
     internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
-    # handle keyword arguments
+    # handle kwargs
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
@@ -228,8 +245,7 @@ def first_derivative(
         raw_evals = raw_evals[:-1]
     func_value = f0
 
-    use_key = key is not None and isinstance(f0, dict)
-    f0_tree = f0[key] if use_key else f0
+    f0_tree = unpacker(f0)
     scalar_out = np.isscalar(f0_tree)
     vector_out = isinstance(f0_tree, np.ndarray) and f0_tree.ndim == 1
 
@@ -244,7 +260,7 @@ def first_derivative(
     # convert the raw evaluations to numpy arrays
     raw_evals = _convert_evals_to_numpy(
         raw_evals=raw_evals,
-        key=key,
+        unpacker=unpacker,
         registry=registry,
         is_scalar_out=scalar_out,
         is_vector_out=vector_out,
@@ -317,8 +333,9 @@ def second_derivative(
     batch_evaluator="joblib",
     return_func_value=False,
     return_info=False,
-    key=None,
+    unpacker=None,
     # deprecated
+    key=None,
     lower_bounds=None,
     upper_bounds=None,
 ):
@@ -396,8 +413,9 @@ def second_derivative(
             evaluations and internal derivative candidates, stored in output dict under
             "func_evals" and "derivative_candidates". Derivative candidates are only
             returned if n_steps > 1. Default False.
-        key (str): If func returns a dictionary, take the derivative of
-            func(params)[key].
+        unpacker: A callable that takes the output of func and returns the part of the
+            output that is needed for the derivative calculation. If None, the output of
+            func is used as is. Default None.
 
 
     Returns:
@@ -440,13 +458,27 @@ def second_derivative(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
-    # ==================================================================================
 
+    if key is not None:
+        deprecations.throw_key_warning_in_derivatives()
+        if unpacker is None:
+            unpacker = lambda x: x[key]
+    # ==================================================================================
     bounds = pre_process_bounds(bounds)
+
+    if unpacker is None:
+        unpacker = lambda x: x
+    else:
+        raw_unpacker = unpacker
+
+        def unpacker(x):
+            if isinstance(x, float) and np.isnan(x):
+                return x
+            return raw_unpacker(x)
 
     internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
-    # handle keyword arguments
+    # handle kwargs
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
@@ -544,13 +576,15 @@ def second_derivative(
         raw_evals["one_step"] = raw_evals["one_step"][:-1]
     func_value = f0
 
-    f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
+    f0_tree = unpacker(f0)
     f0 = tree_leaves(f0_tree, registry=registry)
     f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
-        step_type: _convert_evals_to_numpy(evals, key, registry)
+        step_type: _convert_evals_to_numpy(
+            raw_evals=evals, unpacker=unpacker, registry=registry
+        )
         for step_type, evals in raw_evals.items()
     }
 
@@ -757,7 +791,7 @@ def _convert_richardson_candidates_to_frame(jac, err):
 
 
 def _convert_evals_to_numpy(
-    raw_evals, key, registry, is_scalar_out=False, is_vector_out=False
+    raw_evals, unpacker, registry, is_scalar_out=False, is_vector_out=False
 ):
     """Harmonize the output of the function evaluations.
 
@@ -766,11 +800,8 @@ def _convert_evals_to_numpy(
     evals only contain numpy arrays.
 
     """
-    # get rid of dictionaries
-    evals = [
-        val[key] if isinstance(val, dict) and key is not None else val
-        for val in raw_evals
-    ]
+    # get rid of additional output
+    evals = [unpacker(val) for val in raw_evals]
 
     # convert pytrees to arrays
     if is_scalar_out:

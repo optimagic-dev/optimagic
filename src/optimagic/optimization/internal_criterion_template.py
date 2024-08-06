@@ -4,7 +4,7 @@ import warnings
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
 from optimagic.logging.write_to_database import append_row
-from optimagic.parameters.conversion import aggregate_func_output_to_value
+from optimagic.typing import SolverType
 
 
 def internal_criterion_and_derivative_template(
@@ -105,20 +105,19 @@ def internal_criterion_and_derivative_template(
 
         def func(x):
             p = converter.params_from_internal(x, "tree")
-            crit_full = criterion(p)
-            crit_relevant = converter.func_to_internal(crit_full)
-            out = {"full": crit_full, "relevant": crit_relevant}
-            return out
-
-        options = numdiff_options.copy()
-        options["key"] = "relevant"
-        options["return_func_value"] = True
+            return criterion(p)
 
         try:
-            derivative_dict = first_derivative(func, x, **options)
+            derivative_dict = first_derivative(
+                func,
+                x,
+                **numdiff_options,
+                unpacker=lambda x: x.internal_value(algo_info.solver_type),
+                return_func_value=True,
+            )
             new_derivative = derivative_dict["derivative"]
-            new_criterion = derivative_dict["func_value"]["relevant"]
-            new_external_criterion = derivative_dict["func_value"]["full"]
+            new_external_criterion = derivative_dict["func_value"]
+            new_criterion = new_external_criterion.internal_value(algo_info.solver_type)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -204,21 +203,21 @@ def internal_criterion_and_derivative_template(
                     warnings.warn(msg)
 
     if new_external_criterion is not None and new_criterion is None:
-        new_criterion = converter.func_to_internal(new_external_criterion)
+        new_criterion = new_external_criterion.internal_value(algo_info.solver_type)
 
     if new_external_derivative is not None and new_derivative is None:
         new_derivative = converter.derivative_to_internal(new_external_derivative, x)
 
     if caught_exceptions:
-        new_criterion, new_derivative = error_penalty_func(
+        new_external_criterion, new_derivative = error_penalty_func(
             x, task="criterion_and_derivative"
         )
+        new_criterion = new_external_criterion.internal_value(algo_info.solver_type)
 
     if new_criterion is not None:
-        scalar_critval = aggregate_func_output_to_value(
-            f_eval=new_criterion,
-            primary_key=algo_info.primary_criterion_entry,
-        )
+        # TODO: Remove this assert statement when all tests pass
+        assert new_external_criterion is not None
+        scalar_critval = new_external_criterion.internal_value(SolverType.SCALAR)
     else:
         scalar_critval = None
 

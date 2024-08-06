@@ -13,6 +13,12 @@ from optimagic.optimization.error_penalty import (
     _penalty_value_derivative,
     get_error_penalty_function,
 )
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
+from optimagic.typing import SolverType
 from optimagic.utilities import get_rng
 
 
@@ -25,23 +31,27 @@ def test_penalty_aggregations(seed):
     constant = 3
     dim_out = 10
 
-    scalar = _penalty_value(x, constant, slope, x0)
-    contribs = _penalty_contributions(x, constant, slope, x0, dim_out)
-    root_contribs = _penalty_root_contributions(x, constant, slope, x0, dim_out)
+    scalar = _penalty_value(x, constant, slope, x0).value
+    contribs = _penalty_contributions(x, constant, slope, x0, dim_out).value
+    root_contribs = _penalty_root_contributions(x, constant, slope, x0, dim_out).value
 
     assert np.isclose(scalar, contribs.sum())
     assert np.isclose(scalar, (root_contribs**2).sum())
 
 
 pairs = [
-    (_penalty_value, _penalty_value_derivative),
-    (_penalty_contributions, _penalty_contributions_derivative),
-    (_penalty_root_contributions, _penalty_root_contributions_derivative),
+    (_penalty_value, _penalty_value_derivative, SolverType.SCALAR),
+    (_penalty_contributions, _penalty_contributions_derivative, SolverType.LIKELIHOOD),
+    (
+        _penalty_root_contributions,
+        _penalty_root_contributions_derivative,
+        SolverType.LEAST_SQUARES,
+    ),
 ]
 
 
-@pytest.mark.parametrize("func, deriv", pairs)
-def test_penalty_derivatives(func, deriv):
+@pytest.mark.parametrize("func, deriv, solver_type", pairs)
+def test_penalty_derivatives(func, deriv, solver_type):
     rng = get_rng(seed=5)
     x = rng.uniform(size=5)
     x0 = rng.uniform(size=5)
@@ -54,7 +64,9 @@ def test_penalty_derivatives(func, deriv):
     partialed = functools.partial(
         func, constant=constant, slope=slope, x0=x0, dim_out=dim_out
     )
-    expected = first_derivative(partialed, x)
+    expected = first_derivative(
+        partialed, x, unpacker=lambda x: x.internal_value(solver_type)
+    )
 
     aaae(calculated, expected["derivative"])
 
@@ -70,33 +82,33 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
     scalar_func = get_error_penalty_function(
         error_handling="continue",
         start_x=x0,
-        start_criterion=3,
+        start_criterion=ScalarFunctionValue(3),
         error_penalty={"slope": slope, "constant": constant},
-        primary_key="value",
+        solver_type=SolverType.SCALAR,
         direction="minimize",
     )
 
     contribs_func = get_error_penalty_function(
         error_handling="continue",
         start_x=x0,
-        start_criterion=np.ones(10),
+        start_criterion=LikelihoodFunctionValue(np.ones(10)),
         error_penalty={"slope": slope, "constant": constant},
-        primary_key="contributions",
+        solver_type=SolverType.LIKELIHOOD,
         direction="minimize",
     )
 
     root_contribs_func = get_error_penalty_function(
         error_handling="continue",
         start_x=x0,
-        start_criterion=np.ones(10),
+        start_criterion=LeastSquaresFunctionValue(np.ones(10)),
         error_penalty={"slope": slope, "constant": constant},
-        primary_key="root_contributions",
+        solver_type=SolverType.LEAST_SQUARES,
         direction="minimize",
     )
 
-    scalar = scalar_func(x, task="criterion")
-    contribs = contribs_func(x, task="criterion")
-    root_contribs = root_contribs_func(x, task="criterion")
+    scalar = scalar_func(x, task="criterion").value
+    contribs = contribs_func(x, task="criterion").value
+    root_contribs = root_contribs_func(x, task="criterion").value
 
     assert np.isclose(scalar, contribs.sum())
     assert np.isclose(scalar, (root_contribs**2).sum())

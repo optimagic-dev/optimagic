@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 
@@ -369,3 +370,39 @@ def test_is_scalar_nan():
     assert _is_scalar_nan(np.nan)
     assert not _is_scalar_nan(1.0)
     assert not _is_scalar_nan(np.array([np.nan]))
+
+
+@dataclass
+class MyOutput:
+    value: float
+    message: str
+
+
+def test_first_derivative_with_unpacking():
+    def f(x):
+        return MyOutput(x @ x, "success")
+
+    got = first_derivative(
+        func=f,
+        params=np.ones(3),
+        unpacker=lambda out: out.value,
+        return_func_value=True,
+    )
+
+    assert isinstance(got["func_value"], MyOutput)
+    aaae(got["derivative"], np.ones(3) * 2)
+
+
+def test_second_derivative_with_unpacking():
+    def f(x):
+        return MyOutput(x @ x, "success")
+
+    got = second_derivative(
+        func=f,
+        params=np.ones(3),
+        unpacker=lambda out: out.value,
+        return_func_value=True,
+    )
+
+    assert isinstance(got["func_value"], MyOutput)
+    aaae(got["derivative"], np.eye(3) * 2, decimal=4)

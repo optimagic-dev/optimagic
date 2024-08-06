@@ -58,9 +58,6 @@ def test_tree_converter_primary_key_is_value(params, upper_bounds, func_eval):
     assert unflat[0][0] == params[0][0]
     aae(unflat[0][1], params[0][1])
 
-    assert converter.func_flatten(func_eval) == 5
-    assert isinstance(converter.func_flatten(func_eval), float)
-
 
 PRIMARY_ENTRIES = ["value", "contributions", "root_contributions"]
 

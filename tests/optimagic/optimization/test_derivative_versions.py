@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.decorators import switch_sign
 from optimagic.examples.criterion_functions import (
     sos_criterion_and_gradient,
     sos_criterion_and_jacobian,
@@ -43,91 +42,35 @@ dict_criterion_and_derivatives = [
     None,
 ]
 
-valid_cases = []
-invalid_cases = []
+MIN_CASES = []
 for algo in algorithms:
     if algo in ls_algorithms:
         for deriv in ls_derivatives:
             for crit_and_deriv in ls_criterion_and_derivatives:
-                valid_cases.append(("minimize", algo, deriv, crit_and_deriv))
-                invalid_cases.append(("maximize", algo, deriv, crit_and_deriv))
+                MIN_CASES.append((algo, deriv, crit_and_deriv))
     else:
         for deriv in scalar_derivatives:
             for crit_and_deriv in scalar_criterion_and_derivtives:
-                for direction in ["minimize", "maximize"]:
-                    valid_cases.append((direction, algo, deriv, crit_and_deriv))
+                MIN_CASES.append((algo, deriv, crit_and_deriv))
 
 
-@pytest.mark.parametrize(
-    "direction, algorithm, derivative, criterion_and_derivative", valid_cases
-)
-def test_valid_derivative_versions(
-    direction, algorithm, derivative, criterion_and_derivative
+@pytest.mark.parametrize("algorithm, derivative, criterion_and_derivative", MIN_CASES)
+def test_derivative_versions_in_minimize(
+    algorithm, derivative, criterion_and_derivative
 ):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]
 
-    if direction == "minimize":
-        res = minimize(
-            fun=sos_dict_criterion,
-            params=start_params,
-            algorithm=algorithm,
-            jac=derivative,
-            fun_and_jac=criterion_and_derivative,
-            error_handling="raise",
-        )
-    else:
-        deriv = derivative if derivative is None else switch_sign(derivative)
-        crit_and_deriv = (
-            criterion_and_derivative
-            if criterion_and_derivative is None
-            else switch_sign(criterion_and_derivative)
-        )
-        res = maximize(
-            fun=switch_sign(sos_dict_criterion),
-            params=start_params,
-            algorithm=algorithm,
-            jac=deriv,
-            fun_and_jac=crit_and_deriv,
-            error_handling="raise",
-        )
+    res = minimize(
+        fun=sos_dict_criterion,
+        params=start_params,
+        algorithm=algorithm,
+        jac=derivative,
+        fun_and_jac=criterion_and_derivative,
+        error_handling="raise",
+    )
 
     aaae(res.params["value"].to_numpy(), np.zeros(3), decimal=4)
-
-
-@pytest.mark.parametrize(
-    "direction, algorithm, derivative, criterion_and_derivative", invalid_cases
-)
-def test_invalid_derivative_versions(
-    direction, algorithm, derivative, criterion_and_derivative
-):
-    start_params = pd.DataFrame()
-    start_params["value"] = [1, 2, 3]
-
-    if direction == "minimize":
-        with pytest.raises(ValueError):
-            minimize(
-                fun=sos_dict_criterion,
-                params=start_params,
-                algorithm=algorithm,
-                jac=derivative,
-                fun_and_jac=criterion_and_derivative,
-            )
-    else:
-        deriv = derivative if derivative is None else switch_sign(derivative)
-        crit_and_deriv = (
-            criterion_and_derivative
-            if criterion_and_derivative is None
-            else switch_sign(criterion_and_derivative)
-        )
-        with pytest.raises(ValueError):
-            maximize(
-                fun=switch_sign(sos_dict_criterion),
-                params=start_params,
-                algorithm=algorithm,
-                jac=deriv,
-                fun_and_jac=crit_and_deriv,
-            )
 
 
 def test_dict_derivative():
@@ -142,3 +85,47 @@ def test_dict_derivative():
     )
 
     aaae(res.params["value"].to_numpy(), np.zeros(3))
+
+
+def neg_sos_criterion(params):
+    x = params["value"].to_numpy()
+    return -x @ x
+
+
+def neg_sos_gradient(params):
+    grad = params.copy()
+    grad["value"] = -2 * grad["value"]
+    return grad
+
+
+def neg_sos_crit_and_grad(params):
+    return neg_sos_criterion(params), neg_sos_gradient(params)
+
+
+neg_derivatives = [None, neg_sos_gradient]
+neg_criterion_and_derivatives = [None, neg_sos_crit_and_grad]
+
+MAX_CASES = []
+for algo in ["scipy_lbfgsb", "scipy_neldermead"]:
+    for deriv in neg_derivatives:
+        for crit_and_deriv in neg_criterion_and_derivatives:
+            MAX_CASES.append((algo, deriv, crit_and_deriv))
+
+
+@pytest.mark.parametrize("algorithm, derivative, criterion_and_derivative", MAX_CASES)
+def test_derivative_versions_in_maximize(
+    algorithm, derivative, criterion_and_derivative
+):
+    start_params = pd.DataFrame()
+    start_params["value"] = [1, 2, 3]
+
+    res = maximize(
+        fun=neg_sos_criterion,
+        params=start_params,
+        algorithm=algorithm,
+        jac=derivative,
+        fun_and_jac=criterion_and_derivative,
+        error_handling="raise",
+    )
+
+    aaae(res.params["value"].to_numpy(), np.zeros(3), decimal=4)

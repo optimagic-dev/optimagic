@@ -2,10 +2,16 @@
 
 import numpy as np
 import pandas as pd
+from optimagic import mark
 
 
 def logit_loglike_and_derivative(params, y, x):
     return logit_loglike(params, y, x), logit_derivative(params, y, x)
+
+
+@mark.scalar
+def scalar_logit_fun_and_jac(params, y, x):
+    return logit_loglike(params, y, x)["value"], logit_derivative(params, y, x)["value"]
 
 
 def logit_loglike(params, y, x):
@@ -58,6 +64,11 @@ def logit_derivative(params, y, x):
     grad = jac.sum(axis=0)
     out = {"value": grad, "contributions": jac}
     return out
+
+
+@mark.scalar
+def logit_scalar_derivative(params, y, x):
+    return logit_derivative(params, y, x)["value"]
 
 
 def logit_hessian(params, y, x):  # noqa: ARG001

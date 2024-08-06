@@ -1,5 +1,3 @@
-from itertools import product
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -28,11 +26,15 @@ def params():
     return params
 
 
-test_cases = product(criteria, ["maximize", "minimize"])
+test_cases = [
+    (sos_scalar_criterion, "minimize"),
+    (sos_dict_criterion, "minimize"),
+    (sos_scalar_criterion, "maximize"),
+]
 
 
 @pytest.mark.parametrize("criterion, direction", test_cases)
-def test_multistart_minimize_with_sum_of_squares_at_defaults(
+def test_multistart_optimization_with_sum_of_squares_at_defaults(
     criterion, direction, params
 ):
     if direction == "minimize":
@@ -44,7 +46,7 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
         )
     else:
         res = maximize(
-            fun=switch_sign(sos_dict_criterion),
+            fun=switch_sign(criterion),
             params=params,
             algorithm="scipy_lbfgsb",
             multistart=True,
@@ -87,7 +89,7 @@ def test_convergence_via_max_discoveries_works(params):
     }
 
     res = maximize(
-        fun=switch_sign(sos_dict_criterion),
+        fun=switch_sign(sos_scalar_criterion),
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=True,

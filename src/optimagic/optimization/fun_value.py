@@ -1,4 +1,5 @@
 import functools
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, ParamSpec
 
@@ -8,7 +9,7 @@ from pybaum import tree_just_flatten
 
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import OptimizerType, ProblemType, PyTree, Scalar
+from optimagic.typing import ProblemType, PyTree, Scalar, SolverType
 from optimagic.utilities import isscalar
 
 
@@ -18,8 +19,14 @@ class FunctionValue:
     info: dict[str, Any] | None = None
 
 
+class SpecificFunctionValue(FunctionValue, ABC):
+    @abstractmethod
+    def internal_value(self, solver_type: SolverType) -> float | NDArray[np.float64]:
+        pass
+
+
 @dataclass(frozen=True)
-class ScalarFunctionValue(FunctionValue):
+class ScalarFunctionValue(SpecificFunctionValue):
     value: Scalar
     info: dict[str, Any] | None = None
 
@@ -33,19 +40,19 @@ class ScalarFunctionValue(FunctionValue):
                 "decorators."
             )
 
-    def internal_value(self, optimizer_type: OptimizerType) -> float:
-        if optimizer_type == OptimizerType.SCALAR:
+    def internal_value(self, solver_type: SolverType) -> float:
+        if solver_type == SolverType.SCALAR:
             val = float(self.value)
         else:
             raise InvalidFunctionError(
-                f"You are using a {optimizer_type.value} optimizer but provided a "
+                f"You are using a {solver_type.value} optimizer but provided a "
                 "scalar objective function."
             )
         return val
 
 
 @dataclass(frozen=True)
-class LeastSquaresFunctionValue(FunctionValue):
+class LeastSquaresFunctionValue(SpecificFunctionValue):
     value: PyTree
     info: dict[str, Any] | None = None
 
@@ -59,16 +66,14 @@ class LeastSquaresFunctionValue(FunctionValue):
                 "decorator."
             )
 
-    def internal_value(
-        self, optimizer_type: OptimizerType
-    ) -> float | NDArray[np.float64]:
+    def internal_value(self, solver_type: SolverType) -> float | NDArray[np.float64]:
         resid = _get_flat_value(self.value)
 
         val: float | NDArray[np.float64]
 
-        if optimizer_type == OptimizerType.LEAST_SQUARES:
+        if solver_type == SolverType.LEAST_SQUARES:
             val = resid
-        elif optimizer_type == OptimizerType.LIKELIHOOD:
+        elif solver_type == SolverType.LIKELIHOOD:
             val = resid**2
         else:
             val = float(resid @ resid)
@@ -76,7 +81,7 @@ class LeastSquaresFunctionValue(FunctionValue):
 
 
 @dataclass(frozen=True)
-class LikelihoodFunctionValue(FunctionValue):
+class LikelihoodFunctionValue(SpecificFunctionValue):
     value: PyTree
     info: dict[str, Any] | None = None
 
@@ -89,16 +94,14 @@ class LikelihoodFunctionValue(FunctionValue):
                 "meant to provide a scalar function, use the mark.scalar decorator."
             )
 
-    def internal_value(
-        self, optimizer_type: OptimizerType
-    ) -> float | NDArray[np.float64]:
+    def internal_value(self, solver_type: SolverType) -> float | NDArray[np.float64]:
         loglikes = _get_flat_value(self.value)
 
         val: float | NDArray[np.float64]
 
-        if optimizer_type == OptimizerType.LIKELIHOOD:
+        if solver_type == SolverType.LIKELIHOOD:
             val = loglikes
-        elif optimizer_type == OptimizerType.SCALAR:
+        elif solver_type == SolverType.SCALAR:
             val = float(np.sum(loglikes))
         else:
             raise InvalidFunctionError(
@@ -122,7 +125,20 @@ def _get_flat_value(value: PyTree) -> NDArray[np.float64]:
     return flat_arr
 
 
-def convert_output_to_scalar_function_value(
+def convert_fun_output_to_function_value(
+    raw: Scalar | PyTree | FunctionValue, problem_type: ProblemType
+) -> SpecificFunctionValue:
+    out: FunctionValue
+    if problem_type == ProblemType.SCALAR:
+        out = _convert_output_to_scalar_function_value(raw)
+    elif problem_type == ProblemType.LEAST_SQUARES:
+        out = _convert_output_to_least_squares_function_value(raw)
+    elif problem_type == ProblemType.LIKELIHOOD:
+        out = _convert_output_to_likelihood_function_value(raw)
+    return out
+
+
+def _convert_output_to_scalar_function_value(
     raw: Scalar | FunctionValue,
 ) -> ScalarFunctionValue:
     if isinstance(raw, ScalarFunctionValue):
@@ -134,7 +150,7 @@ def convert_output_to_scalar_function_value(
     return out
 
 
-def convert_output_to_least_squares_function_value(
+def _convert_output_to_least_squares_function_value(
     raw: PyTree | FunctionValue,
 ) -> LeastSquaresFunctionValue:
     if isinstance(raw, LeastSquaresFunctionValue):
@@ -146,7 +162,7 @@ def convert_output_to_least_squares_function_value(
     return out
 
 
-def convert_output_to_likelihood_function_value(
+def _convert_output_to_likelihood_function_value(
     raw: PyTree | FunctionValue,
 ) -> LikelihoodFunctionValue:
     if isinstance(raw, LikelihoodFunctionValue):
@@ -164,7 +180,7 @@ P = ParamSpec("P")
 def enforce_return_type(
     problem_type: ProblemType,
 ) -> Callable[
-    [Callable[P, Scalar | PyTree | FunctionValue]], Callable[P, FunctionValue]
+    [Callable[P, Scalar | PyTree | FunctionValue]], Callable[P, SpecificFunctionValue]
 ]:
     """Enforce a strict return type for objective functions based on problem_type.
 
@@ -175,7 +191,7 @@ def enforce_return_type(
 
     def decorator_enforce(
         func: Callable[P, Scalar | PyTree | FunctionValue],
-    ) -> Callable[P, FunctionValue]:
+    ) -> Callable[P, SpecificFunctionValue]:
         if problem_type == ProblemType.SCALAR:
 
             @functools.wraps(func)
@@ -183,7 +199,7 @@ def enforce_return_type(
                 *args: P.args, **kwargs: P.kwargs
             ) -> ScalarFunctionValue:
                 raw = func(*args, **kwargs)
-                return convert_output_to_scalar_function_value(raw)
+                return _convert_output_to_scalar_function_value(raw)
         elif problem_type == ProblemType.LEAST_SQUARES:
 
             @functools.wraps(func)
@@ -191,7 +207,7 @@ def enforce_return_type(
                 *args: P.args, **kwargs: P.kwargs
             ) -> LeastSquaresFunctionValue:
                 raw = func(*args, **kwargs)
-                return convert_output_to_least_squares_function_value(raw)
+                return _convert_output_to_least_squares_function_value(raw)
         elif problem_type == ProblemType.LIKELIHOOD:
 
             @functools.wraps(func)
@@ -199,7 +215,54 @@ def enforce_return_type(
                 *args: P.args, **kwargs: P.kwargs
             ) -> LikelihoodFunctionValue:
                 raw = func(*args, **kwargs)
-                return convert_output_to_likelihood_function_value(raw)
+                return _convert_output_to_likelihood_function_value(raw)
+
+        return wrapper_enforce
+
+    return decorator_enforce
+
+
+def enforce_return_type_with_jac(
+    problem_type: ProblemType,
+) -> Callable[
+    [Callable[P, tuple[Scalar | PyTree | FunctionValue, PyTree]]],
+    Callable[P, tuple[SpecificFunctionValue, PyTree]],
+]:
+    """Enforce a strict return type for fun_and_jac based on problem_type.
+
+    This has no effect if the first return value of the function already has the
+    strictest possible type for the problem_type but converts everything else to that
+    type. The second return value stays unchanged.
+
+    """
+
+    def decorator_enforce(
+        func: Callable[P, tuple[Scalar | PyTree | FunctionValue, PyTree]],
+    ) -> Callable[P, tuple[SpecificFunctionValue, PyTree]]:
+        if problem_type == ProblemType.SCALAR:
+
+            @functools.wraps(func)
+            def wrapper_enforce(
+                *args: P.args, **kwargs: P.kwargs
+            ) -> tuple[ScalarFunctionValue, PyTree]:
+                raw = func(*args, **kwargs)
+                return (_convert_output_to_scalar_function_value(raw[0]), raw[1])
+        elif problem_type == ProblemType.LEAST_SQUARES:
+
+            @functools.wraps(func)
+            def wrapper_enforce(
+                *args: P.args, **kwargs: P.kwargs
+            ) -> tuple[LeastSquaresFunctionValue, PyTree]:
+                raw = func(*args, **kwargs)
+                return (_convert_output_to_least_squares_function_value(raw[0]), raw[1])
+        elif problem_type == ProblemType.LIKELIHOOD:
+
+            @functools.wraps(func)
+            def wrapper_enforce(
+                *args: P.args, **kwargs: P.kwargs
+            ) -> tuple[LikelihoodFunctionValue, PyTree]:
+                raw = func(*args, **kwargs)
+                return (_convert_output_to_likelihood_function_value(raw[0]), raw[1])
 
         return wrapper_enforce
 
