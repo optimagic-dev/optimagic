@@ -14,6 +14,7 @@ import pandas as pd
 import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic import mark
 from optimagic.examples.criterion_functions import (
     rhe_function_value,
     rhe_gradient,
@@ -31,6 +32,7 @@ from optimagic.optimization.optimize import maximize, minimize
 from optimagic.parameters.bounds import Bounds
 
 
+@mark.likelihood
 def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
 
@@ -49,11 +51,9 @@ def logit_loglike(params, y, x):
     else:
         p = params
     q = 2 * y - 1
-    contribs = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
+    loglikes = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
 
-    out = {"value": contribs.sum(), "contributions": contribs}
-
-    return out
+    return loglikes
 
 
 FUNC_INFO = {

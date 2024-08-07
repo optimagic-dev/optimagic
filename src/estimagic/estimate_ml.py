@@ -9,6 +9,10 @@ from optimagic import deprecations, mark
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.exceptions import InvalidFunctionError, NotAvailableError
+from optimagic.optimization.fun_value import (
+    convert_fun_output_to_function_value,
+    enforce_return_type,
+)
 from optimagic.optimization.optimize import maximize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
@@ -241,6 +245,12 @@ def estimate_ml(
     if deprecations.is_dict_output(loglike_eval):
         deprecations.throw_dict_output_warning()
         loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
+        loglike = deprecations.replace_dict_output(loglike)
+    else:
+        loglike_eval = convert_fun_output_to_function_value(
+            loglike_eval, AggregationLevel.LIKELIHOOD
+        )
+        loglike = enforce_return_type(AggregationLevel.LIKELIHOOD)(loglike)
 
     # ==================================================================================
     # Get the converter for params and function outputs

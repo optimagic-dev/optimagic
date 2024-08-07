@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic import mark
 from optimagic.examples.criterion_functions import (
     sos_derivatives,
     sos_ls,
@@ -21,8 +22,9 @@ from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
 
+@mark.least_squares
 def flexible_sos_ls(params):
-    return {"root_contributions": params}
+    return params
 
 
 algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox"]
