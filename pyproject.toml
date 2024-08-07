@@ -226,7 +226,6 @@ module = [
     "optimagic.differentiation.richardson_extrapolation",
 
     "optimagic.examples",
-    "optimagic.examples.criterion_functions",
     "optimagic.examples.numdiff_functions",
 
 

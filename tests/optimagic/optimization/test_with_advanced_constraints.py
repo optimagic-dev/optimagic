@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.examples.criterion_functions import sos_gradient, sos_scalar_criterion
+from optimagic.examples.criterion_functions import sos_gradient, sos_scalar
 from optimagic.optimization.optimize import minimize
 
 CONSTR_INFO = {
@@ -70,7 +70,7 @@ def test_with_covariance_constraint_bounds_distance(derivative, constr_name):
     params = pd.Series(START_INFO[constr_name], name="value").to_frame()
 
     res = minimize(
-        fun=sos_scalar_criterion,
+        fun=sos_scalar,
         params=params,
         algorithm="scipy_lbfgsb",
         jac=derivative,

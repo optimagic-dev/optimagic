@@ -1,10 +1,9 @@
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
-from optimagic.optimization.fun_value import FunctionValue
-from optimagic.typing import AggregationLevel, PyTree
+from optimagic.typing import AggregationLevel
 
-ScalarFuncT = TypeVar("ScalarFuncT", bound=Callable[..., float | FunctionValue])
-VectorFuncT = TypeVar("VectorFuncT", bound=Callable[..., PyTree | FunctionValue])
+ScalarFuncT = TypeVar("ScalarFuncT", bound=Callable[..., Any])
+VectorFuncT = TypeVar("VectorFuncT", bound=Callable[..., Any])
 
 
 def scalar(func: ScalarFuncT) -> ScalarFuncT:

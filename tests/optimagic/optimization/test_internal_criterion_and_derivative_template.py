@@ -8,7 +8,6 @@ from optimagic.decorators import AlgoInfo
 from optimagic.examples.criterion_functions import (
     sos_gradient,
     sos_pandas_gradient,
-    sos_scalar_criterion,
 )
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
@@ -140,7 +139,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
         params=base_inputs["params"],
         constraints=None,
         bounds=None,
-        func_eval=sos_scalar_criterion(base_inputs["params"]),
+        func_eval=sos_scalar(base_inputs["params"]),
         primary_key="value",
         derivative_eval=None,
     )
@@ -153,7 +152,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
 
     inputs["error_handling"] = "continue"
     inputs["x"] = inputs["x"] + 10
-    inputs["criterion"] = sos_scalar_criterion
+    inputs["criterion"] = sos_scalar
     inputs["derivative"] = sos_gradient
     inputs["criterion_and_derivative"] = raising_crit_and_deriv
     inputs["direction"] = direction

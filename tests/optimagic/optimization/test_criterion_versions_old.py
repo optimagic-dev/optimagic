@@ -13,9 +13,9 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.config import IS_DFOLS_INSTALLED
 from optimagic.examples.criterion_functions import (
-    sos_dict_criterion,
-    sos_dict_criterion_with_pd_objects,
-    sos_scalar_criterion,
+    sos_ls,
+    sos_ls_with_pd_objects,
+    sos_scalar,
 )
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.optimization.optimize import minimize
@@ -28,9 +28,9 @@ ls_algorithms = {"nag_dfols"}
 
 
 criterion_functions = {
-    "sos_dict_criterion": sos_dict_criterion,
-    "sos_scalar_criterion": sos_scalar_criterion,
-    "sos_dict_criterion_with_pd_objects": sos_dict_criterion_with_pd_objects,
+    "sos_dict_criterion": sos_ls,
+    "sos_scalar_criterion": sos_scalar,
+    "sos_dict_criterion_with_pd_objects": sos_ls_with_pd_objects,
 }
 
 

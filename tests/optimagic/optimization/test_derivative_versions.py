@@ -13,14 +13,14 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.examples.criterion_functions import (
-    sos_criterion_and_gradient,
-    sos_criterion_and_jacobian,
-    sos_dict_criterion,
-    sos_dict_derivative,
+    sos_derivatives,
+    sos_fun_and_gradient,
     sos_gradient,
-    sos_jacobian,
+    sos_likelihood_fun_and_jac,
+    sos_likelihood_jacobian,
+    sos_ls,
     sos_pandas_gradient,
-    sos_pandas_jacobian,
+    sos_pandas_likelihood_jacobian,
 )
 from optimagic.optimization.optimize import maximize, minimize
 
@@ -31,12 +31,12 @@ ls_algorithms = {"scipy_ls_dogbox"}
 
 scalar_derivatives = [None, sos_gradient, sos_pandas_gradient]
 
-scalar_criterion_and_derivtives = [None, sos_criterion_and_gradient]
+scalar_criterion_and_derivtives = [None, sos_fun_and_gradient]
 
-ls_derivatives = [None, sos_jacobian, sos_pandas_jacobian]
+ls_derivatives = [None, sos_likelihood_jacobian, sos_pandas_likelihood_jacobian]
 
 
-ls_criterion_and_derivatives = [sos_criterion_and_jacobian]
+ls_criterion_and_derivatives = [sos_likelihood_fun_and_jac]
 
 dict_criterion_and_derivatives = [
     None,
@@ -62,7 +62,7 @@ def test_derivative_versions_in_minimize(
     start_params["value"] = [1, 2, 3]
 
     res = minimize(
-        fun=sos_dict_criterion,
+        fun=sos_ls,
         params=start_params,
         algorithm=algorithm,
         jac=derivative,
@@ -78,10 +78,10 @@ def test_dict_derivative():
     start_params["value"] = [1, 2, 3]
 
     res = minimize(
-        fun=sos_dict_criterion,
+        fun=sos_ls,
         params=start_params,
         algorithm="scipy_lbfgsb",
-        jac=sos_dict_derivative,
+        jac=sos_derivatives,
     )
 
     aaae(res.params["value"].to_numpy(), np.zeros(3))

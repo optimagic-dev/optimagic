@@ -1,38 +1,35 @@
+"""Import common objective functions in several optimagic compatible versions.
+
+All implemented functions accept arbitrary pytrees as parameters. If possible they are
+implemented as scalar and least-squares versions.
+
+"""
+
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
+from pybaum import tree_just_flatten
 
-# ======================================================================================
-# Define criterion functions
-# ======================================================================================
+from optimagic import mark
+from optimagic.optimization.fun_value import (
+    FunctionValue,
+)
+from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import PyTree
 
 
-def trid_scalar_criterion(params):
-    """Implement Trid function. Function description:
-    https://www.sfu.ca/~ssurjano/trid.html.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        int: Trid function output.
-
-    """
+@mark.scalar
+def trid_scalar(params: PyTree) -> float:
+    """Implement Trid function: https://www.sfu.ca/~ssurjano/trid.html."""
     x = _get_x(params)
     return ((x - 1) ** 2).sum() - (x[1:] * x[:-1]).sum()
 
 
-def trid_gradient(params):
-    """Calculate gradient of trid function.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        np.ndarray: gradient of trid function.
-
-    """
+@mark.scalar
+def trid_gradient(params: PyTree) -> NDArray[np.float64]:
+    """Calculate gradient of trid function."""
     x = _get_x(params)
     l1 = np.insert(x, 0, 0)
     l1 = np.delete(l1, [-1])
@@ -41,155 +38,67 @@ def trid_gradient(params):
     return 2 * (x - 1) - l1 - l2
 
 
-def trid_criterion_and_gradient(params):
-    """Implement Trid function and calculate gradient.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        int: trid function output.
-        np.ndarray: gradient of trid function.
-
-    """
-    val = trid_scalar_criterion(params)
+@mark.scalar
+def trid_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
+    """Implement Trid function and calculate gradient."""
+    val = trid_scalar(params)
     grad = trid_gradient(params)
     return val, grad
 
 
-def trid_dict_criterion(params):
-    """Implement trid function.
+@mark.scalar
+def rhe_scalar(params: PyTree) -> float:
+    """Implement Rotated Hyper Ellipsoid function.
 
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        Dictionary with the following entries:
-        "value" (a scalar float): trid function output.
+    Function description: https://www.sfu.ca/~ssurjano/rothyp.html.
 
     """
-    out = {
-        "value": trid_scalar_criterion(params),
-    }
-    return out
+    return (rhe_ls(params) ** 2).sum()
 
 
-def rotated_hyper_ellipsoid_scalar_criterion(params):
-    """Implement Rotated Hyper Ellipsoid function. Function description:
-    https://www.sfu.ca/~ssurjano/rothyp.html.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        int: Rotated Hyper Ellipsoid function output.
-
-    """
-    return rotated_hyper_ellipsoid_contributions(params).sum()
-
-
-def rotated_hyper_ellipsoid_gradient(params):
-    """Calculate gradient of rotated_hyper_ellipsoid function.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        np.ndarray: gradient of rotated hyper ellipsoid function.
-
-    """
+@mark.scalar
+def rhe_gradient(params: PyTree) -> NDArray[np.float64]:
+    """Calculate gradient of rotated_hyper_ellipsoid function."""
     x = _get_x(params)
     return np.arange(2 * len(x), 0, -2) * x
 
 
-def rotated_hyper_ellipsoid_criterion_and_gradient(params):
-    """Implement Rotated Hyper Ellipsoid function and calculate gradient.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        int: Rotated Hyper Ellipsoid function output.
-        np.ndarray: gradient of rotated hyper ellipsoid function.
-
-    """
-    val = rotated_hyper_ellipsoid_scalar_criterion(params)
-    grad = rotated_hyper_ellipsoid_gradient(params)
+@mark.scalar
+def rhe_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
+    """Implement Rotated Hyper Ellipsoid function and calculate gradient."""
+    val = rhe_scalar(params)
+    grad = rhe_gradient(params)
     return val, grad
 
 
-def rotated_hyper_ellipsoid_contributions(params):
-    """Compute contributions of Rotated Hyper Ellipsoid function.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        np.ndarray: array with contributions of function output as elements.
-
-    """
+@mark.least_squares
+def rhe_ls(params: PyTree) -> NDArray[np.float64]:
+    """Compute least-squares version of the Rotated Hyper Ellipsoid function."""
     x = _get_x(params)
     dim = len(params)
     out = np.zeros(dim)
     for i in range(dim):
-        out[i] = (x[: i + 1] ** 2).sum()
+        out[i] = np.sqrt((x[: i + 1] ** 2).sum())
     return out
 
 
-def rotated_hyper_ellipsoid_dict_criterion(params):
-    """Implement Rotated Hyper Ellipsoid function and compute contributions and
-    root_contributions.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        Dictionary with the following entries:
-        "value" (a scalar float): rotated hyper ellipsoid function output.
-        "contributions" (np.ndarray): array with contributions of function output
-        as elements.
-        "root_contributions" (np.ndarray): array with root of contributions of
-        function output as elements.
-
-    """
-    contribs = rotated_hyper_ellipsoid_contributions(params)
-    out = _out_dict_from_contribs(contribs)
+@mark.least_squares
+def rhe_function_value(params: PyTree) -> FunctionValue:
+    """FunctionValue version of Rotated Hyper Ellipsoid function."""
+    contribs = rhe_ls(params)
+    out = FunctionValue(contribs)
     return out
 
 
-def rosenbrock_scalar_criterion(params):
-    """Implement Rosenbrock function. Function description:
-    https://www.sfu.ca/~ssurjano/rosen.html.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        int: Rosenbrock function output.
-
-    """
-    return rosenbrock_contributions(params).sum()
+@mark.scalar
+def rosenbrock_scalar(params: PyTree) -> float:
+    """Rosenbrock function: https://www.sfu.ca/~ssurjano/rosen.html."""
+    return (rosenbrock_ls(params) ** 2).sum()
 
 
-def rosenbrock_gradient(params):
-    """Calculate gradient of rosenbrock function.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        np.ndarray: gradient of rosenbrock function.
-
-    """
+@mark.scalar
+def rosenbrock_gradient(params: PyTree) -> NDArray[np.float64]:
+    """Calculate gradient of rosenbrock function."""
     x = _get_x(params)
     l1 = np.delete(x, [-1])
     l1 = np.append(l1, 0)
@@ -204,177 +113,119 @@ def rosenbrock_gradient(params):
     return 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
 
 
-def rosenbrock_criterion_and_gradient(params):
-    """Implement rosenbrock function and calculate gradient.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        int: rosenbrock function output.
-        np.ndarray: gradient of rosenbrock function.
-
-    """
-    return rosenbrock_scalar_criterion(params), rosenbrock_gradient(params)
+@mark.scalar
+def rosenbrock_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
+    """Implement rosenbrock function and calculate gradient."""
+    return rosenbrock_scalar(params), rosenbrock_gradient(params)
 
 
-def rosenbrock_contributions(params):
-    """Compute contributions of rosenbrock function.
-
-    Args:
-        params (pd.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        np.ndarray: array with contributions of function output as elements.
-
-    """
+@mark.least_squares
+def rosenbrock_ls(params: PyTree) -> NDArray[np.float64]:
+    """Least-squares version of the rosenbrock function."""
     x = _get_x(params)
     dim = len(params)
     out = np.zeros(dim)
     for i in range(dim - 1):
-        out[i] = ((x[i + 1] - x[i] ** 2) ** 2) * 100 + ((x[i] - 1) ** 2)
+        out[i] = np.sqrt(((x[i + 1] - x[i] ** 2) ** 2) * 100 + ((x[i] - 1) ** 2))
     return out
 
 
-def rosenbrock_dict_criterion(params):
-    """Implement Rosenbrock function and compute contributions and root_contributions.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        Dictionary with the following entries:
-        "value" (a scalar float): Rosenbrock function value.
-        "contributions" (np.ndarray): array with contributions of function output
-        as elements.
-        "root_contributions" (np.ndarray): array with root of contributions of
-        function output as elements.
-
-    """
-    contribs = rosenbrock_contributions(params)
-    out = _out_dict_from_contribs(contribs)
-    return out
+@mark.least_squares
+def rosenbrock_function_value(params: PyTree) -> FunctionValue:
+    """FunctionValue version of the rosenbrock function."""
+    return FunctionValue(rosenbrock_ls(params))
 
 
-def sos_dict_criterion(params):
-    """Calculate the sum of squares function and compute contributions and
-    root_contributions.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        Dictionary with the following entries:
-        "value" (a scalar float): sum of squares function value.
-        "contributions" (np.ndarray): array with contributions of function output
-        as elements.
-        "root_contributions" (np.ndarray): array with root of contributions of
-        function output as elements.
-
-    """
-    root_contribs = _get_x(params)
-    out = _out_dict_from_root_contribs(root_contribs)
-    return out
+@mark.least_squares
+def sos_ls(params: PyTree) -> NDArray[np.float64]:
+    """Least-squares version of the sum of squares or sphere function."""
+    return _get_x(params)
 
 
-def sos_dict_criterion_with_pd_objects(params):
-    """Calculate the sum of squares function and compute contributions and
-    root_contributions as pandas objects.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        Dictionary with the following pandas object entries:
-        "value" (a scalar float): sum of squares function value.
-        "contributions" (np.ndarray): array with contributions of function output
-        as elements.
-        "root_contributions" (np.ndarray): array with root of contributions of
-        function output as elements.
-
-    """
-    out = sos_dict_criterion(params)
-    out["contributions"] = pd.Series(out["contributions"])
-    out["root_contributions"] = pd.Series(out["root_contributions"])
-
-    return out
+@mark.least_squares
+def sos_ls_with_pd_objects(params: PyTree) -> pd.Series[float]:
+    """Least-squares version of the sphere function returning pandas objects."""
+    return pd.Series(sos_ls(params))
 
 
-def sos_scalar_criterion(params):
-    """Calculate the sum of squares."""
+@mark.scalar
+def sos_scalar(params: PyTree) -> float:
+    """Sum of squares or sphere function."""
     return (_get_x(params) ** 2).sum()
 
 
-def sos_gradient(params):
+@mark.scalar
+def sos_gradient(params: PyTree) -> NDArray[np.float64]:
     """Calculate the gradient of the sum of squares function."""
     return 2 * _get_x(params)
 
 
-def sos_jacobian(params):
-    """Calculate the Jacobian of the sum of squares function."""
+@mark.likelihood
+def sos_likelihood_jacobian(params: PyTree) -> NDArray[np.float64]:
+    """Calculate the likelihood Jacobian of the sum of squares function."""
     return np.diag(2 * _get_x(params))
 
 
-def sos_ls_jacobian(params):
+@mark.least_squares
+def sos_ls_jacobian(params: PyTree) -> NDArray[np.float64]:
+    """Calculate the least-squares Jacobian of the sum of squares function."""
     return np.eye(len(params))
 
 
-def sos_pandas_gradient(params):
-    """Calculate the gradient of the sum of squares function."""
+@mark.scalar
+def sos_pandas_gradient(params: PyTree) -> pd.Series[float]:
+    """Calculate the gradient of the sum of squares function as pandas object."""
     return 2 * pd.Series(_get_x(params))
 
 
-def sos_pandas_jacobian(params):
-    """Calculate the Jacobian of the sum of squares function."""
+@mark.likelihood
+def sos_pandas_likelihood_jacobian(params: PyTree) -> pd.DataFrame:
+    """Calculate the Jacobian of the sum of squares function as pandas object."""
     return pd.DataFrame(np.diag(2 * _get_x(params)))
 
 
-def sos_criterion_and_gradient(params):
+@mark.least_squares
+def sos_pandas_ls_jacobian(params: PyTree) -> pd.DataFrame:
+    """Calculate the Jacobian of the sum of squares function as pandas object."""
+    return pd.DataFrame(np.eye(len(params)))
+
+
+@mark.scalar
+def sos_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
     """Calculate sum of squares criterion value and gradient."""
     x = _get_x(params)
     return (x**2).sum(), 2 * x
 
 
-def sos_criterion_and_jacobian(params):
+@mark.likelihood
+def sos_likelihood_fun_and_jac(
+    params: PyTree,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Calculate sum of squares criterion value and Jacobian."""
     x = _get_x(params)
-    return {"contributions": x**2, "value": (x**2).sum()}, np.diag(2 * x)
+    return x**2, np.diag(2 * x)
 
 
-sos_dict_derivative = {
+@mark.least_squares
+def sos_ls_fun_and_jac(
+    params: PyTree,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Calculate sum of squares criterion value and Jacobian."""
+    x = _get_x(params)
+    return x, np.eye(len(params))
+
+
+sos_derivatives = {
     "value": sos_gradient,
-    "contributions": sos_jacobian,
+    "contributions": sos_likelihood_jacobian,
     "root_contributions": sos_ls_jacobian,
 }
 
 
-def _out_dict_from_root_contribs(root_contribs):
-    contribs = root_contribs**2
-    out = {
-        "value": contribs.sum(),
-        "contributions": contribs,
-        "root_contributions": root_contribs,
-    }
-    return out
-
-
-def _out_dict_from_contribs(contribs):
-    out = {
-        "value": contribs.sum(),
-        "contributions": contribs,
-        "root_contributions": np.sqrt(contribs),
-    }
-    return out
-
-
-def _get_x(params):
-    if isinstance(params, pd.DataFrame) and "value" in params:
-        x = params["value"].to_numpy()
+def _get_x(params: PyTree) -> NDArray[np.float64]:
+    if isinstance(params, np.ndarray) and params.ndim == 1:
+        x = params.astype(float)
     else:
-        x = params
+        registry = get_registry(extended=True)
+        x = np.array(tree_just_flatten(params, registry=registry), dtype=np.float64)
     return x
