@@ -468,8 +468,13 @@ def test_old_bounds_are_deprecated_in_second_derivative(bounds_kwargs):
 def test_old_bounds_are_deprecated_in_estimate_ml(bounds_kwargs):
     msg = "Specifying bounds via the arguments"
     with pytest.warns(FutureWarning, match=msg):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
         em.estimate_ml(
-            loglike=lambda x: {"contributions": -(x**2), "value": -x @ x},
+            loglike=loglike,
             params=np.arange(3),
             optimize_options={"algorithm": "scipy_lbfgsb"},
             **bounds_kwargs,
