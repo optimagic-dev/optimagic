@@ -137,9 +137,6 @@ def get_converter(
         )
         return jac_with_unscaling
 
-    def _func_to_internal(func_eval):
-        return tree_converter.func_flatten(func_eval)
-
     internal_params = replace(scaled_params, free_mask=internal_params.free_mask)
 
     converter = Converter(
@@ -158,43 +155,6 @@ class Converter:
     params_from_internal: Callable
     derivative_to_internal: Callable
     has_transforming_constraints: bool
-
-
-def aggregate_func_output_to_value(f_eval, primary_key):
-    if primary_key == "value":
-        return f_eval
-    elif primary_key == "contributions":
-        return f_eval.sum()
-    elif primary_key == "root_contributions":
-        return f_eval @ f_eval
-
-
-def _unpack_value_if_needed(func_eval):
-    if isinstance(func_eval, dict):
-        return float(func_eval["value"])
-    else:
-        return func_eval
-
-
-def _unpack_contributions_if_needed(func_eval):
-    if isinstance(func_eval, dict):
-        return func_eval["contributions"].astype(float)
-    else:
-        return func_eval.astype(float)
-
-
-def _unpack_root_contributions_if_needed(func_eval):
-    if isinstance(func_eval, dict):
-        return func_eval["root_contributions"].astype(float)
-    else:
-        return func_eval.astype(float)
-
-
-UNPACK_FUNCTIONS = {
-    "value": _unpack_value_if_needed,
-    "contributions": _unpack_contributions_if_needed,
-    "root_contributions": _unpack_root_contributions_if_needed,
-}
 
 
 def _fast_params_from_internal(x, return_type="tree"):
