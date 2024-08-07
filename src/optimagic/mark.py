@@ -1,6 +1,10 @@
-from typing import Any, Callable, TypeVar
+from functools import wraps
+from typing import Any, Callable, ParamSpec, TypeVar
 
 from optimagic.typing import AggregationLevel
+
+P = ParamSpec("P")
+
 
 ScalarFuncT = TypeVar("ScalarFuncT", bound=Callable[..., Any])
 VectorFuncT = TypeVar("VectorFuncT", bound=Callable[..., Any])
@@ -8,17 +12,44 @@ VectorFuncT = TypeVar("VectorFuncT", bound=Callable[..., Any])
 
 def scalar(func: ScalarFuncT) -> ScalarFuncT:
     """Mark a function as a scalar function."""
-    func._problem_type = AggregationLevel.SCALAR  # type: ignore
-    return func
+    wrapper = func
+    try:
+        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
+    except TypeError:
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):  # type: ignore
+            return func(*args, **kwargs)
+
+        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
+    return wrapper
 
 
 def least_squares(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a least squares function."""
-    func._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
-    return func
+    wrapper = func
+    try:
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
+    except TypeError:
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):  # type: ignore
+            return func(*args, **kwargs)
+
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
+    return wrapper
 
 
 def likelihood(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a likelihood function."""
-    func._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
-    return func
+    wrapper = func
+    try:
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
+    except TypeError:
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):  # type: ignore
+            return func(*args, **kwargs)
+
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
+    return wrapper

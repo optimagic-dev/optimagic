@@ -11,6 +11,7 @@ import sys
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic import mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
@@ -32,9 +33,9 @@ for name, func in LOCAL_ALGORITHMS.items():
         BOUNDED_ALGORITHMS.append(name)
 
 
+@mark.least_squares
 def sos(x):
-    contribs = x**2
-    return {"value": contribs.sum(), "contributions": contribs, "root_contributions": x}
+    return x
 
 
 @pytest.mark.parametrize("algorithm", LOCAL_ALGORITHMS)
