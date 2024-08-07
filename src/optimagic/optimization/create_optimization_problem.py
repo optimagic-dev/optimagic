@@ -38,7 +38,7 @@ from optimagic.shared.process_user_function import (
     infer_problem_type,
     partial_func_of_params,
 )
-from optimagic.typing import ProblemType, PyTree, SolverType
+from optimagic.typing import AggregationLevel, PyTree
 
 
 @dataclass(frozen=True)
@@ -86,7 +86,7 @@ class OptimizationProblem:
     collect_history: bool
     skip_checks: bool
     direction: Literal["minimize", "maximize"]
-    problem_type: ProblemType
+    problem_type: AggregationLevel
     fun_eval: SpecificFunctionValue
 
 
@@ -366,7 +366,7 @@ def create_optimization_problem(
     else:
         problem_type = infer_problem_type(fun)
 
-    if problem_type == ProblemType.LEAST_SQUARES and direction == "maximize":
+    if problem_type == AggregationLevel.LEAST_SQUARES and direction == "maximize":
         raise ValueError("Least-squares problems cannot be maximized.")
 
     # ==================================================================================
@@ -412,14 +412,16 @@ def create_optimization_problem(
         fun_and_jac = deprecations.replace_dict_output(fun_and_jac)
 
         # TODO: the enforce decorator should probably also accept a solver type;
-        if algo_info.solver_type == SolverType.SCALAR:
-            fun_and_jac = enforce_return_type_with_jac(ProblemType.SCALAR)(fun_and_jac)
-        elif algo_info.solver_type == SolverType.LEAST_SQUARES:
-            fun_and_jac = enforce_return_type_with_jac(ProblemType.LEAST_SQUARES)(
+        if algo_info.solver_type == AggregationLevel.SCALAR:
+            fun_and_jac = enforce_return_type_with_jac(AggregationLevel.SCALAR)(
                 fun_and_jac
             )
-        elif algo_info.solver_type == SolverType.LIKELIHOOD:
-            fun_and_jac = enforce_return_type_with_jac(ProblemType.LIKELIHOOD)(
+        elif algo_info.solver_type == AggregationLevel.LEAST_SQUARES:
+            fun_and_jac = enforce_return_type_with_jac(AggregationLevel.LEAST_SQUARES)(
+                fun_and_jac
+            )
+        elif algo_info.solver_type == AggregationLevel.LIKELIHOOD:
+            fun_and_jac = enforce_return_type_with_jac(AggregationLevel.LIKELIHOOD)(
                 fun_and_jac
             )
     # ==================================================================================

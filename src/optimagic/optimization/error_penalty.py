@@ -8,7 +8,7 @@ from optimagic.optimization.fun_value import (
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
-from optimagic.typing import SolverType
+from optimagic.typing import AggregationLevel
 
 
 def _penalty_value(x, constant, slope, x0, dim_out=None):  # noqa: ARG001
@@ -70,22 +70,22 @@ def get_error_penalty_function(
 
     dim_out = (
         1
-        if solver_type == SolverType.SCALAR
+        if solver_type == AggregationLevel.SCALAR
         else len(start_criterion.internal_value(solver_type))
     )
 
     kwargs = {"constant": constant, "slope": slope, "x0": start_x, "dim_out": dim_out}
 
-    if solver_type == SolverType.SCALAR:
+    if solver_type == AggregationLevel.SCALAR:
         _penalty = partial(_penalty_value, **kwargs)
         _derivative = partial(_penalty_value_derivative, **kwargs)
-    elif solver_type == SolverType.LIKELIHOOD:
+    elif solver_type == AggregationLevel.LIKELIHOOD:
         _penalty = partial(_penalty_contributions, **kwargs)
         _derivative = partial(
             _penalty_contributions_derivative,
             **kwargs,
         )
-    elif solver_type == SolverType.LEAST_SQUARES:
+    elif solver_type == AggregationLevel.LEAST_SQUARES:
         _penalty = partial(
             _penalty_root_contributions,
             **kwargs,

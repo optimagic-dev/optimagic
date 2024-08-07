@@ -19,7 +19,7 @@ from optimagic.shared.check_option_dicts import (
     check_numdiff_options,
     check_optimization_options,
 )
-from optimagic.typing import SolverType
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng, to_pickle
 
 from estimagic.ml_covs import (
@@ -272,7 +272,7 @@ def estimate_ml(
                 deprecations.throw_dict_output_warning()
                 loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
 
-            out = loglike_eval.internal_value(SolverType.LIKELIHOOD)
+            out = loglike_eval.internal_value(AggregationLevel.LIKELIHOOD)
             return out
 
         jac_res = first_derivative(
@@ -319,7 +319,7 @@ def estimate_ml(
                 deprecations.throw_dict_output_warning()
                 loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
 
-            out = loglike_eval.internal_value(SolverType.SCALAR)
+            out = loglike_eval.internal_value(AggregationLevel.SCALAR)
             return out
 
         hess_res = second_derivative(

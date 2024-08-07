@@ -18,7 +18,7 @@ from optimagic.optimization.fun_value import (
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
-from optimagic.typing import SolverType
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng
 
 
@@ -40,12 +40,16 @@ def test_penalty_aggregations(seed):
 
 
 pairs = [
-    (_penalty_value, _penalty_value_derivative, SolverType.SCALAR),
-    (_penalty_contributions, _penalty_contributions_derivative, SolverType.LIKELIHOOD),
+    (_penalty_value, _penalty_value_derivative, AggregationLevel.SCALAR),
+    (
+        _penalty_contributions,
+        _penalty_contributions_derivative,
+        AggregationLevel.LIKELIHOOD,
+    ),
     (
         _penalty_root_contributions,
         _penalty_root_contributions_derivative,
-        SolverType.LEAST_SQUARES,
+        AggregationLevel.LEAST_SQUARES,
     ),
 ]
 
@@ -84,7 +88,7 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
         start_x=x0,
         start_criterion=ScalarFunctionValue(3),
         error_penalty={"slope": slope, "constant": constant},
-        solver_type=SolverType.SCALAR,
+        solver_type=AggregationLevel.SCALAR,
         direction="minimize",
     )
 
@@ -93,7 +97,7 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
         start_x=x0,
         start_criterion=LikelihoodFunctionValue(np.ones(10)),
         error_penalty={"slope": slope, "constant": constant},
-        solver_type=SolverType.LIKELIHOOD,
+        solver_type=AggregationLevel.LIKELIHOOD,
         direction="minimize",
     )
 
@@ -102,7 +106,7 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
         start_x=x0,
         start_criterion=LeastSquaresFunctionValue(np.ones(10)),
         error_penalty={"slope": slope, "constant": constant},
-        solver_type=SolverType.LEAST_SQUARES,
+        solver_type=AggregationLevel.LEAST_SQUARES,
         direction="minimize",
     )
 

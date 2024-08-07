@@ -9,7 +9,7 @@ from optimagic.optimization.fun_value import (
     ScalarFunctionValue,
 )
 from optimagic.parameters.bounds import Bounds
-from optimagic.typing import ProblemType
+from optimagic.typing import AggregationLevel
 
 
 def throw_criterion_future_warning():
@@ -200,11 +200,11 @@ def throw_dict_output_warning():
 
 def infer_problem_type_from_dict_output(output):
     if "root_contributions" in output:
-        out = ProblemType.LEAST_SQUARES
+        out = AggregationLevel.LEAST_SQUARES
     elif "contributions" in output:
-        out = ProblemType.LIKELIHOOD
+        out = AggregationLevel.LIKELIHOOD
     else:
-        out = ProblemType.SCALAR
+        out = AggregationLevel.SCALAR
     return out
 
 

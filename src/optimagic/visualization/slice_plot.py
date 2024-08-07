@@ -19,7 +19,7 @@ from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.shared.process_user_function import infer_problem_type
-from optimagic.typing import SolverType
+from optimagic.typing import AggregationLevel
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
 
 
@@ -202,11 +202,11 @@ def slice_plot(
 
     # add NaNs where an evaluation failed
     func_values = [
-        np.nan if isinstance(val, str) else val.internal_value(SolverType.SCALAR)
+        np.nan if isinstance(val, str) else val.internal_value(AggregationLevel.SCALAR)
         for val in func_values
     ]
 
-    func_values += [func_eval.internal_value(SolverType.SCALAR)] * len(selected)
+    func_values += [func_eval.internal_value(AggregationLevel.SCALAR)] * len(selected)
     for pos in selected:
         meta = {
             "name": internal_params.names[pos],
@@ -249,7 +249,7 @@ def slice_plot(
         subfig.add_trace(
             go.Scatter(
                 x=[internal_params.values[pos]],
-                y=[func_eval.internal_value(SolverType.SCALAR)],
+                y=[func_eval.internal_value(AggregationLevel.SCALAR)],
                 marker={"color": color},
             )
         )

@@ -4,7 +4,7 @@ import warnings
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
 from optimagic.logging.write_to_database import append_row
-from optimagic.typing import SolverType
+from optimagic.typing import AggregationLevel
 
 
 def internal_criterion_and_derivative_template(
@@ -217,7 +217,7 @@ def internal_criterion_and_derivative_template(
     if new_criterion is not None:
         # TODO: Remove this assert statement when all tests pass
         assert new_external_criterion is not None
-        scalar_critval = new_external_criterion.internal_value(SolverType.SCALAR)
+        scalar_critval = new_external_criterion.internal_value(AggregationLevel.SCALAR)
     else:
         scalar_critval = None
 

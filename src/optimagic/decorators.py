@@ -21,7 +21,7 @@ import warnings
 from dataclasses import dataclass
 
 from optimagic.exceptions import get_traceback
-from optimagic.typing import SolverType
+from optimagic.typing import AggregationLevel
 
 
 def catch(
@@ -159,9 +159,9 @@ class AlgoInfo:
     @property
     def solver_type(self):
         mapping = {
-            "value": SolverType.SCALAR,
-            "contributions": SolverType.LIKELIHOOD,
-            "root_contributions": SolverType.LEAST_SQUARES,
+            "value": AggregationLevel.SCALAR,
+            "contributions": AggregationLevel.LIKELIHOOD,
+            "root_contributions": AggregationLevel.LEAST_SQUARES,
         }
         return mapping[self.primary_criterion_entry]
 

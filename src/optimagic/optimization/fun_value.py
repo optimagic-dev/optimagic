@@ -9,7 +9,7 @@ from pybaum import tree_just_flatten
 
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import ProblemType, PyTree, Scalar, SolverType
+from optimagic.typing import AggregationLevel, PyTree, Scalar
 from optimagic.utilities import isscalar
 
 
@@ -21,7 +21,9 @@ class FunctionValue:
 
 class SpecificFunctionValue(FunctionValue, ABC):
     @abstractmethod
-    def internal_value(self, solver_type: SolverType) -> float | NDArray[np.float64]:
+    def internal_value(
+        self, solver_type: AggregationLevel
+    ) -> float | NDArray[np.float64]:
         pass
 
 
@@ -40,8 +42,8 @@ class ScalarFunctionValue(SpecificFunctionValue):
                 "decorators."
             )
 
-    def internal_value(self, solver_type: SolverType) -> float:
-        if solver_type == SolverType.SCALAR:
+    def internal_value(self, solver_type: AggregationLevel) -> float:
+        if solver_type == AggregationLevel.SCALAR:
             val = float(self.value)
         else:
             raise InvalidFunctionError(
@@ -66,14 +68,16 @@ class LeastSquaresFunctionValue(SpecificFunctionValue):
                 "decorator."
             )
 
-    def internal_value(self, solver_type: SolverType) -> float | NDArray[np.float64]:
+    def internal_value(
+        self, solver_type: AggregationLevel
+    ) -> float | NDArray[np.float64]:
         resid = _get_flat_value(self.value)
 
         val: float | NDArray[np.float64]
 
-        if solver_type == SolverType.LEAST_SQUARES:
+        if solver_type == AggregationLevel.LEAST_SQUARES:
             val = resid
-        elif solver_type == SolverType.LIKELIHOOD:
+        elif solver_type == AggregationLevel.LIKELIHOOD:
             val = resid**2
         else:
             val = float(resid @ resid)
@@ -94,14 +98,16 @@ class LikelihoodFunctionValue(SpecificFunctionValue):
                 "meant to provide a scalar function, use the mark.scalar decorator."
             )
 
-    def internal_value(self, solver_type: SolverType) -> float | NDArray[np.float64]:
+    def internal_value(
+        self, solver_type: AggregationLevel
+    ) -> float | NDArray[np.float64]:
         loglikes = _get_flat_value(self.value)
 
         val: float | NDArray[np.float64]
 
-        if solver_type == SolverType.LIKELIHOOD:
+        if solver_type == AggregationLevel.LIKELIHOOD:
             val = loglikes
-        elif solver_type == SolverType.SCALAR:
+        elif solver_type == AggregationLevel.SCALAR:
             val = float(np.sum(loglikes))
         else:
             raise InvalidFunctionError(
@@ -126,14 +132,14 @@ def _get_flat_value(value: PyTree) -> NDArray[np.float64]:
 
 
 def convert_fun_output_to_function_value(
-    raw: Scalar | PyTree | FunctionValue, problem_type: ProblemType
+    raw: Scalar | PyTree | FunctionValue, problem_type: AggregationLevel
 ) -> SpecificFunctionValue:
     out: FunctionValue
-    if problem_type == ProblemType.SCALAR:
+    if problem_type == AggregationLevel.SCALAR:
         out = _convert_output_to_scalar_function_value(raw)
-    elif problem_type == ProblemType.LEAST_SQUARES:
+    elif problem_type == AggregationLevel.LEAST_SQUARES:
         out = _convert_output_to_least_squares_function_value(raw)
-    elif problem_type == ProblemType.LIKELIHOOD:
+    elif problem_type == AggregationLevel.LIKELIHOOD:
         out = _convert_output_to_likelihood_function_value(raw)
     return out
 
@@ -178,7 +184,7 @@ P = ParamSpec("P")
 
 
 def enforce_return_type(
-    problem_type: ProblemType,
+    problem_type: AggregationLevel,
 ) -> Callable[
     [Callable[P, Scalar | PyTree | FunctionValue]], Callable[P, SpecificFunctionValue]
 ]:
@@ -192,7 +198,7 @@ def enforce_return_type(
     def decorator_enforce(
         func: Callable[P, Scalar | PyTree | FunctionValue],
     ) -> Callable[P, SpecificFunctionValue]:
-        if problem_type == ProblemType.SCALAR:
+        if problem_type == AggregationLevel.SCALAR:
 
             @functools.wraps(func)
             def wrapper_enforce(
@@ -200,7 +206,7 @@ def enforce_return_type(
             ) -> ScalarFunctionValue:
                 raw = func(*args, **kwargs)
                 return _convert_output_to_scalar_function_value(raw)
-        elif problem_type == ProblemType.LEAST_SQUARES:
+        elif problem_type == AggregationLevel.LEAST_SQUARES:
 
             @functools.wraps(func)
             def wrapper_enforce(
@@ -208,7 +214,7 @@ def enforce_return_type(
             ) -> LeastSquaresFunctionValue:
                 raw = func(*args, **kwargs)
                 return _convert_output_to_least_squares_function_value(raw)
-        elif problem_type == ProblemType.LIKELIHOOD:
+        elif problem_type == AggregationLevel.LIKELIHOOD:
 
             @functools.wraps(func)
             def wrapper_enforce(
@@ -223,7 +229,7 @@ def enforce_return_type(
 
 
 def enforce_return_type_with_jac(
-    problem_type: ProblemType,
+    problem_type: AggregationLevel,
 ) -> Callable[
     [Callable[P, tuple[Scalar | PyTree | FunctionValue, PyTree]]],
     Callable[P, tuple[SpecificFunctionValue, PyTree]],
@@ -239,7 +245,7 @@ def enforce_return_type_with_jac(
     def decorator_enforce(
         func: Callable[P, tuple[Scalar | PyTree | FunctionValue, PyTree]],
     ) -> Callable[P, tuple[SpecificFunctionValue, PyTree]]:
-        if problem_type == ProblemType.SCALAR:
+        if problem_type == AggregationLevel.SCALAR:
 
             @functools.wraps(func)
             def wrapper_enforce(
@@ -247,7 +253,7 @@ def enforce_return_type_with_jac(
             ) -> tuple[ScalarFunctionValue, PyTree]:
                 raw = func(*args, **kwargs)
                 return (_convert_output_to_scalar_function_value(raw[0]), raw[1])
-        elif problem_type == ProblemType.LEAST_SQUARES:
+        elif problem_type == AggregationLevel.LEAST_SQUARES:
 
             @functools.wraps(func)
             def wrapper_enforce(
@@ -255,7 +261,7 @@ def enforce_return_type_with_jac(
             ) -> tuple[LeastSquaresFunctionValue, PyTree]:
                 raw = func(*args, **kwargs)
                 return (_convert_output_to_least_squares_function_value(raw[0]), raw[1])
-        elif problem_type == ProblemType.LIKELIHOOD:
+        elif problem_type == AggregationLevel.LIKELIHOOD:
 
             @functools.wraps(func)
             def wrapper_enforce(

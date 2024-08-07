@@ -2,7 +2,7 @@ import numpy as np
 
 from optimagic.optimization.convergence_report import get_convergence_report
 from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
-from optimagic.typing import SolverType
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import isscalar
 
 
@@ -71,9 +71,9 @@ def _process_one_result(res, converter, solver_type, fixed_kwargs, skip_checks):
 
     if isscalar(res["solution_criterion"]):
         _criterion = float(res["solution_criterion"])
-    elif solver_type == SolverType.LIKELIHOOD:
+    elif solver_type == AggregationLevel.LIKELIHOOD:
         _criterion = float(np.sum(res["solution_criterion"]))
-    elif solver_type == SolverType.LEAST_SQUARES:
+    elif solver_type == AggregationLevel.LEAST_SQUARES:
         _criterion = res["solution_criterion"] @ res["solution_criterion"]
 
     if fixed_kwargs["direction"] == "maximize":

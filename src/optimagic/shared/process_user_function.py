@@ -9,7 +9,7 @@ from optimagic.optimization.fun_value import (
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
-from optimagic.typing import ProblemType
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import propose_alternatives
 
 
@@ -130,11 +130,11 @@ def infer_problem_type(func):
     if hasattr(func, "_problem_type"):
         out = func._problem_type
     elif return_type in (ScalarFunctionValue, float):
-        out = ProblemType.SCALAR
+        out = AggregationLevel.SCALAR
     elif return_type == LeastSquaresFunctionValue:
-        out = ProblemType.LEAST_SQUARES
+        out = AggregationLevel.LEAST_SQUARES
     elif return_type == LikelihoodFunctionValue:
-        out = ProblemType.LIKELIHOOD
+        out = AggregationLevel.LIKELIHOOD
     else:
-        out = ProblemType.SCALAR
+        out = AggregationLevel.SCALAR
     return out

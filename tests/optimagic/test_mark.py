@@ -1,5 +1,5 @@
 import optimagic as om
-from optimagic.typing import ProblemType
+from optimagic.typing import AggregationLevel
 
 
 def test_scalar():
@@ -7,7 +7,7 @@ def test_scalar():
     def f(x):
         pass
 
-    assert f._problem_type == ProblemType.SCALAR
+    assert f._problem_type == AggregationLevel.SCALAR
 
 
 def test_least_squares():
@@ -15,7 +15,7 @@ def test_least_squares():
     def f(x):
         pass
 
-    assert f._problem_type == ProblemType.LEAST_SQUARES
+    assert f._problem_type == AggregationLevel.LEAST_SQUARES
 
 
 def test_likelihood():
@@ -23,4 +23,4 @@ def test_likelihood():
     def f(x):
         pass
 
-    assert f._problem_type == ProblemType.LIKELIHOOD
+    assert f._problem_type == AggregationLevel.LIKELIHOOD

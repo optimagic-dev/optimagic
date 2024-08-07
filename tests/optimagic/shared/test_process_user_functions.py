@@ -13,7 +13,7 @@ from optimagic.shared.process_user_function import (
     infer_problem_type,
     partial_func_of_params,
 )
-from optimagic.typing import ProblemType
+from optimagic.typing import AggregationLevel
 
 
 def test_partial_func_of_params():
@@ -55,7 +55,7 @@ def test_infer_problem_type_no_decorator():
     def f(params):
         return 1
 
-    assert infer_problem_type(f) == ProblemType.SCALAR
+    assert infer_problem_type(f) == AggregationLevel.SCALAR
 
 
 def test_infer_problem_type_scalar_decorator():
@@ -63,14 +63,14 @@ def test_infer_problem_type_scalar_decorator():
     def f(params):
         return 1
 
-    assert infer_problem_type(f) == ProblemType.SCALAR
+    assert infer_problem_type(f) == AggregationLevel.SCALAR
 
 
 def test_infer_problem_type_scalar_anotation():
     def f(params: NDArray[np.float64]) -> ScalarFunctionValue:
         return ScalarFunctionValue(1)
 
-    assert infer_problem_type(f) == ProblemType.SCALAR
+    assert infer_problem_type(f) == AggregationLevel.SCALAR
 
 
 def test_infer_problem_type_least_squares_decorator():
@@ -78,14 +78,14 @@ def test_infer_problem_type_least_squares_decorator():
     def f(params):
         return np.ones(3)
 
-    assert infer_problem_type(f) == ProblemType.LEAST_SQUARES
+    assert infer_problem_type(f) == AggregationLevel.LEAST_SQUARES
 
 
 def test_infer_problem_type_least_squares_anotation():
     def f(params: NDArray[np.float64]) -> LeastSquaresFunctionValue:
         return LeastSquaresFunctionValue(np.ones(3))
 
-    assert infer_problem_type(f) == ProblemType.LEAST_SQUARES
+    assert infer_problem_type(f) == AggregationLevel.LEAST_SQUARES
 
 
 def test_infer_problem_type_likelihood_decorator():
@@ -93,11 +93,11 @@ def test_infer_problem_type_likelihood_decorator():
     def f(params):
         return np.ones(3)
 
-    assert infer_problem_type(f) == ProblemType.LIKELIHOOD
+    assert infer_problem_type(f) == AggregationLevel.LIKELIHOOD
 
 
 def test_infer_problem_type_likelihood_anotation():
     def f(params: NDArray[np.float64]) -> LikelihoodFunctionValue:
         return LikelihoodFunctionValue(np.ones(3))
 
-    assert infer_problem_type(f) == ProblemType.LIKELIHOOD
+    assert infer_problem_type(f) == AggregationLevel.LIKELIHOOD

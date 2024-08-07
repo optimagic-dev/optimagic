@@ -6,16 +6,8 @@ PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]
 Scalar = Any
 
 
-class ProblemType(Enum):
-    """Enum class for function types."""
-
-    SCALAR = "scalar"
-    LEAST_SQUARES = "least_squares"
-    LIKELIHOOD = "likelihood"
-
-
-class SolverType(Enum):
-    """Enum class for optimizer types."""
+class AggregationLevel(Enum):
+    """Enum to specify the aggregation level of objective functions and solvers."""
 
     SCALAR = "scalar"
     LEAST_SQUARES = "least_squares"

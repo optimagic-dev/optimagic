@@ -10,7 +10,7 @@ from optimagic.optimization.fun_value import (
     enforce_return_type,
     enforce_return_type_with_jac,
 )
-from optimagic.typing import ProblemType, SolverType
+from optimagic.typing import AggregationLevel
 
 SCALAR_VALUES = [
     ScalarFunctionValue(5),
@@ -29,14 +29,14 @@ LIKELIHOOD_VALUES = [
 
 @pytest.mark.parametrize("value", SCALAR_VALUES + LS_VALUES + LIKELIHOOD_VALUES)
 def test_values_for_scalar_optimizers(value):
-    got = value.internal_value(SolverType.SCALAR)
+    got = value.internal_value(AggregationLevel.SCALAR)
     assert isinstance(got, float)
     assert got == 5.0
 
 
 @pytest.mark.parametrize("value", LS_VALUES)
 def test_values_for_least_squares_optimizers(value):
-    got = value.internal_value(SolverType.LEAST_SQUARES)
+    got = value.internal_value(AggregationLevel.LEAST_SQUARES)
     assert isinstance(got, np.ndarray)
     assert got.dtype == np.float64
     aae(got, np.array([1.0, 2]))
@@ -44,7 +44,7 @@ def test_values_for_least_squares_optimizers(value):
 
 @pytest.mark.parametrize("value", LS_VALUES + LIKELIHOOD_VALUES)
 def test_values_for_likelihood_optimizers(value):
-    got = value.internal_value(SolverType.LIKELIHOOD)
+    got = value.internal_value(AggregationLevel.LIKELIHOOD)
     assert isinstance(got, np.ndarray)
     assert got.dtype == np.float64
     aae(got, np.array([1.0, 4]))
@@ -53,17 +53,17 @@ def test_values_for_likelihood_optimizers(value):
 @pytest.mark.parametrize("value", SCALAR_VALUES + LIKELIHOOD_VALUES)
 def test_invalid_values_for_least_squares_optimizers(value):
     with pytest.raises(InvalidFunctionError):
-        SCALAR_VALUES[0].internal_value(SolverType.LEAST_SQUARES)
+        SCALAR_VALUES[0].internal_value(AggregationLevel.LEAST_SQUARES)
 
 
 @pytest.mark.parametrize("value", SCALAR_VALUES)
 def test_invalid_values_for_likelihood_optimizers(value):
     with pytest.raises(InvalidFunctionError):
-        SCALAR_VALUES[0].internal_value(SolverType.LIKELIHOOD)
+        SCALAR_VALUES[0].internal_value(AggregationLevel.LIKELIHOOD)
 
 
 def test_enforce_scalar_with_scalar_return():
-    @enforce_return_type(ProblemType.SCALAR)
+    @enforce_return_type(AggregationLevel.SCALAR)
     def f(x):
         return 3
 
@@ -73,7 +73,7 @@ def test_enforce_scalar_with_scalar_return():
 
 
 def test_enforce_scalar_with_function_value_return():
-    @enforce_return_type(ProblemType.SCALAR)
+    @enforce_return_type(AggregationLevel.SCALAR)
     def f(x):
         return FunctionValue(3)
 
@@ -83,7 +83,7 @@ def test_enforce_scalar_with_function_value_return():
 
 
 def test_enforce_scalar_trivial_case():
-    @enforce_return_type(ProblemType.SCALAR)
+    @enforce_return_type(AggregationLevel.SCALAR)
     def f(x):
         return ScalarFunctionValue(3)
 
@@ -93,7 +93,7 @@ def test_enforce_scalar_trivial_case():
 
 
 def test_enforce_scalar_invalid_return():
-    @enforce_return_type(ProblemType.SCALAR)
+    @enforce_return_type(AggregationLevel.SCALAR)
     def f(x):
         return x
 
@@ -102,7 +102,7 @@ def test_enforce_scalar_invalid_return():
 
 
 def test_enforce_least_squares_with_vector_return():
-    @enforce_return_type(ProblemType.LEAST_SQUARES)
+    @enforce_return_type(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return np.ones(3)
 
@@ -112,7 +112,7 @@ def test_enforce_least_squares_with_vector_return():
 
 
 def test_enforce_least_squares_with_function_value_return():
-    @enforce_return_type(ProblemType.LEAST_SQUARES)
+    @enforce_return_type(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return FunctionValue(np.ones(3))
 
@@ -122,7 +122,7 @@ def test_enforce_least_squares_with_function_value_return():
 
 
 def test_enforce_least_squares_trivial_case():
-    @enforce_return_type(ProblemType.LEAST_SQUARES)
+    @enforce_return_type(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return LeastSquaresFunctionValue(np.ones(3))
 
@@ -132,7 +132,7 @@ def test_enforce_least_squares_trivial_case():
 
 
 def test_enforce_least_squares_invalid_return():
-    @enforce_return_type(ProblemType.LEAST_SQUARES)
+    @enforce_return_type(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return 3
 
@@ -141,7 +141,7 @@ def test_enforce_least_squares_invalid_return():
 
 
 def test_enforce_likelihood_with_vector_return():
-    @enforce_return_type(ProblemType.LIKELIHOOD)
+    @enforce_return_type(AggregationLevel.LIKELIHOOD)
     def f(x):
         return np.ones(3)
 
@@ -151,7 +151,7 @@ def test_enforce_likelihood_with_vector_return():
 
 
 def test_enforce_likelihood_with_function_value_return():
-    @enforce_return_type(ProblemType.LIKELIHOOD)
+    @enforce_return_type(AggregationLevel.LIKELIHOOD)
     def f(x):
         return FunctionValue(np.ones(3))
 
@@ -161,7 +161,7 @@ def test_enforce_likelihood_with_function_value_return():
 
 
 def test_enforce_likelihood_trivial_case():
-    @enforce_return_type(ProblemType.LIKELIHOOD)
+    @enforce_return_type(AggregationLevel.LIKELIHOOD)
     def f(x):
         return LikelihoodFunctionValue(np.ones(3))
 
@@ -171,7 +171,7 @@ def test_enforce_likelihood_trivial_case():
 
 
 def test_enforce_likelihood_invalid_return():
-    @enforce_return_type(ProblemType.LIKELIHOOD)
+    @enforce_return_type(AggregationLevel.LIKELIHOOD)
     def f(x):
         return 3
 
@@ -180,7 +180,7 @@ def test_enforce_likelihood_invalid_return():
 
 
 def test_enforce_scalar_with_jac_with_scalar_return():
-    @enforce_return_type_with_jac(ProblemType.SCALAR)
+    @enforce_return_type_with_jac(AggregationLevel.SCALAR)
     def f(x):
         return 3, np.zeros(3)
 
@@ -191,7 +191,7 @@ def test_enforce_scalar_with_jac_with_scalar_return():
 
 
 def test_enforce_scalar_with_jac_with_function_value_return():
-    @enforce_return_type_with_jac(ProblemType.SCALAR)
+    @enforce_return_type_with_jac(AggregationLevel.SCALAR)
     def f(x):
         return FunctionValue(3), np.zeros(3)
 
@@ -202,7 +202,7 @@ def test_enforce_scalar_with_jac_with_function_value_return():
 
 
 def test_enforce_scalar_with_jac_trivial_case():
-    @enforce_return_type_with_jac(ProblemType.SCALAR)
+    @enforce_return_type_with_jac(AggregationLevel.SCALAR)
     def f(x):
         return ScalarFunctionValue(3), np.zeros(3)
 
@@ -213,7 +213,7 @@ def test_enforce_scalar_with_jac_trivial_case():
 
 
 def test_enforce_scalar_with_jac_invalid_return():
-    @enforce_return_type_with_jac(ProblemType.SCALAR)
+    @enforce_return_type_with_jac(AggregationLevel.SCALAR)
     def f(x):
         return x, np.zeros(3)
 
@@ -222,7 +222,7 @@ def test_enforce_scalar_with_jac_invalid_return():
 
 
 def test_enforce_least_squares_with_jac_with_vector_return():
-    @enforce_return_type_with_jac(ProblemType.LEAST_SQUARES)
+    @enforce_return_type_with_jac(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return np.ones(3), np.zeros((3, 3))
 
@@ -233,7 +233,7 @@ def test_enforce_least_squares_with_jac_with_vector_return():
 
 
 def test_enforce_least_squares_with_jac_with_function_value_return():
-    @enforce_return_type_with_jac(ProblemType.LEAST_SQUARES)
+    @enforce_return_type_with_jac(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return FunctionValue(np.ones(3)), np.zeros((3, 3))
 
@@ -244,7 +244,7 @@ def test_enforce_least_squares_with_jac_with_function_value_return():
 
 
 def test_enforce_least_squares_with_jac_trivial_case():
-    @enforce_return_type_with_jac(ProblemType.LEAST_SQUARES)
+    @enforce_return_type_with_jac(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return LeastSquaresFunctionValue(np.ones(3)), np.zeros((3, 3))
 
@@ -255,7 +255,7 @@ def test_enforce_least_squares_with_jac_trivial_case():
 
 
 def test_enforce_least_squares_with_jac_invalid_return():
-    @enforce_return_type_with_jac(ProblemType.LEAST_SQUARES)
+    @enforce_return_type_with_jac(AggregationLevel.LEAST_SQUARES)
     def f(x):
         return 3, np.zeros((3, 3))
 
@@ -264,7 +264,7 @@ def test_enforce_least_squares_with_jac_invalid_return():
 
 
 def test_enforce_likelihood_with_jac_with_vector_return():
-    @enforce_return_type_with_jac(ProblemType.LIKELIHOOD)
+    @enforce_return_type_with_jac(AggregationLevel.LIKELIHOOD)
     def f(x):
         return np.ones(3), np.zeros((3, 3))
 
@@ -275,7 +275,7 @@ def test_enforce_likelihood_with_jac_with_vector_return():
 
 
 def test_enforce_likelihood_with_jac_with_function_value_return():
-    @enforce_return_type_with_jac(ProblemType.LIKELIHOOD)
+    @enforce_return_type_with_jac(AggregationLevel.LIKELIHOOD)
     def f(x):
         return FunctionValue(np.ones(3)), np.zeros((3, 3))
 
@@ -286,7 +286,7 @@ def test_enforce_likelihood_with_jac_with_function_value_return():
 
 
 def test_enforce_likelihood_with_jac_trivial_case():
-    @enforce_return_type_with_jac(ProblemType.LIKELIHOOD)
+    @enforce_return_type_with_jac(AggregationLevel.LIKELIHOOD)
     def f(x):
         return LikelihoodFunctionValue(np.ones(3)), np.zeros((3, 3))
 
@@ -297,7 +297,7 @@ def test_enforce_likelihood_with_jac_trivial_case():
 
 
 def test_enforce_likelihood_with_jac_invalid_return():
-    @enforce_return_type_with_jac(ProblemType.LIKELIHOOD)
+    @enforce_return_type_with_jac(AggregationLevel.LIKELIHOOD)
     def f(x):
         return 3, np.zeros((3, 3))
 

@@ -42,7 +42,7 @@ from optimagic.optimization.fun_value import (
     ScalarFunctionValue,
 )
 from optimagic.parameters.bounds import Bounds
-from optimagic.typing import ProblemType
+from optimagic.typing import AggregationLevel
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0
@@ -528,14 +528,14 @@ def test_is_dict_output():
 
 
 def test_infer_problem_type_from_dict_output():
-    assert infer_problem_type_from_dict_output({"value": 1}) == ProblemType.SCALAR
+    assert infer_problem_type_from_dict_output({"value": 1}) == AggregationLevel.SCALAR
     assert (
         infer_problem_type_from_dict_output({"value": 1, "root_contributions": 2})
-        == ProblemType.LEAST_SQUARES
+        == AggregationLevel.LEAST_SQUARES
     )
     assert (
         infer_problem_type_from_dict_output({"value": 1, "contributions": 2})
-        == ProblemType.LIKELIHOOD
+        == AggregationLevel.LIKELIHOOD
     )
 
 
