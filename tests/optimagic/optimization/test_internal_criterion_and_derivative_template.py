@@ -7,7 +7,6 @@ from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.decorators import AlgoInfo
 from optimagic.examples.criterion_functions import (
     sos_gradient,
-    sos_pandas_gradient,
 )
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
@@ -79,7 +78,7 @@ def sos_fun_and_gradient(params):
 
 
 crits = [sos_ls, sos_ls_pd, sos_scalar]
-derivs = [sos_gradient, sos_pandas_gradient, None]
+derivs = [sos_gradient, None]
 crits_and_derivs = [sos_fun_and_gradient, None]
 
 test_cases = list(itertools.product(directions, crits, derivs, crits_and_derivs))

@@ -10,14 +10,17 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import tree_just_flatten
+from pybaum import tree_just_flatten, tree_unflatten
 
 from optimagic import mark
 from optimagic.optimization.fun_value import (
     FunctionValue,
 )
+from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import PyTree
+
+REGISTRY = get_registry(extended=True)
 
 
 @mark.scalar
@@ -28,18 +31,19 @@ def trid_scalar(params: PyTree) -> float:
 
 
 @mark.scalar
-def trid_gradient(params: PyTree) -> NDArray[np.float64]:
+def trid_gradient(params: PyTree) -> PyTree:
     """Calculate gradient of trid function."""
     x = _get_x(params)
     l1 = np.insert(x, 0, 0)
     l1 = np.delete(l1, [-1])
     l2 = np.append(x, 0)
     l2 = np.delete(l2, [0])
-    return 2 * (x - 1) - l1 - l2
+    flat = 2 * (x - 1) - l1 - l2
+    return _unflatten_gradient(flat, params)
 
 
 @mark.scalar
-def trid_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
+def trid_fun_and_gradient(params: PyTree) -> tuple[float, PyTree]:
     """Implement Trid function and calculate gradient."""
     val = trid_scalar(params)
     grad = trid_gradient(params)
@@ -57,14 +61,15 @@ def rhe_scalar(params: PyTree) -> float:
 
 
 @mark.scalar
-def rhe_gradient(params: PyTree) -> NDArray[np.float64]:
+def rhe_gradient(params: PyTree) -> PyTree:
     """Calculate gradient of rotated_hyper_ellipsoid function."""
     x = _get_x(params)
-    return np.arange(2 * len(x), 0, -2) * x
+    flat = np.arange(2 * len(x), 0, -2) * x
+    return _unflatten_gradient(flat, params)
 
 
 @mark.scalar
-def rhe_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
+def rhe_fun_and_gradient(params: PyTree) -> tuple[float, PyTree]:
     """Implement Rotated Hyper Ellipsoid function and calculate gradient."""
     val = rhe_scalar(params)
     grad = rhe_gradient(params)
@@ -97,7 +102,7 @@ def rosenbrock_scalar(params: PyTree) -> float:
 
 
 @mark.scalar
-def rosenbrock_gradient(params: PyTree) -> NDArray[np.float64]:
+def rosenbrock_gradient(params: PyTree) -> PyTree:
     """Calculate gradient of rosenbrock function."""
     x = _get_x(params)
     l1 = np.delete(x, [-1])
@@ -110,11 +115,12 @@ def rosenbrock_gradient(params: PyTree) -> NDArray[np.float64]:
     l4 = np.append(l4, 0)
     l5 = np.full((len(x) - 1), 2)
     l5 = np.append(l5, 0)
-    return 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
+    flat = 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
+    return _unflatten_gradient(flat, params)
 
 
 @mark.scalar
-def rosenbrock_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
+def rosenbrock_fun_and_gradient(params: PyTree) -> tuple[float, PyTree]:
     """Implement rosenbrock function and calculate gradient."""
     return rosenbrock_scalar(params), rosenbrock_gradient(params)
 
@@ -155,64 +161,55 @@ def sos_scalar(params: PyTree) -> float:
 
 
 @mark.scalar
-def sos_gradient(params: PyTree) -> NDArray[np.float64]:
+def sos_gradient(params: PyTree) -> PyTree:
     """Calculate the gradient of the sum of squares function."""
-    return 2 * _get_x(params)
+    flat = 2 * _get_x(params)
+    return _unflatten_gradient(flat, params)
 
 
 @mark.likelihood
-def sos_likelihood_jacobian(params: PyTree) -> NDArray[np.float64]:
+def sos_likelihood(params: PyTree) -> NDArray[np.float64]:
+    return _get_x(params) ** 2
+
+
+@mark.likelihood
+def sos_likelihood_jacobian(params: PyTree) -> PyTree:
     """Calculate the likelihood Jacobian of the sum of squares function."""
-    return np.diag(2 * _get_x(params))
-
-
-@mark.least_squares
-def sos_ls_jacobian(params: PyTree) -> NDArray[np.float64]:
-    """Calculate the least-squares Jacobian of the sum of squares function."""
-    return np.eye(len(params))
-
-
-@mark.scalar
-def sos_pandas_gradient(params: PyTree) -> pd.Series[float]:
-    """Calculate the gradient of the sum of squares function as pandas object."""
-    return 2 * pd.Series(_get_x(params))
-
-
-@mark.likelihood
-def sos_pandas_likelihood_jacobian(params: PyTree) -> pd.DataFrame:
-    """Calculate the Jacobian of the sum of squares function as pandas object."""
-    return pd.DataFrame(np.diag(2 * _get_x(params)))
-
-
-@mark.least_squares
-def sos_pandas_ls_jacobian(params: PyTree) -> pd.DataFrame:
-    """Calculate the Jacobian of the sum of squares function as pandas object."""
-    return pd.DataFrame(np.eye(len(params)))
-
-
-@mark.scalar
-def sos_fun_and_gradient(params: PyTree) -> tuple[float, NDArray[np.float64]]:
-    """Calculate sum of squares criterion value and gradient."""
     x = _get_x(params)
-    return (x**2).sum(), 2 * x
+    out_mat = np.diag(2 * x)
+    out_tree = matrix_to_block_tree(out_mat, x, params)
+    return out_tree
+
+
+@mark.least_squares
+def sos_ls_jacobian(params: PyTree) -> PyTree:
+    """Calculate the least-squares Jacobian of the sum of squares function."""
+    x = _get_x(params)
+    out_mat = np.eye(len(x))
+    out_tree = matrix_to_block_tree(out_mat, x, params)
+    return out_tree
+
+
+@mark.scalar
+def sos_fun_and_gradient(params: PyTree) -> tuple[float, PyTree]:
+    """Calculate sum of squares criterion value and gradient."""
+    return sos_scalar(params), sos_gradient(params)
 
 
 @mark.likelihood
 def sos_likelihood_fun_and_jac(
     params: PyTree,
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[NDArray[np.float64], PyTree]:
     """Calculate sum of squares criterion value and Jacobian."""
-    x = _get_x(params)
-    return x**2, np.diag(2 * x)
+    return sos_likelihood(params), sos_likelihood_jacobian(params)
 
 
 @mark.least_squares
 def sos_ls_fun_and_jac(
     params: PyTree,
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[NDArray[np.float64], PyTree]:
     """Calculate sum of squares criterion value and Jacobian."""
-    x = _get_x(params)
-    return x, np.eye(len(params))
+    return sos_ls(params), sos_ls_jacobian(params)
 
 
 sos_derivatives = {
@@ -229,3 +226,8 @@ def _get_x(params: PyTree) -> NDArray[np.float64]:
         registry = get_registry(extended=True)
         x = np.array(tree_just_flatten(params, registry=registry), dtype=np.float64)
     return x
+
+
+def _unflatten_gradient(flat: NDArray[np.float64], params: PyTree) -> PyTree:
+    out = tree_unflatten(params, flat.tolist(), registry=REGISTRY)
+    return out
