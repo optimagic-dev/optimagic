@@ -215,8 +215,6 @@ def internal_criterion_and_derivative_template(
         new_criterion = new_external_criterion.internal_value(algo_info.solver_type)
 
     if new_criterion is not None:
-        # TODO: Remove this assert statement when all tests pass
-        assert new_external_criterion is not None
         scalar_critval = new_external_criterion.internal_value(AggregationLevel.SCALAR)
     else:
         scalar_critval = None

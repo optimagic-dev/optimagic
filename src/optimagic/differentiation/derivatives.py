@@ -158,15 +158,7 @@ def first_derivative(
 
     bounds = pre_process_bounds(bounds)
 
-    if unpacker is None:
-        unpacker = lambda x: x
-    else:
-        raw_unpacker = unpacker
-
-        def unpacker(x):
-            if isinstance(x, float) and np.isnan(x):
-                return x
-            return raw_unpacker(x)
+    unpacker = _process_unpacker(unpacker)
 
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
@@ -466,15 +458,7 @@ def second_derivative(
     # ==================================================================================
     bounds = pre_process_bounds(bounds)
 
-    if unpacker is None:
-        unpacker = lambda x: x
-    else:
-        raw_unpacker = unpacker
-
-        def unpacker(x):
-            if isinstance(x, float) and np.isnan(x):
-                return x
-            return raw_unpacker(x)
+    unpacker = _process_unpacker(unpacker)
 
     internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
@@ -656,6 +640,25 @@ def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
     evals = evals.swapaxes(2, 3)
     evals = Evals(pos=evals[0], neg=evals[1])
     return evals
+
+
+def _process_unpacker(unpacker):
+    """Process the user provided unpacker function.
+
+    If the unpacker was None, we set it to the identity.
+
+    """
+    if unpacker is None:
+        unpacker = lambda x: x
+    else:
+        raw_unpacker = unpacker
+
+        def unpacker(x):
+            if isinstance(x, float) and np.isnan(x):
+                return x
+            return raw_unpacker(x)
+
+    return unpacker
 
 
 def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
