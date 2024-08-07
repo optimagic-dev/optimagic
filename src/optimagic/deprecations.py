@@ -89,6 +89,63 @@ def throw_multistart_options_future_warning():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_derivatives_step_ratio_future_warning():
+    msg = (
+        "The `step_ratio` argument is deprecated and will be removed alongside "
+        "Richardson extrapolation in optimagic version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def throw_derivatives_n_steps_future_warning():
+    msg = (
+        "The `n_steps` argument is deprecated and will be removed alongside "
+        "Richardson extrapolation in optimagic version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def throw_derivatives_return_info_future_warning():
+    msg = (
+        "The `return_info` argument is deprecated and will be removed alongside "
+        "Richardson extrapolation in optimagic version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def throw_derivatives_return_func_value_future_warning():
+    msg = (
+        "The `return_func_value` argument is deprecated and will be removed in "
+        "optimagic version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def throw_numdiff_result_func_evals_future_warning():
+    msg = (
+        "The `func_evals` attribute is deprecated and will be removed in optimagic "
+        "version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def throw_numdiff_result_derivative_candidates_future_warning():
+    msg = (
+        "The `derivative_candidates` attribute is deprecated and will be removed in "
+        "optimagic version 0.6.0."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def throw_dict_access_future_warning(attribute, obj_name):
+    msg = (
+        f"The dictionary access for '{attribute}' is deprecated and will be removed "
+        "in optimagic version 0.6.0. Please use the new attribute access instead: "
+        f"`{obj_name}.{attribute}`."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_algo_options(algo_options):
     if not isinstance(algo_options, dict):
         return algo_options
@@ -262,16 +319,16 @@ def replace_and_warn_about_deprecated_multistart_options(options):
 
     if options.share_optimization is not None:
         msg = (
-            "The share_optimization option is deprecated and will be removed in "
-            "version 0.6.0. Use stopping_maxopt instead to specify the number of "
+            "The `share_optimization` option is deprecated and will be removed in "
+            "version 0.6.0. Use `stopping_maxopt` instead to specify the number of "
             "optimizations directly."
         )
         warnings.warn(msg, FutureWarning)
 
     if options.convergence_relative_params_tolerance is not None:
         msg = (
-            "The convergence_relative_params_tolerance option is deprecated and will "
-            "be removed in version 0.6.0. Use convergence_xtol_rel instead."
+            "The `convergence_relative_params_tolerance` option is deprecated and will "
+            "be removed in version 0.6.0. Use `convergence_xtol_rel` instead."
         )
         warnings.warn(msg, FutureWarning)
         if options.convergence_xtol_rel is None:
@@ -281,10 +338,10 @@ def replace_and_warn_about_deprecated_multistart_options(options):
 
     if options.optimization_error_handling is not None:
         msg = (
-            "The optimization_error_handling option is deprecated and will be removed "
-            "in version 0.6.0. Setting this attribute also sets the error handling "
-            "for exploration. Use the new error_handling option to set the error "
-            "handling for both optimization and exploration."
+            "The `optimization_error_handling` option is deprecated and will be "
+            "removed in version 0.6.0. Setting this attribute also sets the error "
+            "handling for exploration. Use the new `error_handling` option to set the "
+            "error handling for both optimization and exploration."
         )
         warnings.warn(msg, FutureWarning)
         if options.error_handling is None:
@@ -292,9 +349,9 @@ def replace_and_warn_about_deprecated_multistart_options(options):
 
     if options.exploration_error_handling is not None:
         msg = (
-            "The exploration_error_handling option is deprecated and will be "
+            "The `exploration_error_handling` option is deprecated and will be "
             "removed in version 0.6.0. Setting this attribute also sets the error "
-            "handling for exploration. Use the new error_handling option to set the "
+            "handling for exploration. Use the new `error_handling` option to set the "
             "error handling for both optimization and exploration."
         )
         warnings.warn(msg, FutureWarning)
@@ -302,3 +359,21 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             replacements["error_handling"] = options.exploration_error_handling
 
     return replace(options, **replacements)
+
+
+def replace_and_warn_about_deprecated_base_steps(
+    steps,
+    base_steps,
+):
+    if base_steps is not None:
+        msg = (
+            "The `base_steps` argument is deprecated and will be removed alongside "
+            "Richardson extrapolation in optimagic version 0.6.0. To specify steps "
+            "for Richardson extrapolation, use the `steps` argument instead."
+        )
+        warnings.warn(msg, FutureWarning)
+
+        if steps is None:
+            steps = base_steps
+
+    return steps

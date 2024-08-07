@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
+from typing import get_type_hints
 
 import numpy as np
 import pandas as pd
@@ -8,6 +9,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.derivatives import (
     Evals,
+    NumdiffResult,
     _consolidate_one_step_derivatives,
     _convert_evaluation_data_to_frame,
     _convert_richardson_candidates_to_frame,
@@ -148,7 +150,7 @@ def test_first_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
     calculated = first_derivative(
         f, 3.0, return_func_value=True, return_info=False, n_cores=1
     )
-    expected = {"derivative": 6.0, "func_value": 9.0}
+    expected = NumdiffResult(derivative=6.0, func_value=9.0)
     assert calculated == expected
 
 
@@ -160,10 +162,10 @@ def test_second_derivative_scalar_with_return_func_value(method):  # noqa: ARG00
     calculated = second_derivative(
         f, 3.0, return_func_value=True, return_info=False, n_cores=1
     )
-    expected = {"derivative": 18.0, "func_value": 27.0}
+    expected = NumdiffResult(derivative=18.0, func_value=27.0)
 
-    assert calculated["func_value"] == expected["func_value"]
-    assert np.abs(calculated["derivative"] - expected["derivative"]) < 1.5 * 10 ** (-6)
+    assert calculated.func_value == expected.func_value
+    assert np.abs(calculated.derivative - expected.derivative) < 1.5 * 10 ** (-6)
 
 
 def test_nan_skipping_batch_evaluator():
@@ -406,3 +408,29 @@ def test_second_derivative_with_unpacking():
 
     assert isinstance(got["func_value"], MyOutput)
     aaae(got["derivative"], np.eye(3) * 2, decimal=4)
+
+
+def test_numdiff_result_getitem():
+    res = NumdiffResult(
+        derivative=1,
+        func_value=2,
+        _func_evals=pd.DataFrame([0, 1]),
+        _derivative_candidates=pd.DataFrame([2, 3]),
+    )
+
+    assert res["derivative"] == res.derivative
+    assert res["func_value"] == res.func_value
+    assert_frame_equal(res["_func_evals"], res._func_evals)
+    assert_frame_equal(res["_derivative_candidates"], res._derivative_candidates)
+
+
+def test_first_and_second_derivative_have_same_type_hints():
+    # exclude method from comparison, as the argument options differ here
+    exclude = ["method"]
+    first_hints = {
+        k: v for k, v in get_type_hints(first_derivative).items() if k not in exclude
+    }
+    second_hints = {
+        k: v for k, v in get_type_hints(second_derivative).items() if k not in exclude
+    }
+    assert first_hints == second_hints
