@@ -56,7 +56,7 @@ def test_get_scale_converter_active(method, expected):
 
     numerical_jacobian = first_derivative(
         converter.params_from_internal, expected.values
-    )["derivative"]
+    ).derivative
 
     aaae(calculated_jacobian, numerical_jacobian)
 

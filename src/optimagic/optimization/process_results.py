@@ -38,9 +38,9 @@ def process_internal_optimizer_result(
                 skip_checks=skip_checks,
             )
 
-            crit_hist = [opt.fun for opt in info["local_optima"]]
-            params_hist = [opt.params for opt in info["local_optima"]]
-            time_hist = [np.nan for opt in info["local_optima"]]
+            crit_hist = [opt.fun for opt in info.local_optima]
+            params_hist = [opt.params for opt in info.local_optima]
+            time_hist = [np.nan for opt in info.local_optima]
             hist = {"criterion": crit_hist, "params": params_hist, "runtime": time_hist}
 
             conv_report = get_convergence_report(
@@ -52,14 +52,14 @@ def process_internal_optimizer_result(
 
             res.algorithm = f"multistart_{res.algorithm}"
             res.n_iterations = _sum_or_none(
-                [opt.n_iterations for opt in info["local_optima"]]
+                [opt.n_iterations for opt in info.local_optima]
             )
 
             res.n_fun_evals = _sum_or_none(
-                [opt.n_fun_evals for opt in info["local_optima"]]
+                [opt.n_fun_evals for opt in info.local_optima]
             )
             res.n_jac_evals = _sum_or_none(
-                [opt.n_jac_evals for opt in info["local_optima"]]
+                [opt.n_jac_evals for opt in info.local_optima]
             )
 
             res.multistart_info = info

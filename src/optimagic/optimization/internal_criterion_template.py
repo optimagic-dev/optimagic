@@ -108,15 +108,14 @@ def internal_criterion_and_derivative_template(
             return criterion(p)
 
         try:
-            derivative_dict = first_derivative(
+            numerical_derivative = first_derivative(
                 func,
                 x,
                 **numdiff_options,
                 unpacker=lambda x: x.internal_value(algo_info.solver_type),
-                return_func_value=True,
             )
-            new_jac = derivative_dict["derivative"]
-            new_external_fun = derivative_dict["func_value"]
+            new_jac = numerical_derivative.derivative
+            new_external_fun = numerical_derivative.func_value
             new_fun = new_external_fun.internal_value(algo_info.solver_type)
         except (KeyboardInterrupt, SystemExit):
             raise

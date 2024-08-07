@@ -306,7 +306,7 @@ def _extract_plotting_data_from_results_object(
     is_multistart = res.multistart_info is not None
 
     if is_multistart:
-        local_histories = [opt.history for opt in res.multistart_info["local_optima"]]
+        local_histories = [opt.history for opt in res.multistart_info.local_optima]
     else:
         local_histories = None
 
@@ -314,10 +314,10 @@ def _extract_plotting_data_from_results_object(
         stacked = _get_stacked_local_histories(local_histories)
         if show_exploration:
             stacked["params"] = (
-                res.multistart_info["exploration_sample"][::-1] + stacked["params"]
+                res.multistart_info.exploration_sample[::-1] + stacked["params"]
             )
             stacked["criterion"] = (
-                res.multistart_info["exploration_results"].tolist()[::-1]
+                res.multistart_info.exploration_results.tolist()[::-1]
                 + stacked["criterion"]
             )
     else:

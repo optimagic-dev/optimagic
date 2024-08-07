@@ -103,7 +103,7 @@ def _process_nonlinear_constraint(
                 constraint_func,
                 p,
                 **options,
-            )["derivative"]
+            ).derivative
 
     # To define the internal Jacobian we need to know which parameters enter the
     # contraint function.
