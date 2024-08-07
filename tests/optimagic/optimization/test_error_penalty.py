@@ -72,7 +72,7 @@ def test_penalty_derivatives(func, deriv, solver_type):
         partialed, x, unpacker=lambda x: x.internal_value(solver_type)
     )
 
-    aaae(calculated, expected["derivative"])
+    aaae(calculated, expected.derivative)
 
 
 @pytest.mark.parametrize("seed", range(10))

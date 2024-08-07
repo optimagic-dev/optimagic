@@ -285,7 +285,7 @@ def estimate_ml(
             **numdiff_options,
         )
 
-        int_jac = jac_res["derivative"]
+        int_jac = jac_res.derivative
     else:
         int_jac = None
 
@@ -331,7 +331,7 @@ def estimate_ml(
             ),
             **numdiff_options,
         )
-        int_hess = hess_res["derivative"]
+        int_hess = hess_res.derivative
     elif hess_case == "closed-form" and constraints:
         raise NotImplementedError(
             "Closed-form Hessians are not yet compatible with constraints."
