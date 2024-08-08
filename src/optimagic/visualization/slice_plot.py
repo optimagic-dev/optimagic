@@ -131,6 +131,7 @@ def slice_plot(
             "whether it is a scalar, least-squares or likelihood function."
         )
         warnings.warn(msg, FutureWarning)
+        func_eval = deprecations.convert_dict_to_function_value(func_eval)
         func = deprecations.replace_dict_output(func)
 
     # ==================================================================================
