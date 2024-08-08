@@ -6,7 +6,7 @@ from optimagic import mark
 from optimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from optimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from optimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
-from optimagic.shared.process_user_function import infer_problem_type
+from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng
 
@@ -224,7 +224,7 @@ def _create_problem_inputs(
     else:
         scaling_factor = None
 
-    problem_type = infer_problem_type(specification["fun"])
+    problem_type = infer_aggregation_level(specification["fun"])
 
     problem_type_to_marker = {
         AggregationLevel.SCALAR: mark.scalar,

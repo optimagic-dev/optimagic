@@ -80,11 +80,7 @@ def test_tree_params_sos_ls(params, algorithm):
     flat = np.array(tree_just_flatten(params, registry=REGISTRY))
     expected = np.zeros_like(flat)
 
-    derivatives = {
-        "value": sos_gradient,
-        "root_contributions": sos_ls_jacobian,
-    }
-
+    derivatives = [sos_gradient, sos_ls_jacobian]
     res = minimize(
         fun=sos_ls,
         jac=derivatives,

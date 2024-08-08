@@ -10,7 +10,7 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
-    infer_problem_type,
+    infer_aggregation_level,
     partial_func_of_params,
 )
 from optimagic.typing import AggregationLevel
@@ -51,53 +51,53 @@ def test_get_kwargs_from_args():
     assert got == expected
 
 
-def test_infer_problem_type_no_decorator():
+def test_infer_aggregation_levle_no_decorator():
     def f(params):
         return 1
 
-    assert infer_problem_type(f) == AggregationLevel.SCALAR
+    assert infer_aggregation_level(f) == AggregationLevel.SCALAR
 
 
-def test_infer_problem_type_scalar_decorator():
+def test_infer_aggregation_levle_scalar_decorator():
     @mark.scalar
     def f(params):
         return 1
 
-    assert infer_problem_type(f) == AggregationLevel.SCALAR
+    assert infer_aggregation_level(f) == AggregationLevel.SCALAR
 
 
-def test_infer_problem_type_scalar_anotation():
+def test_infer_aggregation_levle_scalar_anotation():
     def f(params: NDArray[np.float64]) -> ScalarFunctionValue:
         return ScalarFunctionValue(1)
 
-    assert infer_problem_type(f) == AggregationLevel.SCALAR
+    assert infer_aggregation_level(f) == AggregationLevel.SCALAR
 
 
-def test_infer_problem_type_least_squares_decorator():
+def test_infer_aggregation_levle_least_squares_decorator():
     @mark.least_squares
     def f(params):
         return np.ones(3)
 
-    assert infer_problem_type(f) == AggregationLevel.LEAST_SQUARES
+    assert infer_aggregation_level(f) == AggregationLevel.LEAST_SQUARES
 
 
-def test_infer_problem_type_least_squares_anotation():
+def test_infer_aggregation_levle_least_squares_anotation():
     def f(params: NDArray[np.float64]) -> LeastSquaresFunctionValue:
         return LeastSquaresFunctionValue(np.ones(3))
 
-    assert infer_problem_type(f) == AggregationLevel.LEAST_SQUARES
+    assert infer_aggregation_level(f) == AggregationLevel.LEAST_SQUARES
 
 
-def test_infer_problem_type_likelihood_decorator():
+def test_infer_aggregation_levle_likelihood_decorator():
     @mark.likelihood
     def f(params):
         return np.ones(3)
 
-    assert infer_problem_type(f) == AggregationLevel.LIKELIHOOD
+    assert infer_aggregation_level(f) == AggregationLevel.LIKELIHOOD
 
 
-def test_infer_problem_type_likelihood_anotation():
+def test_infer_aggregation_levle_likelihood_anotation():
     def f(params: NDArray[np.float64]) -> LikelihoodFunctionValue:
         return LikelihoodFunctionValue(np.ones(3))
 
-    assert infer_problem_type(f) == AggregationLevel.LIKELIHOOD
+    assert infer_aggregation_level(f) == AggregationLevel.LIKELIHOOD

@@ -118,7 +118,7 @@ def get_kwargs_from_args(args, func, offset=0):
     return kwargs
 
 
-def infer_problem_type(func):
+def infer_aggregation_level(func):
     """Infer the problem type from type hints or attributes left by mark decorators.
 
     The problem type is either inferred from a `._problem_type` attribute or from type

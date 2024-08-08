@@ -3,6 +3,7 @@ from dataclasses import replace
 from functools import wraps
 from typing import Any, Callable, ParamSpec
 
+from optimagic import mark
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -377,3 +378,27 @@ def replace_and_warn_about_deprecated_base_steps(
             steps = base_steps
 
     return steps
+
+
+def replace_and_warn_about_deprecated_derivatives(candidate, name):
+    msg = (
+        f"Specifying a dictionary of {name} functions is deprecated and will be "
+        "removed in optimagic version 0.6.0. Please specify a single function that has "
+        "returns the correct derivative for your optimizer or a list of functions that "
+        "are decorated with the `mark.scalar`, `mark.likelihood` or "
+        "`mark.least_squares` decorators."
+    )
+    warnings.warn(msg, FutureWarning)
+
+    key_to_marker = {
+        "value": mark.scalar,
+        "contributions": mark.likelihood,
+        "root_contributions": mark.least_squares,
+    }
+
+    out = []
+    for key, func in candidate.items():
+        if key in key_to_marker:
+            out.append(key_to_marker[key](func))
+
+    return out

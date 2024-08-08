@@ -212,11 +212,7 @@ def sos_ls_fun_and_jac(
     return sos_ls(params), sos_ls_jacobian(params)
 
 
-sos_derivatives = {
-    "value": sos_gradient,
-    "contributions": sos_likelihood_jacobian,
-    "root_contributions": sos_ls_jacobian,
-}
+sos_derivatives = [sos_gradient, sos_likelihood_jacobian, sos_ls_jacobian]
 
 
 def _get_x(params: PyTree) -> NDArray[np.float64]:

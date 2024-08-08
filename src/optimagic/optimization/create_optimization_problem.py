@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Literal
@@ -35,7 +36,7 @@ from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
 from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
-    infer_problem_type,
+    infer_aggregation_level,
     partial_func_of_params,
 )
 from optimagic.typing import AggregationLevel, PyTree
@@ -216,6 +217,13 @@ def create_optimization_problem(
         soft_upper_bounds=soft_upper_bounds,
     )
 
+    if isinstance(jac, dict):
+        jac = deprecations.replace_and_warn_about_deprecated_derivatives(jac, "jac")
+
+    if isinstance(fun_and_jac, dict):
+        fun_and_jac = deprecations.replace_and_warn_about_deprecated_derivatives(
+            fun_and_jac, "fun_and_jac"
+        )
     # ==================================================================================
     # handle scipy aliases
     # ==================================================================================
@@ -364,7 +372,7 @@ def create_optimization_problem(
     if deprecations.is_dict_output(fun_eval):
         problem_type = deprecations.infer_problem_type_from_dict_output(fun_eval)
     else:
-        problem_type = infer_problem_type(fun)
+        problem_type = infer_aggregation_level(fun)
 
     if problem_type == AggregationLevel.LEAST_SQUARES and direction == "maximize":
         raise ValueError("Least-squares problems cannot be maximized.")
@@ -387,11 +395,23 @@ def create_optimization_problem(
     raw_algo, algo_info = process_user_algorithm(algorithm)
 
     # ==================================================================================
+    # select the correct derivative functions
+    # ==================================================================================
+
+    if jac is not None:
+        jac = pre_process_derivatives(
+            candidate=jac, name="jac", solver_type=algo_info.solver_type
+        )
+
+    if fun_and_jac is not None:
+        fun_and_jac = pre_process_derivatives(
+            candidate=fun_and_jac, name="fun_and_jac", solver_type=algo_info.solver_type
+        )
+
+    # ==================================================================================
     # partial the kwargs into corresponding functions
     # ==================================================================================
 
-    if isinstance(jac, dict):
-        jac = jac.get(algo_info.primary_criterion_entry)
     if jac is not None:
         jac = partial_func_of_params(
             func=jac,
@@ -399,8 +419,6 @@ def create_optimization_problem(
             name="derivative",
             skip_checks=skip_checks,
         )
-    if isinstance(fun_and_jac, dict):
-        fun_and_jac = fun_and_jac.get(algo_info.primary_criterion_entry)
 
     if fun_and_jac is not None:
         fun_and_jac = partial_func_of_params(
@@ -411,19 +429,8 @@ def create_optimization_problem(
         )
         fun_and_jac = deprecations.replace_dict_output(fun_and_jac)
 
-        # TODO: the enforce decorator should probably also accept a solver type;
-        if algo_info.solver_type == AggregationLevel.SCALAR:
-            fun_and_jac = enforce_return_type_with_jac(AggregationLevel.SCALAR)(
-                fun_and_jac
-            )
-        elif algo_info.solver_type == AggregationLevel.LEAST_SQUARES:
-            fun_and_jac = enforce_return_type_with_jac(AggregationLevel.LEAST_SQUARES)(
-                fun_and_jac
-            )
-        elif algo_info.solver_type == AggregationLevel.LIKELIHOOD:
-            fun_and_jac = enforce_return_type_with_jac(AggregationLevel.LIKELIHOOD)(
-                fun_and_jac
-            )
+        fun_and_jac = enforce_return_type_with_jac(algo_info.solver_type)(fun_and_jac)
+
     # ==================================================================================
     # Check types of arguments
     # ==================================================================================
@@ -517,3 +524,27 @@ def create_optimization_problem(
     )
 
     return problem
+
+
+def pre_process_derivatives(candidate, name, solver_type):
+    if callable(candidate):
+        candidate = [candidate]
+
+    out = None
+    for func in candidate:
+        if not callable(func):
+            raise ValueError(f"{name} must be a callable or sequence of callables.")
+
+        problem_type = infer_aggregation_level(func)
+        if problem_type == solver_type:
+            out = func
+
+    if out is None:
+        msg = (
+            f"You used the `{name}` argument but none of the callables you provided "
+            "has the correct aggregation level for your selected optimization "
+            "algorithm. Falling back to numerical derivatives."
+        )
+        warnings.warn(msg)
+
+    return out

@@ -16,9 +16,9 @@ from optimagic.examples.criterion_functions import (
     sos_derivatives,
     sos_fun_and_gradient,
     sos_gradient,
-    sos_likelihood_fun_and_jac,
-    sos_likelihood_jacobian,
     sos_ls,
+    sos_ls_fun_and_jac,
+    sos_ls_jacobian,
 )
 from optimagic.optimization.optimize import maximize, minimize
 
@@ -31,10 +31,10 @@ scalar_derivatives = [None, sos_gradient]
 
 scalar_criterion_and_derivtives = [None, sos_fun_and_gradient]
 
-ls_derivatives = [None, sos_likelihood_jacobian]
+ls_derivatives = [None, sos_ls_jacobian]
 
 
-ls_criterion_and_derivatives = [sos_likelihood_fun_and_jac]
+ls_criterion_and_derivatives = [sos_ls_fun_and_jac]
 
 dict_criterion_and_derivatives = [
     None,

@@ -18,7 +18,7 @@ from optimagic.optimization.fun_value import (
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.shared.process_user_function import infer_problem_type
+from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
 
@@ -140,7 +140,7 @@ def slice_plot(
     if deprecations.is_dict_output(func_eval):
         problem_type = deprecations.infer_problem_type_from_dict_output(func_eval)
     else:
-        problem_type = infer_problem_type(func)
+        problem_type = infer_aggregation_level(func)
 
     func_eval = convert_fun_output_to_function_value(func_eval, problem_type)
 
