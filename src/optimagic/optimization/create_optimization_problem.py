@@ -87,7 +87,6 @@ class OptimizationProblem:
     collect_history: bool
     skip_checks: bool
     direction: Literal["minimize", "maximize"]
-    problem_type: AggregationLevel
     fun_eval: SpecificFunctionValue
 
 
@@ -394,6 +393,21 @@ def create_optimization_problem(
     # ==================================================================================
     raw_algo, algo_info = process_user_algorithm(algorithm)
 
+    if algo_info.solver_type == AggregationLevel.LIKELIHOOD:
+        if problem_type not in [
+            AggregationLevel.LIKELIHOOD,
+            AggregationLevel.LEAST_SQUARES,
+        ]:
+            raise InvalidFunctionError(
+                "Likelihood solvers can only be used with likelihood or least-squares "
+                "problems."
+            )
+    if algo_info.solver_type == AggregationLevel.LEAST_SQUARES:
+        if problem_type != AggregationLevel.LEAST_SQUARES:
+            raise InvalidFunctionError(
+                "Least-squares solvers can only be used with least-squares problems."
+            )
+
     # ==================================================================================
     # select the correct derivative functions
     # ==================================================================================
@@ -519,7 +533,6 @@ def create_optimization_problem(
         collect_history=collect_history,
         skip_checks=skip_checks,
         direction=direction,
-        problem_type=problem_type,
         fun_eval=fun_eval,
     )
 

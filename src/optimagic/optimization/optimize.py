@@ -52,6 +52,7 @@ from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
+from optimagic.typing import AggregationLevel
 
 
 def maximize(
@@ -480,9 +481,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Process the result
     # ==================================================================================
 
-    _scalar_start_criterion = first_crit_eval.internal_value(
-        problem.algo_info.solver_type
-    )
+    _scalar_start_criterion = first_crit_eval.internal_value(AggregationLevel.SCALAR)
 
     fixed_result_kwargs = {
         "start_fun": _scalar_start_criterion,
