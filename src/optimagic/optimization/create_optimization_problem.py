@@ -354,7 +354,7 @@ def create_optimization_problem(
     # problem type until the decorator approach becomes mandatory.
     # TODO: Move this into `_optimize` and there as late as soon as we reach 0.6.0
     try:
-        fun_eval = fun(params, **fun_kwargs)
+        fun_eval = fun(params)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
