@@ -7,6 +7,7 @@ from optimagic.benchmarking.benchmark_reports import (
 from optimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
+from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.logging.read_log import OptimizeLogReader
 from optimagic.optimization.multistart_options import MultistartOptions
 from optimagic.optimization.optimize import maximize, minimize
@@ -50,5 +51,6 @@ __all__ = [
     "Bounds",
     "ScalingOptions",
     "MultistartOptions",
+    "NumdiffOptions",
     "__version__",
 ]
