@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Callable, Literal, TypedDict
 
 from typing_extensions import NotRequired
@@ -151,24 +152,34 @@ def _validate_attribute_types_and_values(options: NumdiffOptions) -> None:
         )
 
 
-def fill_numdiff_options_with_defaults(
-    options: NumdiffOptions | None,
-    purpose: Literal["optimize", "estimate_ml", "estimate_msm"],
+class NumdiffOptionsPurpose(str, Enum):
+    OPTIMIZE = "optimize"
+    ESTIMATION_FIRST_DERIVATIVE = "estimation_first_derivative"
+    ESTIMATION_SECOND_DERIVATIVE = "estimation_second_derivative"
+
+
+def get_default_numdiff_options(
+    purpose: NumdiffOptionsPurpose,
 ) -> NumdiffOptions:
-    """Fill numerical derivatives options with defaults for optimization.
+    """Get default numerical derivatives options for a given purpose.
 
     Args:
-        options: The numdiff options to update with defaults.
-        purpose: The purpose of the numdiff options. Can be "optimization" or
-            "estimation".
+        purpose: For what purpose the numdiff options are used.
 
     Returns:
         The numdiff options with defaults filled in.
 
     """
-    if options is None:
-        method = "forward" if purpose == "optimize" else "central"
-        scaling_factor = 2 if purpose == "estimate_msm" else 1
-        options = NumdiffOptions(method=method, scaling_factor=scaling_factor)  # type: ignore
+    defaults: NumdiffOptionsDict = {}
 
-    return options
+    if purpose == NumdiffOptionsPurpose.OPTIMIZE:
+        defaults["method"] = "forward"
+
+    if purpose == NumdiffOptionsPurpose.ESTIMATION_FIRST_DERIVATIVE:
+        defaults["method"] = "central"
+
+    if purpose == NumdiffOptionsPurpose.ESTIMATION_SECOND_DERIVATIVE:
+        defaults["method"] = "central_cross"
+        defaults["scaling_factor"] = 2
+
+    return NumdiffOptions(**defaults)

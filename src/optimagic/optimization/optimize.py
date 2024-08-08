@@ -16,7 +16,6 @@ import functools
 import warnings
 from pathlib import Path
 
-from optimagic.differentiation.numdiff_options import fill_numdiff_options_with_defaults
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
@@ -379,11 +378,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             "constraints."
         )
 
-    numdiff_options = fill_numdiff_options_with_defaults(
-        options=problem.numdiff_options,
-        purpose="optimize",
-    )
-
     # get error penalty function
     error_penalty_func = get_error_penalty_function(
         error_handling=problem.error_handling,
@@ -399,9 +393,8 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         nonlinear_constraints=nonlinear_constraints,
         params=problem.params,
         converter=converter,
-        numdiff_options=numdiff_options,
+        numdiff_options=problem.numdiff_options,
         skip_checks=problem.skip_checks,
-        error_handling=problem.error_handling,
     )
 
     x = internal_params.values
@@ -433,7 +426,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         "converter": converter,
         "derivative": problem.jac,
         "criterion_and_derivative": problem.fun_and_jac,
-        "numdiff_options": numdiff_options,
+        "numdiff_options": problem.numdiff_options,
         "logging": problem.logging,
         "database": database,
         "algo_info": problem.algo_info,

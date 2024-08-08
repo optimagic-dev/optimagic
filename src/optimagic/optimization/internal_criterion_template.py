@@ -118,7 +118,7 @@ def internal_criterion_and_derivative_template(
 
         try:
             numerical_derivative = first_derivative(
-                func, x, bounds=bounds, error_handling=error_handling, **options
+                func, x, bounds=bounds, error_handling="raise", **options
             )
             new_derivative = numerical_derivative.derivative
             new_criterion = numerical_derivative.func_value["relevant"]

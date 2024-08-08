@@ -10,6 +10,8 @@ from optimagic.deprecations import (
 )
 from optimagic.differentiation.numdiff_options import (
     NumdiffOptions,
+    NumdiffOptionsPurpose,
+    get_default_numdiff_options,
     pre_process_numdiff_options,
 )
 from optimagic.exceptions import (
@@ -67,7 +69,7 @@ class OptimizationProblem:
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[float, PyTree]] | None
-    numdiff_options: NumdiffOptions | None
+    numdiff_options: NumdiffOptions
     # TODO: logging will become None | Logger and log_options will be removed
     logging: bool | Path | None
     log_options: dict[str, Any] | None
@@ -315,6 +317,11 @@ def create_optimization_problem(
     multistart = pre_process_multistart(multistart)
     numdiff_options = pre_process_numdiff_options(numdiff_options)
 
+    if numdiff_options is None:
+        numdiff_options = get_default_numdiff_options(
+            purpose=NumdiffOptionsPurpose.OPTIMIZE
+        )
+
     fun_kwargs = {} if fun_kwargs is None else fun_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
@@ -399,8 +406,8 @@ def create_optimization_problem(
         if not isinstance(fun_and_jac, Callable | None):
             raise ValueError("fun_and_jac must be a callable or None")
 
-        if not isinstance(numdiff_options, NumdiffOptions | None):
-            raise ValueError("numdiff_options must be a NumdiffOptions object or None")
+        if not isinstance(numdiff_options, NumdiffOptions):
+            raise ValueError("numdiff_options must be a NumdiffOptions object")
 
         if not isinstance(logging, bool | Path | None):
             raise ValueError("logging must be a boolean, a path or None")

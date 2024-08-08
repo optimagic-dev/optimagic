@@ -12,7 +12,8 @@ import pandas as pd
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import (
-    fill_numdiff_options_with_defaults,
+    NumdiffOptionsPurpose,
+    get_default_numdiff_options,
     pre_process_numdiff_options,
 )
 from optimagic.exceptions import InvalidFunctionError
@@ -171,9 +172,10 @@ def estimate_msm(
 
     bounds = pre_process_bounds(bounds)
     numdiff_options = pre_process_numdiff_options(numdiff_options)
-    numdiff_options = fill_numdiff_options_with_defaults(
-        numdiff_options, purpose="estimate_msm"
-    )
+    if numdiff_options is None:
+        numdiff_options = get_default_numdiff_options(
+            purpose=NumdiffOptionsPurpose.ESTIMATION_FIRST_DERIVATIVE
+        )
 
     if weights not in ["diagonal", "optimal", "identity"]:
         raise NotImplementedError("Custom weighting matrices are not yet implemented.")
@@ -191,8 +193,6 @@ def estimate_msm(
         )
 
     jac_case = get_derivative_case(jacobian)
-
-    error_handling = getattr(optimize_options, "error_handling", "raise")
 
     weights, internal_weights = get_weighting_matrix(
         moments_cov=moments_cov,
@@ -318,7 +318,7 @@ def estimate_msm(
                 lower=internal_estimates.lower_bounds,
                 upper=internal_estimates.upper_bounds,
             ),
-            error_handling=error_handling,
+            error_handling="continue",
             **options,
         ).derivative
 

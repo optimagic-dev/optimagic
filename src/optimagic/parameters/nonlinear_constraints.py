@@ -19,7 +19,6 @@ def process_nonlinear_constraints(
     converter,
     numdiff_options,
     skip_checks,
-    error_handling,
 ):
     """Process and prepare nonlinear constraints for internal use.
 
@@ -38,7 +37,6 @@ def process_nonlinear_constraints(
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast constraint functions. Default
             False.
-        error_handling (str): Error handling for numerical derivatives.
 
     Returns:
         list[dict]: List of processed constraints.
@@ -60,7 +58,6 @@ def process_nonlinear_constraints(
             params=params,
             converter=converter,
             numdiff_options=numdiff_options,
-            error_handling=error_handling,
         )
         processed.append(_processed_constraint)
 
@@ -68,7 +65,7 @@ def process_nonlinear_constraints(
 
 
 def _process_nonlinear_constraint(
-    c, constraint_eval, params, converter, numdiff_options, error_handling
+    c, constraint_eval, params, converter, numdiff_options
 ):
     """Process a single nonlinear constraint."""
 
@@ -104,7 +101,7 @@ def _process_nonlinear_constraint(
             return first_derivative(
                 constraint_func,
                 p,
-                error_handling=error_handling,
+                error_handling="raise",
                 **options,
             ).derivative
 

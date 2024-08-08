@@ -8,7 +8,8 @@ import pandas as pd
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
-    fill_numdiff_options_with_defaults,
+    NumdiffOptionsPurpose,
+    get_default_numdiff_options,
     pre_process_numdiff_options,
 )
 from optimagic.exceptions import InvalidFunctionError, NotAvailableError
@@ -54,11 +55,12 @@ def estimate_ml(
     logging=False,
     log_options=None,
     loglike_kwargs=None,
-    numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
+    jacobian_numdiff_options=None,
     hessian=None,
     hessian_kwargs=None,
+    hessian_numdiff_options=None,
     design_info=None,
     # deprecated
     lower_bounds=None,
@@ -116,15 +118,15 @@ def estimate_ml(
             - "if_database_exists": (str): One of "extend", "replace", "raise". What to
             do if the database we want to write to already exists. Default "extend".
         loglike_kwargs (dict): Additional keyword arguments for loglike.
-        numdiff_options (dict): Keyword arguments for the calculation of numerical
-            derivatives for the calculation of standard errors. See
-            :ref:`first_derivative` for details.
         jacobian (callable or None): A function that takes ``params`` and potentially
             other keyword arguments and returns the jacobian of loglike["contributions"]
             with respect to the params. Note that you only need to pass a Jacobian
             function if you have a closed form Jacobian. If you pass None, a numerical
             Jacobian will be calculated.
         jacobian_kwargs (dict): Additional keyword arguments for the Jacobian function.
+        jacobian_numdiff_options (dict): Keyword arguments for the calculation of
+            numerical derivatives for the calculation of standard errors. See
+            :ref:`first_derivative` for details.
         hessian (callable or None or False): A function that takes ``params`` and
             potentially other keyword arguments and returns the Hessian of
             loglike["value"] with respect to the params.  If you pass None, a numerical
@@ -132,6 +134,9 @@ def estimate_ml(
             Hessian should be calculated. Thus, no result that requires the Hessian will
             be calculated.
         hessian_kwargs (dict): Additional keyword arguments for the Hessian function.
+        hessian_numdiff_options (dict): Keyword arguments for the calculation of
+            numerical derivatives for the calculation of standard errors. See
+            :ref:`second_derivative` for details.
         design_info (pandas.DataFrame): DataFrame with one row per observation that
             contains some or all of the variables "psu" (primary sampling unit),
             "strata" and "fpc" (finite population corrector). See
@@ -156,10 +161,18 @@ def estimate_ml(
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
-    numdiff_options = pre_process_numdiff_options(numdiff_options)
-    numdiff_options = fill_numdiff_options_with_defaults(
-        numdiff_options, purpose="estimate_ml"
-    )
+    jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
+    hessian_numdiff_options = pre_process_numdiff_options(hessian_numdiff_options)
+
+    if jacobian_numdiff_options is None:
+        jacobian_numdiff_options = get_default_numdiff_options(
+            purpose=NumdiffOptionsPurpose.ESTIMATION_FIRST_DERIVATIVE
+        )
+
+    if hessian_numdiff_options is None:
+        hessian_numdiff_options = get_default_numdiff_options(
+            purpose=NumdiffOptionsPurpose.ESTIMATION_SECOND_DERIVATIVE
+        )
 
     is_optimized = optimize_options is False
 
@@ -172,8 +185,6 @@ def estimate_ml(
             usage="estimate_ml",
             algorithm_mandatory=True,
         )
-
-    error_handling = getattr(optimize_options, "error_handling", "raise")
 
     jac_case = get_derivative_case(jacobian)
     hess_case = get_derivative_case(hessian)
@@ -266,7 +277,7 @@ def estimate_ml(
             out = converter.func_to_internal(loglike_eval)
             return out
 
-        options = asdict(numdiff_options)
+        options = asdict(jacobian_numdiff_options)
 
         jac_res = first_derivative(
             func=func,
@@ -275,7 +286,7 @@ def estimate_ml(
                 lower=internal_estimates.lower_bounds,
                 upper=internal_estimates.upper_bounds,
             ),
-            error_handling=error_handling,
+            error_handling="continue",
             **options,
         )
 
@@ -314,7 +325,7 @@ def estimate_ml(
             out = converter.func_to_internal(loglike_eval)
             return out
 
-        options = asdict(numdiff_options)
+        options = asdict(hessian_numdiff_options)
 
         hess_res = second_derivative(
             func=func,
@@ -323,7 +334,7 @@ def estimate_ml(
                 lower=internal_estimates.lower_bounds,
                 upper=internal_estimates.upper_bounds,
             ),
-            error_handling=error_handling,
+            error_handling="continue",
             **options,
         )
         int_hess = hess_res.derivative
