@@ -1,5 +1,5 @@
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from functools import cached_property
 from typing import Any, Dict
 
@@ -7,6 +7,10 @@ import numpy as np
 import pandas as pd
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
+from optimagic.differentiation.numdiff_options import (
+    fill_numdiff_options_with_defaults,
+    pre_process_numdiff_options,
+)
 from optimagic.exceptions import InvalidFunctionError, NotAvailableError
 from optimagic.optimization.optimize import maximize
 from optimagic.optimization.optimize_result import OptimizeResult
@@ -15,7 +19,6 @@ from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
 from optimagic.shared.check_option_dicts import (
-    check_numdiff_options,
     check_optimization_options,
 )
 from optimagic.utilities import get_rng, to_pickle
@@ -153,6 +156,10 @@ def estimate_ml(
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
+    numdiff_options = pre_process_numdiff_options(numdiff_options)
+    numdiff_options = fill_numdiff_options_with_defaults(
+        numdiff_options, purpose="estimate_ml"
+    )
 
     is_optimized = optimize_options is False
 
@@ -166,11 +173,11 @@ def estimate_ml(
             algorithm_mandatory=True,
         )
 
+    error_handling = getattr(optimize_options, "error_handling", "raise")
+
     jac_case = get_derivative_case(jacobian)
     hess_case = get_derivative_case(hessian)
 
-    check_numdiff_options(numdiff_options, "estimate_ml")
-    numdiff_options = {} if numdiff_options in (None, False) else numdiff_options
     loglike_kwargs = {} if loglike_kwargs is None else loglike_kwargs
     constraints = [] if constraints is None else constraints
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
@@ -259,6 +266,8 @@ def estimate_ml(
             out = converter.func_to_internal(loglike_eval)
             return out
 
+        options = asdict(numdiff_options)
+
         jac_res = first_derivative(
             func=func,
             params=internal_estimates.values,
@@ -266,7 +275,8 @@ def estimate_ml(
                 lower=internal_estimates.lower_bounds,
                 upper=internal_estimates.upper_bounds,
             ),
-            **numdiff_options,
+            error_handling=error_handling,
+            **options,
         )
 
         int_jac = jac_res.derivative
@@ -304,6 +314,8 @@ def estimate_ml(
             out = converter.func_to_internal(loglike_eval)
             return out
 
+        options = asdict(numdiff_options)
+
         hess_res = second_derivative(
             func=func,
             params=internal_estimates.values,
@@ -311,7 +323,8 @@ def estimate_ml(
                 lower=internal_estimates.lower_bounds,
                 upper=internal_estimates.upper_bounds,
             ),
-            **numdiff_options,
+            error_handling=error_handling,
+            **options,
         )
         int_hess = hess_res.derivative
     elif hess_case == "closed-form" and constraints:

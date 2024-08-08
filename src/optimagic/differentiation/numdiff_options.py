@@ -29,24 +29,32 @@ class NumdiffOptions:
 
     """
 
-    method: Literal["central", "forward", "backward"] = "central"
+    method: Literal[
+        "central", "forward", "backward", "central_cross", "central_average"
+    ] = "central"
     step_size: float | None = None
     scaling_factor: float = 1
     min_steps: float | None = None
     n_cores: int = DEFAULT_N_CORES
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"  # type: ignore
+    # will be deprecated
+    key: str = "relevant"
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
 
 
 class NumdiffOptionsDict(TypedDict):
-    method: NotRequired[Literal["central", "forward", "backward"]]
+    method: NotRequired[
+        Literal["central", "forward", "backward", "central_cross", "central_average"]
+    ]
     step_size: NotRequired[float | None]
     scaling_factor: NotRequired[float]
     min_steps: NotRequired[float | None]
     n_cores: NotRequired[int]
     batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
+    # will be deprecated
+    key: NotRequired[str]
 
 
 def pre_process_numdiff_options(
@@ -90,7 +98,13 @@ def pre_process_numdiff_options(
 
 
 def _validate_attribute_types_and_values(options: NumdiffOptions) -> None:
-    if options.method not in {"central", "forward", "backward"}:
+    if options.method not in {
+        "central",
+        "forward",
+        "backward",
+        "central_cross",
+        "central_average",
+    }:
         raise InvalidNumdiffError(
             f"Invalid numdiff `method`: {options.method}. Numdiff `method` must be "
             "one of 'central', 'forward', or 'backward'."
@@ -135,3 +149,26 @@ def _validate_attribute_types_and_values(options: NumdiffOptions) -> None:
             f"Invalid numdiff `batch_evaluator`: {options.batch_evaluator}. Batch "
             "evaluator must be a callable or one of 'joblib', 'pathos'."
         )
+
+
+def fill_numdiff_options_with_defaults(
+    options: NumdiffOptions | None,
+    purpose: Literal["optimize", "estimate_ml", "estimate_msm"],
+) -> NumdiffOptions:
+    """Fill numerical derivatives options with defaults for optimization.
+
+    Args:
+        options: The numdiff options to update with defaults.
+        purpose: The purpose of the numdiff options. Can be "optimization" or
+            "estimation".
+
+    Returns:
+        The numdiff options with defaults filled in.
+
+    """
+    if options is None:
+        method = "forward" if purpose == "optimize" else "central"
+        scaling_factor = 2 if purpose == "estimate_msm" else 1
+        options = NumdiffOptions(method=method, scaling_factor=scaling_factor)  # type: ignore
+
+    return options

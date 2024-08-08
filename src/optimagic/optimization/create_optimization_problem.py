@@ -8,6 +8,10 @@ from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
+from optimagic.differentiation.numdiff_options import (
+    NumdiffOptions,
+    pre_process_numdiff_options,
+)
 from optimagic.exceptions import (
     AliasError,
     MissingInputError,
@@ -25,7 +29,6 @@ from optimagic.optimization.scipy_aliases import (
 )
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
-from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
     process_func_of_params,
@@ -64,8 +67,7 @@ class OptimizationProblem:
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[float, PyTree]] | None
-    # TODO: numdiff_options will become NumDiffOptions
-    numdiff_options: dict[str, Any] | None
+    numdiff_options: NumdiffOptions | None
     # TODO: logging will become None | Logger and log_options will be removed
     logging: bool | Path | None
     log_options: dict[str, Any] | None
@@ -311,13 +313,13 @@ def create_optimization_problem(
     bounds = pre_process_bounds(bounds)
     scaling = pre_process_scaling(scaling)
     multistart = pre_process_multistart(multistart)
+    numdiff_options = pre_process_numdiff_options(numdiff_options)
 
     fun_kwargs = {} if fun_kwargs is None else fun_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
     jac_kwargs = {} if jac_kwargs is None else jac_kwargs
     fun_and_jac_kwargs = {} if fun_and_jac_kwargs is None else fun_and_jac_kwargs
-    numdiff_options = {} if numdiff_options is None else numdiff_options
     log_options = {} if log_options is None else log_options
     error_penalty = {} if error_penalty is None else error_penalty
     if logging:
@@ -397,8 +399,8 @@ def create_optimization_problem(
         if not isinstance(fun_and_jac, Callable | None):
             raise ValueError("fun_and_jac must be a callable or None")
 
-        if not isinstance(numdiff_options, dict | None):
-            raise ValueError("numdiff_options must be a dictionary or None")
+        if not isinstance(numdiff_options, NumdiffOptions | None):
+            raise ValueError("numdiff_options must be a NumdiffOptions object or None")
 
         if not isinstance(logging, bool | Path | None):
             raise ValueError("logging must be a boolean, a path or None")
@@ -426,8 +428,6 @@ def create_optimization_problem(
             "continue",
         ]:
             raise ValueError("error_handling must be 'raise' or 'continue'")
-
-        check_numdiff_options(numdiff_options, "optimization")
 
     # ==================================================================================
     # create the problem object

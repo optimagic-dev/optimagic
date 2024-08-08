@@ -3,7 +3,7 @@
 import functools
 import warnings
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from functools import cached_property
 from typing import Any, Dict, Union
 
@@ -11,6 +11,10 @@ import numpy as np
 import pandas as pd
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative
+from optimagic.differentiation.numdiff_options import (
+    fill_numdiff_options_with_defaults,
+    pre_process_numdiff_options,
+)
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.optimization.optimize import minimize
 from optimagic.optimization.optimize_result import OptimizeResult
@@ -20,7 +24,6 @@ from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.shared.check_option_dicts import (
-    check_numdiff_options,
     check_optimization_options,
 )
 from optimagic.utilities import get_rng, to_pickle
@@ -167,6 +170,10 @@ def estimate_msm(
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
+    numdiff_options = pre_process_numdiff_options(numdiff_options)
+    numdiff_options = fill_numdiff_options_with_defaults(
+        numdiff_options, purpose="estimate_msm"
+    )
 
     if weights not in ["diagonal", "optimal", "identity"]:
         raise NotImplementedError("Custom weighting matrices are not yet implemented.")
@@ -185,11 +192,7 @@ def estimate_msm(
 
     jac_case = get_derivative_case(jacobian)
 
-    check_numdiff_options(numdiff_options, "estimate_msm")
-
-    numdiff_options = {} if numdiff_options in (None, False) else numdiff_options.copy()
-    if "scaling_factor" not in numdiff_options:
-        numdiff_options["scaling_factor"] = 2
+    error_handling = getattr(optimize_options, "error_handling", "raise")
 
     weights, internal_weights = get_weighting_matrix(
         moments_cov=moments_cov,
@@ -306,6 +309,8 @@ def estimate_msm(
             out = converter.func_to_internal(sim_mom_eval)
             return out
 
+        options = asdict(numdiff_options)
+
         int_jac = first_derivative(
             func=func,
             params=internal_estimates.values,
@@ -313,7 +318,8 @@ def estimate_msm(
                 lower=internal_estimates.lower_bounds,
                 upper=internal_estimates.upper_bounds,
             ),
-            **numdiff_options,
+            error_handling=error_handling,
+            **options,
         ).derivative
 
     # ==================================================================================

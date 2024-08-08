@@ -1,4 +1,5 @@
 import itertools
+from dataclasses import asdict
 from functools import partial
 
 import numpy as np
@@ -18,6 +19,7 @@ def process_nonlinear_constraints(
     converter,
     numdiff_options,
     skip_checks,
+    error_handling,
 ):
     """Process and prepare nonlinear constraints for internal use.
 
@@ -30,13 +32,13 @@ def process_nonlinear_constraints(
             or list containing these elements. See :ref:`params` for examples.
         converter (Converter): NamedTuple with methods to convert between internal and
             external parameters, derivatives and function outputs.
-        numdiff_options (dict): Keyword arguments for the calculation of numerical
-            derivatives. See :ref:`first_derivative` for details. Note that the default
-            method is changed to "forward" for speed reasons. Contains lower and upper
-            bounds of parameters.
+        numdiff_options (NumdiffOptions): Options for numerical derivatives. See
+            :ref:`first_derivative` for details. Note that the default method is changed
+            to "forward" for speed reasons.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast constraint functions. Default
             False.
+        error_handling (str): Error handling for numerical derivatives.
 
     Returns:
         list[dict]: List of processed constraints.
@@ -58,6 +60,7 @@ def process_nonlinear_constraints(
             params=params,
             converter=converter,
             numdiff_options=numdiff_options,
+            error_handling=error_handling,
         )
         processed.append(_processed_constraint)
 
@@ -65,7 +68,7 @@ def process_nonlinear_constraints(
 
 
 def _process_nonlinear_constraint(
-    c, constraint_eval, params, converter, numdiff_options
+    c, constraint_eval, params, converter, numdiff_options, error_handling
 ):
     """Process a single nonlinear constraint."""
 
@@ -88,8 +91,7 @@ def _process_nonlinear_constraint(
     # ==================================================================================
 
     # process numdiff_options for numerical derivative
-    options = numdiff_options.copy()
-    options.pop("bounds", None)
+    options = asdict(numdiff_options)
 
     if "derivative" in c:
         if not callable(c["derivative"]):
@@ -102,6 +104,7 @@ def _process_nonlinear_constraint(
             return first_derivative(
                 constraint_func,
                 p,
+                error_handling=error_handling,
                 **options,
             ).derivative
 

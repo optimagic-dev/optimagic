@@ -1,5 +1,6 @@
 import time
 import warnings
+from dataclasses import asdict, replace
 
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
@@ -15,6 +16,7 @@ def internal_criterion_and_derivative_template(
     criterion,
     converter,
     algo_info,
+    bounds,
     derivative,
     criterion_and_derivative,
     numdiff_options,
@@ -53,6 +55,7 @@ def internal_criterion_and_derivative_template(
             - parallelizes
             - needs_scaling
             - is_available
+        bounds (Bounds): Bounds on the internal parameters for the optimization problem.
         derivative (callable, optional): (partialed) user provided function that
             calculates the first derivative of criterion. For most algorithm, this is
             the gradient of the scalar output (or "value" entry of the dict). However
@@ -110,11 +113,13 @@ def internal_criterion_and_derivative_template(
             out = {"full": crit_full, "relevant": crit_relevant}
             return out
 
-        options = numdiff_options.copy()
-        options["key"] = "relevant"
+        options = replace(numdiff_options, key="relevant")
+        options = asdict(options)
 
         try:
-            numerical_derivative = first_derivative(func, x, **options)
+            numerical_derivative = first_derivative(
+                func, x, bounds=bounds, error_handling=error_handling, **options
+            )
             new_derivative = numerical_derivative.derivative
             new_criterion = numerical_derivative.func_value["relevant"]
             new_external_criterion = numerical_derivative.func_value["full"]
