@@ -8,6 +8,12 @@ from optimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.logging.read_log import OptimizeLogReader
+from optimagic.optimization.fun_value import (
+    FunctionValue,
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
 from optimagic.optimization.multistart_options import MultistartOptions
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
@@ -51,5 +57,9 @@ __all__ = [
     "mark",
     "ScalingOptions",
     "MultistartOptions",
+    "FunctionValue",
+    "LeastSquaresFunctionValue",
+    "ScalarFunctionValue",
+    "LikelihoodFunctionValue",
     "__version__",
 ]

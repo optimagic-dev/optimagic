@@ -55,8 +55,8 @@ def slice_plot(
     # TODO: Don't do a function evaluation outside the batch evaluator.
 
     Args:
-        criterion (callable): criterion function that takes params and returns a
-            scalar value or dictionary with the entry "value".
+        criterion (callable): criterion function that takes params and returns scalar,
+            PyTree or FunctionValue object.
         params (pytree): A pytree with parameters.
         bounds: Lower and upper bounds on the parameters. The bounds are used to create
             a grid over which slice plots are drawn. The most general and preferred

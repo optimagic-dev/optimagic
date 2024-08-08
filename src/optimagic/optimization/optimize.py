@@ -107,6 +107,10 @@ def maximize(
     TODO: Write docstring after enhancement proposals are implemented.
 
     Args:
+        fun: The objective function of a scalar, least-squares or likelihood
+            optimization problem. Non-scalar objective functions have to be marked
+            with the `mark.likelihood` or `mark.least_squares` decorators. `fun` maps
+            params and fun_kwargs to an objective value.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
             way to specify bounds is an `optimagic.Bounds` object that collects lower,
             upper, soft_lower and soft_upper bounds. The soft bounds are used for
@@ -218,6 +222,9 @@ def minimize(
     TODO: Write docstring after enhancement proposals are implemented.
 
     Args:
+        fun: The objective function of a scalar or likelihood optimization problem.
+            Non-scalar objective functions have to be marked with the `mark.likelihood`
+            decorator. `fun` maps params and fun_kwargs to an objective value.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
             way to specify bounds is an `optimagic.Bounds` object that collects lower,
             upper, soft_lower and soft_upper bounds. The soft bounds are used for
