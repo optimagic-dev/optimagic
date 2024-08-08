@@ -144,7 +144,7 @@ def test_hessian_to_block_tree_bijection():
     def func(params):
         return {"e": params["a"] ** 3, "f": (params["b"][0]["c"][1] / 0.5)}
 
-    expected = second_derivative(func, params)["derivative"]
+    expected = second_derivative(func, params).derivative
     hessian = block_tree_to_hessian(expected, func(params), params)
     got = hessian_to_block_tree(hessian, func(params), params)
     _tree_equal_up_to_dtype(expected, got)

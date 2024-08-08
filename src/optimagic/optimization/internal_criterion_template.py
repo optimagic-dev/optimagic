@@ -112,13 +112,12 @@ def internal_criterion_and_derivative_template(
 
         options = numdiff_options.copy()
         options["key"] = "relevant"
-        options["return_func_value"] = True
 
         try:
-            derivative_dict = first_derivative(func, x, **options)
-            new_derivative = derivative_dict["derivative"]
-            new_criterion = derivative_dict["func_value"]["relevant"]
-            new_external_criterion = derivative_dict["func_value"]["full"]
+            numerical_derivative = first_derivative(func, x, **options)
+            new_derivative = numerical_derivative.derivative
+            new_criterion = numerical_derivative.func_value["relevant"]
+            new_external_criterion = numerical_derivative.func_value["full"]
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:

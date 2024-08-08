@@ -59,18 +59,16 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
         func=func,
         method=method,
         params=fix["params_np"],
-        n_steps=1,
-        base_steps=None,
+        steps=None,
         bounds=bounds,
         min_steps=1e-8,
-        step_ratio=2.0,
         f0=func(fix["params_np"]),
         n_cores=1,
     )
 
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
 
-    aaae(calculated["derivative"], expected, decimal=6)
+    aaae(calculated.derivative, expected, decimal=6)
 
 
 def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
@@ -78,7 +76,7 @@ def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
     calculated = first_derivative(func=func, params=fix["params_np"], n_cores=1)
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
-    aaae(calculated["derivative"], expected, decimal=6)
+    aaae(calculated.derivative, expected, decimal=6)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -90,14 +88,13 @@ def test_first_derivative_gradient(binary_choice_inputs, method):
         func=func,
         method=method,
         params=fix["params_np"],
-        n_steps=1,
         f0=func(fix["params_np"]),
         n_cores=1,
     )
 
     expected = logit_loglike_gradient(fix["params_np"], fix["y"], fix["x"])
 
-    aaae(calculated["derivative"], expected, decimal=4)
+    aaae(calculated.derivative, expected, decimal=4)
 
 
 @pytest.mark.parametrize("method", methods_second_derivative)
@@ -109,15 +106,14 @@ def test_second_derivative_hessian(binary_choice_inputs, method):
         func=func,
         method=method,
         params=fix["params_np"],
-        n_steps=1,
         f0=func(fix["params_np"]),
         n_cores=1,
     )
 
     expected = logit_loglike_hessian(fix["params_np"], fix["y"], fix["x"])
 
-    assert np.max(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-2)
-    assert np.mean(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-3)
+    assert np.max(np.abs(calculated.derivative - expected)) < 1.5 * 10 ** (-2)
+    assert np.mean(np.abs(calculated.derivative - expected)) < 1.5 * 10 ** (-3)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -127,7 +123,7 @@ def test_first_derivative_scalar(method):  # noqa: ARG001
 
     calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
-    assert calculated["derivative"] == expected
+    assert calculated.derivative == expected
 
 
 @pytest.mark.parametrize("method", methods_second_derivative)
@@ -138,33 +134,7 @@ def test_second_derivative_scalar(method):  # noqa: ARG001
     calculated = second_derivative(f, 3.0, n_cores=1)
     expected = 2.0
 
-    assert np.abs(calculated["derivative"] - expected) < 1.5 * 10 ** (-6)
-
-
-@pytest.mark.parametrize("method", methods)
-def test_first_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
-    def f(x):
-        return x**2
-
-    calculated = first_derivative(
-        f, 3.0, return_func_value=True, return_info=False, n_cores=1
-    )
-    expected = NumdiffResult(derivative=6.0, func_value=9.0)
-    assert calculated == expected
-
-
-@pytest.mark.parametrize("method", methods_second_derivative)
-def test_second_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
-    def f(x):
-        return x**3
-
-    calculated = second_derivative(
-        f, 3.0, return_func_value=True, return_info=False, n_cores=1
-    )
-    expected = NumdiffResult(derivative=18.0, func_value=27.0)
-
-    assert calculated.func_value == expected.func_value
-    assert np.abs(calculated.derivative - expected.derivative) < 1.5 * 10 ** (-6)
+    assert np.abs(calculated.derivative - expected) < 1.5 * 10 ** (-6)
 
 
 def test_nan_skipping_batch_evaluator():
@@ -236,28 +206,32 @@ def example_function_jacobian_fixtures():
     return {"func": f, "func_prime": fprime}
 
 
+@pytest.mark.filterwarnings("ignore:The `n_steps` argument")
 def test_first_derivative_gradient_richardson(example_function_gradient_fixtures):
     f = example_function_gradient_fixtures["func"]
     fprime = example_function_gradient_fixtures["func_prime"]
 
     true_fprime = fprime(np.ones(3))
     scipy_fprime = approx_derivative(f, np.ones(3))
+
     our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(scipy_fprime, our_fprime["derivative"])
-    aaae(true_fprime, our_fprime["derivative"])
+    aaae(scipy_fprime, our_fprime.derivative)
+    aaae(true_fprime, our_fprime.derivative)
 
 
+@pytest.mark.filterwarnings("ignore:The `n_steps` argument")
 def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures):
     f = example_function_jacobian_fixtures["func"]
     fprime = example_function_jacobian_fixtures["func_prime"]
 
     true_fprime = fprime(np.ones(3))
     scipy_fprime = approx_derivative(f, np.ones(3))
+
     our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(scipy_fprime, our_fprime["derivative"])
-    aaae(true_fprime, our_fprime["derivative"])
+    aaae(scipy_fprime, our_fprime.derivative)
+    aaae(true_fprime, our_fprime.derivative)
 
 
 def test_convert_evaluation_data_to_frame():
@@ -373,6 +347,7 @@ def test_is_scalar_nan():
     assert not _is_scalar_nan(np.array([np.nan]))
 
 
+@pytest.mark.filterwarnings("ignore:The dictionary access for")
 def test_numdiff_result_getitem():
     res = NumdiffResult(
         derivative=1,
@@ -380,7 +355,6 @@ def test_numdiff_result_getitem():
         _func_evals=pd.DataFrame([0, 1]),
         _derivative_candidates=pd.DataFrame([2, 3]),
     )
-
     assert res["derivative"] == res.derivative
     assert res["func_value"] == res.func_value
     assert_frame_equal(res["_func_evals"], res._func_evals)

@@ -82,7 +82,7 @@ def jac(params, func_kwargs):
         func_kwargs=func_kwargs,
     )
 
-    g = derivative_dict["derivative"]
+    g = derivative_dict.derivative
     return g.to_numpy()
 
 

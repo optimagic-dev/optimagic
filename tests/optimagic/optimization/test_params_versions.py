@@ -30,7 +30,7 @@ def flexible_sos_ls_derivative(params):
         key="root_contributions",
     )
 
-    return deriv_dict["derivative"]
+    return deriv_dict.derivative
 
 
 PARAMS = [

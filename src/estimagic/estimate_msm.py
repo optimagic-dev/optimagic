@@ -314,7 +314,7 @@ def estimate_msm(
                 upper=internal_estimates.upper_bounds,
             ),
             **numdiff_options,
-        )["derivative"]
+        ).derivative
 
     # ==================================================================================
     # Calculate external jac (if no constraints and not closed form )
