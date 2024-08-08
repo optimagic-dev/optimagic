@@ -264,18 +264,18 @@ def replace_and_warn_about_deprecated_multistart_options(options):
 
 
 def replace_and_warn_about_deprecated_base_steps(
-    steps,
+    step_size,
     base_steps,
 ):
     if base_steps is not None:
         msg = (
             "The `base_steps` argument is deprecated and will be removed alongside "
-            "Richardson extrapolation in optimagic version 0.6.0. To specify steps "
-            "for Richardson extrapolation, use the `steps` argument instead."
+            "Richardson extrapolation in optimagic version 0.6.0. To specify the "
+            "step size use the `step_size` argument instead."
         )
         warnings.warn(msg, FutureWarning)
 
-        if steps is None:
-            steps = base_steps
+        if step_size is None:
+            step_size = base_steps
 
-    return steps
+    return step_size
