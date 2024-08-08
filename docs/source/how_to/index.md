@@ -11,6 +11,7 @@ maxdepth: 1
 ---
 how_to_criterion_function
 how_to_start_parameters
+how_to_derivatives
 how_to_algorithm_selection
 how_to_bounds
 how_to_constraints
