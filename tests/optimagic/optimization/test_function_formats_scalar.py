@@ -3,7 +3,9 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from numpy.typing import NDArray
 from optimagic import mark, maximize, minimize
+from optimagic.exceptions import InvalidFunctionError
 from optimagic.optimization.fun_value import FunctionValue, ScalarFunctionValue
 
 # ======================================================================================
@@ -346,13 +348,87 @@ def test_invalid_marker_for_fun_and_jac_in_minimize():
         )
 
 
-# scalar functions (marked or not) return arrays or wrong function values
+def invalid_sos(x):
+    return x
 
 
-# scalar fun and jax (marked or not) returns arrays or wrong function values
+@mark.scalar
+def invalid_marked_sos(x):
+    return x
 
 
-# scalar function with jacobian as derivative
+def invalid_typed_sos_array(x: np.ndarray) -> NDArray[np.float64]:
+    return x
 
 
-# scalar function with jacobian as fun and jac
+def invalid_typed_sos_value(x: np.ndarray) -> ScalarFunctionValue:
+    return ScalarFunctionValue(x)
+
+
+def invalid_sos_with_info(x):
+    return FunctionValue(x, info={"x": x})
+
+
+INVALID_FUNS = [
+    invalid_sos,
+    invalid_marked_sos,
+    invalid_typed_sos_array,
+    invalid_typed_sos_value,
+    invalid_sos_with_info,
+]
+
+
+@pytest.mark.parametrize("fun", INVALID_FUNS)
+def test_minimize_with_invalid_fun(fun):
+    with pytest.raises(InvalidFunctionError):
+        minimize(
+            fun=fun,
+            params=np.array([1, 2, 3]),
+            algorithm="scipy_lbfgsb",
+        )
+
+
+def invalid_jac(x):
+    return np.eye(len(x))
+
+
+@mark.scalar
+def invalid_marked_jac(x):
+    return np.eye(len(x))
+
+
+INVALID_JACS = [invalid_jac, invalid_marked_jac]
+
+
+@pytest.mark.parametrize("jac", INVALID_JACS)
+def test_minimize_with_invalid_jac(jac):
+    with pytest.raises(Exception):  # noqa: B017
+        minimize(
+            fun=sos,
+            params=np.array([1, 2, 3]),
+            algorithm="scipy_lbfgsb",
+            jac=jac,
+        )
+
+
+def invalid_fun_and_jac(x):
+    return x, np.eye(len(x))
+
+
+@mark.scalar
+def invalid_marked_fun_and_jac(x):
+    return x, np.eye(len(x))
+
+
+INVALID_FUN_AND_JACS = [invalid_fun_and_jac, invalid_marked_fun_and_jac]
+
+
+@pytest.mark.parametrize("fun_and_jac", INVALID_FUN_AND_JACS)
+def test_minimize_with_invalid_fun_and_jac(fun_and_jac):
+    with pytest.raises(Exception):  # noqa: B017
+        minimize(
+            fun=sos,
+            params=np.array([1, 2, 3]),
+            algorithm="scipy_lbfgsb",
+            fun_and_jac=fun_and_jac,
+        )

@@ -375,7 +375,7 @@ def create_optimization_problem(
         problem_type = infer_aggregation_level(fun)
 
     if problem_type == AggregationLevel.LEAST_SQUARES and direction == "maximize":
-        raise ValueError("Least-squares problems cannot be maximized.")
+        raise InvalidFunctionError("Least-squares problems cannot be maximized.")
 
     # ==================================================================================
     # process the fun_eval; Can be removed once the first evaluation gets moved to
