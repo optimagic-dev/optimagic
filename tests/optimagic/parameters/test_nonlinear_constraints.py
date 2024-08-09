@@ -7,6 +7,7 @@ import pytest
 from numpy.testing import assert_array_equal
 from optimagic.differentiation.numdiff_options import NumDiffOptions
 from optimagic.exceptions import InvalidConstraintError
+from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.nonlinear_constraints import (
     _check_validity_and_return_evaluation,
     _get_components,
@@ -231,12 +232,19 @@ def test_process_nonlinear_constraints():
 
     params = np.array([1.0])
 
+    bounds = Bounds()
+
     converter = Converter()
 
     numdiff_options = NumDiffOptions()
 
     got = process_nonlinear_constraints(
-        nonlinear_constraints, params, converter, numdiff_options, skip_checks=False
+        nonlinear_constraints,
+        params=params,
+        bounds=bounds,
+        converter=converter,
+        numdiff_options=numdiff_options,
+        skip_checks=False,
     )
 
     expected = [

@@ -393,6 +393,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     internal_constraints = process_nonlinear_constraints(
         nonlinear_constraints=nonlinear_constraints,
         params=problem.params,
+        bounds=problem.bounds,
         converter=converter,
         numdiff_options=problem.numdiff_options,
         skip_checks=problem.skip_checks,
