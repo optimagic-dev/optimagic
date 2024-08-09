@@ -12,13 +12,30 @@ OutputType = TypeVar("OutputType", bound=DictLikeAccess)
 
 
 class AbstractKeyValueStore(Generic[InputType, OutputType], ABC):
-    def __init__(self, input_type: Type[InputType], output_type: Type[OutputType]):
+    def __init__(
+        self,
+        input_type: Type[InputType],
+        output_type: Type[OutputType],
+        primary_key: str,
+    ):
         if not (is_dataclass(input_type) and is_dataclass(output_type)):
             raise ValueError("Arguments input_type and output_type must by dataclasses")
 
+        output_fields = {f.name for f in fields(output_type)}
+        if primary_key not in output_fields:
+            raise ValueError(
+                f"Primary key {primary_key} not found in output_type fields "
+                f"{fields(output_type)}"
+            )
+
         self._output_type = output_type
         self._input_type = input_type
+        self._primary_key = primary_key
         self._supported_fields = {f.name for f in fields(input_type)}
+
+    @property
+    def primary_key(self) -> str:
+        return self._primary_key
 
     def insert(self, value: InputType | dict[str, Any]) -> None:
         self._check_fields(value)

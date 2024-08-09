@@ -88,7 +88,7 @@ class SQLAlchemyTableStore(AbstractKeyValueStore[InputType, OutputType]):
         self._engine = db_config.create_engine()
         self._table_config = table_config
         self._table = table_config.create_table(db_config.metadata, self._engine)
-        super().__init__(input_type, output_type)
+        super().__init__(input_type, output_type, self._table_config.primary_key)
 
     @property
     def column_names(self) -> list[str]:
@@ -130,7 +130,7 @@ class SQLAlchemyTableStore(AbstractKeyValueStore[InputType, OutputType]):
 
     def _pre_process(self, value: InputType | dict[str, Any]) -> dict[str, Any]:
         if not isinstance(value, dict):
-            insert_values = asdict(value)  # type:ignore
+            insert_values = asdict(value)
         else:
             insert_values = value
         return insert_values

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -24,6 +24,17 @@ class ExistenceStrategy(str, Enum):
     RAISE = "raise"
     EXTEND = "extend"
     REPLACE = "replace"
+
+
+ExistenceStrategyLiteral = Literal["raise", "extend", "replace"]
+
+
+class OptimizationType(str, Enum):
+    MINIMIZE = "minimize"
+    MAXIMIZE = "maximize"
+
+
+OptimizationTypeLiteral = Literal["minimize", "maximize"]
 
 
 @dataclass(frozen=True)
@@ -98,4 +109,4 @@ class IterationHistory(DictLikeAccess):
 class MultiStartIterationHistory(TupleLikeAccess):
     history: IterationHistory
     local_histories: list[IterationHistory] | None = None
-    exploration: list[Any] | None = None
+    exploration: IterationHistory | None = None
