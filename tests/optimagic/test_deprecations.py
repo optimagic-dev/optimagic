@@ -31,8 +31,20 @@ from estimagic import (
     traceback_report,
     utilities,
 )
+from numpy.testing import assert_almost_equal as aaae
+from optimagic.deprecations import (
+    convert_dict_to_function_value,
+    infer_problem_type_from_dict_output,
+    is_dict_output,
+)
 from optimagic.differentiation.derivatives import NumdiffResult
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import AggregationLevel
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0
@@ -457,8 +469,13 @@ def test_old_bounds_are_deprecated_in_second_derivative(bounds_kwargs):
 def test_old_bounds_are_deprecated_in_estimate_ml(bounds_kwargs):
     msg = "Specifying bounds via the arguments"
     with pytest.warns(FutureWarning, match=msg):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
         em.estimate_ml(
-            loglike=lambda x: {"contributions": -(x**2), "value": -x @ x},
+            loglike=loglike,
             params=np.arange(3),
             optimize_options={"algorithm": "scipy_lbfgsb"},
             **bounds_kwargs,
@@ -510,6 +527,41 @@ def test_old_bounds_are_deprecated_in_slice_plot():
             lower_bounds=np.full(3, -1),
             upper_bounds=np.full(3, 2),
         )
+
+
+def test_is_dict_output():
+    assert is_dict_output({"value": 1})
+    assert not is_dict_output(1)
+
+
+def test_infer_problem_type_from_dict_output():
+    assert infer_problem_type_from_dict_output({"value": 1}) == AggregationLevel.SCALAR
+    assert (
+        infer_problem_type_from_dict_output({"value": 1, "root_contributions": 2})
+        == AggregationLevel.LEAST_SQUARES
+    )
+    assert (
+        infer_problem_type_from_dict_output({"value": 1, "contributions": 2})
+        == AggregationLevel.LIKELIHOOD
+    )
+
+
+def test_convert_value_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 1})
+    assert isinstance(got, ScalarFunctionValue)
+    assert got.value == 1
+
+
+def test_convert_root_contributions_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 5, "root_contributions": [1, 2]})
+    assert isinstance(got, LeastSquaresFunctionValue)
+    assert got.value == [1, 2]
+
+
+def test_convert_contributions_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 5, "contributions": [1, 4]})
+    assert isinstance(got, LikelihoodFunctionValue)
+    assert got.value == [1, 4]
 
 
 def test_old_scaling_options_are_deprecated_in_minimize():
@@ -696,3 +748,82 @@ def test_numdiff_result_dict_access_is_deprecated():
     res = NumdiffResult(derivative=1)
     with pytest.warns(FutureWarning, match=msg):
         _ = res["derivative"]
+
+
+def test_key_argument_is_deprecated_in_first_derivative():
+    with pytest.warns(FutureWarning, match="The `key` argument in"):
+        om.first_derivative(lambda x: {"value": x @ x}, np.arange(3), key="value")
+
+
+def test_key_argument_is_deprecated_in_second_derivative():
+    with pytest.warns(FutureWarning, match="The `key` argument in"):
+        om.second_derivative(lambda x: {"value": x @ x}, np.arange(3), key="value")
+
+
+def test_jac_dicts_are_deprecated_in_minimize():
+    msg = "Specifying a dictionary of jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            jac={"value": lambda x: 2 * x},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_jac_dicts_are_deprecated_in_maximize():
+    msg = "Specifying a dictionary of jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            jac={"value": lambda x: -2 * x},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_and_jac_dicts_are_deprecated_in_minimize():
+    msg = "Specifying a dictionary of fun_and_jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            fun_and_jac={"value": lambda x: (x @ x, 2 * x)},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_and_jac_dicts_are_deprecated_in_maximize():
+    msg = "Specifying a dictionary of fun_and_jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            fun_and_jac={"value": lambda x: (-x @ x, -2 * x)},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_with_dict_return_is_deprecated_in_minimize():
+    msg = "Returning a dictionary with the special keys"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.minimize(
+            lambda x: {"value": x @ x},
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_with_dict_return_is_deprecated_in_slice_plot():
+    msg = "Functions that return dictionaries"
+    with pytest.warns(FutureWarning, match=msg):
+        om.slice_plot(
+            lambda x: {"value": x @ x},
+            np.arange(3),
+            bounds=om.Bounds(lower=np.zeros(3), upper=np.ones(3) * 5),
+        )

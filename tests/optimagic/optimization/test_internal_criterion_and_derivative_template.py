@@ -7,12 +7,11 @@ from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.decorators import AlgoInfo
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.examples.criterion_functions import (
-    sos_criterion_and_gradient,
-    sos_dict_criterion,
-    sos_dict_criterion_with_pd_objects,
     sos_gradient,
-    sos_pandas_gradient,
-    sos_scalar_criterion,
+)
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    ScalarFunctionValue,
 )
 from optimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
@@ -58,9 +57,32 @@ def base_inputs():
 
 
 directions = ["maximize", "minimize"]
-crits = [sos_dict_criterion, sos_dict_criterion_with_pd_objects, sos_scalar_criterion]
-derivs = [sos_gradient, sos_pandas_gradient, None]
-crits_and_derivs = [sos_criterion_and_gradient, None]
+
+
+def sos_ls(params):
+    x = params["value"].to_numpy()
+    return LeastSquaresFunctionValue(value=x)
+
+
+def sos_scalar(params):
+    x = params["value"].to_numpy()
+    return ScalarFunctionValue(value=x @ x)
+
+
+def sos_ls_pd(params):
+    return LeastSquaresFunctionValue(value=params["value"])
+
+
+def sos_fun_and_gradient(params):
+    x = params["value"].to_numpy()
+    grad = params.copy()
+    grad["value"] = 2 * x
+    return ScalarFunctionValue(value=x @ x), grad
+
+
+crits = [sos_ls, sos_ls_pd, sos_scalar]
+derivs = [sos_gradient, None]
+crits_and_derivs = [sos_fun_and_gradient, None]
 
 test_cases = list(itertools.product(directions, crits, derivs, crits_and_derivs))
 
@@ -119,7 +141,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
         params=base_inputs["params"],
         constraints=None,
         bounds=None,
-        func_eval=sos_scalar_criterion(base_inputs["params"]),
+        func_eval=sos_scalar(base_inputs["params"]),
         primary_key="value",
         derivative_eval=None,
     )
@@ -132,11 +154,11 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
 
     inputs["error_handling"] = "continue"
     inputs["x"] = inputs["x"] + 10
-    inputs["criterion"] = sos_scalar_criterion
+    inputs["criterion"] = sos_scalar
     inputs["derivative"] = sos_gradient
     inputs["criterion_and_derivative"] = raising_crit_and_deriv
     inputs["direction"] = direction
-    inputs["error_penalty_func"] = lambda x, task: (42, 52)  # noqa: ARG005
+    inputs["error_penalty_func"] = lambda x, task: (ScalarFunctionValue(42), 52)  # noqa: ARG005
 
     with pytest.warns():
         calc_criterion, calc_derivative = internal_criterion_and_derivative_template(

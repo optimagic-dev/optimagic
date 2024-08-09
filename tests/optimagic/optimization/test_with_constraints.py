@@ -14,23 +14,25 @@ import pandas as pd
 import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic import mark
 from optimagic.examples.criterion_functions import (
-    rosenbrock_dict_criterion,
+    rhe_function_value,
+    rhe_gradient,
+    rosenbrock_function_value,
     rosenbrock_gradient,
-    rotated_hyper_ellipsoid_dict_criterion,
-    rotated_hyper_ellipsoid_gradient,
-    sos_dict_criterion,
     sos_gradient,
-    sos_jacobian,
+    sos_likelihood_jacobian,
+    sos_ls,
     sos_ls_jacobian,
     trid_gradient,
-    trid_scalar_criterion,
+    trid_scalar,
 )
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.parameters.bounds import Bounds
 
 
+@mark.likelihood
 def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
 
@@ -49,18 +51,16 @@ def logit_loglike(params, y, x):
     else:
         p = params
     q = 2 * y - 1
-    contribs = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
+    loglikes = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
 
-    out = {"value": contribs.sum(), "contributions": contribs}
-
-    return out
+    return loglikes
 
 
 FUNC_INFO = {
     "sos": {
-        "criterion": sos_dict_criterion,
+        "criterion": sos_ls,
         "gradient": sos_gradient,
-        "jacobian": sos_jacobian,
+        "jacobian": sos_likelihood_jacobian,
         "ls_jacobian": sos_ls_jacobian,
         "default_result": np.zeros(3),
         "fixed_result": [1, 0, 0],
@@ -69,8 +69,8 @@ FUNC_INFO = {
         "probability_result": [0.5, 0.5, 0],
     },
     "rotated_hyper_ellipsoid": {
-        "criterion": rotated_hyper_ellipsoid_dict_criterion,
-        "gradient": rotated_hyper_ellipsoid_gradient,
+        "criterion": rhe_function_value,
+        "gradient": rhe_gradient,
         "entries": ["value", "contributions", "root_contributions"],
         "default_result": np.zeros(3),
         "fixed_result": [1, 0, 0],
@@ -78,7 +78,7 @@ FUNC_INFO = {
         "probability_result": [0.4, 0.6, 0],
     },
     "rosenbrock": {
-        "criterion": rosenbrock_dict_criterion,
+        "criterion": rosenbrock_function_value,
         "gradient": rosenbrock_gradient,
         "entries": ["value", "contributions"],
         "default_result": np.ones(3),
@@ -86,7 +86,7 @@ FUNC_INFO = {
         "probability_result": "unknown",
     },
     "trid": {
-        "criterion": trid_scalar_criterion,
+        "criterion": trid_scalar,
         "gradient": trid_gradient,
         "entries": ["value"],
         "default_result": [3, 4, 3],

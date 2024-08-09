@@ -48,10 +48,10 @@ from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.optimization.process_results import process_internal_optimizer_result
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
-    aggregate_func_output_to_value,
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
+from optimagic.typing import AggregationLevel
 
 
 def maximize(
@@ -106,6 +106,10 @@ def maximize(
     TODO: Write docstring after enhancement proposals are implemented.
 
     Args:
+        fun: The objective function of a scalar, least-squares or likelihood
+            optimization problem. Non-scalar objective functions have to be marked
+            with the `mark.likelihood` or `mark.least_squares` decorators. `fun` maps
+            params and fun_kwargs to an objective value.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
             way to specify bounds is an `optimagic.Bounds` object that collects lower,
             upper, soft_lower and soft_upper bounds. The soft bounds are used for
@@ -217,6 +221,9 @@ def minimize(
     TODO: Write docstring after enhancement proposals are implemented.
 
     Args:
+        fun: The objective function of a scalar or likelihood optimization problem.
+            Non-scalar objective functions have to be marked with the `mark.likelihood`
+            decorator. `fun` maps params and fun_kwargs to an objective value.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
             way to specify bounds is an `optimagic.Bounds` object that collects lower,
             upper, soft_lower and soft_upper bounds. The soft bounds are used for
@@ -301,13 +308,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     # Do first evaluation of user provided functions
     # ==================================================================================
-    try:
-        first_crit_eval = problem.fun(problem.params)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception as e:
-        msg = "Error while evaluating criterion at start params."
-        raise InvalidFunctionError(msg) from e
+    first_crit_eval = problem.fun_eval
 
     # do first derivative evaluation (if given)
     if problem.jac is not None:
@@ -342,7 +343,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         params=problem.params,
         constraints=constraints,
         bounds=problem.bounds,
-        func_eval=first_crit_eval,
+        func_eval=first_crit_eval.value,
         primary_key=problem.algo_info.primary_criterion_entry,
         scaling=problem.scaling,
         derivative_eval=used_deriv,
@@ -382,9 +383,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     error_penalty_func = get_error_penalty_function(
         error_handling=problem.error_handling,
         start_x=internal_params.values,
-        start_criterion=converter.func_to_internal(first_crit_eval),
+        start_criterion=first_crit_eval,
         error_penalty=problem.error_penalty,
-        primary_key=problem.algo_info.primary_criterion_entry,
+        solver_type=problem.algo_info.solver_type,
         direction=problem.direction,
     )
 
@@ -485,10 +486,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Process the result
     # ==================================================================================
 
-    _scalar_start_criterion = aggregate_func_output_to_value(
-        converter.func_to_internal(first_crit_eval),
-        problem.algo_info.primary_criterion_entry,
-    )
+    _scalar_start_criterion = first_crit_eval.internal_value(AggregationLevel.SCALAR)
 
     fixed_result_kwargs = {
         "start_fun": _scalar_start_criterion,
@@ -501,7 +499,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     res = process_internal_optimizer_result(
         raw_res,
         converter=converter,
-        primary_key=problem.algo_info.primary_criterion_entry,
+        solver_type=problem.algo_info.solver_type,
         fixed_kwargs=fixed_result_kwargs,
         skip_checks=problem.skip_checks,
     )

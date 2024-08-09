@@ -1,10 +1,13 @@
-from functools import partial
+from functools import partial, wraps
 
 import numpy as np
 
+from optimagic import mark
 from optimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from optimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from optimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
+from optimagic.shared.process_user_function import infer_aggregation_level
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng
 
 
@@ -194,7 +197,7 @@ def _get_raw_problems(name):
                 problem = v.copy()
                 raw_func = problem["fun"]
 
-                problem["fun"] = partial(_step_func, raw_func=raw_func)
+                problem["fun"] = wraps(raw_func)(partial(_step_func, raw_func=raw_func))
                 raw_problems[f"{k}_with_steps"] = problem
 
         for k, v in CARTIS_ROBERTS_PROBLEMS.items():
@@ -221,6 +224,14 @@ def _create_problem_inputs(
     else:
         scaling_factor = None
 
+    problem_type = infer_aggregation_level(specification["fun"])
+
+    problem_type_to_marker = {
+        AggregationLevel.SCALAR: mark.scalar,
+        AggregationLevel.LIKELIHOOD: mark.likelihood,
+        AggregationLevel.LEAST_SQUARES: mark.least_squares,
+    }
+
     _criterion = partial(
         _internal_criterion_template,
         criterion=specification["fun"],
@@ -229,6 +240,8 @@ def _create_problem_inputs(
         scaling_factor=scaling_factor,
         rng=rng,
     )
+
+    _criterion = problem_type_to_marker[problem_type](_criterion)
 
     inputs = {"fun": _criterion, "params": _x}
     return inputs
@@ -274,15 +287,7 @@ def _internal_criterion_template(
 
     noisy_critval = critval + noise
 
-    if isinstance(noisy_critval, np.ndarray):
-        out = {
-            "root_contributions": noisy_critval,
-            "value": noisy_critval @ noisy_critval,
-        }
-    else:
-        out = noisy_critval
-
-    return out
+    return noisy_critval
 
 
 def _get_combined_noise(fval, additive_options, multiplicative_options, rng):

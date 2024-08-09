@@ -25,7 +25,6 @@ from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
     update_step_status,
 )
-from optimagic.parameters.conversion import aggregate_func_output_to_value
 from optimagic.utilities import get_rng
 
 
@@ -301,6 +300,15 @@ def _draw_exploration_sample(
     return sample_scaled
 
 
+def _aggregate_func_output_to_value(f_eval, primary_key):
+    if primary_key == "value":
+        return f_eval
+    elif primary_key == "contributions":
+        return f_eval.sum()
+    elif primary_key == "root_contributions":
+        return f_eval @ f_eval
+
+
 def run_explorations(
     func, primary_key, sample, batch_evaluator, n_cores, step_id, error_handling
 ):
@@ -359,8 +367,9 @@ def run_explorations(
         # If desired, errors are caught inside criterion function.
         error_handling="raise",
     )
-
-    values = [aggregate_func_output_to_value(c, primary_key) for c in criterion_outputs]
+    values = [
+        _aggregate_func_output_to_value(c, primary_key) for c in criterion_outputs
+    ]
 
     raw_values = np.array(values)
 
@@ -479,7 +488,7 @@ def update_convergence_state(
             valid_new_y.append(res["solution_criterion"])
         else:
             valid_new_y.append(
-                aggregate_func_output_to_value(
+                _aggregate_func_output_to_value(
                     f_eval=res["solution_criterion"],
                     primary_key=primary_key,
                 )

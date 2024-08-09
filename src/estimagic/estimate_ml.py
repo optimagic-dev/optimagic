@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
+from optimagic import deprecations, mark
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
@@ -13,6 +14,10 @@ from optimagic.differentiation.numdiff_options import (
     pre_process_numdiff_options,
 )
 from optimagic.exceptions import InvalidFunctionError, NotAvailableError
+from optimagic.optimization.fun_value import (
+    convert_fun_output_to_function_value,
+    enforce_return_type,
+)
 from optimagic.optimization.optimize import maximize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
@@ -22,6 +27,7 @@ from optimagic.parameters.space_conversion import InternalParams
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng, to_pickle
 
 from estimagic.ml_covs import (
@@ -79,9 +85,8 @@ def estimate_ml(
 
     Args:
         loglike (callable): Likelihood function that takes a params (and potentially
-            other keyword arguments) and returns a dictionary that has at least the
-            entries "value" (a scalar float) and "contributions" (a 1d numpy array or
-            pytree) with the log likelihood contribution per individual.
+            other keyword arguments) a pytree containing the likelihood contributions
+            for each observation or a FunctionValue object.
         params (pytree): A pytree containing the estimated or start parameters of the
             likelihood model. If the supplied parameters are estimated parameters, set
             optimize_options to False. Pytrees can be a numpy array, a pandas Series, a
@@ -146,6 +151,7 @@ def estimate_ml(
         LikelihoodResult: A LikelihoodResult object.
 
     """
+
     # ==================================================================================
     # handle deprecations
     # ==================================================================================
@@ -159,6 +165,8 @@ def estimate_ml(
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
+
+    loglike = mark.likelihood(loglike)
 
     bounds = pre_process_bounds(bounds)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
@@ -197,7 +205,8 @@ def estimate_ml(
     # ==================================================================================
     # Calculate estimates via maximization (if necessary)
     # ==================================================================================
-
+    # Note: We do not need to handle deprecations for the optimization because that
+    # is already done inside `maximize`.
     if is_optimized:
         estimates = params
         opt_res = None
@@ -249,6 +258,19 @@ def estimate_ml(
         hessian_eval = None
 
     # ==================================================================================
+    # Handle deprecated function output
+    # ==================================================================================
+    if deprecations.is_dict_output(loglike_eval):
+        deprecations.throw_dict_output_warning()
+        loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
+        loglike = deprecations.replace_dict_output(loglike)
+    else:
+        loglike_eval = convert_fun_output_to_function_value(
+            loglike_eval, AggregationLevel.LIKELIHOOD
+        )
+        loglike = enforce_return_type(AggregationLevel.LIKELIHOOD)(loglike)
+
+    # ==================================================================================
     # Get the converter for params and function outputs
     # ==================================================================================
 
@@ -256,7 +278,7 @@ def estimate_ml(
         params=estimates,
         constraints=constraints,
         bounds=bounds,
-        func_eval=loglike_eval,
+        func_eval=loglike_eval.value,
         primary_key="contributions",
         derivative_eval=jacobian_eval,
     )
@@ -273,8 +295,12 @@ def estimate_ml(
 
         def func(x):
             p = converter.params_from_internal(x)
-            loglike_eval = loglike(p, **loglike_kwargs)["contributions"]
-            out = converter.func_to_internal(loglike_eval)
+            loglike_eval = loglike(p, **loglike_kwargs)
+            if deprecations.is_dict_output(loglike_eval):
+                deprecations.throw_dict_output_warning()
+                loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
+
+            out = loglike_eval.internal_value(AggregationLevel.LIKELIHOOD)
             return out
 
         options = asdict(jacobian_numdiff_options)
@@ -295,9 +321,7 @@ def estimate_ml(
         int_jac = None
 
     if constraints in [None, []] and jacobian_eval is None and int_jac is not None:
-        loglike_contribs = loglike_eval
-        if isinstance(loglike_contribs, dict) and "contributions" in loglike_contribs:
-            loglike_contribs = loglike_contribs["contributions"]
+        loglike_contribs = loglike_eval.value
 
         jacobian_eval = matrix_to_block_tree(
             int_jac,
@@ -321,8 +345,12 @@ def estimate_ml(
 
         def func(x):
             p = converter.params_from_internal(x)
-            loglike_eval = loglike(p, **loglike_kwargs)["value"]
-            out = converter.func_to_internal(loglike_eval)
+            loglike_eval = loglike(p, **loglike_kwargs)
+            if deprecations.is_dict_output(loglike_eval):
+                deprecations.throw_dict_output_warning()
+                loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
+
+            out = loglike_eval.internal_value(AggregationLevel.SCALAR)
             return out
 
         options = asdict(hessian_numdiff_options)

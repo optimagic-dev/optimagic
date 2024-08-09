@@ -1,5 +1,3 @@
-from itertools import product
-
 import numpy as np
 import optimagic as om
 import pandas as pd
@@ -7,8 +5,8 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.decorators import switch_sign
 from optimagic.examples.criterion_functions import (
-    sos_dict_criterion,
-    sos_scalar_criterion,
+    sos_ls,
+    sos_scalar,
 )
 from optimagic.logging.load_database import load_database
 from optimagic.logging.read_from_database import read_new_rows
@@ -17,7 +15,7 @@ from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.bounds import Bounds
 
-criteria = [sos_scalar_criterion, sos_dict_criterion]
+criteria = [sos_scalar, sos_ls]
 
 
 @pytest.fixture()
@@ -29,11 +27,15 @@ def params():
     return params
 
 
-test_cases = product(criteria, ["maximize", "minimize"])
+test_cases = [
+    (sos_scalar, "minimize"),
+    (sos_ls, "minimize"),
+    (sos_scalar, "maximize"),
+]
 
 
 @pytest.mark.parametrize("criterion, direction", test_cases)
-def test_multistart_minimize_with_sum_of_squares_at_defaults(
+def test_multistart_optimization_with_sum_of_squares_at_defaults(
     criterion, direction, params
 ):
     if direction == "minimize":
@@ -45,7 +47,7 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
         )
     else:
         res = maximize(
-            fun=switch_sign(sos_dict_criterion),
+            fun=switch_sign(criterion),
             params=params,
             algorithm="scipy_lbfgsb",
             multistart=True,
@@ -67,7 +69,7 @@ def test_multistart_with_existing_sample(params):
     options = om.MultistartOptions(sample=sample)
 
     res = minimize(
-        fun=sos_dict_criterion,
+        fun=sos_ls,
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=options,
@@ -88,7 +90,7 @@ def test_convergence_via_max_discoveries_works(params):
     )
 
     res = maximize(
-        fun=switch_sign(sos_dict_criterion),
+        fun=switch_sign(sos_scalar),
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=options,
@@ -105,7 +107,7 @@ def test_steps_are_logged_as_skipped_if_convergence(params):
     )
 
     minimize(
-        fun=sos_dict_criterion,
+        fun=sos_ls,
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=options,
@@ -124,7 +126,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
     )
 
     minimize(
-        fun=sos_dict_criterion,
+        fun=sos_ls,
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=options,
@@ -146,7 +148,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
 
 def test_with_non_transforming_constraints(params):
     res = minimize(
-        fun=sos_dict_criterion,
+        fun=sos_ls,
         params=params,
         constraints=[{"loc": [0, 1], "type": "fixed", "value": [0, 1]}],
         algorithm="scipy_lbfgsb",
@@ -159,7 +161,7 @@ def test_with_non_transforming_constraints(params):
 def test_error_is_raised_with_transforming_constraints(params):
     with pytest.raises(NotImplementedError):
         minimize(
-            fun=sos_dict_criterion,
+            fun=sos_ls,
             params=params,
             constraints=[{"loc": [0, 1], "type": "probability"}],
             algorithm="scipy_lbfgsb",
@@ -251,7 +253,7 @@ def test_with_ackley():
 
 def test_multistart_with_least_squares_optimizers():
     est = minimize(
-        fun=sos_dict_criterion,
+        fun=sos_ls,
         params=np.array([-1, 1.0]),
         bounds=Bounds(soft_lower=np.full(2, -10), soft_upper=np.full(2, 10)),
         algorithm="scipy_ls_trf",
