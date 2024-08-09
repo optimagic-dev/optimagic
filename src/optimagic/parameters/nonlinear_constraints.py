@@ -101,7 +101,6 @@ def _process_nonlinear_constraint(
     # ==================================================================================
 
     # process numdiff_options for numerical derivative
-    options = asdict(numdiff_options)
 
     if "derivative" in c:
         if not callable(c["derivative"]):
@@ -116,7 +115,7 @@ def _process_nonlinear_constraint(
                 p,
                 bounds=constraint_bounds,
                 error_handling="raise_strict",
-                **options,
+                **asdict(numdiff_options),
             ).derivative
 
     # To define the internal Jacobian we need to know which parameters enter the

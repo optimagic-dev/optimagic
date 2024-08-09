@@ -9,7 +9,7 @@ from optimagic import deprecations, mark
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
-    NumDiffOptionsPurpose,
+    NumdiffPurpose,
     get_default_numdiff_options,
     pre_process_numdiff_options,
 )
@@ -182,12 +182,12 @@ def estimate_ml(
 
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(
-            purpose=NumDiffOptionsPurpose.ESTIMATE_JACOBIAN
+            purpose=NumdiffPurpose.ESTIMATE_JACOBIAN
         )
 
     if hessian_numdiff_options is None:
         hessian_numdiff_options = get_default_numdiff_options(
-            purpose=NumDiffOptionsPurpose.ESTIMATE_HESSIAN
+            purpose=NumdiffPurpose.ESTIMATE_HESSIAN
         )
 
     is_optimized = optimize_options is False
@@ -311,8 +311,6 @@ def estimate_ml(
             out = loglike_eval.internal_value(AggregationLevel.LIKELIHOOD)
             return out
 
-        options = asdict(jacobian_numdiff_options)
-
         jac_res = first_derivative(
             func=func,
             params=internal_estimates.values,
@@ -321,7 +319,7 @@ def estimate_ml(
                 upper=internal_estimates.upper_bounds,
             ),
             error_handling="continue",
-            **options,
+            **asdict(jacobian_numdiff_options),
         )
 
         int_jac = jac_res.derivative
@@ -361,8 +359,6 @@ def estimate_ml(
             out = loglike_eval.internal_value(AggregationLevel.SCALAR)
             return out
 
-        options = asdict(hessian_numdiff_options)
-
         hess_res = second_derivative(
             func=func,
             params=internal_estimates.values,
@@ -371,7 +367,7 @@ def estimate_ml(
                 upper=internal_estimates.upper_bounds,
             ),
             error_handling="continue",
-            **options,
+            **asdict(hessian_numdiff_options),
         )
         int_hess = hess_res.derivative
     elif hess_case == "closed-form" and constraints:

@@ -8,7 +8,7 @@ from typing import Any, Callable, Literal, NamedTuple, cast
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import tree_equal, tree_flatten, tree_unflatten
+from pybaum import tree_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
 
 from optimagic import batch_evaluators, deprecations
@@ -23,7 +23,7 @@ from optimagic.differentiation.richardson_extrapolation import richardson_extrap
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import PyTree, PyTreeRegistry
+from optimagic.typing import PyTree
 
 
 @dataclass(frozen=True)
@@ -220,40 +220,57 @@ def first_derivative(
 
     if not fast_path:
         x, params_treedef = tree_flatten(params, registry=registry)
-        x = np.array(x, dtype=np.float64)
+        x = np.asarray(x, dtype=np.float64)
+
+        if not isinstance(scaling_factor, int | float):
+            scaling_factor, _ = tree_flatten(scaling_factor, registry=registry)
 
         if min_steps is not None:
-            min_steps = _handle_float_or_pytree_argument(
-                min_steps, params_treedef, registry, name="min_steps"
-            )
-
-        if scaling_factor is not None:
-            scaling_factor = _handle_float_or_pytree_argument(
-                scaling_factor, params_treedef, registry, name="scaling_factor"
-            )
+            min_steps, _ = tree_flatten(min_steps, registry=registry)
 
         if step_size is not None:
-            step_size = _handle_float_or_pytree_argument(
-                step_size, params_treedef, registry, name="step_size"
-            )
+            step_size, _ = tree_flatten(step_size, registry=registry)
 
     else:
         x = params.astype(np.float64)
 
         if min_steps is not None:
-            min_steps = _handle_float_or_pytree_argument_fast_path(
-                min_steps, x, name="min_steps"
-            )
-
-        if scaling_factor is not None:
-            scaling_factor = _handle_float_or_pytree_argument_fast_path(
-                scaling_factor, x, name="scaling_factor"
-            )
+            min_steps = np.atleast_1d(min_steps)
 
         if step_size is not None:
-            step_size = _handle_float_or_pytree_argument_fast_path(
-                step_size, x, name="step_size"
-            )
+            step_size = np.atleast_1d(step_size)
+
+    if isinstance(scaling_factor, int | float):
+        pass
+    elif len(scaling_factor) == len(x):
+        scaling_factor = np.asarray(scaling_factor, dtype=np.float64)
+    else:
+        raise ValueError(
+            "scaling_factor must be an int, a float or have the same structure as "
+            "params."
+        )
+
+    if min_steps is None:
+        pass
+    elif len(min_steps) == 1:
+        min_steps = np.full_like(x, min_steps[0])
+    elif len(min_steps) == len(x):
+        min_steps = np.asarray(min_steps, dtype=np.float64)
+    else:
+        raise ValueError(
+            "min_steps must be a float or have the same structure as params."
+        )
+
+    if step_size is None:
+        pass
+    elif len(step_size) == 1:
+        step_size = np.full_like(x, step_size[0])
+    elif len(step_size) == len(x):
+        step_size = np.asarray(step_size, dtype=np.float64)
+    else:
+        raise ValueError(
+            "step_size must be a float or have the same structure as params."
+        )
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -547,40 +564,57 @@ def second_derivative(
 
     if not fast_path:
         x, params_treedef = tree_flatten(params, registry=registry)
-        x = np.array(x, dtype=np.float64)
+        x = np.asarray(x, dtype=np.float64)
+
+        if not isinstance(scaling_factor, int | float):
+            scaling_factor, _ = tree_flatten(scaling_factor, registry=registry)
 
         if min_steps is not None:
-            min_steps = _handle_float_or_pytree_argument(
-                min_steps, params_treedef, registry, name="min_steps"
-            )
-
-        if scaling_factor is not None:
-            scaling_factor = _handle_float_or_pytree_argument(
-                scaling_factor, params_treedef, registry, name="scaling_factor"
-            )
+            min_steps, _ = tree_flatten(min_steps, registry=registry)
 
         if step_size is not None:
-            step_size = _handle_float_or_pytree_argument(
-                step_size, params_treedef, registry, name="step_size"
-            )
+            step_size, _ = tree_flatten(step_size, registry=registry)
 
     else:
         x = params.astype(np.float64)
 
         if min_steps is not None:
-            min_steps = _handle_float_or_pytree_argument_fast_path(
-                min_steps, x, name="min_steps"
-            )
-
-        if scaling_factor is not None:
-            scaling_factor = _handle_float_or_pytree_argument_fast_path(
-                scaling_factor, x, name="scaling_factor"
-            )
+            min_steps = np.atleast_1d(min_steps)
 
         if step_size is not None:
-            step_size = _handle_float_or_pytree_argument_fast_path(
-                step_size, x, name="step_size"
-            )
+            step_size = np.atleast_1d(step_size)
+
+    if isinstance(scaling_factor, int | float):
+        pass
+    elif len(scaling_factor) == len(x):
+        scaling_factor = np.asarray(scaling_factor, dtype=np.float64)
+    else:
+        raise ValueError(
+            "scaling_factor must be an int, a float or have the same structure as "
+            "params."
+        )
+
+    if min_steps is None:
+        pass
+    elif len(min_steps) == 1:
+        min_steps = np.full_like(x, min_steps[0])
+    elif len(min_steps) == len(x):
+        min_steps = np.asarray(min_steps, dtype=np.float64)
+    else:
+        raise ValueError(
+            "min_steps must be a float or have the same structure as params."
+        )
+
+    if step_size is None:
+        pass
+    elif len(step_size) == 1:
+        step_size = np.full_like(x, step_size[0])
+    elif len(step_size) == len(x):
+        step_size = np.asarray(step_size, dtype=np.float64)
+    else:
+        raise ValueError(
+            "step_size must be a float or have the same structure as params."
+        )
 
     unpacker = _process_unpacker(unpacker)
 
@@ -743,42 +777,6 @@ def second_derivative(
         )
         result = {**result, **info}
     return NumdiffResult(**result)
-
-
-def _handle_float_or_pytree_argument(
-    arg: PyTree | float, params_treedef: PyTree, registry: PyTreeRegistry, name: str
-) -> NDArray[np.float64] | float:
-    if isinstance(arg, float | int):
-        out = arg
-    else:
-        data, treedef = tree_flatten(arg, registry=registry)
-        if not tree_equal(treedef, params_treedef):
-            raise ValueError(
-                f"The argument {name} has to be a scalar or of the same type and "
-                "structure as the parameters."
-            )
-        out = np.array(data, dtype=np.float64)  # type: ignore
-    return out
-
-
-def _handle_float_or_pytree_argument_fast_path(
-    arg: PyTree | float, x: NDArray[np.float64], name: str
-) -> NDArray[np.float64] | float:
-    if isinstance(arg, float | int):
-        out = arg
-    elif _is_1d_array(arg):
-        out = np.array(arg, dtype=np.float64)  # type: ignore
-        if out.shape != x.shape:  # type: ignore
-            raise ValueError(
-                f"The argument {name} has to be a scalar or of the same type and "
-                "structure as the parameters, but has different shape."
-            )
-    else:
-        raise ValueError(
-            f"The argument {name} has to be a scalar or of the same type and "
-            "structure as the parameters."
-        )
-    return out
 
 
 def _is_1d_array(candidate: Any) -> bool:

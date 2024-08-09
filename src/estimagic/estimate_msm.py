@@ -13,7 +13,7 @@ from optimagic import deprecations, mark
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import (
-    NumDiffOptionsPurpose,
+    NumdiffPurpose,
     get_default_numdiff_options,
     pre_process_numdiff_options,
 )
@@ -183,7 +183,7 @@ def estimate_msm(
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(
-            purpose=NumDiffOptionsPurpose.ESTIMATE_JACOBIAN
+            purpose=NumdiffPurpose.ESTIMATE_JACOBIAN
         )
 
     if weights not in ["diagonal", "optimal", "identity"]:
@@ -313,8 +313,6 @@ def estimate_msm(
             out = np.array(tree_just_flatten(sim_mom, registry=registry))
             return out
 
-        options = asdict(jacobian_numdiff_options)
-
         int_jac = first_derivative(
             func=func,
             params=internal_estimates.values,
@@ -323,7 +321,7 @@ def estimate_msm(
                 upper=internal_estimates.upper_bounds,
             ),
             error_handling="continue",
-            **options,
+            **asdict(jacobian_numdiff_options),
         ).derivative
 
     # ==================================================================================

@@ -55,7 +55,7 @@ class InvalidMultistartError(OptimagicError):
     """Exception for invalid user provided multistart options."""
 
 
-class InvalidNumdiffError(OptimagicError):
+class InvalidNumdiffOptionsError(OptimagicError):
     """Exception for invalid user provided numdiff options."""
 
 

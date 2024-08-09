@@ -111,13 +111,11 @@ def internal_criterion_and_derivative_template(
             return criterion(p)
 
         try:
-            options = asdict(numdiff_options)
-
             numerical_derivative = first_derivative(
                 func,
                 x,
                 bounds=bounds,
-                **options,
+                **asdict(numdiff_options),
                 unpacker=lambda x: x.internal_value(algo_info.solver_type),
                 error_handling="raise_strict",
             )

@@ -5,11 +5,11 @@ from typing import Callable, Literal, TypedDict
 from typing_extensions import NotRequired
 
 from optimagic.config import DEFAULT_N_CORES
-from optimagic.exceptions import InvalidNumdiffError
+from optimagic.exceptions import InvalidNumdiffOptionsError
 
 
 @dataclass(frozen=True)
-class NumDiffOptions:
+class NumdiffOptions:
     """Options for numerical differentiation.
 
     Attributes:
@@ -55,8 +55,8 @@ class NumdiffOptionsDict(TypedDict):
 
 
 def pre_process_numdiff_options(
-    numdiff_options: NumDiffOptions | NumdiffOptionsDict | None,
-) -> NumDiffOptions | None:
+    numdiff_options: NumdiffOptions | NumdiffOptionsDict | None,
+) -> NumdiffOptions | None:
     """Convert all valid types of Numdiff options to optimagic.NumdiffOptions class.
 
     This just harmonizes multiple ways of specifying numdiff options into a single
@@ -74,17 +74,17 @@ def pre_process_numdiff_options(
             they do not have the correct type.
 
     """
-    if isinstance(numdiff_options, NumDiffOptions) or numdiff_options is None:
+    if isinstance(numdiff_options, NumdiffOptions) or numdiff_options is None:
         pass
     else:
         try:
-            numdiff_options = NumDiffOptions(**numdiff_options)
+            numdiff_options = NumdiffOptions(**numdiff_options)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
-            if isinstance(e, InvalidNumdiffError):
+            if isinstance(e, InvalidNumdiffOptionsError):
                 raise e
-            raise InvalidNumdiffError(
+            raise InvalidNumdiffOptionsError(
                 f"Invalid numdiff options of type: {type(numdiff_options)}. Numdiff "
                 "options must be of type optimagic.NumdiffOptions, a dictionary with a"
                 "subset of the keys {'method', 'step_size', 'scaling_factor', "
@@ -94,7 +94,7 @@ def pre_process_numdiff_options(
     return numdiff_options
 
 
-def _validate_attribute_types_and_values(options: NumDiffOptions) -> None:
+def _validate_attribute_types_and_values(options: NumdiffOptions) -> None:
     if options.method not in {
         "central",
         "forward",
@@ -102,38 +102,39 @@ def _validate_attribute_types_and_values(options: NumDiffOptions) -> None:
         "central_cross",
         "central_average",
     }:
-        raise InvalidNumdiffError(
+        raise InvalidNumdiffOptionsError(
             f"Invalid numdiff `method`: {options.method}. Numdiff `method` must be "
-            "one of 'central', 'forward', or 'backward'."
+            "one of 'central', 'forward', 'backward', 'central_cross', or "
+            "'central_average'."
         )
 
     if options.step_size is not None and (
-        not isinstance(options.step_size, int | float) or options.step_size <= 0
+        not isinstance(options.step_size, float) or options.step_size <= 0
     ):
-        raise InvalidNumdiffError(
-            f"Invalid numdiff `step_size`: {options.step_size}. Step size must be an "
-            "integer or float greater than 0."
+        raise InvalidNumdiffOptionsError(
+            f"Invalid numdiff `step_size`: {options.step_size}. Step size must be a "
+            "float greater than 0."
         )
 
     if (
         not isinstance(options.scaling_factor, int | float)
         or options.scaling_factor <= 0
     ):
-        raise InvalidNumdiffError(
+        raise InvalidNumdiffOptionsError(
             f"Invalid numdiff `scaling_factor`: {options.scaling_factor}. Scaling "
             "factor must be an integer or float greater than 0."
         )
 
     if options.min_steps is not None and (
-        not isinstance(options.min_steps, int | float) or options.min_steps <= 0
+        not isinstance(options.min_steps, float) or options.min_steps <= 0
     ):
-        raise InvalidNumdiffError(
+        raise InvalidNumdiffOptionsError(
             f"Invalid numdiff `min_steps`: {options.min_steps}. Minimum step "
-            "size must be an integer or float greater than 0."
+            "size must be a float greater than 0."
         )
 
     if not isinstance(options.n_cores, int) or options.n_cores <= 0:
-        raise InvalidNumdiffError(
+        raise InvalidNumdiffOptionsError(
             f"Invalid numdiff `n_cores`: {options.n_cores}. Number of cores "
             "must be an integer greater than 0."
         )
@@ -142,21 +143,21 @@ def _validate_attribute_types_and_values(options: NumDiffOptions) -> None:
         "joblib",
         "pathos",
     }:
-        raise InvalidNumdiffError(
+        raise InvalidNumdiffOptionsError(
             f"Invalid numdiff `batch_evaluator`: {options.batch_evaluator}. Batch "
             "evaluator must be a callable or one of 'joblib', 'pathos'."
         )
 
 
-class NumDiffOptionsPurpose(str, Enum):
+class NumdiffPurpose(str, Enum):
     OPTIMIZE = "optimize"
     ESTIMATE_JACOBIAN = "estimate_jacobian"
     ESTIMATE_HESSIAN = "estimate_hessian"
 
 
 def get_default_numdiff_options(
-    purpose: NumDiffOptionsPurpose,
-) -> NumDiffOptions:
+    purpose: NumdiffPurpose,
+) -> NumdiffOptions:
     """Get default numerical derivatives options for a given purpose.
 
     Args:
@@ -168,14 +169,14 @@ def get_default_numdiff_options(
     """
     defaults: NumdiffOptionsDict = {}
 
-    if purpose == NumDiffOptionsPurpose.OPTIMIZE:
+    if purpose == NumdiffPurpose.OPTIMIZE:
         defaults["method"] = "forward"
 
-    if purpose == NumDiffOptionsPurpose.ESTIMATE_JACOBIAN:
+    if purpose == NumdiffPurpose.ESTIMATE_JACOBIAN:
         defaults["method"] = "central"
 
-    if purpose == NumDiffOptionsPurpose.ESTIMATE_HESSIAN:
+    if purpose == NumdiffPurpose.ESTIMATE_HESSIAN:
         defaults["method"] = "central_cross"
         defaults["scaling_factor"] = 2
 
-    return NumDiffOptions(**defaults)
+    return NumdiffOptions(**defaults)
