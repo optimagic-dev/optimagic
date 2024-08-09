@@ -1,12 +1,33 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
+
+import numpy as np
+from numpy.typing import NDArray
+
+from optimagic.typing import PyTree, DictLikeAccess, TupleLikeAccess
 
 
-from optimagic.typing import PyTree
+class StepStatus(str, Enum):
+    SCHEDULED = "scheduled"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    SKIPPED = "skipped"
+
+
+class StepType(str, Enum):
+    OPTIMIZATION = "optimization"
+    EXPLORATION = "exploration"
+
+
+class ExistenceStrategy(str, Enum):
+    RAISE = "raise"
+    EXTEND = "extend"
+    REPLACE = "replace"
 
 
 @dataclass(frozen=True)
-class CriterionEvaluationResult:
+class CriterionEvaluationResult(DictLikeAccess):
     params: PyTree
     timestamp: float
     value: float
@@ -27,33 +48,21 @@ class CriterionEvaluationWithId(CriterionEvaluationResult):
             raise ValueError()
 
 
-class StepStatus(str, Enum):
-    SCHEDULED = "scheduled"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    SKIPPED = "skipped"
-
-
-class StepType(str, Enum):
-    OPTIMIZATION = "optimization"
-    EXPLORATION = "exploration"
-
-
-@dataclass
-class StepResult:
+@dataclass(frozen=True)
+class StepResult(DictLikeAccess):
     name: str
-    type: StepType
-    status: StepStatus
+    type: StepType | str
+    status: StepStatus | str
     n_iterations: int | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.type, str):
-            self.type = StepType(self.type)
+            object.__setattr__(self, "type", StepType(self.type))
         if isinstance(self.status, str):
-            self.status = StepStatus(self.status)
+            object.__setattr__(self, "status", StepStatus(self.status))
 
 
-@dataclass
+@dataclass(frozen=True)
 class StepResultWithId(StepResult):
     rowid: int | None = None
 
@@ -63,22 +72,30 @@ class StepResultWithId(StepResult):
         super().__post_init__()
 
 
-class ExistenceStrategy(str, Enum):
-    RAISE = "raise"
-    EXTEND = "extend"
-    REPLACE = "replace"
-
-
-@dataclass
-class ProblemInitialization:
+@dataclass(frozen=True)
+class ProblemInitialization(DictLikeAccess):
     direction: str
     params: PyTree
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProblemInitializationWithId(ProblemInitialization):
     rowid: int | None = None
 
     def __post_init__(self) -> None:
         if self.rowid is None:
             raise ValueError()
+
+
+@dataclass(frozen=True)
+class IterationHistory(DictLikeAccess):
+    params: list[PyTree]
+    criterion: list[float]
+    runtime: list[float] | NDArray[np.float64]
+
+
+@dataclass(frozen=True)
+class MultiStartIterationHistory(TupleLikeAccess):
+    history: IterationHistory
+    local_histories: list[IterationHistory] | None = None
+    exploration: list[Any] | None = None

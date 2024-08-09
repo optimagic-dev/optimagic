@@ -168,6 +168,14 @@ class TestStepStore:
         assert queried_result is not None
         assert queried_result.n_iterations == result.n_iterations
 
+    def test_insert_string(self, store):
+        result = StepResult("strings", "optimization", "running", n_iterations=1)
+        store.insert(result)
+        queried_result = store.select(1)[0]
+        assert queried_result is not None
+        assert queried_result.status is StepStatus.RUNNING
+        assert queried_result.type is StepType.OPTIMIZATION
+
     def test_update(self, store):
         """Test updating an entry in the IterationStore."""
         # Insert initial data
