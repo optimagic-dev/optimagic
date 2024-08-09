@@ -9,7 +9,7 @@ from optimagic import deprecations, mark
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
-    NumdiffOptionsPurpose,
+    NumDiffOptionsPurpose,
     get_default_numdiff_options,
     pre_process_numdiff_options,
 )
@@ -71,6 +71,7 @@ def estimate_ml(
     # deprecated
     lower_bounds=None,
     upper_bounds=None,
+    numdiff_options=None,
 ):
     """Do a maximum likelihood (ml) estimation.
 
@@ -162,6 +163,13 @@ def estimate_ml(
         bounds=bounds,
     )
 
+    if numdiff_options is not None:
+        deprecations.throw_numdiff_options_deprecated_in_estimate_ml_future_warning()
+        if jacobian_numdiff_options is None:
+            jacobian_numdiff_options = numdiff_options
+        if hessian_numdiff_options is None:
+            hessian_numdiff_options = numdiff_options
+
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
@@ -174,12 +182,12 @@ def estimate_ml(
 
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(
-            purpose=NumdiffOptionsPurpose.ESTIMATION_FIRST_DERIVATIVE
+            purpose=NumDiffOptionsPurpose.ESTIMATE_JACOBIAN
         )
 
     if hessian_numdiff_options is None:
         hessian_numdiff_options = get_default_numdiff_options(
-            purpose=NumdiffOptionsPurpose.ESTIMATION_SECOND_DERIVATIVE
+            purpose=NumDiffOptionsPurpose.ESTIMATE_HESSIAN
         )
 
     is_optimized = optimize_options is False

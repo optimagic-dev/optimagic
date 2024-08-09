@@ -11,7 +11,7 @@ from optimagic.deprecations import (
 )
 from optimagic.differentiation.numdiff_options import (
     NumDiffOptions,
-    NumdiffOptionsPurpose,
+    NumDiffOptionsPurpose,
     get_default_numdiff_options,
     pre_process_numdiff_options,
 )
@@ -335,7 +335,7 @@ def create_optimization_problem(
 
     if numdiff_options is None:
         numdiff_options = get_default_numdiff_options(
-            purpose=NumdiffOptionsPurpose.OPTIMIZE
+            purpose=NumDiffOptionsPurpose.OPTIMIZE
         )
 
     fun_kwargs = {} if fun_kwargs is None else fun_kwargs

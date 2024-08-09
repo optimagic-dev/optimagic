@@ -55,7 +55,7 @@ class NumdiffOptionsDict(TypedDict):
 
 
 def pre_process_numdiff_options(
-    numdiff_options: NumDiffOptions | NumdiffOptionsDict,
+    numdiff_options: NumDiffOptions | NumdiffOptionsDict | None,
 ) -> NumDiffOptions | None:
     """Convert all valid types of Numdiff options to optimagic.NumdiffOptions class.
 
@@ -148,14 +148,14 @@ def _validate_attribute_types_and_values(options: NumDiffOptions) -> None:
         )
 
 
-class NumdiffOptionsPurpose(str, Enum):
+class NumDiffOptionsPurpose(str, Enum):
     OPTIMIZE = "optimize"
-    ESTIMATION_FIRST_DERIVATIVE = "estimation_first_derivative"
-    ESTIMATION_SECOND_DERIVATIVE = "estimation_second_derivative"
+    ESTIMATE_JACOBIAN = "estimate_jacobian"
+    ESTIMATE_HESSIAN = "estimate_hessian"
 
 
 def get_default_numdiff_options(
-    purpose: NumdiffOptionsPurpose,
+    purpose: NumDiffOptionsPurpose,
 ) -> NumDiffOptions:
     """Get default numerical derivatives options for a given purpose.
 
@@ -168,13 +168,13 @@ def get_default_numdiff_options(
     """
     defaults: NumdiffOptionsDict = {}
 
-    if purpose == NumdiffOptionsPurpose.OPTIMIZE:
+    if purpose == NumDiffOptionsPurpose.OPTIMIZE:
         defaults["method"] = "forward"
 
-    if purpose == NumdiffOptionsPurpose.ESTIMATION_FIRST_DERIVATIVE:
+    if purpose == NumDiffOptionsPurpose.ESTIMATE_JACOBIAN:
         defaults["method"] = "central"
 
-    if purpose == NumdiffOptionsPurpose.ESTIMATION_SECOND_DERIVATIVE:
+    if purpose == NumDiffOptionsPurpose.ESTIMATE_HESSIAN:
         defaults["method"] = "central_cross"
         defaults["scaling_factor"] = 2
 

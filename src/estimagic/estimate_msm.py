@@ -9,11 +9,11 @@ from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-from optimagic import mark
+from optimagic import deprecations, mark
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import (
-    NumdiffOptionsPurpose,
+    NumDiffOptionsPurpose,
     get_default_numdiff_options,
     pre_process_numdiff_options,
 )
@@ -69,12 +69,13 @@ def estimate_msm(
     log_options=None,
     simulate_moments_kwargs=None,
     weights="diagonal",
-    numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
+    jacobian_numdiff_options=None,
     # deprecated
     lower_bounds=None,
     upper_bounds=None,
+    numdiff_options=None,
 ):
     """Do a method of simulated moments or indirect inference estimation.
 
@@ -144,15 +145,16 @@ def estimate_msm(
             - "if_database_exists" (str):
                 One of "extend", "replace", "raise". What to do if the database we want
                 to write to already exists. Default "extend".
-        numdiff_options (dict): Keyword arguments for the calculation of numerical
-            derivatives for the calculation of standard errors. See
-            :ref:`first_derivative` for details. Note that by default we increase the
-            step_size by a factor of 2 compared to the rule of thumb for optimal
-            step sizes. This is because many msm criterion functions are slightly noisy.
         jacobian (callable): A function that take ``params`` and
             potentially other keyword arguments and returns the jacobian of
             simulate_moments with respect to the params.
         jacobian_kwargs (dict): Additional keyword arguments for the jacobian function.
+        jacobian_numdiff_options (dict): Keyword arguments for the calculation of
+            numerical
+            derivatives for the calculation of standard errors. See
+            :ref:`first_derivative` for details. Note that by default we increase the
+            step_size by a factor of 2 compared to the rule of thumb for optimal
+            step sizes. This is because many msm criterion functions are slightly noisy.
 
         Returns:
             dict: The estimated parameters, standard errors and sensitivity measures
@@ -168,15 +170,21 @@ def estimate_msm(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
+
+    if numdiff_options is not None:
+        deprecations.throw_numdiff_options_deprecated_in_estimate_msm_future_warning()
+        if jacobian_numdiff_options is not None:
+            jacobian_numdiff_options = numdiff_options
+
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
-    numdiff_options = pre_process_numdiff_options(numdiff_options)
-    if numdiff_options is None:
-        numdiff_options = get_default_numdiff_options(
-            purpose=NumdiffOptionsPurpose.ESTIMATION_FIRST_DERIVATIVE
+    jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
+    if jacobian_numdiff_options is None:
+        jacobian_numdiff_options = get_default_numdiff_options(
+            purpose=NumDiffOptionsPurpose.ESTIMATE_JACOBIAN
         )
 
     if weights not in ["diagonal", "optimal", "identity"]:
@@ -306,7 +314,7 @@ def estimate_msm(
             out = np.array(tree_just_flatten(sim_mom, registry=registry))
             return out
 
-        options = asdict(numdiff_options)
+        options = asdict(jacobian_numdiff_options)
 
         int_jac = first_derivative(
             func=func,
