@@ -3,7 +3,7 @@ from __future__ import annotations
 import traceback
 import warnings
 from dataclasses import asdict, dataclass
-from typing import Any, Sequence, Type, cast
+from typing import Any, Sequence, Type
 
 import sqlalchemy as sql
 from sqlalchemy.engine import Engine
@@ -168,11 +168,10 @@ class SQLAlchemyTableStore(AbstractKeyValueStore[InputType, OutputType]):
             return self._post_process(results)
 
     def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:  # type:ignore
-        result = [
+        return [
             self._output_type(**dict(zip(self.column_names, row, strict=False)))
             for row in results
         ]
-        return cast(list[OutputType], result)
 
     def _execute_write_statement(self, statement: Executable) -> None:
         try:
