@@ -1,21 +1,20 @@
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-
-import pytest
-from sqlalchemy import inspect
 import pickle
-import numpy as np
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
+import numpy as np
+import pytest
 from optimagic.logging.sqlite import (
-    SQLiteConfig,
     IterationStore,
+    SQLiteConfig,
     StepStore,
 )
 from optimagic.logging.types import (
     CriterionEvaluationResult,
     StepResult,
-    StepType,
     StepStatus,
+    StepType,
 )
+from sqlalchemy import inspect
 
 
 class TestIterationStore:

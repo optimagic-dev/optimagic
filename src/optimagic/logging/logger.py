@@ -1,32 +1,31 @@
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
 import pandas as pd
-
 from pybaum import tree_flatten, tree_unflatten
-from dataclasses import replace
 
+from optimagic.logging.base import AbstractKeyValueStore
 from optimagic.logging.sqlite import (
     IterationStore,
-    StepStore,
     ProblemStore,
     SQLiteConfig,
+    StepStore,
 )
-from optimagic.logging.base import AbstractKeyValueStore
 from optimagic.logging.types import (
     CriterionEvaluationResult,
     CriterionEvaluationWithId,
-    StepResult,
-    StepResultWithId,
     ExistenceStrategy,
-    ProblemInitialization,
-    ProblemInitializationWithId,
+    ExistenceStrategyLiteral,
     IterationHistory,
     MultiStartIterationHistory,
     OptimizationType,
     OptimizationTypeLiteral,
-    ExistenceStrategyLiteral,
+    ProblemInitialization,
+    ProblemInitializationWithId,
+    StepResult,
+    StepResultWithId,
     StepType,
 )
 from optimagic.parameters.tree_registry import get_registry

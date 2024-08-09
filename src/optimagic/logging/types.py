@@ -5,7 +5,7 @@ from typing import Literal
 import numpy as np
 from numpy.typing import NDArray
 
-from optimagic.typing import PyTree, DictLikeAccess, TupleLikeAccess
+from optimagic.typing import DictLikeAccess, PyTree, TupleLikeAccess
 
 
 class StepStatus(str, Enum):

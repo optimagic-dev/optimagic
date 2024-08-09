@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from dataclasses import is_dataclass, fields, asdict
-
-from typing import TypeVar, Generic, Type, Any
+from dataclasses import asdict, fields, is_dataclass
+from typing import Any, Generic, Type, TypeVar
 
 import pandas as pd
 

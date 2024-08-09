@@ -3,14 +3,13 @@ from typing import Any, cast
 
 import sqlalchemy as sql
 from sqlalchemy import (
-    Column,
-    PickleType,
-    Integer,
-    Float,
-    String,
     Boolean,
+    Column,
+    Float,
+    Integer,
+    PickleType,
+    String,
 )
-
 from sqlalchemy.engine.base import Engine
 
 from optimagic.logging.load_database import (
@@ -18,17 +17,17 @@ from optimagic.logging.load_database import (
 )
 from optimagic.logging.sqlalchemy import (
     SQLAlchemyConfig,
-    TableConfig,
     SQLAlchemyTableStore,
+    TableConfig,
 )
 from optimagic.logging.types import (
     CriterionEvaluationResult,
     CriterionEvaluationWithId,
-    StepResult,
-    StepResultWithId,
     ExistenceStrategy,
     ProblemInitialization,
     ProblemInitializationWithId,
+    StepResult,
+    StepResultWithId,
 )
 
 

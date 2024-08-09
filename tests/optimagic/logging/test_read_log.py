@@ -3,9 +3,7 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 import pytest
-
 from optimagic.logging.logger import SQLiteLogger
-
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_equal, tree_just_flatten

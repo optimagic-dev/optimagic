@@ -1,7 +1,6 @@
-from enum import Enum
-
 from dataclasses import dataclass, fields
-from typing import Any, Callable, Iterator, KeysView, ItemsView, ValuesView
+from enum import Enum
+from typing import Any, Callable, ItemsView, Iterator, KeysView, ValuesView
 
 PyTree = Any
 PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]

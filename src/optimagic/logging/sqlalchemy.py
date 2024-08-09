@@ -1,14 +1,14 @@
 from __future__ import annotations
+
 import traceback
 import warnings
-
-from dataclasses import dataclass, asdict
-from typing import Any, Type, Sequence, cast
+from dataclasses import asdict, dataclass
+from typing import Any, Sequence, Type, cast
 
 import sqlalchemy as sql
 from sqlalchemy.engine import Engine
-from sqlalchemy.sql.schema import MetaData
 from sqlalchemy.sql.base import Executable
+from sqlalchemy.sql.schema import MetaData
 
 from optimagic.exceptions import TableExistsError
 from optimagic.logging.base import AbstractKeyValueStore, InputType, OutputType
