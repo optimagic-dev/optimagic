@@ -121,8 +121,8 @@ def fitted_logit_model(logit_object):
 test_cases = list(
     itertools.product(
         [
-            # {"algorithm": "scipy_lbfgsb"},
-            # "scipy_lbfgsb",
+            {"algorithm": "scipy_lbfgsb"},
+            "scipy_lbfgsb",
             {
                 "algorithm": "scipy_lbfgsb",
                 "fun_and_jac": scalar_logit_fun_and_jac,
