@@ -1,6 +1,6 @@
 import time
 import warnings
-from dataclasses import asdict, replace
+from dataclasses import asdict
 
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
@@ -111,16 +111,17 @@ def internal_criterion_and_derivative_template(
             return criterion(p)
 
         try:
-            options = replace(numdiff_options, key="relevant")
-            options = asdict(options)
+            options = asdict(numdiff_options)
 
             numerical_derivative = first_derivative(
                 func,
                 x,
+                bounds=bounds,
                 **options,
                 unpacker=lambda x: x.internal_value(algo_info.solver_type),
                 error_handling="raise",
             )
+
             new_jac = numerical_derivative.derivative
             new_external_fun = numerical_derivative.func_value
             new_fun = new_external_fun.internal_value(algo_info.solver_type)

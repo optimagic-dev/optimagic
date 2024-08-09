@@ -215,6 +215,8 @@ def first_derivative(
     # Convert arguments to numpy
     # ==================================================================================
 
+    unpacker = _process_unpacker(unpacker)
+
     registry = get_registry(extended=True)
 
     fast_path = _is_1d_array(params)
@@ -582,6 +584,8 @@ def second_derivative(
             step_size = _handle_float_or_pytree_argument_fast_path(
                 step_size, x, arg_name="step_size"
             )
+
+    unpacker = _process_unpacker(unpacker)
 
     internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 

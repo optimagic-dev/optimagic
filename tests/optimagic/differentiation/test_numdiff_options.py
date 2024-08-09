@@ -1,13 +1,13 @@
 import pytest
 from optimagic.differentiation.numdiff_options import (
-    NumdiffOptions,
+    NumDiffOptions,
     pre_process_numdiff_options,
 )
 from optimagic.exceptions import InvalidNumdiffError
 
 
 def test_pre_process_numdiff_options_trivial_case():
-    numdiff_options = NumdiffOptions(
+    numdiff_options = NumDiffOptions(
         method="central",
         step_size=2,
         scaling_factor=0.5,
@@ -26,7 +26,7 @@ def test_pre_process_numdiff_options_dict_case():
     got = pre_process_numdiff_options(
         {"method": "central", "step_size": 2, "batch_evaluator": "pathos"}
     )
-    assert got == NumdiffOptions(
+    assert got == NumDiffOptions(
         method="central", step_size=2, batch_evaluator="pathos"
     )
 
@@ -48,29 +48,29 @@ def test_pre_process_numdiff_options_invalid_dict_value():
 
 def test_numdiff_options_invalid_method():
     with pytest.raises(InvalidNumdiffError, match="Invalid numdiff `method`:"):
-        NumdiffOptions(method="invalid")
+        NumDiffOptions(method="invalid")
 
 
 def test_numdiff_options_invalid_step_size():
     with pytest.raises(InvalidNumdiffError, match="Invalid numdiff `step_size`:"):
-        NumdiffOptions(step_size=0)
+        NumDiffOptions(step_size=0)
 
 
 def test_numdiff_options_invalid_scaling_factor():
     with pytest.raises(InvalidNumdiffError, match="Invalid numdiff `scaling_factor`:"):
-        NumdiffOptions(scaling_factor=-1)
+        NumDiffOptions(scaling_factor=-1)
 
 
 def test_numdiff_options_invalid_min_steps():
     with pytest.raises(InvalidNumdiffError, match="Invalid numdiff `min_steps`:"):
-        NumdiffOptions(min_steps=-1)
+        NumDiffOptions(min_steps=-1)
 
 
 def test_numdiff_options_invalid_n_cores():
     with pytest.raises(InvalidNumdiffError, match="Invalid numdiff `n_cores`:"):
-        NumdiffOptions(n_cores=-1)
+        NumDiffOptions(n_cores=-1)
 
 
 def test_numdiff_options_invalid_batch_evaluator():
     with pytest.raises(InvalidNumdiffError, match="Invalid numdiff `batch_evaluator`:"):
-        NumdiffOptions(batch_evaluator="invalid")
+        NumDiffOptions(batch_evaluator="invalid")

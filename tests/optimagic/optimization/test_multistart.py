@@ -72,7 +72,6 @@ def test_run_explorations():
 
     calculated = run_explorations(
         func=_dummy,
-        primary_key="value",
         sample=np.arange(6).reshape(3, 2),
         batch_evaluator="joblib",
         n_cores=1,

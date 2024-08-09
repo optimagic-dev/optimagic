@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.decorators import AlgoInfo
-from optimagic.differentiation.numdiff_options import NumdiffOptions
+from optimagic.differentiation.numdiff_options import NumDiffOptions
 from optimagic.examples.criterion_functions import (
     sos_gradient,
 )
@@ -47,7 +47,7 @@ def base_inputs():
         ),
         "bounds": Bounds(lower=np.zeros(5), upper=np.ones(5)),
         "error_handling": "raise",
-        "numdiff_options": NumdiffOptions(),
+        "numdiff_options": NumDiffOptions(),
         "logging": False,
         "database": None,
         "error_penalty_func": None,

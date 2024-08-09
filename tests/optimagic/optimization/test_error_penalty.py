@@ -5,10 +5,10 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.optimization.error_penalty import (
-    _penalty_contributions,
-    _penalty_contributions_derivative,
-    _penalty_root_contributions,
-    _penalty_root_contributions_derivative,
+    _penalty_loglikes,
+    _penalty_loglikes_derivative,
+    _penalty_residuals,
+    _penalty_residuals_derivative,
     _penalty_value,
     _penalty_value_derivative,
     get_error_penalty_function,
@@ -32,8 +32,8 @@ def test_penalty_aggregations(seed):
     dim_out = 10
 
     scalar = _penalty_value(x, constant, slope, x0).value
-    contribs = _penalty_contributions(x, constant, slope, x0, dim_out).value
-    root_contribs = _penalty_root_contributions(x, constant, slope, x0, dim_out).value
+    contribs = _penalty_loglikes(x, constant, slope, x0, dim_out).value
+    root_contribs = _penalty_residuals(x, constant, slope, x0, dim_out).value
 
     assert np.isclose(scalar, contribs.sum())
     assert np.isclose(scalar, (root_contribs**2).sum())
@@ -42,13 +42,13 @@ def test_penalty_aggregations(seed):
 pairs = [
     (_penalty_value, _penalty_value_derivative, AggregationLevel.SCALAR),
     (
-        _penalty_contributions,
-        _penalty_contributions_derivative,
+        _penalty_loglikes,
+        _penalty_loglikes_derivative,
         AggregationLevel.LIKELIHOOD,
     ),
     (
-        _penalty_root_contributions,
-        _penalty_root_contributions_derivative,
+        _penalty_residuals,
+        _penalty_residuals_derivative,
         AggregationLevel.LEAST_SQUARES,
     ),
 ]

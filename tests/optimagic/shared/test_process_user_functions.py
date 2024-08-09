@@ -51,14 +51,14 @@ def test_get_kwargs_from_args():
     assert got == expected
 
 
-def test_infer_aggregation_levle_no_decorator():
+def test_infer_aggregation_level_no_decorator():
     def f(params):
         return 1
 
     assert infer_aggregation_level(f) == AggregationLevel.SCALAR
 
 
-def test_infer_aggregation_levle_scalar_decorator():
+def test_infer_aggregation_level_scalar_decorator():
     @mark.scalar
     def f(params):
         return 1
@@ -66,14 +66,14 @@ def test_infer_aggregation_levle_scalar_decorator():
     assert infer_aggregation_level(f) == AggregationLevel.SCALAR
 
 
-def test_infer_aggregation_levle_scalar_anotation():
+def test_infer_aggregation_level_scalar_anotation():
     def f(params: NDArray[np.float64]) -> ScalarFunctionValue:
         return ScalarFunctionValue(1)
 
     assert infer_aggregation_level(f) == AggregationLevel.SCALAR
 
 
-def test_infer_aggregation_levle_least_squares_decorator():
+def test_infer_aggregation_level_least_squares_decorator():
     @mark.least_squares
     def f(params):
         return np.ones(3)
@@ -81,14 +81,14 @@ def test_infer_aggregation_levle_least_squares_decorator():
     assert infer_aggregation_level(f) == AggregationLevel.LEAST_SQUARES
 
 
-def test_infer_aggregation_levle_least_squares_anotation():
+def test_infer_aggregation_level_least_squares_anotation():
     def f(params: NDArray[np.float64]) -> LeastSquaresFunctionValue:
         return LeastSquaresFunctionValue(np.ones(3))
 
     assert infer_aggregation_level(f) == AggregationLevel.LEAST_SQUARES
 
 
-def test_infer_aggregation_levle_likelihood_decorator():
+def test_infer_aggregation_level_likelihood_decorator():
     @mark.likelihood
     def f(params):
         return np.ones(3)
@@ -96,7 +96,7 @@ def test_infer_aggregation_levle_likelihood_decorator():
     assert infer_aggregation_level(f) == AggregationLevel.LIKELIHOOD
 
 
-def test_infer_aggregation_levle_likelihood_anotation():
+def test_infer_aggregation_level_likelihood_anotation():
     def f(params: NDArray[np.float64]) -> LikelihoodFunctionValue:
         return LikelihoodFunctionValue(np.ones(3))
 

@@ -10,7 +10,7 @@ from optimagic.deprecations import (
     replace_and_warn_about_deprecated_bounds,
 )
 from optimagic.differentiation.numdiff_options import (
-    NumdiffOptions,
+    NumDiffOptions,
     NumdiffOptionsPurpose,
     get_default_numdiff_options,
     pre_process_numdiff_options,
@@ -78,7 +78,7 @@ class OptimizationProblem:
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
-    numdiff_options: NumdiffOptions
+    numdiff_options: NumDiffOptions
     # TODO: logging will become None | Logger and log_options will be removed
     logging: bool | Path | None
     log_options: dict[str, Any] | None
@@ -143,8 +143,7 @@ def create_optimization_problem(
     multistart_options,
 ):
     # ==================================================================================
-    # error handling needed as long as fun is an optional argument (i.e. until
-    # criterion is fully removed).
+    # error handling needed as long as fun is an optional argument
     # ==================================================================================
 
     if fun is None and criterion is None:
@@ -361,7 +360,7 @@ def create_optimization_problem(
 
     # This should be done as late as possible; It has to be done here to infer the
     # problem type until the decorator approach becomes mandatory.
-    # TODO: Move this into `_optimize` and there as late as soon as we reach 0.6.0
+    # TODO: Move this into `_optimize` as soon as we reach 0.6.0
     try:
         fun_eval = fun(params)
     except (KeyboardInterrupt, SystemExit):
@@ -486,7 +485,7 @@ def create_optimization_problem(
         if not isinstance(fun_and_jac, Callable | None):
             raise ValueError("fun_and_jac must be a callable or None")
 
-        if not isinstance(numdiff_options, NumdiffOptions):
+        if not isinstance(numdiff_options, NumDiffOptions):
             raise ValueError("numdiff_options must be a NumdiffOptions object")
 
         if not isinstance(logging, bool | Path | None):

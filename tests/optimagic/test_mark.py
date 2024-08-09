@@ -1,26 +1,47 @@
+import functools
+from dataclasses import dataclass
+
 import optimagic as om
+import pytest
 from optimagic.typing import AggregationLevel
 
 
-def test_scalar():
-    @om.mark.scalar
-    def f(x):
+def f(x):
+    pass
+
+
+@dataclass(frozen=True)
+class ImmutableF:
+    def __call__(self, x):
         pass
 
-    assert f._problem_type == AggregationLevel.SCALAR
+
+def _g(x, y):
+    pass
 
 
-def test_least_squares():
-    @om.mark.least_squares
-    def f(x):
-        pass
-
-    assert f._problem_type == AggregationLevel.LEAST_SQUARES
+g = functools.partial(_g, y=1)
 
 
-def test_likelihood():
-    @om.mark.likelihood
-    def f(x):
-        pass
+CALLABLES = [f, ImmutableF(), g]
 
-    assert f._problem_type == AggregationLevel.LIKELIHOOD
+
+@pytest.mark.parametrize("func", CALLABLES)
+def test_scalar(func):
+    got = om.mark.scalar(func)
+
+    assert got._problem_type == AggregationLevel.SCALAR
+
+
+@pytest.mark.parametrize("func", CALLABLES)
+def test_least_squares(func):
+    got = om.mark.least_squares(func)
+
+    assert got._problem_type == AggregationLevel.LEAST_SQUARES
+
+
+@pytest.mark.parametrize("func", CALLABLES)
+def test_likelihood(func):
+    got = om.mark.likelihood(func)
+
+    assert got._problem_type == AggregationLevel.LIKELIHOOD

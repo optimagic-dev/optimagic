@@ -9,7 +9,7 @@ from optimagic.exceptions import InvalidNumdiffError
 
 
 @dataclass(frozen=True)
-class NumdiffOptions:
+class NumDiffOptions:
     """Options for numerical differentiation.
 
     Attributes:
@@ -38,8 +38,6 @@ class NumdiffOptions:
     min_steps: float | None = None
     n_cores: int = DEFAULT_N_CORES
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"  # type: ignore
-    # will be deprecated
-    key: str = "relevant"
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
@@ -54,13 +52,11 @@ class NumdiffOptionsDict(TypedDict):
     min_steps: NotRequired[float | None]
     n_cores: NotRequired[int]
     batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
-    # will be deprecated
-    key: NotRequired[str]
 
 
 def pre_process_numdiff_options(
-    numdiff_options: NumdiffOptions | NumdiffOptionsDict,
-) -> NumdiffOptions | None:
+    numdiff_options: NumDiffOptions | NumdiffOptionsDict,
+) -> NumDiffOptions | None:
     """Convert all valid types of Numdiff options to optimagic.NumdiffOptions class.
 
     This just harmonizes multiple ways of specifying numdiff options into a single
@@ -78,11 +74,11 @@ def pre_process_numdiff_options(
             they do not have the correct type.
 
     """
-    if isinstance(numdiff_options, NumdiffOptions) or numdiff_options is None:
+    if isinstance(numdiff_options, NumDiffOptions) or numdiff_options is None:
         pass
     else:
         try:
-            numdiff_options = NumdiffOptions(**numdiff_options)
+            numdiff_options = NumDiffOptions(**numdiff_options)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -98,7 +94,7 @@ def pre_process_numdiff_options(
     return numdiff_options
 
 
-def _validate_attribute_types_and_values(options: NumdiffOptions) -> None:
+def _validate_attribute_types_and_values(options: NumDiffOptions) -> None:
     if options.method not in {
         "central",
         "forward",
@@ -160,7 +156,7 @@ class NumdiffOptionsPurpose(str, Enum):
 
 def get_default_numdiff_options(
     purpose: NumdiffOptionsPurpose,
-) -> NumdiffOptions:
+) -> NumDiffOptions:
     """Get default numerical derivatives options for a given purpose.
 
     Args:
@@ -182,4 +178,4 @@ def get_default_numdiff_options(
         defaults["method"] = "central_cross"
         defaults["scaling_factor"] = 2
 
-    return NumdiffOptions(**defaults)
+    return NumDiffOptions(**defaults)

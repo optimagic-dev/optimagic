@@ -15,7 +15,9 @@ def scalar(func: ScalarFuncT) -> ScalarFuncT:
     wrapper = func
     try:
         wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
-    except TypeError:
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception:
 
         @wraps(func)
         def wrapper(*args, **kwargs):  # type: ignore
@@ -30,7 +32,9 @@ def least_squares(func: VectorFuncT) -> VectorFuncT:
     wrapper = func
     try:
         wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
-    except TypeError:
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception:
 
         @wraps(func)
         def wrapper(*args, **kwargs):  # type: ignore
@@ -45,7 +49,9 @@ def likelihood(func: VectorFuncT) -> VectorFuncT:
     wrapper = func
     try:
         wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
-    except TypeError:
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception:
 
         @wraps(func)
         def wrapper(*args, **kwargs):  # type: ignore

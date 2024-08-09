@@ -1,7 +1,7 @@
 """Process user provided functions."""
 
 import inspect
-from functools import partial, wraps
+from functools import partial, update_wrapper
 
 from optimagic.exceptions import InvalidFunctionError, InvalidKwargsError
 from optimagic.optimization.fun_value import (
@@ -35,7 +35,7 @@ def partial_func_of_params(func, kwargs, name="your function", skip_checks=False
 
     # wraps preserves static fields that might have been added to the function via
     # mark decorators.
-    out = wraps(func)(partial(func, **kept))
+    out = update_wrapper(partial(func, **kept), func)
 
     if not skip_checks:
         unpartialled_args = get_unpartialled_arguments(out)
