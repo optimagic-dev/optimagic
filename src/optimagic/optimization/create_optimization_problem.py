@@ -139,8 +139,7 @@ def create_optimization_problem(
     multistart_options,
 ):
     # ==================================================================================
-    # error handling needed as long as fun is an optional argument (i.e. until
-    # criterion is fully removed).
+    # error handling needed as long as fun is an optional argument
     # ==================================================================================
 
     if fun is None and criterion is None:
