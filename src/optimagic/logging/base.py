@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from dataclasses import is_dataclass, fields, asdict
 
@@ -7,8 +5,10 @@ from typing import TypeVar, Generic, Type, Any
 
 import pandas as pd
 
-InputType = TypeVar("InputType")
-OutputType = TypeVar("OutputType")
+from optimagic.typing import DictLikeAccess
+
+InputType = TypeVar("InputType", bound=DictLikeAccess)
+OutputType = TypeVar("OutputType", bound=DictLikeAccess)
 
 
 class AbstractKeyValueStore(Generic[InputType, OutputType], ABC):
@@ -65,4 +65,4 @@ class AbstractKeyValueStore(Generic[InputType, OutputType], ABC):
 
     def to_df(self) -> pd.DataFrame:
         items = self._select_all()
-        return pd.DataFrame([asdict(item) for item in items])  # type:ignore
+        return pd.DataFrame([asdict(item) for item in items])
