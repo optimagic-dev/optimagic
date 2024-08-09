@@ -37,9 +37,8 @@ def get_converter(
         constraints (list): The user provided constraints.
         lower_bounds (pytree): The user provided lower_bounds
         upper_bounds (pytree): The user provided upper bounds
-        func_eval (float, dict or pytree): An evaluation of ``func`` at ``params``.
-            Used to deterimine how the function output has to be transformed for the
-            optimizer.
+        func_eval (float or pytree): An evaluation of ``func`` at ``params``.
+            Used to flatten the derivative output.
         primary_key (str): One of "value", "contributions" and "root_contributions".
             Used to determine how the function and derivative output has to be
             transformed for the optimzer.
@@ -62,7 +61,6 @@ def get_converter(
     fast_path = _is_fast_path(
         params=params,
         constraints=constraints,
-        func_eval=func_eval,
         primary_key=primary_key,
         scaling=scaling,
         derivative_eval=derivative_eval,
@@ -139,16 +137,12 @@ def get_converter(
         )
         return jac_with_unscaling
 
-    def _func_to_internal(func_eval):
-        return tree_converter.func_flatten(func_eval)
-
     internal_params = replace(scaled_params, free_mask=internal_params.free_mask)
 
     converter = Converter(
         params_to_internal=_params_to_internal,
         params_from_internal=_params_from_internal,
         derivative_to_internal=_derivative_to_internal,
-        func_to_internal=_func_to_internal,
         has_transforming_constraints=space_converter.has_transforming_constraints,
     )
 
@@ -160,45 +154,7 @@ class Converter:
     params_to_internal: Callable
     params_from_internal: Callable
     derivative_to_internal: Callable
-    func_to_internal: Callable
     has_transforming_constraints: bool
-
-
-def aggregate_func_output_to_value(f_eval, primary_key):
-    if primary_key == "value":
-        return f_eval
-    elif primary_key == "contributions":
-        return f_eval.sum()
-    elif primary_key == "root_contributions":
-        return f_eval @ f_eval
-
-
-def _unpack_value_if_needed(func_eval):
-    if isinstance(func_eval, dict):
-        return float(func_eval["value"])
-    else:
-        return func_eval
-
-
-def _unpack_contributions_if_needed(func_eval):
-    if isinstance(func_eval, dict):
-        return func_eval["contributions"].astype(float)
-    else:
-        return func_eval.astype(float)
-
-
-def _unpack_root_contributions_if_needed(func_eval):
-    if isinstance(func_eval, dict):
-        return func_eval["root_contributions"].astype(float)
-    else:
-        return func_eval.astype(float)
-
-
-UNPACK_FUNCTIONS = {
-    "value": _unpack_value_if_needed,
-    "contributions": _unpack_contributions_if_needed,
-    "root_contributions": _unpack_root_contributions_if_needed,
-}
 
 
 def _fast_params_from_internal(x, return_type="tree"):
@@ -222,7 +178,6 @@ def _get_fast_path_converter(params, bounds, primary_key):
         params_to_internal=lambda params: params.astype(float),
         params_from_internal=_fast_params_from_internal,
         derivative_to_internal=_fast_derivative_to_internal,
-        func_to_internal=UNPACK_FUNCTIONS[primary_key],
         has_transforming_constraints=False,
     )
 
@@ -249,7 +204,6 @@ def _get_fast_path_converter(params, bounds, primary_key):
 def _is_fast_path(
     params,
     constraints,
-    func_eval,
     primary_key,
     scaling,
     derivative_eval,
@@ -258,8 +212,6 @@ def _is_fast_path(
     if not _is_1d_arr(params):
         return False
     if constraints:
-        return False
-    if not _is_fast_func_eval(func_eval, primary_key):
         return False
 
     if scaling is not None:
@@ -270,17 +222,6 @@ def _is_fast_path(
 
     if add_soft_bounds:
         return False
-
-    return True
-
-
-def _is_fast_func_eval(f, key):
-    if key == "value":
-        if not (np.isscalar(f) or (_is_dict_with(f, key) and np.isscalar(f[key]))):
-            return False
-    else:
-        if not (_is_1d_arr(f) or (_is_dict_with(f, key)) and _is_1d_arr(f[key])):
-            return False
 
     return True
 

@@ -25,7 +25,6 @@ from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
     update_step_status,
 )
-from optimagic.parameters.conversion import aggregate_func_output_to_value
 from optimagic.utilities import get_rng
 
 
@@ -79,7 +78,6 @@ def run_multistart_optimization(
 
     exploration_res = run_explorations(
         criterion,
-        primary_key=primary_key,
         sample=sample,
         batch_evaluator=options.batch_evaluator,
         n_cores=options.n_cores,
@@ -301,17 +299,22 @@ def _draw_exploration_sample(
     return sample_scaled
 
 
-def run_explorations(
-    func, primary_key, sample, batch_evaluator, n_cores, step_id, error_handling
-):
+def _aggregate_func_output_to_value(f_eval, primary_key):
+    if primary_key == "value":
+        return f_eval
+    elif primary_key == "contributions":
+        return f_eval.sum()
+    elif primary_key == "root_contributions":
+        return f_eval @ f_eval
+
+
+def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_handling):
     """Do the function evaluations for the exploration phase.
 
     Args:
         func (callable): An already partialled version of
             ``internal_criterion_and_derivative_template`` where the following arguments
             are still free: ``x``, ``task``, ``error_handling``, ``fixed_log_data``.
-        primary_key: The primary criterion entry of the local optimizer. Needed to
-            interpret the output of the internal criterion function.
         sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
             parameter vector.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
@@ -332,7 +335,7 @@ def run_explorations(
 
     """
     algo_info = AlgoInfo(
-        primary_criterion_entry=primary_key,
+        primary_criterion_entry="value",
         parallelizes=True,
         needs_scaling=False,
         name="tiktak_explorer",
@@ -351,7 +354,7 @@ def run_explorations(
 
     batch_evaluator = process_batch_evaluator(batch_evaluator)
 
-    criterion_outputs = batch_evaluator(
+    raw_values = batch_evaluator(
         _func,
         arguments=arguments,
         n_cores=n_cores,
@@ -360,9 +363,7 @@ def run_explorations(
         error_handling="raise",
     )
 
-    values = [aggregate_func_output_to_value(c, primary_key) for c in criterion_outputs]
-
-    raw_values = np.array(values)
+    raw_values = np.array(raw_values)
 
     is_valid = np.isfinite(raw_values)
 
@@ -479,7 +480,7 @@ def update_convergence_state(
             valid_new_y.append(res["solution_criterion"])
         else:
             valid_new_y.append(
-                aggregate_func_output_to_value(
+                _aggregate_func_output_to_value(
                     f_eval=res["solution_criterion"],
                     primary_key=primary_key,
                 )

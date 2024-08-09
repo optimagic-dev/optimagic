@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Literal
@@ -10,7 +11,14 @@ from optimagic.deprecations import (
 )
 from optimagic.exceptions import (
     AliasError,
+    InvalidFunctionError,
     MissingInputError,
+)
+from optimagic.optimization.fun_value import (
+    SpecificFunctionValue,
+    convert_fun_output_to_function_value,
+    enforce_return_type,
+    enforce_return_type_with_jac,
 )
 from optimagic.optimization.get_algorithm import (
     process_user_algorithm,
@@ -28,9 +36,10 @@ from optimagic.parameters.scaling import ScalingOptions, pre_process_scaling
 from optimagic.shared.check_option_dicts import check_numdiff_options
 from optimagic.shared.process_user_function import (
     get_kwargs_from_args,
-    process_func_of_params,
+    infer_aggregation_level,
+    partial_func_of_params,
 )
-from optimagic.typing import PyTree
+from optimagic.typing import AggregationLevel, PyTree
 
 
 @dataclass(frozen=True)
@@ -52,7 +61,7 @@ class OptimizationProblem:
 
     """
 
-    fun: Callable[[PyTree], float | PyTree]
+    fun: Callable[[PyTree], SpecificFunctionValue]
     params: PyTree
     # TODO: algorithm will become an Algorithm object; algo_options and algo_info will
     # be removed and become part of Algorithm
@@ -63,7 +72,7 @@ class OptimizationProblem:
     # TODO: constraints will become list[Constraint] | None
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
-    fun_and_jac: Callable[[PyTree], tuple[float, PyTree]] | None
+    fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     # TODO: numdiff_options will become NumDiffOptions
     numdiff_options: dict[str, Any] | None
     # TODO: logging will become None | Logger and log_options will be removed
@@ -78,6 +87,7 @@ class OptimizationProblem:
     collect_history: bool
     skip_checks: bool
     direction: Literal["minimize", "maximize"]
+    fun_eval: SpecificFunctionValue
 
 
 def create_optimization_problem(
@@ -129,8 +139,7 @@ def create_optimization_problem(
     multistart_options,
 ):
     # ==================================================================================
-    # error handling needed as long as fun is an optional argument (i.e. until
-    # criterion is fully removed).
+    # error handling needed as long as fun is an optional argument
     # ==================================================================================
 
     if fun is None and criterion is None:
@@ -206,6 +215,13 @@ def create_optimization_problem(
         soft_upper_bounds=soft_upper_bounds,
     )
 
+    if isinstance(jac, dict):
+        jac = deprecations.replace_and_warn_about_deprecated_derivatives(jac, "jac")
+
+    if isinstance(fun_and_jac, dict):
+        fun_and_jac = deprecations.replace_and_warn_about_deprecated_derivatives(
+            fun_and_jac, "fun_and_jac"
+        )
     # ==================================================================================
     # handle scipy aliases
     # ==================================================================================
@@ -324,46 +340,109 @@ def create_optimization_problem(
         logging = Path(logging)
 
     # ==================================================================================
-    # Get the algorithm info
+    # evaluate fun for the first time
     # ==================================================================================
-    raw_algo, algo_info = process_user_algorithm(algorithm)
-
-    if algo_info.primary_criterion_entry == "root_contributions":
-        if direction == "maximize":
-            msg = (
-                "Optimizers that exploit a least squares structure like {} can only be "
-                "used for minimization."
-            )
-            raise ValueError(msg.format(algo_info.name))
-
-    # ==================================================================================
-    # partial the kwargs into corresponding functions
-    # ==================================================================================
-    fun = process_func_of_params(
+    fun = partial_func_of_params(
         func=fun,
         kwargs=fun_kwargs,
         name="criterion",
         skip_checks=skip_checks,
     )
-    if isinstance(jac, dict):
-        jac = jac.get(algo_info.primary_criterion_entry)
+
+    # This should be done as late as possible; It has to be done here to infer the
+    # problem type until the decorator approach becomes mandatory.
+    # TODO: Move this into `_optimize` as soon as we reach 0.6.0
+    try:
+        fun_eval = fun(params)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        msg = "Error while evaluating fun at start params."
+        raise InvalidFunctionError(msg) from e
+
+    if deprecations.is_dict_output(fun_eval):
+        deprecations.throw_dict_output_warning()
+
+    # ==================================================================================
+    # infer the problem type
+    # ==================================================================================
+
+    if deprecations.is_dict_output(fun_eval):
+        problem_type = deprecations.infer_problem_type_from_dict_output(fun_eval)
+    else:
+        problem_type = infer_aggregation_level(fun)
+
+    if problem_type == AggregationLevel.LEAST_SQUARES and direction == "maximize":
+        raise InvalidFunctionError("Least-squares problems cannot be maximized.")
+
+    # ==================================================================================
+    # process the fun_eval; Can be removed once the first evaluation gets moved to
+    # a later point where the `enforce` decorator has already been applied.
+    # ==================================================================================
+    if deprecations.is_dict_output(fun_eval):
+        fun_eval = deprecations.convert_dict_to_function_value(fun_eval)
+        fun = deprecations.replace_dict_output(fun)
+    else:
+        fun_eval = convert_fun_output_to_function_value(fun_eval, problem_type)
+
+    fun = enforce_return_type(problem_type)(fun)
+
+    # ==================================================================================
+    # Get the algorithm info
+    # ==================================================================================
+    raw_algo, algo_info = process_user_algorithm(algorithm)
+
+    if algo_info.solver_type == AggregationLevel.LIKELIHOOD:
+        if problem_type not in [
+            AggregationLevel.LIKELIHOOD,
+            AggregationLevel.LEAST_SQUARES,
+        ]:
+            raise InvalidFunctionError(
+                "Likelihood solvers can only be used with likelihood or least-squares "
+                "problems."
+            )
+    if algo_info.solver_type == AggregationLevel.LEAST_SQUARES:
+        if problem_type != AggregationLevel.LEAST_SQUARES:
+            raise InvalidFunctionError(
+                "Least-squares solvers can only be used with least-squares problems."
+            )
+
+    # ==================================================================================
+    # select the correct derivative functions
+    # ==================================================================================
+
     if jac is not None:
-        jac = process_func_of_params(
+        jac = pre_process_derivatives(
+            candidate=jac, name="jac", solver_type=algo_info.solver_type
+        )
+
+    if fun_and_jac is not None:
+        fun_and_jac = pre_process_derivatives(
+            candidate=fun_and_jac, name="fun_and_jac", solver_type=algo_info.solver_type
+        )
+
+    # ==================================================================================
+    # partial the kwargs into corresponding functions
+    # ==================================================================================
+
+    if jac is not None:
+        jac = partial_func_of_params(
             func=jac,
             kwargs=jac_kwargs,
             name="derivative",
             skip_checks=skip_checks,
         )
-    if isinstance(fun_and_jac, dict):
-        fun_and_jac = fun_and_jac.get(algo_info.primary_criterion_entry)
 
     if fun_and_jac is not None:
-        fun_and_jac = process_func_of_params(
+        fun_and_jac = partial_func_of_params(
             func=fun_and_jac,
             kwargs=fun_and_jac_kwargs,
             name="criterion_and_derivative",
             skip_checks=skip_checks,
         )
+        fun_and_jac = deprecations.replace_dict_output(fun_and_jac)
+
+        fun_and_jac = enforce_return_type_with_jac(algo_info.solver_type)(fun_and_jac)
 
     # ==================================================================================
     # Check types of arguments
@@ -453,6 +532,31 @@ def create_optimization_problem(
         collect_history=collect_history,
         skip_checks=skip_checks,
         direction=direction,
+        fun_eval=fun_eval,
     )
 
     return problem
+
+
+def pre_process_derivatives(candidate, name, solver_type):
+    if callable(candidate):
+        candidate = [candidate]
+
+    out = None
+    for func in candidate:
+        if not callable(func):
+            raise ValueError(f"{name} must be a callable or sequence of callables.")
+
+        problem_type = infer_aggregation_level(func)
+        if problem_type == solver_type:
+            out = func
+
+    if out is None:
+        msg = (
+            f"You used the `{name}` argument but none of the callables you provided "
+            "has the correct aggregation level for your selected optimization "
+            "algorithm. Falling back to numerical derivatives."
+        )
+        warnings.warn(msg)
+
+    return out

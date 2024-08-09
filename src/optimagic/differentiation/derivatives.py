@@ -96,8 +96,9 @@ def first_derivative(
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
-    key: str | None = None,
+    unpacker: Callable[[Any], PyTree] | None = None,
     # deprecated
+    key: str | None = None,
     lower_bounds: NDArray[np.float64] | None = None,
     upper_bounds: NDArray[np.float64] | None = None,
     base_steps: NDArray[np.float64] | None = None,
@@ -155,10 +156,12 @@ def first_derivative(
             to calculate derivative estimates at first but raise an error if all
             evaluations for one parameter failed) and "raise_strict" (raise an error
             as soon as a function evaluation fails).
-        batch_evaluator: Name of a pre-implemented batch evaluator (currently 'joblib'
-            and 'pathos_mp') or Callable with the same interface as the optimagic batch
-            evaluators.
-        key: If func returns a dictionary, take the derivative of func(params)[key].
+        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the optimagic batch_evaluators.
+        unpacker: A callable that takes the output of func and returns the part of the
+            output that is needed for the derivative calculation. If None, the output of
+            func is used as is. Default None.
 
     Returns:
         NumdiffResult: A numerical differentiation result.
@@ -173,6 +176,10 @@ def first_derivative(
         bounds=bounds,
     )
 
+    if key is not None:
+        deprecations.throw_key_warning_in_derivatives()
+        if unpacker is None:
+            unpacker = lambda x: x[key]
     steps = replace_and_warn_about_deprecated_base_steps(
         steps=steps,
         base_steps=base_steps,
@@ -202,12 +209,14 @@ def first_derivative(
 
     bounds = pre_process_bounds(bounds)
 
+    unpacker = _process_unpacker(unpacker)
+
     _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
     registry = get_registry(extended=True)
 
     internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
-    # handle keyword arguments
+    # handle kwargs
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
@@ -280,8 +289,7 @@ def first_derivative(
         raw_evals = raw_evals[:-1]
     func_value = f0
 
-    use_key = key is not None and isinstance(f0, dict)
-    f0_tree = f0[key] if use_key else f0
+    f0_tree = unpacker(f0)
     scalar_out = np.isscalar(f0_tree)
     vector_out = isinstance(f0_tree, np.ndarray) and f0_tree.ndim == 1
 
@@ -296,7 +304,7 @@ def first_derivative(
     # convert the raw evaluations to numpy arrays
     raw_evals = _convert_evals_to_numpy(
         raw_evals=raw_evals,
-        key=key,
+        unpacker=unpacker,
         registry=registry,
         is_scalar_out=scalar_out,
         is_vector_out=vector_out,
@@ -367,7 +375,7 @@ def second_derivative(
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
     batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
-    key: str | None = None,
+    unpacker: Callable[[Any], PyTree] | None = None,
     # deprecated
     lower_bounds: NDArray[np.float64] | None = None,
     upper_bounds: NDArray[np.float64] | None = None,
@@ -376,6 +384,7 @@ def second_derivative(
     n_steps: int | None = None,
     return_info: bool | None = None,
     return_func_value: bool | None = None,
+    key: str | None = None,
 ) -> NumdiffResult:
     """Evaluate second derivative of func at params according to method and step
     options.
@@ -438,8 +447,9 @@ def second_derivative(
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the optimagic batch_evaluators.
-        key (str): If func returns a dictionary, take the derivative of
-            func(params)[key].
+        unpacker: A callable that takes the output of func and returns the part of the
+            output that is needed for the derivative calculation. If None, the output of
+            func is used as is. Default None.
 
 
     Returns:
@@ -481,13 +491,18 @@ def second_derivative(
     else:
         return_func_value = True
 
+    if key is not None:
+        deprecations.throw_key_warning_in_derivatives()
+        if unpacker is None:
+            unpacker = lambda x: x[key]
     # ==================================================================================
-
     bounds = pre_process_bounds(bounds)
+
+    unpacker = _process_unpacker(unpacker)
 
     internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
 
-    # handle keyword arguments
+    # handle kwargs
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
@@ -590,13 +605,15 @@ def second_derivative(
         raw_evals["one_step"] = raw_evals["one_step"][:-1]
     func_value = f0
 
-    f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
+    f0_tree = unpacker(f0)
     f0 = tree_leaves(f0_tree, registry=registry)
     f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
-        step_type: _convert_evals_to_numpy(evals, key, registry)
+        step_type: _convert_evals_to_numpy(
+            raw_evals=evals, unpacker=unpacker, registry=registry
+        )
         for step_type, evals in raw_evals.items()
     }
 
@@ -668,6 +685,27 @@ def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
     evals = evals.swapaxes(2, 3)
     evals = Evals(pos=evals[0], neg=evals[1])
     return evals
+
+
+def _process_unpacker(
+    unpacker: None | Callable[[Any], PyTree],
+) -> Callable[[Any], PyTree]:
+    """Process the user provided unpacker function.
+
+    If the unpacker was None, we set it to the identity.
+
+    """
+    if unpacker is None:
+        unpacker = lambda x: x
+    else:
+        raw_unpacker = unpacker
+
+        def unpacker(x):
+            if isinstance(x, float) and np.isnan(x):
+                return x
+            return raw_unpacker(x)
+
+    return unpacker
 
 
 def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
@@ -803,7 +841,7 @@ def _convert_richardson_candidates_to_frame(jac, err):
 
 
 def _convert_evals_to_numpy(
-    raw_evals, key, registry, is_scalar_out=False, is_vector_out=False
+    raw_evals, unpacker, registry, is_scalar_out=False, is_vector_out=False
 ):
     """Harmonize the output of the function evaluations.
 
@@ -812,11 +850,8 @@ def _convert_evals_to_numpy(
     evals only contain numpy arrays.
 
     """
-    # get rid of dictionaries
-    evals = [
-        val[key] if isinstance(val, dict) and key is not None else val
-        for val in raw_evals
-    ]
+    # get rid of additional output
+    evals = [unpacker(val) for val in raw_evals]
 
     # convert pytrees to arrays
     if is_scalar_out:

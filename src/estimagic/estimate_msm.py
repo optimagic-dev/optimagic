@@ -9,9 +9,11 @@ from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
+from optimagic import mark
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import InvalidFunctionError
+from optimagic.optimization.fun_value import LeastSquaresFunctionValue
 from optimagic.optimization.optimize import minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
@@ -269,14 +271,6 @@ def estimate_msm(
     # get converter for params and function outputs
     # ==================================================================================
 
-    def helper(params):
-        raw = simulate_moments(params, **simulate_moments_kwargs)
-        if isinstance(raw, dict) and "simulated_moments" in raw:
-            out = {"contributions": raw["simulated_moments"]}
-        else:
-            out = {"contributions": raw}
-        return out
-
     if isinstance(sim_mom_eval, dict) and "simulated_moments" in sim_mom_eval:
         func_eval = {"contributions": sim_mom_eval["simulated_moments"]}
     else:
@@ -301,9 +295,12 @@ def estimate_msm(
     else:
 
         def func(x):
-            p = converter.params_from_internal(x)
-            sim_mom_eval = helper(p)
-            out = converter.func_to_internal(sim_mom_eval)
+            params = converter.params_from_internal(x)
+            sim_mom = simulate_moments(params, **simulate_moments_kwargs)
+            if isinstance(sim_mom, dict) and "simulated_moments" in sim_mom:
+                sim_mom = sim_mom["simulated_moments"]
+            registry = get_registry(extended=True)
+            out = np.array(tree_just_flatten(sim_mom, registry=registry))
             return out
 
         int_jac = first_derivative(
@@ -314,7 +311,7 @@ def estimate_msm(
                 upper=internal_estimates.upper_bounds,
             ),
             **numdiff_options,
-        )["derivative"]
+        ).derivative
 
     # ==================================================================================
     # Calculate external jac (if no constraints and not closed form )
@@ -407,12 +404,14 @@ def get_msm_optimization_functions(
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
 
-    criterion = functools.partial(
-        _msm_criterion,
-        simulate_moments=_simulate_moments,
-        flat_empirical_moments=flat_emp_mom,
-        chol_weights=chol_weights,
-        registry=registry,
+    criterion = mark.least_squares(
+        functools.partial(
+            _msm_criterion,
+            simulate_moments=_simulate_moments,
+            flat_empirical_moments=flat_emp_mom,
+            chol_weights=chol_weights,
+            registry=registry,
+        )
     )
 
     out = {"fun": criterion}
@@ -438,14 +437,9 @@ def _msm_criterion(
         simulated_flat = np.array(tree_just_flatten(simulated, registry=registry))
 
     deviations = simulated_flat - flat_empirical_moments
-    root_contribs = deviations @ chol_weights
+    residuals = deviations @ chol_weights
 
-    value = root_contribs @ root_contribs
-    out = {
-        "value": value,
-        "root_contributions": root_contribs,
-    }
-    return out
+    return LeastSquaresFunctionValue(value=residuals)
 
 
 def _partial_kwargs(func, kwargs):

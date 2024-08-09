@@ -4,7 +4,7 @@ import warnings
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
 from optimagic.logging.write_to_database import append_row
-from optimagic.parameters.conversion import aggregate_func_output_to_value
+from optimagic.typing import AggregationLevel
 
 
 def internal_criterion_and_derivative_template(
@@ -93,32 +93,30 @@ def internal_criterion_and_derivative_template(
     to_dos = _determine_to_dos(task, derivative, criterion_and_derivative)
 
     caught_exceptions = []
-    new_criterion, new_external_criterion = None, None
-    new_derivative, new_external_derivative = None, None
+    new_fun, new_external_fun = None, None
+    new_jac, new_external_jac = None, None
     current_params, external_x = converter.params_from_internal(
         x,
         return_type="tree_and_flat",
     )
     if to_dos == []:
         pass
-    elif "numerical_criterion_and_derivative" in to_dos:
+    elif "numerical_fun_and_jac" in to_dos:
 
         def func(x):
             p = converter.params_from_internal(x, "tree")
-            crit_full = criterion(p)
-            crit_relevant = converter.func_to_internal(crit_full)
-            out = {"full": crit_full, "relevant": crit_relevant}
-            return out
-
-        options = numdiff_options.copy()
-        options["key"] = "relevant"
-        options["return_func_value"] = True
+            return criterion(p)
 
         try:
-            derivative_dict = first_derivative(func, x, **options)
-            new_derivative = derivative_dict["derivative"]
-            new_criterion = derivative_dict["func_value"]["relevant"]
-            new_external_criterion = derivative_dict["func_value"]["full"]
+            numerical_derivative = first_derivative(
+                func,
+                x,
+                **numdiff_options,
+                unpacker=lambda x: x.internal_value(algo_info.solver_type),
+            )
+            new_jac = numerical_derivative.derivative
+            new_external_fun = numerical_derivative.func_value
+            new_fun = new_external_fun.internal_value(algo_info.solver_type)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -137,9 +135,9 @@ def internal_criterion_and_derivative_template(
                 )
                 warnings.warn(msg)
 
-    elif "criterion_and_derivative" in to_dos:
+    elif "fun_and_jac" in to_dos:
         try:
-            new_external_criterion, new_external_derivative = criterion_and_derivative(
+            new_external_fun, new_external_jac = criterion_and_derivative(
                 current_params
             )
         except (KeyboardInterrupt, SystemExit):
@@ -161,9 +159,9 @@ def internal_criterion_and_derivative_template(
                 warnings.warn(msg)
 
     else:
-        if "criterion" in to_dos:
+        if "fun" in to_dos:
             try:
-                new_external_criterion = criterion(current_params)
+                new_external_fun = criterion(current_params)
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
@@ -182,9 +180,9 @@ def internal_criterion_and_derivative_template(
                     )
                     warnings.warn(msg)
 
-        if "derivative" in to_dos:
+        if "jac" in to_dos:
             try:
-                new_external_derivative = derivative(current_params)
+                new_external_jac = derivative(current_params)
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
@@ -203,29 +201,27 @@ def internal_criterion_and_derivative_template(
                     )
                     warnings.warn(msg)
 
-    if new_external_criterion is not None and new_criterion is None:
-        new_criterion = converter.func_to_internal(new_external_criterion)
+    if new_external_fun is not None and new_fun is None:
+        new_fun = new_external_fun.internal_value(algo_info.solver_type)
 
-    if new_external_derivative is not None and new_derivative is None:
-        new_derivative = converter.derivative_to_internal(new_external_derivative, x)
+    if new_external_jac is not None and new_jac is None:
+        new_jac = converter.derivative_to_internal(new_external_jac, x)
 
     if caught_exceptions:
-        new_criterion, new_derivative = error_penalty_func(
+        new_external_fun, new_jac = error_penalty_func(
             x, task="criterion_and_derivative"
         )
+        new_fun = new_external_fun.internal_value(algo_info.solver_type)
 
-    if new_criterion is not None:
-        scalar_critval = aggregate_func_output_to_value(
-            f_eval=new_criterion,
-            primary_key=algo_info.primary_criterion_entry,
-        )
+    if new_fun is not None:
+        scalar_critval = new_external_fun.internal_value(AggregationLevel.SCALAR)
     else:
         scalar_critval = None
 
-    if (new_criterion is not None or new_derivative is not None) and logging:
+    if (new_fun is not None or new_jac is not None) and logging:
         _log_new_evaluations(
-            new_criterion=new_external_criterion,
-            new_derivative=new_derivative,
+            new_criterion=new_external_fun,
+            new_derivative=new_jac,
             external_x=external_x,
             caught_exceptions=caught_exceptions,
             database=database,
@@ -235,13 +231,13 @@ def internal_criterion_and_derivative_template(
         )
 
     res = _get_output_for_optimizer(
-        new_criterion=new_criterion,
-        new_derivative=new_derivative,
+        new_criterion=new_fun,
+        new_derivative=new_jac,
         task=task,
         direction=direction,
     )
 
-    if new_criterion is not None:
+    if new_fun is not None:
         hist_entry = {
             "params": current_params,
             "criterion": scalar_critval,
@@ -257,7 +253,7 @@ def internal_criterion_and_derivative_template(
     else:
         hist_entry = None
 
-    if history_container is not None and new_criterion is not None:
+    if history_container is not None and new_fun is not None:
         history_container.append(hist_entry)
 
     if return_history_entry:
@@ -287,25 +283,21 @@ def _determine_to_dos(task, derivative, criterion_and_derivative):
             - ["derivative"]
 
     """
-    criterion_needed = "criterion" in task
-    derivative_needed = "derivative" in task
+    fun_needed = "criterion" in task
+    jac_needed = "derivative" in task
 
     to_dos = []
-    if criterion_and_derivative is not None and criterion_needed and derivative_needed:
-        to_dos.append("criterion_and_derivative")
-    elif (
-        derivative is None
-        and criterion_and_derivative is not None
-        and derivative_needed
-    ):
-        to_dos.append("criterion_and_derivative")
-    elif derivative is None and derivative_needed:
-        to_dos.append("numerical_criterion_and_derivative")
+    if criterion_and_derivative is not None and fun_needed and jac_needed:
+        to_dos.append("fun_and_jac")
+    elif derivative is None and criterion_and_derivative is not None and jac_needed:
+        to_dos.append("fun_and_jac")
+    elif derivative is None and jac_needed:
+        to_dos.append("numerical_fun_and_jac")
     else:
-        if derivative_needed:
-            to_dos.append("derivative")
-        if criterion_needed:
-            to_dos.append("criterion")
+        if jac_needed:
+            to_dos.append("jac")
+        if fun_needed:
+            to_dos.append("fun")
     return to_dos
 
 

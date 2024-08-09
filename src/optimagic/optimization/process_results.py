@@ -2,13 +2,14 @@ import numpy as np
 
 from optimagic.optimization.convergence_report import get_convergence_report
 from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
-from optimagic.parameters.conversion import aggregate_func_output_to_value
+from optimagic.typing import AggregationLevel
+from optimagic.utilities import isscalar
 
 
 def process_internal_optimizer_result(
     res,
     converter,
-    primary_key,
+    solver_type,
     fixed_kwargs,
     skip_checks,
 ):
@@ -25,21 +26,21 @@ def process_internal_optimizer_result(
         res = _dummy_result_from_traceback(res, fixed_kwargs)
     else:
         res = _process_one_result(
-            res, converter, primary_key, fixed_kwargs, skip_checks
+            res, converter, solver_type, fixed_kwargs, skip_checks
         )
 
         if is_multistart:
             info = _process_multistart_info(
                 multistart_info,
                 converter,
-                primary_key,
+                solver_type,
                 fixed_kwargs=fixed_kwargs,
                 skip_checks=skip_checks,
             )
 
-            crit_hist = [opt.fun for opt in info["local_optima"]]
-            params_hist = [opt.params for opt in info["local_optima"]]
-            time_hist = [np.nan for opt in info["local_optima"]]
+            crit_hist = [opt.fun for opt in info.local_optima]
+            params_hist = [opt.params for opt in info.local_optima]
+            time_hist = [np.nan for opt in info.local_optima]
             hist = {"criterion": crit_hist, "params": params_hist, "runtime": time_hist}
 
             conv_report = get_convergence_report(
@@ -51,28 +52,29 @@ def process_internal_optimizer_result(
 
             res.algorithm = f"multistart_{res.algorithm}"
             res.n_iterations = _sum_or_none(
-                [opt.n_iterations for opt in info["local_optima"]]
+                [opt.n_iterations for opt in info.local_optima]
             )
 
             res.n_fun_evals = _sum_or_none(
-                [opt.n_fun_evals for opt in info["local_optima"]]
+                [opt.n_fun_evals for opt in info.local_optima]
             )
             res.n_jac_evals = _sum_or_none(
-                [opt.n_jac_evals for opt in info["local_optima"]]
+                [opt.n_jac_evals for opt in info.local_optima]
             )
 
             res.multistart_info = info
     return res
 
 
-def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
+def _process_one_result(res, converter, solver_type, fixed_kwargs, skip_checks):
     _params = converter.params_from_internal(res["solution_x"])
-    if np.isscalar(res["solution_criterion"]):
+
+    if isscalar(res["solution_criterion"]):
         _criterion = float(res["solution_criterion"])
-    else:
-        _criterion = aggregate_func_output_to_value(
-            res["solution_criterion"], primary_key
-        )
+    elif solver_type == AggregationLevel.LIKELIHOOD:
+        _criterion = float(np.sum(res["solution_criterion"]))
+    elif solver_type == AggregationLevel.LEAST_SQUARES:
+        _criterion = res["solution_criterion"] @ res["solution_criterion"]
 
     if fixed_kwargs["direction"] == "maximize":
         _criterion = -_criterion
@@ -117,7 +119,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
     return out
 
 
-def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_checks):
+def _process_multistart_info(info, converter, solver_type, fixed_kwargs, skip_checks):
     direction = fixed_kwargs["direction"]
 
     starts = [converter.params_from_internal(x) for x in info["start_parameters"]]
@@ -130,7 +132,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
         processed = _process_one_result(
             res,
             converter=converter,
-            primary_key=primary_key,
+            solver_type=solver_type,
             fixed_kwargs=kwargs,
             skip_checks=skip_checks,
         )

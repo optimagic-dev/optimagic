@@ -11,9 +11,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic import mark
 from optimagic.examples.criterion_functions import (
-    sos_dict_criterion,
-    sos_dict_derivative,
+    sos_derivatives,
+    sos_ls,
 )
 from optimagic.exceptions import TableExistsError
 from optimagic.optimization.optimize import minimize
@@ -21,12 +22,13 @@ from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
 
+@mark.least_squares
 def flexible_sos_ls(params):
-    return {"root_contributions": params}
+    return params
 
 
 algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox"]
-derivatives = [None, sos_dict_derivative]
+derivatives = [None, sos_derivatives]
 params = [pd.DataFrame({"value": np.arange(3)}), np.arange(3), {"a": 1, "b": 2, "c": 3}]
 
 test_cases = []
@@ -50,7 +52,7 @@ def test_optimization_with_valid_logging(algorithm, params):
 
 def test_optimization_with_existing_exsting_database():
     minimize(
-        sos_dict_criterion,
+        sos_ls,
         pd.Series([1, 2, 3], name="value").to_frame(),
         algorithm="scipy_lbfgsb",
         logging="logging.db",
@@ -59,7 +61,7 @@ def test_optimization_with_existing_exsting_database():
 
     with pytest.raises(FileExistsError):
         minimize(
-            sos_dict_criterion,
+            sos_ls,
             pd.Series([1, 2, 3], name="value").to_frame(),
             algorithm="scipy_lbfgsb",
             logging="logging.db",
@@ -69,7 +71,7 @@ def test_optimization_with_existing_exsting_database():
 
 def test_optimization_with_existing_exsting_table():
     minimize(
-        sos_dict_criterion,
+        sos_ls,
         pd.Series([1, 2, 3], name="value").to_frame(),
         algorithm="scipy_lbfgsb",
         logging="logging.db",
@@ -78,7 +80,7 @@ def test_optimization_with_existing_exsting_table():
 
     with pytest.raises(TableExistsError):
         minimize(
-            sos_dict_criterion,
+            sos_ls,
             pd.Series([1, 2, 3], name="value").to_frame(),
             algorithm="scipy_lbfgsb",
             logging="logging.db",

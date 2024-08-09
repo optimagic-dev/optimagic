@@ -25,7 +25,10 @@ from functools import partial
 
 import numpy as np
 
+from optimagic import mark
 
+
+@mark.least_squares
 def linear_full_rank(x, dim_out):
     temp = 2 * x.sum() / dim_out + 1
     out = np.full(dim_out, -temp)
@@ -33,6 +36,7 @@ def linear_full_rank(x, dim_out):
     return out
 
 
+@mark.least_squares
 def linear_rank_one(x, dim_out):
     dim_in = len(x)
     sm = np.arange(1, dim_in + 1) @ x
@@ -40,6 +44,7 @@ def linear_rank_one(x, dim_out):
     return fvec
 
 
+@mark.least_squares
 def linear_rank_one_zero_columns_rows(x, dim_out):
     dim_in = len(x)
     sm = (np.arange(2, dim_in) * x[1:-1]).sum()
@@ -48,6 +53,7 @@ def linear_rank_one_zero_columns_rows(x, dim_out):
     return fvec
 
 
+@mark.least_squares
 def rosenbrock(x):
     fvec = np.zeros(2)
     fvec[0] = 10 * (x[1] - x[0] ** 2)
@@ -55,6 +61,7 @@ def rosenbrock(x):
     return fvec
 
 
+@mark.least_squares
 def helical_valley(x):
     temp = 8 * np.arctan(1.0)
     temp1 = np.sign(x[1]) * 0.25
@@ -70,6 +77,7 @@ def helical_valley(x):
     return fvec
 
 
+@mark.least_squares
 def powell_singular(x):
     fvec = np.zeros(4)
     fvec[0] = x[0] + 10 * x[1]
@@ -79,6 +87,7 @@ def powell_singular(x):
     return fvec
 
 
+@mark.least_squares
 def freudenstein_roth(x):
     fvec = np.zeros(2)
     fvec[0] = -13 + x[0] + ((5 - x[1]) * x[1] - 2) * x[1]
@@ -86,6 +95,7 @@ def freudenstein_roth(x):
     return fvec
 
 
+@mark.least_squares
 def bard(x, y):
     fvec = np.zeros(len(y))
     for i in range(1, round(len(y) / 2) + 1):
@@ -97,6 +107,7 @@ def bard(x, y):
     return fvec
 
 
+@mark.least_squares
 def kowalik_osborne(x, y1, y2):
     temp1 = y1 * (y1 + x[1])
     temp2 = y1 * (y1 + x[2]) + x[3]
@@ -104,6 +115,7 @@ def kowalik_osborne(x, y1, y2):
     return fvec
 
 
+@mark.least_squares
 def meyer(x, y):
     temp = 5 * np.arange(1, len(y) + 1) + 45 + x[2]
     temp1 = x[1] / temp
@@ -112,6 +124,7 @@ def meyer(x, y):
     return fvec
 
 
+@mark.least_squares
 def watson(x):
     dim_in = len(x)
     fvec = np.zeros(31)
@@ -125,6 +138,7 @@ def watson(x):
     return fvec
 
 
+@mark.least_squares
 def box_3d(x, dim_out):
     fvec = np.zeros(dim_out)
     for i in range(1, dim_out + 1):
@@ -136,6 +150,7 @@ def box_3d(x, dim_out):
     return fvec
 
 
+@mark.least_squares
 def jennrich_sampson(x, dim_out):
     fvec = (
         2 * (1.0 + np.arange(1, dim_out + 1))
@@ -145,6 +160,7 @@ def jennrich_sampson(x, dim_out):
     return fvec
 
 
+@mark.least_squares
 def brown_dennis(x, dim_out):
     fvec = np.zeros(dim_out)
     for i in range(1, dim_out + 1):
@@ -155,6 +171,7 @@ def brown_dennis(x, dim_out):
     return fvec
 
 
+@mark.least_squares
 def chebyquad(x, dim_out):
     fvec = np.zeros(dim_out)
     dim_in = len(x)
@@ -174,6 +191,7 @@ def chebyquad(x, dim_out):
     return fvec
 
 
+@mark.least_squares
 def brown_almost_linear(x):
     dim_in = len(x)
     sm = -(dim_in + 1) + x.sum()
@@ -183,6 +201,7 @@ def brown_almost_linear(x):
     return fvec
 
 
+@mark.least_squares
 def osborne_one(x, y):
     temp = 10 * np.arange(len(y))
     temp_1 = np.exp(-x[3] * temp)
@@ -191,6 +210,7 @@ def osborne_one(x, y):
     return fvec
 
 
+@mark.least_squares
 def osborne_two(x, y):
     temp_array = np.zeros((4, len(y)))
     temp = np.arange(len(y)) / 10
@@ -202,6 +222,7 @@ def osborne_two(x, y):
     return fvec
 
 
+@mark.least_squares
 def bdqrtic(x):
     # the length of array x should be more than 5.
     dim_in = len(x)
@@ -218,12 +239,14 @@ def bdqrtic(x):
     return fvec
 
 
+@mark.least_squares
 def cube(x):
     fvec = 10 * (x - np.roll(x, 1) ** 3)
     fvec[0] = x[0] - 1.0
     return fvec
 
 
+@mark.least_squares
 def mancino(x):
     dim_in = len(x)
     fvec = np.zeros(dim_in)
@@ -236,6 +259,7 @@ def mancino(x):
     return fvec
 
 
+@mark.least_squares
 def heart_eight(x, y):
     dim_y = len(y)
     fvec = np.zeros(dim_y)
@@ -274,6 +298,7 @@ def heart_eight(x, y):
     return fvec
 
 
+@mark.least_squares
 def get_start_points_mancino(n, a=1):
     x = np.zeros(n)
     for i in range(1, n + 1):
@@ -762,21 +787,21 @@ heart_eight_solution_x = [
 
 MORE_WILD_PROBLEMS = {
     "linear_full_rank_good_start": {
-        "fun": partial(linear_full_rank, dim_out=45),
+        "fun": mark.least_squares(partial(linear_full_rank, dim_out=45)),
         "start_x": [1] * 9,
         "solution_x": linear_full_rank_solution_x,
         "start_criterion": 72,
         "solution_criterion": 36,
     },
     "linear_full_rank_bad_start": {
-        "fun": partial(linear_full_rank, dim_out=45),
+        "fun": mark.least_squares(partial(linear_full_rank, dim_out=45)),
         "start_x": [10] * 9,
         "solution_x": linear_full_rank_solution_x,
         "start_criterion": 1125,
         "solution_criterion": 36,
     },
     "linear_rank_one_good_start": {
-        "fun": partial(linear_rank_one, dim_out=35),
+        "fun": mark.least_squares(partial(linear_rank_one, dim_out=35)),
         "start_x": [1] * 7,
         # no unique solution
         "solution_x": None,
@@ -784,7 +809,7 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 8.380281690143324,
     },
     "linear_rank_one_bad_start": {
-        "fun": partial(linear_rank_one, dim_out=35),
+        "fun": mark.least_squares(partial(linear_rank_one, dim_out=35)),
         "start_x": [10] * 7,
         # no unique solution
         "solution_x": None,
@@ -792,7 +817,9 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 8.380282,
     },
     "linear_rank_one_zero_columns_rows_good_start": {
-        "fun": partial(linear_rank_one_zero_columns_rows, dim_out=35),
+        "fun": mark.least_squares(
+            partial(linear_rank_one_zero_columns_rows, dim_out=35)
+        ),
         "start_x": [1] * 7,
         # no unique solution
         "solution_x": None,
@@ -800,7 +827,9 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 9.880597014926506,
     },
     "linear_rank_one_zero_columns_rows_bad_start": {
-        "fun": partial(linear_rank_one_zero_columns_rows, dim_out=35),
+        "fun": mark.least_squares(
+            partial(linear_rank_one_zero_columns_rows, dim_out=35)
+        ),
         "start_x": [10] * 7,
         # no unique solution
         "solution_x": None,
@@ -864,21 +893,21 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 48.984253679240013,
     },
     "bard_good_start": {
-        "fun": partial(bard, y=y_vec),
+        "fun": mark.least_squares(partial(bard, y=y_vec)),
         "start_x": [1] * 3,
         "solution_x": bard_solution_x,
         "start_criterion": 41.68170,
         "solution_criterion": 0.00821487730657897,
     },
     "bard_bad_start": {
-        "fun": partial(bard, y=y_vec),
+        "fun": mark.least_squares(partial(bard, y=y_vec)),
         "start_x": [10] * 3,
         "solution_x": bard_solution_x,
         "start_criterion": 1306.234,
         "solution_criterion": 0.00821487730657897,
     },
     "kowalik_osborne": {
-        "fun": partial(
+        "fun": mark.least_squares(partial)(
             kowalik_osborne,
             y1=v_vec,
             y2=y2_vec,
@@ -889,7 +918,7 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 0.00030750560384924,
     },
     "meyer": {
-        "fun": partial(meyer, y=y3_vec),
+        "fun": mark.least_squares(partial(meyer, y=y3_vec)),
         "start_x": [0.02, 4000, 250],
         "solution_x": meyer_solution_x,
         "start_criterion": 1.693608e9,
@@ -938,70 +967,70 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 4.722381e-10,
     },
     "box_3d": {
-        "fun": partial(box_3d, dim_out=10),
+        "fun": mark.least_squares(partial(box_3d, dim_out=10)),
         "start_x": [0, 10, 20],
         "solution_x": [1, 10, 1],
         "start_criterion": 1031.154,
         "solution_criterion": 0,
     },
     "jennrich_sampson": {
-        "fun": partial(jennrich_sampson, dim_out=10),
+        "fun": mark.least_squares(partial(jennrich_sampson, dim_out=10)),
         "start_x": [0.3, 0.4],
         "solution_x": [0.2578252135686162] * 2,
         "start_criterion": 4171.306,
         "solution_criterion": 124.3621823556148,
     },
     "brown_dennis_good_start": {
-        "fun": partial(brown_dennis, dim_out=20),
+        "fun": mark.least_squares(partial(brown_dennis, dim_out=20)),
         "start_x": [25, 5, -5, -1],
         "solution_x": brown_dennis_solution_x,
         "start_criterion": 7.926693e6,
         "solution_criterion": 85822.20162635,
     },
     "brown_dennis_bad_start": {
-        "fun": partial(brown_dennis, dim_out=20),
+        "fun": mark.least_squares(partial(brown_dennis, dim_out=20)),
         "start_x": [250, 50, -50, -10],
         "solution_x": brown_dennis_solution_x,
         "start_criterion": 3.081064e11,
         "solution_criterion": 85822.20162635,
     },
     "chebyquad_6": {
-        "fun": partial(chebyquad, dim_out=6),
+        "fun": mark.least_squares(partial(chebyquad, dim_out=6)),
         "start_x": [i / 7 for i in range(1, 7)],
         "solution_x": chebyquad_6_solution_x,
         "start_criterion": 4.642817e-2,
         "solution_criterion": 0,
     },
     "chebyquad_7": {
-        "fun": partial(chebyquad, dim_out=7),
+        "fun": mark.least_squares(partial(chebyquad, dim_out=7)),
         "start_x": [i / 8 for i in range(1, 8)],
         "solution_x": chebyquad_7_solution_x,
         "start_criterion": 3.377064e-2,
         "solution_criterion": 0,
     },
     "chebyquad_8": {
-        "fun": partial(chebyquad, dim_out=8),
+        "fun": mark.least_squares(partial(chebyquad, dim_out=8)),
         "start_x": [i / 9 for i in range(1, 9)],
         "solution_x": chebyquad_8_solution_x,
         "start_criterion": 3.861770e-2,
         "solution_criterion": 0.003516873725677,
     },
     "chebyquad_9": {
-        "fun": partial(chebyquad, dim_out=9),
+        "fun": mark.least_squares(partial(chebyquad, dim_out=9)),
         "start_x": [i / 10 for i in range(1, 10)],
         "solution_x": chebyquad_9_solution_x,
         "start_criterion": 2.888298e-2,
         "solution_criterion": 0,
     },
     "chebyquad_10": {
-        "fun": partial(chebyquad, dim_out=10),
+        "fun": mark.least_squares(partial(chebyquad, dim_out=10)),
         "start_x": [i / 11 for i in range(1, 11)],
         "solution_x": chebyquad_10_solution_x,
         "start_criterion": 3.376327e-2,
         "solution_criterion": 0.00477271369637536,
     },
     "chebyquad_11": {
-        "fun": partial(chebyquad, dim_out=11),
+        "fun": mark.least_squares(partial(chebyquad, dim_out=11)),
         "start_x": [i / 12 for i in range(1, 12)],
         "solution_x": chebyquad_11_solution_x,
         "start_criterion": 2.674060e-2,
@@ -1015,21 +1044,21 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 0,
     },
     "osborne_one": {
-        "fun": partial(osborne_one, y=y4_vec),
+        "fun": mark.least_squares(partial(osborne_one, y=y4_vec)),
         "start_x": [0.5, 1.5, 1, 0.01, 0.02],
         "solution_x": osborne_one_solution_x,
         "start_criterion": 16.17411,
         "solution_criterion": 0.00005464894697483,
     },
     "osborne_two_good_start": {
-        "fun": partial(osborne_two, y=y5_vec),
+        "fun": mark.least_squares(partial(osborne_two, y=y5_vec)),
         "start_x": [1.3, 0.65, 0.65, 0.7, 0.6, 3, 5, 7, 2, 4.5, 5.5],
         "solution_x": osborne_two_solution_x,
         "start_criterion": 2.093420,
         "solution_criterion": 0.0401377362935477,
     },
     "osborne_two_bad_start": {
-        "fun": partial(osborne_two, y=y5_vec),
+        "fun": mark.least_squares(partial(osborne_two, y=y5_vec)),
         "start_x": [13, 6.5, 6.5, 7, 6, 30, 50, 70, 20, 45, 55],
         "solution_x": osborne_two_solution_x,
         "start_criterion": 199.6847,
@@ -1127,9 +1156,11 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 0,
     },
     "heart_eight_good_start": {
-        "fun": partial(
-            heart_eight,
-            y=np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48]),
+        "fun": mark.least_squares(
+            partial(
+                heart_eight,
+                y=np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48]),
+            )
         ),
         "start_x": [-0.3, -0.39, 0.3, -0.344, -1.2, 2.69, 1.59, -1.5],
         "solution_x": heart_eight_solution_x,
@@ -1137,9 +1168,11 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 0,
     },
     "heart_eight_bad_start": {
-        "fun": partial(
-            heart_eight,
-            y=np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48]),
+        "fun": mark.least_squares(
+            partial(
+                heart_eight,
+                y=np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48]),
+            )
         ),
         "start_x": [-3, -3.9, 3, -3.44, -12, 26.9, 15.9, -15],
         "solution_x": heart_eight_solution_x,

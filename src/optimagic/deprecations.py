@@ -1,7 +1,16 @@
 import warnings
 from dataclasses import replace
+from functools import wraps
+from typing import Any, Callable, ParamSpec
 
+from optimagic import mark
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import AggregationLevel
 
 
 def throw_criterion_future_warning():
@@ -207,6 +216,96 @@ def replace_and_warn_about_deprecated_bounds(
     return bounds
 
 
+def convert_dict_to_function_value(candidate):
+    """Convert the deprecated dictionary output to a suitable FunctionValue object.
+
+    No warning is raised here because this function will be called repeatedly!
+
+    """
+    special_keys = ["value", "contributions", "root_contributions"]
+
+    if is_dict_output(candidate):
+        info = {k: v for k, v in candidate.items() if k not in special_keys}
+        if "root_contributions" in candidate:
+            out = LeastSquaresFunctionValue(candidate["root_contributions"], info)
+        elif "contributions" in candidate:
+            out = LikelihoodFunctionValue(candidate["contributions"], info)
+        else:
+            out = ScalarFunctionValue(candidate["value"], info)
+    else:
+        out = candidate
+
+    return out
+
+
+def is_dict_output(candidate):
+    """Check if the output is a dictionary with special keys."""
+    special_keys = ["value", "contributions", "root_contributions"]
+    return isinstance(candidate, dict) and any(k in candidate for k in special_keys)
+
+
+def throw_dict_output_warning():
+    msg = (
+        "Returning a dictionary with the special keys 'value', 'contributions', or "
+        "'root_contributions' is deprecated and will be removed in optimagic version "
+        "0.6.0 and later. Please use the optimagic.mark.scalar, optimagic.mark."
+        "least_squares, or optimagic.mark.likelihood decorators to indicate the type "
+        "of problem you are solving. Use optimagic.FunctionValue objects to return "
+        "additional information for the logging."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
+def infer_problem_type_from_dict_output(output):
+    if "root_contributions" in output:
+        out = AggregationLevel.LEAST_SQUARES
+    elif "contributions" in output:
+        out = AggregationLevel.LIKELIHOOD
+    else:
+        out = AggregationLevel.SCALAR
+    return out
+
+
+P = ParamSpec("P")
+
+
+def replace_dict_output(func: Callable[P, Any]) -> Callable[P, Any]:
+    """Replace the deprecated dictionary output by a suitable FunctionValue.
+
+    This has no effect if the function does not return a dictionary with at least one of
+    the special keys "value", "contributions" or "root_contributions" or a tuple where
+    the first entry is such a dictionary.
+
+    This decorator does not add a warning because the function will be evaluated many
+    times and the warning would pop up too often.
+
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
+        raw = func(*args, **kwargs)
+        # fun and jac case
+        if isinstance(raw, tuple):
+            out = (convert_dict_to_function_value(raw[0]), raw[1])
+        # fun case
+        else:
+            out = convert_dict_to_function_value(raw)
+        return out
+
+    return wrapper
+
+
+def throw_key_warning_in_derivatives():
+    msg = (
+        "The `key` argument in first_derivative and second_derivative is deprecated "
+        "and will be removed in optimagic version 0.6.0 and later. Please use the "
+        "`unpacker` argument instead. While `key` was a string, `unpacker` is a "
+        "callable that takes the output of `func` and returns the desired output that "
+        "is then differentiated."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_multistart_options(options):
     """Replace deprecated multistart options and warn about them.
 
@@ -279,3 +378,27 @@ def replace_and_warn_about_deprecated_base_steps(
             steps = base_steps
 
     return steps
+
+
+def replace_and_warn_about_deprecated_derivatives(candidate, name):
+    msg = (
+        f"Specifying a dictionary of {name} functions is deprecated and will be "
+        "removed in optimagic version 0.6.0. Please specify a single function that has "
+        "returns the correct derivative for your optimizer or a list of functions that "
+        "are decorated with the `mark.scalar`, `mark.likelihood` or "
+        "`mark.least_squares` decorators."
+    )
+    warnings.warn(msg, FutureWarning)
+
+    key_to_marker = {
+        "value": mark.scalar,
+        "contributions": mark.likelihood,
+        "root_contributions": mark.least_squares,
+    }
+
+    out = []
+    for key, func in candidate.items():
+        if key in key_to_marker:
+            out.append(key_to_marker[key](func))
+
+    return out

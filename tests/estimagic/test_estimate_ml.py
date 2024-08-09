@@ -6,9 +6,14 @@ import pytest
 import scipy as sp
 import statsmodels.api as sm
 from estimagic.estimate_ml import estimate_ml
-from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
-from estimagic.examples.logit import logit_loglike_and_derivative as llad
+from estimagic.examples.logit import (
+    logit_hess,
+    logit_jac,
+    logit_loglike,
+    scalar_logit_fun_and_jac,
+)
 from numpy.testing import assert_array_equal
+from optimagic import mark
 from optimagic.parameters.bounds import Bounds
 from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel
@@ -25,15 +30,12 @@ def aaae(obj1, obj2, decimal=3):
 # ==================================================================================
 
 
+@mark.likelihood
 def multivariate_normal_loglike(params, data):
     mean = params["mean"]
     cov = params["cov"]
     mn = multivariate_normal(mean=mean, cov=cov)
-    contributions = mn.logpdf(data)
-    return {
-        "contributions": contributions,
-        "value": contributions.sum(),
-    }
+    return mn.logpdf(data)
 
 
 @pytest.fixture()
@@ -116,15 +118,6 @@ def fitted_logit_model(logit_object):
     return generic_logit.fit()
 
 
-def logit_jacobian(params, y, x):
-    return logit_derivative(params, y, x)["contributions"]
-
-
-def logit_loglike_and_derivative(params, y, x):
-    loglike, loglike_derivative = llad(params, y, x)
-    return loglike, loglike_derivative["value"]
-
-
 test_cases = list(
     itertools.product(
         [
@@ -132,11 +125,11 @@ test_cases = list(
             "scipy_lbfgsb",
             {
                 "algorithm": "scipy_lbfgsb",
-                "fun_and_jac": logit_loglike_and_derivative,
+                "fun_and_jac": scalar_logit_fun_and_jac,
             },
-        ],  # optimize_options
-        [None, logit_jacobian, False],  # jacobian
-        [None, logit_hessian, False],  # hessian
+        ],
+        [None, logit_jac, False],
+        [None, logit_hess, False],
     )
 )
 
@@ -237,7 +230,7 @@ def test_estimate_ml_with_logit_no_constraints(
 
 test_cases_constr = list(
     itertools.product(
-        [None, logit_jacobian],  # jacobian
+        [None, logit_jac],  # jacobian
         [
             {"loc": [1, 2, 3], "type": "covariance"},
             {"loc": [0, 1], "type": "linear", "lower_bound": -20, "weights": 1},
@@ -356,12 +349,9 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_np_inputs)
 # ======================================================================================
 
 
+@mark.likelihood
 def normal_loglike(params, y):
-    contribs = sp.stats.norm.logpdf(y, loc=params["mean"], scale=params["sd"])
-    return {
-        "value": contribs.sum(),
-        "contributions": np.array(contribs),
-    }
+    return sp.stats.norm.logpdf(y, loc=params["mean"], scale=params["sd"])
 
 
 @pytest.fixture()
