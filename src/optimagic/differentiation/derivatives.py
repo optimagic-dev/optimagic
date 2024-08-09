@@ -214,9 +214,6 @@ def first_derivative(
     # ==================================================================================
     # Convert arguments to numpy
     # ==================================================================================
-
-    unpacker = _process_unpacker(unpacker)
-
     registry = get_registry(extended=True)
 
     fast_path = _is_1d_array(params)
@@ -227,17 +224,17 @@ def first_derivative(
 
         if min_steps is not None:
             min_steps = _handle_float_or_pytree_argument(
-                min_steps, params_treedef, registry, arg_name="min_steps"
+                min_steps, params_treedef, registry, name="min_steps"
             )
 
         if scaling_factor is not None:
             scaling_factor = _handle_float_or_pytree_argument(
-                scaling_factor, params_treedef, registry, arg_name="scaling_factor"
+                scaling_factor, params_treedef, registry, name="scaling_factor"
             )
 
         if step_size is not None:
             step_size = _handle_float_or_pytree_argument(
-                step_size, params_treedef, registry, arg_name="step_size"
+                step_size, params_treedef, registry, name="step_size"
             )
 
     else:
@@ -245,17 +242,17 @@ def first_derivative(
 
         if min_steps is not None:
             min_steps = _handle_float_or_pytree_argument_fast_path(
-                min_steps, x, arg_name="min_steps"
+                min_steps, x, name="min_steps"
             )
 
         if scaling_factor is not None:
             scaling_factor = _handle_float_or_pytree_argument_fast_path(
-                scaling_factor, x, arg_name="scaling_factor"
+                scaling_factor, x, name="scaling_factor"
             )
 
         if step_size is not None:
             step_size = _handle_float_or_pytree_argument_fast_path(
-                step_size, x, arg_name="step_size"
+                step_size, x, name="step_size"
             )
 
     if np.isnan(x).any():
@@ -554,17 +551,17 @@ def second_derivative(
 
         if min_steps is not None:
             min_steps = _handle_float_or_pytree_argument(
-                min_steps, params_treedef, registry, arg_name="min_steps"
+                min_steps, params_treedef, registry, name="min_steps"
             )
 
         if scaling_factor is not None:
             scaling_factor = _handle_float_or_pytree_argument(
-                scaling_factor, params_treedef, registry, arg_name="scaling_factor"
+                scaling_factor, params_treedef, registry, name="scaling_factor"
             )
 
         if step_size is not None:
             step_size = _handle_float_or_pytree_argument(
-                step_size, params_treedef, registry, arg_name="step_size"
+                step_size, params_treedef, registry, name="step_size"
             )
 
     else:
@@ -572,17 +569,17 @@ def second_derivative(
 
         if min_steps is not None:
             min_steps = _handle_float_or_pytree_argument_fast_path(
-                min_steps, x, arg_name="min_steps"
+                min_steps, x, name="min_steps"
             )
 
         if scaling_factor is not None:
             scaling_factor = _handle_float_or_pytree_argument_fast_path(
-                scaling_factor, x, arg_name="scaling_factor"
+                scaling_factor, x, name="scaling_factor"
             )
 
         if step_size is not None:
             step_size = _handle_float_or_pytree_argument_fast_path(
-                step_size, x, arg_name="step_size"
+                step_size, x, name="step_size"
             )
 
     unpacker = _process_unpacker(unpacker)
@@ -749,7 +746,7 @@ def second_derivative(
 
 
 def _handle_float_or_pytree_argument(
-    arg: PyTree | float, params_treedef: PyTree, registry: PyTreeRegistry, arg_name: str
+    arg: PyTree | float, params_treedef: PyTree, registry: PyTreeRegistry, name: str
 ) -> NDArray[np.float64] | float:
     if isinstance(arg, float | int):
         out = arg
@@ -757,7 +754,7 @@ def _handle_float_or_pytree_argument(
         data, treedef = tree_flatten(arg, registry=registry)
         if not tree_equal(treedef, params_treedef):
             raise ValueError(
-                f"The argument {arg_name} has to be a scalar or of the same type and "
+                f"The argument {name} has to be a scalar or of the same type and "
                 "structure as the parameters."
             )
         out = np.array(data, dtype=np.float64)  # type: ignore
@@ -765,7 +762,7 @@ def _handle_float_or_pytree_argument(
 
 
 def _handle_float_or_pytree_argument_fast_path(
-    arg: PyTree | float, x: NDArray[np.float64], arg_name: str
+    arg: PyTree | float, x: NDArray[np.float64], name: str
 ) -> NDArray[np.float64] | float:
     if isinstance(arg, float | int):
         out = arg
@@ -773,12 +770,12 @@ def _handle_float_or_pytree_argument_fast_path(
         out = np.array(arg, dtype=np.float64)  # type: ignore
         if out.shape != x.shape:  # type: ignore
             raise ValueError(
-                f"The argument {arg_name} has to be a scalar or of the same type and "
+                f"The argument {name} has to be a scalar or of the same type and "
                 "structure as the parameters, but has different shape."
             )
     else:
         raise ValueError(
-            f"The argument {arg_name} has to be a scalar or of the same type and "
+            f"The argument {name} has to be a scalar or of the same type and "
             "structure as the parameters."
         )
     return out

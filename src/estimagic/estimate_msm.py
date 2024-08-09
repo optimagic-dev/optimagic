@@ -150,8 +150,7 @@ def estimate_msm(
             simulate_moments with respect to the params.
         jacobian_kwargs (dict): Additional keyword arguments for the jacobian function.
         jacobian_numdiff_options (dict): Keyword arguments for the calculation of
-            numerical
-            derivatives for the calculation of standard errors. See
+            numerical derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details. Note that by default we increase the
             step_size by a factor of 2 compared to the rule of thumb for optimal
             step sizes. This is because many msm criterion functions are slightly noisy.
