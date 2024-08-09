@@ -352,7 +352,7 @@ def create_optimization_problem(
 
     # This should be done as late as possible; It has to be done here to infer the
     # problem type until the decorator approach becomes mandatory.
-    # TODO: Move this into `_optimize` and there as late as soon as we reach 0.6.0
+    # TODO: Move this into `_optimize` as soon as we reach 0.6.0
     try:
         fun_eval = fun(params)
     except (KeyboardInterrupt, SystemExit):

@@ -16,13 +16,13 @@ def _penalty_value(x, constant, slope, x0, dim_out=None):  # noqa: ARG001
     return ScalarFunctionValue(value=value)
 
 
-def _penalty_contributions(x, constant, slope, x0, dim_out):
+def _penalty_loglikes(x, constant, slope, x0, dim_out):
     contrib = (constant + slope * np.linalg.norm(x - x0)) / dim_out
     contrib = np.ones(dim_out) * contrib
     return LikelihoodFunctionValue(value=contrib)
 
 
-def _penalty_root_contributions(x, constant, slope, x0, dim_out):
+def _penalty_residuals(x, constant, slope, x0, dim_out):
     contrib = np.sqrt((constant + slope * np.linalg.norm(x - x0)) / dim_out)
     contrib = np.ones(dim_out) * contrib
     return LeastSquaresFunctionValue(value=contrib)
@@ -32,12 +32,12 @@ def _penalty_value_derivative(x, constant, slope, x0, dim_out=None):  # noqa: AR
     return slope * (x - x0) / np.linalg.norm(x - x0)
 
 
-def _penalty_contributions_derivative(x, constant, slope, x0, dim_out):  # noqa: ARG001
+def _penalty_loglikes_derivative(x, constant, slope, x0, dim_out):  # noqa: ARG001
     row = slope * (x - x0) / (dim_out * np.linalg.norm(x - x0))
     return np.full((dim_out, len(x)), row)
 
 
-def _penalty_root_contributions_derivative(x, constant, slope, x0, dim_out):
+def _penalty_residuals_derivative(x, constant, slope, x0, dim_out):
     inner_deriv = slope * (x - x0) / np.linalg.norm(x - x0)
     outer_deriv = 0.5 / np.sqrt(_penalty_value(x, constant, slope, x0).value * dim_out)
     row = outer_deriv * inner_deriv
@@ -80,17 +80,17 @@ def get_error_penalty_function(
         _penalty = partial(_penalty_value, **kwargs)
         _derivative = partial(_penalty_value_derivative, **kwargs)
     elif solver_type == AggregationLevel.LIKELIHOOD:
-        _penalty = partial(_penalty_contributions, **kwargs)
+        _penalty = partial(_penalty_loglikes, **kwargs)
         _derivative = partial(
-            _penalty_contributions_derivative,
+            _penalty_loglikes_derivative,
             **kwargs,
         )
     elif solver_type == AggregationLevel.LEAST_SQUARES:
         _penalty = partial(
-            _penalty_root_contributions,
+            _penalty_residuals,
             **kwargs,
         )
-        _derivative = partial(_penalty_root_contributions_derivative, **kwargs)
+        _derivative = partial(_penalty_residuals_derivative, **kwargs)
 
     else:
         raise ValueError()
