@@ -119,7 +119,7 @@ def internal_criterion_and_derivative_template(
                 bounds=bounds,
                 **options,
                 unpacker=lambda x: x.internal_value(algo_info.solver_type),
-                error_handling="raise",
+                error_handling="raise_strict",
             )
 
             new_jac = numerical_derivative.derivative

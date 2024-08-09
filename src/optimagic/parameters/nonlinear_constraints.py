@@ -115,7 +115,7 @@ def _process_nonlinear_constraint(
                 constraint_func,
                 p,
                 bounds=constraint_bounds,
-                error_handling="raise",
+                error_handling="raise_strict",
                 **options,
             ).derivative
 
