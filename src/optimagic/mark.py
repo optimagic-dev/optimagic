@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import Any, Callable, ParamSpec, TypeVar
 
+from optimagic.optimization.algorithm import AlgoInfo, Algorithm
 from optimagic.typing import AggregationLevel
 
 P = ParamSpec("P")
@@ -59,3 +60,46 @@ def likelihood(func: VectorFuncT) -> VectorFuncT:
 
         wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
     return wrapper
+
+
+def minimizer(
+    name: str,
+    solver_type: AggregationLevel,
+    is_available: bool,
+    is_global: bool,
+    needs_jac: bool,
+    needs_hess: bool,
+    supports_parallelism: bool,
+    supports_bounds: bool,
+    supports_linear_constraints: bool,
+    supports_nonlinear_constraints: bool,
+    disable_history: bool = False,
+) -> Callable[[Algorithm], Algorithm]:
+    """Mark an algorithm as a optimagic minimizer and add AlgoInfo.
+
+    Args:
+        name: The name of the algorithm as a string. Used in error messages, warnings
+            and the OptimizeResult.
+        problem_type: The type of optimization problem the algorithm solves. Used to
+            distinguish between scalar, least-squares and likelihood optimizers.
+
+    """
+
+    def decorator(cls: Algorithm) -> Algorithm:
+        algo_info = AlgoInfo(
+            name=name,
+            solver_type=solver_type,
+            is_available=is_available,
+            is_global=is_global,
+            needs_jac=needs_jac,
+            needs_hess=needs_hess,
+            supports_parallelism=supports_parallelism,
+            supports_bounds=supports_bounds,
+            supports_linear_constraints=supports_linear_constraints,
+            supports_nonlinear_constraints=supports_nonlinear_constraints,
+            disable_history=disable_history,
+        )
+        cls.__algo_info__ = algo_info  # type: ignore
+        return cls
+
+    return decorator

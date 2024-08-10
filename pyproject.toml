@@ -382,5 +382,6 @@ module = [
     "pathos",
     "pathos.pools",
     "optimagic._version",
+    "annotated_types",
   ]
 ignore_missing_imports = true

@@ -24,6 +24,7 @@ dependencies:
   - mypy>=1.11  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
+  - annotated-types  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
