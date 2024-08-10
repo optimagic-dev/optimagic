@@ -8,7 +8,7 @@ from typing import Any, Callable, Literal, NamedTuple, cast
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import tree_flatten, tree_unflatten
+from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 from pybaum import tree_just_flatten as tree_leaves
 
 from optimagic import batch_evaluators, deprecations
@@ -212,65 +212,36 @@ def first_derivative(
     unpacker = _process_unpacker(unpacker)
 
     # ==================================================================================
-    # Convert arguments to numpy
+    # Convert scalar | pytree arguments to 1d arrays of floats
     # ==================================================================================
     registry = get_registry(extended=True)
 
-    fast_path = _is_1d_array(params)
+    is_fast_path = _is_1d_array(params)
 
-    if not fast_path:
+    if not is_fast_path:
         x, params_treedef = tree_flatten(params, registry=registry)
-        x = np.asarray(x, dtype=np.float64)
+        x = np.array(x, dtype=np.float64)
 
-        if not isinstance(scaling_factor, int | float):
-            scaling_factor, _ = tree_flatten(scaling_factor, registry=registry)
+        if scaling_factor is not None and not np.isscalar(scaling_factor):
+            scaling_factor = np.array(
+                tree_just_flatten(scaling_factor, registry=registry)
+            )
 
-        if min_steps is not None:
-            min_steps, _ = tree_flatten(min_steps, registry=registry)
+        if min_steps is not None and not np.isscalar(min_steps):
+            min_steps = np.array(tree_just_flatten(min_steps, registry=registry))
 
-        if step_size is not None:
-            step_size, _ = tree_flatten(step_size, registry=registry)
-
+        if step_size is not None and not np.isscalar(step_size):
+            step_size = np.array(tree_just_flatten(step_size, registry=registry))
     else:
         x = params.astype(np.float64)
 
-        if min_steps is not None:
-            min_steps = np.atleast_1d(min_steps)
+    scaling_factor = _process_scalar_or_array_argument(
+        scaling_factor, x, "scaling_factor"
+    )
+    min_steps = _process_scalar_or_array_argument(min_steps, x, "min_steps")
+    step_size = _process_scalar_or_array_argument(step_size, x, "step_size")
 
-        if step_size is not None:
-            step_size = np.atleast_1d(step_size)
-
-    if isinstance(scaling_factor, int | float):
-        pass
-    elif len(scaling_factor) == len(x):
-        scaling_factor = np.asarray(scaling_factor, dtype=np.float64)
-    else:
-        raise ValueError(
-            "scaling_factor must be an int, a float or have the same structure as "
-            "params."
-        )
-
-    if min_steps is None:
-        pass
-    elif len(min_steps) == 1:
-        min_steps = np.full_like(x, min_steps[0])
-    elif len(min_steps) == len(x):
-        min_steps = np.asarray(min_steps, dtype=np.float64)
-    else:
-        raise ValueError(
-            "min_steps must be a float or have the same structure as params."
-        )
-
-    if step_size is None:
-        pass
-    elif len(step_size) == 1:
-        step_size = np.full_like(x, step_size[0])
-    elif len(step_size) == len(x):
-        step_size = np.asarray(step_size, dtype=np.float64)
-    else:
-        raise ValueError(
-            "step_size must be a float or have the same structure as params."
-        )
+    # ==================================================================================
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -311,7 +282,7 @@ def first_derivative(
                 evaluation_points.append(point)
 
     # convert the numpy arrays to whatever is needed by func
-    if not fast_path:
+    if not is_fast_path:
         evaluation_points = [
             # entries are either a numpy.ndarray or np.nan
             _unflatten_if_not_nan(p, params_treedef, registry)
@@ -396,9 +367,9 @@ def first_derivative(
         raise Exception(exc_info)
 
     # results processing
-    if fast_path and vector_out:
+    if is_fast_path and vector_out:
         derivative = jac
-    elif fast_path and scalar_out:
+    elif is_fast_path and scalar_out:
         derivative = jac.flatten()
     else:
         derivative = matrix_to_block_tree(jac, f0_tree, params)
@@ -556,65 +527,36 @@ def second_derivative(
     unpacker = _process_unpacker(unpacker)
 
     # ==================================================================================
-    # Convert arguments to numpy
+    # Convert scalar | pytree arguments to 1d arrays of floats
     # ==================================================================================
     registry = get_registry(extended=True)
 
-    fast_path = _is_1d_array(params)
+    is_fast_path = _is_1d_array(params)
 
-    if not fast_path:
+    if not is_fast_path:
         x, params_treedef = tree_flatten(params, registry=registry)
-        x = np.asarray(x, dtype=np.float64)
+        x = np.array(x, dtype=np.float64)
 
-        if not isinstance(scaling_factor, int | float):
-            scaling_factor, _ = tree_flatten(scaling_factor, registry=registry)
+        if scaling_factor is not None and not np.isscalar(scaling_factor):
+            scaling_factor = np.array(
+                tree_just_flatten(scaling_factor, registry=registry)
+            )
 
-        if min_steps is not None:
-            min_steps, _ = tree_flatten(min_steps, registry=registry)
+        if min_steps is not None and not np.isscalar(min_steps):
+            min_steps = np.array(tree_just_flatten(min_steps, registry=registry))
 
-        if step_size is not None:
-            step_size, _ = tree_flatten(step_size, registry=registry)
-
+        if step_size is not None and not np.isscalar(step_size):
+            step_size = np.array(tree_just_flatten(step_size, registry=registry))
     else:
         x = params.astype(np.float64)
 
-        if min_steps is not None:
-            min_steps = np.atleast_1d(min_steps)
+    scaling_factor = _process_scalar_or_array_argument(
+        scaling_factor, x, "scaling_factor"
+    )
+    min_steps = _process_scalar_or_array_argument(min_steps, x, "min_steps")
+    step_size = _process_scalar_or_array_argument(step_size, x, "step_size")
 
-        if step_size is not None:
-            step_size = np.atleast_1d(step_size)
-
-    if isinstance(scaling_factor, int | float):
-        pass
-    elif len(scaling_factor) == len(x):
-        scaling_factor = np.asarray(scaling_factor, dtype=np.float64)
-    else:
-        raise ValueError(
-            "scaling_factor must be an int, a float or have the same structure as "
-            "params."
-        )
-
-    if min_steps is None:
-        pass
-    elif len(min_steps) == 1:
-        min_steps = np.full_like(x, min_steps[0])
-    elif len(min_steps) == len(x):
-        min_steps = np.asarray(min_steps, dtype=np.float64)
-    else:
-        raise ValueError(
-            "min_steps must be a float or have the same structure as params."
-        )
-
-    if step_size is None:
-        pass
-    elif len(step_size) == 1:
-        step_size = np.full_like(x, step_size[0])
-    elif len(step_size) == len(x):
-        step_size = np.asarray(step_size, dtype=np.float64)
-    else:
-        raise ValueError(
-            "step_size must be a float or have the same structure as params."
-        )
+    # ==================================================================================
 
     unpacker = _process_unpacker(unpacker)
 
@@ -676,7 +618,7 @@ def second_derivative(
                     evaluation_points["cross_step"].append(point)
 
     # convert the numpy arrays to whatever is needed by func
-    if not fast_path:
+    if not is_fast_path:
         evaluation_points = {
             # entries are either a numpy.ndarray or np.nan, we unflatten only
             step_type: [
@@ -823,6 +765,27 @@ def _process_unpacker(
             return raw_unpacker(x)
 
     return unpacker
+
+
+def _process_scalar_or_array_argument(candidate, x, name):
+    if candidate is None:
+        return None
+
+    if np.isscalar(candidate):
+        return np.full_like(x, candidate, dtype=np.float64)
+    else:
+        try:
+            candidate = np.asarray(candidate, dtype=np.float64)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = f"{name} must be a scalar or have the same structure as params."
+            raise ValueError(msg) from e
+
+        if len(candidate) != len(x) or candidate.ndim != 1:
+            msg = f"{name} must be a scalar or have the same structure as params."
+            raise ValueError(msg)
+    return candidate
 
 
 def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
