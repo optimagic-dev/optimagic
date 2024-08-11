@@ -51,8 +51,8 @@ def test_equality_constraint(dummy_func):
 
 
 def test_pairwise_equality_constraint(dummy_func):
-    constr = PairwiseEqualityConstraint(selector=dummy_func)
-    dict_repr = {"type": "pairwise_equality", "selector": dummy_func}
+    constr = PairwiseEqualityConstraint(selectors=[dummy_func, dummy_func])
+    dict_repr = {"type": "pairwise_equality", "selectors": [dummy_func, dummy_func]}
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)
 

@@ -19,12 +19,16 @@ class Constraint(ABC):
         pass
 
 
+def identity_selector(x: PyTree) -> PyTree:
+    return x
+
+
 ConstraintValue = TypeVar("ConstraintValue", bound=PyTree)
 
 
 @dataclass(frozen=True)
 class FixedConstraint(Constraint, Generic[ConstraintValue]):
-    selector: Callable[[PyTree], ConstraintValue]
+    selector: Callable[[PyTree], ConstraintValue] = identity_selector
     value: ConstraintValue | None = None
 
     def _to_dict(self) -> dict[str, Any]:
@@ -37,7 +41,7 @@ class FixedConstraint(Constraint, Generic[ConstraintValue]):
 
 @dataclass(frozen=True)
 class IncreasingConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "increasing", "selector": self.selector}
@@ -45,7 +49,7 @@ class IncreasingConstraint(Constraint):
 
 @dataclass(frozen=True)
 class DecreasingConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "decreasing", "selector": self.selector}
@@ -53,7 +57,7 @@ class DecreasingConstraint(Constraint):
 
 @dataclass(frozen=True)
 class EqualityConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "equality", "selector": self.selector}
@@ -69,7 +73,7 @@ class PairwiseEqualityConstraint(Constraint):
 
 @dataclass(frozen=True)
 class ProbabilityConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "probability", "selector": self.selector}
@@ -77,7 +81,7 @@ class ProbabilityConstraint(Constraint):
 
 @dataclass(frozen=True)
 class CovarianceConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "covariance", "selector": self.selector}
@@ -85,7 +89,7 @@ class CovarianceConstraint(Constraint):
 
 @dataclass(frozen=True)
 class SDCorrConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "sdcorr", "selector": self.selector}
@@ -99,11 +103,11 @@ ArrayLikeSeriesOrFloat = TypeVar(
 
 @dataclass(frozen=True)
 class LinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
-    selector: Callable[[PyTree], PyTree]
     weights: ArrayLike | pd.Series | pd.DataFrame  # type: ignore
     lower_bound: ArrayLikeSeriesOrFloat | None = None
     upper_bound: ArrayLikeSeriesOrFloat | None = None
     value: ArrayLikeSeriesOrFloat | None = None
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -131,11 +135,13 @@ class LinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
 
 @dataclass(frozen=True)
 class NonlinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
-    selector: Callable[[PyTree], PyTree]
     func: Callable[[PyTree], ArrayLikeSeriesOrFloat]
+    derivative: Callable[[PyTree], PyTree] | None = None
     lower_bound: ArrayLikeSeriesOrFloat | None = None
     upper_bound: ArrayLikeSeriesOrFloat | None = None
     value: ArrayLikeSeriesOrFloat | None = None
+    tol: float | None = None
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -143,9 +149,11 @@ class NonlinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
             "selector": self.selector,
             "func": self.func,
             **_select_non_none(
+                derivative=self.derivative,
                 lower_bound=self.lower_bound,
                 upper_bound=self.upper_bound,
                 value=self.value,
+                tol=self.tol,
             ),
         }
 
@@ -159,6 +167,9 @@ class NonlinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
             raise InvalidConstraintError(
                 "'value' cannot be used with 'lower_bound' or 'upper_bound'."
             )
+
+        if self.tol is not None and self.tol < 0:
+            raise InvalidConstraintError("'tol' must be non-negative.")
 
 
 def _all_none(*args: Any) -> bool:
