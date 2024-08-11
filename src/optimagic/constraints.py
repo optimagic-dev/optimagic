@@ -84,14 +84,15 @@ class SDCorrConstraint(Constraint):
 
 
 ArrayLikeSeriesOrFloat = TypeVar(
-    "ArrayLikeSeriesOrFloat", bound=(ArrayLike | pd.Series[float] | float)
+    "ArrayLikeSeriesOrFloat",
+    bound=(ArrayLike | pd.Series | float),  # type: ignore
 )
 
 
 @dataclass(frozen=True)
 class LinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
     selector: Callable[[PyTree], PyTree]
-    weights: ArrayLikeSeriesOrFloat | pd.DataFrame
+    weights: ArrayLike | pd.Series | pd.DataFrame  # type: ignore
     lower_bound: ArrayLikeSeriesOrFloat | None = None
     upper_bound: ArrayLikeSeriesOrFloat | None = None
     value: ArrayLikeSeriesOrFloat | None = None

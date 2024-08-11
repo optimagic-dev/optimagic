@@ -16,6 +16,7 @@ import functools
 import warnings
 from pathlib import Path
 
+from optimagic.constraints import Constraint
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
@@ -290,10 +291,14 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Split constraints into nonlinear and reparametrization parts
     # ==================================================================================
     constraints = problem.constraints
-    if isinstance(constraints, dict):
+    if not isinstance(constraints, list):
         constraints = [constraints]
 
-    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
+    dict_constraints = [
+        c._to_dict() if isinstance(c, Constraint) else c for c in constraints
+    ]
+
+    nonlinear_constraints = [c for c in dict_constraints if c["type"] == "nonlinear"]
 
     algo_kwargs = set(problem.algo_info.arguments)
     if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
@@ -303,7 +308,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         )
 
     # the following constraints will be handled via reparametrization
-    constraints = [c for c in constraints if c["type"] != "nonlinear"]
+    dict_constraints = [c for c in dict_constraints if c["type"] != "nonlinear"]
 
     # ==================================================================================
     # Do first evaluation of user provided functions
@@ -341,7 +346,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     converter, internal_params = get_converter(
         params=problem.params,
-        constraints=constraints,
+        constraints=dict_constraints,
         bounds=problem.bounds,
         func_eval=first_crit_eval.value,
         primary_key=problem.algo_info.primary_criterion_entry,

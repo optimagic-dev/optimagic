@@ -325,6 +325,15 @@ def throw_key_warning_in_derivatives():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_dict_constraints_future_warning():
+    msg = (
+        "Specifying constraints as a dictionary is deprecated and will be removed in "
+        "optimagic version 0.6.0. Please use a constraint object imported from "
+        "optimagic.constraints instead."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_multistart_options(options):
     """Replace deprecated multistart options and warn about them.
 
