@@ -1,0 +1,176 @@
+import pytest
+from optimagic.constraints import (
+    Constraint,
+    CovarianceConstraint,
+    DecreasingConstraint,
+    EqualityConstraint,
+    FixedConstraint,
+    IncreasingConstraint,
+    LinearConstraint,
+    NonlinearConstraint,
+    PairwiseEqualityConstraint,
+    ProbabilityConstraint,
+    SDCorrConstraint,
+    _all_none,
+)
+from optimagic.exceptions import InvalidConstraintError
+
+
+@pytest.fixture
+def dummy_func():
+    return lambda x: x
+
+
+def test_fixed_constraint(dummy_func):
+    constr = FixedConstraint(selector=dummy_func)
+    dict_repr = {"type": "fixed", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_increasing_constraint(dummy_func):
+    constr = IncreasingConstraint(selector=dummy_func)
+    dict_repr = {"type": "increasing", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_decreasing_constraint(dummy_func):
+    constr = DecreasingConstraint(selector=dummy_func)
+    dict_repr = {"type": "decreasing", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_equality_constraint(dummy_func):
+    constr = EqualityConstraint(selector=dummy_func)
+    dict_repr = {"type": "equality", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_pairwise_equality_constraint(dummy_func):
+    constr = PairwiseEqualityConstraint(selector=dummy_func)
+    dict_repr = {"type": "pairwise_equality", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_probability_constraint(dummy_func):
+    constr = ProbabilityConstraint(selector=dummy_func)
+    dict_repr = {"type": "probability", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_covariance_constraint(dummy_func):
+    constr = CovarianceConstraint(selector=dummy_func)
+    dict_repr = {"type": "covariance", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_sdcorr_constraint(dummy_func):
+    constr = SDCorrConstraint(selector=dummy_func)
+    dict_repr = {"type": "sdcorr", "selector": dummy_func}
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_linear_constraint_with_value(dummy_func):
+    constr = LinearConstraint(selector=dummy_func, value=2.1, weights=[1, 2])
+    dict_repr = {
+        "type": "linear",
+        "selector": dummy_func,
+        "value": 2.1,
+        "weights": [1, 2],
+        "lower_bound": None,
+        "upper_bound": None,
+    }
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_linear_constraint_with_bounds(dummy_func):
+    constr = LinearConstraint(
+        selector=dummy_func, lower_bound=1.0, upper_bound=2.0, weights=[1, 2]
+    )
+    dict_repr = {
+        "type": "linear",
+        "selector": dummy_func,
+        "lower_bound": 1.0,
+        "upper_bound": 2.0,
+        "value": None,
+        "weights": [1, 2],
+    }
+    assert constr._to_dict() == dict_repr
+
+
+def test_linear_constraint_with_bounds_and_value(dummy_func):
+    msg = "'value' cannot be used with 'lower_bound' or 'upper_bound'."
+    with pytest.raises(InvalidConstraintError, match=msg):
+        LinearConstraint(
+            selector=dummy_func,
+            lower_bound=1.0,
+            upper_bound=2.0,
+            value=2.1,
+            weights=[1, 2],
+        )
+
+
+def test_linear_constraint_with_nothing(dummy_func):
+    msg = "At least one of 'lower_bound', 'upper_bound', or 'value' must be non-None."
+    with pytest.raises(InvalidConstraintError, match=msg):
+        LinearConstraint(selector=dummy_func, weights=[1, 2])
+
+
+def test_nonlinear_constraint_with_value(dummy_func):
+    constr = NonlinearConstraint(selector=dummy_func, value=2.1, func=dummy_func)
+    dict_repr = {
+        "type": "nonlinear",
+        "selector": dummy_func,
+        "value": 2.1,
+        "func": dummy_func,
+        "lower_bound": None,
+        "upper_bound": None,
+    }
+    assert constr._to_dict() == dict_repr
+    assert isinstance(constr, Constraint)
+
+
+def test_nonlinear_constraint_with_bounds(dummy_func):
+    constr = NonlinearConstraint(
+        selector=dummy_func, lower_bound=1.0, upper_bound=2.0, func=dummy_func
+    )
+    dict_repr = {
+        "type": "nonlinear",
+        "selector": dummy_func,
+        "lower_bound": 1.0,
+        "upper_bound": 2.0,
+        "value": None,
+        "func": dummy_func,
+    }
+    assert constr._to_dict() == dict_repr
+
+
+def test_nonlinear_constraint_with_bounds_and_value(dummy_func):
+    msg = "'value' cannot be used with 'lower_bound' or 'upper_bound'."
+    with pytest.raises(InvalidConstraintError, match=msg):
+        NonlinearConstraint(
+            selector=dummy_func,
+            lower_bound=1.0,
+            upper_bound=2.0,
+            value=2.1,
+            func=dummy_func,
+        )
+
+
+def test_nonlinear_constraint_with_nothing(dummy_func):
+    msg = "At least one of 'lower_bound', 'upper_bound', or 'value' must be non-None."
+    with pytest.raises(InvalidConstraintError, match=msg):
+        NonlinearConstraint(selector=dummy_func, func=dummy_func)
+
+
+def test_all_none():
+    assert _all_none(None, None, None)
+    assert not _all_none(None, 1, None)

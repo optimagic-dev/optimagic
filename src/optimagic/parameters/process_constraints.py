@@ -78,6 +78,7 @@ def process_constraints(
     constraints = _process_linear_weights(constraints)
     check_constraints_are_satisfied(constraints, params_vec, param_names)
     constraints = _replace_increasing_and_decreasing_by_linear(constraints)
+    # process newly generated linear constraints
     constraints = _process_linear_weights(constraints)
 
     transformations, constr_info = consolidate_constraints(
