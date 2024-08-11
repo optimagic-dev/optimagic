@@ -150,7 +150,9 @@ def test_with_non_transforming_constraints(params):
     res = minimize(
         fun=sos_ls,
         params=params,
-        constraints=[{"loc": [0, 1], "type": "fixed", "value": [0, 1]}],
+        constraints=om.constraints.FixedConstraint(
+            selector=lambda p: p.loc[(0, 1),], value=[0, 1]
+        ),
         algorithm="scipy_lbfgsb",
         multistart=om.MultistartOptions(seed=12345),
     )
@@ -163,7 +165,9 @@ def test_error_is_raised_with_transforming_constraints(params):
         minimize(
             fun=sos_ls,
             params=params,
-            constraints=[{"loc": [0, 1], "type": "probability"}],
+            constraints=om.constraints.ProbabilityConstraint(
+                selector=lambda p: p.loc[(0, 1),]
+            ),
             algorithm="scipy_lbfgsb",
             multistart=om.MultistartOptions(seed=12345),
         )

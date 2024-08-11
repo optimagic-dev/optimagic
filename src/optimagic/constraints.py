@@ -19,12 +19,16 @@ class Constraint(ABC):
         pass
 
 
+ConstraintValue = TypeVar("ConstraintValue", bound=PyTree)
+
+
 @dataclass(frozen=True)
-class FixedConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+class FixedConstraint(Constraint, Generic[ConstraintValue]):
+    selector: Callable[[PyTree], ConstraintValue]
+    value: ConstraintValue
 
     def _to_dict(self) -> dict[str, Any]:
-        return {"type": "fixed", "selector": self.selector}
+        return {"type": "fixed", "selector": self.selector, "value": self.value}
 
 
 @dataclass(frozen=True)

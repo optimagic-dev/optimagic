@@ -1,4 +1,4 @@
-from optimagic import mark, utilities
+from optimagic import constraints, mark, utilities
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,
@@ -63,5 +63,6 @@ __all__ = [
     "LeastSquaresFunctionValue",
     "ScalarFunctionValue",
     "LikelihoodFunctionValue",
+    "constraints",
     "__version__",
 ]
