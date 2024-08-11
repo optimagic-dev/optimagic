@@ -85,8 +85,6 @@ def test_linear_constraint_with_value(dummy_func):
         "selector": dummy_func,
         "value": 2.1,
         "weights": [1, 2],
-        "lower_bound": None,
-        "upper_bound": None,
     }
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)
@@ -101,7 +99,6 @@ def test_linear_constraint_with_bounds(dummy_func):
         "selector": dummy_func,
         "lower_bound": 1.0,
         "upper_bound": 2.0,
-        "value": None,
         "weights": [1, 2],
     }
     assert constr._to_dict() == dict_repr
@@ -132,8 +129,6 @@ def test_nonlinear_constraint_with_value(dummy_func):
         "selector": dummy_func,
         "value": 2.1,
         "func": dummy_func,
-        "lower_bound": None,
-        "upper_bound": None,
     }
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)
@@ -148,7 +143,6 @@ def test_nonlinear_constraint_with_bounds(dummy_func):
         "selector": dummy_func,
         "lower_bound": 1.0,
         "upper_bound": 2.0,
-        "value": None,
         "func": dummy_func,
     }
     assert constr._to_dict() == dict_repr

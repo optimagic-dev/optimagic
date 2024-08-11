@@ -10,6 +10,7 @@
 from copy import deepcopy
 
 import numpy as np
+import optimagic as om
 import pandas as pd
 import pytest
 import statsmodels.api as sm
@@ -102,17 +103,53 @@ FUNC_INFO = {
     },
 }
 
-
 CONSTR_INFO = {
-    "fixed": {"loc": [0], "type": "fixed", "value": 1},
-    "equality": [{"loc": [0, 1, 2], "type": "equality"}],
-    "pairwise_equality": {"locs": [0, 1], "type": "pairwise_equality"},
-    "increasing": [{"loc": [1, 2], "type": "increasing"}],
-    "decreasing": [{"loc": [0, 1], "type": "decreasing"}],
-    "linear": [{"loc": [0, 1], "type": "linear", "value": 4, "weights": [1, 2]}],
-    "probability": [{"loc": [0, 1], "type": "probability"}],
-    "covariance": [{"loc": [0, 1, 2], "type": "covariance"}],
-    "sdcorr": [{"loc": [0, 1, 2], "type": "sdcorr"}],
+    "numpy": {
+        "fixed": om.constraints.FixedConstraint(selector=lambda x: x[0], value=1),
+        "equality": om.constraints.EqualityConstraint(selector=lambda x: x[[0, 1, 2]]),
+        "pairwise_equality": om.constraints.PairwiseEqualityConstraint(
+            selectors=[lambda x: x[0], lambda x: x[1]]
+        ),
+        "increasing": om.constraints.IncreasingConstraint(selector=lambda x: x[[1, 2]]),
+        "decreasing": om.constraints.DecreasingConstraint(selector=lambda x: x[[0, 1]]),
+        "linear": om.constraints.LinearConstraint(
+            selector=lambda x: x[[0, 1]], value=4, weights=[1, 2]
+        ),
+        "probability": om.constraints.ProbabilityConstraint(
+            selector=lambda x: x[[0, 1]]
+        ),
+        "covariance": om.constraints.CovarianceConstraint(
+            selector=lambda x: x[[0, 1, 2]]
+        ),
+        "sdcorr": om.constraints.SDCorrConstraint(selector=lambda x: x[[0, 1, 2]]),
+    },
+    "pandas": {
+        "fixed": om.constraints.FixedConstraint(
+            selector=lambda p: p.loc[(0,),], value=1
+        ),
+        "equality": om.constraints.EqualityConstraint(
+            selector=lambda p: p.loc[(0, 1, 2),]
+        ),
+        "pairwise_equality": om.constraints.PairwiseEqualityConstraint(
+            selectors=[lambda p: p.loc[(0,),], lambda p: p.loc[(1,),]]
+        ),
+        "increasing": om.constraints.IncreasingConstraint(
+            selector=lambda p: p.loc[(1, 2),]
+        ),
+        "decreasing": om.constraints.DecreasingConstraint(
+            selector=lambda p: p.loc[(0, 1),]
+        ),
+        "linear": om.constraints.LinearConstraint(
+            selector=lambda p: p.loc[(0, 1),], value=4, weights=[1, 2]
+        ),
+        "probability": om.constraints.ProbabilityConstraint(
+            selector=lambda p: p.loc[(0, 1),]
+        ),
+        "covariance": om.constraints.CovarianceConstraint(
+            selector=lambda p: p.loc[(0, 1, 2),]
+        ),
+        "sdcorr": om.constraints.SDCorrConstraint(selector=lambda p: p.loc[(0, 1, 2),]),
+    },
 }
 
 
@@ -137,8 +174,8 @@ PARAMS_TYPES = ["numpy", "pandas"]
 
 test_cases = []
 for crit_name in FUNC_INFO:
-    for constr_name in CONSTR_INFO:
-        for ptype in PARAMS_TYPES:
+    for ptype in PARAMS_TYPES:
+        for constr_name in CONSTR_INFO[ptype]:
             unknown_res = FUNC_INFO[crit_name].get(f"{constr_name}_result") == "unknown"
             known_failure = (crit_name, constr_name) in KNOWN_FAILURES
             if not any([unknown_res, known_failure]):
@@ -161,7 +198,7 @@ for crit_name in FUNC_INFO:
 def test_constrained_minimization(
     criterion_name, algorithm, derivative, constraint_name, params_type
 ):
-    constraints = CONSTR_INFO[constraint_name]
+    constraints = CONSTR_INFO[params_type][constraint_name]
     criterion = FUNC_INFO[criterion_name]["criterion"]
     if params_type == "pandas":
         params = pd.Series(START_INFO[constraint_name], name="value").to_frame()
@@ -195,7 +232,7 @@ def test_fix_that_differs_from_start_value_raises_an_error():
             fun=lambda x: x @ x,
             params=np.arange(3),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [1], "type": "fixed", "value": 10}],
+            constraints=om.constraints.FixedConstraint(lambda x: x[1], value=10),
         )
 
 
@@ -204,9 +241,9 @@ def test_three_independent_constraints():
     params[0] = 2
 
     constraints = [
-        {"loc": [0, 1, 2], "type": "covariance"},
-        {"loc": [4, 5], "type": "fixed"},
-        {"loc": [7, 8], "type": "linear", "value": 15, "weights": 1},
+        om.constraints.CovarianceConstraint(lambda x: x[[0, 1, 2]]),
+        om.constraints.FixedConstraint(lambda x: x[[4, 5]]),
+        om.constraints.LinearConstraint(lambda x: x[[7, 8]], value=15, weights=1),
     ]
 
     res = minimize(
@@ -222,10 +259,13 @@ def test_three_independent_constraints():
 
 
 INVALID_CONSTRAINT_COMBIS = [
-    [{"loc": [1, 0, 2], "type": "covariance"}, {"loc": [0, 1], "type": "probability"}],
     [
-        {"loc": [6, 3, 5, 2, 1, 4], "type": "covariance"},
-        {"loc": [0, 1, 2], "type": "increasing"},
+        om.constraints.CovarianceConstraint(lambda x: x[[1, 0, 2]]),
+        om.constraints.ProbabilityConstraint(lambda x: x[[0, 1]]),
+    ],
+    [
+        om.constraints.CovarianceConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
+        om.constraints.IncreasingConstraint(lambda x: x[[0, 1, 2]]),
     ],
 ]
 
@@ -263,11 +303,10 @@ def test_bug_from_copenhagen_presentation():
         params=start_params,
         algorithm="scipy_lbfgsb",
         constraints=[
-            {"selector": return_all_but_working_hours, "type": "fixed"},
-            {
-                "selector": lambda p: [p["work"]["hours"], p["time_budget"]],
-                "type": "increasing",
-            },
+            om.constraints.FixedConstraint(selector=return_all_but_working_hours),
+            om.constraints.IncreasingConstraint(
+                lambda p: [p["work"]["hours"], p["time_budget"]]
+            ),
         ],
         bounds=Bounds(lower={"work": {"hours": 0}}),
     )
@@ -279,14 +318,23 @@ def test_constraint_inheritance():
     """Test that probability constraint applies both sets of parameters in a pairwise
     equality constraint, no matter to which set they were applied originally."""
     for loc in [[0, 1], [2, 3]]:
+
+        def selector(x, loc=loc):
+            # bind loc to the function
+            return x[loc]
+
+        constraints = [
+            om.constraints.PairwiseEqualityConstraint(
+                selectors=[lambda x: x[[0, 1]], lambda x: x[[3, 2]]]
+            ),
+            om.constraints.ProbabilityConstraint(selector),
+        ]
+
         res = minimize(
             fun=lambda x: x @ x,
             params=np.array([0.1, 0.9, 0.9, 0.1]),
             algorithm="scipy_lbfgsb",
-            constraints=[
-                {"locs": [[0, 1], [3, 2]], "type": "pairwise_equality"},
-                {"loc": loc, "type": "probability"},
-            ],
+            constraints=constraints,
         )
         aaae(res.params, [0.5] * 4)
 
@@ -302,7 +350,9 @@ def test_invalid_start_params():
             criterion,
             params=x,
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [1, 2], "type": "probability"}],
+            constraints=om.constraints.ProbabilityConstraint(
+                selector=lambda x: x[[1, 2]]
+            ),
         )
 
 
@@ -319,7 +369,9 @@ def test_covariance_constraint_in_2_by_2_case():
         fun_kwargs=kwargs,
         params=start_params,
         algorithm="scipy_lbfgsb",
-        constraints={"loc": [1, 2, 3], "type": "covariance"},
+        constraints=om.constraints.CovarianceConstraint(
+            selector=lambda x: x[[1, 2, 3]]
+        ),
     )
 
     expected = np.array([-13.0213351, 2.82611417, 0.09515704, 2.37867869])

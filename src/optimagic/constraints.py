@@ -61,10 +61,10 @@ class EqualityConstraint(Constraint):
 
 @dataclass(frozen=True)
 class PairwiseEqualityConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree]
+    selectors: list[Callable[[PyTree], PyTree]]
 
     def _to_dict(self) -> dict[str, Any]:
-        return {"type": "pairwise_equality", "selector": self.selector}
+        return {"type": "pairwise_equality", "selectors": self.selectors}
 
 
 @dataclass(frozen=True)
