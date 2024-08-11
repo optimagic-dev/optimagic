@@ -12,6 +12,7 @@ from optimagic.constraints import (
     ProbabilityConstraint,
     SDCorrConstraint,
     _all_none,
+    _select_non_none,
 )
 from optimagic.exceptions import InvalidConstraintError
 
@@ -174,3 +175,10 @@ def test_nonlinear_constraint_with_nothing(dummy_func):
 def test_all_none():
     assert _all_none(None, None, None)
     assert not _all_none(None, 1, None)
+
+
+def test_select_non_none():
+    assert _select_non_none(a=None, b=None, c=None) == {}
+    assert _select_non_none(a=None, b=1, c=None) == {"b": 1}
+    assert _select_non_none(a=None, b=None, c=2) == {"c": 2}
+    assert _select_non_none(a=1, b=2, c=3) == {"a": 1, "b": 2, "c": 3}

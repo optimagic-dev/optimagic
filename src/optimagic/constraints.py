@@ -25,10 +25,14 @@ ConstraintValue = TypeVar("ConstraintValue", bound=PyTree)
 @dataclass(frozen=True)
 class FixedConstraint(Constraint, Generic[ConstraintValue]):
     selector: Callable[[PyTree], ConstraintValue]
-    value: ConstraintValue
+    value: ConstraintValue | None = None
 
     def _to_dict(self) -> dict[str, Any]:
-        return {"type": "fixed", "selector": self.selector, "value": self.value}
+        return {
+            "type": "fixed",
+            "selector": self.selector,
+            **_select_non_none(value=self.value),
+        }
 
 
 @dataclass(frozen=True)
@@ -105,10 +109,12 @@ class LinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
         return {
             "type": "linear",
             "selector": self.selector,
-            "lower_bound": self.lower_bound,
-            "upper_bound": self.upper_bound,
-            "value": self.value,
             "weights": self.weights,
+            **_select_non_none(
+                lower_bound=self.lower_bound,
+                upper_bound=self.upper_bound,
+                value=self.value,
+            ),
         }
 
     def __post_init__(self) -> None:
@@ -136,9 +142,11 @@ class NonlinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
             "type": "nonlinear",
             "selector": self.selector,
             "func": self.func,
-            "lower_bound": self.lower_bound,
-            "upper_bound": self.upper_bound,
-            "value": self.value,
+            **_select_non_none(
+                lower_bound=self.lower_bound,
+                upper_bound=self.upper_bound,
+                value=self.value,
+            ),
         }
 
     def __post_init__(self) -> None:
@@ -155,3 +163,7 @@ class NonlinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
 
 def _all_none(*args: Any) -> bool:
     return all(v is None for v in args)
+
+
+def _select_non_none(**kwargs: Any) -> dict[str, Any]:
+    return {k: v for k, v in kwargs.items() if v is not None}

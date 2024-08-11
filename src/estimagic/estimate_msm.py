@@ -10,6 +10,7 @@ from typing import Any, Dict, Union
 import numpy as np
 import pandas as pd
 from optimagic import deprecations, mark
+from optimagic.constraints import Constraint
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import (
@@ -175,6 +176,11 @@ def estimate_msm(
         if jacobian_numdiff_options is not None:
             jacobian_numdiff_options = numdiff_options
 
+    if isinstance(constraints, dict) or (
+        isinstance(constraints, list) and any(isinstance(c, dict) for c in constraints)
+    ):
+        deprecations.throw_dict_constraints_future_warning()
+
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
@@ -216,11 +222,19 @@ def estimate_msm(
         inner_tree=empirical_moments,
     )
 
-    constraints = [] if constraints is None else constraints
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
     simulate_moments_kwargs = (
         {} if simulate_moments_kwargs is None else simulate_moments_kwargs
     )
+
+    if constraints is None:
+        constraints = []
+    elif not isinstance(constraints, list):
+        constraints = [constraints]
+
+    dict_constraints = [
+        c._to_dict() if isinstance(c, Constraint) else c for c in constraints
+    ]
 
     # ==================================================================================
     # Calculate estimates via minimization (if necessary)
@@ -288,7 +302,7 @@ def estimate_msm(
 
     converter, internal_estimates = get_converter(
         params=estimates,
-        constraints=constraints,
+        constraints=dict_constraints,
         bounds=bounds,
         func_eval=func_eval,
         primary_key="contributions",
@@ -328,7 +342,7 @@ def estimate_msm(
     # Calculate external jac (if no constraints and not closed form )
     # ==================================================================================
 
-    if constraints in [None, []] and jacobian_eval is None and int_jac is not None:
+    if dict_constraints in [None, []] and jacobian_eval is None and int_jac is not None:
         jacobian_eval = matrix_to_block_tree(
             int_jac,
             outer_tree=empirical_moments,
@@ -361,7 +375,7 @@ def estimate_msm(
         _empirical_moments=empirical_moments,
         _internal_estimates=internal_estimates,
         _free_estimates=free_estimates,
-        _has_constraints=constraints not in [None, []],
+        _has_constraints=dict_constraints not in [None, []],
     )
     return res
 

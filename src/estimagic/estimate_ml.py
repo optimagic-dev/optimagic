@@ -6,6 +6,7 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 from optimagic import deprecations, mark
+from optimagic.constraints import Constraint
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
@@ -170,6 +171,11 @@ def estimate_ml(
         if hessian_numdiff_options is None:
             hessian_numdiff_options = numdiff_options
 
+    if isinstance(constraints, dict) or (
+        isinstance(constraints, list) and any(isinstance(c, dict) for c in constraints)
+    ):
+        deprecations.throw_dict_constraints_future_warning()
+
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
@@ -206,9 +212,17 @@ def estimate_ml(
     hess_case = get_derivative_case(hessian)
 
     loglike_kwargs = {} if loglike_kwargs is None else loglike_kwargs
-    constraints = [] if constraints is None else constraints
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
     hessian_kwargs = {} if hessian_kwargs is None else hessian_kwargs
+
+    if constraints is None:
+        constraints = []
+    elif not isinstance(constraints, list):
+        constraints = [constraints]
+
+    dict_constraints = [
+        c._to_dict() if isinstance(c, Constraint) else c for c in constraints
+    ]
 
     # ==================================================================================
     # Calculate estimates via maximization (if necessary)
@@ -284,7 +298,7 @@ def estimate_ml(
 
     converter, internal_estimates = get_converter(
         params=estimates,
-        constraints=constraints,
+        constraints=dict_constraints,
         bounds=bounds,
         func_eval=loglike_eval.value,
         primary_key="contributions",
@@ -326,7 +340,7 @@ def estimate_ml(
     else:
         int_jac = None
 
-    if constraints in [None, []] and jacobian_eval is None and int_jac is not None:
+    if dict_constraints in [None, []] and jacobian_eval is None and int_jac is not None:
         loglike_contribs = loglike_eval.value
 
         jacobian_eval = matrix_to_block_tree(
@@ -370,7 +384,7 @@ def estimate_ml(
             **asdict(hessian_numdiff_options),
         )
         int_hess = hess_res.derivative
-    elif hess_case == "closed-form" and constraints:
+    elif hess_case == "closed-form" and dict_constraints:
         raise NotImplementedError(
             "Closed-form Hessians are not yet compatible with constraints."
         )
@@ -383,7 +397,7 @@ def estimate_ml(
     else:
         raise ValueError()
 
-    if constraints in [None, []] and hessian_eval is None and int_hess is not None:
+    if dict_constraints in [None, []] and hessian_eval is None and int_hess is not None:
         hessian_eval = matrix_to_block_tree(
             int_hess,
             outer_tree=params,
@@ -419,7 +433,7 @@ def estimate_ml(
         _design_info=design_info,
         _internal_estimates=internal_estimates,
         _free_estimates=free_estimates,
-        _has_constraints=constraints not in [None, []],
+        _has_constraints=dict_constraints not in [None, []],
     )
 
     return res
