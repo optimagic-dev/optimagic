@@ -180,10 +180,10 @@ def _process_nonlinear_constraint(
             select = external_selector(params)
             return np.atleast_1d(constraint_func(select))
 
-        lower_bound = c.get("lower_bounds", 0)
-        upper_bound = c.get("upper_bounds", np.inf)
+        lower_bounds = c.get("lower_bounds", 0)
+        upper_bounds = c.get("upper_bounds", np.inf)
 
-        transformation = _get_transformation(lower_bound, upper_bound)
+        transformation = _get_transformation(lower_bounds, upper_bounds)
 
         internal_constraint_func = _compose_funcs(
             _internal_constraint_func, transformation["func"]
@@ -352,7 +352,7 @@ def _get_selection_indices(params, selector):
 # ======================================================================================
 
 
-def _get_transformation(lower_bound, upper_bound):
+def _get_transformation(lower_bounds, upper_bounds):
     """Get transformation given bounds.
 
     The internal inequality constraint is defined as h(x) >= 0. However, the user can
@@ -360,19 +360,19 @@ def _get_transformation(lower_bound, upper_bound):
     constraint.
 
     """
-    transformation_type = _get_transformation_type(lower_bound, upper_bound)
+    transformation_type = _get_transformation_type(lower_bounds, upper_bounds)
 
     if transformation_type == "identity":
         transformer = {"func": _identity, "derivative": _identity}
     elif transformation_type == "subtract_lb":
         transformer = {
-            "func": lambda v: v - lower_bound,
+            "func": lambda v: v - lower_bounds,
             "derivative": _identity,
         }
     elif transformation_type == "stack":
         transformer = {
             "func": lambda v: np.concatenate(
-                (v - lower_bound, upper_bound - v), axis=0
+                (v - lower_bounds, upper_bounds - v), axis=0
             ),
             "derivative": lambda v: np.concatenate((v, -v), axis=0),
         }
@@ -380,9 +380,9 @@ def _get_transformation(lower_bound, upper_bound):
     return transformer
 
 
-def _get_transformation_type(lower_bound, upper_bound):
-    lb_is_zero = not np.count_nonzero(lower_bound)
-    ub_is_inf = np.all(np.isposinf(upper_bound))
+def _get_transformation_type(lower_bounds, upper_bounds):
+    lb_is_zero = not np.count_nonzero(lower_bounds)
+    ub_is_inf = np.all(np.isposinf(upper_bounds))
 
     if lb_is_zero and ub_is_inf:
         # the external constraint is already in the correct format
@@ -437,15 +437,15 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
     if is_equality_constraint:
         if "lower_bounds" in c or "upper_bounds" in c:
             raise InvalidConstraintError(
-                "Only one of 'value' or ('lower_bound', 'upper_bound') can be "
+                "Only one of 'value' or ('lower_bounds', 'upper_bounds') can be "
                 "passed to a nonlinear constraint."
             )
 
     if not is_equality_constraint:
         if "lower_bounds" not in c and "upper_bounds" not in c:
             raise InvalidConstraintError(
-                "For inequality constraint at least one of ('lower_bound', "
-                "'upper_bound') has to be passed to the nonlinear constraint."
+                "For inequality constraint at least one of ('lower_bounds', "
+                "'upper_bounds') has to be passed to the nonlinear constraint."
             )
 
     if "lower_bounds" in c and "upper_bounds" in c:

@@ -185,7 +185,9 @@ def estimate_ml(
     bounds = pre_process_bounds(bounds)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     hessian_numdiff_options = pre_process_numdiff_options(hessian_numdiff_options)
-    # TODO: Overwrite constraints once we deprecate dictionary constraints
+    # TODO: Overwrite constraints once we deprecate dictionary constraints. We currently
+    # pass constraints unprocessed to the optimizer, so that we do not throw warnings
+    # if the new constraints are used.
     dict_constraints = pre_process_constraints(constraints)
 
     if jacobian_numdiff_options is None:

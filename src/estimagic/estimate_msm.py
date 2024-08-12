@@ -186,6 +186,9 @@ def estimate_msm(
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
+    # TODO: Overwrite constraints once we deprecate dictionary constraints. We currently
+    # pass constraints unprocessed to the optimizer, so that we do not throw warnings
+    # if the new constraints are used.
     dict_constraints = pre_process_constraints(constraints)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     if jacobian_numdiff_options is None:
