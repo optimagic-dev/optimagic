@@ -61,14 +61,6 @@ class EqualityConstraint(Constraint):
 
 
 @dataclass(frozen=True)
-class PairwiseEqualityConstraint(Constraint):
-    selectors: list[Callable[[PyTree], PyTree]]
-
-    def _to_dict(self) -> dict[str, Any]:
-        return {"type": "pairwise_equality", "selectors": self.selectors}
-
-
-@dataclass(frozen=True)
 class ProbabilityConstraint(Constraint):
     selector: Callable[[PyTree], PyTree] = identity_selector
 
@@ -88,6 +80,21 @@ class FlatCovConstraint(Constraint):
             "selector": self.selector,
             **_select_non_none(bounds_distance=self.bounds_distance),
         }
+
+
+@dataclass(frozen=True)
+class PairwiseEqualityConstraint(Constraint):
+    selectors: list[Callable[[PyTree], PyTree]]
+
+    def _to_dict(self) -> dict[str, Any]:
+        return {"type": "pairwise_equality", "selectors": self.selectors}
+
+    def __post_init__(self) -> None:
+        if len(self.selectors) < 2:
+            raise InvalidConstraintError("At least two selectors must be provided.")
+
+        if not all(callable(s) for s in self.selectors):
+            raise InvalidConstraintError("All selectors must be callable.")
 
 
 @dataclass(frozen=True)
