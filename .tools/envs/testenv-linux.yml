@@ -33,4 +33,5 @@ dependencies:
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
+      - sqlalchemy-stubs  # dev, tests
       - -e ../../
