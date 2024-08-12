@@ -856,3 +856,54 @@ def test_fun_with_dict_return_is_deprecated_in_slice_plot():
             np.arange(3),
             bounds=om.Bounds(lower=np.zeros(3), upper=np.ones(3) * 5),
         )
+
+
+def test_dict_constraints_are_deprecated_in_minimize():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_maximize():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_estimate_ml():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_estimate_msm():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
