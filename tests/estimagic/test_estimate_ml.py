@@ -61,7 +61,7 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
 
     constraints = [
         om.constraints.FixedConstraint(selector=lambda p: p["mean"][0]),
-        om.constraints.FlatCovarianceConstraint(
+        om.constraints.FlatCovConstraint(
             selector=lambda p: p["cov"][np.tril_indices(3)]
         ),
     ]
@@ -235,7 +235,7 @@ test_cases_constr = list(
     itertools.product(
         [None, logit_jac],  # jacobian
         [
-            om.constraints.FlatCovarianceConstraint(selector=lambda x: x[[1, 2, 3]]),
+            om.constraints.FlatCovConstraint(selector=lambda x: x[[1, 2, 3]]),
             om.constraints.LinearConstraint(
                 selector=lambda x: x[[0, 1]], lower_bound=-20, weights=1
             ),

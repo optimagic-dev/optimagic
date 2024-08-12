@@ -118,9 +118,7 @@ CONSTR_INFO = {
         "probability": om.constraints.ProbabilityConstraint(
             selector=lambda x: x[[0, 1]]
         ),
-        "covariance": om.constraints.FlatCovarianceConstraint(
-            selector=lambda x: x[[0, 1, 2]]
-        ),
+        "covariance": om.constraints.FlatCovConstraint(selector=lambda x: x[[0, 1, 2]]),
         "sdcorr": om.constraints.FlatSDCorrConstraint(selector=lambda x: x[[0, 1, 2]]),
     },
     "pandas": {
@@ -143,7 +141,7 @@ CONSTR_INFO = {
         "probability": om.constraints.ProbabilityConstraint(
             selector=lambda p: p.loc[[0, 1]]
         ),
-        "covariance": om.constraints.FlatCovarianceConstraint(
+        "covariance": om.constraints.FlatCovConstraint(
             selector=lambda p: p.loc[[0, 1, 2]]
         ),
         "sdcorr": om.constraints.FlatSDCorrConstraint(
@@ -245,7 +243,7 @@ def test_three_independent_constraints():
     params[0] = 2
 
     constraints = [
-        om.constraints.FlatCovarianceConstraint(lambda x: x[[0, 1, 2]]),
+        om.constraints.FlatCovConstraint(lambda x: x[[0, 1, 2]]),
         om.constraints.FixedConstraint(lambda x: x[[4, 5]]),
         om.constraints.LinearConstraint(lambda x: x[[7, 8]], value=15, weights=1),
     ]
@@ -264,11 +262,11 @@ def test_three_independent_constraints():
 
 INVALID_CONSTRAINT_COMBIS = [
     [
-        om.constraints.FlatCovarianceConstraint(lambda x: x[[1, 0, 2]]),
+        om.constraints.FlatCovConstraint(lambda x: x[[1, 0, 2]]),
         om.constraints.ProbabilityConstraint(lambda x: x[[0, 1]]),
     ],
     [
-        om.constraints.FlatCovarianceConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
+        om.constraints.FlatCovConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
         om.constraints.IncreasingConstraint(lambda x: x[[0, 1, 2]]),
     ],
 ]
@@ -373,9 +371,7 @@ def test_covariance_constraint_in_2_by_2_case():
         fun_kwargs=kwargs,
         params=start_params,
         algorithm="scipy_lbfgsb",
-        constraints=om.constraints.FlatCovarianceConstraint(
-            selector=lambda x: x[[1, 2, 3]]
-        ),
+        constraints=om.constraints.FlatCovConstraint(selector=lambda x: x[[1, 2, 3]]),
     )
 
     expected = np.array([-13.0213351, 2.82611417, 0.09515704, 2.37867869])

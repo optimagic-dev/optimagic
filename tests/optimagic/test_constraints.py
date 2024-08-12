@@ -4,7 +4,7 @@ from optimagic.constraints import (
     DecreasingConstraint,
     EqualityConstraint,
     FixedConstraint,
-    FlatCovarianceConstraint,
+    FlatCovConstraint,
     FlatSDCorrConstraint,
     IncreasingConstraint,
     LinearConstraint,
@@ -66,7 +66,7 @@ def test_probability_constraint(dummy_func):
 
 
 def test_covariance_constraint(dummy_func):
-    constr = FlatCovarianceConstraint(selector=dummy_func)
+    constr = FlatCovConstraint(selector=dummy_func)
     dict_repr = {"type": "covariance", "selector": dummy_func}
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)

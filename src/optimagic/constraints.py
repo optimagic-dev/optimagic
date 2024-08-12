@@ -77,7 +77,7 @@ class ProbabilityConstraint(Constraint):
 
 
 @dataclass(frozen=True)
-class FlatCovarianceConstraint(Constraint):
+class FlatCovConstraint(Constraint):
     selector: Callable[[PyTree], PyTree] = identity_selector
     _: KW_ONLY
     bounds_distance: float | None = None
