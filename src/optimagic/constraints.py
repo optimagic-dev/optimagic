@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import KW_ONLY, dataclass
 from typing import Any, Callable
 
+import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
 
@@ -17,6 +18,10 @@ class Constraint(ABC):
     @abstractmethod
     def _to_dict(self) -> dict[str, Any]:
         pass
+
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
 
 
 def identity_selector(x: PyTree) -> PyTree:
@@ -101,14 +106,14 @@ class FlatSDCorrConstraint(Constraint):
 
 @dataclass(frozen=True)
 class LinearConstraint(Constraint):
-    selector: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float] = (
+    selector: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float | int] = (
         identity_selector
     )
     _: KW_ONLY
-    weights: ArrayLike | "pd.Series[float]" | float | pd.DataFrame | None = None
-    lower_bound: ArrayLike | "pd.Series[float]" | float | None = None
-    upper_bound: ArrayLike | "pd.Series[float]" | float | None = None
-    value: ArrayLike | "pd.Series[float]" | float | None = None
+    weights: ArrayLike | "pd.Series[float]" | float | int | None = None
+    lower_bound: float | int | None = None
+    upper_bound: float | int | None = None
+    value: float | int | None = None
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -123,6 +128,8 @@ class LinearConstraint(Constraint):
         }
 
     def __post_init__(self) -> None:
+        super().__post_init__()
+
         if _all_none(self.lower_bound, self.upper_bound, self.value):
             raise InvalidConstraintError(
                 "At least one of 'lower_bound', 'upper_bound', or 'value' must be "
@@ -132,6 +139,24 @@ class LinearConstraint(Constraint):
             raise InvalidConstraintError(
                 "'value' cannot be used with 'lower_bound' or 'upper_bound'."
             )
+
+        if not isinstance(self.weights, np.ndarray | list | pd.Series | float | int):
+            raise InvalidConstraintError(
+                "'weights' must be an array-like, a pandas Series, a float, or an int."
+            )
+
+        if self.lower_bound is not None and not isinstance(
+            self.lower_bound, float | int
+        ):
+            raise InvalidConstraintError("'lower_bound' must be a float or an int.")
+
+        if self.upper_bound is not None and not isinstance(
+            self.upper_bound, float | int
+        ):
+            raise InvalidConstraintError("'upper_bound' must be a float or an int.")
+
+        if self.value is not None and not isinstance(self.value, float | int):
+            raise InvalidConstraintError("'value' must be a float or an int.")
 
 
 @dataclass(frozen=True)
@@ -161,6 +186,8 @@ class NonlinearConstraint(Constraint):
         }
 
     def __post_init__(self) -> None:
+        super().__post_init__()
+
         if _all_none(self.lower_bound, self.upper_bound, self.value):
             raise InvalidConstraintError(
                 "At least one of 'lower_bound', 'upper_bound', or 'value' must be "
@@ -171,11 +198,16 @@ class NonlinearConstraint(Constraint):
                 "'value' cannot be used with 'lower_bound' or 'upper_bound'."
             )
 
-        if self.tol is not None and self.tol < 0:
+        if self.tol is not None and (
+            not isinstance(self.tol, float | int) or self.tol < 0
+        ):
             raise InvalidConstraintError("'tol' must be non-negative.")
 
         if self.func is None or not callable(self.func):
             raise InvalidConstraintError("'func' must be callable.")
+
+        if self.derivative is not None and not callable(self.derivative):
+            raise InvalidConstraintError("'derivative' must be callable.")
 
 
 def pre_process_constraints(

@@ -51,7 +51,7 @@ The unconstrained optimum of a six-dimensional version of this problem is:
     ...    fun=fun,
     ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     ...    algorithm="scipy_lbfgsb",
-    ...    )
+    ... )
     >>> res.params.round(3)
     array([1. , 0.8, 0.6, 0.4, 0.2, 0. ])
 
@@ -84,7 +84,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    constraints=om.constraints.FixedConstraint(
         ...        selector=lambda params: params[[0, 5]]
         ...    ),
-        ...    )
+        ... )
 
     Looking at the optimization result, we get:
 
@@ -113,7 +113,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    constraints=om.constraints.IncreasingConstraint(
         ...        selector=lambda params: params[[1, 2, 3]]
         ...    ),
-        ...    )
+        ... )
 
 
     Imposing the constraint on positions ``params[[1, 2, 3]]`` means that the parameter value
@@ -154,7 +154,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    constraints=om.constraints.DecreasingConstraint(
         ...        selector=lambda params: params[[3, 0, 4]]
         ...    ),
-        ...    )
+        ... )
 
     Imposing the constraint on positions ``params[[3, 0, 4]]`` means that the parameter value
     at index position ``0`` has to be (weakly) smaller than the value at position ``3``.
@@ -188,7 +188,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    constraints=om.constraints.EqualityConstraint(
         ...        selector=lambda params: params[[0, 5]]
         ...    ),
-        ...    )
+        ... )
 
     This yields:
 
@@ -218,7 +218,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...            lambda params: params[[2, 3]]
         ...        ],
         ...    ),
-        ...    )
+        ... )
 
 
 
@@ -245,7 +245,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    constraints=om.constraints.ProbabilityConstraint(
         ...        selector=lambda params: params[:4]
         ...    ),
-        ...    )
+        ... )
 
     This yields again the correct result:
 
@@ -278,7 +278,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    constraints=om.constraints.FlatCovarianceConstraint(
         ...        selector=lambda params: params[:3]
         ...    ),
-        ...    )
+        ... )
 
     This yields the same solution as an unconstrained estimation because the constraint
     is not binding:
@@ -318,7 +318,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    constraints=om.constraints.FlatSDCorrConstraint(
         ...        selector=lambda params: params[:3]
         ...    ),
-        ...    )
+        ... )
 
 
     This yields the same solution as an unconstrained estimation because the constraint
@@ -369,7 +369,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...        lower_bound=0.95,
         ...        weights=0.25,
         ...    ),
-        ...    )
+        ... )
 
     This yields:
 
@@ -414,7 +414,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...        func=lambda x: np.prod(x),
         ...        value=1.0,
         ...    ),
-        ...    )
+        ... )
 
     This yields:
 
@@ -450,7 +450,7 @@ constraints simultaneously, simple pass in a list of constraints. For example:
     ...            value=3,
     ...        ),
     ...    ],
-    ...    )
+    ... )
 
     This yields:
 
