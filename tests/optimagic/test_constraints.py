@@ -1,18 +1,19 @@
 import pytest
 from optimagic.constraints import (
     Constraint,
-    CovarianceConstraint,
     DecreasingConstraint,
     EqualityConstraint,
     FixedConstraint,
+    FlatCovarianceConstraint,
+    FlatSDCorrConstraint,
     IncreasingConstraint,
     LinearConstraint,
     NonlinearConstraint,
     PairwiseEqualityConstraint,
     ProbabilityConstraint,
-    SDCorrConstraint,
     _all_none,
     _select_non_none,
+    pre_process_constraints,
 )
 from optimagic.exceptions import InvalidConstraintError
 
@@ -65,14 +66,14 @@ def test_probability_constraint(dummy_func):
 
 
 def test_covariance_constraint(dummy_func):
-    constr = CovarianceConstraint(selector=dummy_func)
+    constr = FlatCovarianceConstraint(selector=dummy_func)
     dict_repr = {"type": "covariance", "selector": dummy_func}
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)
 
 
 def test_sdcorr_constraint(dummy_func):
-    constr = SDCorrConstraint(selector=dummy_func)
+    constr = FlatSDCorrConstraint(selector=dummy_func)
     dict_repr = {"type": "sdcorr", "selector": dummy_func}
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)
@@ -141,9 +142,9 @@ def test_nonlinear_constraint_with_bounds(dummy_func):
     dict_repr = {
         "type": "nonlinear",
         "selector": dummy_func,
-        "lower_bound": 1.0,
-        "upper_bound": 2.0,
         "func": dummy_func,
+        "lower_bounds": 1.0,
+        "upper_bounds": 2.0,
     }
     assert constr._to_dict() == dict_repr
 
@@ -176,3 +177,50 @@ def test_select_non_none():
     assert _select_non_none(a=None, b=1, c=None) == {"b": 1}
     assert _select_non_none(a=None, b=None, c=2) == {"c": 2}
     assert _select_non_none(a=1, b=2, c=3) == {"a": 1, "b": 2, "c": 3}
+
+
+def test_pre_process_constraints_trivial_case():
+    constraints = FixedConstraint(selector=dummy_func)
+    expected = [{"type": "fixed", "selector": dummy_func}]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_list_of_constraints():
+    constraints = [
+        FixedConstraint(selector=dummy_func),
+        IncreasingConstraint(selector=dummy_func),
+    ]
+    expected = [
+        {"type": "fixed", "selector": dummy_func},
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_none_case():
+    assert pre_process_constraints(None) == []
+
+
+def test_pre_process_constraints_mixed_case():
+    constraints = [
+        FixedConstraint(selector=dummy_func),
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    expected = [
+        {"type": "fixed", "selector": dummy_func},
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_dict_case():
+    constraints = {"type": "fixed", "selector": dummy_func}
+    expected = [{"type": "fixed", "selector": dummy_func}]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_invalid_case():
+    constraints = "invalid"
+    msg = "Invalid constraints type: <class 'str'>"
+    with pytest.raises(InvalidConstraintError, match=msg):
+        pre_process_constraints(constraints)

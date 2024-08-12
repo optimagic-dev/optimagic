@@ -61,7 +61,7 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
 
     constraints = [
         om.constraints.FixedConstraint(selector=lambda p: p["mean"][0]),
-        om.constraints.CovarianceConstraint(
+        om.constraints.FlatCovarianceConstraint(
             selector=lambda p: p["cov"][np.tril_indices(3)]
         ),
     ]
@@ -235,7 +235,7 @@ test_cases_constr = list(
     itertools.product(
         [None, logit_jac],  # jacobian
         [
-            om.constraints.CovarianceConstraint(selector=lambda x: x[[1, 2, 3]]),
+            om.constraints.FlatCovarianceConstraint(selector=lambda x: x[[1, 2, 3]]),
             om.constraints.LinearConstraint(
                 selector=lambda x: x[[0, 1]], lower_bound=-20, weights=1
             ),
@@ -386,7 +386,7 @@ def test_estimate_ml_general_pytree(normal_inputs):
         optimize_options="scipy_lbfgsb",
         bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
-        constraints=om.constraints.SDCorrConstraint(selector=lambda p: p["sd"]),
+        constraints=om.constraints.FlatSDCorrConstraint(selector=lambda p: p["sd"]),
     )
 
     # ==================================================================================
@@ -413,7 +413,7 @@ def test_to_pickle(normal_inputs, tmp_path):
         optimize_options="scipy_lbfgsb",
         bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
-        constraints=om.constraints.SDCorrConstraint(selector=lambda p: p["sd"]),
+        constraints=om.constraints.FlatSDCorrConstraint(selector=lambda p: p["sd"]),
     )
 
     got.to_pickle(tmp_path / "bla.pkl")
@@ -431,7 +431,7 @@ def test_caching(normal_inputs):
         optimize_options="scipy_lbfgsb",
         bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
-        constraints=om.constraints.SDCorrConstraint(selector=lambda p: p["sd"]),
+        constraints=om.constraints.FlatSDCorrConstraint(selector=lambda p: p["sd"]),
     )
 
     assert got._cache == {}

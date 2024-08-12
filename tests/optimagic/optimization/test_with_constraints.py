@@ -105,7 +105,7 @@ FUNC_INFO = {
 
 CONSTR_INFO = {
     "numpy": {
-        "fixed": om.constraints.FixedConstraint(selector=lambda x: x[0], value=1),
+        "fixed": om.constraints.FixedConstraint(selector=lambda x: x[0]),
         "equality": om.constraints.EqualityConstraint(selector=lambda x: x[[0, 1, 2]]),
         "pairwise_equality": om.constraints.PairwiseEqualityConstraint(
             selectors=[lambda x: x[0], lambda x: x[1]]
@@ -118,37 +118,37 @@ CONSTR_INFO = {
         "probability": om.constraints.ProbabilityConstraint(
             selector=lambda x: x[[0, 1]]
         ),
-        "covariance": om.constraints.CovarianceConstraint(
+        "covariance": om.constraints.FlatCovarianceConstraint(
             selector=lambda x: x[[0, 1, 2]]
         ),
-        "sdcorr": om.constraints.SDCorrConstraint(selector=lambda x: x[[0, 1, 2]]),
+        "sdcorr": om.constraints.FlatSDCorrConstraint(selector=lambda x: x[[0, 1, 2]]),
     },
     "pandas": {
-        "fixed": om.constraints.FixedConstraint(
-            selector=lambda p: p.loc[(0,),], value=1
-        ),
+        "fixed": om.constraints.FixedConstraint(selector=lambda p: p.loc[0]),
         "equality": om.constraints.EqualityConstraint(
-            selector=lambda p: p.loc[(0, 1, 2),]
+            selector=lambda p: p.loc[[0, 1, 2]]
         ),
         "pairwise_equality": om.constraints.PairwiseEqualityConstraint(
-            selectors=[lambda p: p.loc[(0,),], lambda p: p.loc[(1,),]]
+            selectors=[lambda p: p.loc[0], lambda p: p.loc[1]]
         ),
         "increasing": om.constraints.IncreasingConstraint(
-            selector=lambda p: p.loc[(1, 2),]
+            selector=lambda p: p.loc[[1, 2]]
         ),
         "decreasing": om.constraints.DecreasingConstraint(
-            selector=lambda p: p.loc[(0, 1),]
+            selector=lambda p: p.loc[[0, 1]]
         ),
         "linear": om.constraints.LinearConstraint(
-            selector=lambda p: p.loc[(0, 1),], value=4, weights=[1, 2]
+            selector=lambda p: p.loc[[0, 1]], value=4, weights=[1, 2]
         ),
         "probability": om.constraints.ProbabilityConstraint(
-            selector=lambda p: p.loc[(0, 1),]
+            selector=lambda p: p.loc[[0, 1]]
         ),
-        "covariance": om.constraints.CovarianceConstraint(
-            selector=lambda p: p.loc[(0, 1, 2),]
+        "covariance": om.constraints.FlatCovarianceConstraint(
+            selector=lambda p: p.loc[[0, 1, 2]]
         ),
-        "sdcorr": om.constraints.SDCorrConstraint(selector=lambda p: p.loc[(0, 1, 2),]),
+        "sdcorr": om.constraints.FlatSDCorrConstraint(
+            selector=lambda p: p.loc[[0, 1, 2]]
+        ),
     },
 }
 
@@ -226,13 +226,17 @@ def test_constrained_minimization(
     aaae(calculated, expected, decimal=4)
 
 
+@pytest.mark.filterwarnings("ignore:")
 def test_fix_that_differs_from_start_value_raises_an_error():
+    # We use the old constraint interface here, as the new interface prohibits the
+    # usage of the 'value' attribute, rendering the test useless.
+    # TODO: Remove this test when the old constraint interface is deprecated.
     with pytest.raises(InvalidParamsError):
         minimize(
             fun=lambda x: x @ x,
             params=np.arange(3),
             algorithm="scipy_lbfgsb",
-            constraints=om.constraints.FixedConstraint(lambda x: x[1], value=10),
+            constraints=[{"selector": lambda x: x[1], "value": 10, "type": "fixed"}],
         )
 
 
@@ -241,7 +245,7 @@ def test_three_independent_constraints():
     params[0] = 2
 
     constraints = [
-        om.constraints.CovarianceConstraint(lambda x: x[[0, 1, 2]]),
+        om.constraints.FlatCovarianceConstraint(lambda x: x[[0, 1, 2]]),
         om.constraints.FixedConstraint(lambda x: x[[4, 5]]),
         om.constraints.LinearConstraint(lambda x: x[[7, 8]], value=15, weights=1),
     ]
@@ -260,11 +264,11 @@ def test_three_independent_constraints():
 
 INVALID_CONSTRAINT_COMBIS = [
     [
-        om.constraints.CovarianceConstraint(lambda x: x[[1, 0, 2]]),
+        om.constraints.FlatCovarianceConstraint(lambda x: x[[1, 0, 2]]),
         om.constraints.ProbabilityConstraint(lambda x: x[[0, 1]]),
     ],
     [
-        om.constraints.CovarianceConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
+        om.constraints.FlatCovarianceConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
         om.constraints.IncreasingConstraint(lambda x: x[[0, 1, 2]]),
     ],
 ]
@@ -369,7 +373,7 @@ def test_covariance_constraint_in_2_by_2_case():
         fun_kwargs=kwargs,
         params=start_params,
         algorithm="scipy_lbfgsb",
-        constraints=om.constraints.CovarianceConstraint(
+        constraints=om.constraints.FlatCovarianceConstraint(
             selector=lambda x: x[[1, 2, 3]]
         ),
     )

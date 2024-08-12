@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 
 from optimagic import deprecations
-from optimagic.constraints import Constraint
+from optimagic.constraints import pre_process_constraints
 from optimagic.decorators import AlgoInfo
 from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
@@ -75,7 +75,8 @@ class OptimizationProblem:
     algo_options: dict[str, Any] | None
     algo_info: AlgoInfo
     bounds: Bounds | None
-    constraints: list[Constraint | dict[str, Any]] | Constraint | dict[str, Any]
+    # TODO: Only allow list[Constraint] or Constraint
+    constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     numdiff_options: NumdiffOptions
@@ -337,6 +338,7 @@ def create_optimization_problem(
     scaling = pre_process_scaling(scaling)
     multistart = pre_process_multistart(multistart)
     numdiff_options = pre_process_numdiff_options(numdiff_options)
+    constraints = pre_process_constraints(constraints)
 
     if numdiff_options is None:
         numdiff_options = get_default_numdiff_options(purpose=NumdiffPurpose.OPTIMIZE)
@@ -479,11 +481,9 @@ def create_optimization_problem(
         if not isinstance(bounds, Bounds | None):
             raise ValueError("bounds must be a Bounds object or None")
 
-        if not isinstance(constraints, list | Constraint | dict):
-            raise ValueError(
-                "constraints must be a list of dicts or Constraint objects, a "
-                "Constraint object or a dictionary"
-            )
+        if not all(isinstance(c, dict) for c in constraints):
+            # TODO: Only allow list[Constraint]
+            raise ValueError("constraints must be a list of dictionaries")
 
         if not isinstance(jac, Callable | None):
             raise ValueError("jac must be a callable or None")

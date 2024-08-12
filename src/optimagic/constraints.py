@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Callable, Generic, TypeVar
+from dataclasses import KW_ONLY, dataclass
+from typing import Any, Callable
 
 import pandas as pd
 from numpy.typing import ArrayLike
@@ -23,20 +23,12 @@ def identity_selector(x: PyTree) -> PyTree:
     return x
 
 
-ConstraintValue = TypeVar("ConstraintValue", bound=PyTree)
-
-
 @dataclass(frozen=True)
-class FixedConstraint(Constraint, Generic[ConstraintValue]):
-    selector: Callable[[PyTree], ConstraintValue] = identity_selector
-    value: ConstraintValue | None = None
+class FixedConstraint(Constraint):
+    selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
-        return {
-            "type": "fixed",
-            "selector": self.selector,
-            **_select_non_none(value=self.value),
-        }
+        return {"type": "fixed", "selector": self.selector}
 
 
 @dataclass(frozen=True)
@@ -80,34 +72,43 @@ class ProbabilityConstraint(Constraint):
 
 
 @dataclass(frozen=True)
-class CovarianceConstraint(Constraint):
+class FlatCovarianceConstraint(Constraint):
     selector: Callable[[PyTree], PyTree] = identity_selector
+    _: KW_ONLY
+    bounds_distance: float | None = None
 
     def _to_dict(self) -> dict[str, Any]:
-        return {"type": "covariance", "selector": self.selector}
+        return {
+            "type": "covariance",
+            "selector": self.selector,
+            **_select_non_none(bounds_distance=self.bounds_distance),
+        }
 
 
 @dataclass(frozen=True)
-class SDCorrConstraint(Constraint):
+class FlatSDCorrConstraint(Constraint):
     selector: Callable[[PyTree], PyTree] = identity_selector
+    _: KW_ONLY
+    bounds_distance: float | None = None
 
     def _to_dict(self) -> dict[str, Any]:
-        return {"type": "sdcorr", "selector": self.selector}
-
-
-ArrayLikeSeriesOrFloat = TypeVar(
-    "ArrayLikeSeriesOrFloat",
-    bound=(ArrayLike | pd.Series | float),  # type: ignore
-)
+        return {
+            "type": "sdcorr",
+            "selector": self.selector,
+            **_select_non_none(bounds_distance=self.bounds_distance),
+        }
 
 
 @dataclass(frozen=True)
-class LinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
-    weights: ArrayLike | pd.Series | pd.DataFrame  # type: ignore
-    lower_bound: ArrayLikeSeriesOrFloat | None = None
-    upper_bound: ArrayLikeSeriesOrFloat | None = None
-    value: ArrayLikeSeriesOrFloat | None = None
-    selector: Callable[[PyTree], PyTree] = identity_selector
+class LinearConstraint(Constraint):
+    selector: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float] = (
+        identity_selector
+    )
+    _: KW_ONLY
+    weights: ArrayLike | "pd.Series[float]" | float | pd.DataFrame | None = None
+    lower_bound: ArrayLike | "pd.Series[float]" | float | None = None
+    upper_bound: ArrayLike | "pd.Series[float]" | float | None = None
+    value: ArrayLike | "pd.Series[float]" | float | None = None
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -134,24 +135,26 @@ class LinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
 
 
 @dataclass(frozen=True)
-class NonlinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
-    func: Callable[[PyTree], ArrayLikeSeriesOrFloat]
-    derivative: Callable[[PyTree], PyTree] | None = None
-    lower_bound: ArrayLikeSeriesOrFloat | None = None
-    upper_bound: ArrayLikeSeriesOrFloat | None = None
-    value: ArrayLikeSeriesOrFloat | None = None
-    tol: float | None = None
+class NonlinearConstraint(Constraint):
     selector: Callable[[PyTree], PyTree] = identity_selector
+    _: KW_ONLY
+    func: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float] | None = None
+    derivative: Callable[[PyTree], PyTree] | None = None
+    lower_bound: ArrayLike | "pd.Series[float]" | float | None = None
+    upper_bound: ArrayLike | "pd.Series[float]" | float | None = None
+    value: ArrayLike | "pd.Series[float]" | float | None = None
+    tol: float | None = None
 
     def _to_dict(self) -> dict[str, Any]:
         return {
             "type": "nonlinear",
             "selector": self.selector,
-            "func": self.func,
             **_select_non_none(
+                func=self.func,
                 derivative=self.derivative,
-                lower_bound=self.lower_bound,
-                upper_bound=self.upper_bound,
+                # In the dict representation, we write _bounds instead of _bound.
+                lower_bounds=self.lower_bound,
+                upper_bounds=self.upper_bound,
                 value=self.value,
                 tol=self.tol,
             ),
@@ -170,6 +173,30 @@ class NonlinearConstraint(Constraint, Generic[ArrayLikeSeriesOrFloat]):
 
         if self.tol is not None and self.tol < 0:
             raise InvalidConstraintError("'tol' must be non-negative.")
+
+        if self.func is None or not callable(self.func):
+            raise InvalidConstraintError("'func' must be callable.")
+
+
+def pre_process_constraints(
+    constraints: list[Constraint | dict[str, Any]] | Constraint | dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    if constraints is None:
+        out = []
+    elif isinstance(constraints, dict):
+        out = [constraints]
+    elif isinstance(constraints, Constraint):
+        out = [constraints._to_dict()]
+    elif isinstance(constraints, list):
+        out = [c._to_dict() if isinstance(c, Constraint) else c for c in constraints]
+    else:
+        msg = (
+            f"Invalid constraints type: {type(constraints)}. Must be a constraint "
+            "object or list thereof imported from `optimagic.constraints`."
+        )
+        raise InvalidConstraintError(msg)
+
+    return out
 
 
 def _all_none(*args: Any) -> bool:

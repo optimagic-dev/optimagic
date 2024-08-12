@@ -180,8 +180,8 @@ def _process_nonlinear_constraint(
             select = external_selector(params)
             return np.atleast_1d(constraint_func(select))
 
-        lower_bound = c.get("lower_bound", 0)
-        upper_bound = c.get("upper_bound", np.inf)
+        lower_bound = c.get("lower_bounds", 0)
+        upper_bound = c.get("upper_bounds", np.inf)
 
         transformation = _get_transformation(lower_bound, upper_bound)
 
@@ -435,21 +435,21 @@ def _check_validity_and_return_evaluation(c, params, skip_checks):
     is_equality_constraint = "value" in c
 
     if is_equality_constraint:
-        if "lower_bound" in c or "upper_bound" in c:
+        if "lower_bounds" in c or "upper_bounds" in c:
             raise InvalidConstraintError(
                 "Only one of 'value' or ('lower_bound', 'upper_bound') can be "
                 "passed to a nonlinear constraint."
             )
 
     if not is_equality_constraint:
-        if "lower_bound" not in c and "upper_bound" not in c:
+        if "lower_bounds" not in c and "upper_bounds" not in c:
             raise InvalidConstraintError(
                 "For inequality constraint at least one of ('lower_bound', "
                 "'upper_bound') has to be passed to the nonlinear constraint."
             )
 
-    if "lower_bound" in c and "upper_bound" in c:
-        if not np.all(np.array(c["lower_bound"]) <= np.array(c["upper_bound"])):
+    if "lower_bounds" in c and "upper_bounds" in c:
+        if not np.all(np.array(c["lower_bounds"]) <= np.array(c["upper_bounds"])):
             raise InvalidConstraintError(
                 "If lower bounds need to less than or equal to upper bounds."
             )

@@ -6,7 +6,7 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 from optimagic import deprecations, mark
-from optimagic.constraints import Constraint
+from optimagic.constraints import pre_process_constraints
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
@@ -185,6 +185,8 @@ def estimate_ml(
     bounds = pre_process_bounds(bounds)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     hessian_numdiff_options = pre_process_numdiff_options(hessian_numdiff_options)
+    # TODO: Overwrite constraints once we deprecate dictionary constraints
+    dict_constraints = pre_process_constraints(constraints)
 
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(
@@ -214,15 +216,6 @@ def estimate_ml(
     loglike_kwargs = {} if loglike_kwargs is None else loglike_kwargs
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
     hessian_kwargs = {} if hessian_kwargs is None else hessian_kwargs
-
-    if constraints is None:
-        constraints = []
-    elif not isinstance(constraints, list):
-        constraints = [constraints]
-
-    dict_constraints = [
-        c._to_dict() if isinstance(c, Constraint) else c for c in constraints
-    ]
 
     # ==================================================================================
     # Calculate estimates via maximization (if necessary)
