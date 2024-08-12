@@ -224,7 +224,7 @@ def test_constrained_minimization(
     aaae(calculated, expected, decimal=4)
 
 
-@pytest.mark.filterwarnings("ignore:")
+@pytest.mark.filterwarnings("ignore")
 def test_fix_that_differs_from_start_value_raises_an_error():
     # We use the old constraint interface here, as the new interface prohibits the
     # usage of the 'value' attribute, rendering the test useless.

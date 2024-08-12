@@ -6,8 +6,10 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 from optimagic import deprecations, mark
-from optimagic.constraints import pre_process_constraints
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic.deprecations import (
+    pre_process_constraints,
+    replace_and_warn_about_deprecated_bounds,
+)
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
     NumdiffPurpose,
@@ -171,10 +173,7 @@ def estimate_ml(
         if hessian_numdiff_options is None:
             hessian_numdiff_options = numdiff_options
 
-    if isinstance(constraints, dict) or (
-        isinstance(constraints, list) and any(isinstance(c, dict) for c in constraints)
-    ):
-        deprecations.throw_dict_constraints_future_warning()
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
 
     # ==================================================================================
     # Check and process inputs
@@ -185,9 +184,8 @@ def estimate_ml(
     bounds = pre_process_bounds(bounds)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     hessian_numdiff_options = pre_process_numdiff_options(hessian_numdiff_options)
-    # TODO: Overwrite constraints once we deprecate dictionary constraints. We currently
-    # pass constraints unprocessed to the optimizer, so that we do not throw warnings
-    # if the new constraints are used.
+    # TODO: Replace dict_constraints with constraints, once we deprecate dictionary
+    # constraints.
     dict_constraints = pre_process_constraints(constraints)
 
     if jacobian_numdiff_options is None:

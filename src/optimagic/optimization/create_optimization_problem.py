@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 
 from optimagic import deprecations
-from optimagic.constraints import pre_process_constraints
 from optimagic.decorators import AlgoInfo
 from optimagic.deprecations import (
+    pre_process_constraints,
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
@@ -210,10 +210,7 @@ def create_optimization_problem(
         if multistart is True and multistart_options is not None:
             multistart = multistart_options
 
-    if isinstance(constraints, dict) or (
-        isinstance(constraints, list) and any(isinstance(c, dict) for c in constraints)
-    ):
-        deprecations.throw_dict_constraints_future_warning()
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
 
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 

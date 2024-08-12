@@ -7,21 +7,16 @@ import pandas as pd
 from numpy.typing import ArrayLike
 
 from optimagic.exceptions import InvalidConstraintError
+from optimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from optimagic.typing import PyTree
 
 
 class Constraint(ABC):
     """Base class for all constraints used for subtyping."""
 
-    selector: Callable[[PyTree], PyTree]
-
     @abstractmethod
     def _to_dict(self) -> dict[str, Any]:
         pass
-
-    def __post_init__(self) -> None:
-        if not callable(self.selector):
-            raise InvalidConstraintError("'selector' must be callable.")
 
 
 def identity_selector(x: PyTree) -> PyTree:
@@ -30,60 +25,137 @@ def identity_selector(x: PyTree) -> PyTree:
 
 @dataclass(frozen=True)
 class FixedConstraint(Constraint):
+    """Constraint that fixes the selected parameters at their starting values.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable.
+
+    """
+
     selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "fixed", "selector": self.selector}
 
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
+
 
 @dataclass(frozen=True)
 class IncreasingConstraint(Constraint):
+    """Constraint that ensures the selected parameters are increasing.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable.
+
+    """
+
     selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "increasing", "selector": self.selector}
 
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
+
 
 @dataclass(frozen=True)
 class DecreasingConstraint(Constraint):
+    """Constraint that ensures that the selected parameters are decreasing.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable.
+
+    """
+
     selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "decreasing", "selector": self.selector}
 
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
+
 
 @dataclass(frozen=True)
 class EqualityConstraint(Constraint):
+    """Constraint that ensures that the selected parameters are equal.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable.
+
+    """
+
     selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "equality", "selector": self.selector}
 
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
+
 
 @dataclass(frozen=True)
 class ProbabilityConstraint(Constraint):
+    """Constraint that ensures that the selected parameters are probabilities.
+
+    This constraint ensures that each of the selected parameters is positive and that
+    the sum of the selected parameters is 1.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable.
+
+    """
+
     selector: Callable[[PyTree], PyTree] = identity_selector
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "probability", "selector": self.selector}
 
-
-@dataclass(frozen=True)
-class FlatCovConstraint(Constraint):
-    selector: Callable[[PyTree], PyTree] = identity_selector
-    _: KW_ONLY
-    bounds_distance: float | None = None
-
-    def _to_dict(self) -> dict[str, Any]:
-        return {
-            "type": "covariance",
-            "selector": self.selector,
-            **_select_non_none(bounds_distance=self.bounds_distance),
-        }
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
 
 
 @dataclass(frozen=True)
 class PairwiseEqualityConstraint(Constraint):
+    """Constraint that ensures that groups of selected parameters are equal.
+
+    This constraint ensures that each pair between the selected parameters is equal.
+
+    Attributes:
+        selectors: A list of functions that take as input the parameters and return the
+            subsets of parameters to be constrained.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable.
+
+    """
+
     selectors: list[Callable[[PyTree], PyTree]]
 
     def _to_dict(self) -> dict[str, Any]:
@@ -98,21 +170,110 @@ class PairwiseEqualityConstraint(Constraint):
 
 
 @dataclass(frozen=True)
-class FlatSDCorrConstraint(Constraint):
+class FlatCovConstraint(Constraint):
+    """Constraint that ensures the selected parameters are a valid covariance matrix.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+        bounds_distance: The minimal lower bound for the internal covariance parameter.
+            Defaults to 0.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable or bounds_distance is
+            not a non-negative float or int.
+
+    """
+
     selector: Callable[[PyTree], PyTree] = identity_selector
     _: KW_ONLY
-    bounds_distance: float | None = None
+    bounds_distance: float = 0.0
+
+    def _to_dict(self) -> dict[str, Any]:
+        return {
+            "type": "covariance",
+            "selector": self.selector,
+            "bounds_distance": self.bounds_distance,
+        }
+
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
+
+        if (
+            not isinstance(self.bounds_distance, float | int)
+            or self.bounds_distance < 0
+        ):
+            raise InvalidConstraintError(
+                "'bounds_distance' must be a non-negative float or int."
+            )
+
+
+@dataclass(frozen=True)
+class FlatSDCorrConstraint(Constraint):
+    """Constraint that ensures the selected parameters are a valid correlation matrix.
+
+    This constraint ensures that each of the selected parameters is positive and that
+    the sum of the selected parameters is 1.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable or bounds_distance is
+            not a non-negative float or int.
+
+    """
+
+    selector: Callable[[PyTree], PyTree] = identity_selector
+    _: KW_ONLY
+    bounds_distance: float = 0.0
 
     def _to_dict(self) -> dict[str, Any]:
         return {
             "type": "sdcorr",
             "selector": self.selector,
-            **_select_non_none(bounds_distance=self.bounds_distance),
+            "bounds_distance": self.bounds_distance,
         }
+
+    def __post_init__(self) -> None:
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
+
+        if (
+            not isinstance(self.bounds_distance, float | int)
+            or self.bounds_distance < 0
+        ):
+            raise InvalidConstraintError(
+                "'bounds_distance' must be a non-negative float or int."
+            )
 
 
 @dataclass(frozen=True)
 class LinearConstraint(Constraint):
+    """Constraint that bounds a linear combination of the selected parameters.
+
+    This constraint ensures that a linear combination of the selected parameters with
+    the 'weights' is either equal to 'value', or is bounded by 'lower_bound' and
+    'upper_bound'.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+        weights: The weights for the linear combination. If a scalar is provided, it is
+            used for all parameters. Otherwise, it must have the same structure as the
+            selected parameters.
+        lower_bound: The lower bound for the linear combination. Defaults to None.
+        upper_bound: The upper bound for the linear combination. Defaults to None.
+        value: The value to compare the linear combination to. Defaults to None.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable, or if the weights,
+            lower_bound, upper_bound, or value are not valid.
+
+    """
+
     selector: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float | int] = (
         identity_selector
     )
@@ -135,7 +296,8 @@ class LinearConstraint(Constraint):
         }
 
     def __post_init__(self) -> None:
-        super().__post_init__()
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
 
         if _all_none(self.lower_bound, self.upper_bound, self.value):
             raise InvalidConstraintError(
@@ -168,6 +330,32 @@ class LinearConstraint(Constraint):
 
 @dataclass(frozen=True)
 class NonlinearConstraint(Constraint):
+    """Constraint that bounds a nonlinear function of the selected parameters.
+
+    This constraint ensures that a nonlinear function of the selected parameters is
+    either equal to 'value', or is bounded by 'lower_bound' and 'upper_bound'.
+
+    Attributes:
+        selector: A function that takes as input the parameters and returns the subset
+            of parameters to be constrained. By default, all parameters are constrained.
+        func: The constraint function which is applied to the selected parameters.
+        derivative: The derivative of the constraint function with respect to the
+            selected parameters. Defaults to None.
+        lower_bound: The lower bound for the nonlinear function. Can be a scalar or of
+            the same structure as output of the constraint function. Defaults to None.
+        upper_bound: The upper bound for the nonlinear function. Can be a scalar or of
+            the same structure as output of the constraint function. Defaults to None.
+        value: The value to compare the nonlinear function to. Can be a scalar or of
+            the same structure as output of the constraint function. Defaults to None.
+        tol: The tolerance for the constraint function. Defaults to
+            `optimagic.optimization.algo_options.CONSTRAINTS_ABSOLUTE_TOLERANCE`.
+
+    Raises:
+        InvalidConstraintError: If the selector is not callable, or if the func,
+            derivative, lower_bound, upper_bound, or value are not valid.
+
+    """
+
     selector: Callable[[PyTree], PyTree] = identity_selector
     _: KW_ONLY
     func: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float] | None = None
@@ -175,7 +363,7 @@ class NonlinearConstraint(Constraint):
     lower_bound: ArrayLike | "pd.Series[float]" | float | None = None
     upper_bound: ArrayLike | "pd.Series[float]" | float | None = None
     value: ArrayLike | "pd.Series[float]" | float | None = None
-    tol: float | None = None
+    tol: float = CONSTRAINTS_ABSOLUTE_TOLERANCE
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -193,7 +381,8 @@ class NonlinearConstraint(Constraint):
         }
 
     def __post_init__(self) -> None:
-        super().__post_init__()
+        if not callable(self.selector):
+            raise InvalidConstraintError("'selector' must be callable.")
 
         if _all_none(self.lower_bound, self.upper_bound, self.value):
             raise InvalidConstraintError(
@@ -215,27 +404,6 @@ class NonlinearConstraint(Constraint):
 
         if self.derivative is not None and not callable(self.derivative):
             raise InvalidConstraintError("'derivative' must be callable.")
-
-
-def pre_process_constraints(
-    constraints: list[Constraint | dict[str, Any]] | Constraint | dict[str, Any] | None,
-) -> list[dict[str, Any]]:
-    if constraints is None:
-        out = []
-    elif isinstance(constraints, dict):
-        out = [constraints]
-    elif isinstance(constraints, Constraint):
-        out = [constraints._to_dict()]
-    elif isinstance(constraints, list):
-        out = [c._to_dict() if isinstance(c, Constraint) else c for c in constraints]
-    else:
-        msg = (
-            f"Invalid constraints type: {type(constraints)}. Must be a constraint "
-            "object or list thereof imported from `optimagic.constraints`."
-        )
-        raise InvalidConstraintError(msg)
-
-    return out
 
 
 def _all_none(*args: Any) -> bool:
