@@ -275,7 +275,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.FlatCovarianceConstraint(
+        ...    constraints=om.constraints.FlatCovConstraint(
         ...        selector=lambda params: params[:3]
         ...    ),
         ... )
