@@ -105,6 +105,10 @@ class TableConfig:
     def _handle_existing_table(self, metadata: MetaData, engine: Engine) -> None:
         if self.table_name in metadata.tables:
             if self.if_table_exists is ExistenceStrategy.REPLACE:
+                warnings.warn(
+                    f"Replacing existing table {self.table_name} due to "
+                    f"{self.if_table_exists=}"
+                )
                 metadata.tables[self.table_name].drop(engine)
             elif self.if_table_exists is ExistenceStrategy.RAISE:
                 raise TableExistsError(f"The table {self.table_name} already exists.")
