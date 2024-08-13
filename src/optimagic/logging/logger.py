@@ -35,6 +35,20 @@ from optimagic.typing import OptimizationType, OptimizationTypeLiteral, PyTree
 
 
 class Logger:
+    """A logger class that manages and retrieves optimization and exploration data.
+
+    This class handles storing and retrieving iterations, steps, and problem
+    initialization data using various stores.
+    It provides methods to read iteration history, retrieve
+    specific iterations, and handle multistart optimization history.
+
+    Args:
+        iteration_store: A non-updatable store for iteration data.
+        step_store: An updatable store for step data.
+        problem_store: An updatable store for problem initialization data.
+
+    """
+
     def __init__(
         self,
         iteration_store: NonUpdatableKeyValueStore[
@@ -57,6 +71,18 @@ class Logger:
         ]
 
     def read_iteration(self, iteration: int) -> CriterionEvaluationWithId:
+        """Read a specific iteration from the iteration store.
+
+        Args:
+            iteration: The iteration number to read. Negative values read from the end.
+
+        Returns:
+            A `CriterionEvaluationWithId` object containing the iteration data.
+
+        Raises:
+            IndexError: If the iteration is invalid or the store is empty.
+
+        """
         if iteration >= 0:
             rowid = iteration + 1
         else:
@@ -86,6 +112,13 @@ class Logger:
         return replace(data, params=params)
 
     def read_history(self) -> IterationHistory:
+        """Read the entire iteration history from the iteration store.
+
+        Returns:
+            An `IterationHistory` object containing the parameters,
+                criterion values, and runtimes.
+
+        """
         raw_res = self.iteration_store.select()
         params_list = []
         criterion_list = []
@@ -212,6 +245,16 @@ class Logger:
     def read_multistart_history(
         self, direction: OptimizationType | OptimizationTypeLiteral
     ) -> MultiStartIterationHistory:
+        """Read and the multistart optimization history.
+
+        Args:
+            direction: The optimization direction, either as an enum or string.
+
+        Returns:
+            A `MultiStartIterationHistory` object containing the best history,
+                local histories, and exploration history.
+
+        """
         optimization_type = self._normalize_direction(direction)
         history_df = self._build_history_dataframe()
         exploration, optimization_history = self._split_exploration_and_optimization(
@@ -229,10 +272,30 @@ class Logger:
         )
 
     def read_start_params(self) -> PyTree:
+        """Read the start parameters form the problem store.
+
+        Returns:
+            A pytree object representing the start parameter.
+
+        """
         return self.problem_store.select_last_rows(1)[0].params
 
 
 class SQLiteLogger(Logger):
+    """A logger class that stores and manages optimization and exploration data using
+    SQLite. It supports different strategies for handling existing tables and databases,
+    such as extending, replacing, or raising an error.
+
+    Args:
+        path: The file path to the SQLite database.
+        fast_logging: A boolean indicating whether to use fast logging mode.
+        if_table_exists: Strategy for handling existing tables.
+            Can be 'extend', 'replace', or 'raise'.
+        if_database_exists: Strategy for handling the existing database file.
+            Can be 'extend', 'replace', or 'raise'.
+
+    """
+
     def __init__(
         self,
         path: str | Path,
