@@ -49,6 +49,14 @@ def test_log_reader_read_iteration(example_db):
     assert np.allclose(last_row["value"], 0)
 
 
+def test_log_reader_index_exception(example_db):
+    with pytest.raises(IndexError):
+        SQLiteLogger(example_db).read_iteration(10)
+
+    with pytest.raises(IndexError):
+        SQLiteLogger(":memory:").read_iteration(-2)
+
+
 def test_log_reader_read_history(example_db):
     reader = SQLiteLogger(example_db)
     res = reader.read_history()

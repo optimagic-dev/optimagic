@@ -3,6 +3,8 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import numpy as np
 import pytest
+from optimagic.exceptions import TableExistsError
+from optimagic.logging import ExistenceStrategy
 from optimagic.logging.sqlite import (
     IterationStore,
     SQLiteConfig,
@@ -109,6 +111,39 @@ class TestIterationStore:
         result_last = store.select_last_rows(5)
         assert len(result_last) == 5
 
+    def test_db_replacement_warning(self, store):
+        store.insert(self.create_test_point(245))
+        with pytest.warns(match="Existing database file"):
+            SQLiteConfig(
+                store._db_config.url.split("sqlite:///")[-1],
+                if_database_exists=ExistenceStrategy.REPLACE,
+            )
+
+    def test_db_existence_raise(self, store):
+        store.insert(self.create_test_point(245))
+        with pytest.raises(FileExistsError):
+            SQLiteConfig(
+                store._db_config.url.split("sqlite:///")[-1],
+            )
+
+    def test_table_replacement_warning(self, store):
+        store.insert(self.create_test_point(245))
+        with pytest.warns(match="Replacing"):
+            db_config = SQLiteConfig(
+                store._db_config.url.split("sqlite:///")[-1],
+                if_database_exists=ExistenceStrategy.EXTEND,
+            )
+            IterationStore(db_config, if_table_exists=ExistenceStrategy.REPLACE)
+
+    def test_table_existence_raise(self, store):
+        store.insert(self.create_test_point(245))
+        with pytest.raises(TableExistsError):
+            db_config = SQLiteConfig(
+                store._db_config.url.split("sqlite:///")[-1],
+                if_database_exists=ExistenceStrategy.EXTEND,
+            )
+            IterationStore(db_config, if_table_exists=ExistenceStrategy.RAISE)
+
 
 class TestStepStore:
     @pytest.fixture
@@ -167,6 +202,9 @@ class TestStepStore:
         updated_entry = store.select(1)[0]
         assert updated_entry is not None
         assert updated_entry.n_iterations == 34
+
+        with pytest.raises(ValueError):
+            store.update(key=1, value={"N_iterations_typo": 34})
 
     def test_serialization(self, store):
         """Test the serialization and deserialization of the IterationStore."""
