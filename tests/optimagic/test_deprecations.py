@@ -36,8 +36,10 @@ from optimagic.deprecations import (
     convert_dict_to_function_value,
     infer_problem_type_from_dict_output,
     is_dict_output,
+    pre_process_constraints,
 )
 from optimagic.differentiation.derivatives import NumdiffResult
+from optimagic.exceptions import InvalidConstraintError
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -119,7 +121,8 @@ def test_estimagic_check_constraints_is_deprecated():
     msg = "estimagic.check_constraints has been deprecated"
     with pytest.warns(FutureWarning, match=msg):
         check_constraints(
-            params=np.arange(3), constraints=[{"loc": 0, "type": "fixed"}]
+            params=np.arange(3),
+            constraints=om.FixedConstraint(lambda x: x[0]),
         )
 
 
@@ -127,7 +130,8 @@ def test_estimagic_count_free_params_is_deprecated():
     msg = "estimagic.count_free_params has been deprecated"
     with pytest.warns(FutureWarning, match=msg):
         count_free_params(
-            params=np.arange(3), constraints=[{"loc": 0, "type": "fixed"}]
+            params=np.arange(3),
+            constraints=om.FixedConstraint(lambda x: x[0]),
         )
 
 
@@ -531,7 +535,7 @@ def test_old_bounds_are_deprecated_in_count_free_params(bounds_kwargs):
     with pytest.warns(FutureWarning, match=msg):
         om.count_free_params(
             np.arange(3),
-            constraints=[{"loc": 0, "type": "fixed"}],
+            constraints=om.FixedConstraint(lambda x: x[0]),
             **bounds_kwargs,
         )
 
@@ -542,7 +546,7 @@ def test_old_bounds_are_deprecated_in_check_constraints(bounds_kwargs):
     with pytest.warns(FutureWarning, match=msg):
         om.check_constraints(
             np.arange(3),
-            constraints=[{"loc": 0, "type": "fixed"}],
+            constraints=om.FixedConstraint(lambda x: x[0]),
             **bounds_kwargs,
         )
 
@@ -856,3 +860,117 @@ def test_fun_with_dict_return_is_deprecated_in_slice_plot():
             np.arange(3),
             bounds=om.Bounds(lower=np.zeros(3), upper=np.ones(3) * 5),
         )
+
+
+def test_dict_constraints_are_deprecated_in_minimize():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_maximize():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_estimate_ml():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_estimate_msm():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+@pytest.fixture
+def dummy_func():
+    return lambda x: x
+
+
+def test_pre_process_constraints_trivial_case(dummy_func):
+    constraints = om.FixedConstraint(selector=dummy_func)
+    expected = [{"type": "fixed", "selector": dummy_func}]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_list_of_constraints(dummy_func):
+    constraints = [
+        om.FixedConstraint(selector=dummy_func),
+        om.IncreasingConstraint(selector=dummy_func),
+    ]
+    expected = [
+        {"type": "fixed", "selector": dummy_func},
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_none_case():
+    assert pre_process_constraints(None) == []
+
+
+def test_pre_process_constraints_mixed_case(dummy_func):
+    constraints = [
+        om.FixedConstraint(selector=dummy_func),
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    expected = [
+        {"type": "fixed", "selector": dummy_func},
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_dict_case(dummy_func):
+    constraints = {"type": "fixed", "selector": dummy_func}
+    expected = [{"type": "fixed", "selector": dummy_func}]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_invalid_case():
+    constraints = "invalid"
+    msg = "Invalid constraint type: <class 'str'>"
+    with pytest.raises(InvalidConstraintError, match=msg):
+        pre_process_constraints(constraints)
+
+
+def test_pre_process_constraints_invalid_mixed_case():
+    constraints = [
+        {"type": "fixed", "loc": [0, 1]},
+        om.FixedConstraint(),
+        "invalid",
+    ]
+    msg = "Invalid constraint types: {<class 'str'>}"
+    with pytest.raises(InvalidConstraintError, match=msg):
+        pre_process_constraints(constraints)

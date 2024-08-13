@@ -290,8 +290,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Split constraints into nonlinear and reparametrization parts
     # ==================================================================================
     constraints = problem.constraints
-    if isinstance(constraints, dict):
-        constraints = [constraints]
 
     nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
 

@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Any, Callable, ParamSpec
 
 from optimagic import mark
+from optimagic.constraints import Constraint, InvalidConstraintError
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -325,6 +326,43 @@ def throw_key_warning_in_derivatives():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_dict_constraints_future_warning_if_required(
+    constraints: list[dict[str, Any]] | dict[str, Any],
+) -> None:
+    replacements = {
+        "fixed": "optimagic.FixedConstraint",
+        "increasing": "optimagic.IncreasingConstraint",
+        "decreasing": "optimagic.DecreasingConstraint",
+        "equality": "optimagic.EqualityConstraint",
+        "probability": "optimagic.ProbabilityConstraint",
+        "pairwise_equality": "optimagic.PairwiseEqualityConstraint",
+        "covariance": "optimagic.FlatCovConstraint",
+        "sdcorr": "optimagic.FlatSDCorrConstraint",
+        "linear": "optimagic.LinearConstraint",
+        "nonlinear": "optimagic.NonlinearConstraint",
+    }
+
+    if not isinstance(constraints, list):
+        constraints = [constraints]
+
+    types = [
+        constraint.get("type", None) if isinstance(constraint, dict) else None
+        for constraint in constraints
+    ]
+    types = list(set(types) - {None})
+
+    if types:
+        msg = (
+            "Specifying constraints as a dictionary is deprecated and will be removed "
+            "in optimagic version 0.6.0. Please replace them using the new optimagic "
+            "constraint objects:\n"
+        )
+        for t in types:
+            msg += f"  {{'type': '{t}', ...}} -> {replacements[t]}(...)\n"
+
+        warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_multistart_options(options):
     """Replace deprecated multistart options and warn about them.
 
@@ -419,5 +457,53 @@ def replace_and_warn_about_deprecated_derivatives(candidate, name):
     for key, func in candidate.items():
         if key in key_to_marker:
             out.append(key_to_marker[key](func))
+
+    return out
+
+
+def pre_process_constraints(
+    constraints: list[Constraint | dict[str, Any]] | Constraint | dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Convert all ways of specifying constraints to a list of dictionaries.
+
+    For the optimagic release 0.5.0 we only implemented the new constraint API, but have
+    not overhauled the internal representation of constraints yet. As a result, we
+    convert all ways of specifying constraints, and in particular the new interface, to
+    the old format, that is, a list of dictionaries.
+
+    Once we have refactor the internal representation of constraints, we will be able to
+    go the other way, and convert all formats to the new one.
+
+    """
+    if constraints is None:
+        return []
+
+    if isinstance(constraints, dict | Constraint):
+        constraints = [constraints]
+
+    if isinstance(constraints, list):
+        out = []
+        invalid_types: list[type] = []
+        for constr in constraints:
+            if isinstance(constr, Constraint):
+                out.append(constr._to_dict())
+            elif isinstance(constr, dict):
+                out.append(constr)
+            else:
+                invalid_types.append(type(constr))
+
+        if invalid_types:
+            msg = (
+                f"Invalid constraint types: {set(invalid_types)}. Must be a constraint "
+                "object imported from `optimagic`."
+            )
+            raise InvalidConstraintError(msg)
+
+    else:
+        msg = (
+            f"Invalid constraint type: {type(constraints)}. Must be a constraint "
+            "object or list thereof imported from `optimagic`."
+        )
+        raise InvalidConstraintError(msg)
 
     return out

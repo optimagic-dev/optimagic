@@ -9,6 +9,7 @@
 import itertools
 
 import numpy as np
+import optimagic as om
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
@@ -16,29 +17,15 @@ from optimagic.examples.criterion_functions import sos_gradient, sos_scalar
 from optimagic.optimization.optimize import minimize
 
 CONSTR_INFO = {
-    "cov_bounds_distance": [
-        {
-            "loc": [0, 1, 2, 3, 4, 5],
-            "type": "covariance",
-            "bounds_distance": 0.1,
-            "robust_bounds": True,
-        }
-    ],
-    "sdcorr_bounds_distance": [
-        {
-            "loc": [0, 1, 2, 3, 4, 5],
-            "type": "sdcorr",
-            "bounds_distance": 0.1,
-            "robust_bounds": True,
-        }
-    ],
+    "cov_bounds_distance": om.FlatCovConstraint(regularization=0.1),
+    "sdcorr_bounds_distance": om.FlatSDCorrConstraint(regularization=0.1),
     "fixed_and_decreasing": [
-        {"loc": [1, 2, 3, 4], "type": "decreasing"},
-        {"loc": 2, "type": "fixed", "value": 4},
+        om.DecreasingConstraint(lambda x: x.loc[[1, 2, 3, 4]]),
+        om.FixedConstraint(lambda x: x.loc[2]),
     ],
     "fixed_and_increasing": [
-        {"loc": [0, 1, 2, 3], "type": "increasing"},
-        {"loc": 2, "type": "fixed", "value": 3},
+        om.IncreasingConstraint(lambda x: x.loc[[0, 1, 2, 3]]),
+        om.FixedConstraint(lambda x: x.loc[2]),
     ],
 }
 

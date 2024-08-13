@@ -74,7 +74,7 @@ class OptimizationProblem:
     algo_options: dict[str, Any] | None
     algo_info: AlgoInfo
     bounds: Bounds | None
-    # TODO: constraints will become list[Constraint] | None
+    # TODO: Only allow list[Constraint] or Constraint
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
@@ -209,6 +209,8 @@ def create_optimization_problem(
         if multistart is True and multistart_options is not None:
             multistart = multistart_options
 
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
+
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
     bounds = replace_and_warn_about_deprecated_bounds(
@@ -332,6 +334,7 @@ def create_optimization_problem(
     scaling = pre_process_scaling(scaling)
     multistart = pre_process_multistart(multistart)
     numdiff_options = pre_process_numdiff_options(numdiff_options)
+    constraints = deprecations.pre_process_constraints(constraints)
 
     if numdiff_options is None:
         numdiff_options = get_default_numdiff_options(purpose=NumdiffPurpose.OPTIMIZE)
@@ -474,8 +477,9 @@ def create_optimization_problem(
         if not isinstance(bounds, Bounds | None):
             raise ValueError("bounds must be a Bounds object or None")
 
-        if not isinstance(constraints, list | dict):
-            raise ValueError("constraints must be a list or a dictionary")
+        if not all(isinstance(c, dict) for c in constraints):
+            # TODO: Only allow list[Constraint]
+            raise ValueError("constraints must be a list of dictionaries")
 
         if not isinstance(jac, Callable | None):
             raise ValueError("jac must be a callable or None")
