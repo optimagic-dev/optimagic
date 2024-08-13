@@ -1,4 +1,5 @@
 from dataclasses import replace
+from functools import cached_property
 from pathlib import Path
 from typing import Any, cast
 
@@ -20,8 +21,6 @@ from optimagic.logging.types import (
     ExistenceStrategyLiteral,
     IterationHistory,
     MultiStartIterationHistory,
-    OptimizationType,
-    OptimizationTypeLiteral,
     ProblemInitialization,
     ProblemInitializationWithId,
     StepResult,
@@ -29,7 +28,7 @@ from optimagic.logging.types import (
     StepType,
 )
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import PyTree
+from optimagic.typing import OptimizationType, OptimizationTypeLiteral, PyTree
 
 
 class Logger:
@@ -47,9 +46,12 @@ class Logger:
         self.iteration_store = iteration_store
         self.problem_store = problem_store
         self._pytree_registry = get_registry(extended=True)
-        self._treedef = tree_flatten(
-            self.read_start_params(), registry=self._pytree_registry
-        )[-1]
+
+    @cached_property
+    def _treedef(self) -> tuple[list[Any], Any]:
+        return tree_flatten(self.read_start_params(), registry=self._pytree_registry)[
+            -1
+        ]
 
     def read_iteration(self, iteration: int) -> CriterionEvaluationWithId:
         if iteration >= 0:
@@ -232,16 +234,21 @@ class SQLiteLogger(Logger):
         self,
         path: str | Path,
         fast_logging: bool = True,
-        existence_strategy: ExistenceStrategy
+        if_table_exists: ExistenceStrategy
+        | ExistenceStrategyLiteral = ExistenceStrategy.EXTEND,
+        if_database_exists: ExistenceStrategy
         | ExistenceStrategyLiteral = ExistenceStrategy.EXTEND,
     ):
-        if isinstance(existence_strategy, str):
-            existence_strategy = ExistenceStrategy(existence_strategy)
+        if isinstance(if_table_exists, str):
+            if_table_exists = ExistenceStrategy(if_table_exists)
 
-        db_config = SQLiteConfig(path, fast_logging=fast_logging)
-        iteration_store = IterationStore(
-            db_config, existence_strategy=existence_strategy
+        if isinstance(if_database_exists, str):
+            if_database_exists = ExistenceStrategy(if_database_exists)
+
+        db_config = SQLiteConfig(
+            path, fast_logging=fast_logging, if_database_exists=if_database_exists
         )
-        step_store = StepStore(db_config, existence_strategy=existence_strategy)
-        problem_store = ProblemStore(db_config, existence_strategy=existence_strategy)
+        iteration_store = IterationStore(db_config, existence_strategy=if_table_exists)
+        step_store = StepStore(db_config, existence_strategy=if_table_exists)
+        problem_store = ProblemStore(db_config, existence_strategy=if_table_exists)
         super().__init__(iteration_store, step_store, problem_store)

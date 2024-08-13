@@ -1,9 +1,13 @@
+import io
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import asdict, fields, is_dataclass
 from typing import Any, Generic, Type, TypeVar
 
+import cloudpickle
 import pandas as pd
 
+from optimagic.exceptions import get_traceback
 from optimagic.typing import DictLikeAccess
 
 InputType = TypeVar("InputType", bound=DictLikeAccess)
@@ -82,3 +86,52 @@ class AbstractKeyValueStore(Generic[InputType, OutputType], ABC):
     def to_df(self) -> pd.DataFrame:
         items = self._select_all()
         return pd.DataFrame([asdict(item) for item in items])
+
+
+class RobustPickler:
+    @staticmethod
+    def loads(
+        data: Any,
+        fix_imports: bool = True,  # noqa: ARG004
+        encoding: str = "ASCII",  # noqa: ARG004
+        errors: str = "strict",  # noqa: ARG004
+        buffers: Any = None,  # noqa: ARG004
+    ) -> Any:
+        """Robust pickle loading.
+
+        We first try to unpickle the object with pd.read_pickle. This makes no
+        difference for non-pandas objects but makes the de-serialization
+        of pandas objects more robust across pandas versions. If that fails, we use
+        cloudpickle. If that fails, we return None but do not raise an error.
+
+        See: https://github.com/pandas-dev/pandas/issues/16474
+
+        """
+        try:
+            res = pd.read_pickle(io.BytesIO(data), compression=None)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            try:
+                res = cloudpickle.loads(data)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception:
+                res = None
+                tb = get_traceback()
+                warnings.warn(
+                    f"Unable to read PickleType column from database:\n{tb}\n "
+                    "The entry was replaced by None."
+                )
+
+        return res
+
+    @staticmethod
+    def dumps(
+        obj: Any,
+        protocol: str | None = None,
+        *,
+        fix_imports: bool = True,  # noqa: ARG001
+        buffer_callback: Any = None,  # noqa: ARG004
+    ) -> Any:
+        return cloudpickle.dumps(obj, protocol=protocol)

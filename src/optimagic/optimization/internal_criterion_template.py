@@ -4,7 +4,7 @@ from dataclasses import asdict
 
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
-from optimagic.logging.write_to_database import append_row
+from optimagic.logging.types import CriterionEvaluationResult
 from optimagic.typing import AggregationLevel
 
 
@@ -21,7 +21,6 @@ def internal_criterion_and_derivative_template(
     criterion_and_derivative,
     numdiff_options,
     logging,
-    database,
     error_handling,
     error_penalty_func,
     fixed_log_data,
@@ -71,7 +70,6 @@ def internal_criterion_and_derivative_template(
             derivatives. See :ref:`first_derivative` for details. Note that the default
             method is changed to "forward" for speed reasons.
         logging (bool): Whether logging is used.
-        database (DataBase): Database to which the logs are written.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -230,10 +228,10 @@ def internal_criterion_and_derivative_template(
             new_derivative=new_jac,
             external_x=external_x,
             caught_exceptions=caught_exceptions,
-            database=database,
             fixed_log_data=fixed_log_data,
             scalar_value=scalar_critval,
             now=now,
+            logger=logging,
         )
 
     res = _get_output_for_optimizer(
@@ -312,10 +310,10 @@ def _log_new_evaluations(
     new_derivative,
     external_x,
     caught_exceptions,
-    database,
     fixed_log_data,
     scalar_value,
     now,
+    logger,
 ):
     """Write the new evaluations and additional information into the database.
 
@@ -341,9 +339,8 @@ def _log_new_evaluations(
         data["exceptions"] = separator.join(caught_exceptions)
         data["valid"] = False
 
-    name = "optimization_iterations"
-
-    append_row(data, name, database=database)
+    data = CriterionEvaluationResult(**data)
+    logger.iteration_store.insert(data)
 
 
 def _get_output_for_optimizer(

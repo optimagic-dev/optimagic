@@ -8,9 +8,7 @@ from optimagic.examples.criterion_functions import (
     sos_ls,
     sos_scalar,
 )
-from optimagic.logging.load_database import load_database
-from optimagic.logging.read_from_database import read_new_rows
-from optimagic.logging.read_log import read_steps_table
+from optimagic.logging.logger import SQLiteLogger
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.bounds import Bounds
@@ -114,7 +112,7 @@ def test_steps_are_logged_as_skipped_if_convergence(params):
         logging="logging.db",
     )
 
-    steps_table = read_steps_table("logging.db")
+    steps_table = SQLiteLogger("logging.db").step_store.to_df()
     expected_status = ["complete", "complete", "complete", "skipped", "skipped"]
     assert steps_table["status"].tolist() == expected_status
 
@@ -133,13 +131,8 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
         logging="logging.db",
     )
 
-    database = load_database(path_or_database="logging.db")
-    iterations, _ = read_new_rows(
-        database=database,
-        table_name="optimization_iterations",
-        last_retrieved=0,
-        return_type="dict_of_lists",
-    )
+    logging = SQLiteLogger("logging.db")
+    iterations = logging.iteration_store.to_df()
 
     present_steps = set(iterations["step"])
 

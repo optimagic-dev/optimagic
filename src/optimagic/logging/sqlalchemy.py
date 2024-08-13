@@ -11,13 +11,20 @@ from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.schema import MetaData
 
 from optimagic.exceptions import TableExistsError
-from optimagic.logging.base import AbstractKeyValueStore, InputType, OutputType
-from optimagic.logging.load_database import RobustPickler
+from optimagic.logging.base import (
+    AbstractKeyValueStore,
+    InputType,
+    OutputType,
+    RobustPickler,
+)
 from optimagic.logging.types import ExistenceStrategy
 
 
 class SQLAlchemyConfig:
-    def __init__(self, url: str):
+    def __init__(
+        self,
+        url: str,
+    ):
         self.url = url
         engine = self.create_engine()
         metadata = MetaData()
@@ -160,7 +167,8 @@ class SQLAlchemyTableStore(AbstractKeyValueStore[InputType, OutputType]):
             .order_by(getattr(self._table.c, self.primary_key).desc())
             .limit(n_rows)
         )
-        return self._execute_read_statement(stmt)
+        result = self._execute_read_statement(stmt)
+        return result[::-1]
 
     def _execute_read_statement(self, statement: Executable) -> list[OutputType]:
         with self._engine.connect() as connection:

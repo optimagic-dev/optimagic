@@ -13,19 +13,11 @@ is then passed to `_optimize` which handles the optimization logic.
 """
 
 import functools
-import warnings
-from pathlib import Path
 
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
-from optimagic.logging.create_tables import (
-    make_optimization_iteration_table,
-    make_optimization_problem_table,
-    make_steps_table,
-)
-from optimagic.logging.load_database import load_database
-from optimagic.logging.write_to_database import append_row
+from optimagic.logging.types import ProblemInitialization
 from optimagic.optimization.create_optimization_problem import (
     OptimizationProblem,
     create_optimization_problem,
@@ -68,8 +60,7 @@ def maximize(
     fun_and_jac=None,
     fun_and_jac_kwargs=None,
     numdiff_options=None,
-    logging=False,
-    log_options=None,
+    logging=None,
     error_handling="raise",
     error_penalty=None,
     scaling=False,
@@ -94,6 +85,7 @@ def maximize(
     derivative_kwargs=None,
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
+    log_options=None,
     lower_bounds=None,
     upper_bounds=None,
     soft_lower_bounds=None,
@@ -183,8 +175,7 @@ def minimize(
     fun_and_jac=None,
     fun_and_jac_kwargs=None,
     numdiff_options=None,
-    logging=False,
-    log_options=None,
+    logging=None,
     error_handling="raise",
     error_penalty=None,
     scaling=False,
@@ -210,6 +201,7 @@ def minimize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     lower_bounds=None,
+    log_options=None,
     upper_bounds=None,
     soft_lower_bounds=None,
     soft_upper_bounds=None,
@@ -249,7 +241,6 @@ def minimize(
         fun_and_jac_kwargs=fun_and_jac_kwargs,
         numdiff_options=numdiff_options,
         logging=logging,
-        log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,
@@ -275,6 +266,7 @@ def minimize(
         criterion_and_derivative=criterion_and_derivative,
         criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
         lower_bounds=lower_bounds,
+        log_options=log_options,
         upper_bounds=upper_bounds,
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
@@ -353,21 +345,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
-    if problem.logging:
-        # TODO: We want to remove the optimization_problem table completely but we
-        # probably do need to store the start parameters in the database because it is
-        # used by the log reader.
-        problem_data = {
-            "direction": problem.direction,
-            "params": problem.params,
-        }
-        database = _create_and_initialize_database(
-            logging=problem.logging,
-            log_options=problem.log_options,
-            problem_data=problem_data,
-        )
-    else:
-        database = None
+    if problem.logger is not None:
+        problem_data = ProblemInitialization(problem.direction, problem.params)
+        problem.logger.problem_store.insert(problem_data)
 
     # ==================================================================================
     # Do some things that require internal parameters or bounds
@@ -415,8 +395,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         upper_bounds=internal_params.upper_bounds,
         nonlinear_constraints=internal_constraints,
         algo_options=problem.algo_options,
-        logging=problem.logging,
-        database=database,
+        logging=problem.logger,
         collect_history=problem.collect_history,
     )
     # ==================================================================================
@@ -429,8 +408,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         "derivative": problem.jac,
         "criterion_and_derivative": problem.fun_and_jac,
         "numdiff_options": problem.numdiff_options,
-        "logging": problem.logging,
-        "database": database,
+        "logging": problem.logger,
         "algo_info": problem.algo_info,
         "error_handling": problem.error_handling,
         "error_penalty_func": error_penalty_func,
@@ -458,8 +436,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
         step_ids = log_scheduled_steps_and_get_ids(
             steps=steps,
-            logging=problem.logging,
-            database=database,
+            logging=problem.logger,
         )
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
@@ -478,8 +455,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             lower_sampling_bounds=internal_params.soft_lower_bounds,
             upper_sampling_bounds=internal_params.soft_upper_bounds,
             options=multistart_options,
-            logging=problem.logging,
-            database=database,
+            logging=problem.logger,
             error_handling=problem.error_handling,
         )
 
@@ -506,54 +482,3 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     )
 
     return res
-
-
-def _create_and_initialize_database(logging, log_options, problem_data):
-    """Create and initialize to sqlite database for logging."""
-    path = Path(logging)
-    fast_logging = log_options.get("fast_logging", False)
-    if_table_exists = log_options.get("if_table_exists", "extend")
-    if_database_exists = log_options.get("if_database_exists", "extend")
-
-    if "if_exists" in log_options and "if_table_exists" not in log_options:
-        warnings.warn("The log_option 'if_exists' was renamed to 'if_table_exists'.")
-
-    if logging.exists():
-        if if_database_exists == "raise":
-            raise FileExistsError(
-                f"The database {logging} already exists and the log_option "
-                "'if_database_exists' is set to 'raise'"
-            )
-        elif if_database_exists == "replace":
-            logging.unlink()
-
-    database = load_database(path_or_database=path, fast_logging=fast_logging)
-
-    # create the optimization_iterations table
-    make_optimization_iteration_table(
-        database=database,
-        if_exists=if_table_exists,
-    )
-
-    # create and initialize the steps table; This is alway extended if it exists.
-    make_steps_table(database, if_exists=if_table_exists)
-
-    # create_and_initialize the optimization_problem table
-    make_optimization_problem_table(database, if_exists=if_table_exists)
-
-    not_saved = [
-        "criterion",
-        "criterion_kwargs",
-        "constraints",
-        "derivative",
-        "derivative_kwargs",
-        "criterion_and_derivative",
-        "criterion_and_derivative_kwargs",
-    ]
-    problem_data = {
-        key: val for key, val in problem_data.items() if key not in not_saved
-    }
-
-    append_row(problem_data, "optimization_problem", database=database)
-
-    return database

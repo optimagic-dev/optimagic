@@ -49,7 +49,6 @@ def base_inputs():
         "error_handling": "raise",
         "numdiff_options": NumdiffOptions(),
         "logging": False,
-        "database": None,
         "error_penalty_func": None,
         "fixed_log_data": {"stage": "optimization", "substage": 0},
     }

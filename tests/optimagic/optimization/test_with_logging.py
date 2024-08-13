@@ -17,6 +17,8 @@ from optimagic.examples.criterion_functions import (
     sos_ls,
 )
 from optimagic.exceptions import TableExistsError
+from optimagic.logging.logger import SQLiteLogger
+from optimagic.logging.types import ExistenceStrategy
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
@@ -55,8 +57,7 @@ def test_optimization_with_existing_exsting_database():
         sos_ls,
         pd.Series([1, 2, 3], name="value").to_frame(),
         algorithm="scipy_lbfgsb",
-        logging="logging.db",
-        log_options={"if_database_exists": "raise"},
+        logging=SQLiteLogger("logging.db", if_database_exists=ExistenceStrategy.RAISE),
     )
 
     with pytest.raises(FileExistsError):
@@ -64,8 +65,9 @@ def test_optimization_with_existing_exsting_database():
             sos_ls,
             pd.Series([1, 2, 3], name="value").to_frame(),
             algorithm="scipy_lbfgsb",
-            logging="logging.db",
-            log_options={"if_database_exists": "raise"},
+            logging=SQLiteLogger(
+                "logging.db", if_database_exists=ExistenceStrategy.RAISE
+            ),
         )
 
 
@@ -74,8 +76,11 @@ def test_optimization_with_existing_exsting_table():
         sos_ls,
         pd.Series([1, 2, 3], name="value").to_frame(),
         algorithm="scipy_lbfgsb",
-        logging="logging.db",
-        log_options={"if_database_exists": "raise"},
+        logging=SQLiteLogger(
+            "logging.db",
+            if_database_exists=ExistenceStrategy.EXTEND,
+            if_table_exists=ExistenceStrategy.EXTEND,
+        ),
     )
 
     with pytest.raises(TableExistsError):
@@ -83,6 +88,9 @@ def test_optimization_with_existing_exsting_table():
             sos_ls,
             pd.Series([1, 2, 3], name="value").to_frame(),
             algorithm="scipy_lbfgsb",
-            logging="logging.db",
-            log_options={"if_table_exists": "raise"},
+            logging=SQLiteLogger(
+                "logging.db",
+                if_database_exists=ExistenceStrategy.EXTEND,
+                if_table_exists=ExistenceStrategy.RAISE,
+            ),
         )

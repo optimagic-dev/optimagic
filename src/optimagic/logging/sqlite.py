@@ -1,3 +1,6 @@
+import logging
+import os.path
+import warnings
 from pathlib import Path
 from typing import Any, cast
 
@@ -12,9 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.engine.base import Engine
 
-from optimagic.logging.load_database import (
-    RobustPickler,
-)
+from optimagic.logging.base import RobustPickler
 from optimagic.logging.sqlalchemy import (
     SQLAlchemyConfig,
     SQLAlchemyTableStore,
@@ -24,18 +25,49 @@ from optimagic.logging.types import (
     CriterionEvaluationResult,
     CriterionEvaluationWithId,
     ExistenceStrategy,
+    ExistenceStrategyLiteral,
     ProblemInitialization,
     ProblemInitializationWithId,
     StepResult,
     StepResultWithId,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class SQLiteConfig(SQLAlchemyConfig):
-    def __init__(self, path: str | Path, fast_logging: bool = True):
+    def __init__(
+        self,
+        path: str | Path,
+        fast_logging: bool = True,
+        if_database_exists: ExistenceStrategy
+        | ExistenceStrategyLiteral = ExistenceStrategy.RAISE,
+    ):
+        self._handle_existing_database(path, if_database_exists)
         url = f"sqlite:///{path}"
         self._fast_logging = fast_logging
         super().__init__(url)
+
+    @staticmethod
+    def _handle_existing_database(
+        path: str | Path,
+        if_database_exists: ExistenceStrategy | ExistenceStrategyLiteral,
+    ) -> None:
+        if isinstance(if_database_exists, str):
+            if_database_exists = ExistenceStrategy(if_database_exists)
+        database_exists = os.path.exists(path)
+        if database_exists and if_database_exists is ExistenceStrategy.RAISE:
+            raise FileExistsError(
+                "If you want to reuse and extend the existing "
+                "database, provide "
+                "if_database_exists=ExistenceStrategy.EXTEND"
+            )
+        elif if_database_exists is ExistenceStrategy.REPLACE:
+            warnings.warn(
+                f"Due to if_database_exists=ExistenceStrategy.EXTEND, will"
+                f"remove existing database file at {path}"
+            )
+            os.remove(path)
 
     def _create_engine(self) -> Engine:
         engine = sql.create_engine(self.url)
