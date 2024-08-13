@@ -40,9 +40,15 @@ class SQLiteConfig(SQLAlchemyConfig):
 
     Args:
         path (str | Path): The file path to the SQLite database.
-        fast_logging (bool): Whether to enable fast logging mode.
+        fast_logging (bool): A boolean that determines if “unsafe” settings are used to
+            speed up write processes to the database. This should only be used for very
+            short running criterion functions where the main purpose of the log
+            is a real-time dashboard, and it would not be catastrophic to get
+            a corrupted database in case of a sudden system shutdown.
+            If one evaluation of the criterion function (and gradient if applicable)
+            takes more than 100 ms, the logging overhead is negligible.
         if_database_exists (ExistenceStrategy): Strategy for handling an existing
-            database file.
+            database file. One of “extend”, “replace”, “raise”.
 
     """
 
