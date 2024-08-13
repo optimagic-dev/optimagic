@@ -12,8 +12,8 @@ from sqlalchemy.sql.schema import MetaData
 
 from optimagic.exceptions import TableExistsError
 from optimagic.logging.base import (
-    AbstractKeyValueStore,
     InputType,
+    KeyValueStore,
     OutputType,
     RobustPickler,
 )
@@ -83,7 +83,7 @@ class TableConfig:
         return table
 
 
-class SQLAlchemyTableStore(AbstractKeyValueStore[InputType, OutputType]):
+class SQLAlchemyTableStore(KeyValueStore[InputType, OutputType]):
     def __init__(
         self,
         table_config: TableConfig,

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from pybaum import tree_flatten, tree_unflatten
 
-from optimagic.logging.base import AbstractKeyValueStore
+from optimagic.logging.base import KeyValueStore
 from optimagic.logging.sqlite import (
     IterationStore,
     ProblemStore,
@@ -34,11 +34,11 @@ from optimagic.typing import OptimizationType, OptimizationTypeLiteral, PyTree
 class Logger:
     def __init__(
         self,
-        iteration_store: AbstractKeyValueStore[
+        iteration_store: KeyValueStore[
             CriterionEvaluationResult, CriterionEvaluationWithId
         ],
-        step_store: AbstractKeyValueStore[StepResult, StepResultWithId],
-        problem_store: AbstractKeyValueStore[
+        step_store: KeyValueStore[StepResult, StepResultWithId],
+        problem_store: KeyValueStore[
             ProblemInitialization, ProblemInitializationWithId
         ],
     ):

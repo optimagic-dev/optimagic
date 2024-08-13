@@ -14,7 +14,7 @@ InputType = TypeVar("InputType", bound=DictLikeAccess)
 OutputType = TypeVar("OutputType", bound=DictLikeAccess)
 
 
-class AbstractKeyValueStore(Generic[InputType, OutputType], ABC):
+class KeyValueStore(Generic[InputType, OutputType], ABC):
     def __init__(
         self,
         input_type: Type[InputType],
