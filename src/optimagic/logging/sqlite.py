@@ -1,4 +1,3 @@
-import logging
 import os.path
 import warnings
 from pathlib import Path
@@ -31,10 +30,22 @@ from optimagic.logging.types import (
     StepResultWithId,
 )
 
-logger = logging.getLogger(__name__)
-
 
 class SQLiteConfig(SQLAlchemyConfig):
+    """Configuration class for setting up an SQLite database with SQLAlchemy.
+
+    This class extends the `SQLAlchemyConfig` class to configure an SQLite database.
+    It handles the creation of the database engine, manages database files,
+    and applies various optimizations for logging performance.
+
+    Args:
+        path (str | Path): The file path to the SQLite database.
+        fast_logging (bool): Whether to enable fast logging mode.
+        if_database_exists (ExistenceStrategy): Strategy for handling an existing
+            database file.
+
+    """
+
     def __init__(
         self,
         path: str | Path,
@@ -114,6 +125,14 @@ class SQLiteConfig(SQLAlchemyConfig):
 class IterationStore(
     SQLAlchemySimpleStore[CriterionEvaluationResult, CriterionEvaluationWithId]
 ):
+    """Store for managing iteration data in an SQLite database.
+
+    Args:
+        db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
+        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
+
+    """
+
     _TABLE_NAME = "optimization_iterations"
     _PRIMARY_KEY = "rowid"
 
@@ -133,13 +152,21 @@ class IterationStore(
 
 
 class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
+    """Store for managing step data in an SQLite database.
+
+    Args:
+        db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
+        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
+
+    """
+
     _TABLE_NAME = "steps"
     _PRIMARY_KEY = "rowid"
 
     def __init__(
         self,
         db_config: SQLiteConfig,
-        existence_strategy: ExistenceStrategy = ExistenceStrategy.EXTEND,
+        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
@@ -153,7 +180,7 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
             self._TABLE_NAME,
             cast(list[Column[Any]], columns),
             self._PRIMARY_KEY,
-            existence_strategy,
+            if_table_exists,
         )
 
         super().__init__(
@@ -167,13 +194,22 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
 class ProblemStore(
     SQLAlchemyTableStore[ProblemInitialization, ProblemInitializationWithId]
 ):
+    """Store for managing optimization problem initialization data in an SQLite
+    database.
+
+    Args:
+        db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
+        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
+
+    """
+
     _TABLE_NAME = "optimization_problem"
     _PRIMARY_KEY = "rowid"
 
     def __init__(
         self,
         db_config: SQLiteConfig,
-        existence_strategy: ExistenceStrategy = ExistenceStrategy.EXTEND,
+        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
@@ -185,7 +221,7 @@ class ProblemStore(
             self._TABLE_NAME,
             cast(list[Column[Any]], columns),
             self._PRIMARY_KEY,
-            existence_strategy,
+            if_table_exists,
         )
 
         super().__init__(

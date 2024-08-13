@@ -315,6 +315,6 @@ class SQLiteLogger(Logger):
             path, fast_logging=fast_logging, if_database_exists=if_database_exists
         )
         iteration_store = IterationStore(db_config, if_table_exists=if_table_exists)
-        step_store = StepStore(db_config, existence_strategy=if_table_exists)
-        problem_store = ProblemStore(db_config, existence_strategy=if_table_exists)
+        step_store = StepStore(db_config, if_table_exists=if_table_exists)
+        problem_store = ProblemStore(db_config, if_table_exists=if_table_exists)
         super().__init__(iteration_store, step_store, problem_store)
