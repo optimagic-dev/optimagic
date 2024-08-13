@@ -299,7 +299,7 @@ class SQLiteLogger(Logger):
     def __init__(
         self,
         path: str | Path,
-        fast_logging: bool = True,
+        fast_logging: bool = False,
         if_table_exists: ExistenceStrategy
         | ExistenceStrategyLiteral = ExistenceStrategy.EXTEND,
         if_database_exists: ExistenceStrategy
