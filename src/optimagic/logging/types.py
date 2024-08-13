@@ -112,7 +112,7 @@ class CriterionEvaluationWithId(CriterionEvaluationResult):
 
     def __post_init__(self) -> None:
         if self.rowid is None:
-            raise ValueError()
+            raise ValueError("rowid must not be None")
 
 
 @dataclass(frozen=True)
@@ -155,7 +155,7 @@ class StepResultWithId(StepResult):
 
     def __post_init__(self) -> None:
         if self.rowid is None:
-            raise ValueError()
+            raise ValueError("rowid must not be None")
         super().__post_init__()
 
 
@@ -190,7 +190,7 @@ class ProblemInitializationWithId(ProblemInitialization):
 
     def __post_init__(self) -> None:
         if self.rowid is None:
-            raise ValueError()
+            raise ValueError("rowid must not be None")
 
 
 @dataclass(frozen=True)
