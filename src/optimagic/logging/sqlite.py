@@ -55,18 +55,19 @@ class SQLiteConfig(SQLAlchemyConfig):
         if isinstance(if_database_exists, str):
             if_database_exists = ExistenceStrategy(if_database_exists)
         database_exists = os.path.exists(path)
-        if database_exists and if_database_exists is ExistenceStrategy.RAISE:
-            raise FileExistsError(
-                "If you want to reuse and extend the existing "
-                "database, provide "
-                "if_database_exists=ExistenceStrategy.EXTEND"
-            )
-        elif if_database_exists is ExistenceStrategy.REPLACE:
-            warnings.warn(
-                f"Due to if_database_exists=ExistenceStrategy.EXTEND, will"
-                f"remove existing database file at {path}"
-            )
-            os.remove(path)
+        if database_exists:
+            if if_database_exists is ExistenceStrategy.RAISE:
+                raise FileExistsError(
+                    f"The database at {path} already exists. To reuse and extend "
+                    f"the existing database, set if_database_exists to "
+                    f"ExistenceStrategy.EXTEND."
+                )
+            elif if_database_exists is ExistenceStrategy.REPLACE:
+                warnings.warn(
+                    f"Existing database file at {path} will be removed due to "
+                    f"if_database_exists=ExistenceStrategy.REPLACE."
+                )
+                os.remove(path)
 
     def _create_engine(self) -> Engine:
         engine = sql.create_engine(self.url)
