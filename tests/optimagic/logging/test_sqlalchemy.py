@@ -5,11 +5,8 @@ import numpy as np
 import pytest
 from optimagic.exceptions import TableExistsError
 from optimagic.logging import ExistenceStrategy
-from optimagic.logging.sqlite import (
-    IterationStore,
-    SQLiteConfig,
-    StepStore,
-)
+from optimagic.logging.logger import SQLiteConfig
+from optimagic.logging.sqlalchemy import IterationStore, StepStore
 from optimagic.logging.types import (
     CriterionEvaluationResult,
     StepResult,

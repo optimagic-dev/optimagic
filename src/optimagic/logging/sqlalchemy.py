@@ -3,9 +3,10 @@ from __future__ import annotations
 import traceback
 import warnings
 from dataclasses import asdict, dataclass
-from typing import Any, Sequence, Type
+from typing import Any, Sequence, Type, cast
 
 import sqlalchemy as sql
+from sqlalchemy import Column, Integer, PickleType, String
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.schema import MetaData
@@ -18,7 +19,15 @@ from optimagic.logging.base import (
     RobustPickler,
     UpdatableKeyValueStore,
 )
-from optimagic.logging.types import ExistenceStrategy
+from optimagic.logging.types import (
+    CriterionEvaluationResult,
+    CriterionEvaluationWithId,
+    ExistenceStrategy,
+    ProblemInitialization,
+    ProblemInitializationWithId,
+    StepResult,
+    StepResultWithId,
+)
 
 
 class SQLAlchemyConfig:
@@ -385,3 +394,113 @@ class SQLAlchemyTableStore(
             self._output_type(**dict(zip(self.column_names, row, strict=False)))
             for row in results
         ]
+
+
+class IterationStore(
+    SQLAlchemySimpleStore[CriterionEvaluationResult, CriterionEvaluationWithId]
+):
+    """Store for managing iteration data in an SQLite database.
+
+    Args:
+        db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
+        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
+
+    """
+
+    _TABLE_NAME = "optimization_iterations"
+    _PRIMARY_KEY = "rowid"
+
+    def __init__(
+        self,
+        db_config: SQLAlchemyConfig,
+        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
+    ):
+        super().__init__(
+            self._TABLE_NAME,
+            self._PRIMARY_KEY,
+            db_config,
+            CriterionEvaluationResult,
+            CriterionEvaluationWithId,
+            if_table_exists=if_table_exists,
+        )
+
+
+class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
+    """Store for managing step data in an SQLite database.
+
+    Args:
+        db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
+        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
+
+    """
+
+    _TABLE_NAME = "steps"
+    _PRIMARY_KEY = "rowid"
+
+    def __init__(
+        self,
+        db_config: SQLAlchemyConfig,
+        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
+    ):
+        columns = [
+            Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
+            Column("type", String),  # e.g. optimization
+            Column("status", String),  # e.g. running
+            Column("n_iterations", Integer),  # optional
+            Column("name", String),  # e.g. "optimization-1", "exploration", not unique
+        ]
+
+        table_config = TableConfig(
+            self._TABLE_NAME,
+            cast(list[Column[Any]], columns),
+            self._PRIMARY_KEY,
+            if_table_exists,
+        )
+
+        super().__init__(
+            table_config,
+            db_config,
+            StepResult,
+            StepResultWithId,
+        )
+
+
+class ProblemStore(
+    SQLAlchemyTableStore[ProblemInitialization, ProblemInitializationWithId]
+):
+    """Store for managing optimization problem initialization data in an SQLite
+    database.
+
+    Args:
+        db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
+        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
+
+    """
+
+    _TABLE_NAME = "optimization_problem"
+    _PRIMARY_KEY = "rowid"
+
+    def __init__(
+        self,
+        db_config: SQLAlchemyConfig,
+        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
+    ):
+        columns = [
+            Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
+            Column("direction", String),
+            Column("params", PickleType(pickler=RobustPickler)),  # type:ignore
+        ]
+
+        table_config = TableConfig(
+            self._TABLE_NAME,
+            cast(list[Column[Any]], columns),
+            self._PRIMARY_KEY,
+            if_table_exists,
+        )
+
+        super().__init__(
+            table_config,
+            db_config,
+            ProblemInitialization,
+            ProblemInitializationWithId,
+        )
