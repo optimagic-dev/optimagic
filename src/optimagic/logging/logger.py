@@ -335,11 +335,11 @@ class SQLiteConfig(SQLAlchemyConfig):
                 )
             elif if_database_exists is ExistenceStrategy.REPLACE:
                 try:
+                    os.remove(path)
                     warnings.warn(
-                        f"Existing database file at {path} will be removed due to "
+                        f"Existing database file at {path} removed due to "
                         f"if_database_exists=ExistenceStrategy.REPLACE."
                     )
-                    os.remove(path)
                 except PermissionError as e:
                     msg = (
                         f"Failed to remove file {path}. "
