@@ -22,6 +22,16 @@ from optimagic.logging.types import ExistenceStrategy
 
 
 class SQLAlchemyConfig:
+    """Configuration class for setting up an SQLAlchemy engine and metadata.
+
+    This class manages the connection URL, engine creation, and metadata reflection
+    for an SQLAlchemy database connection.
+
+    Args:
+        url: The database URL to connect to.
+
+    """
+
     def __init__(
         self,
         url: str,
@@ -35,9 +45,21 @@ class SQLAlchemyConfig:
 
     @property
     def metadata(self) -> MetaData:
+        """Get the metadata object.
+
+        Returns:
+            The SQLAlchemy MetaData object reflecting the database schema.
+
+        """
         return self._metadata
 
     def create_engine(self) -> Engine:
+        """Create and return an SQLAlchemy engine.
+
+        Returns:
+            An SQLAlchemy Engine object.
+
+        """
         return sql.create_engine(self.url)
 
     @staticmethod
@@ -58,10 +80,23 @@ class SQLAlchemyConfig:
 
 @dataclass
 class TableConfig:
+    """Configuration for creating and managing SQLAlchemy tables.
+
+    This class defines the schema for an SQLAlchemy table, including its name,
+    columns, primary key, and strategy for handling existing tables.
+
+    Args:
+        table_name: The name of the table.
+        columns: A list of SQLAlchemy Column objects defining the table schema.
+        primary_key: The name of the primary key column.
+        if_table_exists: Strategy for handling existing tables (default: 'extend').
+
+    """
+
     table_name: str
     columns: list[sql.Column[Any]]
     primary_key: str
-    existence_strategy: ExistenceStrategy = ExistenceStrategy.EXTEND
+    if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND
 
     @property
     def column_names(self) -> list[str]:
@@ -69,12 +104,22 @@ class TableConfig:
 
     def _handle_existing_table(self, metadata: MetaData, engine: Engine) -> None:
         if self.table_name in metadata.tables:
-            if self.existence_strategy is ExistenceStrategy.REPLACE:
+            if self.if_table_exists is ExistenceStrategy.REPLACE:
                 metadata.tables[self.table_name].drop(engine)
-            elif self.existence_strategy is ExistenceStrategy.RAISE:
+            elif self.if_table_exists is ExistenceStrategy.RAISE:
                 raise TableExistsError(f"The table {self.table_name} already exists.")
 
     def create_table(self, metadata: MetaData, engine: Engine) -> sql.Table:
+        """Create or reflect the table in the database.
+
+        Args:
+            metadata: The SQLAlchemy MetaData object.
+            engine: The SQLAlchemy Engine object.
+
+        Returns:
+            The SQLAlchemy Table object representing the created or reflected table.
+
+        """
         metadata.reflect(engine)
         self._handle_existing_table(metadata, engine)
         table = sql.Table(
@@ -85,6 +130,17 @@ class TableConfig:
 
 
 class _SQLAlchemyStoreMixin:
+    """Mixin class for common SQLAlchemy store operations.
+
+    This class provides common methods for selecting, inserting, and executing
+    SQL statements in an SQLAlchemy-based key-value store.
+
+    Args:
+        db_config: The SQLAlchemyConfig object for database configuration.
+        table_config: The TableConfig object for table configuration.
+
+    """
+
     def __init__(self, db_config: SQLAlchemyConfig, table_config: TableConfig):
         self._db_config = db_config
         self._engine = db_config.create_engine()
@@ -150,6 +206,19 @@ class _SQLAlchemyStoreMixin:
 class SQLAlchemySimpleStore(
     NonUpdatableKeyValueStore[InputType, OutputType], _SQLAlchemyStoreMixin
 ):
+    """A simple SQLAlchemy-based key-value store that does not support updates.
+
+    This class provides basic key-value storage functionality using SQLAlchemy,
+    where values are serialized and stored as BLOBs. The store does not support
+    updating existing entries.
+
+    Args:
+            table_name: The name of the table.
+            primary_key: The primary key column name.
+            db_config: The SQLAlchemyConfig object for database configuration.
+
+    """
+
     _value_column: str = "serialized_value"
 
     def __init__(
@@ -167,7 +236,7 @@ class SQLAlchemySimpleStore(
             sql.Column(self._value_column, sql.PickleType(pickler=RobustPickler)),  # type:ignore
         ]
         table_config = TableConfig(
-            table_name, columns, self.primary_key, existence_strategy=if_table_exists
+            table_name, columns, self.primary_key, if_table_exists=if_table_exists
         )
 
         _SQLAlchemyStoreMixin.__init__(self, db_config, table_config)
@@ -184,10 +253,16 @@ class SQLAlchemySimpleStore(
             self._db_config,
             self._input_type,
             self._output_type,
-            self._table_config.existence_strategy,
+            self._table_config.if_table_exists,
         )
 
     def insert(self, value: InputType) -> None:
+        """Insert a new value into the store.
+
+        Args:
+            value: The value to insert into the store.
+
+        """
         self._insert({self._value_column: value})
 
     def _select_by_key(self, key: int) -> list[OutputType]:
@@ -199,6 +274,15 @@ class SQLAlchemySimpleStore(
         return self._post_process(result)
 
     def select_last_rows(self, n_rows: int) -> list[OutputType]:
+        """Select the last `n_rows` values from the store.
+
+        Args:
+            n_rows: The number of rows to select.
+
+        Returns:
+            A list of the last `n_rows` output values.
+
+        """
         result = self._select_last_rows(n_rows)
         return self._post_process(result)
 
@@ -214,6 +298,19 @@ class SQLAlchemySimpleStore(
 class SQLAlchemyTableStore(
     UpdatableKeyValueStore[InputType, OutputType], _SQLAlchemyStoreMixin
 ):
+    """An SQLAlchemy-based key-value store that supports updates.
+
+    This class provides key-value storage functionality using SQLAlchemy,
+    allowing for insertion, updating, and selection of data.
+
+    Args:
+        table_config: The TableConfig object defining the table schema.
+        db_config: The SQLAlchemyConfig object for database configuration.
+        input_type: The type of input data.
+        output_type: The type of output data.
+
+    """
+
     def __init__(
         self,
         table_config: TableConfig,
@@ -238,6 +335,12 @@ class SQLAlchemyTableStore(
         )
 
     def insert(self, value: InputType) -> None:
+        """Insert a new value into the store.
+
+        Args:
+            value: The value to insert into the store.
+
+        """
         self._insert(asdict(value))
 
     def _update(self, key: int, value: InputType | dict[str, Any]) -> None:
@@ -261,6 +364,15 @@ class SQLAlchemyTableStore(
         return self._post_process(result)
 
     def select_last_rows(self, n_rows: int) -> list[OutputType]:
+        """Select the last `n_rows` values from the store.
+
+        Args:
+            n_rows: The number of rows to select.
+
+        Returns:
+            A list of the last `n_rows` output values.
+
+        """
         result = self._select_last_rows(n_rows)
         return self._post_process(result)
 
