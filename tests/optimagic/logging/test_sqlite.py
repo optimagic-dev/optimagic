@@ -49,7 +49,7 @@ class TestIterationStore:
         assert queried_result is not None
         assert queried_result.value == result.value
 
-    def test_update(self, store):
+    def test_update_raise(self, store):
         """Test updating an entry in the IterationStore."""
         # Insert initial data
         result = self.create_test_point(568)
@@ -68,17 +68,13 @@ class TestIterationStore:
             step=queried_result.step,
             criterion_eval=queried_result.criterion_eval,
         )
-        store.update(key=1, value=updated_result)
+        msg = f"'{IterationStore.__name__}' object does not allow to update items in"
+        "the store"
+        with pytest.raises(AttributeError, match=msg):
+            store.update(key=1, value=updated_result)
 
-        # Verify the update
-        updated_entry = store.select(1)[0]
-        assert updated_entry is not None
-        assert updated_entry.value == 1.0
-
-        store.update(key=1, value={"step": 34})
-        updated_entry = store.select(1)[0]
-        assert updated_entry is not None
-        assert updated_entry.step == 34.0
+        with pytest.raises(AttributeError):
+            store.sellect_typo  # type:ignore # noqa: B018
 
     def test_serialization(self, store):
         """Test the serialization and deserialization of the IterationStore."""
@@ -112,35 +108,6 @@ class TestIterationStore:
 
         result_last = store.select_last_rows(5)
         assert len(result_last) == 5
-
-    @pytest.mark.parametrize(
-        "executor_factory",
-        [
-            lambda: ThreadPoolExecutor(max_workers=10),
-            lambda: ProcessPoolExecutor(max_workers=10),
-        ],
-        ids=["threads", "processes"],
-    )
-    def test_parallel_update(self, store, executor_factory):
-        """Test multithreaded writing and reading in the IterationStore."""
-
-        with executor_factory() as executor:
-            # Insert data concurrently
-            to_insert = list(map(self.create_test_point, range(10)))
-            futures = [executor.submit(store.insert, item) for item in to_insert]
-            for future in futures:
-                future.result()
-
-        with executor_factory() as executor:
-            # Update data concurrently
-            to_update = [(2, {"value": 100}), (2, {"step": 200})]
-            futures = [executor.submit(store.update, *item) for item in to_update]
-            for future in futures:
-                future.result()
-
-        result = store.select(2)[0]
-        assert result.value == 100
-        assert result.step == 200
 
 
 class TestStepStore:

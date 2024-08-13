@@ -7,7 +7,10 @@ import numpy as np
 import pandas as pd
 from pybaum import tree_flatten, tree_unflatten
 
-from optimagic.logging.base import KeyValueStore
+from optimagic.logging.base import (
+    NonUpdatableKeyValueStore,
+    UpdatableKeyValueStore,
+)
 from optimagic.logging.sqlite import (
     IterationStore,
     ProblemStore,
@@ -34,11 +37,11 @@ from optimagic.typing import OptimizationType, OptimizationTypeLiteral, PyTree
 class Logger:
     def __init__(
         self,
-        iteration_store: KeyValueStore[
+        iteration_store: NonUpdatableKeyValueStore[
             CriterionEvaluationResult, CriterionEvaluationWithId
         ],
-        step_store: KeyValueStore[StepResult, StepResultWithId],
-        problem_store: KeyValueStore[
+        step_store: UpdatableKeyValueStore[StepResult, StepResultWithId],
+        problem_store: UpdatableKeyValueStore[
             ProblemInitialization, ProblemInitializationWithId
         ],
     ):
@@ -248,7 +251,7 @@ class SQLiteLogger(Logger):
         db_config = SQLiteConfig(
             path, fast_logging=fast_logging, if_database_exists=if_database_exists
         )
-        iteration_store = IterationStore(db_config, existence_strategy=if_table_exists)
+        iteration_store = IterationStore(db_config, if_table_exists=if_table_exists)
         step_store = StepStore(db_config, existence_strategy=if_table_exists)
         problem_store = ProblemStore(db_config, existence_strategy=if_table_exists)
         super().__init__(iteration_store, step_store, problem_store)

@@ -6,9 +6,7 @@ from typing import Any, cast
 
 import sqlalchemy as sql
 from sqlalchemy import (
-    Boolean,
     Column,
-    Float,
     Integer,
     PickleType,
     String,
@@ -18,6 +16,7 @@ from sqlalchemy.engine.base import Engine
 from optimagic.logging.base import RobustPickler
 from optimagic.logging.sqlalchemy import (
     SQLAlchemyConfig,
+    SQLAlchemySimpleStore,
     SQLAlchemyTableStore,
     TableConfig,
 )
@@ -112,45 +111,29 @@ class SQLiteConfig(SQLAlchemyConfig):
 
 
 class IterationStore(
-    SQLAlchemyTableStore[CriterionEvaluationResult, CriterionEvaluationWithId]
+    SQLAlchemySimpleStore[CriterionEvaluationResult, CriterionEvaluationWithId]
 ):
-    table_name = "optimization_iterations"
+    _TABLE_NAME = "optimization_iterations"
+    _PRIMARY_KEY = "rowid"
 
     def __init__(
         self,
         db_config: SQLiteConfig,
-        existence_strategy: ExistenceStrategy = ExistenceStrategy.EXTEND,
+        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
-        columns = [
-            Column("rowid", Integer, primary_key=True, autoincrement=True),
-            Column("params", PickleType(pickler=RobustPickler)),  # type:ignore
-            Column("internal_derivative", PickleType(pickler=RobustPickler)),  # type:ignore
-            Column("timestamp", Float),
-            Column("exceptions", String),
-            Column("valid", Boolean),
-            Column("hash", String),
-            Column("value", Float),
-            Column("step", Integer),
-            Column("criterion_eval", PickleType(pickler=RobustPickler)),  # type:ignore
-        ]
-
-        table_config = TableConfig(
-            self.table_name,
-            columns,
-            "rowid",
-            existence_strategy,
-        )
-
         super().__init__(
-            table_config,
+            self._TABLE_NAME,
+            self._PRIMARY_KEY,
             db_config,
             CriterionEvaluationResult,
             CriterionEvaluationWithId,
+            if_table_exists=if_table_exists,
         )
 
 
 class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
-    table_name = "steps"
+    _TABLE_NAME = "steps"
+    _PRIMARY_KEY = "rowid"
 
     def __init__(
         self,
@@ -158,7 +141,7 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
         existence_strategy: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
         columns = [
-            Column("rowid", Integer, primary_key=True, autoincrement=True),
+            Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
             Column("type", String),  # e.g. optimization
             Column("status", String),  # e.g. running
             Column("n_iterations", Integer),  # optional
@@ -166,9 +149,9 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
         ]
 
         table_config = TableConfig(
-            self.table_name,
+            self._TABLE_NAME,
             cast(list[Column[Any]], columns),
-            "rowid",
+            self._PRIMARY_KEY,
             existence_strategy,
         )
 
@@ -183,7 +166,8 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
 class ProblemStore(
     SQLAlchemyTableStore[ProblemInitialization, ProblemInitializationWithId]
 ):
-    table_name = "optimization_problem"
+    _TABLE_NAME = "optimization_problem"
+    _PRIMARY_KEY = "rowid"
 
     def __init__(
         self,
@@ -191,15 +175,15 @@ class ProblemStore(
         existence_strategy: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
         columns = [
-            Column("rowid", Integer, primary_key=True, autoincrement=True),
+            Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
             Column("direction", String),
             Column("params", PickleType(pickler=RobustPickler)),  # type:ignore
         ]
 
         table_config = TableConfig(
-            self.table_name,
+            self._TABLE_NAME,
             cast(list[Column[Any]], columns),
-            "rowid",
+            self._PRIMARY_KEY,
             existence_strategy,
         )
 

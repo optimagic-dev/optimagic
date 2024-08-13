@@ -40,29 +40,8 @@ class KeyValueStore(Generic[InputType, OutputType], ABC):
     def primary_key(self) -> str:
         return self._primary_key
 
-    def insert(self, value: InputType | dict[str, Any]) -> None:
-        self._check_fields(value)
-        self._insert(value)
-
     @abstractmethod
-    def _insert(self, value: InputType | dict[str, Any]) -> None:
-        pass
-
-    def update(self, key: int, value: InputType | dict[str, Any]) -> None:
-        self._check_fields(value)
-        self._update(key, value)
-
-    def _check_fields(self, value: InputType | dict[str, Any]) -> None:
-        if isinstance(value, dict):
-            not_supported_fields = set(value.keys()).difference(self._supported_fields)
-            if not_supported_fields:
-                raise ValueError(
-                    f"Not supported fields {not_supported_fields}. "
-                    f"Only supports fields {self._supported_fields}"
-                )
-
-    @abstractmethod
-    def _update(self, key: int, value: InputType | dict[str, Any]) -> None:
+    def insert(self, value: InputType) -> None:
         pass
 
     @abstractmethod
@@ -86,6 +65,37 @@ class KeyValueStore(Generic[InputType, OutputType], ABC):
     def to_df(self) -> pd.DataFrame:
         items = self._select_all()
         return pd.DataFrame([asdict(item) for item in items])
+
+
+class UpdatableKeyValueStore(KeyValueStore[InputType, OutputType], ABC):
+    def update(self, key: int, value: InputType | dict[str, Any]) -> None:
+        self._check_fields(value)
+        self._update(key, value)
+
+    @abstractmethod
+    def _update(self, key: int, value: InputType | dict[str, Any]) -> None:
+        pass
+
+    def _check_fields(self, value: InputType | dict[str, Any]) -> None:
+        if isinstance(value, dict):
+            not_supported_fields = set(value.keys()).difference(self._supported_fields)
+            if not_supported_fields:
+                raise ValueError(
+                    f"Not supported fields {not_supported_fields}. "
+                    f"Only supports fields {self._supported_fields}"
+                )
+
+
+class NonUpdatableKeyValueStore(KeyValueStore[InputType, OutputType], ABC):
+    def __getattr__(self, name: str) -> Any:
+        if name == "update":
+            msg = (
+                f"'{self.__class__.__name__}' object does not allow to update items in"
+                f"the store"
+            )
+        else:
+            msg = f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        raise AttributeError(msg)
 
 
 class RobustPickler:
