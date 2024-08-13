@@ -5,7 +5,13 @@ from typing import Literal
 import numpy as np
 from numpy.typing import NDArray
 
-from optimagic.typing import DictLikeAccess, PyTree, TupleLikeAccess
+from optimagic.typing import (
+    DictLikeAccess,
+    OptimizationType,
+    OptimizationTypeLiteral,
+    PyTree,
+    TupleLikeAccess,
+)
 
 
 class StepStatus(str, Enum):
@@ -27,14 +33,6 @@ class ExistenceStrategy(str, Enum):
 
 
 ExistenceStrategyLiteral = Literal["raise", "extend", "replace"]
-
-
-class OptimizationType(str, Enum):
-    MINIMIZE = "minimize"
-    MAXIMIZE = "maximize"
-
-
-OptimizationTypeLiteral = Literal["minimize", "maximize"]
 
 
 @dataclass(frozen=True)
@@ -85,7 +83,7 @@ class StepResultWithId(StepResult):
 
 @dataclass(frozen=True)
 class ProblemInitialization(DictLikeAccess):
-    direction: str
+    direction: OptimizationType | OptimizationTypeLiteral
     params: PyTree
 
 

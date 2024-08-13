@@ -1,6 +1,6 @@
 from dataclasses import dataclass, fields
 from enum import Enum
-from typing import Any, Callable, ItemsView, Iterator, KeysView, ValuesView
+from typing import Any, Callable, ItemsView, Iterator, KeysView, Literal, ValuesView
 
 PyTree = Any
 PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]
@@ -58,3 +58,11 @@ class TupleLikeAccess:
     def __iter__(self) -> Iterator[str]:
         for field in fields(self):
             yield getattr(self, field.name)
+
+
+class OptimizationType(str, Enum):
+    MINIMIZE = "minimize"
+    MAXIMIZE = "maximize"
+
+
+OptimizationTypeLiteral = Literal["minimize", "maximize"]
