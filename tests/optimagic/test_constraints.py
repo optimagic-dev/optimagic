@@ -66,14 +66,14 @@ def test_probability_constraint(dummy_func):
 
 def test_covariance_constraint(dummy_func):
     constr = FlatCovConstraint(selector=dummy_func)
-    dict_repr = {"type": "covariance", "selector": dummy_func, "bounds_distance": 0.0}
+    dict_repr = {"type": "covariance", "selector": dummy_func, "regularization": 0.0}
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)
 
 
 def test_sdcorr_constraint(dummy_func):
     constr = FlatSDCorrConstraint(selector=dummy_func)
-    dict_repr = {"type": "sdcorr", "selector": dummy_func, "bounds_distance": 0.0}
+    dict_repr = {"type": "sdcorr", "selector": dummy_func, "regularization": 0.0}
     assert constr._to_dict() == dict_repr
     assert isinstance(constr, Constraint)
 

@@ -176,36 +176,35 @@ class FlatCovConstraint(Constraint):
     Attributes:
         selector: A function that takes as input the parameters and returns the subset
             of parameters to be constrained. By default, all parameters are constrained.
-        bounds_distance: The minimal lower bound for the internal covariance parameter.
-            Defaults to 0.
+        regularization: Helps in guiding the optimization towards finding a
+            positive definite covariance matrix instead of only a positive semi-definite
+            matrix. Larger values correspond to a higher likelihood of positive
+            definiteness. Defaults to 0.
 
     Raises:
-        InvalidConstraintError: If the selector is not callable or bounds_distance is
+        InvalidConstraintError: If the selector is not callable or regularization is
             not a non-negative float or int.
 
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
     _: KW_ONLY
-    bounds_distance: float = 0.0
+    regularization: float = 0.0
 
     def _to_dict(self) -> dict[str, Any]:
         return {
             "type": "covariance",
             "selector": self.selector,
-            "bounds_distance": self.bounds_distance,
+            "regularization": self.regularization,
         }
 
     def __post_init__(self) -> None:
         if not callable(self.selector):
             raise InvalidConstraintError("'selector' must be callable.")
 
-        if (
-            not isinstance(self.bounds_distance, float | int)
-            or self.bounds_distance < 0
-        ):
+        if not isinstance(self.regularization, float | int) or self.regularization < 0:
             raise InvalidConstraintError(
-                "'bounds_distance' must be a non-negative float or int."
+                "'regularization' must be a non-negative float or int."
             )
 
 
@@ -219,34 +218,35 @@ class FlatSDCorrConstraint(Constraint):
     Attributes:
         selector: A function that takes as input the parameters and returns the subset
             of parameters to be constrained. By default, all parameters are constrained.
+        regularization: Helps in guiding the optimization towards finding a
+            positive definite covariance matrix instead of only a positive semi-definite
+            matrix. Larger values correspond to a higher likelihood of positive
+            definiteness. Defaults to 0.
 
     Raises:
-        InvalidConstraintError: If the selector is not callable or bounds_distance is
+        InvalidConstraintError: If the selector is not callable or regularization is
             not a non-negative float or int.
 
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
     _: KW_ONLY
-    bounds_distance: float = 0.0
+    regularization: float = 0.0
 
     def _to_dict(self) -> dict[str, Any]:
         return {
             "type": "sdcorr",
             "selector": self.selector,
-            "bounds_distance": self.bounds_distance,
+            "regularization": self.regularization,
         }
 
     def __post_init__(self) -> None:
         if not callable(self.selector):
             raise InvalidConstraintError("'selector' must be callable.")
 
-        if (
-            not isinstance(self.bounds_distance, float | int)
-            or self.bounds_distance < 0
-        ):
+        if not isinstance(self.regularization, float | int) or self.regularization < 0:
             raise InvalidConstraintError(
-                "'bounds_distance' must be a non-negative float or int."
+                "'regularization' must be a non-negative float or int."
             )
 
 
