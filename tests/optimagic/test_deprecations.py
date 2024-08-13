@@ -34,10 +34,12 @@ from estimagic import (
 from numpy.testing import assert_almost_equal as aaae
 from optimagic.deprecations import (
     convert_dict_to_function_value,
+    handle_log_options_throw_deprecated_warning,
     infer_problem_type_from_dict_output,
     is_dict_output,
 )
 from optimagic.differentiation.derivatives import NumdiffResult
+from optimagic.logging.logger import SQLiteLogger
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -857,3 +859,40 @@ def test_fun_with_dict_return_is_deprecated_in_slice_plot():
             np.arange(3),
             bounds=om.Bounds(lower=np.zeros(3), upper=np.ones(3) * 5),
         )
+
+
+def test_handle_log_options():
+    msg = (
+        "Usage of the parameter log_options is deprecated "
+        "and will be removed in a future version. "
+        "Provide a Logger instance for the parameter `logging`, if you need to "
+        "configure the logging."
+    )
+    log_options = {"fast_logging": True}
+    with pytest.warns(FutureWarning, match=msg):
+        logger = None
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options, logger
+        )
+        assert handled_logger is None
+
+    creation_warning = (
+        f"\nUsing {log_options=} to create an instance of SQLiteLogger. "
+        f"This mechanism will be removed in the future."
+    )
+
+    with pytest.warns(match=creation_warning):
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options, ":memory:"
+        )
+        assert isinstance(handled_logger, SQLiteLogger)
+
+    incompatibility_warning = "Found string or path for logger argument, but parameter"
+    f" {log_options=} is not compatible "
+    log_options_typo = {"fast_lugging": False}
+
+    with pytest.warns(match=incompatibility_warning):
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options_typo, ":memory:"
+        )
+        assert handled_logger == ":memory:"
