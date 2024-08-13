@@ -14,7 +14,23 @@ InputType = TypeVar("InputType", bound=DictLikeAccess)
 OutputType = TypeVar("OutputType", bound=DictLikeAccess)
 
 
-class KeyValueStore(Generic[InputType, OutputType], ABC):
+class _KeyValueStore(Generic[InputType, OutputType], ABC):
+    """Generic abstract base class for a key-value store.
+
+    This class defines the basic interface for key-value stores that support
+    insertion and selection of items based on a primary key.
+
+    Args:
+        input_type: The type of input data that can be stored.
+        output_type: The type of output data that can be retrieved.
+        primary_key: The primary key used to uniquely identify items in the store.
+
+    Raises:
+        ValueError: If input_type or output_type is not a dataclass, or if
+                the primary key is not found in output_type fields.
+
+    """
+
     def __init__(
         self,
         input_type: Type[InputType],
@@ -38,21 +54,41 @@ class KeyValueStore(Generic[InputType, OutputType], ABC):
 
     @property
     def primary_key(self) -> str:
+        """Get the primary key of the store.
+
+        Returns:
+            The primary key field name.
+
+        """
         return self._primary_key
 
     @abstractmethod
     def insert(self, value: InputType) -> None:
-        pass
+        """Implement this method to insert a new value into the key-value store.
+
+        Make sure an auto-increment logic is implemented for the insertion.
+
+        """
 
     @abstractmethod
     def _select_by_key(self, key: int) -> list[OutputType]:
-        pass
+        """Implement this method to select a value from the store by its primary key."""
 
     @abstractmethod
     def _select_all(self) -> list[OutputType]:
-        pass
+        """Implement this method to select all values from the store."""
 
     def select(self, key: int | None = None) -> list[OutputType]:
+        """Select items from the store.
+
+        Args:
+            key: Optional; the primary key of the item to be selected. If not provided,
+                 all items will be selected.
+
+        Returns:
+            A list of output items.
+
+        """
         if key is None:
             return self._select_all()
 
@@ -60,21 +96,52 @@ class KeyValueStore(Generic[InputType, OutputType], ABC):
 
     @abstractmethod
     def select_last_rows(self, n_rows: int) -> list[OutputType]:
-        pass
+        """Implement this to select the last `n_rows` from the store.
+
+        Args:
+            n_rows: The number of rows to select.
+
+        Returns:
+            A list of the last `n_rows` output items.
+
+        """
 
     def to_df(self) -> pd.DataFrame:
+        """Convert the store's data to a Pandas DataFrame.
+
+        Returns:
+            A DataFrame containing all items in the store.
+
+        """
         items = self._select_all()
         return pd.DataFrame([asdict(item) for item in items])
 
 
-class UpdatableKeyValueStore(KeyValueStore[InputType, OutputType], ABC):
+class UpdatableKeyValueStore(_KeyValueStore[InputType, OutputType], ABC):
+    """Generic abstract base class for an updatable key-value store.
+
+    This class extends `KeyValueStore` to add support for updating existing
+    items in the store.
+
+    """
+
     def update(self, key: int, value: InputType | dict[str, Any]) -> None:
+        """Update an existing item in the store.
+
+        Args:
+            key: The primary key of the item to be updated.
+            value: The updated item, or a dictionary of fields to update.
+
+        Raises:
+            ValueError: If any fields in `value` are not supported by the store.
+
+        """
         self._check_fields(value)
         self._update(key, value)
 
     @abstractmethod
     def _update(self, key: int, value: InputType | dict[str, Any]) -> None:
-        pass
+        """Implement the internal method to update an existing item in the store."""
 
     def _check_fields(self, value: InputType | dict[str, Any]) -> None:
         if isinstance(value, dict):
@@ -86,7 +153,7 @@ class UpdatableKeyValueStore(KeyValueStore[InputType, OutputType], ABC):
                 )
 
 
-class NonUpdatableKeyValueStore(KeyValueStore[InputType, OutputType], ABC):
+class NonUpdatableKeyValueStore(_KeyValueStore[InputType, OutputType], ABC):
     def __getattr__(self, name: str) -> Any:
         if name == "update":
             msg = (
