@@ -86,7 +86,7 @@ class SQLiteConfig(SQLAlchemyConfig):
                 )
                 os.remove(path)
 
-    def _create_engine(self) -> Engine:
+    def create_engine(self) -> Engine:
         engine = sql.create_engine(self.url)
         self._configure_engine(engine)
         return engine
