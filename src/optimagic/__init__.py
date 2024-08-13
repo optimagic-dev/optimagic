@@ -6,6 +6,18 @@ from optimagic.benchmarking.benchmark_reports import (
 )
 from optimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
+from optimagic.constraints import (
+    DecreasingConstraint,
+    EqualityConstraint,
+    FixedConstraint,
+    FlatCovConstraint,
+    FlatSDCorrConstraint,
+    IncreasingConstraint,
+    LinearConstraint,
+    NonlinearConstraint,
+    PairwiseEqualityConstraint,
+    ProbabilityConstraint,
+)
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.logging.read_log import OptimizeLogReader
@@ -64,5 +76,15 @@ __all__ = [
     "ScalarFunctionValue",
     "LikelihoodFunctionValue",
     "constraints",
+    "FlatCovConstraint",
+    "FlatSDCorrConstraint",
+    "IncreasingConstraint",
+    "DecreasingConstraint",
+    "FixedConstraint",
+    "NonlinearConstraint",
+    "LinearConstraint",
+    "ProbabilityConstraint",
+    "PairwiseEqualityConstraint",
+    "EqualityConstraint",
     "__version__",
 ]

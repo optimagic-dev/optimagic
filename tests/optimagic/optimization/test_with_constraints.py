@@ -105,48 +105,34 @@ FUNC_INFO = {
 
 CONSTR_INFO = {
     "numpy": {
-        "fixed": om.constraints.FixedConstraint(selector=lambda x: x[0]),
-        "equality": om.constraints.EqualityConstraint(selector=lambda x: x[[0, 1, 2]]),
-        "pairwise_equality": om.constraints.PairwiseEqualityConstraint(
+        "fixed": om.FixedConstraint(selector=lambda x: x[0]),
+        "equality": om.EqualityConstraint(selector=lambda x: x[[0, 1, 2]]),
+        "pairwise_equality": om.PairwiseEqualityConstraint(
             selectors=[lambda x: x[0], lambda x: x[1]]
         ),
-        "increasing": om.constraints.IncreasingConstraint(selector=lambda x: x[[1, 2]]),
-        "decreasing": om.constraints.DecreasingConstraint(selector=lambda x: x[[0, 1]]),
-        "linear": om.constraints.LinearConstraint(
+        "increasing": om.IncreasingConstraint(selector=lambda x: x[[1, 2]]),
+        "decreasing": om.DecreasingConstraint(selector=lambda x: x[[0, 1]]),
+        "linear": om.LinearConstraint(
             selector=lambda x: x[[0, 1]], value=4, weights=[1, 2]
         ),
-        "probability": om.constraints.ProbabilityConstraint(
-            selector=lambda x: x[[0, 1]]
-        ),
-        "covariance": om.constraints.FlatCovConstraint(selector=lambda x: x[[0, 1, 2]]),
-        "sdcorr": om.constraints.FlatSDCorrConstraint(selector=lambda x: x[[0, 1, 2]]),
+        "probability": om.ProbabilityConstraint(selector=lambda x: x[[0, 1]]),
+        "covariance": om.FlatCovConstraint(selector=lambda x: x[[0, 1, 2]]),
+        "sdcorr": om.FlatSDCorrConstraint(selector=lambda x: x[[0, 1, 2]]),
     },
     "pandas": {
-        "fixed": om.constraints.FixedConstraint(selector=lambda p: p.loc[0]),
-        "equality": om.constraints.EqualityConstraint(
-            selector=lambda p: p.loc[[0, 1, 2]]
-        ),
-        "pairwise_equality": om.constraints.PairwiseEqualityConstraint(
+        "fixed": om.FixedConstraint(selector=lambda p: p.loc[0]),
+        "equality": om.EqualityConstraint(selector=lambda p: p.loc[[0, 1, 2]]),
+        "pairwise_equality": om.PairwiseEqualityConstraint(
             selectors=[lambda p: p.loc[0], lambda p: p.loc[1]]
         ),
-        "increasing": om.constraints.IncreasingConstraint(
-            selector=lambda p: p.loc[[1, 2]]
-        ),
-        "decreasing": om.constraints.DecreasingConstraint(
-            selector=lambda p: p.loc[[0, 1]]
-        ),
-        "linear": om.constraints.LinearConstraint(
+        "increasing": om.IncreasingConstraint(selector=lambda p: p.loc[[1, 2]]),
+        "decreasing": om.DecreasingConstraint(selector=lambda p: p.loc[[0, 1]]),
+        "linear": om.LinearConstraint(
             selector=lambda p: p.loc[[0, 1]], value=4, weights=[1, 2]
         ),
-        "probability": om.constraints.ProbabilityConstraint(
-            selector=lambda p: p.loc[[0, 1]]
-        ),
-        "covariance": om.constraints.FlatCovConstraint(
-            selector=lambda p: p.loc[[0, 1, 2]]
-        ),
-        "sdcorr": om.constraints.FlatSDCorrConstraint(
-            selector=lambda p: p.loc[[0, 1, 2]]
-        ),
+        "probability": om.ProbabilityConstraint(selector=lambda p: p.loc[[0, 1]]),
+        "covariance": om.FlatCovConstraint(selector=lambda p: p.loc[[0, 1, 2]]),
+        "sdcorr": om.FlatSDCorrConstraint(selector=lambda p: p.loc[[0, 1, 2]]),
     },
 }
 
@@ -224,7 +210,7 @@ def test_constrained_minimization(
     aaae(calculated, expected, decimal=4)
 
 
-@pytest.mark.filterwarnings("ignore")
+@pytest.mark.filterwarnings("ignore:Specifying constraints as a dictionary is")
 def test_fix_that_differs_from_start_value_raises_an_error():
     # We use the old constraint interface here, as the new interface prohibits the
     # usage of the 'value' attribute, rendering the test useless.
@@ -243,9 +229,9 @@ def test_three_independent_constraints():
     params[0] = 2
 
     constraints = [
-        om.constraints.FlatCovConstraint(lambda x: x[[0, 1, 2]]),
-        om.constraints.FixedConstraint(lambda x: x[[4, 5]]),
-        om.constraints.LinearConstraint(lambda x: x[[7, 8]], value=15, weights=1),
+        om.FlatCovConstraint(lambda x: x[[0, 1, 2]]),
+        om.FixedConstraint(lambda x: x[[4, 5]]),
+        om.LinearConstraint(lambda x: x[[7, 8]], value=15, weights=1),
     ]
 
     res = minimize(
@@ -262,12 +248,12 @@ def test_three_independent_constraints():
 
 INVALID_CONSTRAINT_COMBIS = [
     [
-        om.constraints.FlatCovConstraint(lambda x: x[[1, 0, 2]]),
-        om.constraints.ProbabilityConstraint(lambda x: x[[0, 1]]),
+        om.FlatCovConstraint(lambda x: x[[1, 0, 2]]),
+        om.ProbabilityConstraint(lambda x: x[[0, 1]]),
     ],
     [
-        om.constraints.FlatCovConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
-        om.constraints.IncreasingConstraint(lambda x: x[[0, 1, 2]]),
+        om.FlatCovConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
+        om.IncreasingConstraint(lambda x: x[[0, 1, 2]]),
     ],
 ]
 
@@ -305,10 +291,8 @@ def test_bug_from_copenhagen_presentation():
         params=start_params,
         algorithm="scipy_lbfgsb",
         constraints=[
-            om.constraints.FixedConstraint(selector=return_all_but_working_hours),
-            om.constraints.IncreasingConstraint(
-                lambda p: [p["work"]["hours"], p["time_budget"]]
-            ),
+            om.FixedConstraint(selector=return_all_but_working_hours),
+            om.IncreasingConstraint(lambda p: [p["work"]["hours"], p["time_budget"]]),
         ],
         bounds=Bounds(lower={"work": {"hours": 0}}),
     )
@@ -326,10 +310,10 @@ def test_constraint_inheritance():
             return x[loc]
 
         constraints = [
-            om.constraints.PairwiseEqualityConstraint(
+            om.PairwiseEqualityConstraint(
                 selectors=[lambda x: x[[0, 1]], lambda x: x[[3, 2]]]
             ),
-            om.constraints.ProbabilityConstraint(selector),
+            om.ProbabilityConstraint(selector),
         ]
 
         res = minimize(
@@ -352,9 +336,7 @@ def test_invalid_start_params():
             criterion,
             params=x,
             algorithm="scipy_lbfgsb",
-            constraints=om.constraints.ProbabilityConstraint(
-                selector=lambda x: x[[1, 2]]
-            ),
+            constraints=om.ProbabilityConstraint(selector=lambda x: x[[1, 2]]),
         )
 
 
@@ -371,7 +353,7 @@ def test_covariance_constraint_in_2_by_2_case():
         fun_kwargs=kwargs,
         params=start_params,
         algorithm="scipy_lbfgsb",
-        constraints=om.constraints.FlatCovConstraint(selector=lambda x: x[[1, 2, 3]]),
+        constraints=om.FlatCovConstraint(selector=lambda x: x[[1, 2, 3]]),
     )
 
     expected = np.array([-13.0213351, 2.82611417, 0.09515704, 2.37867869])

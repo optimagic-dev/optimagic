@@ -17,15 +17,15 @@ from optimagic.examples.criterion_functions import sos_gradient, sos_scalar
 from optimagic.optimization.optimize import minimize
 
 CONSTR_INFO = {
-    "cov_bounds_distance": om.constraints.FlatCovConstraint(bounds_distance=0.1),
-    "sdcorr_bounds_distance": om.constraints.FlatSDCorrConstraint(bounds_distance=0.1),
+    "cov_bounds_distance": om.FlatCovConstraint(bounds_distance=0.1),
+    "sdcorr_bounds_distance": om.FlatSDCorrConstraint(bounds_distance=0.1),
     "fixed_and_decreasing": [
-        om.constraints.DecreasingConstraint(lambda x: x.loc[[1, 2, 3, 4]]),
-        om.constraints.FixedConstraint(lambda x: x.loc[2]),
+        om.DecreasingConstraint(lambda x: x.loc[[1, 2, 3, 4]]),
+        om.FixedConstraint(lambda x: x.loc[2]),
     ],
     "fixed_and_increasing": [
-        om.constraints.IncreasingConstraint(lambda x: x.loc[[0, 1, 2, 3]]),
-        om.constraints.FixedConstraint(lambda x: x.loc[2]),
+        om.IncreasingConstraint(lambda x: x.loc[[0, 1, 2, 3]]),
+        om.FixedConstraint(lambda x: x.loc[2]),
     ],
 }
 

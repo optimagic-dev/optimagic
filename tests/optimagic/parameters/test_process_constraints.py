@@ -41,5 +41,5 @@ def test_to_many_bounds_in_increasing_constraint_raise_good_error():
         check_constraints(
             params=np.arange(3),
             bounds=Bounds(lower=np.arange(3) - 1),
-            constraints=om.constraints.IncreasingConstraint(selector=lambda x: x[:3]),
+            constraints=om.IncreasingConstraint(selector=lambda x: x[:3]),
         )

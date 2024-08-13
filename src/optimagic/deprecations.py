@@ -330,26 +330,26 @@ def throw_dict_constraints_future_warning_if_required(
     constraints: list[dict[str, Any]] | dict[str, Any],
 ) -> None:
     replacements = {
-        "fixed": "optimagic.constraints.FixedConstraint",
-        "increasing": "optimagic.constraints.IncreasingConstraint",
-        "decreasing": "optimagic.constraints.DecreasingConstraint",
-        "equality": "optimagic.constraints.EqualityConstraint",
-        "probability": "optimagic.constraints.ProbabilityConstraint",
-        "pairwise_equality": "optimagic.constraints.PairwiseEqualityConstraint",
-        "covariance": "optimagic.constraints.FlatCovConstraint",
-        "sdcorr": "optimagic.constraints.FlatSDCorrConstraint",
-        "linear": "optimagic.constraints.LinearConstraint",
-        "nonlinear": "optimagic.constraints.NonlinearConstraint",
-        None: "Could not determine constraint type. Please specify it explicitly.",
+        "fixed": "optimagic.FixedConstraint",
+        "increasing": "optimagic.IncreasingConstraint",
+        "decreasing": "optimagic.DecreasingConstraint",
+        "equality": "optimagic.EqualityConstraint",
+        "probability": "optimagic.ProbabilityConstraint",
+        "pairwise_equality": "optimagic.PairwiseEqualityConstraint",
+        "covariance": "optimagic.FlatCovConstraint",
+        "sdcorr": "optimagic.FlatSDCorrConstraint",
+        "linear": "optimagic.LinearConstraint",
+        "nonlinear": "optimagic.NonlinearConstraint",
     }
 
     if not isinstance(constraints, list):
         constraints = [constraints]
 
-    types = []
-    for constraint in constraints:
-        if isinstance(constraint, dict):
-            types.append(constraint.get("type", None))
+    types = [
+        constraint.get("type", None) if isinstance(constraint, dict) else None
+        for constraint in constraints
+    ]
+    types = list(set(types) - {None})
 
     if types:
         msg = (
@@ -464,33 +464,45 @@ def replace_and_warn_about_deprecated_derivatives(candidate, name):
 def pre_process_constraints(
     constraints: list[Constraint | dict[str, Any]] | Constraint | dict[str, Any] | None,
 ) -> list[dict[str, Any]]:
-    if constraints is None:
-        out = []
-    elif isinstance(constraints, dict):
-        out = [constraints]
-    elif isinstance(constraints, Constraint):
-        out = [constraints._to_dict()]
-    elif isinstance(constraints, list):
-        out = []
-        invalid: list[type] = []
-        for c in constraints:
-            if isinstance(c, Constraint):
-                out.append(c._to_dict())
-            elif isinstance(c, dict):
-                out.append(c)
-            else:
-                invalid.append(type(c))
+    """Convert all ways of specifying constraints to a list of dictionaries.
 
-            if invalid:
-                msg = (
-                    f"Invalid constraint types: {set(invalid)}. Must be a constraint "
-                    "object or dictionary."
-                )
-                raise InvalidConstraintError(msg)
+    For the optimagic release 0.5.0 we only implemented the new constraint API, but have
+    not overhauled the internal representation of constraints yet. As a result, we
+    convert all ways of specifying constraints, and in particular the new interface, to
+    the old format, that is, a list of dictionaries.
+
+    Once we have refactor the internal representation of constraints, we will be able to
+    go the other way, and convert all formats to the new one.
+
+    """
+    if constraints is None:
+        return []
+
+    if isinstance(constraints, dict | Constraint):
+        constraints = [constraints]
+
+    if isinstance(constraints, list):
+        out = []
+        invalid_types: list[type] = []
+        for constr in constraints:
+            if isinstance(constr, Constraint):
+                out.append(constr._to_dict())
+            elif isinstance(constr, dict):
+                out.append(constr)
+            else:
+                invalid_types.append(type(constr))
+
+        if invalid_types:
+            msg = (
+                f"Invalid constraint types: {set(invalid_types)}. Must be a constraint "
+                "object imported from `optimagic`."
+            )
+            raise InvalidConstraintError(msg)
+
     else:
         msg = (
             f"Invalid constraint type: {type(constraints)}. Must be a constraint "
-            "object or list thereof imported from `optimagic.constraints`."
+            "object or list thereof imported from `optimagic`."
         )
         raise InvalidConstraintError(msg)
 

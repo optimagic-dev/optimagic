@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from optimagic import deprecations, mark
 from optimagic.deprecations import (
-    pre_process_constraints,
     replace_and_warn_about_deprecated_bounds,
 )
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
@@ -186,7 +185,7 @@ def estimate_ml(
     hessian_numdiff_options = pre_process_numdiff_options(hessian_numdiff_options)
     # TODO: Replace dict_constraints with constraints, once we deprecate dictionary
     # constraints.
-    dict_constraints = pre_process_constraints(constraints)
+    dict_constraints = deprecations.pre_process_constraints(constraints)
 
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(

@@ -122,7 +122,7 @@ def test_estimagic_check_constraints_is_deprecated():
     with pytest.warns(FutureWarning, match=msg):
         check_constraints(
             params=np.arange(3),
-            constraints=om.constraints.FixedConstraint(lambda x: x[0]),
+            constraints=om.FixedConstraint(lambda x: x[0]),
         )
 
 
@@ -131,7 +131,7 @@ def test_estimagic_count_free_params_is_deprecated():
     with pytest.warns(FutureWarning, match=msg):
         count_free_params(
             params=np.arange(3),
-            constraints=om.constraints.FixedConstraint(lambda x: x[0]),
+            constraints=om.FixedConstraint(lambda x: x[0]),
         )
 
 
@@ -535,7 +535,7 @@ def test_old_bounds_are_deprecated_in_count_free_params(bounds_kwargs):
     with pytest.warns(FutureWarning, match=msg):
         om.count_free_params(
             np.arange(3),
-            constraints=om.constraints.FixedConstraint(lambda x: x[0]),
+            constraints=om.FixedConstraint(lambda x: x[0]),
             **bounds_kwargs,
         )
 
@@ -546,7 +546,7 @@ def test_old_bounds_are_deprecated_in_check_constraints(bounds_kwargs):
     with pytest.warns(FutureWarning, match=msg):
         om.check_constraints(
             np.arange(3),
-            constraints=om.constraints.FixedConstraint(lambda x: x[0]),
+            constraints=om.FixedConstraint(lambda x: x[0]),
             **bounds_kwargs,
         )
 
@@ -919,15 +919,15 @@ def dummy_func():
 
 
 def test_pre_process_constraints_trivial_case(dummy_func):
-    constraints = om.constraints.FixedConstraint(selector=dummy_func)
+    constraints = om.FixedConstraint(selector=dummy_func)
     expected = [{"type": "fixed", "selector": dummy_func}]
     assert pre_process_constraints(constraints) == expected
 
 
 def test_pre_process_constraints_list_of_constraints(dummy_func):
     constraints = [
-        om.constraints.FixedConstraint(selector=dummy_func),
-        om.constraints.IncreasingConstraint(selector=dummy_func),
+        om.FixedConstraint(selector=dummy_func),
+        om.IncreasingConstraint(selector=dummy_func),
     ]
     expected = [
         {"type": "fixed", "selector": dummy_func},
@@ -942,7 +942,7 @@ def test_pre_process_constraints_none_case():
 
 def test_pre_process_constraints_mixed_case(dummy_func):
     constraints = [
-        om.constraints.FixedConstraint(selector=dummy_func),
+        om.FixedConstraint(selector=dummy_func),
         {"type": "increasing", "selector": dummy_func},
     ]
     expected = [
@@ -968,7 +968,7 @@ def test_pre_process_constraints_invalid_case():
 def test_pre_process_constraints_invalid_mixed_case():
     constraints = [
         {"type": "fixed", "loc": [0, 1]},
-        om.constraints.FixedConstraint(),
+        om.FixedConstraint(),
         "invalid",
     ]
     msg = "Invalid constraint types: {<class 'str'>}"

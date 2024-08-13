@@ -6,7 +6,6 @@ from typing import Any, Callable, Literal
 from optimagic import deprecations
 from optimagic.decorators import AlgoInfo
 from optimagic.deprecations import (
-    pre_process_constraints,
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
@@ -335,7 +334,7 @@ def create_optimization_problem(
     scaling = pre_process_scaling(scaling)
     multistart = pre_process_multistart(multistart)
     numdiff_options = pre_process_numdiff_options(numdiff_options)
-    constraints = pre_process_constraints(constraints)
+    constraints = deprecations.pre_process_constraints(constraints)
 
     if numdiff_options is None:
         numdiff_options = get_default_numdiff_options(purpose=NumdiffPurpose.OPTIMIZE)

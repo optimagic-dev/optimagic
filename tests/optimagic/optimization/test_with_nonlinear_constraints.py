@@ -42,14 +42,14 @@ def nlc_2d_example():
     def constraint_jac(x):
         return 2 * np.row_stack((x.reshape(1, -1), -x.reshape(1, -1)))
 
-    constraints_long = om.constraints.NonlinearConstraint(
+    constraints_long = om.NonlinearConstraint(
         func=constraint_func,
         derivative=constraint_jac,
         lower_bound=np.zeros(2),
         tol=1e-8,
     )
 
-    constraints_flat = om.constraints.NonlinearConstraint(
+    constraints_flat = om.NonlinearConstraint(
         func=lambda x: np.dot(x, x),
         derivative=lambda x: 2 * x,
         lower_bound=1,
@@ -57,19 +57,19 @@ def nlc_2d_example():
         tol=1e-8,
     )
 
-    constraints_equality = om.constraints.NonlinearConstraint(
+    constraints_equality = om.NonlinearConstraint(
         func=lambda x: np.dot(x, x),
         derivative=lambda x: 2 * x,
         value=2,
     )
 
     constraints_equality_and_inequality = [
-        om.constraints.NonlinearConstraint(
+        om.NonlinearConstraint(
             func=lambda x: np.dot(x, x),
             derivative=lambda x: 2 * x,
             lower_bound=1,
         ),
-        om.constraints.NonlinearConstraint(
+        om.NonlinearConstraint(
             func=lambda x: np.dot(x, x),
             derivative=lambda x: 2 * x,
             value=2,
@@ -159,7 +159,7 @@ def test_documentation_example(algorithm):
         fun=criterion,
         params=np.ones(6),
         algorithm=algorithm,
-        constraints=om.constraints.NonlinearConstraint(
+        constraints=om.NonlinearConstraint(
             func=lambda x: np.prod(x),
             selector=lambda x: x[:-1],
             value=1.0,
@@ -191,16 +191,16 @@ def general_example():
         return selected["probs"] @ selected["probs"]
 
     constraints = [
-        om.constraints.ProbabilityConstraint(
+        om.ProbabilityConstraint(
             selector=selector_probability_constraint,
         ),
-        om.constraints.NonlinearConstraint(
+        om.NonlinearConstraint(
             selector=selector_nonlinear_constraint,
             upper_bound=0.8,
             func=constraint,
             tol=0.01,
         ),
-        om.constraints.NonlinearConstraint(
+        om.NonlinearConstraint(
             selector=selector_nonlinear_constraint,
             func=constraint,
             upper_bound=0.8,

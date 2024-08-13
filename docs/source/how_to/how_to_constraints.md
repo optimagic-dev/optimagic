@@ -81,7 +81,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.FixedConstraint(
+        ...    constraints=om.FixedConstraint(
         ...        selector=lambda params: params[[0, 5]]
         ...    ),
         ... )
@@ -110,7 +110,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.IncreasingConstraint(
+        ...    constraints=om.IncreasingConstraint(
         ...        selector=lambda params: params[[1, 2, 3]]
         ...    ),
         ... )
@@ -151,7 +151,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.DecreasingConstraint(
+        ...    constraints=om.DecreasingConstraint(
         ...        selector=lambda params: params[[3, 0, 4]]
         ...    ),
         ... )
@@ -185,7 +185,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.EqualityConstraint(
+        ...    constraints=om.EqualityConstraint(
         ...        selector=lambda params: params[[0, 5]]
         ...    ),
         ... )
@@ -212,7 +212,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.PairwiseEqualityConstraint(
+        ...    constraints=om.PairwiseEqualityConstraint(
         ...        selectors=[
         ...            lambda params: params[[0, 1]],
         ...            lambda params: params[[2, 3]]
@@ -242,7 +242,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.array([0.3, 0.2, 0.25, 0.25, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.ProbabilityConstraint(
+        ...    constraints=om.ProbabilityConstraint(
         ...        selector=lambda params: params[:4]
         ...    ),
         ... )
@@ -275,7 +275,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.FlatCovConstraint(
+        ...    constraints=om.FlatCovConstraint(
         ...        selector=lambda params: params[:3]
         ...    ),
         ... )
@@ -315,7 +315,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.FlatSDCorrConstraint(
+        ...    constraints=om.FlatSDCorrConstraint(
         ...        selector=lambda params: params[:3]
         ...    ),
         ... )
@@ -364,7 +364,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints=om.constraints.LinearConstraint(
+        ...    constraints=om.LinearConstraint(
         ...        selector=lambda params: params[:4],
         ...        lower_bound=0.95,
         ...        weights=0.25,
@@ -409,7 +409,7 @@ full parameter vector and returns the subset of parameters that should be constr
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_slsqp",
-        ...    constraints=om.constraints.NonlinearConstraint(
+        ...    constraints=om.NonlinearConstraint(
         ...        selector=lambda params: params[:-1],
         ...        func=lambda x: np.prod(x),
         ...        value=1.0,
@@ -443,8 +443,8 @@ constraints simultaneously, simple pass in a list of constraints. For example:
     ...    params=np.ones(6),
     ...    algorithm="scipy_lbfgsb",
     ...    constraints=[
-    ...        om.constraints.EqualityConstraint(selector=lambda params: params[:2]),
-    ...        om.constraints.LinearConstraint(
+    ...        om.EqualityConstraint(selector=lambda params: params[:2]),
+    ...        om.LinearConstraint(
     ...            selector=lambda params: params[2:5],
     ...            weights=1,
     ...            value=3,
@@ -484,9 +484,7 @@ res = om.minimize(
     fun=some_fun,
     params=params,
     algorithm="scipy_lbfgsb",
-    constraints=om.constraints.FixedConstraint(
-        selector=lambda params: params["b"]["d"]
-    ),
+    constraints=om.FixedConstraint(selector=lambda params: params["b"]["d"]),
 )
 ```
 
@@ -506,7 +504,7 @@ res = om.minimize(
     fun=some_fun,
     params=params,
     algorithm="scipy_lbfgsb",
-    constraints=om.constraints.FixedConstraint(selector=my_selector),
+    constraints=om.FixedConstraint(selector=my_selector),
 )
 ```
 
