@@ -1,4 +1,5 @@
 import pickle
+import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import numpy as np
@@ -108,9 +109,25 @@ class TestIterationStore:
         result_last = store.select_last_rows(5)
         assert len(result_last) == 5
 
+    @pytest.mark.skipif(
+        sys.platform.startswith("win"),
+        reason="On windows this results in a RuntimeError caused by a PermissionError",
+    )
     def test_db_replacement_warning(self, store):
         store.insert(self.create_test_point(245))
         with pytest.warns(match="Existing database file"):
+            SQLiteConfig(
+                store._db_config.url.split("sqlite:///")[-1],
+                if_database_exists=ExistenceStrategy.REPLACE,
+            )
+
+    @pytest.mark.skipif(
+        not sys.platform.startswith("win"),
+        reason="On linux and macOS, this will result in a warning",
+    )
+    def test_db_replacement_error(self, store):
+        store.insert(self.create_test_point(245))
+        with pytest.raises(RuntimeError, match="PermissionError"):
             SQLiteConfig(
                 store._db_config.url.split("sqlite:///")[-1],
                 if_database_exists=ExistenceStrategy.REPLACE,

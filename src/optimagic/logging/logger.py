@@ -334,11 +334,21 @@ class SQLiteConfig(SQLAlchemyConfig):
                     f"ExistenceStrategy.EXTEND."
                 )
             elif if_database_exists is ExistenceStrategy.REPLACE:
-                warnings.warn(
-                    f"Existing database file at {path} will be removed due to "
-                    f"if_database_exists=ExistenceStrategy.REPLACE."
-                )
-                os.remove(path)
+                try:
+                    warnings.warn(
+                        f"Existing database file at {path} will be removed due to "
+                        f"if_database_exists=ExistenceStrategy.REPLACE."
+                    )
+                    os.remove(path)
+                except PermissionError as e:
+                    msg = (
+                        f"Failed to remove file {path}. "
+                        f"In particular, this can happen on Windows "
+                        f"machines, when a different process is accessing the file, "
+                        f"which results in a PermissionError. In this case, delete"
+                        f"the file manually."
+                    )
+                    raise RuntimeError(msg) from e
 
     def create_engine(self) -> Engine:
         engine = sql.create_engine(self.url)
