@@ -1,4 +1,4 @@
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
+from optimagic import deprecations
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 
@@ -29,13 +29,16 @@ def count_free_params(
         int: Number of (free) parameters
 
     """
-    bounds = replace_and_warn_about_deprecated_bounds(
+    bounds = deprecations.replace_and_warn_about_deprecated_bounds(
         bounds=bounds,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
     )
 
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
+
     bounds = pre_process_bounds(bounds)
+    constraints = deprecations.pre_process_constraints(constraints)
 
     _, internal_params = get_converter(
         params=params,
@@ -74,13 +77,16 @@ def check_constraints(
         InvalidConstraintError: If constraints are invalid.
 
     """
-    bounds = replace_and_warn_about_deprecated_bounds(
+    bounds = deprecations.replace_and_warn_about_deprecated_bounds(
         bounds=bounds,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
     )
 
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
+
     bounds = pre_process_bounds(bounds)
+    constraints = deprecations.pre_process_constraints(constraints)
 
     get_converter(
         params=params,

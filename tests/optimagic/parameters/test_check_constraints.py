@@ -1,4 +1,5 @@
 import numpy as np
+import optimagic as om
 import pytest
 from optimagic.exceptions import InvalidParamsError
 from optimagic.parameters.check_constraints import _iloc
@@ -29,7 +30,8 @@ def test_iloc():
 def test_check_constraints_are_satisfied_type_equality():
     with pytest.raises(InvalidParamsError):
         check_constraints(
-            params=np.array([1, 2, 3]), constraints={"type": "equality", "loc": [0, 1]}
+            params=np.array([1, 2, 3]),
+            constraints=om.EqualityConstraint(lambda x: x[:2]),
         )
 
 
@@ -37,7 +39,7 @@ def test_check_constraints_are_satisfied_type_increasing():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=np.array([1, 2, 3, 2, 4]),
-            constraints={"type": "increasing", "loc": [1, 2, 3]},
+            constraints=om.IncreasingConstraint(lambda x: x[[1, 2, 3]]),
         )
 
 
@@ -45,7 +47,7 @@ def test_check_constraints_are_satisfied_type_decreasing():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=np.array([1, 2, 3, 2, 4]),
-            constraints={"type": "decreasing", "loc": [0, 1, 3]},
+            constraints=om.DecreasingConstraint(lambda x: x[[0, 1, 3]]),
         )
 
 
@@ -53,7 +55,9 @@ def test_check_constraints_are_satisfied_type_pairwise_equality():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=np.array([1, 2, 3, 3, 4]),
-            constraints={"type": "pairwise_equality", "locs": [[0, 4], [3, 2]]},
+            constraints=om.PairwiseEqualityConstraint(
+                selectors=[lambda x: x[[0, 4]], lambda x: x[[3, 2]]]
+            ),
         )
 
 
@@ -61,7 +65,7 @@ def test_check_constraints_are_satisfied_type_probability():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=np.array([0.10, 0.25, 0.50, 1, 0.7]),
-            constraints={"type": "probability", "loc": [0, 1, 2, 4]},
+            constraints=om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 4]]),
         )
 
 
@@ -69,12 +73,9 @@ def test_check_constraints_are_satisfied_type_linear_lower_bound():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=np.ones(5),
-            constraints={
-                "type": "linear",
-                "loc": [0, 2, 3, 4],
-                "lower_bound": 1.1,
-                "weights": 0.25,
-            },
+            constraints=om.LinearConstraint(
+                selector=lambda x: x[[0, 2, 3, 4]], lower_bound=1.1, weights=0.25
+            ),
         )
 
 
@@ -82,12 +83,9 @@ def test_check_constraints_are_satisfied_type_linear_upper_bound():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=np.ones(5),
-            constraints={
-                "type": "linear",
-                "loc": [0, 2, 3, 4],
-                "upper_bound": 0.9,
-                "weights": 0.25,
-            },
+            constraints=om.LinearConstraint(
+                selector=lambda x: x[[0, 2, 3, 4]], upper_bound=0.9, weights=0.25
+            ),
         )
 
 
@@ -95,12 +93,9 @@ def test_check_constraints_are_satisfied_type_linear_value():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=np.ones(5),
-            constraints={
-                "type": "linear",
-                "loc": [0, 2, 3, 4],
-                "value": 2,
-                "weights": 0.25,
-            },
+            constraints=om.LinearConstraint(
+                selector=lambda x: x[[0, 2, 3, 4]], value=2, weights=0.25
+            ),
         )
 
 
@@ -108,11 +103,7 @@ def test_check_constraints_are_satisfied_type_covariance():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=[1, 1, 1, -1, 1, -1],
-            constraints={
-                "type": "covariance",
-                # "loc": [0, 1, 2],
-                "selector": lambda params: params,
-            },
+            constraints=om.FlatCovConstraint(selector=lambda params: params),
         )
 
 
@@ -120,13 +111,5 @@ def test_check_constraints_are_satisfied_type_sdcorr():
     with pytest.raises(InvalidParamsError):
         check_constraints(
             params=[1, 1, 1, -1, 1, 1],
-            constraints={
-                "type": "sdcorr",
-                # "loc": [0, 1, 2],
-                "selector": lambda params: params,
-            },
+            constraints=om.FlatSDCorrConstraint(selector=lambda params: params),
         )
-
-
-# to ignore as per email?
-# def test_check_constraints_are_satisfied_type_nonlinear():

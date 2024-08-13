@@ -78,6 +78,7 @@ def process_constraints(
     constraints = _process_linear_weights(constraints)
     check_constraints_are_satisfied(constraints, params_vec, param_names)
     constraints = _replace_increasing_and_decreasing_by_linear(constraints)
+    # process newly generated linear constraints
     constraints = _process_linear_weights(constraints)
 
     transformations, constr_info = consolidate_constraints(
@@ -239,7 +240,7 @@ def _create_internal_bounds(lower, upper, constraints):
             dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
             diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
-            bd = constr.get("bounds_distance", 0)
+            bd = constr.get("regularization", 0)
             bd = np.sqrt(bd) if constr["type"] == "covariance" else bd
             int_lower[diag_indices] = np.maximum(int_lower[diag_indices], bd)
         elif constr["type"] == "probability":
