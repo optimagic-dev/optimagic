@@ -6,11 +6,8 @@ import numpy as np
 
 from optimagic.algorithms import ALL_ALGORITHMS
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.logging.read_from_database import (
-    list_of_dicts_to_dict_of_lists,
-)
 from optimagic.logging.types import StepStatus
-from optimagic.utilities import propose_alternatives
+from optimagic.utilities import list_of_dicts_to_dict_of_lists, propose_alternatives
 
 
 def process_user_algorithm(algorithm):
