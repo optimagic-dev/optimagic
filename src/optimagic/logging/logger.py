@@ -26,8 +26,6 @@ from optimagic.logging.types import (
     CriterionEvaluationWithId,
     ExistenceStrategy,
     ExistenceStrategyLiteral,
-    IterationHistory,
-    MultiStartIterationHistory,
     ProblemInitialization,
     ProblemInitializationWithId,
     StepResult,
@@ -35,7 +33,13 @@ from optimagic.logging.types import (
     StepType,
 )
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import OptimizationType, OptimizationTypeLiteral, PyTree
+from optimagic.typing import (
+    IterationHistory,
+    MultiStartIterationHistory,
+    OptimizationType,
+    OptimizationTypeLiteral,
+    PyTree,
+)
 
 
 class Logger:

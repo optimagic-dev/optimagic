@@ -2,15 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
-import numpy as np
-from numpy.typing import NDArray
-
 from optimagic.typing import (
     DictLikeAccess,
     OptimizationType,
     OptimizationTypeLiteral,
     PyTree,
-    TupleLikeAccess,
 )
 
 
@@ -191,35 +187,3 @@ class ProblemInitializationWithId(ProblemInitialization):
     def __post_init__(self) -> None:
         if self.rowid is None:
             raise ValueError("rowid must not be None")
-
-
-@dataclass(frozen=True)
-class IterationHistory(DictLikeAccess):
-    """History of iterations in a process.
-
-    Attributes:
-        params: A list of parameters used in each iteration.
-        criterion: A list of criterion values obtained in each iteration.
-        runtime: A list or array of runtimes associated with each iteration.
-
-    """
-
-    params: list[PyTree]
-    criterion: list[float]
-    runtime: list[float] | NDArray[np.float64]
-
-
-@dataclass(frozen=True)
-class MultiStartIterationHistory(TupleLikeAccess):
-    """History of multiple start iterations.
-
-    Attributes:
-        history: The main iteration history, representing the best end value.
-        local_histories: Optional, a list of local iteration histories.
-        exploration: Optional, iteration history for exploration steps.
-
-    """
-
-    history: IterationHistory
-    local_histories: list[IterationHistory] | None = None
-    exploration: IterationHistory | None = None
