@@ -891,11 +891,11 @@ def test_handle_log_options():
         )
         assert isinstance(handled_logger, SQLiteLogger)
 
-    incompatibility_warning = "Found string or path for logger argument, but parameter"
+    incompatibility_msg = "Found string or path for logger argument, but parameter"
     f" {log_options=} is not compatible "
     log_options_typo = {"fast_lugging": False}
 
-    with pytest.warns(match=incompatibility_warning):
+    with pytest.raises(ValueError, match=incompatibility_msg):
         handled_logger = handle_log_options_throw_deprecated_warning(
             log_options_typo, ":memory:"
         )

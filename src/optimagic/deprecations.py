@@ -490,7 +490,7 @@ def handle_log_options_throw_deprecated_warning(
             )
             return SQLiteLogger(cast(str | Path, logger), **log_options)
         elif not log_options_is_compatible:
-            warnings.warn(
+            raise ValueError(
                 f"Found string or path for logger argument, but parameter"
                 f" {log_options=} is not compatible to {compatible_keys=}."
                 f"Explicitly create a Logger instance for configuration."
