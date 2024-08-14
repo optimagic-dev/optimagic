@@ -1,14 +1,11 @@
 import os
 import warnings
-from dataclasses import replace
-from functools import cached_property
 from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 import sqlalchemy as sql
-from pybaum import tree_flatten, tree_unflatten
 from sqlalchemy.engine import Engine
 
 from optimagic.logging.base import (
@@ -32,7 +29,6 @@ from optimagic.logging.types import (
     StepResultWithId,
     StepType,
 )
-from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import (
     IterationHistory,
     MultiStartIterationHistory,
@@ -70,13 +66,6 @@ class Logger:
         self.step_store = step_store
         self.iteration_store = iteration_store
         self.problem_store = problem_store
-        self._pytree_registry = get_registry(extended=True)
-
-    @cached_property
-    def _treedef(self) -> tuple[list[Any], Any]:
-        return tree_flatten(self.read_start_params(), registry=self._pytree_registry)[
-            -1
-        ]
 
     def read_iteration(self, iteration: int) -> CriterionEvaluationWithId:
         """Read a specific iteration from the iteration store.
@@ -113,11 +102,7 @@ class Logger:
         else:
             data = row_list[0]
 
-        params = tree_unflatten(
-            self._treedef, data.params, registry=self._pytree_registry
-        )
-
-        return replace(data, params=params)
+        return data
 
     def read_history(self) -> IterationHistory:
         """Read the entire iteration history from the iteration store.
@@ -133,10 +118,7 @@ class Logger:
         runtime_list = []
         for data in raw_res:
             if data.value is not None:
-                params = tree_unflatten(
-                    self._treedef, data.params, registry=self._pytree_registry
-                )
-                params_list.append(params)
+                params_list.append(data.params)
                 criterion_list.append(data.value)
                 runtime_list.append(data.timestamp)
 
@@ -166,10 +148,7 @@ class Logger:
 
         for data in raw_res:
             if data.value is not None:
-                params = tree_unflatten(
-                    self._treedef, data.params, registry=self._pytree_registry
-                )
-                history["params"].append(params)
+                history["params"].append(data.params)
                 history["criterion"].append(data.value)
                 history["runtime"].append(data.timestamp)
                 history["step"].append(data.step)
@@ -286,7 +265,7 @@ class Logger:
             A pytree object representing the start parameter.
 
         """
-        return self.problem_store.select_last_rows(1)[0].params
+        return self.problem_store.select(1)[0].params
 
 
 class SQLiteConfig(SQLAlchemyConfig):

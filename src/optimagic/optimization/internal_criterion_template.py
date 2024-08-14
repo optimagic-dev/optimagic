@@ -96,10 +96,7 @@ def internal_criterion_and_derivative_template(
     caught_exceptions = []
     new_fun, new_external_fun = None, None
     new_jac, new_external_jac = None, None
-    current_params, external_x = converter.params_from_internal(
-        x,
-        return_type="tree_and_flat",
-    )
+    current_params = converter.params_from_internal(x)
     if to_dos == []:
         pass
     elif "numerical_fun_and_jac" in to_dos:
@@ -226,7 +223,7 @@ def internal_criterion_and_derivative_template(
         _log_new_evaluations(
             new_criterion=new_external_fun,
             new_derivative=new_jac,
-            external_x=external_x,
+            params=current_params,
             caught_exceptions=caught_exceptions,
             fixed_log_data=fixed_log_data,
             scalar_value=scalar_critval,
@@ -308,7 +305,7 @@ def _determine_to_dos(task, derivative, criterion_and_derivative):
 def _log_new_evaluations(
     new_criterion,
     new_derivative,
-    external_x,
+    params,
     caught_exceptions,
     fixed_log_data,
     scalar_value,
@@ -323,7 +320,7 @@ def _log_new_evaluations(
 
     """
     data = {
-        "params": external_x,
+        "params": params,
         "timestamp": now,
         "valid": True,
         "criterion_eval": new_criterion,
