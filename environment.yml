@@ -36,6 +36,7 @@ dependencies:
   - jinja2  # dev, tests
   - furo  # dev, docs
   - annotated-types  # dev, tests
+  - pydantic  # dev, tests, run
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests

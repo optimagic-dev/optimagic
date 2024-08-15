@@ -95,7 +95,7 @@ def get_error_penalty_function(
     else:
         raise ValueError()
 
-    def penalty(x, task):
+    def penalty(x, task="criterion_and_derivative"):
         if task == "criterion":
             out = _penalty(x)
         elif task == "derivative":
