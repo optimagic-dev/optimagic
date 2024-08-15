@@ -173,6 +173,8 @@ filterwarnings = [
     "ignore:Widget.widgets is deprecated",
     "ignore:Parallelization together with",
     "ignore:Conversion of an array with ndim > 0 to a scalar is deprecated",
+    "ignore:The following exception was caught when evaluating",
+    "ignore:The following exception was caught when calculating",
 ]
 addopts = ["--doctest-modules"]
 markers = [

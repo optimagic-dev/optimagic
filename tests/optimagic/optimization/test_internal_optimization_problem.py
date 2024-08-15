@@ -5,7 +5,9 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic import NumdiffOptions
 from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic.config import CRITERION_PENALTY_CONSTANT, CRITERION_PENALTY_SLOPE
 from optimagic.exceptions import UserFunctionRuntimeError
+from optimagic.optimization.error_penalty import get_error_penalty_function
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     ScalarFunctionValue,
@@ -531,6 +533,152 @@ def test_numerical_fun_and_jac_for_pytree_problem(pytree_problem):
 # ======================================================================================
 
 
+@pytest.fixture
+def error_min_problem():
+    """Set up a basic InternalOptimizationProblem that can be modified for tests."""
+
+    def fun(params):
+        raise ValueError("Test error")
+
+    def jac(params):
+        raise ValueError("Test error")
+
+    def fun_and_jac(params):
+        raise ValueError("Test error")
+
+    converter = Converter(
+        params_to_internal=lambda x: x,
+        params_from_internal=lambda x: x,
+        derivative_to_internal=lambda x: x,
+        has_transforming_constraints=False,
+    )
+
+    solver_type = AggregationLevel.SCALAR
+
+    direction = Direction.MINIMIZE
+
+    bounds = InternalBounds(lower=None, upper=None)
+
+    numdiff_options = NumdiffOptions()
+
+    error_handling = ErrorHandling.CONTINUE
+
+    batch_evaluator = process_batch_evaluator(batch_evaluator="joblib")
+
+    linear_constraints = None
+
+    nonlinear_constraints = None
+
+    start_params = np.array([1, 2, 3])
+
+    error_penalty_function = get_error_penalty_function(
+        start_x=start_params,
+        error_handling=error_handling.value,
+        error_penalty=None,
+        start_criterion=ScalarFunctionValue(14),
+        direction=direction.value,
+        solver_type=solver_type,
+    )
+
+    problem = InternalOptimizationProblem(
+        fun=fun,
+        jac=jac,
+        fun_and_jac=fun_and_jac,
+        converter=converter,
+        solver_type=solver_type,
+        direction=direction,
+        bounds=bounds,
+        numdiff_options=numdiff_options,
+        error_handling=error_handling,
+        error_penalty_func=error_penalty_function,
+        batch_evaluator=batch_evaluator,
+        linear_constraints=linear_constraints,
+        nonlinear_constraints=nonlinear_constraints,
+    )
+
+    return problem
+
+
+def test_error_in_fun_minimize(error_min_problem):
+    got = error_min_problem.fun(np.array([2, 3, 4]))
+    expected = 28 + CRITERION_PENALTY_CONSTANT + np.sqrt(3) * CRITERION_PENALTY_SLOPE
+    assert np.allclose(got, expected)
+
+
+def test_error_in_jac_minimize(error_min_problem):
+    got = error_min_problem.jac(np.array([2, 3, 4]))
+    expected = np.full(3, CRITERION_PENALTY_SLOPE) / np.sqrt(3)
+    aaae(got, expected)
+
+
+def test_error_in_fun_and_jac_minimize(error_min_problem):
+    got_fun, got_jac = error_min_problem.fun_and_jac(np.array([2, 3, 4]))
+    expected_fun = (
+        28 + CRITERION_PENALTY_CONSTANT + np.sqrt(3) * CRITERION_PENALTY_SLOPE
+    )
+    expected_jac = np.full(3, CRITERION_PENALTY_SLOPE) / np.sqrt(3)
+    assert np.allclose(got_fun, expected_fun)
+    aaae(got_jac, expected_jac)
+
+
+def test_error_in_numerical_jac_minimize(error_min_problem):
+    error_min_problem._jac = None
+    error_min_problem._fun_and_jac = None
+
+    got = error_min_problem.jac(np.array([2, 3, 4]))
+    expected = np.full(3, CRITERION_PENALTY_SLOPE) / np.sqrt(3)
+    aaae(got, expected)
+
+
 # ======================================================================================
 # test error penalty with maximize
 # ======================================================================================
+
+
+@pytest.fixture
+def error_max_problem(error_min_problem):
+    problem = copy(error_min_problem)
+    problem._direction = Direction.MAXIMIZE
+
+    error_penalty_function = get_error_penalty_function(
+        start_x=np.array([1, 2, 3]),
+        error_handling=problem._error_handling.value,
+        error_penalty=None,
+        start_criterion=ScalarFunctionValue(-14),
+        direction=problem._direction.value,
+        solver_type=problem._solver_type,
+    )
+
+    problem._error_penalty_func = error_penalty_function
+    return problem
+
+
+def test_error_in_fun_maximize(error_max_problem):
+    got = error_max_problem.fun(np.array([2, 3, 4]))
+    expected = 28 + CRITERION_PENALTY_CONSTANT + np.sqrt(3) * CRITERION_PENALTY_SLOPE
+    assert np.allclose(got, expected)
+
+
+def test_error_in_jac_maximize(error_max_problem):
+    got = error_max_problem.jac(np.array([2, 3, 4]))
+    expected = np.full(3, CRITERION_PENALTY_SLOPE) / np.sqrt(3)
+    aaae(got, expected)
+
+
+def test_error_in_fun_and_jac_maximize(error_max_problem):
+    got_fun, got_jac = error_max_problem.fun_and_jac(np.array([2, 3, 4]))
+    expected_fun = (
+        28 + CRITERION_PENALTY_CONSTANT + np.sqrt(3) * CRITERION_PENALTY_SLOPE
+    )
+    expected_jac = np.full(3, CRITERION_PENALTY_SLOPE) / np.sqrt(3)
+    assert np.allclose(got_fun, expected_fun)
+    aaae(got_jac, expected_jac)
+
+
+def test_error_in_numerical_jac_maximize(error_max_problem):
+    error_max_problem._jac = None
+    error_max_problem._fun_and_jac = None
+
+    got = error_max_problem.jac(np.array([2, 3, 4]))
+    expected = np.full(3, CRITERION_PENALTY_SLOPE) / np.sqrt(3)
+    aaae(got, expected)

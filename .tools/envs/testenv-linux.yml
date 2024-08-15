@@ -25,7 +25,6 @@ dependencies:
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
-  - pydantic  # dev, tests, run
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
