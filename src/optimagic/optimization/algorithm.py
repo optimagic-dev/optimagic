@@ -163,13 +163,9 @@ class Algorithm(ABC):
         valid_keys = set(self.__dataclass_fields__) - {"__algo_info__"}
         invalid = set(kwargs) - valid_keys
         if invalid:
-            if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
-                name = self.__algo_info__.name
-            else:
-                name = self.__class__.__name__
             raise InvalidAlgoOptionError(
                 f"The keyword arguments {invalid} are not valid options for "
-                f"the algorithm {name}"
+                f"the algorithm {self.name}"
             )
         return replace(self, **kwargs)
 
@@ -215,15 +211,29 @@ class Algorithm(ABC):
         valid_keys = set(self.__dataclass_fields__) - {"__algo_info__"}
         invalid = set(kwargs) - valid_keys
         if invalid:
-            if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
-                name = self.__algo_info__.name
-            else:
-                name = self.__class__.__name__
             msg = (
                 "The following algo_options were ignored because they are not "
-                f"compatible with {name}:\n\n {invalid}"
+                f"compatible with {self.name}:\n\n {invalid}"
             )
             warnings.warn(msg)
 
         kwargs = {k: v for k, v in kwargs.items() if k in valid_keys}
         return self.with_option(**kwargs)
+
+    @property
+    def name(self) -> str:
+        # cannot call algo_info here because it would be an infinite recursion
+        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+            return self.__algo_info__.name
+        return self.__class__.__name__
+
+    @property
+    def algo_info(self) -> AlgoInfo:
+        if not hasattr(self, "__algo_info__") or self.__algo_info__ is None:
+            msg = (
+                f"The algorithm {self.name} does not have have the __algo_info__ "
+                "attribute. Use the `mark.minimizer` decorator to add this attribute."
+            )
+            raise AttributeError(msg)
+
+        return self.__algo_info__
