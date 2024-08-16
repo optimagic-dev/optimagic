@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
+from optimagic.type_conversion import TYPE_CONVERTERS
 from optimagic.typing import (
-    TYPE_CONVERTERS,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveFloat,

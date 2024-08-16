@@ -11,7 +11,8 @@ from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.typing import TYPE_CONVERTERS, AggregationLevel
+from optimagic.type_conversion import TYPE_CONVERTERS
+from optimagic.typing import AggregationLevel
 
 
 @dataclass(frozen=True)
