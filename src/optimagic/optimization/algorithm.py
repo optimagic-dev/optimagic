@@ -1,4 +1,5 @@
 import typing
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from typing import Any
@@ -208,3 +209,21 @@ class Algorithm(ABC):
         if needs_replacement:
             result = replace(result, history=problem.history)
         return result
+
+    def with_option_if_applicable(self, **kwargs: Any) -> Self:
+        """Call with_option only with applicable keyword arguments."""
+        valid_keys = set(self.__dataclass_fields__) - {"__algo_info__"}
+        invalid = set(kwargs) - valid_keys
+        if invalid:
+            if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+                name = self.__algo_info__.name
+            else:
+                name = self.__class__.__name__
+            msg = (
+                "The following algo_options were ignored because they are not "
+                f"compatible with {name}:\n\n {invalid}"
+            )
+            warnings.warn(msg)
+
+        kwargs = {k: v for k, v in kwargs.items() if k in valid_keys}
+        return self.with_option(**kwargs)

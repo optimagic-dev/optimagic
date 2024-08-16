@@ -177,6 +177,22 @@ def test_with_convergence_invalid_key():
         algo.with_convergence(invalid_key=1e-5)
 
 
+def test_with_option_if_applicable():
+    algo = DummyAlgorithm()
+    with pytest.warns(UserWarning):
+        new_algo = algo.with_option_if_applicable(
+            invalid=15,
+            initial_radius=42,
+        )
+    assert new_algo is not algo
+    assert new_algo.initial_radius == 42
+
+
+# ======================================================================================
+# Test the type conversions of algo options
+# ======================================================================================
+
+
 def test_algorithm_does_type_conversion():
     algo = DummyAlgorithm(
         initial_radius="1.0",
