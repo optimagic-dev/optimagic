@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import Any, Callable, ParamSpec, TypeVar
 
-from optimagic.optimization.algorithm import AlgoInfo, Algorithm
+from optimagic.optimization.algorithm import AlgoInfo
 from optimagic.typing import AggregationLevel
 
 P = ParamSpec("P")
@@ -62,6 +62,10 @@ def likelihood(func: VectorFuncT) -> VectorFuncT:
     return wrapper
 
 
+# TODO: I get an error when adding bound=Algorithm to AlgorithmSubclass. Why?
+AlgorithmSubclass = TypeVar("AlgorithmSubclass")
+
+
 def minimizer(
     name: str,
     solver_type: AggregationLevel,
@@ -74,7 +78,7 @@ def minimizer(
     supports_linear_constraints: bool,
     supports_nonlinear_constraints: bool,
     disable_history: bool = False,
-) -> Callable[[Algorithm], Algorithm]:
+) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
     """Mark an algorithm as a optimagic minimizer and add AlgoInfo.
 
     Args:
@@ -85,7 +89,7 @@ def minimizer(
 
     """
 
-    def decorator(cls: Algorithm) -> Algorithm:
+    def decorator(cls: AlgorithmSubclass) -> AlgorithmSubclass:
         algo_info = AlgoInfo(
             name=name,
             solver_type=solver_type,

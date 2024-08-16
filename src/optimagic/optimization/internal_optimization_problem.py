@@ -228,6 +228,10 @@ class InternalOptimizationProblem:
     def history(self) -> History:
         return self._history
 
+    @property
+    def bounds(self) -> InternalBounds:
+        return self._bounds
+
     # ==================================================================================
     # Implementation of the public functions; The main difference is that the lower-
     # level implementations return a history entry instead of adding it to the history

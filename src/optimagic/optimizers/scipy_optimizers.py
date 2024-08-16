@@ -34,11 +34,16 @@ The following arguments are not supported as part of ``algo_options``:
 """
 
 import functools
+from dataclasses import dataclass
 
 import numpy as np
 import scipy
-from scipy.optimize import Bounds, NonlinearConstraint
+from numpy.typing import NDArray
+from scipy.optimize import Bounds as ScipyBounds
+from scipy.optimize import NonlinearConstraint
+from scipy.optimize import OptimizeResult as ScipyOptimizeResult
 
+from optimagic import mark
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
@@ -56,11 +61,62 @@ from optimagic.optimization.algo_options import (
     STOPPING_MAXFUN_GLOBAL,
     STOPPING_MAXITER,
 )
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalBounds,
+    InternalOptimizationProblem,
+)
 from optimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
     vector_as_list_of_scalar_constraints,
 )
+from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 from optimagic.utilities import calculate_trustregion_initial_radius
+
+
+@mark.minimizer(
+    name="scipy_lbfgsb",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyLBFGSB(Algorithm):
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
+    max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "maxcor": self.limited_memory_storage_length,
+            "ftol": self.convergence_ftol_rel,
+            "gtol": self.convergence_gtol_abs,
+            "maxfun": self.stopping_maxfun,
+            "maxiter": self.stopping_maxiter,
+            "maxls": self.max_line_search_steps,
+        }
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun_and_jac,
+            x0=x0,
+            method="L-BFGS-B",
+            jac=True,
+            bounds=_get_scipy_bounds(problem.bounds),
+            options=options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
 
 
 @mark_minimizer(name="scipy_lbfgsb")
@@ -96,11 +152,11 @@ def scipy_lbfgsb(
         x0=x,
         method="L-BFGS-B",
         jac=True,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_slsqp")
@@ -131,12 +187,12 @@ def scipy_slsqp(
         x0=x,
         method="SLSQP",
         jac=derivative,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         constraints=nonlinear_constraints,
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_neldermead", needs_scaling=True)
@@ -171,12 +227,12 @@ def scipy_neldermead(
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         method="Nelder-Mead",
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_powell", needs_scaling=True)
@@ -208,11 +264,11 @@ def scipy_powell(
         fun=criterion,
         x0=x,
         method="Powell",
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_bfgs")
@@ -244,7 +300,7 @@ def scipy_bfgs(
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_conjugate_gradient")
@@ -276,7 +332,7 @@ def scipy_conjugate_gradient(
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_newton_cg")
@@ -306,7 +362,7 @@ def scipy_newton_cg(
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_cobyla", needs_scaling=True)
@@ -342,7 +398,7 @@ def scipy_cobyla(
         tol=convergence_xtol_rel,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_truncated_newton")
@@ -392,10 +448,10 @@ def scipy_truncated_newton(
         method="TNC",
         jac=True,
         options=options,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_trust_constr")
@@ -435,15 +491,15 @@ def scipy_trust_constr(
         jac=True,
         x0=x,
         method="trust-constr",
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         constraints=_get_scipy_constraints(nonlinear_constraints),
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
-def process_scipy_result(scipy_results_obj):
+def process_scipy_result_old(scipy_results_obj):
     # using get with defaults to access dict elements is just a safety measure
     raw_res = {**scipy_results_obj}
     processed = {
@@ -461,8 +517,30 @@ def process_scipy_result(scipy_results_obj):
     return processed
 
 
-def _get_scipy_bounds(lower_bounds, upper_bounds):
-    return Bounds(lb=lower_bounds, ub=upper_bounds)
+def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResult:
+    res = InternalOptimizeResult(
+        x=scipy_res.x,
+        fun=scipy_res.fun,
+        success=scipy_res.success,
+        message=scipy_res.message,
+        n_fun_evals=scipy_res.nfev,
+        n_jac_evals=scipy_res.njev,
+        n_hess_evals=scipy_res.nhev,
+        n_iterations=scipy_res.nit,
+        # TODO: Pass on more things once we can convert them to external
+        status=None,
+        jac=None,
+        hess=None,
+        hess_inv=None,
+        max_constraint_violation=None,
+        info=None,
+        history=None,
+    )
+    return res
+
+
+def _get_scipy_bounds_old(lower_bounds, upper_bounds):
+    return ScipyBounds(lb=lower_bounds, ub=upper_bounds)
 
 
 def _get_scipy_constraints(constraints):
@@ -525,7 +603,7 @@ def _scipy_least_squares(
         tr_options=tr_solver_options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 _scipy_ls_trf = functools.partial(_scipy_least_squares, method="trf")
@@ -572,7 +650,7 @@ def scipy_ls_lm(
         tr_options=tr_solver_options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_basinhopping", is_global=True)
@@ -606,7 +684,7 @@ def scipy_basinhopping(
     local_algo_options = {} if local_algo_options is None else local_algo_options
     default_minimizer_kwargs = {
         "method": local_algorithm,
-        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "bounds": _get_scipy_bounds_old(lower_bounds, upper_bounds),
         "jac": derivative,
     }
 
@@ -628,7 +706,7 @@ def scipy_basinhopping(
         stepwise_factor=stepwise_factor,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_brute", is_global=True, disable_history=True)
@@ -710,7 +788,7 @@ def scipy_differential_evolution(
     workers = _get_workers(n_cores, batch_evaluator)
     res = scipy.optimize.differential_evolution(
         func=criterion,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         strategy=strategy,
         maxiter=stopping_maxiter,
         popsize=population_size_multiplier,
@@ -726,7 +804,7 @@ def scipy_differential_evolution(
         constraints=_get_scipy_constraints(nonlinear_constraints),
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_shgo", is_global=True)
@@ -774,7 +852,7 @@ def scipy_shgo(
     local_algo_options = {} if local_algo_options is None else local_algo_options
     default_minimizer_kwargs = {
         "method": local_algorithm,
-        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "bounds": _get_scipy_bounds_old(lower_bounds, upper_bounds),
         "jac": derivative,
     }
 
@@ -799,7 +877,7 @@ def scipy_shgo(
 
     res = scipy.optimize.shgo(
         func=criterion,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         constraints=nonlinear_constraints,
         minimizer_kwargs=minimizer_kwargs,
         n=n_sampling_points,
@@ -808,7 +886,7 @@ def scipy_shgo(
         options=options,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_dual_annealing", is_global=True)
@@ -839,7 +917,7 @@ def scipy_dual_annealing(
     local_algo_options = {} if local_algo_options is None else local_algo_options
     default_minimizer_kwargs = {
         "method": local_algorithm,
-        "bounds": _get_scipy_bounds(lower_bounds, upper_bounds),
+        "bounds": _get_scipy_bounds_old(lower_bounds, upper_bounds),
         "jac": derivative,
     }
 
@@ -847,7 +925,7 @@ def scipy_dual_annealing(
 
     res = scipy.optimize.dual_annealing(
         func=criterion,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         maxiter=stopping_maxiter,
         minimizer_kwargs=minimizer_kwargs,
         initial_temp=initial_temperature,
@@ -860,7 +938,7 @@ def scipy_dual_annealing(
         x0=x,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 @mark_minimizer(name="scipy_direct", is_global=True)
@@ -888,7 +966,7 @@ def scipy_direct(
 
     res = scipy.optimize.direct(
         func=criterion,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds_old(lower_bounds, upper_bounds),
         eps=convergence_ftol_rel,
         maxfun=stopping_maxfun,
         maxiter=stopping_maxiter,
@@ -899,7 +977,7 @@ def scipy_direct(
         len_tol=length_hyperrectangle_tolerance,
     )
 
-    return process_scipy_result(res)
+    return process_scipy_result_old(res)
 
 
 def _get_workers(n_cores, batch_evaluator):
@@ -910,3 +988,7 @@ def _get_workers(n_cores, batch_evaluator):
         error_handling="raise",
     )
     return out
+
+
+def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds:
+    return ScipyBounds(lb=bounds.lower, ub=bounds.upper)

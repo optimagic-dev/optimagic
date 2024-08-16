@@ -9,7 +9,7 @@ from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_REL,
     STOPPING_MAXITER,
 )
-from optimagic.optimizers.scipy_optimizers import process_scipy_result
+from optimagic.optimizers.scipy_optimizers import process_scipy_result_old
 
 if IS_CYIPOPT_INSTALLED:
     import cyipopt
@@ -500,7 +500,7 @@ def ipopt(
         options=options,
     )
 
-    res = process_scipy_result(raw_res)
+    res = process_scipy_result_old(raw_res)
     return res
 
 
