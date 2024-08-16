@@ -4,8 +4,10 @@ import numpy as np
 import pytest
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.optimization.algorithm import AlgoInfo, Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import HistoryEntry
 from optimagic.typing import (
     AggregationLevel,
+    EvalTask,
     NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
@@ -111,7 +113,14 @@ class DummyAlgorithm(Algorithm):
     stopping_maxiter: PositiveInt = 1000
 
     def _solve_internal_problem(self, problem, x0):
-        pass
+        hist_entry = HistoryEntry(
+            params=x0,
+            fun=0.0,
+            time=0.0,
+            task=EvalTask.FUN,
+        )
+        problem.history.add_entry(hist_entry)
+        return InternalOptimizeResult(x=x0, fun=0.0, success=True)
 
 
 def test_with_option():

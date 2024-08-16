@@ -9,6 +9,7 @@ from typing_extensions import Self
 
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.optimization.internal_optimization_problem import (
+    History,
     InternalOptimizationProblem,
 )
 from optimagic.type_conversion import TYPE_CONVERTERS
@@ -78,6 +79,7 @@ class InternalOptimizeResult:
     hess_inv: NDArray[np.float64] | None = None
     max_constraint_violation: float | None = None
     info: dict[str, typing.Any] | None = None
+    history: History | None = None
 
     def __post_init__(self) -> None:
         report: list[str] = []
@@ -189,3 +191,20 @@ class Algorithm(ABC):
                 options[f"convergence_{k}"] = v
 
         return self.with_option(**options)
+
+    def solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        problem = problem.with_new_history()
+        result = self._solve_internal_problem(problem, x0)
+
+        needs_replacement = True
+        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+            needs_replacement = False
+
+        if result.history is not None:
+            needs_replacement = False
+
+        if needs_replacement:
+            result = replace(result, history=problem.history)
+        return result
