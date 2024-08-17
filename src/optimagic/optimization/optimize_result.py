@@ -1,11 +1,12 @@
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
 
 from optimagic import deprecations
+from optimagic.optimization.internal_optimization_problem import History
 from optimagic.shared.compat import pd_df_map
 from optimagic.typing import PyTree
 from optimagic.utilities import to_pickle
@@ -55,14 +56,14 @@ class OptimizeResult:
     jac: PyTree | None = None
     hess: PyTree | None = None
     hess_inv: PyTree | None = None
-    max_constaint_violation: float | None = None
+    max_constraint_violation: float | None = None
 
-    history: Dict | None = None
+    history: History | None = None
 
     convergence_report: Dict | None = None
 
     multistart_info: Optional["MultistartInfo"] = None
-    algorithm_output: Dict = field(default_factory=dict)
+    algorithm_output: Dict[str, Any] | None = None
 
     # ==================================================================================
     # Deprecations

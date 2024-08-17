@@ -291,7 +291,7 @@ def estimate_msm(
         constraints=constraints,
         bounds=bounds,
         func_eval=func_eval,
-        primary_key="contributions",
+        solver_type="contributions",
         derivative_eval=jacobian_eval,
     )
 

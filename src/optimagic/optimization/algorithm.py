@@ -87,7 +87,7 @@ class InternalOptimizeResult:
         if not isinstance(self.x, np.ndarray):
             report.append("x must be a numpy array")
 
-        if not isinstance(self.fun, np.ndarray) or np.isscalar(self.fun):
+        if not (isinstance(self.fun, np.ndarray) or np.isscalar(self.fun)):
             report.append("fun must be a numpy array or scalar")
 
         if self.success is not None and not isinstance(self.success, bool):
@@ -195,14 +195,7 @@ class Algorithm(ABC):
         problem = problem.with_new_history()
         result = self._solve_internal_problem(problem, x0)
 
-        needs_replacement = True
-        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
-            needs_replacement = False
-
-        if result.history is not None:
-            needs_replacement = False
-
-        if needs_replacement:
+        if (not self.algo_info.disable_history) and (result.history is None):
             result = replace(result, history=problem.history)
         return result
 

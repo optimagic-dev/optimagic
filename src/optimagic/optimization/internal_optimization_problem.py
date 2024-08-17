@@ -375,7 +375,7 @@ class InternalOptimizationProblem:
                 _, jac_value = self._error_penalty_func(x)
 
         out_jac = _process_jac_value(
-            value=jac_value, direction=self._direction, converter=self._converter
+            value=jac_value, direction=self._direction, converter=self._converter, x=x
         )
 
         hist_entry = HistoryEntry(
@@ -500,7 +500,7 @@ class InternalOptimizationProblem:
         if is_error:
             out_jac = jac_value
         else:
-            out_jac = self._converter.derivative_to_internal(jac_value)
+            out_jac = self._converter.derivative_to_internal(jac_value, x)
 
         if self._direction == Direction.MAXIMIZE:
             out_jac = -out_jac
@@ -547,7 +547,10 @@ def _process_fun_value(
 
 
 def _process_jac_value(
-    value: SpecificFunctionValue, direction: Direction, converter: Converter
+    value: SpecificFunctionValue,
+    direction: Direction,
+    converter: Converter,
+    x: NDArray[np.float64],
 ) -> NDArray[np.float64]:
     """Post-process a for use by the algorithm.
 
@@ -561,7 +564,7 @@ def _process_jac_value(
 
     """
 
-    out_value = converter.derivative_to_internal(value)
+    out_value = converter.derivative_to_internal(value, x)
     if direction == Direction.MAXIMIZE:
         out_value = -out_value
 

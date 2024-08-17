@@ -8,6 +8,7 @@ from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.scaling import ScalingOptions
+from optimagic.typing import AggregationLevel
 
 
 def test_get_converter_fast_case():
@@ -17,7 +18,7 @@ def test_get_converter_fast_case():
         bounds=None,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
     )
 
     aaae(internal.values, np.arange(3))
@@ -43,7 +44,7 @@ def test_get_converter_with_constraints_and_bounds():
         bounds=bounds,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
     )
 
     aaae(internal.values, np.arange(2))
@@ -69,7 +70,7 @@ def test_get_converter_with_scaling():
         bounds=bounds,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
         scaling=ScalingOptions(method="start_values", clipping_value=0.5),
     )
 
@@ -91,9 +92,9 @@ def test_get_converter_with_trees():
         params=params,
         constraints=None,
         bounds=None,
-        func_eval={"contributions": {"d": 1, "e": 2}},
+        func_eval={"d": 1, "e": 2},
         derivative_eval={"a": 0, "b": 2, "c": 4},
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
     )
 
     aaae(internal.values, np.arange(3))
@@ -113,7 +114,7 @@ def fast_kwargs():
     kwargs = {
         "params": np.arange(3),
         "constraints": None,
-        "primary_key": "value",
+        "solver_type": AggregationLevel.SCALAR,
         "scaling": None,
         "derivative_eval": np.arange(3),
         "add_soft_bounds": False,
@@ -124,7 +125,6 @@ def fast_kwargs():
 STILL_FAST = [
     ("params", np.arange(3)),
     ("constraints", []),
-    ("derivative_eval", {"value": np.arange(3)}),
 ]
 
 
@@ -156,13 +156,11 @@ def test_is_fast_path_when_false(fast_kwargs, name, value):
 helper = np.arange(6).reshape(3, 2)
 
 FAST_DERIV_CASES = [
-    ("contributions", helper),
-    ("contributions", {"contributions": helper}),
-    ("root_contributions", helper),
-    ("root_contributions", {"root_contributions": helper}),
-    ("value", None),
-    ("contributions", None),
-    ("root_contributions", None),
+    (AggregationLevel.LIKELIHOOD, helper),
+    (AggregationLevel.LEAST_SQUARES, helper),
+    (AggregationLevel.SCALAR, None),
+    (AggregationLevel.LIKELIHOOD, None),
+    (AggregationLevel.LEAST_SQUARES, None),
 ]
 
 
@@ -172,10 +170,13 @@ def test_is_fast_deriv_eval_true(key, f):
 
 
 SLOW_DERIV_CASES = [
-    ("contributions", np.arange(8).reshape(2, 2, 2)),
-    ("contributions", {"contributions": np.arange(8).reshape(2, 2, 2)}),
-    ("root_contributions", np.arange(8).reshape(2, 2, 2)),
-    ("root_contributions", {"root_contributions": np.arange(8).reshape(2, 2, 2)}),
+    (AggregationLevel.LIKELIHOOD, np.arange(8).reshape(2, 2, 2)),
+    (AggregationLevel.LIKELIHOOD, {"contributions": np.arange(8).reshape(2, 2, 2)}),
+    (AggregationLevel.LEAST_SQUARES, np.arange(8).reshape(2, 2, 2)),
+    (
+        AggregationLevel.LEAST_SQUARES,
+        {"root_contributions": np.arange(8).reshape(2, 2, 2)},
+    ),
 ]
 
 

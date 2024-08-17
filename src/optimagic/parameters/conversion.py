@@ -9,6 +9,7 @@ from optimagic.parameters.process_selectors import process_selectors
 from optimagic.parameters.scale_conversion import get_scale_converter
 from optimagic.parameters.space_conversion import InternalParams, get_space_converter
 from optimagic.parameters.tree_conversion import get_tree_converter
+from optimagic.typing import AggregationLevel
 
 
 def get_converter(
@@ -16,7 +17,7 @@ def get_converter(
     constraints,
     bounds,
     func_eval,
-    primary_key,
+    solver_type,
     scaling=None,
     derivative_eval=None,
     add_soft_bounds=False,
@@ -39,8 +40,7 @@ def get_converter(
         upper_bounds (pytree): The user provided upper bounds
         func_eval (float or pytree): An evaluation of ``func`` at ``params``.
             Used to flatten the derivative output.
-        primary_key (str): One of "value", "contributions" and "root_contributions".
-            Used to determine how the function and derivative output has to be
+        solver_type: Used to determine how the derivative output has to be
             transformed for the optimzer.
         scaling (ScalingOptions | None): Scaling options. If None, no scaling is
             performed.
@@ -61,7 +61,7 @@ def get_converter(
     fast_path = _is_fast_path(
         params=params,
         constraints=constraints,
-        primary_key=primary_key,
+        solver_type=solver_type,
         scaling=scaling,
         derivative_eval=derivative_eval,
         add_soft_bounds=add_soft_bounds,
@@ -70,7 +70,7 @@ def get_converter(
         return _get_fast_path_converter(
             params=params,
             bounds=bounds,
-            primary_key=primary_key,
+            solver_type=solver_type,
         )
 
     tree_converter, internal_params = get_tree_converter(
@@ -78,7 +78,7 @@ def get_converter(
         bounds=bounds,
         func_eval=func_eval,
         derivative_eval=derivative_eval,
-        primary_key=primary_key,
+        solver_type=solver_type,
         add_soft_bounds=add_soft_bounds,
     )
 
@@ -165,7 +165,7 @@ def _fast_params_from_internal(x, return_type="tree"):
         return x
 
 
-def _get_fast_path_converter(params, bounds, primary_key):
+def _get_fast_path_converter(params, bounds, solver_type):
     def _fast_derivative_to_internal(
         derivative_eval,
         x,  # noqa: ARG001
@@ -204,7 +204,7 @@ def _get_fast_path_converter(params, bounds, primary_key):
 def _is_fast_path(
     params,
     constraints,
-    primary_key,
+    solver_type,
     scaling,
     derivative_eval,
     add_soft_bounds,
@@ -217,7 +217,7 @@ def _is_fast_path(
     if scaling is not None:
         return False
 
-    if not _is_fast_deriv_eval(derivative_eval, primary_key):
+    if not _is_fast_deriv_eval(derivative_eval, solver_type):
         return False
 
     if add_soft_bounds:
@@ -226,16 +226,16 @@ def _is_fast_path(
     return True
 
 
-def _is_fast_deriv_eval(d, key):
+def _is_fast_deriv_eval(d, solver_type):
     # this is the case if no or closed form derivatives are used
     if d is None:
         return True
 
-    if key == "value":
-        if not (_is_1d_arr(d) or (_is_dict_with(d, key) and _is_1d_arr(d[key]))):
+    if solver_type == AggregationLevel.SCALAR:
+        if not _is_1d_arr(d):
             return False
     else:
-        if not (_is_2d_arr(d) or (_is_dict_with(d, key)) and _is_2d_arr(d[key])):
+        if not _is_2d_arr(d):
             return False
 
     return True
@@ -247,7 +247,3 @@ def _is_1d_arr(candidate):
 
 def _is_2d_arr(candidate):
     return isinstance(candidate, np.ndarray) and candidate.ndim == 2
-
-
-def _is_dict_with(candidate, key):
-    return isinstance(candidate, dict) and key in candidate

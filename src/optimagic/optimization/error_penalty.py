@@ -8,7 +8,7 @@ from optimagic.optimization.fun_value import (
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
-from optimagic.typing import AggregationLevel
+from optimagic.typing import AggregationLevel, ErrorHandling
 
 
 def _penalty_value(x, constant, slope, x0, dim_out=None):  # noqa: ARG001
@@ -53,10 +53,8 @@ def get_error_penalty_function(
     direction,
 ):
     # TODO: We only ever need the task "criterion_and_derivative"
-    if error_handling == "raise":
+    if error_handling == ErrorHandling.RAISE:
         return None
-    elif error_handling != "continue":
-        raise ValueError("Error handling must be 'raise' or 'continue'")
 
     error_penalty = {} if error_penalty is None else error_penalty
 

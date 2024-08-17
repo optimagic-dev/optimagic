@@ -12,7 +12,7 @@ from optimagic.parameters.bounds import Bounds
 NLC_ALGORITHMS = [
     name
     for name, algo in AVAILABLE_ALGORITHMS.items()
-    if "nonlinear_constraints" in algo._algorithm_info.arguments
+    if algo.__algo_info__.supports_nonlinear_constraints
 ]
 
 # ======================================================================================

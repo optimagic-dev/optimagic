@@ -42,7 +42,7 @@ def count_free_params(
         constraints=constraints,
         bounds=bounds,
         func_eval=3,
-        primary_key="value",
+        solver_type="value",
     )
 
     return int(internal_params.free_mask.sum())
@@ -87,5 +87,5 @@ def check_constraints(
         constraints=constraints,
         bounds=bounds,
         func_eval=3,
-        primary_key="value",
+        solver_type="value",
     )

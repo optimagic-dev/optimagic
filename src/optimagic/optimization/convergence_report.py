@@ -9,8 +9,8 @@ def get_convergence_report(history, direction):
         direction=direction,
     )
 
-    critvals = history_arrs["criterion"][history_arrs["is_accepted"]]
-    params = history_arrs["params"][history_arrs["is_accepted"]]
+    critvals = history_arrs.fun[history_arrs.is_accepted]
+    params = history_arrs.params[history_arrs.is_accepted]
 
     if len(critvals) < 2:
         out = None

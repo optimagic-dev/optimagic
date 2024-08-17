@@ -14,11 +14,11 @@ from optimagic.parameters.bounds import Bounds
 OPTIMIZERS = []
 BOUNDED = []
 for name, algo in AVAILABLE_ALGORITHMS.items():
-    args = algo._algorithm_info.arguments
-    if not algo._algorithm_info.disable_history:
-        if "n_cores" in args:
+    info = algo.__algo_info__
+    if not info.disable_history:
+        if info.supports_parallelism:
             OPTIMIZERS.append(name)
-        if "lower_bounds" in args:
+        if info.supports_bounds:
             BOUNDED.append(name)
 
 

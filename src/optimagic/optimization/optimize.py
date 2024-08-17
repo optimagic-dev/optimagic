@@ -12,10 +12,11 @@ is then passed to `_optimize` which handles the optimization logic.
 
 """
 
-import functools
 import warnings
 from pathlib import Path
+from typing import cast
 
+from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
@@ -31,11 +32,9 @@ from optimagic.optimization.create_optimization_problem import (
     create_optimization_problem,
 )
 from optimagic.optimization.error_penalty import get_error_penalty_function
-from optimagic.optimization.get_algorithm import (
-    get_final_algorithm,
-)
-from optimagic.optimization.internal_criterion_template import (
-    internal_criterion_and_derivative_template,
+from optimagic.optimization.internal_optimization_problem import (
+    InternalBounds,
+    InternalOptimizationProblem,
 )
 from optimagic.optimization.multistart import (
     run_multistart_optimization,
@@ -45,13 +44,15 @@ from optimagic.optimization.multistart_options import (
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.process_results import process_internal_optimizer_result
-from optimagic.parameters.bounds import Bounds
+from optimagic.optimization.process_results import (
+    ExtraResultFields,
+    process_single_result,
+)
 from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.typing import AggregationLevel
+from optimagic.typing import AggregationLevel, Direction, ErrorHandling
 
 
 def maximize(
@@ -120,7 +121,7 @@ def maximize(
 
     """
     problem = create_optimization_problem(
-        direction="maximize",
+        direction=Direction.MAXIMIZE,
         fun=fun,
         params=params,
         bounds=bounds,
@@ -235,7 +236,7 @@ def minimize(
     """
 
     problem = create_optimization_problem(
-        direction="minimize",
+        direction=Direction.MINIMIZE,
         fun=fun,
         params=params,
         algorithm=algorithm,
@@ -295,12 +296,12 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
     nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
 
-    algo_kwargs = set(problem.algo_info.arguments)
-    if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
-        raise ValueError(
-            f"Algorithm {problem.algo_info.name} does not support nonlinear "
-            "constraints."
-        )
+    if nonlinear_constraints:
+        if not problem.algorithm.algo_info.supports_nonlinear_constraints:
+            raise ValueError(
+                f"Algorithm {problem.algorithm.name} does not support "
+                "nonlinear constraints."
+            )
 
     # the following constraints will be handled via reparametrization
     constraints = [c for c in constraints if c["type"] != "nonlinear"]
@@ -344,7 +345,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         constraints=constraints,
         bounds=problem.bounds,
         func_eval=first_crit_eval.value,
-        primary_key=problem.algo_info.primary_criterion_entry,
+        solver_type=problem.algorithm.algo_info.solver_type,
         scaling=problem.scaling,
         derivative_eval=used_deriv,
         add_soft_bounds=problem.multistart is not None,
@@ -358,7 +359,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         # probably do need to store the start parameters in the database because it is
         # used by the log reader.
         problem_data = {
-            "direction": problem.direction,
+            "direction": problem.direction.value,
             "params": problem.params,
         }
         database = _create_and_initialize_database(
@@ -385,9 +386,17 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         start_x=internal_params.values,
         start_criterion=first_crit_eval,
         error_penalty=problem.error_penalty,
-        solver_type=problem.algo_info.solver_type,
+        solver_type=problem.algorithm.algo_info.solver_type,
         direction=problem.direction,
     )
+
+    # convert the error handling to an enum
+    # TODO: Admit enums in the outer interface and do this processing in
+    # create_optimization_problem
+    if problem.error_handling == "raise":
+        internal_error_handling = ErrorHandling.RAISE
+    else:
+        internal_error_handling = ErrorHandling.CONTINUE
 
     # process nonlinear constraints:
     internal_constraints = process_nonlinear_constraints(
@@ -400,55 +409,38 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     )
 
     x = internal_params.values
-    internal_bounds = Bounds(
+    internal_bounds = InternalBounds(
         lower=internal_params.lower_bounds,
         upper=internal_params.upper_bounds,
     )
     # ==================================================================================
-    # get the internal algorithm
+    # Create a batch evaluator
     # ==================================================================================
-    internal_algorithm = get_final_algorithm(
-        raw_algorithm=problem.algorithm,
-        algo_info=problem.algo_info,
-        valid_kwargs=algo_kwargs,
-        lower_bounds=internal_params.lower_bounds,
-        upper_bounds=internal_params.upper_bounds,
-        nonlinear_constraints=internal_constraints,
-        algo_options=problem.algo_options,
-        logging=problem.logging,
-        database=database,
-        collect_history=problem.collect_history,
-    )
-    # ==================================================================================
-    # partial arguments into the internal_criterion_and_derivative_template
-    # ==================================================================================
-    to_partial = {
-        "direction": problem.direction,
-        "criterion": problem.fun,
-        "converter": converter,
-        "derivative": problem.jac,
-        "criterion_and_derivative": problem.fun_and_jac,
-        "numdiff_options": problem.numdiff_options,
-        "logging": problem.logging,
-        "database": database,
-        "algo_info": problem.algo_info,
-        "error_handling": problem.error_handling,
-        "error_penalty_func": error_penalty_func,
-        "bounds": internal_bounds,
-    }
+    # TODO: Make batch evaluator an argument of maximize and minimize and move this
+    # to create_optimization_problem
+    batch_evaluator = process_batch_evaluator("joblib")
 
-    internal_criterion_and_derivative = functools.partial(
-        internal_criterion_and_derivative_template,
-        **to_partial,
-    )
+    # ==================================================================================
+    # Create the InternalOptimizationProblem
+    # ==================================================================================
 
-    problem_functions = {}
-    for task in ["criterion", "derivative", "criterion_and_derivative"]:
-        if task in algo_kwargs:
-            problem_functions[task] = functools.partial(
-                internal_criterion_and_derivative,
-                task=task,
-            )
+    internal_problem = InternalOptimizationProblem(
+        fun=problem.fun,
+        jac=problem.jac,
+        fun_and_jac=problem.fun_and_jac,
+        converter=converter,
+        solver_type=problem.algorithm.algo_info.solver_type,
+        direction=problem.direction,
+        bounds=internal_bounds,
+        numdiff_options=problem.numdiff_options,
+        error_handling=internal_error_handling,
+        error_penalty_func=error_penalty_func,
+        batch_evaluator=batch_evaluator,
+        # TODO: Actually pass through linear constraints if possible
+        linear_constraints=None,
+        nonlinear_constraints=nonlinear_constraints,
+        # TODO: add logger
+    )
 
     # ==================================================================================
     # Do actual optimization
@@ -462,7 +454,8 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             database=database,
         )
 
-        raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
+        raw_res = problem.algorithm.solve_internal_problem(internal_problem, x)
+
     else:
         multistart_options = get_internal_multistart_options_from_public(
             options=problem.multistart,
@@ -487,23 +480,27 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Process the result
     # ==================================================================================
 
-    _scalar_start_criterion = first_crit_eval.internal_value(AggregationLevel.SCALAR)
-
-    fixed_result_kwargs = {
-        "start_fun": _scalar_start_criterion,
-        "start_params": problem.params,
-        "algorithm": problem.algo_info.name,
-        "direction": problem.direction,
-        "n_free": internal_params.free_mask.sum(),
-    }
-
-    res = process_internal_optimizer_result(
-        raw_res,
-        converter=converter,
-        solver_type=problem.algo_info.solver_type,
-        fixed_kwargs=fixed_result_kwargs,
-        skip_checks=problem.skip_checks,
+    _scalar_start_criterion = cast(
+        float, first_crit_eval.internal_value(AggregationLevel.SCALAR)
     )
+
+    extra_fields = ExtraResultFields(
+        start_fun=_scalar_start_criterion,
+        start_params=problem.params,
+        algorithm=problem.algorithm.algo_info.name,
+        direction=problem.direction,
+        n_free=internal_params.free_mask.sum(),
+    )
+
+    if problem.multistart is None:
+        res = process_single_result(
+            res=raw_res,
+            converter=converter,
+            solver_type=problem.algorithm.algo_info.solver_type,
+            extra_fields=extra_fields,
+        )
+    else:
+        raise NotImplementedError()
 
     return res
 

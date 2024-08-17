@@ -96,7 +96,7 @@ def test_criterion_and_derivative_template(
         constraints=None,
         bounds=None,
         func_eval=crit(base_inputs["params"]),
-        primary_key="value",
+        solver_type="value",
         derivative_eval=None,
     )
     inputs = {k: v for k, v in base_inputs.items() if k != "params"}
@@ -142,7 +142,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
         constraints=None,
         bounds=None,
         func_eval=sos_scalar(base_inputs["params"]),
-        primary_key="value",
+        solver_type="value",
         derivative_eval=None,
     )
     inputs = {k: v for k, v in base_inputs.items() if k != "params"}

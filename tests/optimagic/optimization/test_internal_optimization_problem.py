@@ -70,7 +70,7 @@ def base_problem():
     converter = Converter(
         params_to_internal=lambda x: x,
         params_from_internal=lambda x: x,
-        derivative_to_internal=lambda x: x,
+        derivative_to_internal=lambda d, x: d,
         has_transforming_constraints=False,
     )
 
@@ -435,7 +435,7 @@ def pytree_problem(base_problem):
         assert isinstance(params, dict)
         return fun(params), jac(params)
 
-    def derivative_flatten(tree):
+    def derivative_flatten(tree, x):
         out = [list(row.values()) for row in tree.values()]
         return np.array(out)
 
@@ -549,7 +549,7 @@ def error_min_problem():
     converter = Converter(
         params_to_internal=lambda x: x,
         params_from_internal=lambda x: x,
-        derivative_to_internal=lambda x: x,
+        derivative_to_internal=lambda d, x: d,
         has_transforming_constraints=False,
     )
 

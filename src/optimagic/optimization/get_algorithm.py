@@ -4,45 +4,11 @@ from functools import partial
 
 import numpy as np
 
-from optimagic.algorithms import ALL_ALGORITHMS
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.logging.read_from_database import (
     list_of_dicts_to_dict_of_lists,
 )
 from optimagic.logging.write_to_database import update_row
-from optimagic.utilities import propose_alternatives
-
-
-def process_user_algorithm(algorithm):
-    """Process the user specfied algorithm.
-
-    If the algorithm is a callable, this function just reads out the algorithm_info
-    and available options. If algorithm is a string it loads the algorithm function
-    from the available algorithms.
-
-    Args:
-        algorithm (str or callable): The user specified algorithm.
-
-    Returns:
-        callable: the raw internal algorithm
-        AlgoInfo: Attributes of the algorithm
-
-    """
-    if isinstance(algorithm, str):
-        try:
-            # Use ALL_ALGORITHMS and not just AVAILABLE_ALGORITHMS such that the
-            # algorithm specific error message with installation instruction will be
-            # reached if an optional dependency is not installed.
-            algorithm = ALL_ALGORITHMS[algorithm]
-        except KeyError:
-            proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
-            raise ValueError(
-                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
-            ) from None
-
-    algo_info = algorithm._algorithm_info
-
-    return algorithm, algo_info
 
 
 def get_final_algorithm(

@@ -235,6 +235,48 @@ def scipy_neldermead(
     return process_scipy_result_old(res)
 
 
+@mark.minimizer(
+    name="scipy_neldermead",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyNelderMead(Algorithm):
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_XTOL_ABS
+    adaptive: bool = False
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "maxiter": self.stopping_maxiter,
+            "maxfev": self.stopping_maxfun,
+            "xatol": self.convergence_xtol_abs,
+            "fatol": self.convergence_ftol_abs,
+            "adaptive": self.adaptive,
+        }
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun,
+            x0=x0,
+            bounds=_get_scipy_bounds(problem.bounds),
+            method="Nelder-Mead",
+            options=options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
 @mark_minimizer(name="scipy_powell", needs_scaling=True)
 def scipy_powell(
     criterion,
@@ -520,13 +562,13 @@ def process_scipy_result_old(scipy_results_obj):
 def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResult:
     res = InternalOptimizeResult(
         x=scipy_res.x,
-        fun=scipy_res.fun,
-        success=scipy_res.success,
-        message=scipy_res.message,
-        n_fun_evals=scipy_res.nfev,
-        n_jac_evals=scipy_res.njev,
-        n_hess_evals=scipy_res.nhev,
-        n_iterations=scipy_res.nit,
+        fun=float(scipy_res.fun),
+        success=bool(scipy_res.success),
+        message=str(scipy_res.message),
+        n_fun_evals=scipy_res.get("nfev"),
+        n_jac_evals=scipy_res.get("njev"),
+        n_hess_evals=scipy_res.get("nhev"),
+        n_iterations=scipy_res.get("nit"),
         # TODO: Pass on more things once we can convert them to external
         status=None,
         jac=None,

@@ -1,10 +1,10 @@
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Type, cast
 
 from optimagic import deprecations
-from optimagic.decorators import AlgoInfo
+from optimagic.algorithms import ALL_ALGORITHMS
 from optimagic.deprecations import (
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
@@ -20,14 +20,12 @@ from optimagic.exceptions import (
     InvalidFunctionError,
     MissingInputError,
 )
+from optimagic.optimization.algorithm import AlgoInfo, Algorithm
 from optimagic.optimization.fun_value import (
     SpecificFunctionValue,
     convert_fun_output_to_function_value,
     enforce_return_type,
     enforce_return_type_with_jac,
-)
-from optimagic.optimization.get_algorithm import (
-    process_user_algorithm,
 )
 from optimagic.optimization.multistart_options import (
     MultistartOptions,
@@ -44,7 +42,8 @@ from optimagic.shared.process_user_function import (
     infer_aggregation_level,
     partial_func_of_params,
 )
-from optimagic.typing import AggregationLevel, PyTree
+from optimagic.typing import AggregationLevel, Direction, ErrorHandling, PyTree
+from optimagic.utilities import propose_alternatives
 
 
 @dataclass(frozen=True)
@@ -68,11 +67,7 @@ class OptimizationProblem:
 
     fun: Callable[[PyTree], SpecificFunctionValue]
     params: PyTree
-    # TODO: algorithm will become an Algorithm object; algo_options and algo_info will
-    # be removed and become part of Algorithm
-    algorithm: Callable | str
-    algo_options: dict[str, Any] | None
-    algo_info: AlgoInfo
+    algorithm: Algorithm
     bounds: Bounds | None
     # TODO: constraints will become list[Constraint] | None
     constraints: list[dict[str, Any]]
@@ -82,15 +77,13 @@ class OptimizationProblem:
     # TODO: logging will become None | Logger and log_options will be removed
     logging: bool | Path | None
     log_options: dict[str, Any] | None
-    # TODO: error_handling will become None | ErrorHandlingOptions and error_penalty
-    # will be removed
-    error_handling: Literal["raise", "continue"]
+    error_handling: ErrorHandling
     error_penalty: dict[str, Any] | None
     scaling: ScalingOptions | None
     multistart: MultistartOptions | None
     collect_history: bool
     skip_checks: bool
-    direction: Literal["minimize", "maximize"]
+    direction: Direction
     fun_eval: SpecificFunctionValue
 
 
@@ -326,6 +319,15 @@ def create_optimization_problem(
         raise NotImplementedError(msg)
 
     # ==================================================================================
+    # Convert literals to enums
+    # ==================================================================================
+    # TODO: Use Kristof's enum conversion
+    if error_handling == "raise":
+        error_handling = ErrorHandling.RAISE
+    elif error_handling == "continue":
+        error_handling = ErrorHandling.CONTINUE
+
+    # ==================================================================================
     # Set default values and check options
     # ==================================================================================
     bounds = pre_process_bounds(bounds)
@@ -395,11 +397,13 @@ def create_optimization_problem(
     fun = enforce_return_type(problem_type)(fun)
 
     # ==================================================================================
-    # Get the algorithm info
+    # Process the user provided algorithm
     # ==================================================================================
-    raw_algo, algo_info = process_user_algorithm(algorithm)
 
-    if algo_info.solver_type == AggregationLevel.LIKELIHOOD:
+    algorithm = pre_process_user_algorithm(algorithm)
+    algorithm = algorithm.with_option_if_applicable(**algo_options)
+
+    if algorithm.algo_info.solver_type == AggregationLevel.LIKELIHOOD:
         if problem_type not in [
             AggregationLevel.LIKELIHOOD,
             AggregationLevel.LEAST_SQUARES,
@@ -408,7 +412,7 @@ def create_optimization_problem(
                 "Likelihood solvers can only be used with likelihood or least-squares "
                 "problems."
             )
-    if algo_info.solver_type == AggregationLevel.LEAST_SQUARES:
+    elif algorithm.algo_info.solver_type == AggregationLevel.LEAST_SQUARES:
         if problem_type != AggregationLevel.LEAST_SQUARES:
             raise InvalidFunctionError(
                 "Least-squares solvers can only be used with least-squares problems."
@@ -420,12 +424,14 @@ def create_optimization_problem(
 
     if jac is not None:
         jac = pre_process_derivatives(
-            candidate=jac, name="jac", solver_type=algo_info.solver_type
+            candidate=jac, name="jac", solver_type=algorithm.algo_info.solver_type
         )
 
     if fun_and_jac is not None:
         fun_and_jac = pre_process_derivatives(
-            candidate=fun_and_jac, name="fun_and_jac", solver_type=algo_info.solver_type
+            candidate=fun_and_jac,
+            name="fun_and_jac",
+            solver_type=algorithm.algo_info.solver_type,
         )
 
     # ==================================================================================
@@ -449,7 +455,9 @@ def create_optimization_problem(
         )
         fun_and_jac = deprecations.replace_dict_output(fun_and_jac)
 
-        fun_and_jac = enforce_return_type_with_jac(algo_info.solver_type)(fun_and_jac)
+        fun_and_jac = enforce_return_type_with_jac(algorithm.algo_info.solver_type)(
+            fun_and_jac
+        )
 
     # ==================================================================================
     # Check types of arguments
@@ -462,13 +470,13 @@ def create_optimization_problem(
         if not isinstance(fun, Callable):
             raise ValueError("fun must be a callable")
 
-        if not isinstance(algorithm, Callable | str):
-            raise ValueError("algorithm must be a callable or a string")
+        if not isinstance(algorithm, Algorithm):
+            raise ValueError("algorithm must be an Algorithm object.")
 
         if not isinstance(algo_options, dict | None):
             raise ValueError("algo_options must be a dictionary or None")
 
-        if not isinstance(algo_info, AlgoInfo):
+        if not isinstance(algorithm.algo_info, AlgoInfo):
             raise ValueError("algo_info must be an AlgoInfo object")
 
         if not isinstance(bounds, Bounds | None):
@@ -504,15 +512,6 @@ def create_optimization_problem(
         if not isinstance(collect_history, bool):
             raise ValueError("collect_history must be a boolean")
 
-        if not isinstance(direction, str) or direction not in ["minimize", "maximize"]:
-            raise ValueError("direction must be 'minimize' or 'maximize'")
-
-        if not isinstance(error_handling, str) or error_handling not in [
-            "raise",
-            "continue",
-        ]:
-            raise ValueError("error_handling must be 'raise' or 'continue'")
-
     # ==================================================================================
     # create the problem object
     # ==================================================================================
@@ -520,9 +519,7 @@ def create_optimization_problem(
     problem = OptimizationProblem(
         fun=fun,
         params=params,
-        algorithm=raw_algo,
-        algo_options=algo_options,
-        algo_info=algo_info,
+        algorithm=algorithm,
         bounds=bounds,
         constraints=constraints,
         jac=jac,
@@ -565,3 +562,24 @@ def pre_process_derivatives(candidate, name, solver_type):
         warnings.warn(msg)
 
     return out
+
+
+def pre_process_user_algorithm(
+    algorithm: str | Algorithm | Type[Algorithm],
+) -> Algorithm:
+    """Process the user specfied algorithm."""
+    if isinstance(algorithm, str):
+        try:
+            # Use ALL_ALGORITHMS and not just AVAILABLE_ALGORITHMS such that the
+            # algorithm specific error message with installation instruction will be
+            # reached if an optional dependency is not installed.
+            algorithm = ALL_ALGORITHMS[algorithm]()
+        except KeyError:
+            proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
+            raise ValueError(
+                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
+            ) from None
+    elif isinstance(algorithm, type) and issubclass(algorithm, Algorithm):
+        algorithm = algorithm()
+
+    return cast(Algorithm, algorithm)

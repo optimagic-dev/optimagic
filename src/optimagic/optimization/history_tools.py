@@ -1,13 +1,61 @@
+import warnings
+from dataclasses import dataclass
 from functools import partial
+from typing import Literal
 
 import numpy as np
+from numpy.typing import NDArray
 from pybaum import tree_just_flatten
 
+from optimagic.optimization.internal_optimization_problem import History
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import Direction
 
 
-def get_history_arrays(history, direction):
-    parhist = history["params"]
+@dataclass(frozen=True)
+class HistoryArrays:
+    fun: NDArray[np.float64]
+    params: NDArray[np.float64]
+    time: NDArray[np.float64]
+    monotone_fun: NDArray[np.float64]
+    is_accepted: NDArray[np.bool_]
+
+    @property
+    def criterion(self) -> NDArray[np.float64]:
+        msg = "The criterion attribute is deprecated in HistoryArrays."
+        warnings.warn(msg, FutureWarning)
+        return self.fun
+
+    @property
+    def monotone_criterion(self) -> NDArray[np.float64]:
+        msg = "The monotone_criterion attribute is deprecated in HistoryArrays."
+        warnings.warn(msg, FutureWarning)
+        return self.monotone_fun
+
+    def __getitem__(self, key: str) -> NDArray[np.float64] | NDArray[np.bool_]:
+        msg = "Dict access for HistoryArrays is deprecated."
+        warnings.warn(msg, FutureWarning)
+        return getattr(self, key)
+
+
+def get_history_arrays(
+    history: History, direction: Direction | Literal["minimize", "maximize"]
+) -> HistoryArrays:
+    # ==================================================================================
+    # Handle deprecations for now
+    # ==================================================================================
+    if direction not in ["minimize", "maximize"]:
+        msg = "Strings as direction argument are deprecated in get_history_arrays."
+        warnings.warn(msg, FutureWarning)
+
+    if direction == "minimize":
+        direction = Direction.MINIMIZE
+    elif direction == "maximize":
+        direction = Direction.MAXIMIZE
+
+    # ==================================================================================
+
+    parhist = history.params
     is_flat = (
         len(parhist) > 0 and isinstance(parhist[0], np.ndarray) and parhist[0].ndim == 1
     )
@@ -17,24 +65,24 @@ def get_history_arrays(history, direction):
         registry = get_registry(extended=True)
         to_internal = partial(tree_just_flatten, registry=registry)
 
-    critvals = np.array(history["criterion"])
+    critvals = np.array(history.fun)
 
-    params = np.array([to_internal(p) for p in history["params"]])
+    params = np.array([to_internal(p) for p in history.params])
 
-    runtimes = np.array(history["runtime"])
+    runtimes = np.array(history.time)
 
-    if direction == "minimize":
+    if direction == Direction.MINIMIZE:
         monotone = np.minimum.accumulate(critvals)
         is_accepted = critvals <= monotone
-    elif direction == "maximize":
+    elif direction == Direction.MAXIMIZE:
         monotone = np.maximum.accumulate(critvals)
         is_accepted = critvals >= monotone
 
-    out = {
-        "criterion": critvals,
-        "params": params,
-        "runtimes": runtimes,
-        "monotone_criterion": monotone,
-        "is_accepted": is_accepted,
-    }
+    out = HistoryArrays(
+        fun=critvals,
+        params=params,
+        time=runtimes,
+        monotone_fun=monotone,
+        is_accepted=is_accepted,
+    )
     return out
