@@ -389,11 +389,15 @@ def _get_stacked_local_histories(local_histories, history=None):
     append the best history at the end.
 
     """
-    # list of dicts to dict of lists
-    stacked = {key: [h[key] for h in local_histories] for key in local_histories[0]}
-    # flatten inner lists
-    stacked = {key: list(itertools.chain(*value)) for key, value in stacked.items()}
+    stacked = {"criterion": [], "params": [], "runtime": []}
+    for hist in local_histories:
+        stacked["criterion"].extend(hist.fun)
+        stacked["params"].extend(hist.params)
+        stacked["runtime"].extend(hist.time)
+
     # append additional history is necessary
     if history is not None:
-        stacked = {key: value + history[key] for key, value in stacked.items()}
+        stacked["criterion"].extend(history.fun)
+        stacked["params"].extend(history.params)
+        stacked["runtime"].extend(history.time)
     return stacked
