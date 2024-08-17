@@ -134,7 +134,7 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
         warnings.simplefilter("ignore")
         result = maximize(algorithm=algorithm, **kwargs[constr_type])
 
-    if AVAILABLE_ALGORITHMS[algorithm]._algorithm_info.is_global:
+    if AVAILABLE_ALGORITHMS[algorithm].__algo_info__.is_global:
         decimal = 0
     else:
         decimal = 4
