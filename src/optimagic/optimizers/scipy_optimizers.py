@@ -35,6 +35,7 @@ The following arguments are not supported as part of ``algo_options``:
 
 import functools
 from dataclasses import dataclass
+from typing import Any, Callable, Literal
 
 import numpy as np
 import scipy
@@ -638,6 +639,8 @@ class ScipyCOBYLA(Algorithm):
             fun=problem.fun,
             x0=x0,
             method="COBYLA",
+            # TODO: The previous version did not use `_get_scipy_constraints` here.
+            # Check if it should be used.
             constraints=_get_scipy_constraints(nonlinear_constraints),
             options=options,
             tol=self.convergence_xtol_rel,
@@ -701,8 +704,8 @@ class ScipyLSTRF(Algorithm):
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     relative_step_size_diff_approx: NonNegativeFloat | None = None
-    tr_solver: str | None = None
-    tr_solver_options: dict | None = None
+    tr_solver: Literal["exact", "lsmr"] | None = None
+    tr_solver_options: dict[str, Any] | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -748,8 +751,8 @@ class ScipyLSDogbox(Algorithm):
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     relative_step_size_diff_approx: NonNegativeFloat | None = None
-    tr_solver: str | None = None
-    tr_solver_options: dict | None = None
+    tr_solver: Literal["exact", "lsmr"] | None = None
+    tr_solver_options: dict[str, Any] | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -795,17 +798,10 @@ class ScipyLSLM(Algorithm):
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     relative_step_size_diff_approx: NonNegativeFloat | None = None
-    tr_solver: str | None = None
-    tr_solver_options: dict | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if self.tr_solver_options is None:
-            tr_solver_options = {}
-        else:
-            tr_solver_options = self.tr_solver_options
-
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
@@ -815,8 +811,61 @@ class ScipyLSLM(Algorithm):
             ftol=self.convergence_ftol_rel,
             gtol=self.convergence_gtol_rel,
             diff_step=self.relative_step_size_diff_approx,
-            tr_solver=self.tr_solver,
-            tr_options=tr_solver_options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
+@mark.minimizer(
+    name="scipy_truncated_newton",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyTruncatedNewton(Algorithm):
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    max_hess_evaluations_per_iteration: int = -1
+    max_step_for_line_search: NonNegativeFloat = 0
+    line_search_severity: float = -1
+    finite_difference_precision: NonNegativeFloat = 0
+    criterion_rescale_factor: float = -1
+    # TODO: Check type hint for `func_min_estimate`
+    func_min_estimate: float = 0
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "ftol": self.convergence_ftol_abs,
+            "xtol": self.convergence_xtol_abs,
+            "gtol": self.convergence_gtol_abs,
+            "maxfun": self.stopping_maxfun,
+            "maxCGit": self.max_hess_evaluations_per_iteration,
+            "stepmx": self.max_step_for_line_search,
+            "minfev": self.func_min_estimate,
+            "eta": self.line_search_severity,
+            "accuracy": self.finite_difference_precision,
+            "rescale": self.criterion_rescale_factor,
+        }
+
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun_and_jac,
+            x0=x0,
+            method="TNC",
+            jac=True,
+            bounds=_get_scipy_bounds(problem.bounds),
+            options=options,
         )
         res = process_scipy_result(raw_res)
         return res
@@ -873,6 +922,61 @@ def scipy_truncated_newton(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_trust_constr",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyTrustConstr(Algorithm):
+    # TODO: Check if can be set to CONVERGENCE_GTOL_ABS
+    convergence_gtol_abs: NonNegativeFloat = 1e-08
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    trustregion_initial_radius: PositiveFloat | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.trustregion_initial_radius is None:
+            trustregion_initial_radius = calculate_trustregion_initial_radius(x0)
+        else:
+            trustregion_initial_radius = self.trustregion_initial_radius
+
+        options = {
+            "gtol": self.convergence_gtol_abs,
+            "maxiter": self.stopping_maxiter,
+            "xtol": self.convergence_xtol_rel,
+            "initial_tr_radius": trustregion_initial_radius,
+        }
+
+        # cannot handle equality constraints
+        nonlinear_constraints = equality_as_inequality_constraints(
+            problem.nonlinear_constraints
+        )
+
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun_and_jac,
+            jac=True,
+            x0=x0,
+            method="trust-constr",
+            bounds=_get_scipy_bounds(problem.bounds),
+            # TODO: The previous version did not use `_get_scipy_constraints` here.
+            constraints=_get_scipy_constraints(nonlinear_constraints),
+            options=options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
 
 
 @mark_minimizer(name="scipy_trust_constr")
@@ -1072,6 +1176,88 @@ def scipy_ls_lm(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_basinhopping",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=True,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyBasinhopping(Algorithm):
+    local_algorithm: (
+        Literal[
+            "Nelder-Mead",
+            "Powell",
+            "CG",
+            "BFGS",
+            "Newton-CG",
+            "L-BFGS-B",
+            "TNC",
+            "COBYLA",
+            "SLSQP",
+            "trust-constr",
+            "dogleg",
+            "trust-ncg",
+            "trust-exact",
+            "trust-krylov",
+        ]
+        | Callable
+    ) = "L-BFGS-B"
+    n_local_optimizations: PositiveInt = 100
+    # TODO: Check if should be PositivFloat
+    temperature: NonNegativeFloat = 1.0
+    # TODO: Check if should be PositivFloat
+    stepsize: NonNegativeFloat = 0.5
+    local_algo_options: dict[str, Any] | None = None
+    take_step: Callable | None = None
+    accept_test: Callable | None = None
+    interval: PositiveInt = 50
+    convergence_n_unchanged_iterations: PositiveInt | None = None
+    seed: int | np.random.Generator | np.random.RandomState | None = None
+    target_accept_rate: PositiveFloat = 0.5
+    stepwise_factor: PositiveFloat = 0.9
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        n_local_optimizations = max(1, self.n_local_optimizations - 1)
+        if self.local_algo_options is None:
+            local_algo_options = {}
+        else:
+            local_algo_options = self.local_algo_options
+        minimizer_kwargs = {
+            "method": self.local_algorithm,
+            "bounds": _get_scipy_bounds(problem.bounds),
+            "jac": problem.jac,
+        }
+        minimizer_kwargs = {**minimizer_kwargs, **local_algo_options}
+
+        res = scipy.optimize.basinhopping(
+            func=problem.fun,
+            x0=x0,
+            minimizer_kwargs=minimizer_kwargs,
+            niter=n_local_optimizations,
+            T=self.temperature,
+            stepsize=self.stepsize,
+            take_step=self.take_step,
+            accept_test=self.accept_test,
+            interval=self.interval,
+            niter_success=self.convergence_n_unchanged_iterations,
+            seed=self.seed,
+            target_accept_rate=self.target_accept_rate,
+            stepwise_factor=self.stepwise_factor,
+        )
+
+        return process_scipy_result(res)
 
 
 @mark_minimizer(name="scipy_basinhopping", is_global=True)
