@@ -307,8 +307,6 @@ module = [
     "optimagic.visualization.slice_plot",
 
     "optimagic",
-    "optimagic.batch_evaluators",
-    "optimagic.cli",
     "optimagic.decorators",
     "optimagic.exceptions",
     "optimagic.utilities",

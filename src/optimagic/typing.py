@@ -10,18 +10,6 @@ Scalar = Any
 T = TypeVar("T")
 
 
-class BatchEvaluator(Protocol):
-    def __call__(
-        self,
-        func: Callable[..., T],
-        arguments: list[Any],
-        n_cores: int = 1,
-        error_handling: Literal["raise", "continue"] = "continue",
-        unpack_symbol: Literal["*", "**"] | None = None,
-    ) -> list[T]:
-        pass
-
-
 class AggregationLevel(Enum):
     """Enum to specify the aggregation level of objective functions and solvers."""
 
@@ -52,6 +40,19 @@ class EvalTask(Enum):
     JAC = "jac"
     FUN_AND_JAC = "fun_and_jac"
     EXPLORATION = "exploration"
+
+
+class BatchEvaluator(Protocol):
+    def __call__(
+        self,
+        func: Callable[..., T],
+        arguments: list[Any],
+        n_cores: int = 1,
+        error_handling: ErrorHandling
+        | Literal["raise", "continue"] = ErrorHandling.CONTINUE,
+        unpack_symbol: Literal["*", "**"] | None = None,
+    ) -> list[T]:
+        pass
 
 
 PositiveInt = Annotated[int, Gt(0)]
