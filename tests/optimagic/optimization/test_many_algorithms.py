@@ -5,7 +5,6 @@
 
 """
 
-import inspect
 import sys
 
 import numpy as np
@@ -30,6 +29,7 @@ BOUNDED_ALGORITHMS = []
 for name, algo in LOCAL_ALGORITHMS.items():
     if algo.__algo_info__.supports_bounds:
         BOUNDED_ALGORITHMS.append(name)
+
 
 @mark.least_squares
 def sos(x):
