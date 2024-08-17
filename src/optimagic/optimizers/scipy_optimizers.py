@@ -38,6 +38,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy
+import scipy.optimize
 from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 from scipy.optimize import NonlinearConstraint
@@ -70,7 +71,12 @@ from optimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
     vector_as_list_of_scalar_constraints,
 )
-from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
+from optimagic.typing import (
+    AggregationLevel,
+    NonNegativeFloat,
+    PositiveFloat,
+    PositiveInt,
+)
 from optimagic.utilities import calculate_trustregion_initial_radius
 
 
@@ -157,6 +163,46 @@ def scipy_lbfgsb(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_slsqp",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipySLSQP(Algorithm):
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "maxiter": self.stopping_maxiter,
+            "ftol": self.convergence_ftol_abs,
+        }
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun,
+            x0=x0,
+            method="SLSQP",
+            jac=problem.jac,
+            bounds=_get_scipy_bounds(problem.bounds),
+            # TODO: The previous version did not use `_get_scipy_constraints` here.
+            # Check if it should be used.
+            constraints=_get_scipy_constraints(problem.nonlinear_constraints),
+            options=options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
 
 
 @mark_minimizer(name="scipy_slsqp")
@@ -277,6 +323,46 @@ class ScipyNelderMead(Algorithm):
         return res
 
 
+@mark.minimizer(
+    name="scipy_powell",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyPowell(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "xtol": self.convergence_xtol_rel,
+            "ftol": self.convergence_ftol_rel,
+            "maxfev": self.stopping_maxfun,
+            "maxiter": self.stopping_maxiter,
+        }
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun,
+            x0=x0,
+            method="Powell",
+            bounds=_get_scipy_bounds(problem.bounds),
+            options=options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
 @mark_minimizer(name="scipy_powell", needs_scaling=True)
 def scipy_powell(
     criterion,
@@ -313,6 +399,40 @@ def scipy_powell(
     return process_scipy_result_old(res)
 
 
+@mark.minimizer(
+    name="scipy_bfgs",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyBFGS(Algorithm):
+    convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    norm: NonNegativeFloat = np.inf
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "gtol": self.convergence_gtol_abs,
+            "maxiter": self.stopping_maxiter,
+            "norm": self.norm,
+        }
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun_and_jac, x0=x0, method="BFGS", jac=True, options=options
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
 @mark_minimizer(name="scipy_bfgs")
 def scipy_bfgs(
     criterion_and_derivative,
@@ -343,6 +463,40 @@ def scipy_bfgs(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_conjugate_gradient",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyConjugateGradient(Algorithm):
+    convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    norm: NonNegativeFloat = np.inf
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "gtol": self.convergence_gtol_abs,
+            "maxiter": self.stopping_maxiter,
+            "norm": self.norm,
+        }
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun_and_jac, x0=x0, method="CG", jac=True, options=options
+        )
+        res = process_scipy_result(raw_res)
+        return res
 
 
 @mark_minimizer(name="scipy_conjugate_gradient")
@@ -377,6 +531,42 @@ def scipy_conjugate_gradient(
     return process_scipy_result_old(res)
 
 
+@mark.minimizer(
+    name="scipy_newton_cg",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyNewtonCG(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        options = {
+            "xtol": self.convergence_xtol_rel,
+            "maxiter": self.stopping_maxiter,
+        }
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun_and_jac,
+            x0=x0,
+            method="Newton-CG",
+            jac=True,
+            options=options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
 @mark_minimizer(name="scipy_newton_cg")
 def scipy_newton_cg(
     criterion_and_derivative,
@@ -405,6 +595,55 @@ def scipy_newton_cg(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_cobyla",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyCOBYLA(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    trustregion_initial_radius: PositiveFloat | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.trustregion_initial_radius is None:
+            radius = calculate_trustregion_initial_radius(x0)
+        else:
+            radius = self.trustregion_initial_radius
+
+        options = {
+            "maxiter": self.stopping_maxiter,
+            "rhobeg": radius,
+        }
+
+        # cannot handle equality constraints
+        nonlinear_constraints = equality_as_inequality_constraints(
+            problem.nonlinear_constraints
+        )
+
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun,
+            x0=x0,
+            method="COBYLA",
+            constraints=_get_scipy_constraints(nonlinear_constraints),
+            options=options,
+            tol=self.convergence_xtol_rel,
+        )
+        res = process_scipy_result(raw_res)
+        return res
 
 
 @mark_minimizer(name="scipy_cobyla", needs_scaling=True)
@@ -441,6 +680,146 @@ def scipy_cobyla(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_ls_trf",
+    solver_type=AggregationLevel.LEAST_SQUARES,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyLSTRF(Algorithm):
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    relative_step_size_diff_approx: NonNegativeFloat | None = None
+    tr_solver: str | None = None
+    tr_solver_options: dict | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.tr_solver_options is None:
+            tr_solver_options = {}
+        else:
+            tr_solver_options = self.tr_solver_options
+
+        raw_res = scipy.optimize.least_squares(
+            fun=problem.fun,
+            x0=x0,
+            jac=problem.jac,
+            bounds=(problem.bounds.lower, problem.bounds.upper),
+            method="trf",
+            max_nfev=self.stopping_maxfun,
+            ftol=self.convergence_ftol_rel,
+            gtol=self.convergence_gtol_rel,
+            diff_step=self.relative_step_size_diff_approx,
+            tr_solver=self.tr_solver,
+            tr_options=tr_solver_options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
+@mark.minimizer(
+    name="scipy_ls_dogbox",
+    solver_type=AggregationLevel.LEAST_SQUARES,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyLSDogbox(Algorithm):
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    relative_step_size_diff_approx: NonNegativeFloat | None = None
+    tr_solver: str | None = None
+    tr_solver_options: dict | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.tr_solver_options is None:
+            tr_solver_options = {}
+        else:
+            tr_solver_options = self.tr_solver_options
+
+        raw_res = scipy.optimize.least_squares(
+            fun=problem.fun,
+            x0=x0,
+            jac=problem.jac,
+            bounds=(problem.bounds.lower, problem.bounds.upper),
+            method="dogbox",
+            max_nfev=self.stopping_maxfun,
+            ftol=self.convergence_ftol_rel,
+            gtol=self.convergence_gtol_rel,
+            diff_step=self.relative_step_size_diff_approx,
+            tr_solver=self.tr_solver,
+            tr_options=tr_solver_options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
+@mark.minimizer(
+    name="scipy_ls_lm",
+    solver_type=AggregationLevel.LEAST_SQUARES,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyLSLM(Algorithm):
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    relative_step_size_diff_approx: NonNegativeFloat | None = None
+    tr_solver: str | None = None
+    tr_solver_options: dict | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.tr_solver_options is None:
+            tr_solver_options = {}
+        else:
+            tr_solver_options = self.tr_solver_options
+
+        raw_res = scipy.optimize.least_squares(
+            fun=problem.fun,
+            x0=x0,
+            jac=problem.jac,
+            method="lm",
+            max_nfev=self.stopping_maxfun,
+            ftol=self.convergence_ftol_rel,
+            gtol=self.convergence_gtol_rel,
+            diff_step=self.relative_step_size_diff_approx,
+            tr_solver=self.tr_solver,
+            tr_options=tr_solver_options,
+        )
+        res = process_scipy_result(raw_res)
+        return res
 
 
 @mark_minimizer(name="scipy_truncated_newton")
@@ -562,7 +941,7 @@ def process_scipy_result_old(scipy_results_obj):
 def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResult:
     res = InternalOptimizeResult(
         x=scipy_res.x,
-        fun=float(scipy_res.fun),
+        fun=scipy_res.fun,
         success=bool(scipy_res.success),
         message=str(scipy_res.message),
         n_fun_evals=scipy_res.get("nfev"),
