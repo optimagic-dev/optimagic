@@ -197,9 +197,7 @@ class ScipySLSQP(Algorithm):
             method="SLSQP",
             jac=problem.jac,
             bounds=_get_scipy_bounds(problem.bounds),
-            # TODO: The previous version did not use `_get_scipy_constraints` here.
-            # Check if it should be used.
-            constraints=_get_scipy_constraints(problem.nonlinear_constraints),
+            constraints=problem.nonlinear_constraints,
             options=options,
         )
         res = process_scipy_result(raw_res)
@@ -639,9 +637,7 @@ class ScipyCOBYLA(Algorithm):
             fun=problem.fun,
             x0=x0,
             method="COBYLA",
-            # TODO: The previous version did not use `_get_scipy_constraints` here.
-            # Check if it should be used.
-            constraints=_get_scipy_constraints(nonlinear_constraints),
+            constraints=nonlinear_constraints,
             options=options,
             tol=self.convergence_xtol_rel,
         )
@@ -971,7 +967,6 @@ class ScipyTrustConstr(Algorithm):
             x0=x0,
             method="trust-constr",
             bounds=_get_scipy_bounds(problem.bounds),
-            # TODO: The previous version did not use `_get_scipy_constraints` here.
             constraints=_get_scipy_constraints(nonlinear_constraints),
             options=options,
         )
