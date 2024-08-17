@@ -53,9 +53,21 @@ def get_history_arrays(
     elif direction == "maximize":
         direction = Direction.MAXIMIZE
 
+    if isinstance(history, dict):
+        msg = "Dict input for history argument is deprecated in get_history_arrays."
+        warnings.warn(msg, FutureWarning)
+
+        parhist = history["params"]
+        funhist = history["criterion"]
+        timehist = history["runtime"]
+
+    else:
+        parhist = history.params
+        funhist = history.fun
+        timehist = history.time
+
     # ==================================================================================
 
-    parhist = history.params
     is_flat = (
         len(parhist) > 0 and isinstance(parhist[0], np.ndarray) and parhist[0].ndim == 1
     )
@@ -65,11 +77,11 @@ def get_history_arrays(
         registry = get_registry(extended=True)
         to_internal = partial(tree_just_flatten, registry=registry)
 
-    critvals = np.array(history.fun)
+    critvals = np.array(funhist)
 
-    params = np.array([to_internal(p) for p in history.params])
+    params = np.array([to_internal(p) for p in parhist])
 
-    runtimes = np.array(history.time)
+    runtimes = np.array(timehist)
 
     if direction == Direction.MINIMIZE:
         monotone = np.minimum.accumulate(critvals)

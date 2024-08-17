@@ -203,6 +203,22 @@ class InternalOptimizationProblem:
 
         return fun_and_jac_values
 
+    def exploration_fun(
+        self, x: list[NDArray[np.float64]], n_cores: int
+    ) -> list[float]:
+        batch_result = self._batch_evaluator(
+            func=self._evaluate_exploration_fun,
+            arguments=x,
+            n_cores=n_cores,
+            # This should always be raise because errors are already handled
+            error_handling="raise",
+        )
+        fun_values = [result[0] for result in batch_result]
+        hist_entries = [result[1] for result in batch_result]
+        self._history.add_batch(hist_entries)
+
+        return fun_values
+
     def with_new_history(self) -> Self:
         new = copy(self)
         new._history = History()
@@ -265,6 +281,15 @@ class InternalOptimizationProblem:
         # TODO: process and log the log_entry
 
         return jac_value, hist_entry
+
+    def _evaluate_exploration_fun(
+        self, x: NDArray[np.float64]
+    ) -> tuple[float, HistoryEntry]:
+        fun_value, hist_entry, log_entry = self._pure_exploration_fun(x)
+
+        # TODO: log the log_entry
+
+        return fun_value, hist_entry
 
     def _evaluate_fun_and_jac(
         self, x: NDArray[np.float64]
@@ -455,6 +480,53 @@ class InternalOptimizationProblem:
         log_entry = LogEntry()
 
         return (algo_fun_value, jac_value), hist_entry, log_entry
+
+    def _pure_exploration_fun(
+        self, x: NDArray[np.float64]
+    ) -> tuple[float, HistoryEntry, LogEntry]:
+        now = time.perf_counter()
+        params = self._converter.params_from_internal(x)
+        is_error = False
+        try:
+            fun_value = self._fun(params)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            tb = get_traceback()
+            is_error = True
+            msg = (
+                "The following exception was caught when evaluating fun during the "
+                "exploration phase of a multistart optimization. The fun value was "
+                "replaced by a penalty value to continue with the "
+                f"optimization.:\n\n{tb}"
+            )
+            warnings.warn(msg)
+            fun_value, _ = self._error_penalty_func(x)
+
+        if not is_error:
+            algo_fun_value, hist_fun_value = _process_fun_value(
+                value=fun_value,
+                # For exploration we always need a scalar value
+                solver_type=AggregationLevel.SCALAR,
+                direction=self._direction,
+            )
+        else:
+            algo_fun_value = -np.inf
+            hist_fun_value = -np.inf
+            if self._direction == Direction.MAXIMIZE:
+                hist_fun_value = np.inf
+
+        hist_entry = HistoryEntry(
+            params=params,
+            fun=hist_fun_value,
+            time=now,
+            task=EvalTask.EXPLORATION,
+        )
+
+        # TODO: Create actual log entry
+        log_entry = LogEntry()
+
+        return cast(float, algo_fun_value), hist_entry, log_entry
 
     def _pure_evaluate_fun_and_jac(
         self, x: NDArray[np.float64]

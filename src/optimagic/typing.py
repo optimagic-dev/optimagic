@@ -51,6 +51,7 @@ class EvalTask(Enum):
     FUN = "fun"
     JAC = "jac"
     FUN_AND_JAC = "fun_and_jac"
+    EXPLORATION = "exploration"
 
 
 PositiveInt = Annotated[int, Gt(0)]

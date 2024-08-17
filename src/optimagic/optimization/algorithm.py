@@ -81,6 +81,7 @@ class InternalOptimizeResult:
     max_constraint_violation: float | None = None
     info: dict[str, typing.Any] | None = None
     history: History | None = None
+    multistart_info: dict[str, typing.Any] | None = None
 
     def __post_init__(self) -> None:
         report: list[str] = []
