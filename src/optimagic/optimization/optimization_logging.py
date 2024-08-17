@@ -1,11 +1,11 @@
 from typing import Any
 
-from optimagic.logging.logger import Logger
+from optimagic.logging.logger import LogStore
 from optimagic.logging.types import StepResult, StepStatus
 
 
 def log_scheduled_steps_and_get_ids(
-    steps: list[dict[str, Any]], logging: Logger | None
+    steps: list[dict[str, Any]], logging: LogStore | None
 ) -> list[int | None]:
     """Add scheduled steps to the steps table of the database and get their ids.
 

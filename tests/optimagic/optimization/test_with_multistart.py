@@ -8,7 +8,7 @@ from optimagic.examples.criterion_functions import (
     sos_ls,
     sos_scalar,
 )
-from optimagic.logging.logger import SQLiteLogger
+from optimagic.logging import SQLiteLogReader
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.bounds import Bounds
@@ -97,22 +97,22 @@ def test_convergence_via_max_discoveries_works(params):
     assert len(res.multistart_info.local_optima) == 2
 
 
-def test_steps_are_logged_as_skipped_if_convergence(params):
+def test_steps_are_logged_as_skipped_if_convergence(tmp_path, params):
     options = om.MultistartOptions(
         n_samples=10 * len(params),
         convergence_xtol_rel=np.inf,
         convergence_max_discoveries=2,
     )
-
+    path = tmp_path / "logging.db"
     minimize(
         fun=sos_ls,
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=options,
-        logging="logging.db",
+        logging=path,
     )
 
-    steps_table = SQLiteLogger("logging.db").step_store.to_df()
+    steps_table = SQLiteLogReader.from_path(path)._step_store.to_df()
     expected_status = ["complete", "complete", "complete", "skipped", "skipped"]
     assert steps_table["status"].tolist() == expected_status
 
@@ -131,8 +131,8 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
         logging="logging.db",
     )
 
-    logging = SQLiteLogger("logging.db")
-    iterations = logging.iteration_store.to_df()
+    logging = SQLiteLogReader.from_path("logging.db")
+    iterations = logging._iteration_store.to_df()
 
     present_steps = set(iterations["step"])
 

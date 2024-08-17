@@ -12,7 +12,6 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.schema import MetaData
 
-from optimagic.exceptions import TableExistsError
 from optimagic.logging.base import (
     InputType,
     NonUpdatableKeyValueStore,
@@ -23,7 +22,6 @@ from optimagic.logging.base import (
 from optimagic.logging.types import (
     CriterionEvaluationResult,
     CriterionEvaluationWithId,
-    ExistenceStrategy,
     ProblemInitialization,
     ProblemInitializationWithId,
     StepResult,
@@ -98,29 +96,16 @@ class TableConfig:
         table_name: The name of the table.
         columns: A list of SQLAlchemy Column objects defining the table schema.
         primary_key: The name of the primary key column.
-        if_table_exists: Strategy for handling existing tables (default: 'extend').
 
     """
 
     table_name: str
     columns: list[sql.Column[Any]]
     primary_key: str
-    if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND
 
     @property
     def column_names(self) -> list[str]:
         return [c.name for c in self.columns]
-
-    def _handle_existing_table(self, metadata: MetaData, engine: Engine) -> None:
-        if self.table_name in metadata.tables:
-            if self.if_table_exists is ExistenceStrategy.REPLACE:
-                warnings.warn(
-                    f"Replacing existing table {self.table_name} due to "
-                    f"{self.if_table_exists=}"
-                )
-                metadata.tables[self.table_name].drop(engine)
-            elif self.if_table_exists is ExistenceStrategy.RAISE:
-                raise TableExistsError(f"The table {self.table_name} already exists.")
 
     def create_table(self, metadata: MetaData, engine: Engine) -> sql.Table:
         """Create or reflect the table in the database.
@@ -134,7 +119,6 @@ class TableConfig:
 
         """
         metadata.reflect(engine)
-        self._handle_existing_table(metadata, engine)
         table = sql.Table(
             self.table_name, metadata, *self.columns, extend_existing=True
         )
@@ -217,7 +201,8 @@ class _SQLAlchemyStoreMixin:
 
 
 class SQLAlchemySimpleStore(
-    NonUpdatableKeyValueStore[InputType, OutputType], _SQLAlchemyStoreMixin
+    NonUpdatableKeyValueStore[InputType, OutputType],
+    _SQLAlchemyStoreMixin,
 ):
     """A simple SQLAlchemy-based key-value store that does not support updates.
 
@@ -241,16 +226,13 @@ class SQLAlchemySimpleStore(
         db_config: SQLAlchemyConfig,
         input_type: Type[InputType],
         output_type: Type[OutputType],
-        if_table_exists: ExistenceStrategy = ExistenceStrategy.RAISE,
     ):
         super().__init__(input_type, output_type, primary_key)
         columns = [
             sql.Column(primary_key, sql.Integer, primary_key=True, autoincrement=True),
             sql.Column(self._value_column, sql.PickleType(pickler=RobustPickler)),  # type:ignore
         ]
-        table_config = TableConfig(
-            table_name, columns, self.primary_key, if_table_exists=if_table_exists
-        )
+        table_config = TableConfig(table_name, columns, self.primary_key)
 
         _SQLAlchemyStoreMixin.__init__(self, db_config, table_config)
 
@@ -258,7 +240,7 @@ class SQLAlchemySimpleStore(
         self,
     ) -> tuple[
         Type[SQLAlchemySimpleStore[Any, Any]],
-        tuple[str, str, SQLAlchemyConfig, Type[Any], Type[Any], ExistenceStrategy],
+        tuple[str, str, SQLAlchemyConfig, Type[Any], Type[Any]],
     ]:
         return SQLAlchemySimpleStore, (
             self.table_name,
@@ -266,7 +248,6 @@ class SQLAlchemySimpleStore(
             self._db_config,
             self._input_type,
             self._output_type,
-            self._table_config.if_table_exists,
         )
 
     def insert(self, value: InputType) -> None:
@@ -413,7 +394,6 @@ class IterationStore(
     def __init__(
         self,
         db_config: SQLAlchemyConfig,
-        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
         super().__init__(
             self._TABLE_NAME,
@@ -421,7 +401,6 @@ class IterationStore(
             db_config,
             CriterionEvaluationResult,
             CriterionEvaluationWithId,
-            if_table_exists=if_table_exists,
         )
 
 
@@ -440,7 +419,6 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
     def __init__(
         self,
         db_config: SQLAlchemyConfig,
-        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
@@ -454,7 +432,6 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
             self._TABLE_NAME,
             cast(list[Column[Any]], columns),
             self._PRIMARY_KEY,
-            if_table_exists,
         )
 
         super().__init__(
@@ -483,7 +460,6 @@ class ProblemStore(
     def __init__(
         self,
         db_config: SQLAlchemyConfig,
-        if_table_exists: ExistenceStrategy = ExistenceStrategy.EXTEND,
     ):
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
@@ -495,7 +471,6 @@ class ProblemStore(
             self._TABLE_NAME,
             cast(list[Column[Any]], columns),
             self._PRIMARY_KEY,
-            if_table_exists,
         )
 
         super().__init__(

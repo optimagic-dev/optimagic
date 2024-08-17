@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import os
 import warnings
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Generic, Type, TypeVar, cast
 
 import numpy as np
 import pandas as pd
@@ -38,21 +41,31 @@ from optimagic.typing import (
 )
 
 
-class Logger:
-    """A logger class that manages and retrieves optimization and exploration data.
+class LogOptions:
+    """Base class for defining different log options.
 
-    This class handles storing and retrieving iterations, steps, and problem
-    initialization data using various stores.
-    It provides methods to read iteration history, retrieve
-    specific iterations, and handle multistart optimization history.
-
-    Args:
-        iteration_store: A non-updatable store for iteration data.
-        step_store: An updatable store for step data.
-        problem_store: An updatable store for problem initialization data.
+    Serves as a registry for implemented option classes for better discoverability.
 
     """
 
+    _subclass_registry: list[Type[LogOptions]] = []
+
+    def __init_subclass__(
+        cls: Type[LogOptions], abstract: bool = False, **kwargs: dict[Any, Any]
+    ):
+        if not abstract:
+            LogOptions._subclass_registry.append(cls)
+        super().__init_subclass__(**kwargs)
+
+    @classmethod
+    def available_option_types(cls) -> list[Type[LogOptions]]:
+        return cls._subclass_registry
+
+
+_LogOptionsType = TypeVar("_LogOptionsType", bound=LogOptions)
+
+
+class LogReader(Generic[_LogOptionsType], ABC):
     def __init__(
         self,
         iteration_store: NonUpdatableKeyValueStore[
@@ -63,9 +76,27 @@ class Logger:
             ProblemInitialization, ProblemInitializationWithId
         ],
     ):
-        self.step_store = step_store
-        self.iteration_store = iteration_store
-        self.problem_store = problem_store
+        self._step_store = step_store
+        self._iteration_store = iteration_store
+        self._problem_store = problem_store
+
+    @classmethod
+    def from_options(cls, log_options: LogOptions) -> LogReader[_LogOptionsType]:
+        log_reader_class = _LOG_OPTION_LOG_READER_REGISTRY.get(type(log_options), None)
+
+        if log_reader_class is None:
+            raise ValueError(
+                f"No LogReader implementation found for type "
+                f"{type(log_options)}. Available option types: "
+                f"\n {list(_LOG_OPTION_LOG_READER_REGISTRY.keys())}"
+            )
+
+        return log_reader_class.create(log_options)
+
+    @classmethod
+    @abstractmethod
+    def create(cls, log_options: _LogOptionsType) -> LogReader[_LogOptionsType]:
+        pass
 
     def read_iteration(self, iteration: int) -> CriterionEvaluationWithId:
         """Read a specific iteration from the iteration store.
@@ -84,7 +115,7 @@ class Logger:
             rowid = iteration + 1
         else:
             try:
-                last_row = self.iteration_store.select_last_rows(1)
+                last_row = self._iteration_store.select_last_rows(1)
                 highest_rowid = last_row[0].rowid
             except IndexError as e:
                 raise IndexError(
@@ -95,7 +126,7 @@ class Logger:
             assert highest_rowid is not None
             rowid = highest_rowid + iteration + 1
 
-        row_list = self.iteration_store.select(rowid)
+        row_list = self._iteration_store.select(rowid)
 
         if len(row_list) == 0:
             raise IndexError(f"Invalid iteration requested: {iteration}")
@@ -112,7 +143,7 @@ class Logger:
                 criterion values, and runtimes.
 
         """
-        raw_res = self.iteration_store.select()
+        raw_res = self._iteration_store.select()
         params_list = []
         criterion_list = []
         runtime_list = []
@@ -136,8 +167,8 @@ class Logger:
         return direction
 
     def _build_history_dataframe(self) -> pd.DataFrame:
-        steps = self.step_store.to_df()
-        raw_res = self.iteration_store.select()
+        steps = self._step_store.to_df()
+        raw_res = self._iteration_store.select()
 
         history: dict[str, list[Any]] = {
             "params": [],
@@ -159,11 +190,11 @@ class Logger:
 
         df = pd.DataFrame(history)
         df = df.merge(
-            steps[[f"{self.step_store.primary_key}", "type"]],
+            steps[[f"{self._step_store.primary_key}", "type"]],
             left_on="step",
-            right_on=f"{self.step_store.primary_key}",
+            right_on=f"{self._step_store.primary_key}",
         )
-        return df.drop(columns=f"{self.step_store.primary_key}")
+        return df.drop(columns=f"{self._step_store.primary_key}")
 
     @staticmethod
     def _split_exploration_and_optimization(
@@ -265,10 +296,69 @@ class Logger:
             A pytree object representing the start parameter.
 
         """
-        return self.problem_store.select(1)[0].params
+        return self._problem_store.select(1)[0].params
 
 
-class SQLiteConfig(SQLAlchemyConfig):
+_LogReaderType = TypeVar("_LogReaderType", bound=LogReader[Any])
+
+
+class LogStore(Generic[_LogOptionsType, _LogReaderType], ABC):
+    """A logger class that manages and retrieves optimization and exploration data.
+
+    This class handles storing and retrieving iterations, steps, and problem
+    initialization data using various stores.
+    It provides methods to read iteration history, retrieve
+    specific iterations, and handle multistart optimization history.
+
+    Args:
+        iteration_store: A non-updatable store for iteration data.
+        step_store: An updatable store for step data.
+        problem_store: An updatable store for problem initialization data.
+
+    """
+
+    def __init__(
+        self,
+        iteration_store: NonUpdatableKeyValueStore[
+            CriterionEvaluationResult, CriterionEvaluationWithId
+        ],
+        step_store: UpdatableKeyValueStore[StepResult, StepResultWithId],
+        problem_store: UpdatableKeyValueStore[
+            ProblemInitialization, ProblemInitializationWithId
+        ],
+    ):
+        self.step_store = step_store
+        self.iteration_store = iteration_store
+        self.problem_store = problem_store
+
+    @classmethod
+    def from_options(
+        cls, log_options: LogOptions
+    ) -> LogStore[_LogOptionsType, _LogReaderType]:
+        logger_class = _LOG_OPTION_LOGGER_REGISTRY.get(type(log_options), None)
+
+        if logger_class is None:
+            raise ValueError(
+                f"No Logger implementation found for type "
+                f"{type(log_options)}. Available option types: "
+                f"\n {list(_LOG_OPTION_LOGGER_REGISTRY.keys())}"
+            )
+
+        return logger_class.create(log_options)
+
+    @classmethod
+    @abstractmethod
+    def create(
+        cls, log_options: _LogOptionsType
+    ) -> LogStore[_LogOptionsType, _LogReaderType]:
+        pass
+
+    @abstractmethod
+    def as_reader(self) -> _LogReaderType:
+        pass
+
+
+class SQLiteLogOptions(SQLAlchemyConfig, LogOptions):
     """Configuration class for setting up an SQLite database with SQLAlchemy.
 
     This class extends the `SQLAlchemyConfig` class to configure an SQLite database.
@@ -296,42 +386,17 @@ class SQLiteConfig(SQLAlchemyConfig):
         if_database_exists: ExistenceStrategy
         | ExistenceStrategyLiteral = ExistenceStrategy.RAISE,
     ):
-        self._handle_existing_database(path, if_database_exists)
         url = f"sqlite:///{path}"
         self._fast_logging = fast_logging
-        super().__init__(url)
-
-    @staticmethod
-    def _handle_existing_database(
-        path: str | Path,
-        if_database_exists: ExistenceStrategy | ExistenceStrategyLiteral,
-    ) -> None:
+        self._path = path
         if isinstance(if_database_exists, str):
             if_database_exists = ExistenceStrategy(if_database_exists)
-        database_exists = os.path.exists(path)
-        if database_exists:
-            if if_database_exists is ExistenceStrategy.RAISE:
-                raise FileExistsError(
-                    f"The database at {path} already exists. To reuse and extend "
-                    f"the existing database, set if_database_exists to "
-                    f"ExistenceStrategy.EXTEND."
-                )
-            elif if_database_exists is ExistenceStrategy.REPLACE:
-                try:
-                    os.remove(path)
-                    warnings.warn(
-                        f"Existing database file at {path} removed due to "
-                        f"if_database_exists=ExistenceStrategy.REPLACE."
-                    )
-                except PermissionError as e:
-                    msg = (
-                        f"Failed to remove file {path}. "
-                        f"In particular, this can happen on Windows "
-                        f"machines, when a different process is accessing the file, "
-                        f"which results in a PermissionError. In this case, delete"
-                        f"the file manually."
-                    )
-                    raise RuntimeError(msg) from e
+        self.if_database_exists = if_database_exists
+        super().__init__(url)
+
+    @property
+    def path(self) -> str | Path:
+        return self._path
 
     def create_engine(self) -> Engine:
         engine = sql.create_engine(self.url)
@@ -375,40 +440,79 @@ class SQLiteConfig(SQLAlchemyConfig):
             cursor.close()
 
 
-class SQLiteLogger(Logger):
-    """A logger class that stores and manages optimization and exploration data using
-    SQLite. It supports different strategies for handling existing tables and databases,
-    such as extending, replacing, or raising an error.
+class SQLiteLogReader(LogReader[SQLiteLogOptions]):
+    @classmethod
+    def create(cls, log_options: SQLiteLogOptions) -> SQLiteLogReader:
+        iteration_store = IterationStore(log_options)
+        step_store = StepStore(log_options)
+        problem_store = ProblemStore(log_options)
+        return cls(iteration_store, step_store, problem_store)
 
-    Args:
-        path: The file path to the SQLite database.
-        fast_logging: A boolean indicating whether to use fast logging mode.
-        if_table_exists: Strategy for handling existing tables.
-            Can be 'extend', 'replace', or 'raise'.
-        if_database_exists: Strategy for handling the existing database file.
-            Can be 'extend', 'replace', or 'raise'.
+    @classmethod
+    def from_path(cls, path: str | Path) -> SQLiteLogReader:
+        log_option = SQLiteLogOptions(path, if_database_exists=ExistenceStrategy.EXTEND)
+        return cls.create(log_option)
+
+
+class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
+    """A logger class that stores and manages optimization and exploration data using
+    SQLite.
+
+    It supports different strategies for handling existing tables and databases, such as
+    extending, replacing, or raising an error.
 
     """
 
-    def __init__(
-        self,
+    @staticmethod
+    def _handle_existing_database(
         path: str | Path,
-        fast_logging: bool = False,
-        if_table_exists: ExistenceStrategy
-        | ExistenceStrategyLiteral = ExistenceStrategy.EXTEND,
-        if_database_exists: ExistenceStrategy
-        | ExistenceStrategyLiteral = ExistenceStrategy.EXTEND,
-    ):
-        if isinstance(if_table_exists, str):
-            if_table_exists = ExistenceStrategy(if_table_exists)
-
+        if_database_exists: ExistenceStrategy | ExistenceStrategyLiteral,
+    ) -> None:
         if isinstance(if_database_exists, str):
             if_database_exists = ExistenceStrategy(if_database_exists)
+        database_exists = os.path.exists(path)
+        if database_exists:
+            if if_database_exists is ExistenceStrategy.RAISE:
+                raise FileExistsError(
+                    f"The database at {path} already exists. To reuse and extend "
+                    f"the existing database, set if_database_exists to "
+                    f"ExistenceStrategy.EXTEND."
+                )
+            elif if_database_exists is ExistenceStrategy.REPLACE:
+                try:
+                    os.remove(path)
+                    warnings.warn(
+                        f"Existing database file at {path} removed due to "
+                        f"if_database_exists=ExistenceStrategy.REPLACE."
+                    )
+                except PermissionError as e:
+                    msg = (
+                        f"Failed to remove file {path}. "
+                        f"In particular, this can happen on Windows "
+                        f"machines, when a different process is accessing the file, "
+                        f"which results in a PermissionError. In this case, delete"
+                        f"the file manually."
+                    )
+                    raise RuntimeError(msg) from e
 
-        db_config = SQLiteConfig(
-            path, fast_logging=fast_logging, if_database_exists=if_database_exists
+    @classmethod
+    def create(cls, log_options: SQLiteLogOptions) -> _SQLiteLogStore:
+        cls._handle_existing_database(log_options.path, log_options.if_database_exists)
+
+        iteration_store = IterationStore(log_options)
+        step_store = StepStore(log_options)
+        problem_store = ProblemStore(log_options)
+        return cls(iteration_store, step_store, problem_store)
+
+    def as_reader(self) -> SQLiteLogReader:
+        return SQLiteLogReader(
+            self.iteration_store, self.step_store, self.problem_store
         )
-        iteration_store = IterationStore(db_config, if_table_exists=if_table_exists)
-        step_store = StepStore(db_config, if_table_exists=if_table_exists)
-        problem_store = ProblemStore(db_config, if_table_exists=if_table_exists)
-        super().__init__(iteration_store, step_store, problem_store)
+
+
+_LOG_OPTION_LOGGER_REGISTRY: dict[Type[LogOptions], Type[LogStore[Any, Any]]] = {
+    SQLiteLogOptions: _SQLiteLogStore
+}
+_LOG_OPTION_LOG_READER_REGISTRY: dict[Type[LogOptions], Type[LogReader[Any]]] = {
+    SQLiteLogOptions: SQLiteLogReader
+}

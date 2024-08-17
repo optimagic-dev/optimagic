@@ -14,7 +14,7 @@ Otherwise, the functions may be very slow.
 import warnings
 from dataclasses import dataclass
 
-from optimagic.logging.logger import SQLiteLogger
+from optimagic.logging.logger import SQLiteLogOptions, SQLiteLogReader
 
 
 @dataclass
@@ -25,4 +25,5 @@ class OptimizeLogReader:
             "version. Please use optimagic.logging.SQLiteLogger instead.",
             FutureWarning,
         )
-        return SQLiteLogger(*args, **kwargs)
+        sqlite_options = SQLiteLogOptions(*args, **kwargs)
+        return SQLiteLogReader.from_options(sqlite_options)

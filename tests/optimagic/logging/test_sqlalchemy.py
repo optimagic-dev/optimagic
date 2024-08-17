@@ -4,9 +4,8 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import numpy as np
 import pytest
-from optimagic.exceptions import TableExistsError
 from optimagic.logging import ExistenceStrategy
-from optimagic.logging.logger import SQLiteConfig
+from optimagic.logging.logger import LogStore, SQLiteLogOptions
 from optimagic.logging.sqlalchemy import IterationStore, StepStore
 from optimagic.logging.types import (
     CriterionEvaluationResult,
@@ -21,7 +20,7 @@ class TestIterationStore:
     @pytest.fixture
     def store(self, tmp_path):
         """Fixture to set up the IterationStore."""
-        return IterationStore(SQLiteConfig(tmp_path / "test.db"))
+        return IterationStore(SQLiteLogOptions(tmp_path / "test.db"))
 
     @staticmethod
     def create_test_point(i: int):
@@ -116,9 +115,11 @@ class TestIterationStore:
     def test_db_replacement_warning(self, store):
         store.insert(self.create_test_point(245))
         with pytest.warns(match="Existing database file"):
-            SQLiteConfig(
-                store._db_config.url.split("sqlite:///")[-1],
-                if_database_exists=ExistenceStrategy.REPLACE,
+            LogStore.from_options(
+                SQLiteLogOptions(
+                    store._db_config.url.split("sqlite:///")[-1],
+                    if_database_exists=ExistenceStrategy.REPLACE,
+                )
             )
 
     @pytest.mark.skipif(
@@ -128,7 +129,7 @@ class TestIterationStore:
     def test_db_replacement_error(self, store):
         store.insert(self.create_test_point(245))
         with pytest.raises(RuntimeError, match="PermissionError"):
-            SQLiteConfig(
+            SQLiteLogOptions(
                 store._db_config.url.split("sqlite:///")[-1],
                 if_database_exists=ExistenceStrategy.REPLACE,
             )
@@ -136,34 +137,18 @@ class TestIterationStore:
     def test_db_existence_raise(self, store):
         store.insert(self.create_test_point(245))
         with pytest.raises(FileExistsError):
-            SQLiteConfig(
-                store._db_config.url.split("sqlite:///")[-1],
+            LogStore.from_options(
+                SQLiteLogOptions(
+                    store._db_config.url.split("sqlite:///")[-1],
+                )
             )
-
-    def test_table_replacement_warning(self, store):
-        store.insert(self.create_test_point(245))
-        with pytest.warns(match="Replacing"):
-            db_config = SQLiteConfig(
-                store._db_config.url.split("sqlite:///")[-1],
-                if_database_exists=ExistenceStrategy.EXTEND,
-            )
-            IterationStore(db_config, if_table_exists=ExistenceStrategy.REPLACE)
-
-    def test_table_existence_raise(self, store):
-        store.insert(self.create_test_point(245))
-        with pytest.raises(TableExistsError):
-            db_config = SQLiteConfig(
-                store._db_config.url.split("sqlite:///")[-1],
-                if_database_exists=ExistenceStrategy.EXTEND,
-            )
-            IterationStore(db_config, if_table_exists=ExistenceStrategy.RAISE)
 
 
 class TestStepStore:
     @pytest.fixture
     def store(self, tmp_path):
         """Fixture to set up the IterationStore."""
-        return StepStore(SQLiteConfig(tmp_path / "test.db"))
+        return StepStore(SQLiteLogOptions(tmp_path / "test.db"))
 
     @staticmethod
     def create_test_point(i: int):

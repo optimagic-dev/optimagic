@@ -7,7 +7,10 @@ from typing import Any, Callable, ParamSpec, cast
 
 from optimagic import mark
 from optimagic.constraints import Constraint, InvalidConstraintError
-from optimagic.logging.logger import Logger, SQLiteLogger
+from optimagic.logging.logger import (
+    LogOptions,
+    SQLiteLogOptions,
+)
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -467,8 +470,8 @@ def replace_and_warn_about_deprecated_derivatives(candidate, name):
 
 
 def handle_log_options_throw_deprecated_warning(
-    log_options: dict[str, Any], logger: str | Path | Logger | None
-) -> str | Path | Logger | None:
+    log_options: dict[str, Any], logger: str | Path | LogOptions | None
+) -> str | Path | LogOptions | None:
     msg = (
         "Usage of the parameter log_options is deprecated "
         "and will be removed in a future version. "
@@ -485,10 +488,12 @@ def handle_log_options_throw_deprecated_warning(
     if logging_is_path_or_string:
         if log_options_is_dict and log_options_is_compatible:
             warnings.warn(
-                f"\nUsing {log_options=} to create an instance of SQLiteLogger. "
+                f"\nUsing {log_options=} to create an instance of SQLiteLogOptions. "
                 f"This mechanism will be removed in the future."
             )
-            return SQLiteLogger(cast(str | Path, logger), **log_options)
+            if "if_table_exists" in log_options:
+                del log_options["if_table_exists"]
+            return SQLiteLogOptions(cast(str | Path, logger), **log_options)
         elif not log_options_is_compatible:
             raise ValueError(
                 f"Found string or path for logger argument, but parameter"

@@ -13,10 +13,12 @@ is then passed to `_optimize` which handles the optimization logic.
 """
 
 import functools
+from typing import Any
 
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
+from optimagic.logging.logger import LogStore
 from optimagic.logging.types import ProblemInitialization
 from optimagic.optimization.create_optimization_problem import (
     OptimizationProblem,
@@ -343,9 +345,13 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
+    logger: LogStore[Any, Any] | None
     if problem.logger is not None:
+        logger = LogStore.from_options(problem.logger)
         problem_data = ProblemInitialization(problem.direction, problem.params)
-        problem.logger.problem_store.insert(problem_data)
+        logger.problem_store.insert(problem_data)
+    else:
+        logger = None
 
     # ==================================================================================
     # Do some things that require internal parameters or bounds
@@ -393,7 +399,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         upper_bounds=internal_params.upper_bounds,
         nonlinear_constraints=internal_constraints,
         algo_options=problem.algo_options,
-        logging=problem.logger,
+        logging=logger,
         collect_history=problem.collect_history,
     )
     # ==================================================================================
@@ -406,7 +412,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         "derivative": problem.jac,
         "criterion_and_derivative": problem.fun_and_jac,
         "numdiff_options": problem.numdiff_options,
-        "logging": problem.logger,
+        "logging": logger,
         "algo_info": problem.algo_info,
         "error_handling": problem.error_handling,
         "error_penalty_func": error_penalty_func,
@@ -434,7 +440,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
         step_ids = log_scheduled_steps_and_get_ids(
             steps=steps,
-            logging=problem.logger,
+            logging=logger,
         )
 
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
@@ -453,7 +459,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             lower_sampling_bounds=internal_params.soft_lower_bounds,
             upper_sampling_bounds=internal_params.soft_upper_bounds,
             options=multistart_options,
-            logging=problem.logger,
+            logging=logger,
             error_handling=problem.error_handling,
         )
 
@@ -478,5 +484,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         fixed_kwargs=fixed_result_kwargs,
         skip_checks=problem.skip_checks,
     )
+    if logger is None:
+        res.logging = logger
+    else:
+        res.logger = logger.as_reader()
 
     return res

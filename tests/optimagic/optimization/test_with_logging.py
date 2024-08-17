@@ -16,8 +16,7 @@ from optimagic.examples.criterion_functions import (
     sos_derivatives,
     sos_ls,
 )
-from optimagic.exceptions import TableExistsError
-from optimagic.logging.logger import SQLiteLogger
+from optimagic.logging.logger import SQLiteLogOptions
 from optimagic.logging.types import ExistenceStrategy
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
@@ -57,7 +56,9 @@ def test_optimization_with_existing_exsting_database():
         sos_ls,
         pd.Series([1, 2, 3], name="value").to_frame(),
         algorithm="scipy_lbfgsb",
-        logging=SQLiteLogger("logging.db", if_database_exists=ExistenceStrategy.RAISE),
+        logging=SQLiteLogOptions(
+            "logging.db", if_database_exists=ExistenceStrategy.REPLACE
+        ),
     )
 
     with pytest.raises(FileExistsError):
@@ -65,32 +66,7 @@ def test_optimization_with_existing_exsting_database():
             sos_ls,
             pd.Series([1, 2, 3], name="value").to_frame(),
             algorithm="scipy_lbfgsb",
-            logging=SQLiteLogger(
+            logging=SQLiteLogOptions(
                 "logging.db", if_database_exists=ExistenceStrategy.RAISE
-            ),
-        )
-
-
-def test_optimization_with_existing_exsting_table():
-    minimize(
-        sos_ls,
-        pd.Series([1, 2, 3], name="value").to_frame(),
-        algorithm="scipy_lbfgsb",
-        logging=SQLiteLogger(
-            "logging.db",
-            if_database_exists=ExistenceStrategy.EXTEND,
-            if_table_exists=ExistenceStrategy.EXTEND,
-        ),
-    )
-
-    with pytest.raises(TableExistsError):
-        minimize(
-            sos_ls,
-            pd.Series([1, 2, 3], name="value").to_frame(),
-            algorithm="scipy_lbfgsb",
-            logging=SQLiteLogger(
-                "logging.db",
-                if_database_exists=ExistenceStrategy.EXTEND,
-                if_table_exists=ExistenceStrategy.RAISE,
             ),
         )

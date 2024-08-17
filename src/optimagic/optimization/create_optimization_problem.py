@@ -21,7 +21,7 @@ from optimagic.exceptions import (
     InvalidFunctionError,
     MissingInputError,
 )
-from optimagic.logging.logger import Logger, SQLiteLogger
+from optimagic.logging.logger import LogOptions, SQLiteLogOptions
 from optimagic.optimization.fun_value import (
     SpecificFunctionValue,
     convert_fun_output_to_function_value,
@@ -87,7 +87,7 @@ class OptimizationProblem:
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     numdiff_options: NumdiffOptions
     # TODO: logging will become None | Logger and log_options will be removed
-    logger: Logger | None
+    logger: LogOptions | None
     # TODO: error_handling will become None | ErrorHandlingOptions and error_penalty
     # will be removed
     error_handling: Literal["raise", "continue"]
@@ -357,7 +357,7 @@ def create_optimization_problem(
 
     if isinstance(logging, str) or isinstance(logging, Path):
         log_path = Path(logging)
-        logging = SQLiteLogger(log_path)
+        logging = SQLiteLogOptions(log_path)
 
     # ==================================================================================
     # evaluate fun for the first time
@@ -500,9 +500,9 @@ def create_optimization_problem(
         if not isinstance(numdiff_options, NumdiffOptions):
             raise ValueError("numdiff_options must be a NumdiffOptions object")
 
-        if not isinstance(logging, bool | Path | Logger | None):
+        if not isinstance(logging, bool | Path | LogOptions | None):
             raise ValueError(
-                "logging must be a boolean, a path, a Logger instance or None"
+                "logging must be a boolean, a path, a LogOptions instance or None"
             )
 
         if not isinstance(log_options, dict | None):

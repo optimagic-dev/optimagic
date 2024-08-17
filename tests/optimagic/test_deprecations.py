@@ -41,7 +41,7 @@ from optimagic.deprecations import (
 )
 from optimagic.differentiation.derivatives import NumdiffResult
 from optimagic.exceptions import InvalidConstraintError
-from optimagic.logging.logger import SQLiteLogger
+from optimagic.logging.logger import SQLiteLogOptions
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -881,7 +881,7 @@ def test_handle_log_options():
         assert handled_logger is None
 
     creation_warning = (
-        f"\nUsing {log_options=} to create an instance of SQLiteLogger. "
+        f"\nUsing {log_options=} to create an instance of SQLiteLogOptions. "
         f"This mechanism will be removed in the future."
     )
 
@@ -889,7 +889,7 @@ def test_handle_log_options():
         handled_logger = handle_log_options_throw_deprecated_warning(
             log_options, ":memory:"
         )
-        assert isinstance(handled_logger, SQLiteLogger)
+        assert isinstance(handled_logger, SQLiteLogOptions)
 
     incompatibility_msg = "Found string or path for logger argument, but parameter"
     f" {log_options=} is not compatible "
