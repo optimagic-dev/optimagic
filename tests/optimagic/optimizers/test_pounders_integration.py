@@ -132,7 +132,7 @@ def test_bntr(
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result["solution_x"], x_expected, decimal=3)
+    aaae(result.x, x_expected, decimal=3)
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])
@@ -169,4 +169,4 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result["solution_x"], x_expected, decimal=4)
+    aaae(result.x, x_expected, decimal=4)

@@ -44,7 +44,7 @@ def get_history_arrays(
     # ==================================================================================
     # Handle deprecations for now
     # ==================================================================================
-    if direction not in ["minimize", "maximize"]:
+    if direction in ["minimize", "maximize"]:
         msg = "Strings as direction argument are deprecated in get_history_arrays."
         warnings.warn(msg, FutureWarning)
 
@@ -65,6 +65,14 @@ def get_history_arrays(
         parhist = history.params
         funhist = history.fun
         timehist = history.time
+
+    # ==================================================================================
+    # Filter out evaluations that do not have a `fun` value
+    # ==================================================================================
+
+    parhist = [p for p, f in zip(parhist, funhist, strict=False) if f is not None]
+    timehist = [t for t, f in zip(timehist, funhist, strict=False) if f is not None]
+    funhist = [f for f in funhist if f is not None]
 
     # ==================================================================================
 

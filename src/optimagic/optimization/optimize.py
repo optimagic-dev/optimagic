@@ -53,7 +53,7 @@ from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.typing import AggregationLevel, Direction, ErrorHandling
+from optimagic.typing import AggregationLevel, Direction
 
 
 def maximize(
@@ -391,14 +391,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         direction=problem.direction,
     )
 
-    # convert the error handling to an enum
-    # TODO: Admit enums in the outer interface and do this processing in
-    # create_optimization_problem
-    if problem.error_handling == "raise":
-        internal_error_handling = ErrorHandling.RAISE
-    else:
-        internal_error_handling = ErrorHandling.CONTINUE
-
     # process nonlinear constraints:
     internal_nonlinear_constraints = process_nonlinear_constraints(
         nonlinear_constraints=nonlinear_constraints,
@@ -434,7 +426,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         direction=problem.direction,
         bounds=internal_bounds,
         numdiff_options=problem.numdiff_options,
-        error_handling=internal_error_handling,
+        error_handling=problem.error_handling,
         error_penalty_func=error_penalty_func,
         batch_evaluator=batch_evaluator,
         # TODO: Actually pass through linear constraints if possible

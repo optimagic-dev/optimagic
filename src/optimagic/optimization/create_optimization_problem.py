@@ -381,7 +381,10 @@ def create_optimization_problem(
     else:
         problem_type = infer_aggregation_level(fun)
 
-    if problem_type == AggregationLevel.LEAST_SQUARES and direction == "maximize":
+    if (
+        problem_type == AggregationLevel.LEAST_SQUARES
+        and direction == Direction.MAXIMIZE
+    ):
         raise InvalidFunctionError("Least-squares problems cannot be maximized.")
 
     # ==================================================================================
