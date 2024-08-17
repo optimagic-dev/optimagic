@@ -225,6 +225,14 @@ def test_base_problem_fun_for_ls_optimizer(base_problem):
     aaae(got, expected)
 
 
+def test_base_problem_exploration_fun(base_problem):
+    got = base_problem.exploration_fun(
+        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1
+    )
+    expected = [14, 77]
+    assert got == expected
+
+
 # ======================================================================================
 # test history
 # ======================================================================================
@@ -289,6 +297,16 @@ def test_history_with_batch_fun_and_jac(base_problem):
     aaae(base_problem.history.params[1], [4, 5, 6])
     assert base_problem.history.fun == [14, 77]
     assert base_problem.history.task == [EvalTask.FUN_AND_JAC, EvalTask.FUN_AND_JAC]
+    assert base_problem.history.batches == [0, 0]
+
+
+def test_history_with_exploration_fun(base_problem):
+    base_problem.exploration_fun([np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1)
+    assert len(base_problem.history.params) == 2
+    aaae(base_problem.history.params[0], [1, 2, 3])
+    aaae(base_problem.history.params[1], [4, 5, 6])
+    assert base_problem.history.fun == [14, 77]
+    assert base_problem.history.task == [EvalTask.EXPLORATION, EvalTask.EXPLORATION]
     assert base_problem.history.batches == [0, 0]
 
 
@@ -407,6 +425,14 @@ def test_fun_and_jac_via_numdiff(max_problem):
     aaae(got_jac, expected_jac)
 
 
+def test_max_problem_exploration_fun(max_problem):
+    got = max_problem.exploration_fun(
+        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1
+    )
+    expected = [14, 77]
+    assert got == expected
+
+
 # ======================================================================================
 # test pytree ls output and params
 # ======================================================================================
@@ -507,6 +533,14 @@ def test_pytree_problem_fun_and_jac(pytree_problem):
     expected_fun, expected_jac = np.array([1, 2, 3]), np.eye(3)
     aaae(got_jac, expected_jac)
     aaae(got_fun, expected_fun)
+
+
+def test_pytree_problem_exploration_fun(pytree_problem):
+    got = pytree_problem.exploration_fun(
+        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1
+    )
+    expected = [14, 77]
+    assert got == expected
 
 
 def test_numerical_jac_for_pytree_problem(pytree_problem):
@@ -630,6 +664,14 @@ def test_error_in_numerical_jac_minimize(error_min_problem):
     aaae(got, expected)
 
 
+def test_error_in_exploration_fun_minimize(error_min_problem):
+    got = error_min_problem.exploration_fun(
+        [np.array([2, 3, 4]), np.array([5, 6, 7])], n_cores=1
+    )
+    expected = [-np.inf, -np.inf]
+    assert np.allclose(got, expected)
+
+
 # ======================================================================================
 # test error penalty with maximize
 # ======================================================================================
@@ -682,3 +724,11 @@ def test_error_in_numerical_jac_maximize(error_max_problem):
     got = error_max_problem.jac(np.array([2, 3, 4]))
     expected = np.full(3, CRITERION_PENALTY_SLOPE) / np.sqrt(3)
     aaae(got, expected)
+
+
+def test_error_in_exploration_fun_maximize(error_max_problem):
+    got = error_max_problem.exploration_fun(
+        [np.array([2, 3, 4]), np.array([5, 6, 7])], n_cores=1
+    )
+    expected = [-np.inf, -np.inf]
+    assert np.allclose(got, expected)

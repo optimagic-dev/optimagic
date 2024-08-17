@@ -46,6 +46,7 @@ from optimagic.optimization.optimization_logging import log_scheduled_steps_and_
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.optimization.process_results import (
     ExtraResultFields,
+    process_multistart_result,
     process_single_result,
 )
 from optimagic.parameters.conversion import (
@@ -399,7 +400,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         internal_error_handling = ErrorHandling.CONTINUE
 
     # process nonlinear constraints:
-    internal_constraints = process_nonlinear_constraints(
+    internal_nonlinear_constraints = process_nonlinear_constraints(
         nonlinear_constraints=nonlinear_constraints,
         params=problem.params,
         bounds=problem.bounds,
@@ -438,7 +439,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         batch_evaluator=batch_evaluator,
         # TODO: Actually pass through linear constraints if possible
         linear_constraints=None,
-        nonlinear_constraints=nonlinear_constraints,
+        nonlinear_constraints=internal_nonlinear_constraints,
         # TODO: add logger
     )
 
@@ -448,7 +449,8 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     if problem.multistart is None:
         steps = [{"type": "optimization", "name": "optimization"}]
 
-        step_ids = log_scheduled_steps_and_get_ids(
+        # TODO: Actually use the step ids
+        step_ids = log_scheduled_steps_and_get_ids(  # noqa: F841
             steps=steps,
             logging=problem.logging,
             database=database,
@@ -463,13 +465,16 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             params_to_internal=converter.params_to_internal,
         )
 
+        sampling_bounds = InternalBounds(
+            lower=internal_params.soft_lower_bounds,
+            upper=internal_params.soft_upper_bounds,
+        )
+
         raw_res = run_multistart_optimization(
-            local_algorithm=internal_algorithm,
-            primary_key=problem.algo_info.primary_criterion_entry,
-            problem_functions=problem_functions,
+            local_algorithm=problem.algorithm,
+            internal_problem=internal_problem,
             x=x,
-            lower_sampling_bounds=internal_params.soft_lower_bounds,
-            upper_sampling_bounds=internal_params.soft_upper_bounds,
+            sampling_bounds=sampling_bounds,
             options=multistart_options,
             logging=problem.logging,
             database=database,
@@ -500,7 +505,12 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             extra_fields=extra_fields,
         )
     else:
-        raise NotImplementedError()
+        res = process_multistart_result(
+            res=raw_res,
+            converter=converter,
+            solver_type=problem.algorithm.algo_info.solver_type,
+            extra_fields=extra_fields,
+        )
 
     return res
 

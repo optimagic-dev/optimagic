@@ -71,7 +71,7 @@ def test_run_explorations():
         return out
 
     calculated = run_explorations(
-        func=_dummy,
+        internal_problem=_dummy,
         sample=np.arange(6).reshape(3, 2),
         batch_evaluator="joblib",
         n_cores=1,
@@ -141,7 +141,7 @@ def test_update_state_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
-        primary_key="value",
+        solver_type="value",
     )
 
     aaae(new_state["best_x"], np.arange(3))
@@ -165,7 +165,7 @@ def test_update_state_not_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
-        primary_key="value",
+        solver_type="value",
     )
 
     assert not is_converged
