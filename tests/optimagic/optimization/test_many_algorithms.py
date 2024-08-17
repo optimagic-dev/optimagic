@@ -27,11 +27,9 @@ GLOBAL_ALGORITHMS_AVAILABLE = [
 ]
 
 BOUNDED_ALGORITHMS = []
-for name, func in LOCAL_ALGORITHMS.items():
-    arguments = list(inspect.signature(func).parameters)
-    if "lower_bounds" in arguments and "upper_bounds" in arguments:
+for name, algo in LOCAL_ALGORITHMS.items():
+    if algo.__algo_info__.supports_bounds:
         BOUNDED_ALGORITHMS.append(name)
-
 
 @mark.least_squares
 def sos(x):

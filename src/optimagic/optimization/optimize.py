@@ -12,11 +12,10 @@ is then passed to `_optimize` which handles the optimization logic.
 
 """
 
+import functools
 import warnings
 from pathlib import Path
-from typing import cast
 
-from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
@@ -32,10 +31,10 @@ from optimagic.optimization.create_optimization_problem import (
     create_optimization_problem,
 )
 from optimagic.optimization.error_penalty import get_error_penalty_function
-from optimagic.optimization.internal_optimization_problem import (
-    InternalBounds,
-    InternalOptimizationProblem,
+from optimagic.optimization.get_algorithm import (
+    get_final_algorithm,
 )
+
 from optimagic.optimization.multistart import (
     run_multistart_optimization,
 )
@@ -44,16 +43,18 @@ from optimagic.optimization.multistart_options import (
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.process_results import (
-    ExtraResultFields,
-    process_single_result,
-)
+from optimagic.optimization.process_results import process_internal_optimizer_result
+from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.typing import AggregationLevel, Direction, ErrorHandling
-
+from optimagic.typing import AggregationLevel, ErrorHandling
+from optimagic.optimization.internal_optimization_problem import InternalBounds, InternalOptimizationProblem
+from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic.optimization.process_results import process_single_result, ExtraResultFields
+from optimagic.typing import Direction
+from typing import cast
 
 def maximize(
     fun=None,
@@ -351,6 +352,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         add_soft_bounds=problem.multistart is not None,
     )
 
+
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
@@ -480,9 +482,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Process the result
     # ==================================================================================
 
-    _scalar_start_criterion = cast(
-        float, first_crit_eval.internal_value(AggregationLevel.SCALAR)
-    )
+    _scalar_start_criterion = cast(float, first_crit_eval.internal_value(AggregationLevel.SCALAR))
 
     extra_fields = ExtraResultFields(
         start_fun=_scalar_start_criterion,
