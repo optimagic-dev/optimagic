@@ -3,6 +3,7 @@ from __future__ import annotations
 import traceback
 import warnings
 from dataclasses import asdict, dataclass
+from functools import cached_property
 from typing import Any, Sequence, Type, cast
 
 import sqlalchemy as sql
@@ -46,13 +47,8 @@ class SQLAlchemyConfig:
         url: str,
     ):
         self.url = url
-        engine = self.create_engine()
-        metadata = MetaData()
-        self._configure_reflect()
-        metadata.reflect(engine)
-        self._metadata = metadata
 
-    @property
+    @cached_property
     def metadata(self) -> MetaData:
         """Get the metadata object.
 
@@ -60,7 +56,11 @@ class SQLAlchemyConfig:
             The SQLAlchemy MetaData object reflecting the database schema.
 
         """
-        return self._metadata
+        engine = self.create_engine()
+        metadata = MetaData()
+        self._configure_reflect()
+        metadata.reflect(engine)
+        return metadata
 
     def create_engine(self) -> Engine:
         """Create and return an SQLAlchemy engine.
