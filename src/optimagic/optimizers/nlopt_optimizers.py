@@ -4,8 +4,12 @@ The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io
 
 """
 
-import numpy as np
+from dataclasses import dataclass
 
+import numpy as np
+from numpy.typing import NDArray
+
+from optimagic import mark
 from optimagic.config import IS_NLOPT_INSTALLED
 from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
@@ -16,12 +20,59 @@ from optimagic.optimization.algo_options import (
     STOPPING_MAXFUN,
     STOPPING_MAXFUN_GLOBAL,
 )
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
 from optimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
+)
+from optimagic.typing import (
+    AggregationLevel,
+    NonNegativeFloat,
+    PositiveInt,
 )
 
 if IS_NLOPT_INSTALLED:
     import nlopt
+
+
+@mark.minimizer(
+    name="nlopt_bobyqa",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NloptBobyqa(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            convergence_xtol_rel=self.convergence_ftol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LN_BOBYQA,
+        )
+
+        return res
 
 
 @mark_minimizer(
@@ -48,7 +99,7 @@ def nlopt_bobyqa(
     :ref: `list_of_nlopt_algorithms`.
 
     """
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -90,7 +141,7 @@ def nlopt_neldermead(
 
     """
 
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -129,7 +180,7 @@ def nlopt_praxis(
     :ref: `list_of_nlopt_algorithms`.
 
     """
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds=None,
@@ -172,7 +223,7 @@ def nlopt_cobyla(
 
     """
 
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -215,7 +266,7 @@ def nlopt_sbplx(
 
     """
 
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -260,7 +311,7 @@ def nlopt_newuoa(
     else:
         algo = nlopt.LN_NEWUOA
 
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -302,7 +353,7 @@ def nlopt_tnewton(
 
     """
 
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -345,7 +396,7 @@ def nlopt_lbfgs(
 
     """
 
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -387,7 +438,7 @@ def nlopt_ccsaq(
     :ref: `list_of_nlopt_algorithms`.
 
     """
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -433,7 +484,7 @@ def nlopt_mma(
     # cannot handle equality constraints
     nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
 
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -481,7 +532,7 @@ def nlopt_var(
         algo = nlopt.LD_VAR1
     else:
         algo = nlopt.LD_VAR2
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -524,7 +575,7 @@ def nlopt_slsqp(
     :ref: `list_of_nlopt_algorithms`.
 
     """
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -581,7 +632,7 @@ def nlopt_direct(
         algo = nlopt.GN_DIRECT_L_RAND_NOSCAL
     elif not locally_biased and not random_search and unscaled_bounds:
         algo = nlopt.GN_DIRECT_NOSCAL
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -624,7 +675,7 @@ def nlopt_esch(
     :ref: `list_of_nlopt_algorithms`.
 
     """
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -668,7 +719,7 @@ def nlopt_isres(
     :ref: `list_of_nlopt_algorithms`.
 
     """
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -715,7 +766,7 @@ def nlopt_crs2_lm(
     """
     if population_size is None:
         population_size = 10 * (len(x) + 1)
-    out = _minimize_nlopt(
+    out = _minimize_nlopt_old(
         criterion,
         x,
         lower_bounds,
@@ -735,6 +786,59 @@ def nlopt_crs2_lm(
 
 
 def _minimize_nlopt(
+    problem,
+    x0,
+    algorithm,
+    *,
+    convergence_xtol_rel=None,
+    convergence_xtol_abs=None,
+    convergence_ftol_rel=None,
+    convergence_ftol_abs=None,
+    stopping_max_eval=None,
+    population_size=None,
+):
+    """Run actual nlopt optimization argument, set relevant attributes."""
+
+    def func(x, grad):
+        if grad.size > 0:
+            fun, jac = problem.fun_and_jac(x)
+            grad[:] = jac
+        else:
+            fun = problem.fun(x)
+        return fun
+
+    opt = nlopt.opt(algorithm, x0.shape[0])
+    if convergence_ftol_rel is not None:
+        opt.set_ftol_rel(convergence_ftol_rel)
+    if convergence_ftol_abs is not None:
+        opt.set_ftol_abs(convergence_ftol_abs)
+    if convergence_xtol_rel is not None:
+        opt.set_xtol_rel(convergence_xtol_rel)
+    if convergence_xtol_abs is not None:
+        opt.set_xtol_abs(convergence_xtol_abs)
+    if problem.bounds.lower is not None:
+        opt.set_lower_bounds(problem.bounds.lower)
+    if problem.bounds.upper is not None:
+        opt.set_upper_bounds(problem.bounds.upper)
+    if stopping_max_eval is not None:
+        opt.set_maxeval(stopping_max_eval)
+    if population_size is not None:
+        opt.set_population(population_size)
+    if problem.nonlinear_constraints:
+        for constr in _get_nlopt_constraints(
+            problem.nonlinear_constraints, filter_type="eq"
+        ):
+            opt.add_equality_mconstraint(constr["fun"], constr["tol"])
+        for constr in _get_nlopt_constraints(
+            problem.nonlinear_constraints, filter_type="ineq"
+        ):
+            opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
+    opt.set_min_objective(func)
+    solution_x = opt.optimize(x0)
+    return _process_nlopt_results(opt, solution_x)
+
+
+def _minimize_nlopt_old(
     criterion,
     x,
     lower_bounds,
@@ -783,7 +887,40 @@ def _minimize_nlopt(
         opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
     opt.set_min_objective(func)
     solution_x = opt.optimize(x)
-    return _process_nlopt_results(opt, solution_x)
+    return _process_nlopt_results_old(opt, solution_x)
+
+
+def _process_nlopt_results(nlopt_obj, solution_x):
+    messages = {
+        1: "Convergence achieved ",
+        2: (
+            "Optimizer stopped because maximum value of criterion function was reached"
+        ),
+        3: (
+            "Optimizer stopped because convergence_ftol_rel or "
+            "convergence_ftol_abs was reached"
+        ),
+        4: (
+            "Optimizer stopped because convergence_xtol_rel or "
+            "convergence_xtol_abs was reached"
+        ),
+        5: "Optimizer stopped because max_criterion_evaluations was reached",
+        6: "Optimizer stopped because max running time was reached",
+        -1: "Optimizer failed",
+        -2: "Invalid arguments were passed",
+        -3: "Memory error",
+        -4: "Halted because roundoff errors limited progress",
+        -5: "Halted because of user specified forced stop",
+    }
+    processed = InternalOptimizeResult(
+        x=solution_x,
+        fun=nlopt_obj.last_optimum_value(),
+        n_fun_evals=nlopt_obj.get_numevals(),
+        success=nlopt_obj.last_optimize_result() in [1, 2, 3, 4],
+        message=messages[nlopt_obj.last_optimize_result()],
+    )
+
+    return processed
 
 
 def _get_nlopt_constraints(constraints, filter_type):
@@ -816,7 +953,7 @@ def _internal_to_nlopt_constaint(c):
     return new_constr
 
 
-def _process_nlopt_results(nlopt_obj, solution_x):
+def _process_nlopt_results_old(nlopt_obj, solution_x):
     messages = {
         1: "Convergence achieved ",
         2: (
