@@ -22,26 +22,26 @@ class ExtraResultFields:
 
 
 def process_single_result(
-    res: InternalOptimizeResult,
+    raw_res: InternalOptimizeResult,
     converter: Converter,
     solver_type: AggregationLevel,
     extra_fields: ExtraResultFields,
 ) -> OptimizeResult:
     """Process an internal optimizer result."""
-    params = converter.params_from_internal(res.x)
-    if isscalar(res.fun):
-        fun = float(res.fun)
+    params = converter.params_from_internal(raw_res.x)
+    if isscalar(raw_res.fun):
+        fun = float(raw_res.fun)
     elif solver_type == AggregationLevel.LIKELIHOOD:
-        fun = float(np.sum(res.fun))
+        fun = float(np.sum(raw_res.fun))
     elif solver_type == AggregationLevel.LEAST_SQUARES:
-        fun = np.dot(res.fun, res.fun)
+        fun = np.dot(raw_res.fun, raw_res.fun)
 
     if extra_fields.direction == Direction.MAXIMIZE:
         fun = -fun
 
-    if res.history is not None:
+    if raw_res.history is not None:
         conv_report = get_convergence_report(
-            history=res.history,
+            history=raw_res.history,
             direction=extra_fields.direction.value,
         )
     else:
@@ -55,26 +55,26 @@ def process_single_result(
         algorithm=extra_fields.algorithm,
         direction=extra_fields.direction.value,
         n_free=extra_fields.n_free,
-        message=res.message,
-        success=res.success,
-        n_fun_evals=res.n_fun_evals,
-        n_jac_evals=res.n_jac_evals,
-        n_hess_evals=res.n_hess_evals,
-        n_iterations=res.n_iterations,
-        status=res.status,
-        jac=res.jac,
-        hess=res.hess,
-        hess_inv=res.hess_inv,
-        max_constraint_violation=res.max_constraint_violation,
-        history=res.history,
-        algorithm_output=res.info,
+        message=raw_res.message,
+        success=raw_res.success,
+        n_fun_evals=raw_res.n_fun_evals,
+        n_jac_evals=raw_res.n_jac_evals,
+        n_hess_evals=raw_res.n_hess_evals,
+        n_iterations=raw_res.n_iterations,
+        status=raw_res.status,
+        jac=raw_res.jac,
+        hess=raw_res.hess,
+        hess_inv=raw_res.hess_inv,
+        max_constraint_violation=raw_res.max_constraint_violation,
+        history=raw_res.history,
+        algorithm_output=raw_res.info,
         convergence_report=conv_report,
     )
     return out
 
 
 def process_multistart_result(
-    res,
+    raw_res,
     converter,
     solver_type,
     extra_fields,
@@ -85,20 +85,19 @@ def process_multistart_result(
         res (dict): Results dictionary of an internal optimizer or multistart optimizer.
 
     """
-    info = res.multistart_info
 
-    if isinstance(res, str):
-        res = _dummy_result_from_traceback(res, extra_fields)
+    if isinstance(raw_res, str):
+        res = _dummy_result_from_traceback(raw_res, extra_fields)
     else:
         res = process_single_result(
-            res=res,
+            raw_res=raw_res,
             converter=converter,
             solver_type=solver_type,
             extra_fields=extra_fields,
         )
 
         info = _process_multistart_info(
-            info,
+            raw_res.multistart_info,
             converter=converter,
             solver_type=solver_type,
             extra_fields=extra_fields,

@@ -491,14 +491,14 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
     if problem.multistart is None:
         res = process_single_result(
-            res=raw_res,
+            raw_res=raw_res,
             converter=converter,
             solver_type=problem.algorithm.algo_info.solver_type,
             extra_fields=extra_fields,
         )
     else:
         res = process_multistart_result(
-            res=raw_res,
+            raw_res=raw_res,
             converter=converter,
             solver_type=problem.algorithm.algo_info.solver_type,
             extra_fields=extra_fields,
