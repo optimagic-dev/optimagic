@@ -64,10 +64,22 @@ class History:
         self._batches.append(batch_id)
         self._task.append(entry.task)
 
-    def add_batch(self, batch: list[HistoryEntry]) -> None:
-        batch_number = self._get_next_batch_id()
-        for entry in batch:
-            self.add_entry(entry, batch_number)
+    def add_batch(
+        self, batch: list[HistoryEntry], batch_size: int | None = None
+    ) -> None:
+        # The naming is complicated here:
+        # batch refers to the entries to be added to the history in one go
+        # batch_size is a property of a parallelizing algorithm that influences how
+        # the batch_ids are assigned. It is not the same as the length of the batch.
+        if batch_size is None:
+            batch_size = len(batch)
+
+        start = self._get_next_batch_id()
+        n_batches = int(np.ceil(len(batch) / batch_size))
+        ids = np.repeat(np.arange(start, start + n_batches), batch_size)[: len(batch)]
+
+        for entry, id in zip(batch, ids, strict=False):
+            self.add_entry(entry, id)
 
     @property
     def params(self) -> list[PyTree]:
@@ -157,8 +169,12 @@ class InternalOptimizationProblem:
         return fun_and_jac_value
 
     def batch_fun(
-        self, x_list: list[NDArray[np.float64]], n_cores: int
+        self,
+        x_list: list[NDArray[np.float64]],
+        n_cores: int,
+        batch_size: int | None = None,
     ) -> list[float | NDArray[np.float64]]:
+        batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun,
             arguments=x_list,
@@ -168,13 +184,18 @@ class InternalOptimizationProblem:
         )
         fun_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries)
+        self._history.add_batch(hist_entries, batch_size)
 
         return fun_values
 
     def batch_jac(
-        self, x_list: list[NDArray[np.float64]], n_cores: int
+        self,
+        x_list: list[NDArray[np.float64]],
+        n_cores: int,
+        batch_size: int | None = None,
     ) -> list[NDArray[np.float64]]:
+        batch_size = n_cores if batch_size is None else batch_size
+
         batch_result = self._batch_evaluator(
             func=self._evaluate_jac,
             arguments=x_list,
@@ -184,12 +205,16 @@ class InternalOptimizationProblem:
         )
         jac_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries)
+        self._history.add_batch(hist_entries, batch_size)
         return jac_values
 
     def batch_fun_and_jac(
-        self, x_list: list[NDArray[np.float64]], n_cores: int
+        self,
+        x_list: list[NDArray[np.float64]],
+        n_cores: int,
+        batch_size: int | None = None,
     ) -> list[tuple[float | NDArray[np.float64], NDArray[np.float64]]]:
+        batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun_and_jac,
             arguments=x_list,
@@ -199,13 +224,17 @@ class InternalOptimizationProblem:
         )
         fun_and_jac_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries)
+        self._history.add_batch(hist_entries, batch_size)
 
         return fun_and_jac_values
 
     def exploration_fun(
-        self, x_list: list[NDArray[np.float64]], n_cores: int
+        self,
+        x_list: list[NDArray[np.float64]],
+        n_cores: int,
+        batch_size: int | None = None,
     ) -> list[float]:
+        batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
             func=self._evaluate_exploration_fun,
             arguments=x_list,
@@ -215,7 +244,7 @@ class InternalOptimizationProblem:
         )
         fun_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries)
+        self._history.add_batch(hist_entries, batch_size)
 
         return fun_values
 

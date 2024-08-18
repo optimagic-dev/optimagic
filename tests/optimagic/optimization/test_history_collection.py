@@ -106,17 +106,17 @@ class DummyOptimizer(Algorithm):
 
         start_index = 0
 
-        while start_index < 15 - self.batch_size:
+        for iteration in range(3):
+            start_index = iteration * 5
             # do four evaluations in a batch evaluator
             problem.batch_fun(
-                list(xs[start_index : start_index + self.batch_size]),
+                list(xs[start_index : start_index + 4]),
                 n_cores=self.n_cores,
+                batch_size=self.batch_size,
             )
-            start_index += self.batch_size
 
             # do one evaluation without the batch evaluator
-            problem.fun(xs[start_index])
-            start_index += 1
+            problem.fun(xs[start_index + 4])
 
         out = InternalOptimizeResult(
             x=xs[-1],
@@ -130,9 +130,9 @@ class DummyOptimizer(Algorithm):
 
 def _get_fake_history(batch_size):
     if batch_size == 1:
-        batches = list(range(14))
+        batches = list(range(15))
     elif batch_size == 2:
-        batches = [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9]
+        batches = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 8]
     elif batch_size == 4:
         batches = [0, 0, 0, 0, 1, 2, 2, 2, 2, 3, 4, 4, 4, 4, 5]
     else:
