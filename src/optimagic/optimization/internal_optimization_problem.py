@@ -157,11 +157,11 @@ class InternalOptimizationProblem:
         return fun_and_jac_value
 
     def batch_fun(
-        self, x: list[NDArray[np.float64]], n_cores: int
+        self, x_list: list[NDArray[np.float64]], n_cores: int
     ) -> list[float | NDArray[np.float64]]:
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun,
-            arguments=x,
+            arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",
@@ -173,11 +173,11 @@ class InternalOptimizationProblem:
         return fun_values
 
     def batch_jac(
-        self, x: list[NDArray[np.float64]], n_cores: int
+        self, x_list: list[NDArray[np.float64]], n_cores: int
     ) -> list[NDArray[np.float64]]:
         batch_result = self._batch_evaluator(
             func=self._evaluate_jac,
-            arguments=x,
+            arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",
@@ -188,11 +188,11 @@ class InternalOptimizationProblem:
         return jac_values
 
     def batch_fun_and_jac(
-        self, x: list[NDArray[np.float64]], n_cores: int
+        self, x_list: list[NDArray[np.float64]], n_cores: int
     ) -> list[tuple[float | NDArray[np.float64], NDArray[np.float64]]]:
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun_and_jac,
-            arguments=x,
+            arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",
@@ -204,11 +204,11 @@ class InternalOptimizationProblem:
         return fun_and_jac_values
 
     def exploration_fun(
-        self, x: list[NDArray[np.float64]], n_cores: int
+        self, x_list: list[NDArray[np.float64]], n_cores: int
     ) -> list[float]:
         batch_result = self._batch_evaluator(
             func=self._evaluate_exploration_fun,
-            arguments=x,
+            arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",

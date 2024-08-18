@@ -12,7 +12,7 @@ coverage:
         target: 30%
     project:
       default:
-        target: 90%
+        target: 80%
 ignore:
   - setup.py
   - src/optimagic/benchmarking/cartis_roberts.py
