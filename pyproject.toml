@@ -249,7 +249,6 @@ module = [
     "optimagic.optimization.optimization_logging",
     "optimagic.optimization.optimize_result",
     "optimagic.optimization.optimize",
-    "optimagic.optimization.process_results",
     "optimagic.optimization.multistart",
     "optimagic.optimization.scipy_aliases",
     "optimagic.optimization.create_optimization_problem",

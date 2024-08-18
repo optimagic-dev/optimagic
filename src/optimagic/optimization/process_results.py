@@ -1,6 +1,8 @@
 from dataclasses import dataclass, replace
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.convergence_report import get_convergence_report
@@ -74,17 +76,19 @@ def process_single_result(
 
 
 def process_multistart_result(
-    raw_res,
-    converter,
-    solver_type,
-    extra_fields,
-):
+    raw_res: InternalOptimizeResult,
+    converter: Converter,
+    solver_type: AggregationLevel,
+    extra_fields: ExtraResultFields,
+) -> OptimizeResult:
     """Process results of internal optimizers.
 
     Args:
         res (dict): Results dictionary of an internal optimizer or multistart optimizer.
 
     """
+    if raw_res.multistart_info is None:
+        raise ValueError("Multistart info is missing.")
 
     if isinstance(raw_res, str):
         res = _dummy_result_from_traceback(raw_res, extra_fields)
@@ -129,7 +133,12 @@ def process_multistart_result(
     return res
 
 
-def _process_multistart_info(info, converter, solver_type, extra_fields):
+def _process_multistart_info(
+    info: dict[str, Any],
+    converter: Converter,
+    solver_type: AggregationLevel,
+    extra_fields: ExtraResultFields,
+) -> MultistartInfo:
     starts = [converter.params_from_internal(x) for x in info["start_parameters"]]
 
     optima = []
@@ -162,10 +171,12 @@ def _process_multistart_info(info, converter, solver_type, extra_fields):
     )
 
 
-def _dummy_result_from_traceback(candidate, extra_fields):  # noqa: ARG001
+def _dummy_result_from_traceback(
+    candidate: str, extra_fields: ExtraResultFields
+) -> OptimizeResult:
     out = OptimizeResult(
-        params=None,
-        fun=None,
+        params=extra_fields.start_params,
+        fun=extra_fields.start_fun,
         start_fun=extra_fields.start_fun,
         start_params=extra_fields.start_params,
         algorithm=extra_fields.algorithm,
@@ -176,7 +187,10 @@ def _dummy_result_from_traceback(candidate, extra_fields):  # noqa: ARG001
     return out
 
 
-def switch_sign(critval):
+def switch_sign(
+    critval: dict[str, Any] | float | NDArray[np.float64],
+) -> dict[str, Any] | float | NDArray[np.float64]:
+    out: dict[str, Any] | float | NDArray[np.float64]
     if isinstance(critval, dict):
         out = critval.copy()
         if "value" in critval:
@@ -188,9 +202,9 @@ def switch_sign(critval):
     return out
 
 
-def _sum_or_none(summands):
+def _sum_or_none(summands: list[int | None | float]) -> int | None:
     if any(s is None for s in summands):
         out = None
     else:
-        out = int(np.sum(summands))
+        out = int(np.array(summands).sum())
     return out
