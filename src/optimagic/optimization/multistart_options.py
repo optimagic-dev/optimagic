@@ -100,7 +100,7 @@ class MultistartOptionsDict(TypedDict):
     convergence_xtol_rel: NotRequired[float | None]
     convergence_max_discoveries: NotRequired[int]
     n_cores: NotRequired[int]
-    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
+    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | BatchEvaluator]
     batch_size: NotRequired[int | None]
     seed: NotRequired[int | np.random.Generator | None]
     error_handling: NotRequired[Literal["raise", "continue"] | None]

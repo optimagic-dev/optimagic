@@ -126,6 +126,14 @@ class InternalOptimizeResult:
         if self.info is not None and not isinstance(self.info, dict):
             report.append("info must be a dictionary or None")
 
+        if self.status is not None and not isinstance(self.status, int):
+            report.append("status must be an int or None")
+
+        if self.max_constraint_violation and not isinstance(
+            self.max_constraint_violation, float
+        ):
+            report.append("max_constraint_violation must be a float or None")
+
         if report:
             msg = (
                 "The following arguments to InternalOptimizeResult are invalid:\n"

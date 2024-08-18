@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from itertools import product
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.multistart import (
     _draw_exploration_sample,
     get_batched_optimization_sample,
@@ -57,33 +59,29 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
 
 
 def test_run_explorations():
-    def _dummy(x, **kwargs):
-        assert set(kwargs) == {
-            "task",
-            "algo_info",
-            "error_handling",
-            "fixed_log_data",
-        }
-        if x.sum() == 5:
-            out = np.nan
-        else:
-            out = -x.sum()
-        return out
+    @dataclass
+    class Dummy:
+        def exploration_fun(self, x, n_cores):
+            out = []
+            for vec in x:
+                if vec.sum() == 5:
+                    out.append(np.inf)
+                else:
+                    out.append(-vec.sum())
+            return out
 
     calculated = run_explorations(
-        internal_problem=_dummy,
+        internal_problem=Dummy(),
         sample=np.arange(6).reshape(3, 2),
-        batch_evaluator="joblib",
         n_cores=1,
         step_id=0,
-        error_handling="raise",
     )
 
     exp_values = np.array([-9, -1])
     exp_sample = np.array([[4, 5], [0, 1]])
 
-    aaae(calculated["sorted_values"], exp_values)
     aaae(calculated["sorted_sample"], exp_sample)
+    aaae(calculated["sorted_values"], exp_values)
 
 
 def test_get_batched_optimization_sample():
@@ -127,7 +125,11 @@ def starts():
 
 @pytest.fixture()
 def results():
-    return [{"solution_x": np.arange(3) + 1e-10, "solution_criterion": 4}]
+    res = InternalOptimizeResult(
+        x=np.arange(3) + 1e-10,
+        fun=4,
+    )
+    return [res]
 
 
 def test_update_state_converged(current_state, starts, results):
@@ -147,9 +149,8 @@ def test_update_state_converged(current_state, starts, results):
     aaae(new_state["best_x"], np.arange(3))
     assert new_state["best_y"] == 4
     assert new_state["y_history"] == [6, 5, 4]
-    assert new_state["result_history"][0]["solution_criterion"] == 4
+    assert new_state["result_history"][0].fun == 4
     aaae(new_state["start_history"][0], np.zeros(3))
-    assert new_state["best_res"].keys() == results[0].keys()
 
     assert is_converged
 

@@ -228,7 +228,7 @@ def params_plot(
     if data["stacked_local_histories"] is not None:
         history = data["stacked_local_histories"]["params"]
     else:
-        history = data["history"]["params"]
+        history = data["history"].params
 
     # ==================================================================================
     # Create figure
