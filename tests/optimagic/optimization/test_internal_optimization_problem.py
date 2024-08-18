@@ -607,10 +607,10 @@ def error_min_problem():
 
     error_penalty_function = get_error_penalty_function(
         start_x=start_params,
-        error_handling=error_handling.value,
+        error_handling=error_handling,
         error_penalty=None,
         start_criterion=ScalarFunctionValue(14),
-        direction=direction.value,
+        direction=direction,
         solver_type=solver_type,
     )
 
@@ -684,10 +684,10 @@ def error_max_problem(error_min_problem):
 
     error_penalty_function = get_error_penalty_function(
         start_x=np.array([1, 2, 3]),
-        error_handling=problem._error_handling.value,
+        error_handling=problem._error_handling,
         error_penalty=None,
         start_criterion=ScalarFunctionValue(-14),
-        direction=problem._direction.value,
+        direction=problem._direction,
         solver_type=problem._solver_type,
     )
 

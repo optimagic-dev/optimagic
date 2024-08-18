@@ -240,11 +240,9 @@ module = [
 
     "optimagic.optimization",
     "optimagic.optimization.algo_options",
-    "optimagic.optimization.check_arguments",
     "optimagic.optimization.convergence_report",
     "optimagic.optimization.error_penalty",
     "optimagic.optimization.get_algorithm",
-    "optimagic.optimization.history_tools",
     "optimagic.optimization.internal_criterion_template",
     "optimagic.optimization.optimization_logging",
     "optimagic.optimization.optimize_result",
