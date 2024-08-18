@@ -2,7 +2,6 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
 
 from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.convergence_report import get_convergence_report
@@ -184,21 +183,6 @@ def _dummy_result_from_traceback(
         n_free=extra_fields.n_free,
         message=candidate,
     )
-    return out
-
-
-def switch_sign(
-    critval: dict[str, Any] | float | NDArray[np.float64],
-) -> dict[str, Any] | float | NDArray[np.float64]:
-    out: dict[str, Any] | float | NDArray[np.float64]
-    if isinstance(critval, dict):
-        out = critval.copy()
-        if "value" in critval:
-            out["value"] = -critval["value"]
-        if "contributions" in critval:
-            out["contributions"] = -critval["contributions"]
-    else:
-        out = -critval
     return out
 
 

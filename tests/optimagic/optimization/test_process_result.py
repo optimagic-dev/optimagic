@@ -1,8 +1,6 @@
-from optimagic.optimization.process_results import switch_sign
+from optimagic.optimization.process_results import _sum_or_none
 
 
-def test_switch_sign_dict():
-    d = {"contributions": 1, "value": -1}
-    calculated = switch_sign(d)
-    expected = {"contributions": -1, "value": 1}
-    assert calculated == expected
+def test_sum_or_none():
+    assert _sum_or_none([1, 2, 3]) == 6
+    assert _sum_or_none([1, 2, None]) is None

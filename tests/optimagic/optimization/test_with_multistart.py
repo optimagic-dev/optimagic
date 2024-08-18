@@ -1,9 +1,10 @@
+import functools
+
 import numpy as np
 import optimagic as om
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.decorators import switch_sign
 from optimagic.examples.criterion_functions import (
     sos_ls,
     sos_scalar,
@@ -34,6 +35,30 @@ test_cases = [
 ]
 
 
+def _switch_sign(func):
+    """Switch sign of all outputs of a function."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        unswitched = func(*args, **kwargs)
+        if isinstance(unswitched, dict):
+            switched = {key: -val for key, val in unswitched.items()}
+        elif isinstance(unswitched, (tuple, list)):
+            switched = []
+            for entry in unswitched:
+                if isinstance(entry, dict):
+                    switched.append({key: -val for key, val in entry.items()})
+                else:
+                    switched.append(-entry)
+            if isinstance(unswitched, tuple):
+                switched = tuple(switched)
+        else:
+            switched = -unswitched
+        return switched
+
+    return wrapper
+
+
 @pytest.mark.parametrize("criterion, direction", test_cases)
 def test_multistart_optimization_with_sum_of_squares_at_defaults(
     criterion, direction, params
@@ -47,7 +72,7 @@ def test_multistart_optimization_with_sum_of_squares_at_defaults(
         )
     else:
         res = maximize(
-            fun=switch_sign(criterion),
+            fun=_switch_sign(criterion),
             params=params,
             algorithm="scipy_lbfgsb",
             multistart=True,
@@ -90,7 +115,7 @@ def test_convergence_via_max_discoveries_works(params):
     )
 
     res = maximize(
-        fun=switch_sign(sos_scalar),
+        fun=_switch_sign(sos_scalar),
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=options,

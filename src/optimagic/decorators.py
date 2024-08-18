@@ -121,30 +121,6 @@ def unpack(func=None, symbol=None):
         return decorator_unpack
 
 
-def switch_sign(func):
-    """Switch sign of all outputs of a function."""
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        unswitched = func(*args, **kwargs)
-        if isinstance(unswitched, dict):
-            switched = {key: -val for key, val in unswitched.items()}
-        elif isinstance(unswitched, (tuple, list)):
-            switched = []
-            for entry in unswitched:
-                if isinstance(entry, dict):
-                    switched.append({key: -val for key, val in entry.items()})
-                else:
-                    switched.append(-entry)
-            if isinstance(unswitched, tuple):
-                switched = tuple(switched)
-        else:
-            switched = -unswitched
-        return switched
-
-    return wrapper
-
-
 @dataclass
 class AlgoInfo:
     primary_criterion_entry: str
