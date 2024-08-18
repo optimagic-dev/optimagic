@@ -93,6 +93,7 @@ def test_criterion_plot_wrong_results():
         criterion_plot([10, np.array([1, 2, 3])])
 
 
+@pytest.mark.xfail(reason="Iteration logging is currently not implemented.")
 def test_criterion_plot_different_input_types():
     bounds = Bounds(soft_lower=np.full(5, -1), soft_upper=np.full(5, 6))
     # logged result

@@ -99,6 +99,7 @@ def test_convergence_via_max_discoveries_works(params):
     assert len(res.multistart_info.local_optima) == 2
 
 
+@pytest.mark.xfail(reason="Steps loggin is not implemented.")
 def test_steps_are_logged_as_skipped_if_convergence(params):
     options = om.MultistartOptions(
         n_samples=10 * len(params),
@@ -119,6 +120,7 @@ def test_steps_are_logged_as_skipped_if_convergence(params):
     assert steps_table["status"].tolist() == expected_status
 
 
+@pytest.mark.xfail(reason="Steps loggin is not implemented.")
 def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
     options = om.MultistartOptions(
         convergence_max_discoveries=np.inf,

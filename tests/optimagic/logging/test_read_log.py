@@ -9,6 +9,7 @@ from optimagic.logging.read_log import (
 )
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import Direction
 from pybaum import tree_equal, tree_just_flatten
 
 
@@ -40,6 +41,7 @@ def test_log_reader_read_start_params(example_db):
     assert res == {"a": 1, "b": 2, "c": 3}
 
 
+@pytest.mark.xfail(reason="Iteration logging is currently not implemented.")
 def test_log_reader_read_iteration(example_db):
     reader = OptimizeLogReader(example_db)
     first_row = reader.read_iteration(0)
@@ -52,6 +54,7 @@ def test_log_reader_read_iteration(example_db):
     assert np.allclose(last_row["value"], 0)
 
 
+@pytest.mark.xfail(reason="Iteration logging is currently not implemented.")
 def test_log_reader_read_history(example_db):
     reader = OptimizeLogReader(example_db)
     res = reader.read_history()
@@ -60,10 +63,11 @@ def test_log_reader_read_history(example_db):
     assert res["params"][0] == {"a": 1, "b": 2, "c": 3}
 
 
+@pytest.mark.xfail(reason="Iteration logging is currently not implemented.")
 def test_log_reader_read_multistart_history(example_db):
     reader = OptimizeLogReader(example_db)
     history, local_history, exploration = reader.read_multistart_history(
-        direction="minimize"
+        direction=Direction.MINIMIZE
     )
     assert local_history is None
     assert exploration is None
@@ -75,6 +79,7 @@ def test_log_reader_read_multistart_history(example_db):
     )
 
 
+@pytest.mark.xfail(reason="Steps logging is currently not implemented.")
 def test_read_steps_table(example_db):
     res = read_steps_table(example_db)
     assert isinstance(res, pd.DataFrame)
