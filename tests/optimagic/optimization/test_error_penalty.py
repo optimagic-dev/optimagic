@@ -15,7 +15,7 @@ from optimagic.optimization.fun_value import (
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
-from optimagic.typing import AggregationLevel, Direction, ErrorHandling
+from optimagic.typing import AggregationLevel, Direction
 from optimagic.utilities import get_rng
 
 
@@ -73,7 +73,6 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
     constant = 3
 
     scalar_func = get_error_penalty_function(
-        error_handling=ErrorHandling.CONTINUE,
         start_x=x0,
         start_criterion=ScalarFunctionValue(3),
         error_penalty={"slope": slope, "constant": constant},
@@ -82,7 +81,6 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
     )
 
     contribs_func = get_error_penalty_function(
-        error_handling=ErrorHandling.CONTINUE,
         start_x=x0,
         start_criterion=LikelihoodFunctionValue(np.ones(10)),
         error_penalty={"slope": slope, "constant": constant},
@@ -91,7 +89,6 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
     )
 
     root_contribs_func = get_error_penalty_function(
-        error_handling=ErrorHandling.CONTINUE,
         start_x=x0,
         start_criterion=LeastSquaresFunctionValue(np.ones(10)),
         error_penalty={"slope": slope, "constant": constant},

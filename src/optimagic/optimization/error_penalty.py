@@ -10,7 +10,7 @@ from optimagic.optimization.fun_value import (
     ScalarFunctionValue,
     SpecificFunctionValue,
 )
-from optimagic.typing import AggregationLevel, Direction, ErrorHandling
+from optimagic.typing import AggregationLevel, Direction
 
 
 def _scalar_penalty(
@@ -59,7 +59,6 @@ def _penalty_residuals(
 
 
 def get_error_penalty_function(
-    error_handling: ErrorHandling,
     start_x: NDArray[np.float64],
     start_criterion: SpecificFunctionValue,
     error_penalty: dict[str, float] | None,

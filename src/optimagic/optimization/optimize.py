@@ -383,7 +383,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
     # get error penalty function
     error_penalty_func = get_error_penalty_function(
-        error_handling=problem.error_handling,
         start_x=internal_params.values,
         start_criterion=first_crit_eval,
         error_penalty=problem.error_penalty,
