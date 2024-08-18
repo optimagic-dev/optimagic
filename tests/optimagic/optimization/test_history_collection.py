@@ -158,7 +158,6 @@ CASES = [(1, 1), (1, 2), (2, 2), (1, 4), (2, 4)]
 @pytest.mark.parametrize("n_cores, batch_size", CASES)
 def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
     options = {
-        "batch_evaluator": "joblib",
         "batch_size": batch_size,
         "n_cores": n_cores,
     }

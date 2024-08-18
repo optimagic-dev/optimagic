@@ -1,7 +1,5 @@
-import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,41 +20,23 @@ class HistoryArrays:
 
     @property
     def criterion(self) -> NDArray[np.float64]:
-        msg = "The criterion attribute is deprecated in HistoryArrays."
-        warnings.warn(msg, FutureWarning)
         return self.fun
 
     @property
     def monotone_criterion(self) -> NDArray[np.float64]:
-        msg = "The monotone_criterion attribute is deprecated in HistoryArrays."
-        warnings.warn(msg, FutureWarning)
         return self.monotone_fun
 
     def __getitem__(self, key: str) -> NDArray[np.float64] | NDArray[np.bool_]:
-        msg = "Dict access for HistoryArrays is deprecated."
-        warnings.warn(msg, FutureWarning)
         return getattr(self, key)
 
 
-def get_history_arrays(
-    history: History, direction: Direction | Literal["minimize", "maximize"]
-) -> HistoryArrays:
+def get_history_arrays(history: History, direction: Direction) -> HistoryArrays:
     # ==================================================================================
     # Handle deprecations for now
     # ==================================================================================
-    if direction in ["minimize", "maximize"]:
-        msg = "Strings as direction argument are deprecated in get_history_arrays."
-        warnings.warn(msg, FutureWarning)
-
-    if direction == "minimize":
-        direction = Direction.MINIMIZE
-    elif direction == "maximize":
-        direction = Direction.MAXIMIZE
+    assert direction in [Direction.MINIMIZE, Direction.MAXIMIZE]
 
     if isinstance(history, dict):
-        msg = "Dict input for history argument is deprecated in get_history_arrays."
-        warnings.warn(msg, FutureWarning)
-
         parhist = history["params"]
         funhist = history["criterion"]
         timehist = history["runtime"]

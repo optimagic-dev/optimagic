@@ -42,8 +42,7 @@ def process_single_result(
 
     if raw_res.history is not None:
         conv_report = get_convergence_report(
-            history=raw_res.history,
-            direction=extra_fields.direction.value,
+            history=raw_res.history, direction=extra_fields.direction
         )
     else:
         conv_report = None

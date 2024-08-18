@@ -13,6 +13,7 @@ from optimagic.logging.read_log import (
 from optimagic.optimization.history_tools import get_history_arrays
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import Direction
 
 
 def criterion_plot(
@@ -118,7 +119,9 @@ def criterion_plot(
         }
 
         for i, local_history in enumerate(data[0]["local_histories"]):
-            history = get_history_arrays(local_history, data[0]["direction"])[key]
+            history = get_history_arrays(
+                local_history, Direction(data[0]["direction"])
+            )[key]
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
@@ -325,7 +328,7 @@ def _extract_plotting_data_from_results_object(
 
     data = {
         "history": res.history,
-        "direction": res.direction,
+        "direction": Direction(res.direction),
         "is_multistart": is_multistart,
         "local_histories": local_histories,
         "stacked_local_histories": stacked,
