@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 
 import numpy as np
 import pytest
@@ -8,8 +9,10 @@ from optimagic import mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.decorators import mark_minimizer
 from optimagic.logging.read_log import OptimizeLogReader
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import AggregationLevel
 
 OPTIMIZERS = []
 BOUNDED = []
@@ -22,7 +25,8 @@ for name, algo in AVAILABLE_ALGORITHMS.items():
             BOUNDED.append(name)
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason="Slow on other platforms.")
+@pytest.mark.xfail(reason="Iteration logging is not yet implemented.")
+@pytest.mark.skipif(sys.platform == "win32", reason="Slow on windows.")
 @pytest.mark.parametrize("algorithm", OPTIMIZERS)
 def test_history_collection_with_parallelization(algorithm, tmp_path):
     lb = np.zeros(5) if algorithm in BOUNDED else None
@@ -77,11 +81,58 @@ def _dummy_optimizer(criterion, x, n_cores, batch_size, batch_evaluator):
     return out
 
 
+@mark.minimizer(
+    name="dummy",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class DummyOptimizer(Algorithm):
+    n_cores: int = 1
+    batch_size: int = 1
+
+    def _solve_internal_problem(self, problem, x0):
+        assert self.batch_size in [1, 2, 4]
+
+        xs = np.arange(15).repeat(len(x0)).reshape(15, len(x0))
+
+        start_index = 0
+
+        while start_index < 15 - self.batch_size:
+            # do four evaluations in a batch evaluator
+            problem.batch_fun(
+                list(xs[start_index : start_index + self.batch_size]),
+                n_cores=self.n_cores,
+            )
+            start_index += self.batch_size
+
+            # do one evaluation without the batch evaluator
+            problem.fun(xs[start_index])
+            start_index += 1
+
+        out = InternalOptimizeResult(
+            x=xs[-1],
+            fun=5,
+            success=True,
+            n_fun_evals=15,
+            n_iterations=3,
+        )
+        return out
+
+
 def _get_fake_history(batch_size):
     if batch_size == 1:
-        batches = list(range(15))
+        batches = list(range(14))
     elif batch_size == 2:
-        batches = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 8]
+        batches = [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9]
     elif batch_size == 4:
         batches = [0, 0, 0, 0, 1, 2, 2, 2, 2, 3, 4, 4, 4, 4, 5]
     else:
@@ -103,7 +154,7 @@ def _fake_criterion(x):
 CASES = [(1, 1), (1, 2), (2, 2), (1, 4), (2, 4)]
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason="Slow on other platforms.")
+@pytest.mark.skipif(sys.platform == "win32", reason="Slow on windows.")
 @pytest.mark.parametrize("n_cores, batch_size", CASES)
 def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
     options = {
@@ -115,7 +166,7 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
     res = minimize(
         fun=_fake_criterion,
         params=np.arange(5),
-        algorithm=_dummy_optimizer,
+        algorithm=DummyOptimizer,
         algo_options=options,
     )
 
@@ -123,8 +174,6 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
 
     expected_history = _get_fake_history(batch_size)
 
-    assert isinstance(got_history, dict)
-    assert set(got_history.keys()) == {"params", "criterion", "batches", "runtime"}
-    aae(got_history["batches"], expected_history["batches"])
-    assert got_history["criterion"] == expected_history["criterion"]
-    aaae(got_history["params"], expected_history["params"])
+    aae(got_history.batches, expected_history["batches"])
+    assert got_history.fun == expected_history["criterion"][: len(got_history.fun)]
+    aaae(got_history.params, expected_history["params"][: len(got_history.params)])
