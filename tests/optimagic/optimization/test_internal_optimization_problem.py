@@ -249,7 +249,9 @@ def test_history_with_fun(base_problem):
 
 
 def test_history_with_batch_fun(base_problem):
-    base_problem.batch_fun([np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1)
+    base_problem.batch_fun(
+        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1, batch_size=2
+    )
     assert len(base_problem.history.params) == 2
     aaae(base_problem.history.params[0], [1, 2, 3])
     aaae(base_problem.history.params[1], [4, 5, 6])
@@ -269,7 +271,9 @@ def test_history_with_jac(base_problem):
 
 
 def test_history_with_batch_jac(base_problem):
-    base_problem.batch_jac([np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1)
+    base_problem.batch_jac(
+        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1, batch_size=2
+    )
     assert len(base_problem.history.params) == 2
     aaae(base_problem.history.params[0], [1, 2, 3])
     aaae(base_problem.history.params[1], [4, 5, 6])
@@ -290,7 +294,7 @@ def test_history_with_fun_and_jac(base_problem):
 
 def test_history_with_batch_fun_and_jac(base_problem):
     base_problem.batch_fun_and_jac(
-        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1
+        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1, batch_size=2
     )
     assert len(base_problem.history.params) == 2
     aaae(base_problem.history.params[0], [1, 2, 3])
@@ -301,7 +305,9 @@ def test_history_with_batch_fun_and_jac(base_problem):
 
 
 def test_history_with_exploration_fun(base_problem):
-    base_problem.exploration_fun([np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1)
+    base_problem.exploration_fun(
+        [np.array([1, 2, 3]), np.array([4, 5, 6])], n_cores=1, batch_size=2
+    )
     assert len(base_problem.history.params) == 2
     aaae(base_problem.history.params[0], [1, 2, 3])
     aaae(base_problem.history.params[1], [4, 5, 6])
