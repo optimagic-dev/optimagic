@@ -35,7 +35,7 @@ The following arguments are not supported as part of ``algo_options``:
 
 import functools
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Callable, List, Literal, Tuple
 
 import numpy as np
 import scipy
@@ -74,7 +74,10 @@ from optimagic.parameters.nonlinear_constraints import (
 )
 from optimagic.typing import (
     AggregationLevel,
+    BatchEvaluator,
+    NegativeFloat,
     NonNegativeFloat,
+    NonNegativeInt,
     PositiveFloat,
     PositiveInt,
 )
@@ -1311,6 +1314,59 @@ def scipy_basinhopping(
     return process_scipy_result_old(res)
 
 
+@mark.minimizer(
+    name="scipy_brute",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=True,
+)
+@dataclass(frozen=True)
+class ScipyBrute(Algorithm):
+    n_grid_points: PositiveInt = 20
+    polishing_function: Callable | None = None
+    n_cores: PositiveInt = 1
+    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        workers = _get_workers(self.n_cores, self.batch_evaluator)
+        if problem.bounds.lower is None or problem.bounds.upper is None:
+            raise ValueError(
+                """Global algorithms like scipy_brute need finite bounds
+                 for all parameters"""
+            )
+        raw_res = scipy.optimize.brute(
+            func=problem.fun,
+            ranges=tuple(
+                map(
+                    tuple, np.column_stack((problem.bounds.lower, problem.bounds.upper))
+                )
+            ),
+            Ns=self.n_grid_points,
+            full_output=True,
+            finish=self.polishing_function,
+            workers=workers,
+        )
+        res = InternalOptimizeResult(
+            x=raw_res[0],
+            fun=raw_res[1],
+            n_fun_evals=raw_res[2].size,
+            n_iterations=raw_res[2].size,
+            success=True,
+            message="brute force optimization terminated successfully",
+        )
+
+        return res
+
+
 @mark_minimizer(name="scipy_brute", is_global=True, disable_history=True)
 def scipy_brute(
     criterion,
@@ -1356,6 +1412,82 @@ def scipy_brute(
     }
 
     return out
+
+
+@mark.minimizer(
+    name="scipy_differential_evolution",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=True,
+)
+@dataclass(frozen=True)
+class ScipyDifferentialEvolution(Algorithm):
+    strategy: (
+        Literal[
+            "best1bin",
+            "best1exp",
+            "rand1exp",
+            "randtobest1exp",
+            "currenttobest1exp",
+            "best2exp",
+            "rand2exp",
+            "randtobest1bin",
+            "currenttobest1bin",
+            "best2bin",
+            "rand2bin",
+            "rand1bin",
+        ]
+        | Callable
+    ) = "best1bin"
+    stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    population_size_multiplier: NonNegativeInt = 15
+    convergence_ftol_rel: NonNegativeFloat = 0.01
+    # TODO: Refine type to add ranges [0,2] if float.
+    mutation_constant: NonNegativeFloat | Tuple[NonNegativeFloat, NonNegativeFloat] = (
+        0.5,
+        1,
+    )
+    # TODO: Refine type to add ranges [0,1].
+    recombination_constant: NonNegativeFloat = 0.7
+    seed: int | np.random.Generator | np.random.RandomState | None = None
+    polish: bool = True
+    sampling_method: (
+        Literal["latinhypercube", "random", "sobol", "halton"] | NDArray[np.float64]
+    ) = "latinhypercube"
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
+    n_cores: PositiveInt = 1
+    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        workers = _get_workers(self.n_cores, self.batch_evaluator)
+        res = scipy.optimize.differential_evolution(
+            func=problem.fun,
+            bounds=_get_scipy_bounds(problem.bounds),
+            strategy=self.strategy,
+            maxiter=self.stopping_maxiter,
+            popsize=self.population_size_multiplier,
+            tol=self.convergence_ftol_rel,
+            mutation=self.mutation_constant,
+            recombination=self.recombination_constant,
+            seed=self.seed,
+            polish=self.polish,
+            init=self.sampling_method,
+            atol=self.convergence_ftol_abs,
+            updating="deferred",
+            workers=workers,
+            constraints=_get_scipy_constraints(problem.nonlinear_constraints),
+        )
+
+        return process_scipy_result(res)
 
 
 @mark_minimizer(
@@ -1407,6 +1539,112 @@ def scipy_differential_evolution(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_shgo",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=True,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipySHGO(Algorithm):
+    local_algorithm: (
+        Literal[
+            "Nelder-Mead",
+            "Powell",
+            "CG",
+            "BFGS",
+            "Newton-CG",
+            "L-BFGS-B",
+            "TNC",
+            "COBYLA",
+            "SLSQP",
+            "trust-constr",
+            "dogleg",
+            "trust-ncg",
+            "trust-exact",
+            "trust-krylov",
+        ]
+        | Callable
+    ) = "L-BFGS-B"
+    local_algo_options: dict[str, Any] | None = None
+    n_sampling_points: PositiveInt = 128
+    n_simplex_iterations: PositiveInt = 1
+    sampling_method: Literal["simplicial", "halton", "sobol"] | Callable = "simplicial"
+    max_sampling_evaluations: PositiveInt | None = None
+    convergence_minimum_criterion_value: float | None = None
+    convergence_minimum_criterion_tolerance: NonNegativeFloat = 1e-4
+    stopping_maxiter: PositiveInt | None = None
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    stopping_max_processing_time: PositiveFloat | None = None
+    minimum_homology_group_rank_differential: PositiveInt | None = None
+    symmetry: List | bool = False
+    minimize_every_iteration: bool = True
+    max_local_minimizations_per_iteration: PositiveInt | bool = False
+    infinity_constraints: bool = True
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.local_algorithm == "COBYLA":
+            nonlinear_constraints = equality_as_inequality_constraints(
+                problem.nonlinear_constraints
+            )
+
+        nonlinear_constraints = vector_as_list_of_scalar_constraints(
+            problem.nonlinear_constraints
+        )
+
+        local_algo_options = (
+            {} if self.local_algo_options is None else self.local_algo_options
+        )
+        default_minimizer_kwargs = {
+            "method": self.local_algorithm,
+            "bounds": _get_scipy_bounds(problem.bounds),
+            "jac": problem.jac,
+        }
+
+        minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
+        options = {
+            "maxfev": self.max_sampling_evaluations,
+            "f_min": self.convergence_minimum_criterion_value,
+            "f_tol": self.convergence_minimum_criterion_tolerance,
+            "maxiter": self.stopping_maxiter,
+            "maxev": self.stopping_maxfun,
+            "maxtime": self.stopping_max_processing_time,
+            "minhgrd": self.minimum_homology_group_rank_differential,
+            "symmetry": self.symmetry,
+            "jac": problem.jac,
+            "minimize_every_iter": self.minimize_every_iteration,
+            "local_iter": self.max_local_minimizations_per_iteration,
+            "infty_constraints": self.infinity_constraints,
+        }
+
+        if any(options.values()) is False:
+            options_used = None
+        else:
+            options_used = options
+
+        res = scipy.optimize.shgo(
+            func=problem.fun,
+            bounds=_get_scipy_bounds(problem.bounds),
+            constraints=nonlinear_constraints,
+            minimizer_kwargs=minimizer_kwargs,
+            n=self.n_sampling_points,
+            iters=self.n_simplex_iterations,
+            sampling_method=self.sampling_method,
+            options=options_used,
+        )
+
+        return process_scipy_result(res)
 
 
 @mark_minimizer(name="scipy_shgo", is_global=True)
@@ -1491,6 +1729,86 @@ def scipy_shgo(
     return process_scipy_result_old(res)
 
 
+@mark.minimizer(
+    name="scipy_dual_annealing",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=True,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyDualAnnealing(Algorithm):
+    stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    local_algorithm: (
+        Literal[
+            "Nelder-Mead",
+            "Powell",
+            "CG",
+            "BFGS",
+            "Newton-CG",
+            "L-BFGS-B",
+            "TNC",
+            "COBYLA",
+            "SLSQP",
+            "trust-constr",
+            "dogleg",
+            "trust-ncg",
+            "trust-exact",
+            "trust-krylov",
+        ]
+        | Callable
+    ) = "L-BFGS-B"
+    local_algo_options: dict[str, Any] | None = None
+    # TODO: Refine type to add ranges (0.01, 5e4]
+    initial_temperature: PositiveFloat = 5230.0
+    # TODO: Refine type to add ranges (0,1)
+    restart_temperature_ratio: PositiveFloat = 2e-05
+    # TODO: Refine type to add ranges (1, 3]
+    visit: PositiveFloat = 2.62
+    # TODO: Refine type to add ranges (-1e4, -5]
+    accept: NegativeFloat = -5.0
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    seed: int | np.random.Generator | np.random.RandomState | None = None
+    no_local_search: bool = False
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        local_algo_options = (
+            {} if self.local_algo_options is None else self.local_algo_options
+        )
+        default_minimizer_kwargs = {
+            "method": self.local_algorithm,
+            "bounds": _get_scipy_bounds(problem.bounds),
+            "jac": problem.jac,
+        }
+
+        minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
+
+        res = scipy.optimize.dual_annealing(
+            func=problem.fun,
+            bounds=_get_scipy_bounds(problem.bounds),
+            maxiter=self.stopping_maxiter,
+            minimizer_kwargs=minimizer_kwargs,
+            initial_temp=self.initial_temperature,
+            restart_temp_ratio=self.restart_temperature_ratio,
+            visit=self.visit,
+            accept=self.accept,
+            maxfun=self.stopping_maxfun,
+            seed=self.seed,
+            no_local_search=self.no_local_search,
+            x0=x0,
+        )
+
+        return process_scipy_result(res)
+
+
 @mark_minimizer(name="scipy_dual_annealing", is_global=True)
 def scipy_dual_annealing(
     criterion,
@@ -1541,6 +1859,52 @@ def scipy_dual_annealing(
     )
 
     return process_scipy_result_old(res)
+
+
+@mark.minimizer(
+    name="scipy_direct",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyDirect(Algorithm):
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    locally_biased: bool = True
+    convergence_minimum_criterion_value: float = -np.inf
+    # TODO: must be between 0 and 1
+    convergence_minimum_criterion_tolerance: NonNegativeFloat = 1e-4
+    # TODO: must be between 0 and 1
+    volume_hyperrectangle_tolerance: NonNegativeFloat = 1e-16
+    # TODO: must be between 0 and 1
+    length_hyperrectangle_tolerance: NonNegativeFloat = 1e-6
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = scipy.optimize.direct(
+            func=problem.fun,
+            bounds=_get_scipy_bounds(problem.bounds),
+            eps=self.convergence_ftol_rel,
+            maxfun=self.stopping_maxfun,
+            maxiter=self.stopping_maxiter,
+            locally_biased=self.locally_biased,
+            f_min=self.convergence_minimum_criterion_value,
+            f_min_rtol=self.convergence_minimum_criterion_tolerance,
+            vol_tol=self.volume_hyperrectangle_tolerance,
+            len_tol=self.length_hyperrectangle_tolerance,
+        )
+
+        return process_scipy_result(res)
 
 
 @mark_minimizer(name="scipy_direct", is_global=True)

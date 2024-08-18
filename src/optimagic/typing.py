@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated, Any, Callable, Literal, Protocol, TypeVar
 
-from annotated_types import Ge, Gt
+from annotated_types import Ge, Gt, Lt
 
 PyTree = Any
 PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]
@@ -59,3 +59,4 @@ PositiveInt = Annotated[int, Gt(0)]
 NonNegativeInt = Annotated[int, Ge(0)]
 PositiveFloat = Annotated[float, Gt(0)]
 NonNegativeFloat = Annotated[float, Ge(0)]
+NegativeFloat = Annotated[float, Lt(0)]
