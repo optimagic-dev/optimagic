@@ -99,10 +99,6 @@ def test_read_optimization_problem_table(example_db):
     assert isinstance(res, pd.DataFrame)
 
 
-# TODO: db file is created at instantiation of the logger, decide how to handle
-#  empty tables. By now, the logger methods may raise unspecific errors
-#  (like IndexError)
-@pytest.mark.skip
 def test_non_existing_database_raises_error(tmp_path):
     with pytest.raises(FileNotFoundError):
         SQLiteLogReader(tmp_path / "i_do_not_exist.db").read_start_params()

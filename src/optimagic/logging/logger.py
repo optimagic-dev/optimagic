@@ -450,6 +450,9 @@ class SQLiteLogReader(LogReader[SQLiteLogOptions]):
     """
 
     def __init__(self, path: str | Path):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"No file found at {path=}")
+
         log_options = SQLiteLogOptions(
             path, fast_logging=True, if_database_exists=ExistenceStrategy.EXTEND
         )
