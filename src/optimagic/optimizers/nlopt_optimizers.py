@@ -11,7 +11,6 @@ from numpy.typing import NDArray
 
 from optimagic import mark
 from optimagic.config import IS_NLOPT_INSTALLED
-from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
     CONVERGENCE_FTOL_REL,
@@ -51,7 +50,7 @@ if IS_NLOPT_INSTALLED:
     disable_history=False,
 )
 @dataclass(frozen=True)
-class NloptBobyqa(Algorithm):
+class NloptBOBYQA(Algorithm):
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
@@ -64,7 +63,8 @@ class NloptBobyqa(Algorithm):
         res = _minimize_nlopt(
             problem=problem,
             x0=x0,
-            convergence_xtol_rel=self.convergence_ftol_rel,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
             convergence_xtol_abs=self.convergence_xtol_abs,
             convergence_ftol_rel=self.convergence_ftol_rel,
             convergence_ftol_abs=self.convergence_ftol_abs,
@@ -75,720 +75,640 @@ class NloptBobyqa(Algorithm):
         return res
 
 
-@mark_minimizer(
-    name="nlopt_bobyqa",
-    primary_criterion_entry="value",
-    needs_scaling=False,
-    is_available=IS_NLOPT_INSTALLED,
-)
-def nlopt_bobyqa(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the BOBYQA algorithm.
-
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
-
-    """
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        derivative=None,
-        algorithm=nlopt.LN_BOBYQA,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
-
-
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_neldermead",
-    primary_criterion_entry="value",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_neldermead(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=0,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the Nelder-Mead simplex algorithm.
+@dataclass(frozen=True)
+class NloptNelderMead(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LN_NELDERMEAD,
+        )
 
-    """
-
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LN_NELDERMEAD,
-        derivative=None,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_praxis",
-    primary_criterion_entry="value",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_praxis(
-    criterion,
-    x,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using principal-axis method.
+@dataclass(frozen=True)
+class NloptPRAXIS(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LN_PRAXIS,
+        )
 
-    """
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds=None,
-        upper_bounds=None,
-        algorithm=nlopt.LN_PRAXIS,
-        derivative=None,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_cobyla",
-    primary_criterion_entry="value",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
 )
-def nlopt_cobyla(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    nonlinear_constraints=(),
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the cobyla method.
+@dataclass(frozen=True)
+class NloptCOBYLA(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LN_COBYLA,
+        )
 
-    """
-
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LN_COBYLA,
-        derivative=None,
-        nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_sbplx",
-    primary_criterion_entry="value",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_sbplx(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the "Subplex" algorithm.
+@dataclass(frozen=True)
+class NloptSbplx(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LN_SBPLX,
+        )
 
-    """
-
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LN_SBPLX,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_newuoa",
-    primary_criterion_entry="value",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_newuoa(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the NEWUOA algorithm.
+@dataclass(frozen=True)
+class NloptNEWUOA(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if problem.bounds.lower is None or problem.bounds.upper is None:
+            algo = nlopt.LN_NEWUOA
+        elif np.any(np.isfinite(problem.bounds.lower)) or np.any(
+            np.isfinite(problem.bounds.upper)
+        ):
+            algo = nlopt.LN_NEWUOA_BOUND
+        else:
+            algo = nlopt.LN_NEWUOA
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=algo,
+        )
 
-    """
-    if np.any(np.isfinite(lower_bounds)) or np.any(np.isfinite(upper_bounds)):
-        algo = nlopt.LN_NEWUOA_BOUND
-    else:
-        algo = nlopt.LN_NEWUOA
-
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=algo,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_tnewton",
-    primary_criterion_entry="value",
-    needs_scaling=False,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_tnewton(
-    criterion,
-    derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the "TNEWTON" algorithm.
+@dataclass(frozen=True)
+class NloptTNewton(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LD_TNEWTON,
+        )
 
-    """
-
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LD_TNEWTON,
-        derivative=derivative,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_lbfgsb",
-    primary_criterion_entry="value",
-    needs_scaling=False,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_lbfgs(
-    criterion,
-    derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the "LBFGS" algorithm.
+@dataclass(frozen=True)
+class NloptLBFGSB(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LD_LBFGS,
+        )
 
-    """
-
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LD_TNEWTON,
-        derivative=derivative,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_ccsaq",
-    primary_criterion_entry="value",
-    needs_scaling=False,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_ccsaq(
-    criterion,
-    derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using CCSAQ algorithm.
+@dataclass(frozen=True)
+class NloptCCSAQ(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LD_CCSAQ,
+        )
 
-    """
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LD_CCSAQ,
-        derivative=derivative,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_mma",
-    primary_criterion_entry="value",
-    needs_scaling=False,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
 )
-def nlopt_mma(
-    criterion,
-    derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    nonlinear_constraints=(),
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Minimize a scalar function using the method of moving asymptotes (MMA).
+@dataclass(frozen=True)
+class NloptMMA(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        nonlinear_constraints = equality_as_inequality_constraints(
+            problem.nonlinear_constraints
+        )
 
-    """
-    # cannot handle equality constraints
-    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LD_MMA,
+            nonlinear_constraints=nonlinear_constraints,
+        )
 
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LD_MMA,
-        derivative=derivative,
-        nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_var",
-    primary_criterion_entry="value",
-    needs_scaling=False,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_var(
-    criterion,
-    derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-    rank_1_update=True,
-):
-    """Minimize a scalar function limited memory switching variable-metric method.
+@dataclass(frozen=True)
+class NloptVAR(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    rank_1_update: bool = True
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.rank_1_update:
+            algo = nlopt.LD_VAR1
+        else:
+            algo = nlopt.LD_VAR2
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=algo,
+        )
 
-    """
-    if rank_1_update:
-        algo = nlopt.LD_VAR1
-    else:
-        algo = nlopt.LD_VAR2
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=algo,
-        derivative=derivative,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_slsqp",
-    primary_criterion_entry="value",
-    needs_scaling=False,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
 )
-def nlopt_slsqp(
-    criterion,
-    derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    nonlinear_constraints=(),
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN,
-):
-    """Optimize a scalar function based on SLSQP method.
+@dataclass(frozen=True)
+class NloptSLSQP(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.LD_SLSQP,
+        )
 
-    """
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.LD_SLSQP,
-        derivative=derivative,
-        nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_direct",
-    primary_criterion_entry="value",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
     is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_direct(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
-    locally_biased=False,
-    random_search=False,
-    unscaled_bounds=False,
-):
-    """Optimize a scalar function based on DIRECT method.
+@dataclass(frozen=True)
+class NloptDirect(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    locally_biased: bool = False
+    random_search: bool = False
+    unscaled_bounds: bool = False
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
-
-    """
-    if not locally_biased and not random_search and not unscaled_bounds:
-        algo = nlopt.GN_DIRECT
-    elif locally_biased and not random_search and not unscaled_bounds:
-        algo = nlopt.GN_DIRECT_L
-    elif locally_biased and not random_search and unscaled_bounds:
-        algo = nlopt.GN_DIRECT_L_NOSCAL
-    elif locally_biased and random_search and not unscaled_bounds:
-        algo = nlopt.GN_DIRECT_L_RAND
-    elif locally_biased and random_search and unscaled_bounds:
-        algo = nlopt.GN_DIRECT_L_RAND_NOSCAL
-    elif not locally_biased and not random_search and unscaled_bounds:
-        algo = nlopt.GN_DIRECT_NOSCAL
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=algo,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    # this is a global optimizer
-    out["success"] = None
-    return out
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if (
+            not self.locally_biased
+            and not self.random_search
+            and not self.unscaled_bounds
+        ):
+            algo = nlopt.GN_DIRECT
+        elif (
+            self.locally_biased and not self.random_search and not self.unscaled_bounds
+        ):
+            algo = nlopt.GN_DIRECT_L
+        elif self.locally_biased and not self.random_search and self.unscaled_bounds:
+            algo = nlopt.GN_DIRECT_L_NOSCAL
+        elif self.locally_biased and self.random_search and not self.unscaled_bounds:
+            algo = nlopt.GN_DIRECT_L_RAND
+        elif self.locally_biased and self.random_search and self.unscaled_bounds:
+            algo = nlopt.GN_DIRECT_L_RAND_NOSCAL
+        elif (
+            not self.locally_biased and not self.random_search and self.unscaled_bounds
+        ):
+            algo = nlopt.GN_DIRECT_NOSCAL
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=algo,
+        )
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_esch",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_esch(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
-):
-    """Optimize a scalar function using the ESCH algorithm.
+@dataclass(frozen=True)
+class NloptESCH(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.GN_ESCH,
+        )
 
-    """
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.GN_ESCH,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    # this is a global optimizer
-    out["success"] = None
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_isres",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
 )
-def nlopt_isres(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    nonlinear_constraints=(),
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
-):
-    """Optimize a scalar function using the ISRES algorithm.
+@dataclass(frozen=True)
+class NloptISRES(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.GN_ISRES,
+        )
 
-    """
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.GN_ISRES,
-        nonlinear_constraints=nonlinear_constraints,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-    )
-
-    # this is a global optimizer
-    out["success"] = None
-    return out
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nlopt_crs2_lm",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nlopt_crs2_lm(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    convergence_xtol_rel=CONVERGENCE_XTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
-    population_size=None,
-):
-    """Optimize a scalar function using the CRS2_LM algorithm.
+@dataclass(frozen=True)
+class NloptCRS2LM(Algorithm):
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    population_size: PositiveInt | None = None
 
-    For details see
-    :ref: `list_of_nlopt_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.population_size is None:
+            population_size = 10 * (len(x0) + 1)
+        else:
+            population_size = self.population_size
+        res = _minimize_nlopt(
+            problem=problem,
+            x0=x0,
+            is_global=self.algo_info.is_global,
+            convergence_xtol_rel=self.convergence_xtol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            stopping_max_eval=self.stopping_maxfun,
+            algorithm=nlopt.GN_CRS2_LM,
+            population_size=population_size,
+        )
 
-    """
-    if population_size is None:
-        population_size = 10 * (len(x) + 1)
-    out = _minimize_nlopt_old(
-        criterion,
-        x,
-        lower_bounds,
-        upper_bounds,
-        algorithm=nlopt.GN_CRS2_LM,
-        convergence_xtol_rel=convergence_xtol_rel,
-        convergence_xtol_abs=convergence_xtol_abs,
-        convergence_ftol_rel=convergence_ftol_rel,
-        convergence_ftol_abs=convergence_ftol_abs,
-        stopping_max_eval=stopping_maxfun,
-        population_size=population_size,
-    )
-
-    # this is a global optimizer
-    out["success"] = None
-    return out
+        return res
 
 
 def _minimize_nlopt(
     problem,
     x0,
     algorithm,
+    is_global,
     *,
     convergence_xtol_rel=None,
     convergence_xtol_abs=None,
@@ -796,6 +716,7 @@ def _minimize_nlopt(
     convergence_ftol_abs=None,
     stopping_max_eval=None,
     population_size=None,
+    nonlinear_constraints=None,
 ):
     """Run actual nlopt optimization argument, set relevant attributes."""
 
@@ -807,6 +728,8 @@ def _minimize_nlopt(
             fun = problem.fun(x)
         return fun
 
+    if nonlinear_constraints is None:
+        nonlinear_constraints = problem.nonlinear_constraints
     opt = nlopt.opt(algorithm, x0.shape[0])
     if convergence_ftol_rel is not None:
         opt.set_ftol_rel(convergence_ftol_rel)
@@ -824,18 +747,14 @@ def _minimize_nlopt(
         opt.set_maxeval(stopping_max_eval)
     if population_size is not None:
         opt.set_population(population_size)
-    if problem.nonlinear_constraints:
-        for constr in _get_nlopt_constraints(
-            problem.nonlinear_constraints, filter_type="eq"
-        ):
+    if nonlinear_constraints:
+        for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="eq"):
             opt.add_equality_mconstraint(constr["fun"], constr["tol"])
-        for constr in _get_nlopt_constraints(
-            problem.nonlinear_constraints, filter_type="ineq"
-        ):
+        for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="ineq"):
             opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
     opt.set_min_objective(func)
     solution_x = opt.optimize(x0)
-    return _process_nlopt_results(opt, solution_x)
+    return _process_nlopt_results(opt, solution_x, is_global)
 
 
 def _minimize_nlopt_old(
@@ -890,7 +809,7 @@ def _minimize_nlopt_old(
     return _process_nlopt_results_old(opt, solution_x)
 
 
-def _process_nlopt_results(nlopt_obj, solution_x):
+def _process_nlopt_results(nlopt_obj, solution_x, is_global):
     messages = {
         1: "Convergence achieved ",
         2: (
@@ -912,11 +831,14 @@ def _process_nlopt_results(nlopt_obj, solution_x):
         -4: "Halted because roundoff errors limited progress",
         -5: "Halted because of user specified forced stop",
     }
+    success = nlopt_obj.last_optimize_result() in [1, 2, 3, 4]
+    if is_global and not success:
+        success = None
     processed = InternalOptimizeResult(
         x=solution_x,
         fun=nlopt_obj.last_optimum_value(),
         n_fun_evals=nlopt_obj.get_numevals(),
-        success=nlopt_obj.last_optimize_result() in [1, 2, 3, 4],
+        success=success,
         message=messages[nlopt_obj.last_optimize_result()],
     )
 
