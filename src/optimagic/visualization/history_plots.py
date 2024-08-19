@@ -6,10 +6,7 @@ import plotly.graph_objects as go
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
 from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
-from optimagic.logging.read_log import (
-    OptimizeLogReader,
-    read_optimization_problem_table,
-)
+from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.history_tools import get_history_arrays
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
@@ -358,8 +355,8 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         are stacked into a single one.
 
     """
-    reader = OptimizeLogReader(res)
-    _problem_table = read_optimization_problem_table(res)
+    reader = LogReader.from_options(SQLiteLogOptions(res))
+    _problem_table = reader.problem_df
 
     direction = _problem_table["direction"].tolist()[-1]
 

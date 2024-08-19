@@ -4,7 +4,7 @@ from dataclasses import asdict
 
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
-from optimagic.logging.write_to_database import append_row
+from optimagic.logging.types import IterationState
 from optimagic.typing import AggregationLevel
 
 
@@ -21,7 +21,6 @@ def internal_criterion_and_derivative_template(
     criterion_and_derivative,
     numdiff_options,
     logging,
-    database,
     error_handling,
     error_penalty_func,
     fixed_log_data,
@@ -71,7 +70,6 @@ def internal_criterion_and_derivative_template(
             derivatives. See :ref:`first_derivative` for details. Note that the default
             method is changed to "forward" for speed reasons.
         logging (bool): Whether logging is used.
-        database (DataBase): Database to which the logs are written.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -98,10 +96,7 @@ def internal_criterion_and_derivative_template(
     caught_exceptions = []
     new_fun, new_external_fun = None, None
     new_jac, new_external_jac = None, None
-    current_params, external_x = converter.params_from_internal(
-        x,
-        return_type="tree_and_flat",
-    )
+    current_params = converter.params_from_internal(x)
     if to_dos == []:
         pass
     elif "numerical_fun_and_jac" in to_dos:
@@ -228,12 +223,12 @@ def internal_criterion_and_derivative_template(
         _log_new_evaluations(
             new_criterion=new_external_fun,
             new_derivative=new_jac,
-            external_x=external_x,
+            params=current_params,
             caught_exceptions=caught_exceptions,
-            database=database,
             fixed_log_data=fixed_log_data,
             scalar_value=scalar_critval,
             now=now,
+            logger=logging,
         )
 
     res = _get_output_for_optimizer(
@@ -310,12 +305,12 @@ def _determine_to_dos(task, derivative, criterion_and_derivative):
 def _log_new_evaluations(
     new_criterion,
     new_derivative,
-    external_x,
+    params,
     caught_exceptions,
-    database,
     fixed_log_data,
     scalar_value,
     now,
+    logger,
 ):
     """Write the new evaluations and additional information into the database.
 
@@ -325,7 +320,7 @@ def _log_new_evaluations(
 
     """
     data = {
-        "params": external_x,
+        "params": params,
         "timestamp": now,
         "valid": True,
         "criterion_eval": new_criterion,
@@ -341,9 +336,8 @@ def _log_new_evaluations(
         data["exceptions"] = separator.join(caught_exceptions)
         data["valid"] = False
 
-    name = "optimization_iterations"
-
-    append_row(data, name, database=database)
+    data = IterationState(**data)
+    logger.iteration_store.insert(data)
 
 
 def _get_output_for_optimizer(

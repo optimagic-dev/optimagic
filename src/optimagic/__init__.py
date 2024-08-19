@@ -1,4 +1,4 @@
-from optimagic import mark, utilities
+from optimagic import constraints, mark, utilities
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,
@@ -6,8 +6,29 @@ from optimagic.benchmarking.benchmark_reports import (
 )
 from optimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
+from optimagic.constraints import (
+    DecreasingConstraint,
+    EqualityConstraint,
+    FixedConstraint,
+    FlatCovConstraint,
+    FlatSDCorrConstraint,
+    IncreasingConstraint,
+    LinearConstraint,
+    NonlinearConstraint,
+    PairwiseEqualityConstraint,
+    ProbabilityConstraint,
+)
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
+from optimagic.logging import (
+    ExistenceStrategy as ExistenceStrategy,
+)
+from optimagic.logging import (
+    SQLiteLogOptions as SQLiteLogOptions,
+)
+from optimagic.logging import (
+    SQLiteLogReader as SQLiteLogReader,
+)
 from optimagic.logging.read_log import OptimizeLogReader
 from optimagic.optimization.fun_value import (
     FunctionValue,
@@ -63,5 +84,16 @@ __all__ = [
     "LeastSquaresFunctionValue",
     "ScalarFunctionValue",
     "LikelihoodFunctionValue",
+    "constraints",
+    "FlatCovConstraint",
+    "FlatSDCorrConstraint",
+    "IncreasingConstraint",
+    "DecreasingConstraint",
+    "FixedConstraint",
+    "NonlinearConstraint",
+    "LinearConstraint",
+    "ProbabilityConstraint",
+    "PairwiseEqualityConstraint",
+    "EqualityConstraint",
     "__version__",
 ]

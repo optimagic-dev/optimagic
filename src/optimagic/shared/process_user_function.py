@@ -33,8 +33,8 @@ def partial_func_of_params(func, kwargs, name="your function", skip_checks=False
 
         raise InvalidKwargsError(msg)
 
-    # wraps preserves static fields that might have been added to the function via
-    # mark decorators.
+    # update_wrapper preserves static fields that might have been added to the function
+    # via mark decorators.
     out = update_wrapper(partial(func, **kept), func)
 
     if not skip_checks:

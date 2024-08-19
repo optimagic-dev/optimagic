@@ -406,3 +406,65 @@ def test_first_and_second_derivative_have_same_type_hints():
         k: v for k, v in get_type_hints(second_derivative).items() if k not in exclude
     }
     assert first_hints == second_hints
+
+
+def test_first_derivative_pytree_step_size():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+
+    got = first_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        step_size=params,
+    )
+    assert np.allclose(got.derivative["a"], np.array([2, 4, 6]))
+    assert np.allclose(got.derivative["b"], 2)
+
+
+def test_second_derivative_pytree_step_size():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+
+    got = second_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        step_size=params,
+    )
+    assert np.allclose(got.derivative["a"]["a"], np.eye(3) * 2)
+    assert np.allclose(got.derivative["a"]["b"], np.zeros(3))
+    assert np.allclose(got.derivative["b"]["b"], 0)
+
+
+def test_first_derivative_pytree_min_steps():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+    bounds = Bounds(
+        lower={"a": np.array([0, 1, 2]), "b": 3},
+        upper={"a": np.array([2, 3, 4]), "b": 5},
+    )
+    min_steps = {"a": np.array([0.2, 0.5, 0.7]), "b": 0.2}
+
+    got = first_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        bounds=bounds,
+        min_steps=min_steps,
+    )
+    assert np.allclose(got.derivative["a"], np.array([2, 4, 6]))
+    assert np.allclose(got.derivative["b"], 2)
+
+
+def test_second_derivative_pytree_min_steps():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+    bounds = Bounds(
+        lower={"a": np.array([0, 1, 2]), "b": 3},
+        upper={"a": np.array([2, 3, 4]), "b": 5},
+    )
+    min_steps = {"a": np.array([0.2, 0.5, 0.7]), "b": 0.2}
+
+    got = second_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        bounds=bounds,
+        min_steps=min_steps,
+    )
+    assert np.allclose(got.derivative["a"]["a"], np.eye(3) * 2)
+    assert np.allclose(got.derivative["a"]["b"], np.zeros(3))
+    assert np.allclose(got.derivative["b"]["b"], 0)

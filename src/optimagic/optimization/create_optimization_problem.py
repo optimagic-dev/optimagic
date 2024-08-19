@@ -6,6 +6,7 @@ from typing import Any, Callable, Type, cast
 from optimagic import deprecations
 from optimagic.algorithms import ALL_ALGORITHMS
 from optimagic.deprecations import (
+    handle_log_options_throw_deprecated_warning,
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
@@ -20,6 +21,7 @@ from optimagic.exceptions import (
     InvalidFunctionError,
     MissingInputError,
 )
+from optimagic.logging.logger import LogOptions, SQLiteLogOptions
 from optimagic.optimization.algorithm import AlgoInfo, Algorithm
 from optimagic.optimization.fun_value import (
     SpecificFunctionValue,
@@ -69,15 +71,14 @@ class OptimizationProblem:
     params: PyTree
     algorithm: Algorithm
     bounds: Bounds | None
-    # TODO: constraints will become list[Constraint] | None
+    # TODO: Only allow list[Constraint] or Constraint
     constraints: list[dict[str, Any]]
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     numdiff_options: NumdiffOptions
     # TODO: logging will become None | Logger and log_options will be removed
-    logging: bool | Path | None
-    log_options: dict[str, Any] | None
     error_handling: ErrorHandling
+    logger: LogOptions | None
     error_penalty: dict[str, Any] | None
     scaling: ScalingOptions | None
     multistart: MultistartOptions | None
@@ -103,7 +104,6 @@ def create_optimization_problem(
     fun_and_jac_kwargs,
     numdiff_options,
     logging,
-    log_options,
     error_handling,
     error_penalty,
     scaling,
@@ -129,6 +129,7 @@ def create_optimization_problem(
     criterion_and_derivative,
     criterion_and_derivative_kwargs,
     lower_bounds,
+    log_options,
     upper_bounds,
     soft_lower_bounds,
     soft_upper_bounds,
@@ -163,6 +164,9 @@ def create_optimization_problem(
     # ==================================================================================
     # deprecations
     # ==================================================================================
+
+    if log_options is not None:
+        logging = handle_log_options_throw_deprecated_warning(log_options, logging)
 
     if criterion is not None:
         deprecations.throw_criterion_future_warning()
@@ -201,6 +205,8 @@ def create_optimization_problem(
         deprecations.throw_multistart_options_future_warning()
         if multistart is True and multistart_options is not None:
             multistart = multistart_options
+
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
 
     algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
 
@@ -334,6 +340,7 @@ def create_optimization_problem(
     scaling = pre_process_scaling(scaling)
     multistart = pre_process_multistart(multistart)
     numdiff_options = pre_process_numdiff_options(numdiff_options)
+    constraints = deprecations.pre_process_constraints(constraints)
 
     if numdiff_options is None:
         numdiff_options = get_default_numdiff_options(purpose=NumdiffPurpose.OPTIMIZE)
@@ -343,10 +350,11 @@ def create_optimization_problem(
     algo_options = {} if algo_options is None else algo_options
     jac_kwargs = {} if jac_kwargs is None else jac_kwargs
     fun_and_jac_kwargs = {} if fun_and_jac_kwargs is None else fun_and_jac_kwargs
-    log_options = {} if log_options is None else log_options
     error_penalty = {} if error_penalty is None else error_penalty
-    if logging:
-        logging = Path(logging)
+
+    if isinstance(logging, str) or isinstance(logging, Path):
+        log_path = Path(logging)
+        logging = SQLiteLogOptions(log_path)
 
     # ==================================================================================
     # evaluate fun for the first time
@@ -485,8 +493,9 @@ def create_optimization_problem(
         if not isinstance(bounds, Bounds | None):
             raise ValueError("bounds must be a Bounds object or None")
 
-        if not isinstance(constraints, list | dict):
-            raise ValueError("constraints must be a list or a dictionary")
+        if not all(isinstance(c, dict) for c in constraints):
+            # TODO: Only allow list[Constraint]
+            raise ValueError("constraints must be a list of dictionaries")
 
         if not isinstance(jac, Callable | None):
             raise ValueError("jac must be a callable or None")
@@ -497,8 +506,10 @@ def create_optimization_problem(
         if not isinstance(numdiff_options, NumdiffOptions):
             raise ValueError("numdiff_options must be a NumdiffOptions object")
 
-        if not isinstance(logging, bool | Path | None):
-            raise ValueError("logging must be a boolean, a path or None")
+        if not isinstance(logging, bool | Path | LogOptions | None):
+            raise ValueError(
+                "logging must be a boolean, a path, a LogOptions instance or None"
+            )
 
         if not isinstance(log_options, dict | None):
             raise ValueError("log_options must be a dictionary or None")
@@ -528,8 +539,7 @@ def create_optimization_problem(
         jac=jac,
         fun_and_jac=fun_and_jac,
         numdiff_options=numdiff_options,
-        logging=logging,
-        log_options=log_options,
+        logger=logging,
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,
