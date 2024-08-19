@@ -6,7 +6,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.ipopt import Ipopt
-from optimagic.paramerers.bounds import Bounds
+from optimagic.parameters.bounds import Bounds
 
 test_cases = [
     {},
