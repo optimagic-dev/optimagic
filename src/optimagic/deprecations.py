@@ -475,7 +475,7 @@ def handle_log_options_throw_deprecated_warning(
     msg = (
         "Usage of the parameter log_options is deprecated "
         "and will be removed in a future version. "
-        "Provide a Logger instance for the parameter `logging`, if you need to "
+        "Provide a LogOptions instance for the parameter `logging`, if you need to "
         "configure the logging."
     )
     warnings.warn(msg, FutureWarning)

@@ -232,6 +232,7 @@ def estimate_ml(
             bounds=bounds,
             constraints=constraints,
             logging=logging,
+            log_options=log_options,
             **optimize_options,
         )
         estimates = opt_res.params

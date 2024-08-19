@@ -251,6 +251,7 @@ def estimate_msm(
             bounds=bounds,
             constraints=constraints,
             logging=logging,
+            log_options=log_options,
             params=params,
             **funcs,  # contains the criterion func and possibly more
             **optimize_options,

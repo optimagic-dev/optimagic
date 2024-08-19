@@ -869,7 +869,7 @@ def test_handle_log_options():
     msg = (
         "Usage of the parameter log_options is deprecated "
         "and will be removed in a future version. "
-        "Provide a Logger instance for the parameter `logging`, if you need to "
+        "Provide a LogOptions instance for the parameter `logging`, if you need to "
         "configure the logging."
     )
     log_options = {"fast_logging": True}
@@ -900,6 +900,110 @@ def test_handle_log_options():
             log_options_typo, ":memory:"
         )
         assert handled_logger == ":memory:"
+
+
+def test_log_options_are_deprecated_in_estimate_ml(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_estimate_msm(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_minimize(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_maximize(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
 
 
 def test_dict_constraints_are_deprecated_in_minimize():
