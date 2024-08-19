@@ -6,7 +6,9 @@ from typing import Any, Literal
 import numpy as np
 from annotated_types import Gt
 from numpy.typing import NDArray
+from scipy.optimize import Bounds as ScipyBounds
 
+from optimagic import mark
 from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
@@ -14,7 +16,11 @@ from optimagic.optimization.algo_options import (
     STOPPING_MAXITER,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
-from optimagic.optimization.internal_problem import InternalOptimizationProblem
+from optimagic.optimization.internal_optimization_problem import (
+    InternalBounds,
+    InternalOptimizationProblem,
+)
+from optimagic.optimizers.scipy_optimizers import process_scipy_result
 from optimagic.typing import (
     AggregationLevel,
     GeOneInt,
@@ -27,7 +33,7 @@ from optimagic.typing import (
 )
 
 if IS_CYIPOPT_INSTALLED:
-    pass
+    import cyipopt
 
 
 @mark.minimizer(
@@ -109,7 +115,7 @@ class Ipopt(Algorithm):
     constr_mult_init_max: NonNegativeFloat = 1000
     bound_mult_init_val: PositiveFloat = 1
     bound_mult_init_method: Literal[
-        "consant",
+        "constant",
         "mu-based",
     ] = "constant"
     least_square_init_primal: YesNoBool = False
@@ -199,7 +205,7 @@ class Ipopt(Algorithm):
     # TODO: refine type to fix the range [0,1)
     quality_function_section_qf_tol: NonNegativeFloat = 0.0
     # line search
-    line_search_method: [
+    line_search_method: Literal[
         "filter",
         "penalty",
         "cg-penalty",
@@ -243,11 +249,14 @@ class Ipopt(Algorithm):
     obj_max_inc: Gt = 5
     max_filter_resets: NonNegativeInt = 5
     filter_reset_trigger: GeOneInt = 5
-    corrector_type: Literal[
-        "none",
-        "affine",
-        "primal-dual",
-    ] = None
+    corrector_type: (
+        Literal[
+            "none",
+            "affine",
+            "primal-dual",
+        ]
+        | None
+    ) = None
     skip_corr_if_neg_curv: YesNoBool = True
     skip_corr_in_monotone_mode: YesNoBool = True
     corrector_compl_avrg_red_fact: PositiveFloat = 1
@@ -351,8 +360,8 @@ class Ipopt(Algorithm):
             )
         if self.mu_strategy not in ["monotone", "adaptive"]:
             raise ValueError(
-                f"Unknown barrier strategy: {self.mu_strategy}. It must be 'monotone' or "
-                "'adaptive'."
+                f"Unknown barrier strategy: {self.mu_strategy}."
+                " It must be 'monotone' or 'adaptive'."
             )
         if self.nlp_upper_bound_inf < 0:
             raise ValueError("nlp_upper_bound_inf should be > 0.")
@@ -361,3 +370,306 @@ class Ipopt(Algorithm):
         linear_solver_options = (
             {} if self.linear_solver_options is None else self.linear_solver_options
         )
+        if self.resto_failure_feasibility_threshold is None:
+            resto_failure_feasibility_threshold = 1e2 * self.convergence_ftol_rel
+        else:
+            resto_failure_feasibility_threshold = (
+                self.resto_failure_feasibility_threshold
+            )
+
+        # convert None to str none section
+        linear_solver_options_with_none = [
+            "ma86_scaling",
+            "ma97_scaling",
+            "ma97_scaling1",
+            "ma97_scaling2",
+            "ma97_scaling3",
+            "spral_scaling",
+            "spral_scaling_1",
+            "spral_scaling_2",
+            "spral_scaling_3",
+            "linear_system_scaling",
+        ]
+        for key, val in linear_solver_options.items():
+            if key in linear_solver_options_with_none:
+                linear_solver_options[key] = _convert_none_to_str(val)
+        boolean_linear_solver_options = [
+            "linear_scaling_on_demand"
+            "ma27_skip_inertia_check"
+            "ma27_ignore_singularity"
+            "ma57_automatic_scaling"
+            "ma97_solve_blas3"
+            "pardiso_redo_symbolic_fact_only_if_inertia_wrong"
+            "pardiso_repeated_perturbation_means_singular"
+            "pardiso_skip_inertia_check"
+            "pardiso_iterative"
+            "pardisomkl_redo_symbolic_fact_only_if_inertia_wrong"
+            "pardisomkl_repeated_perturbation_means_singular"
+            "pardisomkl_skip_inertia_check"
+            "spral_ignore_numa"
+            "spral_use_gpu"
+            "wsmp_skip_inertia_check"
+            "wsmp_no_pivoting"
+        ]
+        for key, val in linear_solver_options.items():
+            if key in boolean_linear_solver_options:
+                linear_solver_options[key] = _convert_bool_to_str(val, key)
+
+        convert_bool_to_str_options = {
+            "dependency_detection_with_rhs": self.dependency_detection_with_rhs,
+            "check_derivatives_for_naninf": self.check_derivatives_for_naninf,
+            "jac_c_constant": self.jac_c_constant,
+            "jac_d_constant": self.jac_d_constant,
+            "hessian_constant": self.hessian_constant,
+            "least_square_init_primal": self.least_square_init_primal,
+            "least_square_init_duals": self.least_square_init_duals,
+            "warm_start_init_point": self.warm_start_init_point,
+            "warm_start_same_structure": self.warm_start_same_structure,
+            "warm_start_entire_iterate": self.warm_start_entire_iterate,
+            "replace_bounds": self.replace_bounds,
+            "skip_finalize_solution_call": self.skip_finalize_solution_call,
+            "timing_statistics": self.timing_statistics,
+            "adaptive_mu_restore_previous_iterate": (
+                self.adaptive_mu_restore_previous_iterate
+            ),
+            "mu_allow_fast_monotone_decrease": self.mu_allow_fast_monotone_decrease,
+            "accept_every_trial_step": self.accept_every_trial_step,
+            "skip_corr_if_neg_curv": self.skip_corr_if_neg_curv,
+            "skip_corr_in_monotone_mode": self.skip_corr_in_monotone_mode,
+            "recalc_y": self.recalc_y,
+            "mehrotra_algorithm": self.mehrotra_algorithm,
+            "fast_step_computation": self.fast_step_computation,
+            "neg_curv_test_reg": self.neg_curv_test_reg,
+            "perturb_always_cd": self.perturb_always_cd,
+            "expect_infeasible_problem": self.expect_infeasible_problem,
+            "start_with_resto": self.start_with_resto,
+            "evaluate_orig_obj_at_resto_trial": self.evaluate_orig_obj_at_resto_trial,
+            "limited_memory_special_for_resto": self.limited_memory_special_for_resto,
+            "honor_original_bounds": self.honor_original_bounds,
+        }
+        converted_bool_to_str_options = {
+            key: _convert_bool_to_str(val, key)
+            for key, val in convert_bool_to_str_options.items()
+        }
+
+        options = {
+            # disable verbosity
+            "print_level": 0,
+            "ma77_print_level": -1,
+            "ma86_print_level": -1,
+            "ma97_print_level": -1,
+            "pardiso_msglvl": 0,
+            # disable derivative checker
+            "derivative_test": "none",
+            "s_max": self.s_max,
+            "max_iter": self.stopping_maxiter,
+            "max_wall_time": self.stopping_max_wall_time_seconds,
+            "max_cpu_time": self.stopping_max_cpu_time,
+            "dual_inf_tol": self.dual_inf_tol,
+            "constr_viol_tol": self.constr_viol_tol,
+            "compl_inf_tol": self.compl_inf_tol,
+            # acceptable heuristic
+            "acceptable_iter": self.acceptable_iter,
+            "acceptable_tol": self.acceptable_tol,
+            "acceptable_dual_inf_tol": self.acceptable_dual_inf_tol,
+            "acceptable_constr_viol_tol": self.acceptable_constr_viol_tol,
+            "acceptable_compl_inf_tol": self.acceptable_compl_inf_tol,
+            "acceptable_obj_change_tol": self.acceptable_obj_change_tol,
+            # bounds and more
+            "diverging_iterates_tol": self.diverging_iterates_tol,
+            "nlp_lower_bound_inf": self.nlp_lower_bound_inf,
+            "nlp_upper_bound_inf": self.nlp_upper_bound_inf,
+            "fixed_variable_treatment": self.fixed_variable_treatment,
+            "dependency_detector": _convert_none_to_str(self.dependency_detector),
+            "kappa_d": self.kappa_d,
+            "bound_relax_factor": self.bound_relax_factor,
+            "honor_original_bounds": self.honor_original_bounds,
+            # scaling
+            "nlp_scaling_method": _convert_none_to_str(self.nlp_scaling_method),
+            "obj_scaling_factor": self.obj_scaling_factor,
+            "nlp_scaling_max_gradient": self.nlp_scaling_max_gradient,
+            "nlp_scaling_obj_target_gradient": (self.nlp_scaling_obj_target_gradient),
+            "nlp_scaling_constr_target_gradient": (
+                self.nlp_scaling_constr_target_gradient
+            ),
+            "nlp_scaling_min_value": self.nlp_scaling_min_value,
+            # initialization
+            "bound_push": self.bound_push,
+            "bound_frac": self.bound_frac,
+            "slack_bound_push": self.slack_bound_push,
+            "slack_bound_frac": self.slack_bound_frac,
+            "constr_mult_init_max": self.constr_mult_init_max,
+            "bound_mult_init_val": self.bound_mult_init_val,
+            "bound_mult_init_method": self.bound_mult_init_method,
+            # warm start
+            "warm_start_bound_push": self.warm_start_bound_push,
+            "warm_start_bound_frac": self.warm_start_bound_frac,
+            "warm_start_slack_bound_push": self.warm_start_slack_bound_push,
+            "warm_start_slack_bound_frac": self.warm_start_slack_bound_frac,
+            "warm_start_mult_bound_push": self.warm_start_mult_bound_push,
+            "warm_start_mult_init_max": self.warm_start_mult_init_max,
+            "warm_start_target_mu": self.warm_start_target_mu,
+            # more miscellaneous
+            "option_file_name": self.option_file_name,
+            # barrier parameter update
+            "mu_target": self.mu_target,
+            "mu_max_fact": self.mu_max_fact,
+            "mu_max": self.mu_max,
+            "mu_min": self.mu_min,
+            "adaptive_mu_globalization": self.adaptive_mu_globalization,
+            "adaptive_mu_kkterror_red_iters": self.adaptive_mu_kkterror_red_iters,
+            "adaptive_mu_kkterror_red_fact": self.adaptive_mu_kkterror_red_fact,
+            "filter_margin_fact": self.filter_margin_fact,
+            "filter_max_margin": self.filter_max_margin,
+            "adaptive_mu_monotone_init_factor": self.adaptive_mu_monotone_init_factor,
+            "adaptive_mu_kkt_norm_type": self.adaptive_mu_kkt_norm_type,
+            "mu_strategy": self.mu_strategy,
+            "mu_oracle": self.mu_oracle,
+            "fixed_mu_oracle": self.fixed_mu_oracle,
+            "mu_init": self.mu_init,
+            "barrier_tol_factor": self.barrier_tol_factor,
+            "mu_linear_decrease_factor": self.mu_linear_decrease_factor,
+            "mu_superlinear_decrease_power": self.mu_superlinear_decrease_power,
+            "tau_min": self.tau_min,
+            "sigma_max": self.sigma_max,
+            "sigma_min": self.sigma_min,
+            "quality_function_norm_type": self.quality_function_norm_type,
+            "quality_function_centrality": _convert_none_to_str(
+                self.quality_function_centrality
+            ),
+            "quality_function_balancing_term": _convert_none_to_str(
+                self.quality_function_balancing_term
+            ),
+            "quality_function_max_section_steps": (
+                self.quality_function_max_section_steps
+            ),
+            "quality_function_section_sigma_tol": (
+                self.quality_function_section_sigma_tol
+            ),
+            "quality_function_section_qf_tol": self.quality_function_section_qf_tol,
+            # linear search
+            "line_search_method": self.line_search_method,
+            "alpha_red_factor": self.alpha_red_factor,
+            "accept_after_max_steps": self.accept_after_max_steps,
+            "alpha_for_y": self.alpha_for_y,
+            "alpha_for_y_tol": self.alpha_for_y_tol,
+            "tiny_step_tol": self.tiny_step_tol,
+            "tiny_step_y_tol": self.tiny_step_y_tol,
+            "watchdog_shortened_iter_trigger": self.watchdog_shortened_iter_trigger,
+            "watchdog_trial_iter_max": self.watchdog_trial_iter_max,
+            "theta_max_fact": self.theta_max_fact,
+            "theta_min_fact": self.theta_min_fact,
+            "eta_phi": self.eta_phi,
+            "delta": self.delta,
+            "s_phi": self.s_phi,
+            "s_theta": self.s_theta,
+            "gamma_phi": self.gamma_phi,
+            "gamma_theta": self.gamma_theta,
+            "alpha_min_frac": self.alpha_min_frac,
+            "max_soc": self.max_soc,
+            "kappa_soc": self.kappa_soc,
+            "obj_max_inc": self.obj_max_inc,
+            "max_filter_resets": self.max_filter_resets,
+            "filter_reset_trigger": self.filter_reset_trigger,
+            "corrector_type": _convert_none_to_str(self.corrector_type),
+            "corrector_compl_avrg_red_fact": self.corrector_compl_avrg_red_fact,
+            "soc_method": self.soc_method,
+            "nu_init": self.nu_init,
+            "nu_inc": self.nu_inc,
+            "rho": self.rho,
+            "kappa_sigma": self.kappa_sigma,
+            "recalc_y_feas_tol": self.recalc_y_feas_tol,
+            "slack_move": self.slack_move,
+            "constraint_violation_norm_type": self.constraint_violation_norm_type,
+            # step calculation
+            "min_refinement_steps": self.min_refinement_steps,
+            "max_refinement_steps": self.max_refinement_steps,
+            "residual_ratio_max": self.residual_ratio_max,
+            "residual_ratio_singular": self.residual_ratio_singular,
+            "residual_improvement_factor": self.residual_improvement_factor,
+            "neg_curv_test_tol": self.neg_curv_test_tol,
+            "max_hessian_perturbation": self.max_hessian_perturbation,
+            "min_hessian_perturbation": self.min_hessian_perturbation,
+            "perturb_inc_fact_first": self.perturb_inc_fact_first,
+            "perturb_inc_fact": self.perturb_inc_fact,
+            "perturb_dec_fact": self.perturb_dec_fact,
+            "first_hessian_perturbation": self.first_hessian_perturbation,
+            "jacobian_regularization_value": self.jacobian_regularization_value,
+            "jacobian_regularization_exponent": self.jacobian_regularization_exponent,
+            # restoration phase
+            "expect_infeasible_problem_ctol": self.expect_infeasible_problem_ctol,
+            "expect_infeasible_problem_ytol": self.expect_infeasible_problem_ytol,
+            "soft_resto_pderror_reduction_factor": (
+                self.soft_resto_pderror_reduction_factor
+            ),
+            "max_soft_resto_iters": self.max_soft_resto_iters,
+            "required_infeasibility_reduction": self.required_infeasibility_reduction,
+            "max_resto_iter": self.max_resto_iter,
+            "resto_penalty_parameter": self.resto_penalty_parameter,
+            "resto_proximity_weight": self.resto_proximity_weight,
+            "bound_mult_reset_threshold": self.bound_mult_reset_threshold,
+            "constr_mult_reset_threshold": self.constr_mult_reset_threshold,
+            "resto_failure_feasibility_threshold": resto_failure_feasibility_threshold,
+            # hessian approximation
+            "limited_memory_aug_solver": self.limited_memory_aug_solver,
+            "limited_memory_max_history": self.limited_memory_max_history,
+            "limited_memory_update_type": self.limited_memory_update_type,
+            "limited_memory_initialization": self.limited_memory_initialization,
+            "limited_memory_init_val": self.limited_memory_init_val,
+            "limited_memory_init_val_max": self.limited_memory_init_val_max,
+            "limited_memory_init_val_min": self.limited_memory_init_val_min,
+            "limited_memory_max_skipping": self.limited_memory_max_skipping,
+            "hessian_approximation": self.hessian_approximation,
+            "hessian_approximation_space": self.hessian_approximation_space,
+            # linear solver
+            "linear_solver": self.linear_solver,
+            **linear_solver_options,
+            **converted_bool_to_str_options,
+        }
+
+        raw_res = cyipopt.minimize_ipopt(
+            fun=problem.fun,
+            x0=x0,
+            bounds=_get_scipy_bounds(problem.bounds),
+            jac=problem.jac,
+            constraints=problem.nonlinear_constraints,
+            tol=self.convergence_ftol_rel,
+            options=options,
+        )
+
+        res = process_scipy_result(raw_res)
+
+        return res
+
+
+def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds:
+    return ScipyBounds(lb=bounds.lower, ub=bounds.upper)
+
+
+def _convert_bool_to_str(var, name):
+    """Convert input to either 'yes' or 'no' and check the output is yes or no.
+
+    Args:
+        var (str or bool): user input
+        name (str): name of the variable.
+
+    Returns:
+        out (str): "yes" or "no".
+
+    """
+    if var is True:
+        out = "yes"
+    elif var is False:
+        out = "no"
+    else:
+        out = var
+    if out not in {"yes", "no"}:
+        raise ValueError(
+            f"{name} must be 'yes', 'no', True or False. You specified {var}."
+        )
+    return out
+
+
+def _convert_none_to_str(var):
+    out = "none" if var is None else var
+    return out
