@@ -30,6 +30,7 @@ for name, algo in LOCAL_ALGORITHMS.items():
     if algo.__algo_info__.supports_bounds:
         BOUNDED_ALGORITHMS.append(name)
 
+
 @mark.least_squares
 def sos(x):
     return x
@@ -50,7 +51,6 @@ def test_algorithm_on_sum_of_squares(algorithm):
 
 @pytest.mark.parametrize("algorithm", BOUNDED_ALGORITHMS)
 def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
-    breakpoint()
     res = minimize(
         fun=sos,
         params=np.array([3, 2, -3]),

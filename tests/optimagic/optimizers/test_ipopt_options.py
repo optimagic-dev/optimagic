@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.config import IS_CYIPOPT_INSTALLED
+from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.ipopt import Ipopt
-from dataclasses import replace
-
+from optimagic.paramerers.bounds import Bounds
 
 test_cases = [
     {},
@@ -215,8 +215,8 @@ def test_ipopt_algo_options(algo_options):
         algorithm=algorithm,
         x0=np.array([1, 2, 3]),
         bounds=Bounds(
-        lower=np.array([-np.inf, -np.inf, -np.inf]),
-        upper=np.array([np.inf, np.inf, np.inf]),
+            lower=np.array([-np.inf, -np.inf, -np.inf]),
+            upper=np.array([np.inf, np.inf, np.inf]),
         ),
     )
     aaae(res.params, np.zeros(3), decimal=7)
