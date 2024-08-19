@@ -353,7 +353,7 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
 
     """
     reader = LogReader.from_options(SQLiteLogOptions(res))
-    _problem_table = reader._problem_store.to_df()
+    _problem_table = reader.problem_df
 
     direction = _problem_table["direction"].tolist()[-1]
 

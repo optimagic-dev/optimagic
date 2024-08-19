@@ -66,6 +66,18 @@ _LogOptionsType = TypeVar("_LogOptionsType", bound=LogOptions)
 
 
 class LogReader(Generic[_LogOptionsType], ABC):
+    """A class that manages the retrieving of optimization and exploration data.
+
+    This class exposes methods to retrieve optimization logging data
+    from stores.
+
+    Args:
+        iteration_store: A non-updatable store for iteration data.
+        step_store: An updatable store for step data.
+        problem_store: An updatable store for problem initialization data.
+
+    """
+
     def __init__(
         self,
         iteration_store: NonUpdatableKeyValueStore[
@@ -80,6 +92,10 @@ class LogReader(Generic[_LogOptionsType], ABC):
         self._iteration_store = iteration_store
         self._problem_store = problem_store
 
+    @property
+    def problem_df(self) -> pd.DataFrame:
+        return self._problem_store.to_df()
+
     @classmethod
     def from_options(cls, log_options: LogOptions) -> LogReader[_LogOptionsType]:
         log_reader_class = _LOG_OPTION_LOG_READER_REGISTRY.get(type(log_options), None)
@@ -91,11 +107,11 @@ class LogReader(Generic[_LogOptionsType], ABC):
                 f"\n {list(_LOG_OPTION_LOG_READER_REGISTRY.keys())}"
             )
 
-        return log_reader_class.create(log_options)
+        return log_reader_class._create(log_options)
 
     @classmethod
     @abstractmethod
-    def create(cls, log_options: _LogOptionsType) -> LogReader[_LogOptionsType]:
+    def _create(cls, log_options: _LogOptionsType) -> LogReader[_LogOptionsType]:
         pass
 
     def read_iteration(self, iteration: int) -> CriterionEvaluationWithId:
@@ -303,12 +319,10 @@ _LogReaderType = TypeVar("_LogReaderType", bound=LogReader[Any])
 
 
 class LogStore(Generic[_LogOptionsType, _LogReaderType], ABC):
-    """A logger class that manages and retrieves optimization and exploration data.
+    """A class that manages the logging of optimization and exploration data.
 
-    This class handles storing and retrieving iterations, steps, and problem
+    This class handles storing iterations, steps, and problem
     initialization data using various stores.
-    It provides methods to read iteration history, retrieve
-    specific iterations, and handle multistart optimization history.
 
     Args:
         iteration_store: A non-updatable store for iteration data.
@@ -441,8 +455,25 @@ class SQLiteLogOptions(SQLAlchemyConfig, LogOptions):
 
 
 class SQLiteLogReader(LogReader[SQLiteLogOptions]):
+    """A class that manages the retrieving of optimization and exploration data from a
+    SQLite database.
+
+    This class exposes methods to retrieve optimization logging data from stores.
+
+    """
+
     @classmethod
-    def create(cls, log_options: SQLiteLogOptions) -> SQLiteLogReader:
+    def _create(cls, log_options: SQLiteLogOptions) -> SQLiteLogReader:
+        """Create an instance of SQLiteLogReader using the provided log options.
+
+        Args:
+            log_options (SQLiteLogOptions): Configuration options for the SQLite log.
+
+        Returns:
+            SQLiteLogReader: An instance of SQLiteLogReader initialized with the
+            provided log options.
+
+        """
         iteration_store = IterationStore(log_options)
         step_store = StepStore(log_options)
         problem_store = ProblemStore(log_options)
@@ -450,16 +481,26 @@ class SQLiteLogReader(LogReader[SQLiteLogOptions]):
 
     @classmethod
     def from_path(cls, path: str | Path) -> SQLiteLogReader:
+        """Create an instance of SQLiteLogReader from a given file path.
+
+        Args:
+            path (str | Path): The path to the SQLite database file.
+
+        Returns:
+            SQLiteLogReader: An instance of SQLiteLogReader initialized with the
+            provided file path.
+
+        """
         log_option = SQLiteLogOptions(path, if_database_exists=ExistenceStrategy.EXTEND)
-        return cls.create(log_option)
+        return cls._create(log_option)
 
 
 class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
     """A logger class that stores and manages optimization and exploration data using
     SQLite.
 
-    It supports different strategies for handling existing tables and databases, such as
-    extending, replacing, or raising an error.
+    It supports different strategies for handling existing databases, such as extending,
+    replacing, or raising an error.
 
     """
 
