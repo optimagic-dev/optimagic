@@ -4,7 +4,7 @@ from dataclasses import asdict
 
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
-from optimagic.logging.types import CriterionEvaluationResult
+from optimagic.logging.types import IterationState
 from optimagic.typing import AggregationLevel
 
 
@@ -336,7 +336,7 @@ def _log_new_evaluations(
         data["exceptions"] = separator.join(caught_exceptions)
         data["valid"] = False
 
-    data = CriterionEvaluationResult(**data)
+    data = IterationState(**data)
     logger.iteration_store.insert(data)
 
 

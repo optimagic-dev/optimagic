@@ -8,7 +8,7 @@ from optimagic.logging import ExistenceStrategy
 from optimagic.logging.logger import LogStore, SQLiteLogOptions
 from optimagic.logging.sqlalchemy import IterationStore, StepStore
 from optimagic.logging.types import (
-    CriterionEvaluationResult,
+    IterationState,
     StepResult,
     StepStatus,
     StepType,
@@ -24,7 +24,7 @@ class TestIterationStore:
 
     @staticmethod
     def create_test_point(i: int):
-        return CriterionEvaluationResult(
+        return IterationState(
             params=np.array([i, i + 1]),
             internal_derivative=None,
             timestamp=123456.0 + i,
@@ -56,7 +56,7 @@ class TestIterationStore:
         queried_result = store.select(1)[0]
 
         # Update the value
-        updated_result = CriterionEvaluationResult(
+        updated_result = IterationState(
             params=queried_result.params,
             internal_derivative=queried_result.internal_derivative,
             timestamp=queried_result.timestamp,

@@ -22,10 +22,10 @@ from optimagic.logging.sqlalchemy import (
     StepStore,
 )
 from optimagic.logging.types import (
-    CriterionEvaluationResult,
     CriterionEvaluationWithId,
     ExistenceStrategy,
     ExistenceStrategyLiteral,
+    IterationState,
     ProblemInitialization,
     ProblemInitializationWithId,
     StepResult,
@@ -74,7 +74,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
 
     _step_store: UpdatableKeyValueStore[StepResult, StepResultWithId]
     _iteration_store: NonUpdatableKeyValueStore[
-        CriterionEvaluationResult, CriterionEvaluationWithId
+        IterationState, CriterionEvaluationWithId
     ]
     _problem_store: UpdatableKeyValueStore[
         ProblemInitialization, ProblemInitializationWithId
@@ -322,7 +322,7 @@ class LogStore(Generic[_LogOptionsType, _LogReaderType], ABC):
     def __init__(
         self,
         iteration_store: NonUpdatableKeyValueStore[
-            CriterionEvaluationResult, CriterionEvaluationWithId
+            IterationState, CriterionEvaluationWithId
         ],
         step_store: UpdatableKeyValueStore[StepResult, StepResultWithId],
         problem_store: UpdatableKeyValueStore[

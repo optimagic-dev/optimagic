@@ -65,7 +65,7 @@ ExistenceStrategyLiteral = Literal["raise", "extend", "replace"]
 
 
 @dataclass(frozen=True)
-class CriterionEvaluationResult(DictLikeAccess):
+class IterationState(DictLikeAccess):
     """Result of a criterion evaluation.
 
     Attributes:
@@ -93,7 +93,7 @@ class CriterionEvaluationResult(DictLikeAccess):
 
 
 @dataclass(frozen=True)
-class CriterionEvaluationWithId(CriterionEvaluationResult):
+class CriterionEvaluationWithId(IterationState):
     """Criterion evaluation result with an ID.
 
     Attributes:
