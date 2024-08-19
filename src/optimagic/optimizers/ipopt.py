@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 import numpy as np
-from annotated_types import Gt
 from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
@@ -246,7 +245,7 @@ class Ipopt(Algorithm):
     alpha_min_frac: PositiveFloat = 0.05
     max_soc: NonNegativeInt = 4
     kappa_soc: PositiveFloat = 0.99
-    obj_max_inc: GtOneFloat = 5
+    obj_max_inc: float = 5.0
     max_filter_resets: NonNegativeInt = 5
     filter_reset_trigger: GeOneInt = 5
     corrector_type: (
@@ -461,9 +460,9 @@ class Ipopt(Algorithm):
             "pardiso_msglvl": 0,
             # disable derivative checker
             "derivative_test": "none",
-            "s_max": self.s_max,
+            "s_max": float(self.s_max),
             "max_iter": self.stopping_maxiter,
-            "max_wall_time": self.stopping_max_wall_time_seconds,
+            "max_wall_time": float(self.stopping_max_wall_time_seconds),
             "max_cpu_time": self.stopping_max_cpu_time,
             "dual_inf_tol": self.dual_inf_tol,
             "constr_viol_tol": self.constr_viol_tol,
@@ -486,20 +485,22 @@ class Ipopt(Algorithm):
             "honor_original_bounds": self.honor_original_bounds,
             # scaling
             "nlp_scaling_method": _convert_none_to_str(self.nlp_scaling_method),
-            "obj_scaling_factor": self.obj_scaling_factor,
-            "nlp_scaling_max_gradient": self.nlp_scaling_max_gradient,
-            "nlp_scaling_obj_target_gradient": (self.nlp_scaling_obj_target_gradient),
-            "nlp_scaling_constr_target_gradient": (
+            "obj_scaling_factor": float(self.obj_scaling_factor),
+            "nlp_scaling_max_gradient": float(self.nlp_scaling_max_gradient),
+            "nlp_scaling_obj_target_gradient": float(
+                self.nlp_scaling_obj_target_gradient
+            ),
+            "nlp_scaling_constr_target_gradient": float(
                 self.nlp_scaling_constr_target_gradient
             ),
-            "nlp_scaling_min_value": self.nlp_scaling_min_value,
+            "nlp_scaling_min_value": float(self.nlp_scaling_min_value),
             # initialization
             "bound_push": self.bound_push,
             "bound_frac": self.bound_frac,
             "slack_bound_push": self.slack_bound_push,
             "slack_bound_frac": self.slack_bound_frac,
-            "constr_mult_init_max": self.constr_mult_init_max,
-            "bound_mult_init_val": self.bound_mult_init_val,
+            "constr_mult_init_max": float(self.constr_mult_init_max),
+            "bound_mult_init_val": float(self.bound_mult_init_val),
             "bound_mult_init_method": self.bound_mult_init_method,
             # warm start
             "warm_start_bound_push": self.warm_start_bound_push,
@@ -512,27 +513,27 @@ class Ipopt(Algorithm):
             # more miscellaneous
             "option_file_name": self.option_file_name,
             # barrier parameter update
-            "mu_target": self.mu_target,
-            "mu_max_fact": self.mu_max_fact,
-            "mu_max": self.mu_max,
-            "mu_min": self.mu_min,
+            "mu_target": float(self.mu_target),
+            "mu_max_fact": float(self.mu_max_fact),
+            "mu_max": float(self.mu_max),
+            "mu_min": float(self.mu_min),
             "adaptive_mu_globalization": self.adaptive_mu_globalization,
             "adaptive_mu_kkterror_red_iters": self.adaptive_mu_kkterror_red_iters,
             "adaptive_mu_kkterror_red_fact": self.adaptive_mu_kkterror_red_fact,
-            "filter_margin_fact": self.filter_margin_fact,
-            "filter_max_margin": self.filter_max_margin,
+            "filter_margin_fact": float(self.filter_margin_fact),
+            "filter_max_margin": float(self.filter_max_margin),
             "adaptive_mu_monotone_init_factor": self.adaptive_mu_monotone_init_factor,
             "adaptive_mu_kkt_norm_type": self.adaptive_mu_kkt_norm_type,
             "mu_strategy": self.mu_strategy,
             "mu_oracle": self.mu_oracle,
             "fixed_mu_oracle": self.fixed_mu_oracle,
             "mu_init": self.mu_init,
-            "barrier_tol_factor": self.barrier_tol_factor,
+            "barrier_tol_factor": float(self.barrier_tol_factor),
             "mu_linear_decrease_factor": self.mu_linear_decrease_factor,
             "mu_superlinear_decrease_power": self.mu_superlinear_decrease_power,
             "tau_min": self.tau_min,
-            "sigma_max": self.sigma_max,
-            "sigma_min": self.sigma_min,
+            "sigma_max": float(self.sigma_max),
+            "sigma_min": float(self.sigma_min),
             "quality_function_norm_type": self.quality_function_norm_type,
             "quality_function_centrality": _convert_none_to_str(
                 self.quality_function_centrality
@@ -552,15 +553,15 @@ class Ipopt(Algorithm):
             "alpha_red_factor": self.alpha_red_factor,
             "accept_after_max_steps": self.accept_after_max_steps,
             "alpha_for_y": self.alpha_for_y,
-            "alpha_for_y_tol": self.alpha_for_y_tol,
+            "alpha_for_y_tol": float(self.alpha_for_y_tol),
             "tiny_step_tol": self.tiny_step_tol,
             "tiny_step_y_tol": self.tiny_step_y_tol,
             "watchdog_shortened_iter_trigger": self.watchdog_shortened_iter_trigger,
             "watchdog_trial_iter_max": self.watchdog_trial_iter_max,
-            "theta_max_fact": self.theta_max_fact,
+            "theta_max_fact": float(self.theta_max_fact),
             "theta_min_fact": self.theta_min_fact,
             "eta_phi": self.eta_phi,
-            "delta": self.delta,
+            "delta": float(self.delta),
             "s_phi": self.s_phi,
             "s_theta": self.s_theta,
             "gamma_phi": self.gamma_phi,
@@ -568,11 +569,11 @@ class Ipopt(Algorithm):
             "alpha_min_frac": self.alpha_min_frac,
             "max_soc": self.max_soc,
             "kappa_soc": self.kappa_soc,
-            "obj_max_inc": self.obj_max_inc,
+            "obj_max_inc": float(self.obj_max_inc),
             "max_filter_resets": self.max_filter_resets,
             "filter_reset_trigger": self.filter_reset_trigger,
             "corrector_type": _convert_none_to_str(self.corrector_type),
-            "corrector_compl_avrg_red_fact": self.corrector_compl_avrg_red_fact,
+            "corrector_compl_avrg_red_fact": float(self.corrector_compl_avrg_red_fact),
             "soc_method": self.soc_method,
             "nu_init": self.nu_init,
             "nu_inc": self.nu_inc,
@@ -586,16 +587,18 @@ class Ipopt(Algorithm):
             "max_refinement_steps": self.max_refinement_steps,
             "residual_ratio_max": self.residual_ratio_max,
             "residual_ratio_singular": self.residual_ratio_singular,
-            "residual_improvement_factor": self.residual_improvement_factor,
-            "neg_curv_test_tol": self.neg_curv_test_tol,
+            "residual_improvement_factor": float(self.residual_improvement_factor),
+            "neg_curv_test_tol": float(self.neg_curv_test_tol),
             "max_hessian_perturbation": self.max_hessian_perturbation,
             "min_hessian_perturbation": self.min_hessian_perturbation,
-            "perturb_inc_fact_first": self.perturb_inc_fact_first,
-            "perturb_inc_fact": self.perturb_inc_fact,
-            "perturb_dec_fact": self.perturb_dec_fact,
-            "first_hessian_perturbation": self.first_hessian_perturbation,
-            "jacobian_regularization_value": self.jacobian_regularization_value,
-            "jacobian_regularization_exponent": self.jacobian_regularization_exponent,
+            "perturb_inc_fact_first": float(self.perturb_inc_fact_first),
+            "perturb_inc_fact": float(self.perturb_inc_fact),
+            "perturb_dec_fact": float(self.perturb_dec_fact),
+            "first_hessian_perturbation": float(self.first_hessian_perturbation),
+            "jacobian_regularization_value": float(self.jacobian_regularization_value),
+            "jacobian_regularization_exponent": float(
+                self.jacobian_regularization_exponent
+            ),
             # restoration phase
             "expect_infeasible_problem_ctol": self.expect_infeasible_problem_ctol,
             "expect_infeasible_problem_ytol": self.expect_infeasible_problem_ytol,
@@ -603,19 +606,23 @@ class Ipopt(Algorithm):
                 self.soft_resto_pderror_reduction_factor
             ),
             "max_soft_resto_iters": self.max_soft_resto_iters,
-            "required_infeasibility_reduction": self.required_infeasibility_reduction,
+            "required_infeasibility_reduction": float(
+                self.required_infeasibility_reduction
+            ),
             "max_resto_iter": self.max_resto_iter,
-            "resto_penalty_parameter": self.resto_penalty_parameter,
-            "resto_proximity_weight": self.resto_proximity_weight,
-            "bound_mult_reset_threshold": self.bound_mult_reset_threshold,
-            "constr_mult_reset_threshold": self.constr_mult_reset_threshold,
-            "resto_failure_feasibility_threshold": resto_failure_feasibility_threshold,
+            "resto_penalty_parameter": float(self.resto_penalty_parameter),
+            "resto_proximity_weight": float(self.resto_proximity_weight),
+            "bound_mult_reset_threshold": float(self.bound_mult_reset_threshold),
+            "constr_mult_reset_threshold": float(self.constr_mult_reset_threshold),
+            "resto_failure_feasibility_threshold": float(
+                resto_failure_feasibility_threshold
+            ),
             # hessian approximation
             "limited_memory_aug_solver": self.limited_memory_aug_solver,
             "limited_memory_max_history": self.limited_memory_max_history,
             "limited_memory_update_type": self.limited_memory_update_type,
             "limited_memory_initialization": self.limited_memory_initialization,
-            "limited_memory_init_val": self.limited_memory_init_val,
+            "limited_memory_init_val": float(self.limited_memory_init_val),
             "limited_memory_init_val_max": self.limited_memory_init_val_max,
             "limited_memory_init_val_min": self.limited_memory_init_val_min,
             "limited_memory_max_skipping": self.limited_memory_max_skipping,
