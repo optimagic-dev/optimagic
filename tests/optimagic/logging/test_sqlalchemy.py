@@ -129,9 +129,11 @@ class TestIterationStore:
     def test_db_replacement_error(self, store):
         store.insert(self.create_test_point(245))
         with pytest.raises(RuntimeError, match="PermissionError"):
-            SQLiteLogOptions(
-                store._db_config.url.split("sqlite:///")[-1],
-                if_database_exists=ExistenceStrategy.REPLACE,
+            LogStore.from_options(
+                SQLiteLogOptions(
+                    store._db_config.url.split("sqlite:///")[-1],
+                    if_database_exists=ExistenceStrategy.REPLACE,
+                )
             )
 
     def test_db_existence_raise(self, store):
