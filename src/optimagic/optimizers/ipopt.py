@@ -246,7 +246,7 @@ class Ipopt(Algorithm):
     alpha_min_frac: PositiveFloat = 0.05
     max_soc: NonNegativeInt = 4
     kappa_soc: PositiveFloat = 0.99
-    obj_max_inc: Gt = 5
+    obj_max_inc: GtOneFloat = 5
     max_filter_resets: NonNegativeInt = 5
     filter_reset_trigger: GeOneInt = 5
     corrector_type: (
