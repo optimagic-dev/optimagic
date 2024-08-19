@@ -64,7 +64,7 @@ class OptimizeResult:
 
     multistart_info: Optional["MultistartInfo"] = None
     algorithm_output: Dict = field(default_factory=dict)
-    logging: LogReader | None = None
+    logger: LogReader | None = None
 
     # ==================================================================================
     # Deprecations

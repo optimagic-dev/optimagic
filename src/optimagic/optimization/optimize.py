@@ -485,7 +485,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         skip_checks=problem.skip_checks,
     )
     if logger is None:
-        res.logging = logger
+        res.logger = logger
     else:
         res.logger = logger.as_reader()
 
