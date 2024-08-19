@@ -479,7 +479,6 @@ def handle_log_options_throw_deprecated_warning(
         "configure the logging."
     )
     warnings.warn(msg, FutureWarning)
-
     logging_is_path_or_string = isinstance(logger, str) or isinstance(logger, Path)
     log_options_is_dict = isinstance(log_options, dict)
     compatible_keys = {"fast_logging", "if_table_exists", "if_database_exists"}
@@ -489,10 +488,18 @@ def handle_log_options_throw_deprecated_warning(
         if log_options_is_dict and log_options_is_compatible:
             warnings.warn(
                 f"\nUsing {log_options=} to create an instance of SQLiteLogOptions. "
-                f"This mechanism will be removed in the future."
+                f"This mechanism will be removed in the future.",
+                FutureWarning,
             )
             if "if_table_exists" in log_options:
-                del log_options["if_table_exists"]
+                warnings.warn(
+                    "Found 'if_table_exists' in options dictionary. "
+                    "This option is deprecated and setting it has no effect.",
+                    FutureWarning,
+                )
+                log_options = {
+                    k: v for k, v in log_options.items() if k != "if_table_exists"
+                }
             return SQLiteLogOptions(cast(str | Path, logger), **log_options)
         elif not log_options_is_compatible:
             raise ValueError(
