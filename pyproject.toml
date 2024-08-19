@@ -175,6 +175,7 @@ filterwarnings = [
     "ignore:Conversion of an array with ndim > 0 to a scalar is deprecated",
     "ignore:The following exception was caught when evaluating",
     "ignore:The following exception was caught when calculating",
+    "ignore:Usage of the parameter log_options",
 ]
 addopts = ["--doctest-modules"]
 markers = [

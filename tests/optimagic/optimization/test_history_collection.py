@@ -8,6 +8,7 @@ from numpy.testing import assert_array_equal as aae
 from optimagic import SQLiteLogReader, mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.decorators import mark_minimizer
+from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
@@ -31,7 +32,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
     lb = np.zeros(5) if algorithm in BOUNDED else None
     ub = np.full(5, 10) if algorithm in BOUNDED else None
 
-    logging = tmp_path / "log.db"
+    path = tmp_path / "log.db"
 
     collected_hist = minimize(
         fun=mark.least_squares(lambda x: x),
@@ -39,11 +40,10 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
         algorithm=algorithm,
         bounds=Bounds(lower=lb, upper=ub),
         algo_options={"n_cores": 2, "stopping_maxiter": 3},
-        logging=logging,
-        log_options={"if_database_exists": "replace", "fast_logging": True},
+        logging=SQLiteLogOptions(path=path, if_database_exists="replace"),
     ).history
 
-    reader = SQLiteLogReader(logging)
+    reader = SQLiteLogReader(path)
 
     log_hist = reader.read_history()
 
