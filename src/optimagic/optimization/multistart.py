@@ -14,14 +14,14 @@ First implemented in Python by Alisdair McKay (
 import warnings
 from copy import copy
 from dataclasses import replace
-from pathlib import Path
 from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import qmc, triang
 
-from optimagic.logging.load_database import DataBase
+from optimagic.logging.logger import LogStore
+from optimagic.logging.types import StepStatus
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
@@ -30,7 +30,6 @@ from optimagic.optimization.internal_optimization_problem import (
 from optimagic.optimization.multistart_options import InternalMultistartOptions
 from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
-    update_step_status,
 )
 from optimagic.typing import AggregationLevel, ErrorHandling
 from optimagic.utilities import get_rng
@@ -42,8 +41,7 @@ def run_multistart_optimization(
     x: NDArray[np.float64],
     sampling_bounds: InternalBounds,
     options: InternalMultistartOptions,
-    logging: bool | Path | None,
-    database: DataBase | None,
+    logging: LogStore | None,
     error_handling: ErrorHandling,
 ) -> InternalOptimizeResult:
     steps = determine_steps(options.n_samples, stopping_maxopt=options.stopping_maxopt)
@@ -51,7 +49,6 @@ def run_multistart_optimization(
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
         logging=logging,
-        database=database,
     )
 
     if options.sample is not None:
@@ -71,10 +68,8 @@ def run_multistart_optimization(
         sample = np.vstack([x.reshape(1, -1), sample])
 
     if logging:
-        update_step_status(
-            step=scheduled_steps[0],
-            new_status="running",
-            database=database,
+        logging.step_store.update(
+            scheduled_steps[0], {"status": StepStatus.RUNNING.value}
         )
 
     exploration_res = run_explorations(
@@ -85,10 +80,8 @@ def run_multistart_optimization(
     )
 
     if logging:
-        update_step_status(
-            step=scheduled_steps[0],
-            new_status="complete",
-            database=database,
+        logging.step_store.update(
+            scheduled_steps[0], {"status": StepStatus.COMPLETE.value}
         )
 
     scheduled_steps = scheduled_steps[1:]
@@ -110,11 +103,8 @@ def run_multistart_optimization(
 
         if logging:
             for step in skipped_steps:
-                update_step_status(
-                    step=step,
-                    new_status="skipped",
-                    database=database,
-                )
+                new_status = StepStatus.SKIPPED.value
+                logging.step_store.update(step, {"status": new_status})
 
     batched_sample = get_batched_optimization_sample(
         sorted_sample=sorted_sample,
@@ -172,11 +162,8 @@ def run_multistart_optimization(
         if is_converged:
             if logging:
                 for step in scheduled_steps:
-                    update_step_status(
-                        step=step,
-                        new_status="skipped",
-                        database=database,
-                    )
+                    new_status = StepStatus.SKIPPED.value
+                    logging.step_store.update(step, {"status": new_status})
             break
 
     multistart_info = {

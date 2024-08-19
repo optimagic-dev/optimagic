@@ -29,6 +29,13 @@ the major changes are:
 
 ### Breaking changes
 
+- When providing a path for the argument `logging` of the functions
+  `maximize` and `minimize` and the file already exists, the default
+  behavior is to raise an error now. Replacement or extension
+  of an existing file must be explicitly configured.
+- The argument `if_table_exists` has no effect anymore and a
+  corresponding warning is raised.
+
 
 ### Deprecations
 
@@ -55,7 +62,10 @@ the major changes are:
     - `convergence_scaled_gradient_tolerance` -> `convergence_gtol_scaled`
     - `stopping_max_criterion_evaluations` -> `stopping_maxfun`
     - `stopping_max_iterations` -> `stopping_maxiter`
-
+- The `log_options` argument of `minimize` and `maximize` is deprecated,
+  an according FutureWarning is raised.
+- The class `OptimizeLogReader` is deprecated and redirects to
+  `SQLiteLogReader`.
 
 ## 0.4.7
 
