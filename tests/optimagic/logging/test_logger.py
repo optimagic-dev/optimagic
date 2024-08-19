@@ -60,7 +60,7 @@ def test_log_reader_index_exception(example_db):
         SQLiteLogReader(example_db).read_iteration(10)
 
     with pytest.raises(IndexError):
-        SQLiteLogReader(":memory:").read_iteration(-2)
+        SQLiteLogReader(example_db).read_iteration(-4)
 
 
 def test_log_reader_read_history(example_db):
