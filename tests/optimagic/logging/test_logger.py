@@ -95,7 +95,7 @@ def test_read_steps_table(example_db):
 
 
 def test_read_optimization_problem_table(example_db):
-    res = SQLiteLogReader(example_db)._problem_store.to_df()
+    res = SQLiteLogReader(example_db).problem_df
     assert isinstance(res, pd.DataFrame)
 
 

@@ -22,7 +22,7 @@ class OptimizeLogReader:
     def __new__(cls, *args, **kwargs):
         warnings.warn(
             "OptimizeLogReader is deprecated and will be removed in a future "
-            "version. Please use optimagic.logging.SQLiteLogger instead.",
+            "version. Please use optimagic.logging.SQLiteLogReader instead.",
             FutureWarning,
         )
         sqlite_options = SQLiteLogOptions(*args, **kwargs)

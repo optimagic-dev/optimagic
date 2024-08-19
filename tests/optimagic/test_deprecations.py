@@ -1118,3 +1118,10 @@ def test_pre_process_constraints_invalid_mixed_case():
     msg = "Invalid constraint types: {<class 'str'>}"
     with pytest.raises(InvalidConstraintError, match=msg):
         pre_process_constraints(constraints)
+
+
+def test_deprecated_log_reader(example_db):
+    with pytest.warns(FutureWarning, match="SQLiteLogReader"):
+        reader = OptimizeLogReader(example_db)
+        res = reader.read_start_params()
+        assert res == {"a": 1, "b": 2, "c": 3}
