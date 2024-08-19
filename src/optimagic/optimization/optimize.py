@@ -18,7 +18,7 @@ from typing import Any
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
-from optimagic.logging.logger import LogStore
+from optimagic.logging.logger import LogReader, LogStore
 from optimagic.logging.types import ProblemInitialization
 from optimagic.optimization.create_optimization_problem import (
     OptimizationProblem,
@@ -484,9 +484,14 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         fixed_kwargs=fixed_result_kwargs,
         skip_checks=problem.skip_checks,
     )
-    if logger is None:
-        res.logger = logger
+    log_reader: LogReader[Any] | None
+
+    if logger is not None:
+        assert problem.logger is not None
+        log_reader = LogReader.from_options(problem.logger)
     else:
-        res.logger = logger.as_reader()
+        log_reader = None
+
+    res.logger = log_reader
 
     return res

@@ -384,7 +384,6 @@ class IterationStore(
 
     Args:
         db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
-        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
 
     """
 
@@ -409,7 +408,6 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
 
     Args:
         db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
-        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
 
     """
 
@@ -450,7 +448,6 @@ class ProblemStore(
 
     Args:
         db_config (SQLiteConfig): The SQLiteConfig object for database configuration.
-        if_table_exists (ExistenceStrategy): Strategy for handling existing tables.
 
     """
 

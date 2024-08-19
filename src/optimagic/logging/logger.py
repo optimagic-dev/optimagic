@@ -68,29 +68,17 @@ _LogOptionsType = TypeVar("_LogOptionsType", bound=LogOptions)
 class LogReader(Generic[_LogOptionsType], ABC):
     """A class that manages the retrieving of optimization and exploration data.
 
-    This class exposes methods to retrieve optimization logging data
-    from stores.
-
-    Args:
-        iteration_store: A non-updatable store for iteration data.
-        step_store: An updatable store for step data.
-        problem_store: An updatable store for problem initialization data.
+    This class exposes methods to retrieve optimization logging data from stores.
 
     """
 
-    def __init__(
-        self,
-        iteration_store: NonUpdatableKeyValueStore[
-            CriterionEvaluationResult, CriterionEvaluationWithId
-        ],
-        step_store: UpdatableKeyValueStore[StepResult, StepResultWithId],
-        problem_store: UpdatableKeyValueStore[
-            ProblemInitialization, ProblemInitializationWithId
-        ],
-    ):
-        self._step_store = step_store
-        self._iteration_store = iteration_store
-        self._problem_store = problem_store
+    _step_store: UpdatableKeyValueStore[StepResult, StepResultWithId]
+    _iteration_store: NonUpdatableKeyValueStore[
+        CriterionEvaluationResult, CriterionEvaluationWithId
+    ]
+    _problem_store: UpdatableKeyValueStore[
+        ProblemInitialization, ProblemInitializationWithId
+    ]
 
     @property
     def problem_df(self) -> pd.DataFrame:
@@ -367,10 +355,6 @@ class LogStore(Generic[_LogOptionsType, _LogReaderType], ABC):
     ) -> LogStore[_LogOptionsType, _LogReaderType]:
         pass
 
-    @abstractmethod
-    def as_reader(self) -> _LogReaderType:
-        pass
-
 
 class SQLiteLogOptions(SQLAlchemyConfig, LogOptions):
     """Configuration class for setting up an SQLite database with SQLAlchemy.
@@ -460,7 +444,18 @@ class SQLiteLogReader(LogReader[SQLiteLogOptions]):
 
     This class exposes methods to retrieve optimization logging data from stores.
 
+    Args:
+            path (str | Path): The path to the SQLite database file.
+
     """
+
+    def __init__(self, path: str | Path):
+        log_options = SQLiteLogOptions(
+            path, fast_logging=True, if_database_exists=ExistenceStrategy.EXTEND
+        )
+        self._iteration_store = IterationStore(log_options)
+        self._step_store = StepStore(log_options)
+        self._problem_store = ProblemStore(log_options)
 
     @classmethod
     def _create(cls, log_options: SQLiteLogOptions) -> SQLiteLogReader:
@@ -474,25 +469,7 @@ class SQLiteLogReader(LogReader[SQLiteLogOptions]):
             provided log options.
 
         """
-        iteration_store = IterationStore(log_options)
-        step_store = StepStore(log_options)
-        problem_store = ProblemStore(log_options)
-        return cls(iteration_store, step_store, problem_store)
-
-    @classmethod
-    def from_path(cls, path: str | Path) -> SQLiteLogReader:
-        """Create an instance of SQLiteLogReader from a given file path.
-
-        Args:
-            path (str | Path): The path to the SQLite database file.
-
-        Returns:
-            SQLiteLogReader: An instance of SQLiteLogReader initialized with the
-            provided file path.
-
-        """
-        log_option = SQLiteLogOptions(path, if_database_exists=ExistenceStrategy.EXTEND)
-        return cls._create(log_option)
+        return cls(log_options.path)
 
 
 class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
@@ -544,11 +521,6 @@ class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
         step_store = StepStore(log_options)
         problem_store = ProblemStore(log_options)
         return cls(iteration_store, step_store, problem_store)
-
-    def as_reader(self) -> SQLiteLogReader:
-        return SQLiteLogReader(
-            self.iteration_store, self.step_store, self.problem_store
-        )
 
 
 _LOG_OPTION_LOGGER_REGISTRY: dict[Type[LogOptions], Type[LogStore[Any, Any]]] = {

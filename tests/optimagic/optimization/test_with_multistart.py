@@ -112,7 +112,7 @@ def test_steps_are_logged_as_skipped_if_convergence(tmp_path, params):
         logging=path,
     )
 
-    steps_table = SQLiteLogReader.from_path(path)._step_store.to_df()
+    steps_table = SQLiteLogReader(path)._step_store.to_df()
     expected_status = ["complete", "complete", "complete", "skipped", "skipped"]
     assert steps_table["status"].tolist() == expected_status
 
@@ -131,7 +131,7 @@ def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
         logging="logging.db",
     )
 
-    logging = SQLiteLogReader.from_path("logging.db")
+    logging = SQLiteLogReader("logging.db")
     iterations = logging._iteration_store.to_df()
 
     present_steps = set(iterations["step"])
