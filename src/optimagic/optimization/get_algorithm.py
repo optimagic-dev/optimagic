@@ -6,11 +6,8 @@ import numpy as np
 
 from optimagic.algorithms import ALL_ALGORITHMS
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.logging.read_from_database import (
-    list_of_dicts_to_dict_of_lists,
-)
-from optimagic.logging.write_to_database import update_row
-from optimagic.utilities import propose_alternatives
+from optimagic.logging.types import StepStatus
+from optimagic.utilities import list_of_dicts_to_dict_of_lists, propose_alternatives
 
 
 def process_user_algorithm(algorithm):
@@ -54,7 +51,6 @@ def get_final_algorithm(
     nonlinear_constraints,
     algo_options,
     logging,
-    database,
     collect_history,
 ):
     """Get algorithm-function with partialled options.
@@ -77,8 +73,8 @@ def get_final_algorithm(
         algo_options (dict): Dictionary with additional keyword arguments for the
             algorithm. Entries that are not used by the algorithm are ignored with a
             warning.
-        logging (bool): Whether the algorithm should do logging.
-        database (DataBase): Database to which the logging should be written.
+        logging (Logger | None): An optional Logger instance to add logging to the
+            algorithm.
 
     Returns:
         callable: The algorithm.
@@ -100,7 +96,6 @@ def get_final_algorithm(
     algorithm = _add_logging(
         algorithm,
         logging=logging,
-        database=database,
     )
     is_parallel = algo_info.parallelizes
     batch_size = internal_options.get("batch_size", internal_options.get("n_cores", 1))
@@ -111,7 +106,7 @@ def get_final_algorithm(
     return algorithm
 
 
-def _add_logging(algorithm=None, *, logging=None, database=None):
+def _add_logging(algorithm=None, *, logging=None):
     """Add logging of status to the algorithm."""
 
     def decorator_add_logging_to_algorithm(algorithm):
@@ -122,11 +117,8 @@ def _add_logging(algorithm=None, *, logging=None, database=None):
             _kwargs = {k: v for k, v in kwargs.items() if k != "step_id"}
 
             if logging:
-                update_row(
-                    data={"status": "running"},
-                    rowid=step_id,
-                    table_name="steps",
-                    database=database,
+                logging.step_store.update(
+                    step_id, {"status": f"{StepStatus.RUNNING.value}"}
                 )
 
             for task in ["criterion", "derivative", "criterion_and_derivative"]:
@@ -138,11 +130,8 @@ def _add_logging(algorithm=None, *, logging=None, database=None):
             res = algorithm(**_kwargs)
 
             if logging:
-                update_row(
-                    data={"status": "complete"},
-                    rowid=step_id,
-                    table_name="steps",
-                    database=database,
+                logging.step_store.update(
+                    step_id, {"status": f"{StepStatus.COMPLETE.value}"}
                 )
 
             return res

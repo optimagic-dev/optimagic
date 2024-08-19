@@ -1,10 +1,16 @@
+import logging
 import warnings
 from dataclasses import replace
 from functools import wraps
-from typing import Any, Callable, ParamSpec
+from pathlib import Path
+from typing import Any, Callable, ParamSpec, cast
 
 from optimagic import mark
 from optimagic.constraints import Constraint, InvalidConstraintError
+from optimagic.logging.logger import (
+    LogOptions,
+    SQLiteLogOptions,
+)
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -12,6 +18,8 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.bounds import Bounds
 from optimagic.typing import AggregationLevel
+
+_logger = logging.getLogger(__name__)
 
 
 def throw_criterion_future_warning():
@@ -459,6 +467,48 @@ def replace_and_warn_about_deprecated_derivatives(candidate, name):
             out.append(key_to_marker[key](func))
 
     return out
+
+
+def handle_log_options_throw_deprecated_warning(
+    log_options: dict[str, Any], logger: str | Path | LogOptions | None
+) -> str | Path | LogOptions | None:
+    msg = (
+        "Usage of the parameter log_options is deprecated "
+        "and will be removed in a future version. "
+        "Provide a LogOptions instance for the parameter `logging`, if you need to "
+        "configure the logging."
+    )
+    warnings.warn(msg, FutureWarning)
+    logging_is_path_or_string = isinstance(logger, str) or isinstance(logger, Path)
+    log_options_is_dict = isinstance(log_options, dict)
+    compatible_keys = {"fast_logging", "if_table_exists", "if_database_exists"}
+    log_options_is_compatible = set(log_options.keys()).issubset(compatible_keys)
+
+    if logging_is_path_or_string:
+        if log_options_is_dict and log_options_is_compatible:
+            warnings.warn(
+                f"\nUsing {log_options=} to create an instance of SQLiteLogOptions. "
+                f"This mechanism will be removed in the future.",
+                FutureWarning,
+            )
+            if "if_table_exists" in log_options:
+                warnings.warn(
+                    "Found 'if_table_exists' in options dictionary. "
+                    "This option is deprecated and setting it has no effect.",
+                    FutureWarning,
+                )
+                log_options = {
+                    k: v for k, v in log_options.items() if k != "if_table_exists"
+                }
+            return SQLiteLogOptions(cast(str | Path, logger), **log_options)
+        elif not log_options_is_compatible:
+            raise ValueError(
+                f"Found string or path for logger argument, but parameter"
+                f" {log_options=} is not compatible to {compatible_keys=}."
+                f"Explicitly create a Logger instance for configuration."
+            )
+
+    return logger
 
 
 def pre_process_constraints(

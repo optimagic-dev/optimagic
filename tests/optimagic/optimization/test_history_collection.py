@@ -4,10 +4,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
-from optimagic import mark
+from optimagic import SQLiteLogReader, mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.decorators import mark_minimizer
-from optimagic.logging.read_log import OptimizeLogReader
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
@@ -40,7 +39,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
         log_options={"if_database_exists": "replace", "fast_logging": True},
     ).history
 
-    reader = OptimizeLogReader(logging)
+    reader = SQLiteLogReader(logging)
 
     log_hist = reader.read_history()
 

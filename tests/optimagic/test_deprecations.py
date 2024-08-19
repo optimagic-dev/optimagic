@@ -34,12 +34,14 @@ from estimagic import (
 from numpy.testing import assert_almost_equal as aaae
 from optimagic.deprecations import (
     convert_dict_to_function_value,
+    handle_log_options_throw_deprecated_warning,
     infer_problem_type_from_dict_output,
     is_dict_output,
     pre_process_constraints,
 )
 from optimagic.differentiation.derivatives import NumdiffResult
 from optimagic.exceptions import InvalidConstraintError
+from optimagic.logging.logger import SQLiteLogOptions
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -153,7 +155,8 @@ def example_db(tmp_path):
 
 
 def test_estimagic_log_reader_is_deprecated(example_db):
-    msg = "estimagic.OptimizeLogReader has been deprecated"
+    msg = "OptimizeLogReader is deprecated and will be removed in a future "
+    "version. Please use optimagic.logging.SQLiteLogger instead."
     with pytest.warns(FutureWarning, match=msg):
         OptimizeLogReader(example_db)
 
@@ -862,6 +865,147 @@ def test_fun_with_dict_return_is_deprecated_in_slice_plot():
         )
 
 
+def test_handle_log_options():
+    msg = (
+        "Usage of the parameter log_options is deprecated "
+        "and will be removed in a future version. "
+        "Provide a LogOptions instance for the parameter `logging`, if you need to "
+        "configure the logging."
+    )
+    log_options = {"fast_logging": True}
+    with pytest.warns(FutureWarning, match=msg):
+        logger = None
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options, logger
+        )
+        assert handled_logger is None
+
+    creation_warning = (
+        f"\nUsing {log_options=} to create an instance of SQLiteLogOptions. "
+        f"This mechanism will be removed in the future."
+    )
+
+    with pytest.warns(match=creation_warning):
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options, ":memory:"
+        )
+        assert isinstance(handled_logger, SQLiteLogOptions)
+
+    incompatibility_msg = "Found string or path for logger argument, but parameter"
+    f" {log_options=} is not compatible "
+    log_options_typo = {"fast_lugging": False}
+
+    with pytest.raises(ValueError, match=incompatibility_msg):
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options_typo, ":memory:"
+        )
+        assert handled_logger == ":memory:"
+
+
+def test_log_options_are_deprecated_in_estimate_ml(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_estimate_msm(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_minimize(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_maximize(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
 def test_dict_constraints_are_deprecated_in_minimize():
     msg = "Specifying constraints as a dictionary is deprecated and"
     with pytest.warns(FutureWarning, match=msg):
@@ -974,3 +1118,10 @@ def test_pre_process_constraints_invalid_mixed_case():
     msg = "Invalid constraint types: {<class 'str'>}"
     with pytest.raises(InvalidConstraintError, match=msg):
         pre_process_constraints(constraints)
+
+
+def test_deprecated_log_reader(example_db):
+    with pytest.warns(FutureWarning, match="SQLiteLogReader"):
+        reader = OptimizeLogReader(example_db)
+        res = reader.read_start_params()
+        assert res == {"a": 1, "b": 2, "c": 3}

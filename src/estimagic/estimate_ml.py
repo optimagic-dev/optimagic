@@ -60,8 +60,7 @@ def estimate_ml(
     *,
     bounds=None,
     constraints=None,
-    logging=False,
-    log_options=None,
+    logging=None,
     loglike_kwargs=None,
     jacobian=None,
     jacobian_kwargs=None,
@@ -71,6 +70,7 @@ def estimate_ml(
     hessian_numdiff_options=None,
     design_info=None,
     # deprecated
+    log_options=None,
     lower_bounds=None,
     upper_bounds=None,
     numdiff_options=None,

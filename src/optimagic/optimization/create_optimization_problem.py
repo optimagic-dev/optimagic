@@ -6,6 +6,7 @@ from typing import Any, Callable, Literal
 from optimagic import deprecations
 from optimagic.decorators import AlgoInfo
 from optimagic.deprecations import (
+    handle_log_options_throw_deprecated_warning,
     replace_and_warn_about_deprecated_algo_options,
     replace_and_warn_about_deprecated_bounds,
 )
@@ -20,6 +21,7 @@ from optimagic.exceptions import (
     InvalidFunctionError,
     MissingInputError,
 )
+from optimagic.logging.logger import LogOptions, SQLiteLogOptions
 from optimagic.optimization.fun_value import (
     SpecificFunctionValue,
     convert_fun_output_to_function_value,
@@ -44,7 +46,12 @@ from optimagic.shared.process_user_function import (
     infer_aggregation_level,
     partial_func_of_params,
 )
-from optimagic.typing import AggregationLevel, PyTree
+from optimagic.typing import (
+    AggregationLevel,
+    OptimizationType,
+    OptimizationTypeLiteral,
+    PyTree,
+)
 
 
 @dataclass(frozen=True)
@@ -80,8 +87,7 @@ class OptimizationProblem:
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     numdiff_options: NumdiffOptions
     # TODO: logging will become None | Logger and log_options will be removed
-    logging: bool | Path | None
-    log_options: dict[str, Any] | None
+    logger: LogOptions | None
     # TODO: error_handling will become None | ErrorHandlingOptions and error_penalty
     # will be removed
     error_handling: Literal["raise", "continue"]
@@ -90,7 +96,7 @@ class OptimizationProblem:
     multistart: MultistartOptions | None
     collect_history: bool
     skip_checks: bool
-    direction: Literal["minimize", "maximize"]
+    direction: OptimizationType | OptimizationTypeLiteral
     fun_eval: SpecificFunctionValue
 
 
@@ -110,7 +116,6 @@ def create_optimization_problem(
     fun_and_jac_kwargs,
     numdiff_options,
     logging,
-    log_options,
     error_handling,
     error_penalty,
     scaling,
@@ -136,6 +141,7 @@ def create_optimization_problem(
     criterion_and_derivative,
     criterion_and_derivative_kwargs,
     lower_bounds,
+    log_options,
     upper_bounds,
     soft_lower_bounds,
     soft_upper_bounds,
@@ -170,6 +176,9 @@ def create_optimization_problem(
     # ==================================================================================
     # deprecations
     # ==================================================================================
+
+    if log_options is not None:
+        logging = handle_log_options_throw_deprecated_warning(log_options, logging)
 
     if criterion is not None:
         deprecations.throw_criterion_future_warning()
@@ -344,10 +353,11 @@ def create_optimization_problem(
     algo_options = {} if algo_options is None else algo_options
     jac_kwargs = {} if jac_kwargs is None else jac_kwargs
     fun_and_jac_kwargs = {} if fun_and_jac_kwargs is None else fun_and_jac_kwargs
-    log_options = {} if log_options is None else log_options
     error_penalty = {} if error_penalty is None else error_penalty
-    if logging:
-        logging = Path(logging)
+
+    if isinstance(logging, str) or isinstance(logging, Path):
+        log_path = Path(logging)
+        logging = SQLiteLogOptions(log_path)
 
     # ==================================================================================
     # evaluate fun for the first time
@@ -490,8 +500,10 @@ def create_optimization_problem(
         if not isinstance(numdiff_options, NumdiffOptions):
             raise ValueError("numdiff_options must be a NumdiffOptions object")
 
-        if not isinstance(logging, bool | Path | None):
-            raise ValueError("logging must be a boolean, a path or None")
+        if not isinstance(logging, bool | Path | LogOptions | None):
+            raise ValueError(
+                "logging must be a boolean, a path, a LogOptions instance or None"
+            )
 
         if not isinstance(log_options, dict | None):
             raise ValueError("log_options must be a dictionary or None")
@@ -532,8 +544,7 @@ def create_optimization_problem(
         jac=jac,
         fun_and_jac=fun_and_jac,
         numdiff_options=numdiff_options,
-        logging=logging,
-        log_options=log_options,
+        logger=logging,
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from optimagic import deprecations
+from optimagic.logging.logger import LogReader
 from optimagic.shared.compat import pd_df_map
 from optimagic.typing import PyTree
 from optimagic.utilities import to_pickle
@@ -63,6 +64,7 @@ class OptimizeResult:
 
     multistart_info: Optional["MultistartInfo"] = None
     algorithm_output: Dict = field(default_factory=dict)
+    logger: LogReader | None = None
 
     # ==================================================================================
     # Deprecations

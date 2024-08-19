@@ -20,6 +20,15 @@ from optimagic.constraints import (
 )
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
+from optimagic.logging import (
+    ExistenceStrategy as ExistenceStrategy,
+)
+from optimagic.logging import (
+    SQLiteLogOptions as SQLiteLogOptions,
+)
+from optimagic.logging import (
+    SQLiteLogReader as SQLiteLogReader,
+)
 from optimagic.logging.read_log import OptimizeLogReader
 from optimagic.optimization.fun_value import (
     FunctionValue,
