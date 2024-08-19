@@ -60,3 +60,6 @@ NonNegativeInt = Annotated[int, Ge(0)]
 PositiveFloat = Annotated[float, Gt(0)]
 NonNegativeFloat = Annotated[float, Ge(0)]
 NegativeFloat = Annotated[float, Lt(0)]
+GeOneInt: Annotated[int, Ge(1)]
+GtOneFloat: Annotated[float, Gt(1)]
+YesNoBool: Literal["yes", "no"] | bool
