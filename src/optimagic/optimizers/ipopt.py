@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 import numpy as np
-from annotated_types import Gt
 from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
