@@ -25,7 +25,7 @@ for name, algo in AVAILABLE_ALGORITHMS.items():
             BOUNDED.append(name)
 
 
-@pytest.mark.xfail(reason="Iteration logging is not yet implemented.")
+@pytest.mark.xfail(reason="pounders does not use batch fun.")
 @pytest.mark.skipif(sys.platform == "win32", reason="Slow on windows.")
 @pytest.mark.parametrize("algorithm", OPTIMIZERS)
 def test_history_collection_with_parallelization(algorithm, tmp_path):
@@ -48,7 +48,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
     log_hist = reader.read_history()
 
     # We cannot expect the order to be the same
-    aaae(sorted(collected_hist["criterion"]), sorted(log_hist["criterion"]))
+    aaae(sorted(collected_hist.fun), sorted(log_hist["criterion"]))
 
 
 @mark_minimizer(name="dummy")

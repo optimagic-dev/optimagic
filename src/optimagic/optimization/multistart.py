@@ -312,6 +312,7 @@ def run_explorations(
                 vectors.
 
     """
+    internal_problem = internal_problem.with_step_id(step_id)
     x_list = list(sample)
 
     raw_values = np.array(internal_problem.exploration_fun(x_list, n_cores=n_cores))

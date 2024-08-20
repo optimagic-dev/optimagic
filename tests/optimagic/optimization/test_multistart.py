@@ -70,6 +70,9 @@ def test_run_explorations():
                     out.append(-vec.sum())
             return out
 
+        def with_step_id(self, step_id):
+            return self
+
     calculated = run_explorations(
         internal_problem=Dummy(),
         sample=np.arange(6).reshape(3, 2),
