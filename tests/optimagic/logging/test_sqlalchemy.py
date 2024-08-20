@@ -26,11 +26,9 @@ class TestIterationStore:
     def create_test_point(i: int):
         return IterationState(
             params=np.array([i, i + 1]),
-            internal_derivative=None,
             timestamp=123456.0 + i,
             exceptions=None,
             valid=True,
-            hash=f"abc{i}",
             value=0.5 + i,
             step=i,
             criterion_eval=None,
@@ -58,11 +56,9 @@ class TestIterationStore:
         # Update the value
         updated_result = IterationState(
             params=queried_result.params,
-            internal_derivative=queried_result.internal_derivative,
             timestamp=queried_result.timestamp,
             exceptions=queried_result.exceptions,
             valid=queried_result.valid,
-            hash=queried_result.hash,
             value=1.0,  # New value
             step=queried_result.step,
             criterion_eval=queried_result.criterion_eval,

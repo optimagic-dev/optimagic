@@ -88,8 +88,6 @@ class IterationState(DictLikeAccess):
     criterion_eval: PyTree | None = None
     step: int | None = None
     exceptions: str | None = None
-    internal_derivative: PyTree | None = None
-    hash: str | None = None
 
     def combine(self, other: "IterationState") -> "IterationState":
         """Combine two iteration states.
