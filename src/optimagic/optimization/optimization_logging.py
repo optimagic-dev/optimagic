@@ -5,7 +5,7 @@ from optimagic.logging.types import StepResult, StepStatus
 
 
 def log_scheduled_steps_and_get_ids(
-    steps: list[dict[str, Any]], logging: LogStore | None
+    steps: list[dict[str, Any]], logger: LogStore | None
 ) -> list[int]:
     """Add scheduled steps to the steps table of the database and get their ids.
 
@@ -21,12 +21,12 @@ def log_scheduled_steps_and_get_ids(
 
     """
     default_row = {"status": StepStatus.SCHEDULED.value}
-    if logging:
+    if logger:
         for row in steps:
             data = StepResult(**{**default_row, **row})
-            logging.step_store.insert(data)
+            logger.step_store.insert(data)
 
-        last_steps = logging.step_store.select_last_rows(len(steps))
+        last_steps = logger.step_store.select_last_rows(len(steps))
         step_ids = cast(list[int], [row.rowid for row in last_steps])
     else:
         step_ids = list(range(len(steps)))

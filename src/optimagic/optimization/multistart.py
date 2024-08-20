@@ -40,14 +40,14 @@ def run_multistart_optimization(
     x: NDArray[np.float64],
     sampling_bounds: InternalBounds,
     options: InternalMultistartOptions,
-    logging: LogStore | None,
+    logger: LogStore | None,
     error_handling: ErrorHandling,
 ) -> InternalOptimizeResult:
     steps = determine_steps(options.n_samples, stopping_maxopt=options.stopping_maxopt)
 
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
-        logging=logging,
+        logger=logger,
     )
 
     if options.sample is not None:
@@ -66,8 +66,8 @@ def run_multistart_optimization(
 
         sample = np.vstack([x.reshape(1, -1), sample])
 
-    if logging:
-        logging.step_store.update(
+    if logger:
+        logger.step_store.update(
             scheduled_steps[0], {"status": StepStatus.RUNNING.value}
         )
 
@@ -78,8 +78,8 @@ def run_multistart_optimization(
         step_id=scheduled_steps[0],
     )
 
-    if logging:
-        logging.step_store.update(
+    if logger:
+        logger.step_store.update(
             scheduled_steps[0], {"status": StepStatus.COMPLETE.value}
         )
 
@@ -100,10 +100,10 @@ def run_multistart_optimization(
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
 
-        if logging:
+        if logger:
             for step in skipped_steps:
                 new_status = StepStatus.SKIPPED.value
-                logging.step_store.update(step, {"status": new_status})
+                logger.step_store.update(step, {"status": new_status})
 
     batched_sample = get_batched_optimization_sample(
         sorted_sample=sorted_sample,
@@ -162,10 +162,10 @@ def run_multistart_optimization(
         )
         opt_counter += len(batch)
         if is_converged:
-            if logging:
+            if logger:
                 for step in scheduled_steps:
                     new_status = StepStatus.SKIPPED.value
-                    logging.step_store.update(step, {"status": new_status})
+                    logger.step_store.update(step, {"status": new_status})
             break
 
     multistart_info = {

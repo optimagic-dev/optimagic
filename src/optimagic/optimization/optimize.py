@@ -427,7 +427,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         # TODO: Actually use the step ids
         step_id = log_scheduled_steps_and_get_ids(  # noqa: F841
             steps=steps,
-            logging=logger,
+            logger=logger,
         )[0]
 
         raw_res = problem.algorithm.solve_internal_problem(internal_problem, x, step_id)
@@ -450,7 +450,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             x=x,
             sampling_bounds=sampling_bounds,
             options=multistart_options,
-            logging=logger,
+            logger=logger,
             error_handling=problem.error_handling,
         )
 
