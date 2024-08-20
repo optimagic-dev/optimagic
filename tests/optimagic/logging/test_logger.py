@@ -44,7 +44,6 @@ def test_log_reader_read_start_params(example_db):
     assert res == {"a": 1, "b": 2, "c": 3}
 
 
-@pytest.mark.xfail(reason="Iteration logging is currently not implemented.")
 def test_log_reader_read_iteration(example_db):
     reader = SQLiteLogReader(example_db)
     first_row = reader.read_iteration(0)
@@ -65,7 +64,6 @@ def test_log_reader_index_exception(example_db):
         SQLiteLogReader(example_db).read_iteration(-4)
 
 
-@pytest.mark.xfail(reason="Iteration logging is currently not implemented.")
 def test_log_reader_read_history(example_db):
     reader = SQLiteLogReader(example_db)
     res = reader.read_history()
@@ -74,7 +72,6 @@ def test_log_reader_read_history(example_db):
     assert res["params"][0] == {"a": 1, "b": 2, "c": 3}
 
 
-@pytest.mark.xfail(reason="Iteration logging is currently not implemented.")
 def test_log_reader_read_multistart_history(example_db):
     reader = SQLiteLogReader(example_db)
     history, local_history, exploration = reader.read_multistart_history(

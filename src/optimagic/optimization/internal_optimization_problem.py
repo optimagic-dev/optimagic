@@ -12,6 +12,7 @@ from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
 from optimagic.logging.logger import LogStore
+from optimagic.logging.types import IterationState
 from optimagic.optimization.fun_value import SpecificFunctionValue
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import Converter
@@ -39,12 +40,6 @@ class HistoryEntry:
     fun: float | None
     time: float
     task: EvalTask
-
-
-# placeholder for something I'll get from Kristof
-@dataclass(frozen=True)
-class LogEntry:
-    pass
 
 
 class History:
@@ -304,7 +299,10 @@ class InternalOptimizationProblem:
         self, x: NDArray[np.float64]
     ) -> tuple[float | NDArray[np.float64], HistoryEntry]:
         fun_value, hist_entry, log_entry = self._pure_evaluate_fun(x)
-        # TODO: log the log_entry
+
+        if self._logger:
+            self._logger.iteration_store.insert(log_entry)
+
         return fun_value, hist_entry
 
     def _evaluate_jac(
@@ -324,7 +322,8 @@ class InternalOptimizationProblem:
 
             hist_entry = replace(hist_entry, task=EvalTask.JAC)
 
-        # TODO: process and log the log_entry
+        if self._logger:
+            self._logger.iteration_store.insert(log_entry)
 
         return jac_value, hist_entry
 
@@ -333,7 +332,8 @@ class InternalOptimizationProblem:
     ) -> tuple[float, HistoryEntry]:
         fun_value, hist_entry, log_entry = self._pure_exploration_fun(x)
 
-        # TODO: log the log_entry
+        if self._logger:
+            self._logger.iteration_store.insert(log_entry)
 
         return fun_value, hist_entry
 
@@ -348,14 +348,15 @@ class InternalOptimizationProblem:
             fun_value, hist_entry, log_entry_fun = self._pure_evaluate_fun(x)
             jac_value, _, log_entry_jac = self._pure_evaluate_jac(x)
             hist_entry = replace(hist_entry, task=EvalTask.FUN_AND_JAC)
-            # TODO: Check if this is the correct way to combine log entries
-            log_entry = replace(log_entry_jac, **asdict(log_entry_fun))
+            log_entry = log_entry_fun.combine(log_entry_jac)
         else:
             (fun_value, jac_value), hist_entry, log_entry = (
                 self._pure_evaluate_numerical_fun_and_jac(x)
             )
 
-        # TODO: log the log_entry
+        if self._logger:
+            self._logger.iteration_store.insert(log_entry)
+
         return (fun_value, jac_value), hist_entry
 
     # ==================================================================================
@@ -364,7 +365,7 @@ class InternalOptimizationProblem:
 
     def _pure_evaluate_fun(
         self, x: NDArray[np.float64]
-    ) -> tuple[float | NDArray[np.float64], HistoryEntry, LogEntry]:
+    ) -> tuple[float | NDArray[np.float64], HistoryEntry, IterationState]:
         """Evaluate fun and handle exceptions.
 
         This function does all the conversions from x to params and from
@@ -378,6 +379,7 @@ class InternalOptimizationProblem:
         """
         now = time.perf_counter()
         params = self._converter.params_from_internal(x)
+        traceback: None | str = None
         try:
             fun_value = self._fun(params)
         except (KeyboardInterrupt, SystemExit):
@@ -390,11 +392,11 @@ class InternalOptimizationProblem:
                 msg = "An error occurred when evaluating fun during optimization."
                 raise UserFunctionRuntimeError(msg) from e
             else:
-                tb = get_traceback()
+                traceback = get_traceback()
                 msg = (
                     "The following exception was caught when evaluating fun during "
                     "optimization. The fun value was replaced by a penalty value to "
-                    f"continue with the optimization.:\n\n{tb}"
+                    f"continue with the optimization.:\n\n{traceback}"
                 )
                 warnings.warn(msg)
                 fun_value, _ = self._error_penalty_func(x)
@@ -410,18 +412,26 @@ class InternalOptimizationProblem:
             task=EvalTask.FUN,
         )
 
-        # TODO: Create actual log entry
-        log_entry = LogEntry()
+        log_entry = IterationState(
+            params=params,
+            timestamp=now,
+            value=hist_fun_value,
+            valid=not bool(traceback),
+            criterion_eval=fun_value,
+            step=self._step_id,
+            exceptions=traceback,
+        )
 
         return algo_fun_value, hist_entry, log_entry
 
     def _pure_evaluate_jac(
         self, x: NDArray[np.float64]
-    ) -> tuple[NDArray[np.float64], HistoryEntry, LogEntry]:
+    ) -> tuple[NDArray[np.float64], HistoryEntry, IterationState]:
         if self._jac is None:
             raise ValueError("The jac function is not defined.")
 
         now = time.perf_counter()
+        traceback: None | str = None
 
         params = self._converter.params_from_internal(x)
         try:
@@ -436,11 +446,12 @@ class InternalOptimizationProblem:
                 msg = "An error occurred when evaluating jac during optimization."
                 raise UserFunctionRuntimeError(msg) from e
             else:
-                tb = get_traceback()
+                traceback = get_traceback()
+
                 msg = (
                     "The following exception was caught when evaluating jac during "
                     "optimization. The jac value was replaced by a penalty value to "
-                    f"continue with the optimization.:\n\n{tb}"
+                    f"continue with the optimization.:\n\n{traceback}"
                 )
                 warnings.warn(msg)
                 _, jac_value = self._error_penalty_func(x)
@@ -456,17 +467,27 @@ class InternalOptimizationProblem:
             task=EvalTask.JAC,
         )
 
-        # TODO: Create actual log entry
-        log_entry = LogEntry()
+        log_entry = IterationState(
+            params=params,
+            timestamp=now,
+            value=None,
+            valid=not bool(traceback),
+            criterion_eval=None,
+            step=self._step_id,
+            exceptions=traceback,
+        )
 
         return out_jac, hist_entry, log_entry
 
     def _pure_evaluate_numerical_fun_and_jac(
         self, x: NDArray[np.float64]
     ) -> tuple[
-        tuple[float | NDArray[np.float64], NDArray[np.float64]], HistoryEntry, LogEntry
+        tuple[float | NDArray[np.float64], NDArray[np.float64]],
+        HistoryEntry,
+        IterationState,
     ]:
         now = time.perf_counter()
+        traceback: None | str = None
 
         def func(x: NDArray[np.float64]) -> SpecificFunctionValue:
             p = self._converter.params_from_internal(x)
@@ -496,12 +517,13 @@ class InternalOptimizationProblem:
                 )
                 raise UserFunctionRuntimeError(msg) from e
             else:
-                tb = get_traceback()
+                traceback = get_traceback()
+
                 msg = (
                     "The following exception was caught when calculating a "
                     "numerical derivative during optimization. The jac value was "
                     "replaced by a penalty value to continue with the optimization."
-                    f":\n\n{tb}"
+                    f":\n\n{traceback}"
                 )
                 warnings.warn(msg)
                 fun_value, jac_value = self._error_penalty_func(x)
@@ -522,34 +544,42 @@ class InternalOptimizationProblem:
             task=EvalTask.FUN_AND_JAC,
         )
 
-        # TODO: Create actual log entry
-        log_entry = LogEntry()
+        log_entry = IterationState(
+            params=self._converter.params_from_internal(x),
+            timestamp=now,
+            value=hist_fun_value,
+            valid=not bool(traceback),
+            criterion_eval=fun_value,
+            step=self._step_id,
+            exceptions=traceback,
+        )
 
         return (algo_fun_value, jac_value), hist_entry, log_entry
 
     def _pure_exploration_fun(
         self, x: NDArray[np.float64]
-    ) -> tuple[float, HistoryEntry, LogEntry]:
+    ) -> tuple[float, HistoryEntry, IterationState]:
         now = time.perf_counter()
         params = self._converter.params_from_internal(x)
-        is_error = False
+        traceback: None | str = None
+
         try:
             fun_value = self._fun(params)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            tb = get_traceback()
-            is_error = True
+            traceback = get_traceback()
+
             msg = (
                 "The following exception was caught when evaluating fun during the "
                 "exploration phase of a multistart optimization. The fun value was "
                 "replaced by a penalty value to continue with the "
-                f"optimization.:\n\n{tb}"
+                f"optimization.:\n\n{traceback}"
             )
             warnings.warn(msg)
             fun_value, _ = self._error_penalty_func(x)
 
-        if not is_error:
+        if not traceback:
             algo_fun_value, hist_fun_value = _process_fun_value(
                 value=fun_value,
                 # For exploration we always need a scalar value
@@ -569,21 +599,30 @@ class InternalOptimizationProblem:
             task=EvalTask.EXPLORATION,
         )
 
-        # TODO: Create actual log entry
-        log_entry = LogEntry()
+        log_entry = IterationState(
+            params=params,
+            timestamp=now,
+            value=hist_fun_value,
+            valid=not bool(traceback),
+            criterion_eval=fun_value,
+            step=self._step_id,
+            exceptions=traceback,
+        )
 
         return cast(float, algo_fun_value), hist_entry, log_entry
 
     def _pure_evaluate_fun_and_jac(
         self, x: NDArray[np.float64]
     ) -> tuple[
-        tuple[float | NDArray[np.float64], NDArray[np.float64]], HistoryEntry, LogEntry
+        tuple[float | NDArray[np.float64], NDArray[np.float64]],
+        HistoryEntry,
+        IterationState,
     ]:
         if self._fun_and_jac is None:
             raise ValueError("The fun_and_jac function is not defined.")
 
         now = time.perf_counter()
-        is_error = False
+        traceback: None | str = None
         params = self._converter.params_from_internal(x)
 
         try:
@@ -600,22 +639,21 @@ class InternalOptimizationProblem:
                 )
                 raise UserFunctionRuntimeError(msg) from e
             else:
-                tb = get_traceback()
+                traceback = get_traceback()
                 msg = (
                     "The following exception was caught when evaluating fun_and_jac "
                     "during optimization. The fun and jac values were replaced by "
-                    f"penalty values to continue with the optimization.:\n\n{tb}"
+                    f"penalty values to continue with the optimization.:\n\n{traceback}"
                 )
                 warnings.warn(msg)
 
-                is_error = True
                 fun_value, jac_value = self._error_penalty_func(x)
 
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value, solver_type=self._solver_type, direction=self._direction
         )
 
-        if is_error:
+        if traceback:
             out_jac = jac_value
         else:
             out_jac = self._converter.derivative_to_internal(jac_value, x)
@@ -630,8 +668,15 @@ class InternalOptimizationProblem:
             task=EvalTask.FUN_AND_JAC,
         )
 
-        # TODO: Create actual log entry
-        log_entry = LogEntry()
+        log_entry = IterationState(
+            params=params,
+            timestamp=now,
+            value=hist_fun_value,
+            valid=not bool(traceback),
+            criterion_eval=fun_value,
+            step=self._step_id,
+            exceptions=traceback,
+        )
 
         return (algo_fun_value, out_jac), hist_entry, log_entry
 
