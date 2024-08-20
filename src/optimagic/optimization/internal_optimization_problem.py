@@ -344,9 +344,9 @@ class InternalOptimizationProblem:
         log_entry = IterationState(
             params=params,
             timestamp=now,
-            value=hist_fun_value,
+            scalar_fun=hist_fun_value,
             valid=not bool(traceback),
-            criterion_eval=fun_value,
+            raw_fun=fun_value,
             step=self._step_id,
             exceptions=traceback,
         )
@@ -399,9 +399,9 @@ class InternalOptimizationProblem:
         log_entry = IterationState(
             params=params,
             timestamp=now,
-            value=None,
+            scalar_fun=None,
             valid=not bool(traceback),
-            criterion_eval=None,
+            raw_fun=None,
             step=self._step_id,
             exceptions=traceback,
         )
@@ -476,9 +476,9 @@ class InternalOptimizationProblem:
         log_entry = IterationState(
             params=self._converter.params_from_internal(x),
             timestamp=now,
-            value=hist_fun_value,
+            scalar_fun=hist_fun_value,
             valid=not bool(traceback),
-            criterion_eval=fun_value,
+            raw_fun=fun_value,
             step=self._step_id,
             exceptions=traceback,
         )
@@ -531,9 +531,9 @@ class InternalOptimizationProblem:
         log_entry = IterationState(
             params=params,
             timestamp=now,
-            value=hist_fun_value,
+            scalar_fun=hist_fun_value,
             valid=not bool(traceback),
-            criterion_eval=fun_value,
+            raw_fun=fun_value,
             step=self._step_id,
             exceptions=traceback,
         )
@@ -600,9 +600,9 @@ class InternalOptimizationProblem:
         log_entry = IterationState(
             params=params,
             timestamp=now,
-            value=hist_fun_value,
+            scalar_fun=hist_fun_value,
             valid=not bool(traceback),
-            criterion_eval=fun_value,
+            raw_fun=fun_value,
             step=self._step_id,
             exceptions=traceback,
         )

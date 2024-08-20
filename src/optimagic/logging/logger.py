@@ -150,9 +150,9 @@ class LogReader(Generic[_LogOptionsType], ABC):
         criterion_list = []
         runtime_list = []
         for data in raw_res:
-            if data.value is not None:
+            if data.scalar_fun is not None:
                 params_list.append(data.params)
-                criterion_list.append(data.value)
+                criterion_list.append(data.scalar_fun)
                 runtime_list.append(data.timestamp)
 
         times = np.array(runtime_list)
@@ -180,9 +180,9 @@ class LogReader(Generic[_LogOptionsType], ABC):
         }
 
         for data in raw_res:
-            if data.value is not None:
+            if data.scalar_fun is not None:
                 history["params"].append(data.params)
-                history["fun"].append(data.value)
+                history["fun"].append(data.scalar_fun)
                 history["time"].append(data.timestamp)
                 history["step"].append(data.step)
 

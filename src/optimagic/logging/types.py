@@ -83,9 +83,9 @@ class IterationState(DictLikeAccess):
 
     params: PyTree
     timestamp: float
-    value: float | None
+    scalar_fun: float | None
     valid: bool
-    criterion_eval: PyTree | None = None
+    raw_fun: PyTree | None = None
     step: int | None = None
     exceptions: str | None = None
 
@@ -108,10 +108,10 @@ class IterationState(DictLikeAccess):
             # one of the values must be None
             params=self.params,
             timestamp=min(self.timestamp, other.timestamp),
-            value=self.value or other.value,
+            scalar_fun=self.scalar_fun or other.scalar_fun,
             valid=self.valid and other.valid,
             # one of the values must be None
-            criterion_eval=self.criterion_eval or other.criterion_eval,
+            raw_fun=self.raw_fun or other.raw_fun,
             step=self.step,
             exceptions=exceptions,
         )

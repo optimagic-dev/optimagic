@@ -49,11 +49,11 @@ def test_log_reader_read_iteration(example_db):
     first_row = reader.read_iteration(0)
     assert first_row["params"] == {"a": 1, "b": 2, "c": 3}
     assert first_row["rowid"] == 1
-    assert first_row["value"] == 14
+    assert first_row["scalar_fun"] == 14
 
     last_row = reader.read_iteration(-1)
     assert list(last_row["params"]) == ["a", "b", "c"]
-    assert np.allclose(last_row["value"], 0)
+    assert np.allclose(last_row["scalar_fun"], 0)
 
 
 def test_log_reader_index_exception(example_db):
