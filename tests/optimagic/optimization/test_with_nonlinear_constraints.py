@@ -212,11 +212,11 @@ def general_example():
     upper_bound = {"b": np.array([2, 2])}
 
     kwargs = {
-        "criterion": criterion,
+        "fun": criterion,
         "params": params,
         "constraints": constraints,
-        "lower_bound": lower_bound,
-        "upper_bound": upper_bound,
+        "lower_bounds": lower_bound,
+        "upper_bounds": upper_bound,
     }
     return kwargs
 

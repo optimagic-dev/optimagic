@@ -32,7 +32,7 @@ def main():
 
     ## test environment others
     test_env_others = deepcopy(test_env)
-    test_env_others.insert(_insert_idx, "  - cyipopt<=1.2.0")
+    test_env_others.insert(_insert_idx, "  - cyipopt>=1.4.0")
 
     ## test environment for pandas version 1
     test_env_pandas = deepcopy(test_env)

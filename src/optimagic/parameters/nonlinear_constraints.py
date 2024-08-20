@@ -1,5 +1,5 @@
 import itertools
-from dataclasses import asdict, replace
+from dataclasses import asdict
 from functools import partial
 
 import numpy as np
@@ -86,11 +86,16 @@ def _process_nonlinear_constraint(
         constraint_eval = constraint_func(selected)
 
     if bounds is not None:
-        constraint_bounds = replace(
-            bounds,
-            lower=external_selector(bounds.lower),
-            upper=external_selector(bounds.upper),
-        )
+        # TODO: use bounds for numerical derivative; For this to work we need to
+        # extend bounds to the full params pytree before passing them to
+        # process_nonlinear_constraints.
+
+        # constraint_bounds = replace(
+        #     bounds,
+        #     lower=external_selector(bounds.lower),
+        #     upper=external_selector(bounds.upper),
+        # )
+        constraint_bounds = None
     else:
         constraint_bounds = None
 

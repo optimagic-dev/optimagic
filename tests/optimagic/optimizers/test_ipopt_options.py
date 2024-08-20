@@ -211,7 +211,7 @@ def test_ipopt_algo_options(algo_options):
     algorithm = Ipopt(**algo_options)
     res = minimize(
         fun=criterion,
-        derivative=derivative,
+        jac=derivative,
         algorithm=algorithm,
         x0=np.array([1, 2, 3]),
         bounds=Bounds(

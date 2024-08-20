@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - cyipopt<=1.2.0
+  - cyipopt>=1.4.0
   - nlopt  # dev, tests
   - pip  # dev, tests, docs
   - pytest  # dev, tests
