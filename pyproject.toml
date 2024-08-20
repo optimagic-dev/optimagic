@@ -231,20 +231,9 @@ module = [
     "optimagic.examples",
     "optimagic.examples.numdiff_functions",
 
-
-    "optimagic.logging",
-    "optimagic.logging.create_tables",
-    "optimagic.logging.load_database",
-    "optimagic.logging.read_from_database",
-    "optimagic.logging.read_log",
-    "optimagic.logging.write_to_database",
-
     "optimagic.optimization",
     "optimagic.optimization.algo_options",
     "optimagic.optimization.convergence_report",
-    "optimagic.optimization.error_penalty",
-    "optimagic.optimization.get_algorithm",
-    "optimagic.optimization.internal_criterion_template",
     "optimagic.optimization.optimization_logging",
     "optimagic.optimization.optimize_result",
     "optimagic.optimization.optimize",
