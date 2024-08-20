@@ -174,21 +174,21 @@ class LogReader(Generic[_LogOptionsType], ABC):
 
         history: dict[str, list[Any]] = {
             "params": [],
-            "criterion": [],
-            "runtime": [],
+            "fun": [],
+            "time": [],
             "step": [],
         }
 
         for data in raw_res:
             if data.value is not None:
                 history["params"].append(data.params)
-                history["criterion"].append(data.value)
-                history["runtime"].append(data.timestamp)
+                history["fun"].append(data.value)
+                history["time"].append(data.timestamp)
                 history["step"].append(data.step)
 
-        times = np.array(history["runtime"])
+        times = np.array(history["time"])
         times -= times[0]
-        history["runtime"] = times.tolist()
+        history["time"] = times.tolist()
 
         df = pd.DataFrame(history)
         df = df.merge(
@@ -216,9 +216,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
     ) -> IterationHistory | None:
         if exploration is not None:
             is_minimization = optimization_type is Direction.MINIMIZE
-            exploration = exploration.sort_values(
-                by="criterion", ascending=is_minimization
-            )
+            exploration = exploration.sort_values(by="fun", ascending=is_minimization)
             exploration_dict = cast(dict[str, Any], exploration.to_dict(orient="list"))
             return IterationHistory(**exploration_dict)
         return exploration
@@ -227,7 +225,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
     def _extract_best_history(
         histories: pd.DataFrame, optimization_type: Direction
     ) -> tuple[IterationHistory, list[IterationHistory] | None]:
-        groupby_step_criterion = histories["criterion"].groupby(level="step")
+        groupby_step_criterion = histories["fun"].groupby(level="step")
 
         if optimization_type is Direction.MINIMIZE:
             best_idx = groupby_step_criterion.min().idxmin()

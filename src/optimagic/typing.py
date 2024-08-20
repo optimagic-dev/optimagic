@@ -136,8 +136,8 @@ class IterationHistory(DictLikeAccess):
     """
 
     params: list[PyTree]
-    criterion: list[float]
-    runtime: list[float] | NDArray[np.float64]
+    fun: list[float]
+    time: list[float] | NDArray[np.float64]
 
 
 @dataclass(frozen=True)

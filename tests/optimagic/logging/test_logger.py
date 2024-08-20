@@ -67,8 +67,8 @@ def test_log_reader_index_exception(example_db):
 def test_log_reader_read_history(example_db):
     reader = SQLiteLogReader(example_db)
     res = reader.read_history()
-    assert res["runtime"][0] == 0
-    assert res["criterion"][0] == 14
+    assert res["time"][0] == 0
+    assert res["fun"][0] == 14
     assert res["params"][0] == {"a": 1, "b": 2, "c": 3}
 
 
