@@ -8,7 +8,7 @@ from optimagic.logging.types import (
 
 def test_raise_on_missing_id():
     with pytest.raises(ValueError, match="rowid"):
-        IterationStateWithId(1, 2, 3, True)
+        IterationStateWithId(1, 2, 3, True, None, None, None)
 
     with pytest.raises(ValueError, match="rowid"):
         StepResultWithId("n", "optimization", "skipped")

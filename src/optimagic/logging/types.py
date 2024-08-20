@@ -86,9 +86,9 @@ class IterationState(DictLikeAccess):
     timestamp: float
     scalar_fun: float | None
     valid: bool
-    raw_fun: SpecificFunctionValue | None = None
-    step: int | None = None
-    exceptions: str | None = None
+    raw_fun: SpecificFunctionValue | None
+    step: int | None
+    exceptions: str | None
 
     def combine(self, other: "IterationState") -> "IterationState":
         """Combine two iteration states.
