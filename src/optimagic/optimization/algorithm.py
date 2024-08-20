@@ -199,7 +199,10 @@ class Algorithm(ABC):
         return self.with_option(**options)
 
     def solve_internal_problem(
-        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+        self,
+        problem: InternalOptimizationProblem,
+        x0: NDArray[np.float64],
+        step_id: int,
     ) -> InternalOptimizeResult:
         problem = problem.with_new_history()
         result = self._solve_internal_problem(problem, x0)

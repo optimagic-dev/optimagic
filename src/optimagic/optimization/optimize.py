@@ -425,12 +425,12 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         steps = [{"type": "optimization", "name": "optimization"}]
 
         # TODO: Actually use the step ids
-        step_ids = log_scheduled_steps_and_get_ids(  # noqa: F841
+        step_id = log_scheduled_steps_and_get_ids(  # noqa: F841
             steps=steps,
             logging=logger,
-        )
+        )[0]
 
-        raw_res = problem.algorithm.solve_internal_problem(internal_problem, x)
+        raw_res = problem.algorithm.solve_internal_problem(internal_problem, x, step_id)
 
     else:
         multistart_options = get_internal_multistart_options_from_public(

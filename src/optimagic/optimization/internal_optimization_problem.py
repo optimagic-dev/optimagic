@@ -148,6 +148,7 @@ class InternalOptimizationProblem:
         self._linear_constraints = linear_constraints
         self._nonlinear_constraints = nonlinear_constraints
         self._logger = logger
+        self._step_id: int | None = None
 
     # ==================================================================================
     # Public methods used by optimizers
@@ -253,6 +254,16 @@ class InternalOptimizationProblem:
     def with_new_history(self) -> Self:
         new = copy(self)
         new._history = History()
+        return new
+
+    def with_error_handling(self, error_handling: ErrorHandling) -> Self:
+        new = copy(self)
+        new._error_handling = error_handling
+        return new
+
+    def with_step_id(self, step_id: int) -> Self:
+        new = copy(self)
+        new._step_id = step_id
         return new
 
     # ==================================================================================

@@ -12,7 +12,6 @@ First implemented in Python by Alisdair McKay (
 """
 
 import warnings
-from copy import copy
 from dataclasses import replace
 from typing import Literal
 
@@ -129,12 +128,10 @@ def run_multistart_optimization(
 
     batch_evaluator = options.batch_evaluator
 
-    def single_optimization(x):
+    def single_optimization(x0, step_id):
         """Closure for running a single optimization, given a starting point."""
-        problem = copy(internal_problem)
-        problem._error_handling = error_handling
-
-        res = local_algorithm.solve_internal_problem(problem, x)
+        problem = internal_problem.with_error_handling(error_handling)
+        res = local_algorithm.solve_internal_problem(problem, x0, step_id)
         return res
 
     opt_counter = 0
@@ -142,10 +139,16 @@ def run_multistart_optimization(
         weight = options.weight_func(opt_counter, stopping_maxopt)
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
+        arguments = [
+            {"x0": x, "step_id": id_}
+            for x, id_ in zip(starts, scheduled_steps[: len(batch)], strict=False)
+        ]
+        scheduled_steps = scheduled_steps[len(batch) :]
+
         batch_results = batch_evaluator(
             func=single_optimization,
-            arguments=starts,
-            unpack_symbol=None,
+            arguments=arguments,
+            unpack_symbol="**",
             n_cores=options.n_cores,
             error_handling=options.error_handling,
         )
@@ -158,7 +161,6 @@ def run_multistart_optimization(
             solver_type=local_algorithm.algo_info.solver_type,
         )
         opt_counter += len(batch)
-        scheduled_steps = scheduled_steps[len(batch) :]
         if is_converged:
             if logging:
                 for step in scheduled_steps:
