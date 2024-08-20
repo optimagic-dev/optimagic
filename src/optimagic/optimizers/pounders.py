@@ -8,7 +8,6 @@ import numpy as np
 from numpy.typing import NDArray
 
 from optimagic import mark
-from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -33,7 +32,6 @@ from optimagic.optimizers._pounders.pounders_auxiliary import (
 from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 from optimagic.typing import (
     AggregationLevel,
-    BatchEvaluator,
     NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
@@ -78,14 +76,11 @@ class Pounders(Algorithm):
         "gqtpar",
     ] = "bntr"
     trustregion_subsolver_options: dict[str, Any] | None = None
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
     n_cores: PositiveInt = DEFAULT_N_CORES
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        batch_evaluator = process_batch_evaluator(self.batch_evaluator)
-
         if self.max_interpolation_points is None:
             max_interpolation_points = 2 * len(x0) + 1
         else:
@@ -158,7 +153,7 @@ class Pounders(Algorithm):
             ],
             k_easy_sub=trustregion_subsolver_options["k_easy"],
             k_hard_sub=trustregion_subsolver_options["k_hard"],
-            batch_evaluator=batch_evaluator,
+            batch_fun=problem.batch_fun,
             n_cores=self.n_cores,
         )
 
@@ -197,7 +192,7 @@ def internal_solve_pounders(
     gtol_rel_conjugate_gradient_sub,
     k_easy_sub,
     k_hard_sub,
-    batch_evaluator,
+    batch_fun,
     n_cores,
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
@@ -308,7 +303,7 @@ def internal_solve_pounders(
         x1[i] += delta
         xs.append(x1)
 
-    residuals = batch_evaluator(criterion, arguments=xs, n_cores=n_cores)
+    residuals = batch_fun(x_list=xs, n_cores=n_cores)
 
     history.add_entries(xs, residuals)
     accepted_index = history.get_best_index()
@@ -419,7 +414,7 @@ def internal_solve_pounders(
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
-                    batch_evaluator=batch_evaluator,
+                    batch_fun=batch_fun,
                     n_cores=n_cores,
                 )
                 n_modelpoints = n
@@ -490,7 +485,7 @@ def internal_solve_pounders(
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
-                    batch_evaluator=batch_evaluator,
+                    batch_fun=batch_fun,
                     n_cores=n_cores,
                 )
 

@@ -397,7 +397,7 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     criterion,
     lower_bounds,
     upper_bounds,
-    batch_evaluator,
+    batch_fun,
     n_cores,
 ):
     """Add points until main model is fully linear.
@@ -461,9 +461,7 @@ def add_geomtery_points_to_make_main_model_fully_linear(
         x_candidates_list.append(x_candidate)
         model_indices[i] = current_history + i - n_modelpoints
 
-    criterion_candidates_list = batch_evaluator(
-        criterion, arguments=x_candidates_list, n_cores=n_cores
-    )
+    criterion_candidates_list = batch_fun(x_list=x_candidates_list, n_cores=n_cores)
 
     history.add_entries(x_candidates_list, criterion_candidates_list)
 

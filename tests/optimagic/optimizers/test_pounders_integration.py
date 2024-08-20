@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.optimizers.pounders import internal_solve_pounders
 
 from tests.optimagic.optimizers._pounders.test_pounders_unit import FIXTURES_DIR
@@ -106,6 +105,9 @@ def test_bntr(
     gtol_rel = 1e-8
     gtol_scaled = 0
 
+    def batch_fun(x_list, n_cores):
+        return [criterion(x) for x in x_list]
+
     result = internal_solve_pounders(
         x0=start_vec,
         criterion=criterion,
@@ -127,7 +129,7 @@ def test_bntr(
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
-        batch_evaluator=joblib_batch_evaluator,
+        batch_fun=batch_fun,
         **pounders_options,
     )
 
@@ -142,6 +144,9 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
     gtol_abs = 1e-8
     gtol_rel = 1e-8
     gtol_scaled = 0
+
+    def batch_fun(x_list, n_cores):
+        return [criterion(x) for x in x_list]
 
     result = internal_solve_pounders(
         x0=start_vec,
@@ -164,7 +169,7 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
-        batch_evaluator=joblib_batch_evaluator,
+        batch_fun=batch_fun,
         **pounders_options,
     )
 
