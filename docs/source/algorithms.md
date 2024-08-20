@@ -2321,16 +2321,7 @@ To use ipopt, you need to have
       overrides  ``nlp_scaling_max_gradient``  for the objective function. The valid
       range for this real option is 0 ≤ nlp_scaling_obj_target_gradient and
       its default value is 0.
-    - **nlp_scaling_constr_target_gradient** (float): Min value of gradient-based
-      scaling values.
-      This is the lower bound for the scaling factors computed by
-      gradient-based scaling method. If
-      some derivatives of some functions are huge, the scaling factors will
-      otherwise become very small, and the (unscaled) final constraint
-      violation, for example, might then be significant. Note: This option is
-      only used if  ``nlp_scaling_method`` is chosen as "gradient-based". The
-      valid range for this real option is 0 ≤ nlp_scaling_min_value and its
-      default value is :math:`1e-08`.
+    - **nlp_scaling_constr_target_gradient** (float): arget value for constraint function gradient size. If a positive number is chosen, the scaling factors for the constraint functions are computed so that the gradient has the max norm of the given size at the starting point. This overrides nlp_scaling_max_gradient for the constraint functions. The valid range for this real option is 0 ≤ nlp_scaling_constr_target_gradient and its default value is 0.
     - **nlp_scaling_min_value** (float): Minimum value of
       gradient-based scaling values. This is the lower bound for the scaling
       factors computed by gradient-based scaling method. If some derivatives
@@ -2880,7 +2871,7 @@ To use ipopt, you need to have
       option "barrier_strategy"). This option is only used if "mu_strategy" is
       "adaptive". Changing this option is experimental. The default value for
       this string option is "yes". Possible values: "yes", "no", True, False
-    - **corrector_compl_avrg_red_fact** (int): advanced! Complementarity tolerance
+    - **corrector_compl_avrg_red_fact** (float): advanced! Complementarity tolerance
       factor for accepting corrector step. This option determines the factor by
       which complementarity is allowed to increase for a corrector step to be
       accepted. Changing this option is experimental. The valid range for this
