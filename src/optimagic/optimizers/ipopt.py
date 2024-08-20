@@ -22,7 +22,6 @@ from optimagic.optimization.internal_optimization_problem import (
 from optimagic.optimizers.scipy_optimizers import process_scipy_result
 from optimagic.typing import (
     AggregationLevel,
-    GeOneInt,
     GtOneFloat,
     NonNegativeFloat,
     NonNegativeInt,
@@ -229,7 +228,7 @@ class Ipopt(Algorithm):
     tiny_step_tol: NonNegativeFloat = 2.22045 * 1e-15
     tiny_step_y_tol: NonNegativeFloat = 0.01
     watchdog_shortened_iter_trigger: NonNegativeInt = 10
-    watchdog_trial_iter_max: GeOneInt = 3
+    watchdog_trial_iter_max: PositiveInt = 3
     theta_max_fact: PositiveFloat = 10_000
     theta_min_fact: PositiveFloat = 0.0001
     # TODO: refine type to fix the range (0,0.5)
@@ -247,7 +246,7 @@ class Ipopt(Algorithm):
     kappa_soc: PositiveFloat = 0.99
     obj_max_inc: float = 5.0
     max_filter_resets: NonNegativeInt = 5
-    filter_reset_trigger: GeOneInt = 5
+    filter_reset_trigger: PositiveInt = 5
     corrector_type: (
         Literal[
             "none",
@@ -329,7 +328,7 @@ class Ipopt(Algorithm):
     limited_memory_init_val: PositiveFloat = 1
     limited_memory_init_val_max: PositiveFloat = 1e8
     limited_memory_init_val_min: PositiveFloat = 1e-8
-    limited_memory_max_skipping: GeOneInt = 2
+    limited_memory_max_skipping: PositiveInt = 2
     limited_memory_special_for_resto: YesNoBool = False
     hessian_approximation: Literal[
         "limited-memory",
