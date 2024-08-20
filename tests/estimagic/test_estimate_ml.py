@@ -134,6 +134,10 @@ test_cases = list(
     )
 )
 
+test_cases = [
+    case for case in test_cases if not (case[1] is False and case[2] is False)
+]
+
 
 @pytest.mark.parametrize("optimize_options, jacobian, hessian", test_cases)
 def test_estimate_ml_with_logit_no_constraints(
@@ -145,9 +149,6 @@ def test_estimate_ml_with_logit_no_constraints(
 ):
     """Test that estimate_ml computes correct params and covariances under different
     scenarios."""
-
-    if jacobian is False and hessian is False:
-        pytest.xfail("jacobian and hessian cannot both be False.")
 
     # ==================================================================================
     # estimate

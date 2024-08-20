@@ -348,8 +348,8 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     logger: LogStore[Any, Any] | None
 
-    if problem.logger:
-        logger = LogStore.from_options(problem.logger)
+    if problem.logging:
+        logger = LogStore.from_options(problem.logging)
         problem_data = ProblemInitialization(problem.direction, problem.params)
         logger.problem_store.insert(problem_data)
     else:
@@ -415,7 +415,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         # TODO: Actually pass through linear constraints if possible
         linear_constraints=None,
         nonlinear_constraints=internal_nonlinear_constraints,
-        # TODO: add logger
+        logger=logger,
     )
 
     # ==================================================================================
@@ -487,8 +487,8 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         )
 
     if logger is not None:
-        assert problem.logger is not None
-        log_reader = LogReader.from_options(problem.logger)
+        assert problem.logging is not None
+        log_reader = LogReader.from_options(problem.logging)
     else:
         log_reader = None
 

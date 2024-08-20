@@ -11,6 +11,7 @@ from typing_extensions import Self
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
+from optimagic.logging.logger import LogStore
 from optimagic.optimization.fun_value import SpecificFunctionValue
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import Converter
@@ -127,9 +128,9 @@ class InternalOptimizationProblem:
             tuple[SpecificFunctionValue, NDArray[np.float64]],
         ],
         batch_evaluator: BatchEvaluator,
-        linear_constraints: list[dict[str, Any]] | None = None,
-        nonlinear_constraints: list[dict[str, Any]] | None = None,
-        # TODO: add logger (after Kristof finishes his PR)
+        linear_constraints: list[dict[str, Any]] | None,
+        nonlinear_constraints: list[dict[str, Any]] | None,
+        logger: LogStore[Any, Any] | None,
         # TODO: add hess and hessp
     ):
         self._fun = fun
@@ -146,6 +147,7 @@ class InternalOptimizationProblem:
         self._history = History()
         self._linear_constraints = linear_constraints
         self._nonlinear_constraints = nonlinear_constraints
+        self._logger = logger
 
     # ==================================================================================
     # Public methods used by optimizers
@@ -276,6 +278,10 @@ class InternalOptimizationProblem:
     @property
     def bounds(self) -> InternalBounds:
         return self._bounds
+
+    @property
+    def logger(self) -> LogStore[Any, Any] | None:
+        return self._logger
 
     # ==================================================================================
     # Implementation of the public functions; The main difference is that the lower-

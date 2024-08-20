@@ -104,6 +104,7 @@ def base_problem():
         batch_evaluator=batch_evaluator,
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
+        logger=None,
     )
 
     return problem
@@ -510,6 +511,7 @@ def pytree_problem(base_problem):
         batch_evaluator=batch_evaluator,
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
+        logger=None,
     )
 
     return problem
@@ -633,6 +635,7 @@ def error_min_problem():
         batch_evaluator=batch_evaluator,
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
+        logger=None,
     )
 
     return problem

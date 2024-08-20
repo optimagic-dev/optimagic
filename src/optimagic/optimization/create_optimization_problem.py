@@ -78,7 +78,7 @@ class OptimizationProblem:
     numdiff_options: NumdiffOptions
     # TODO: logging will become None | Logger and log_options will be removed
     error_handling: ErrorHandling
-    logger: LogOptions | None
+    logging: LogOptions | None
     error_penalty: dict[str, Any] | None
     scaling: ScalingOptions | None
     multistart: MultistartOptions | None
@@ -539,7 +539,7 @@ def create_optimization_problem(
         jac=jac,
         fun_and_jac=fun_and_jac,
         numdiff_options=numdiff_options,
-        logger=logging,
+        logging=logging,
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,

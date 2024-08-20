@@ -20,8 +20,8 @@ from optimagic.logging.base import (
     UpdatableKeyValueStore,
 )
 from optimagic.logging.types import (
-    CriterionEvaluationWithId,
     IterationState,
+    IterationStateWithId,
     ProblemInitialization,
     ProblemInitializationWithId,
     StepResult,
@@ -377,7 +377,7 @@ class SQLAlchemyTableStore(
         ]
 
 
-class IterationStore(SQLAlchemySimpleStore[IterationState, CriterionEvaluationWithId]):
+class IterationStore(SQLAlchemySimpleStore[IterationState, IterationStateWithId]):
     """Store for managing iteration data in an SQLite database.
 
     Args:
@@ -397,7 +397,7 @@ class IterationStore(SQLAlchemySimpleStore[IterationState, CriterionEvaluationWi
             self._PRIMARY_KEY,
             db_config,
             IterationState,
-            CriterionEvaluationWithId,
+            IterationStateWithId,
         )
 
 

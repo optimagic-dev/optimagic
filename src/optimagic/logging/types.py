@@ -93,7 +93,7 @@ class IterationState(DictLikeAccess):
 
 
 @dataclass(frozen=True)
-class CriterionEvaluationWithId(IterationState):
+class IterationStateWithId(IterationState):
     """Criterion evaluation result with an ID.
 
     Attributes:
