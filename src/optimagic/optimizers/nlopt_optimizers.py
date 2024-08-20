@@ -757,58 +757,6 @@ def _minimize_nlopt(
     return _process_nlopt_results(opt, solution_x, is_global)
 
 
-def _minimize_nlopt_old(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    algorithm,
-    *,
-    derivative=None,
-    nonlinear_constraints=(),
-    convergence_xtol_rel=None,
-    convergence_xtol_abs=None,
-    convergence_ftol_rel=None,
-    convergence_ftol_abs=None,
-    stopping_max_eval=None,
-    population_size=None,
-):
-    """Run actual nlopt optimization argument, set relevant attributes."""
-
-    def func(x, grad):
-        if grad.size > 0:
-            criterion_value = criterion(x)
-            grad[:] = derivative(x)
-        else:
-            criterion_value = criterion(x)
-        return criterion_value
-
-    opt = nlopt.opt(algorithm, x.shape[0])
-    if convergence_ftol_rel is not None:
-        opt.set_ftol_rel(convergence_ftol_rel)
-    if convergence_ftol_abs is not None:
-        opt.set_ftol_abs(convergence_ftol_abs)
-    if convergence_xtol_rel is not None:
-        opt.set_xtol_rel(convergence_xtol_rel)
-    if convergence_xtol_abs is not None:
-        opt.set_xtol_abs(convergence_xtol_abs)
-    if lower_bounds is not None:
-        opt.set_lower_bounds(lower_bounds)
-    if upper_bounds is not None:
-        opt.set_upper_bounds(upper_bounds)
-    if stopping_max_eval is not None:
-        opt.set_maxeval(stopping_max_eval)
-    if population_size is not None:
-        opt.set_population(population_size)
-    for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="eq"):
-        opt.add_equality_mconstraint(constr["fun"], constr["tol"])
-    for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="ineq"):
-        opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
-    opt.set_min_objective(func)
-    solution_x = opt.optimize(x)
-    return _process_nlopt_results_old(opt, solution_x)
-
-
 def _process_nlopt_results(nlopt_obj, solution_x, is_global):
     messages = {
         1: "Convergence achieved ",
@@ -873,40 +821,3 @@ def _internal_to_nlopt_constaint(c):
         "tol": tol,
     }
     return new_constr
-
-
-def _process_nlopt_results_old(nlopt_obj, solution_x):
-    messages = {
-        1: "Convergence achieved ",
-        2: (
-            "Optimizer stopped because maximum value of criterion function was reached"
-        ),
-        3: (
-            "Optimizer stopped because convergence_ftol_rel or "
-            "convergence_ftol_abs was reached"
-        ),
-        4: (
-            "Optimizer stopped because convergence_xtol_rel or "
-            "convergence_xtol_abs was reached"
-        ),
-        5: "Optimizer stopped because max_criterion_evaluations was reached",
-        6: "Optimizer stopped because max running time was reached",
-        -1: "Optimizer failed",
-        -2: "Invalid arguments were passed",
-        -3: "Memory error",
-        -4: "Halted because roundoff errors limited progress",
-        -5: "Halted because of user specified forced stop",
-    }
-    processed = {
-        "solution_x": solution_x,
-        "solution_criterion": nlopt_obj.last_optimum_value(),
-        "solution_derivative": None,
-        "solution_hessian": None,
-        "n_fun_evals": nlopt_obj.get_numevals(),
-        "n_jac_evals": None,
-        "n_iterations": None,
-        "success": nlopt_obj.last_optimize_result() in [1, 2, 3, 4],
-        "message": messages[nlopt_obj.last_optimize_result()],
-        "reached_convergence_criterion": None,
-    }
-    return processed
