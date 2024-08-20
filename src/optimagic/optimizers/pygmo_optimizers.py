@@ -1,10 +1,29 @@
-"""Implement pygmo optimizers."""
+"""Implement pygmo optimizers.
+
+Notes for converting to the new algorithm interface:
+
+- `create_algo_options` is not needed anymore because the only thing it did was mixing
+  options that are supported by all optimizers (e.g. population_size, seed) with
+  specific options. Then later they had to be taken appart again. Instead you need
+  to pass  a few more arguments directly to `_minimize_pygmo`.
+- Calling `_check_that_every_param_is_bounded` is not needed anymore. I do that check
+  once in `_minimize_pygmo`.
+- The documentation often just says float where I suspect PositiveFloats; Leave it at
+  float for now and add todos where needed. Don't spend a lot of time on it.
+- There are some specific type checks and type conversions that should not be needed
+  anymore after switching to the new interface.
+
+"""
 
 import contextlib
 import warnings
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
+from optimagic import mark
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import IS_PYGMO_INSTALLED
 from optimagic.decorators import mark_minimizer
@@ -14,11 +33,87 @@ from optimagic.optimization.algo_options import (
     STOPPING_MAXFUN_GLOBAL,
     get_population_size,
 )
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
+from optimagic.typing import (
+    AggregationLevel,
+    NonNegativeFloat,
+    PositiveFloat,
+    PositiveInt,
+)
 
 STOPPING_MAX_ITERATIONS_GENETIC = 250
 
 with contextlib.suppress(ImportError):
     import pygmo as pg
+
+
+@mark.minimizer(
+    name="pygmo_gaco",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoGaco(Algorithm):
+    population_size: int | None = None
+    n_cores: int = 1
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    kernel_size: PositiveInt = 63
+    speed_parameter_q: PositiveFloat = 1.0
+    oracle: float = 0.0
+    accuracy: PositiveFloat = 0.01
+    threshold: PositiveInt = 1
+    speed_of_std_values_convergence: int = 7
+    stopping_max_n_without_improvements: PositiveInt = 100000
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    focus: NonNegativeFloat = 0.0
+    cache: bool = False
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
+
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "ker": self.kernel_size,
+            "q": self.speed_parameter_q,
+            "oracle": self.oracle,
+            "acc": self.accuracy,
+            "threshold": self.threshold,
+            "n_gen_mark": self.speed_of_std_values_convergence,
+            "impstop": self.stopping_max_n_without_improvements,
+            "evalstop": self.stopping_maxfun,
+            "focus": self.focus,
+            "memory": self.cache,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="gaco",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+
+        return res
 
 
 @mark_minimizer(
@@ -83,7 +178,7 @@ def pygmo_gaco(
         "focus": focus,
         "memory": cache,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         n_cores=n_cores,
         seed=seed,
@@ -92,7 +187,7 @@ def pygmo_gaco(
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -131,7 +226,7 @@ def pygmo_bee_colony(
     population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=20
     )
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
@@ -141,7 +236,7 @@ def pygmo_bee_colony(
         },
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -210,14 +305,14 @@ def pygmo_de(
         "ftol": convergence_criterion_tolerance,
         "xtol": convergence_relative_params_tolerance,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -257,14 +352,14 @@ def pygmo_sea(
         population_size=population_size, x=x, lower_bound=10
     )
 
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options={"gen": int(stopping_maxiter)},
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -374,14 +469,14 @@ def pygmo_sga(
         "selection": selection_strategy,
         "param_s": param_s,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -458,14 +553,14 @@ def pygmo_sade(
         "xtol": xtol,
         "memory": keep_adapted_params,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -526,14 +621,14 @@ def pygmo_cmaes(
         "memory": keep_adapted_params,
         "force_bounds": True,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -587,14 +682,14 @@ def pygmo_simulated_annealing(
         "bin_size": bin_size,
         "start_range": start_range,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -679,14 +774,14 @@ def pygmo_pso(
         "neighb_param": neighbor_param,
         "memory": keep_velocities,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -772,7 +867,7 @@ def pygmo_pso_gen(
         "neighb_param": neighbor_param,
         "memory": keep_velocities,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         n_cores=n_cores,
         seed=seed,
@@ -781,7 +876,7 @@ def pygmo_pso_gen(
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -831,14 +926,14 @@ def pygmo_mbh(
         "stop": stopping_max_inner_runs_without_improvement,
         "perturb": perturbation,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -897,14 +992,14 @@ def pygmo_xnes(
         "memory": keep_adapted_params,
         "force_bounds": True,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -944,14 +1039,14 @@ def pygmo_gwo(
     population_size = get_population_size(
         population_size=population_size, x=x, lower_bound=64
     )
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options={"gen": int(stopping_maxiter)},
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -1005,14 +1100,14 @@ def pygmo_compass_search(
         "stop_range": stop_range,
         "reduction_coeff": reduction_coeff,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -1069,14 +1164,14 @@ def pygmo_ihs(
         "bw_min": min_distance_bandwidth,
         "bw_max": max_distance_bandwidth,
     }
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -1159,14 +1254,14 @@ def pygmo_de1220(
         "allowed_variants": allowed_variant_codes,
     }
 
-    algo_options = _create_algo_options(
+    algo_options = _create_algo_options_old(
         population_size=population_size,
         seed=seed,
         discard_start_params=discard_start_params,
         algo_specific_options=algo_specific_options,
     )
 
-    res = _minimize_pygmo(
+    res = _minimize_pygmo_old(
         criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
@@ -1181,6 +1276,142 @@ def pygmo_de1220(
 
 
 def _minimize_pygmo(
+    problem: InternalOptimizationProblem,
+    x0: NDArray[np.float64],
+    method: str,
+    specific_options: dict[str, Any],
+    population_size: PositiveInt,
+    n_cores: int,
+    seed: int | None,
+    discard_start_params: bool,
+) -> InternalOptimizeResult:
+    if not IS_PYGMO_INSTALLED:
+        raise NotInstalledError(
+            f"The {method} algorithm requires the pygmo package to be installed. "
+            "You can install it with 'conda install -c conda-forge pygmo'. Visit "
+            "https://esa.github.io/pygmo2/install.html for more detailed installation "
+            "instructions."
+        )
+
+    bounds = problem.bounds
+    if bounds is None or bounds.lower is None or bounds.upper is None:
+        raise ValueError(f"{method} requires finitel bounds for all parameters.")
+    elif not np.isfinite(bounds.lower).all() or not np.isfinite(bounds.upper).all():
+        raise ValueError(f"{method} requires finite bounds for all parameters.")
+
+    pygmo_problem = _create_pygmo_problem(problem, len(x0), n_cores)
+    algo = _create_algorithm(method, specific_options, n_cores)
+    pop = _create_population(
+        problem=pygmo_problem,
+        population_size=population_size,
+        x=x0,
+        seed=seed,
+        discard_start_params=discard_start_params,
+    )
+    evolved = algo.evolve(pop)
+    result = _process_pygmo_result(evolved)
+    return result
+
+
+def _create_pygmo_problem(
+    problem: InternalOptimizationProblem, dim: int, n_cores: int
+) -> pg.problem:
+    class Problem:
+        def fitness(self, x):
+            return [problem.fun(x)]
+
+        def get_bounds(self):
+            return (problem.bounds.lower, problem.bounds.upper)
+
+        def gradient(self, dv):  # noqa: ARG002
+            raise ValueError("No pygmo optimizer should use a gradient.")
+
+        def batch_fitness(self, dvs):
+            x_list = list(dvs.reshape(-1, dim))
+            eval_list = problem.batch_fun(x_list, n_cores=n_cores)
+            evals = np.array(eval_list)
+            return evals
+
+    pygmo_problem = pg.problem(Problem())
+    return pygmo_problem
+
+
+def _create_algorithm(
+    method: str, algo_options: dict[str, Any], n_cores: int
+) -> pg.algorithm:
+    """Create a pygmo algorithm."""
+    pygmo_uda = getattr(pg, method)
+    algo = pygmo_uda(**algo_options)
+    try:
+        algo.set_bfe(pg.bfe())
+    except AttributeError:
+        if n_cores >= 2:
+            warnings.warn(
+                f"Your specified algorithm {method} does not support parallelization. "
+                "Choose another algorithm such as pygmo_gaco to parallelize."
+            )
+    out = pg.algorithm(algo)
+    return out
+
+
+def _create_population(
+    problem: InternalOptimizationProblem,
+    population_size: int,
+    x: NDArray[np.float64],
+    seed: int | None,
+    discard_start_params: bool,
+) -> pg.population:
+    if not discard_start_params:
+        population_size = population_size - 1
+
+    pop = pg.population(
+        problem,
+        size=population_size,
+        seed=seed,
+        b=pg.bfe(),
+    )
+    if not discard_start_params:
+        pop.push_back(x)
+    return pop
+
+
+def _process_pygmo_result(evolved: pg.population) -> InternalOptimizeResult:
+    result = InternalOptimizeResult(
+        x=evolved.champion_x,
+        fun=evolved.champion_f[0],
+        success=True,
+        message="Number of generations reached.",
+        n_fun_evals=evolved.problem.get_fevals(),
+        n_jac_evals=evolved.problem.get_gevals(),
+    )
+
+    return result
+
+
+def _convert_str_to_int(str_to_int, value):
+    if value in str_to_int:
+        out = str_to_int[value]
+    elif value not in str_to_int.values():
+        raise ValueError(
+            f"You specified {value} as value. "
+            f"It must be one of {', '.join(str_to_int.keys())}"
+        )
+    else:
+        out = value
+    return out
+
+
+def _replace_none(var, none_value):
+    out = var if var is not None else none_value
+    return out
+
+
+# ======================================================================================
+# Old functions
+# ======================================================================================
+
+
+def _minimize_pygmo_old(
     criterion,
     x,
     lower_bounds,
@@ -1233,7 +1464,7 @@ def _minimize_pygmo(
     discard_start_params = algo_options.pop("discard_start_params", False)
 
     bounds = (lower_bounds, upper_bounds)
-    prob = _create_problem(
+    prob = _create_problem_old(
         func=criterion,
         bounds=bounds,
         dim=len(x),
@@ -1245,12 +1476,12 @@ def _minimize_pygmo(
         prob, population_size, x, seed=seed, discard_start_params=discard_start_params
     )
     evolved = algo.evolve(pop)
-    result = _process_pygmo_results(evolved)
+    result = _process_pygmo_result_old(evolved)
 
     return result
 
 
-def _create_problem(func, bounds, dim, batch_evaluator, n_cores):
+def _create_problem_old(func, bounds, dim, batch_evaluator, n_cores):
     class Problem:
         def fitness(self, x):
             return [func(x)]
@@ -1277,49 +1508,7 @@ def _create_problem(func, bounds, dim, batch_evaluator, n_cores):
     return problem
 
 
-def _create_algorithm(method, algo_options, n_cores):
-    """Create a pygmo algorithm."""
-    pygmo_uda = getattr(pg, method)
-    algo = pygmo_uda(**algo_options)
-    try:
-        algo.set_bfe(pg.bfe())
-    except AttributeError:
-        if n_cores >= 2:
-            warnings.warn(
-                f"Your specified algorithm {method} does not support parallelization. "
-                "Choose another algorithm such as pygmo_gaco to parallelize."
-            )
-    out = pg.algorithm(algo)
-    return out
-
-
-def _create_population(problem, population_size, x, seed, discard_start_params):
-    """Create a pygmo population object.
-
-    Args:
-        problem (pygmo.Problem)
-        algo_options (dict)
-        x (np.ndarray)
-
-    Todo:
-        - constrain random initial values to be in some bounds
-
-    """
-    if not discard_start_params:
-        population_size = population_size - 1
-
-    pop = pg.population(
-        problem,
-        size=population_size,
-        seed=seed,
-        b=pg.bfe(),
-    )
-    if not discard_start_params:
-        pop.push_back(x)
-    return pop
-
-
-def _process_pygmo_results(evolved):
+def _process_pygmo_result_old(evolved):
     results = {
         # Harmonized results.
         "solution_x": evolved.champion_x,
@@ -1337,7 +1526,7 @@ def _process_pygmo_results(evolved):
     return results
 
 
-def _create_algo_options(
+def _create_algo_options_old(
     population_size,
     seed,
     discard_start_params,
@@ -1361,21 +1550,3 @@ def _create_algo_options(
 def _check_that_every_param_is_bounded(lower_bounds, upper_bounds):
     assert np.isfinite(lower_bounds).all(), "The lower bounds must all be finite."
     assert np.isfinite(upper_bounds).all(), "The upper bounds must all be finite."
-
-
-def _convert_str_to_int(str_to_int, value):
-    if value in str_to_int:
-        out = str_to_int[value]
-    elif value not in str_to_int.values():
-        raise ValueError(
-            f"You specified {value} as value. "
-            f"It must be one of {', '.join(str_to_int.keys())}"
-        )
-    else:
-        out = value
-    return out
-
-
-def _replace_none(var, none_value):
-    out = var if var is not None else none_value
-    return out
