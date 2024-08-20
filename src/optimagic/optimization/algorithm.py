@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 from typing_extensions import Self
 
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
+from optimagic.logging.types import StepStatus
 from optimagic.optimization.internal_optimization_problem import (
     History,
     InternalOptimizationProblem,
@@ -204,11 +205,23 @@ class Algorithm(ABC):
         x0: NDArray[np.float64],
         step_id: int,
     ) -> InternalOptimizeResult:
-        problem = problem.with_new_history()
+        problem = problem.with_new_history().with_step_id(step_id)
+
+        if problem.logger:
+            problem.logger.step_store.update(
+                step_id, {"status": str(StepStatus.RUNNING.value)}
+            )
+
         result = self._solve_internal_problem(problem, x0)
 
         if (not self.algo_info.disable_history) and (result.history is None):
             result = replace(result, history=problem.history)
+
+        if problem.logger:
+            problem.logger.step_store.update(
+                step_id, {"status": str(StepStatus.COMPLETE.value)}
+            )
+
         return result
 
     def with_option_if_applicable(self, **kwargs: Any) -> Self:

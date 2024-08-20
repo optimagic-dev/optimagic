@@ -90,7 +90,6 @@ def test_log_reader_read_multistart_history(example_db):
     )
 
 
-@pytest.mark.xfail(reason="Steps logging is currently not implemented.")
 def test_read_steps_table(example_db):
     res = SQLiteLogReader(example_db)._step_store.to_df()
     assert isinstance(res, pd.DataFrame)
