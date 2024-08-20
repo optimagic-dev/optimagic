@@ -5,6 +5,8 @@ channels:
   - nodefaults
 dependencies:
   - pandas<2.0.0
+  - cyipopt>=1.4.0  # dev, tests
+  - pygmo>=2.19.0  # dev, tests
   - nlopt  # dev, tests
   - pip  # dev, tests, docs
   - pytest  # dev, tests

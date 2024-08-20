@@ -5,7 +5,8 @@ channels:
   - nodefaults
 dependencies:
   - python=3.10  # dev
-  - cyipopt>=1.4.0  # dev
+  - cyipopt>=1.4.0  # dev, tests
+  - pygmo>=2.19.0  # dev, tests
   - jupyterlab  # dev, docs
   - nlopt  # dev, tests
   - pdbpp  # dev
