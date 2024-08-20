@@ -20,7 +20,7 @@ Notes for converting to the new algorithm interface:
 import contextlib
 import warnings
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -794,6 +794,111 @@ def pygmo_pso(
     return res
 
 
+@mark.minimizer(
+    name="pygmo_pso_gen",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoPsoGen(Algorithm):
+    population_size: int | None = None
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,1]
+    omega: NonNegativeFloat = 0.7298
+    # TODO: Refine type to fix range [0,4]
+    force_of_previous_best: NonNegativeFloat = 2.05
+    # TODO: Refine type to fix range [0,4]
+    force_of_best_in_neighborhood: NonNegativeFloat = 2.05
+    # TODO: Refine type to fix range [0,1]
+    max_velocity: NonNegativeFloat = 0.5
+    algo_variant: Literal[
+        "canonical_inertia",
+        "social_and_cog_rand",
+        "all_components_rand",
+        "one_rand",
+        "canonical_constriction",
+        "fips",
+    ] = "canonical_constriction"
+    neighbor_definition: Literal[
+        "gbest",
+        "lbest",
+        "Von Neumann",
+        "Adaptive random",
+    ] = "lbest"
+    neighbor_param: int | None = None
+    keep_velocities: bool = False
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if (
+            self.neighbor_definition in ["gbest", "Von Neumann"]
+            and self.neighbor_param is not None
+        ):
+            warnings.warn(
+                "You gave a neighbor parameter but selected a neighbor_definition "
+                "that ignores this parameter."
+            )
+        neighbor_param = 4 if self.neighbor_param is None else self.neighbor_param
+        neighbor_str_to_int = {
+            "gbest": 1,
+            "lbest": 2,
+            "Von Neumann": 3,
+            "Adaptive random": 4,
+        }
+        neighbor_type = _convert_str_to_int(
+            neighbor_str_to_int, self.neighbor_definition
+        )
+        algo_variant_str_to_int = {
+            "canonical_inertia": 1,
+            "social_and_cog_rand": 2,
+            "all_components_rand": 3,
+            "one_rand": 4,
+            "canonical_constriction": 5,
+            "fips": 6,
+        }
+        algo_variant = _convert_str_to_int(algo_variant_str_to_int, self.algo_variant)
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "omega": self.omega,
+            "eta1": self.force_of_previous_best,
+            "eta2": self.force_of_best_in_neighborhood,
+            "max_vel": self.max_velocity,
+            "variant": algo_variant,
+            "neighb_type": neighbor_type,
+            "neighb_param": neighbor_param,
+            "memory": self.keep_velocities,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="pso_gen",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
+
+
 @mark_minimizer(
     name="pygmo_pso_gen",
     primary_criterion_entry="value",
@@ -889,6 +994,57 @@ def pygmo_pso_gen(
     return res
 
 
+@mark.minimizer(
+    name="pygmo_mbh",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoMbh(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    inner_algorithm: pg.algorithm | None = None
+    # this is 30 instead of 5 in pygmo for our sum of squares test to pass
+    stopping_max_inner_runs_without_improvement: PositiveInt = 30
+    perturbation: float = 0.01
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        # the min default population size is this large to pass our sum of
+        # squares tests.
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=250
+        )
+
+        algo_specific_options = {
+            "algo": self.inner_algorithm,
+            "stop": self.stopping_max_inner_runs_without_improvement,
+            "perturb": self.perturbation,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="mbh",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+            n_cores=1,
+        )
+        return res
+
+
 @mark_minimizer(
     name="pygmo_mbh",
     primary_criterion_entry="value",
@@ -944,6 +1100,83 @@ def pygmo_mbh(
         algo_options=algo_options,
     )
     return res
+
+
+@mark.minimizer(
+    name="pygmo_xnes",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoXnes(Algorithm):
+    population_size: float | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_mean_update: NonNegativeFloat | None = 1.0
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_step_size_update: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_cov_matrix_update: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    initial_search_share: NonNegativeFloat | None = 1.0
+    ftol: NonNegativeFloat = 1e-6
+    xtol: NonNegativeFloat = 1e-6
+    keep_adapted_params: bool = False
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
+        eta_mu = (
+            -1
+            if self.learning_rate_mean_update is None
+            else self.learning_rate_mean_update
+        )
+        eta_sigma = (
+            -1
+            if self.learning_rate_step_size_update is None
+            else self.learning_rate_step_size_update
+        )
+        eta_b = (
+            -1
+            if self.learning_rate_cov_matrix_update is None
+            else self.learning_rate_cov_matrix_update
+        )
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "eta_mu": eta_mu,
+            "eta_sigma": eta_sigma,
+            "eta_b": eta_b,
+            "sigma0": self.initial_search_share,
+            "ftol": self.ftol,
+            "xtol": self.xtol,
+            "memory": self.keep_adapted_params,
+            "force_bounds": True,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="xnes",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
 
 
 @mark_minimizer(
