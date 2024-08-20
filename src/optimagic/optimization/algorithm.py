@@ -10,8 +10,8 @@ from typing_extensions import Self
 
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.logging.types import StepStatus
+from optimagic.optimization.history import History
 from optimagic.optimization.internal_optimization_problem import (
-    History,
     InternalOptimizationProblem,
 )
 from optimagic.type_conversion import TYPE_CONVERTERS

@@ -13,45 +13,11 @@ from optimagic.optimization.fun_value import (
     ScalarFunctionValue,
 )
 from optimagic.optimization.internal_optimization_problem import (
-    History,
-    HistoryEntry,
     InternalBounds,
     InternalOptimizationProblem,
 )
 from optimagic.parameters.conversion import Converter
 from optimagic.typing import AggregationLevel, Direction, ErrorHandling, EvalTask
-
-
-@pytest.fixture
-def history_entries():
-    return [
-        HistoryEntry(params=[1, 2, 3], fun=1, time=0.1, task=EvalTask.FUN),
-        HistoryEntry(params=[4, 5, 6], fun=2, time=0.2, task=EvalTask.FUN),
-        HistoryEntry(params=[7, 8, 9], fun=3, time=0.3, task=EvalTask.FUN),
-    ]
-
-
-def test_history_add_entry(history_entries):
-    history = History()
-    for entry in history_entries:
-        history.add_entry(entry)
-
-    assert history.params == [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    assert history.fun == [1, 2, 3]
-    assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
-    assert history.batches == [0, 1, 2]
-    aaae(history.time, [0.0, 0.1, 0.2])
-
-
-def test_history_add_batch(history_entries):
-    history = History()
-    history.add_batch(history_entries)
-
-    assert history.params == [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    assert history.fun == [1, 2, 3]
-    assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
-    assert history.batches == [0, 0, 0]
-    aaae(history.time, [0.0, 0.1, 0.2])
 
 
 @pytest.fixture

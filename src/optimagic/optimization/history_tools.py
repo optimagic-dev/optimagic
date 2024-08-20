@@ -5,7 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 from pybaum import tree_just_flatten
 
-from optimagic.optimization.internal_optimization_problem import History
+from optimagic.optimization.history import History
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import Direction
 
