@@ -12,6 +12,8 @@ Notes for converting to the new algorithm interface:
   float for now and add todos where needed. Don't spend a lot of time on it.
 - There are some specific type checks and type conversions that should not be needed
   anymore after switching to the new interface.
+- Whenever we had batch_evaluator as `algo_option` we don't need it anymore but we
+  should have `n_cores` in those algorithms.
 
 """
 
