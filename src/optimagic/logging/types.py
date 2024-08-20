@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
+from optimagic.optimization.fun_value import SpecificFunctionValue
 from optimagic.typing import (
     DictLikeAccess,
     Direction,
@@ -85,7 +86,7 @@ class IterationState(DictLikeAccess):
     timestamp: float
     scalar_fun: float | None
     valid: bool
-    raw_fun: PyTree | None = None
+    raw_fun: SpecificFunctionValue | None = None
     step: int | None = None
     exceptions: str | None = None
 
