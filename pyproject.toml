@@ -359,6 +359,8 @@ module = [
     "petsc4py.PETSc",
     "tranquilo",
     "tranquilo.tranquilo",
+    "tranquilo.options",
+    "tranquilo.process_arguments",
     "dfols",
     "pybobyqa",
     "pygmo",

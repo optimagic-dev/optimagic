@@ -27,7 +27,6 @@ from optimagic.typing import (
     NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
-    PyTree,
 )
 
 if IS_FIDES_INSTALLED:
@@ -116,8 +115,8 @@ class Fides(Algorithm):
 def fides_internal(
     fun_and_jac: Callable[[NDArray[np.float64]], NDArray[np.float64]],
     x: NDArray[np.float64],
-    lower_bounds: PyTree | None,
-    upper_bounds: PyTree | None,
+    lower_bounds: NDArray[np.float64] | None,
+    upper_bounds: NDArray[np.float64] | None,
     hessian_update_strategy: Literal[
         "bfgs",
         "bb",
