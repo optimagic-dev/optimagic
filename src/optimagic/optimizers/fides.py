@@ -1,11 +1,14 @@
 """Implement the fides optimizer."""
 
 import logging
+from dataclasses import dataclass
+from typing import Callable, Literal, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
+from optimagic import mark
 from optimagic.config import IS_FIDES_INSTALLED
-from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
@@ -15,40 +18,138 @@ from optimagic.optimization.algo_options import (
     CONVERGENCE_XTOL_ABS,
     STOPPING_MAXITER,
 )
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
+from optimagic.typing import (
+    AggregationLevel,
+    NonNegativeFloat,
+    PositiveFloat,
+    PositiveInt,
+    PyTree,
+)
 
 if IS_FIDES_INSTALLED:
     from fides import Optimizer, hessian_approximation
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="fides",
-    primary_criterion_entry="value",
-    needs_scaling=False,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_FIDES_INSTALLED,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def fides(
-    criterion_and_derivative,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    hessian_update_strategy="bfgs",
-    convergence_ftol_abs=CONVERGENCE_FTOL_ABS,
-    convergence_ftol_rel=CONVERGENCE_FTOL_REL,
-    convergence_xtol_abs=CONVERGENCE_XTOL_ABS,
-    convergence_gtol_abs=CONVERGENCE_GTOL_ABS,
-    convergence_gtol_rel=CONVERGENCE_GTOL_REL,
-    stopping_maxiter=STOPPING_MAXITER,
-    stopping_max_seconds=np.inf,
-    trustregion_initial_radius=1.0,
-    trustregion_stepback_strategy="truncate",
-    trustregion_subspace_dimension="full",
-    trustregion_max_stepback_fraction=0.95,
-    trustregion_decrease_threshold=0.25,
-    trustregion_increase_threshold=0.75,
-    trustregion_decrease_factor=0.25,
-    trustregion_increase_factor=2.0,
-):
+@dataclass(frozen=True)
+class Fides(Algorithm):
+    hessian_update_strategy: Literal[
+        "bfgs",
+        "bb",
+        "bg",
+        "dfp",
+        "sr1",
+    ] = "bfgs"
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    stopping_max_seconds: float = np.inf
+    trustregion_initial_radius: PositiveFloat = 1.0
+    trustregion_stepback_strategy: Literal[
+        "truncate",
+        "reflect",
+        "reflect_single",
+        "mixed",
+    ] = "truncate"
+    trustregion_subspace_dimension: Literal[
+        "full",
+        "2D",
+        "scg",
+    ] = "full"
+    trustregion_max_stepback_fraction: float = 0.95
+    trustregion_decrease_threshold: float = 0.25
+    trustregion_increase_threshold: float = 0.75
+    trustregion_decrease_factor: float = 0.25
+    trustregion_increase_factor: float = 2.0
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = fides_internal(
+            fun_and_jac=cast(
+                Callable[[NDArray[np.float64]], NDArray[np.float64]],
+                problem.fun_and_jac,
+            ),
+            x=x0,
+            lower_bounds=problem.bounds.lower,
+            upper_bounds=problem.bounds.upper,
+            hessian_update_strategy=self.hessian_update_strategy,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            convergence_gtol_abs=self.convergence_gtol_abs,
+            convergence_gtol_rel=self.convergence_gtol_rel,
+            stopping_maxiter=self.stopping_maxiter,
+            stopping_max_seconds=self.stopping_max_seconds,
+            trustregion_initial_radius=self.trustregion_initial_radius,
+            trustregion_stepback_strategy=self.trustregion_stepback_strategy,
+            trustregion_subspace_dimension=self.trustregion_subspace_dimension,
+            trustregion_max_stepback_fraction=self.trustregion_max_stepback_fraction,
+            trustregion_decrease_threshold=self.trustregion_decrease_threshold,
+            trustregion_increase_threshold=self.trustregion_increase_threshold,
+            trustregion_decrease_factor=self.trustregion_decrease_factor,
+            trustregion_increase_factor=self.trustregion_increase_factor,
+        )
+
+        return res
+
+
+def fides_internal(
+    fun_and_jac: Callable[[NDArray[np.float64]], NDArray[np.float64]],
+    x: NDArray[np.float64],
+    lower_bounds: PyTree | None,
+    upper_bounds: PyTree | None,
+    hessian_update_strategy: Literal[
+        "bfgs",
+        "bb",
+        "bg",
+        "dfp",
+        "sr1",
+    ],
+    convergence_ftol_abs: NonNegativeFloat,
+    convergence_ftol_rel: NonNegativeFloat,
+    convergence_xtol_abs: NonNegativeFloat,
+    convergence_gtol_abs: NonNegativeFloat,
+    convergence_gtol_rel: NonNegativeFloat,
+    stopping_maxiter: PositiveInt,
+    stopping_max_seconds: float,
+    trustregion_initial_radius: PositiveFloat,
+    trustregion_stepback_strategy: Literal[
+        "truncate",
+        "reflect",
+        "reflect_single",
+        "mixed",
+    ],
+    trustregion_subspace_dimension: Literal[
+        "full",
+        "2D",
+        "scg",
+    ],
+    trustregion_max_stepback_fraction: float,
+    trustregion_decrease_threshold: float,
+    trustregion_increase_threshold: float,
+    trustregion_decrease_factor: float,
+    trustregion_increase_factor: float,
+) -> InternalOptimizeResult:
     """Minimize a scalar function using the Fides Optimizer.
 
     For details see
@@ -82,7 +183,7 @@ def fides(
     hessian_instance = _create_hessian_updater_from_user_input(hessian_update_strategy)
 
     opt = Optimizer(
-        fun=criterion_and_derivative,
+        fun=fun_and_jac,
         lb=lower_bounds,
         ub=upper_bounds,
         verbose=logging.ERROR,
@@ -93,7 +194,17 @@ def fides(
     )
     raw_res = opt.minimize(x)
     res = _process_fides_res(raw_res, opt)
-    return res
+    out = InternalOptimizeResult(
+        x=res["solution_x"],
+        fun=res["solution_criterion"],
+        jac=res["solution_derivative"],
+        hess=res["solution_hessian"],
+        success=res["success"],
+        message=res["message"],
+        n_iterations=res["n_iterations"],
+    )
+
+    return out
 
 
 def _process_fides_res(raw_res, opt):

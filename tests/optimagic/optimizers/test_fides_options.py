@@ -4,10 +4,12 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.config import IS_FIDES_INSTALLED
+from optimagic.optimization.optimize import minimize
+from optimagic.parameters.bounds import Bounds
 
 if IS_FIDES_INSTALLED:
     from fides.hessian_approximation import FX, SR1, Broyden
-    from optimagic.optimizers.fides import fides
+    from optimagic.optimizers.fides import Fides
 else:
     FX = lambda: None
     SR1 = lambda: None
@@ -40,17 +42,24 @@ def criterion_and_derivative(x):
     return (x**2).sum(), 2 * x
 
 
+def criterion(x):
+    return (x**2).sum()
+
+
 @pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
 @pytest.mark.parametrize("algo_options", test_cases_no_contribs_needed)
 def test_fides_correct_algo_options(algo_options):
-    res = fides(
-        criterion_and_derivative=criterion_and_derivative,
-        x=np.array([1, -5, 3]),
-        lower_bounds=np.array([-10, -10, -10]),
-        upper_bounds=np.array([10, 10, 10]),
-        **algo_options,
+    res = minimize(
+        fun_and_jac=criterion_and_derivative,
+        fun=criterion,
+        x0=np.array([1, -5, 3]),
+        bounds=Bounds(
+            lower=np.array([-10, -10, -10]),
+            upper=np.array([10, 10, 10]),
+        ),
+        algorithm=Fides(**algo_options),
     )
-    aaae(res["solution_x"], np.zeros(3), decimal=4)
+    aaae(res.params, np.zeros(3), decimal=4)
 
 
 test_cases_needing_contribs = [
@@ -65,23 +74,29 @@ test_cases_needing_contribs = [
 @pytest.mark.parametrize("algo_options", test_cases_needing_contribs)
 def test_fides_unimplemented_algo_options(algo_options):
     with pytest.raises(NotImplementedError):
-        fides(
-            criterion_and_derivative=criterion_and_derivative,
-            x=np.array([1, -5, 3]),
-            lower_bounds=np.array([-10, -10, -10]),
-            upper_bounds=np.array([10, 10, 10]),
-            **algo_options,
+        minimize(
+            fun_and_jac=criterion_and_derivative,
+            fun=criterion,
+            x0=np.array([1, -5, 3]),
+            bounds=Bounds(
+                lower=np.array([-10, -10, -10]),
+                upper=np.array([10, 10, 10]),
+            ),
+            algorithm=Fides(**algo_options),
         )
 
 
 @pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
 def test_fides_stop_after_one_iteration():
-    res = fides(
-        criterion_and_derivative=criterion_and_derivative,
-        x=np.array([1, -5, 3]),
-        lower_bounds=np.array([-10, -10, -10]),
-        upper_bounds=np.array([10, 10, 10]),
-        stopping_maxiter=1,
+    res = minimize(
+        fun_and_jac=criterion_and_derivative,
+        fun=criterion,
+        x0=np.array([1, -5, 3]),
+        bounds=Bounds(
+            lower=np.array([-10, -10, -10]),
+            upper=np.array([10, 10, 10]),
+        ),
+        algorithm=Fides(stopping_maxiter=1),
     )
-    assert not res["success"]
-    assert res["n_iterations"] == 1
+    assert not res.success
+    assert res.n_iterations == 1
