@@ -1,66 +1,75 @@
 """Implement Berndt-Hall-Hall-Hausman (BHHH) algorithm."""
 
+from dataclasses import dataclass
+from typing import Callable, cast
+
 import numpy as np
+from numpy.typing import NDArray
 
-from optimagic.decorators import mark_minimizer
-
-
-@mark_minimizer(
-    name="bhhh",
-    primary_criterion_entry="contributions",
-    needs_scaling=False,
-    is_available=True,
+from optimagic import mark
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
 )
-def bhhh(
-    criterion_and_derivative,
-    x,
-    *,
-    converence_gtol_abs=1e-8,
-    stopping_maxiter=200,
-):
-    """Minimize a likelihood function using the BHHH algorithm.
+from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 
-    For details, see
-    :ref: `_own_algorithms`.
 
-    """
-    result_dict = bhhh_internal(
-        criterion_and_derivative,
-        x=x,
-        convergence_gtol_abs=converence_gtol_abs,
-        stopping_maxiter=stopping_maxiter,
-    )
+@mark.minimizer(
+    name="bhhh",
+    solver_type=AggregationLevel.LIKELIHOOD,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class BHHH(Algorithm):
+    converence_gtol_abs: NonNegativeFloat = 1e-8
+    # TODO: Why is this 200?
+    stopping_maxiter: PositiveInt = 200
 
-    return result_dict
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = bhhh_internal(
+            fun_and_jac=cast(
+                Callable[[NDArray[np.float64]], NDArray[np.float64]],
+                problem.fun_and_jac,
+            ),
+            x=x0,
+            gtol_abs=self.converence_gtol_abs,
+            maxiter=self.stopping_maxiter,
+        )
+
+        return res
 
 
 def bhhh_internal(
-    criterion_and_derivative,
-    x,
-    convergence_gtol_abs,
-    stopping_maxiter,
-):
+    fun_and_jac: Callable[[NDArray[np.float64]], NDArray[np.float64]],
+    x: NDArray[np.float64],
+    gtol_abs: NonNegativeFloat,
+    maxiter: PositiveInt,
+) -> InternalOptimizeResult:
     """Minimize a likelihood function using the BHHH algorithm.
 
     Args:
-        criterion_and_derivative (callable): The objective function to be minimized.
-        x (np.ndarray): Initial guess of the parameter vector (starting points).
-        convergence_absolute_gradient_tolerance (float): Stopping criterion for the
+        criterion_and_derivative: The objective function to be minimized.
+        x: Initial guess of the parameter vector (starting points).
+        convergence_absolute_gradient_tolerance: Stopping criterion for the
             gradient tolerance.
-        stopping_max_iterations (int): Maximum number of iterations. If reached,
+        stopping_max_iterations: Maximum number of iterations. If reached,
             terminate.
 
     Returns:
-        (dict) Result dictionary containing:
-
-        - solution_x (np.ndarray): Solution vector of shape (n,).
-        - solution_criterion (np.ndarray): Likelihood at the solution. Shape (n_obs,).
-        - n_iterations (int): Number of iterations the algorithm ran before finding a
-            solution vector or reaching stopping_max_iterations.
-        - message (str): Message to the user. Currently it says: "Under development."
+        InternalOptimizeResult: The result of the optimization.
 
     """
-    criterion_accepted, gradient = criterion_and_derivative(x)
+    criterion_accepted, gradient = fun_and_jac(x)
     x_accepted = x
 
     hessian_approx = np.dot(gradient.T, gradient)
@@ -68,22 +77,22 @@ def bhhh_internal(
     direction = np.linalg.solve(hessian_approx, gradient_sum)
     gtol = np.dot(gradient_sum, direction)
 
-    initial_step_size = 1
+    initial_step_size = 1.0
     step_size = initial_step_size
 
     niter = 1
-    while niter < stopping_maxiter:
+    while niter < maxiter:
         niter += 1
 
         x_candidate = x_accepted + step_size * direction
-        criterion_candidate, gradient = criterion_and_derivative(x_candidate)
+        criterion_candidate, gradient = fun_and_jac(x_candidate)
 
         # If previous step was accepted
         if step_size == initial_step_size:
             hessian_approx = np.dot(gradient.T, gradient)
 
         else:
-            criterion_candidate, gradient = criterion_and_derivative(x_candidate)
+            criterion_candidate, gradient = fun_and_jac(x_candidate)
 
         # Line search
         if np.sum(criterion_candidate) > np.sum(criterion_accepted):
@@ -114,14 +123,14 @@ def bhhh_internal(
             # Reset stepsize
             step_size = initial_step_size
 
-        if gtol < convergence_gtol_abs:
+        if gtol < gtol_abs:
             break
 
-    result_dict = {
-        "solution_x": x_accepted,
-        "solution_criterion": criterion_accepted,
-        "n_iterations": niter,
-        "message": "Under develpment",
-    }
+    res = InternalOptimizeResult(
+        x=x_accepted,
+        fun=criterion_accepted,
+        message="Under development",
+        n_iterations=niter,
+    )
 
-    return result_dict
+    return res

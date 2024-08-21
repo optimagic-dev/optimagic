@@ -2,11 +2,13 @@
 
 import contextlib
 import functools
+from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 
+from optimagic import mark
 from optimagic.config import IS_PETSC4PY_INSTALLED
-from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
     CONVERGENCE_GTOL_ABS,
@@ -14,18 +16,75 @@ from optimagic.optimization.algo_options import (
     CONVERGENCE_GTOL_SCALED,
     STOPPING_MAXITER,
 )
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
+from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 from optimagic.utilities import calculate_trustregion_initial_radius
 
 with contextlib.suppress(ImportError):
     from petsc4py import PETSc
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="tao_pounders",
-    primary_criterion_entry="root_contributions",
+    solver_type=AggregationLevel.LEAST_SQUARES,
     is_available=IS_PETSC4PY_INSTALLED,
-    needs_scaling=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
+@dataclass(frozen=True)
+class TAOPounders(Algorithm):
+    """Implement the POUNDERs algorithm."""
+
+    convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    convergence_gtol_scaled: NonNegativeFloat = CONVERGENCE_GTOL_SCALED
+    trustregion_initial_radius: NonNegativeFloat | None = None
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        raw = tao_pounders(
+            criterion=problem.fun,
+            x=x0,
+            lower_bounds=problem.bounds.lower,
+            upper_bounds=problem.bounds.upper,
+            convergence_gtol_abs=self.convergence_gtol_abs,
+            convergence_gtol_rel=self.convergence_gtol_rel,
+            convergence_gtol_scaled=self.convergence_gtol_scaled,
+            trustregion_initial_radius=self.trustregion_initial_radius,
+            stopping_maxiter=self.stopping_maxiter,
+        )
+
+        res = InternalOptimizeResult(
+            x=raw["solution_x"],
+            fun=raw["solution_criterion"],
+            success=raw["success"],
+            message=raw["message"],
+            n_fun_evals=raw["n_fun_evals"],
+            n_jac_evals=0,
+            n_hess_evals=0,
+            n_iterations=raw["n_iterations"],
+            info={
+                "gradient_norm": raw["gradient_norm"],
+                "criterion_norm": raw["criterion_norm"],
+                "convergence_code": raw["convergence_code"],
+                "convergence_reason": raw["reached_convergence_criterion"],
+            },
+        )
+
+        return res
+
+
 def tao_pounders(
     criterion,
     x,

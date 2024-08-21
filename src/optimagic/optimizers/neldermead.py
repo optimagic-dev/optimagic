@@ -1,35 +1,44 @@
 """Implementation of parallelosation of Nelder-Mead algorithm."""
 
-import numpy as np
+from dataclasses import dataclass
+from typing import Callable, Literal, cast
 
+import numpy as np
+from numpy.typing import NDArray
+
+from optimagic import mark
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.decorators import mark_minimizer
 from optimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_FTOL_ABS,
     CONVERGENCE_SECOND_BEST_XTOL_ABS,
     STOPPING_MAXITER,
 )
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
+from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
+
+InitSimplexLiteral = Literal["pfeffer", "nash", "gao_han", "varadhan_borchers"]
+InitSimplexCallable = Callable[[NDArray[np.float64]], NDArray[np.float64]]
+from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="neldermead_parallel",
-    primary_criterion_entry="value",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
     disable_history=True,
 )
-def neldermead_parallel(
-    criterion,
-    x,
-    *,
-    init_simplex_method="gao_han",
-    n_cores=1,
-    adaptive=True,
-    stopping_maxiter=STOPPING_MAXITER,
-    convergence_ftol_abs=CONVERGENCE_SECOND_BEST_FTOL_ABS,  # noqa: E501
-    convergence_xtol_abs=CONVERGENCE_SECOND_BEST_XTOL_ABS,  # noqa: E501
-    batch_evaluator="joblib",
-):
+@dataclass(frozen=True)
+class NelderMeadParallel(Algorithm):
     """Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
     implementation of the simplex function minimization routine, Computational
     Economics, 2007.
@@ -70,6 +79,56 @@ def neldermead_parallel(
         DESCRIPTION.
 
     """
+
+    init_simplex_method: InitSimplexLiteral | InitSimplexCallable = "gao_han"
+    n_cores: PositiveInt = 1
+    adaptive: bool = True
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_XTOL_ABS
+    batch_evaluator: BatchEvaluator | BatchEvaluatorLiteral = "joblib"
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        raw = neldermead_parallel(
+            criterion=cast(
+                Callable[[NDArray[np.float64]], float],
+                problem.fun,
+            ),
+            x=x0,
+            init_simplex_method=self.init_simplex_method,
+            n_cores=self.n_cores,
+            adaptive=self.adaptive,
+            stopping_maxiter=self.stopping_maxiter,
+            convergence_ftol_abs=self.convergence_ftol_abs,
+            convergence_xtol_abs=self.convergence_xtol_abs,
+            batch_evaluator=self.batch_evaluator,
+        )
+
+        res = InternalOptimizeResult(
+            x=raw["solution_x"],
+            fun=raw["solution_criterion"],
+            n_iterations=raw["n_iterations"],
+            success=raw["success"],
+            message=raw["reached_convergence_criterion"],
+        )
+
+        return res
+
+
+def neldermead_parallel(
+    criterion,
+    x,
+    *,
+    init_simplex_method="gao_han",
+    n_cores=1,
+    adaptive=True,
+    stopping_maxiter=STOPPING_MAXITER,
+    convergence_ftol_abs=CONVERGENCE_SECOND_BEST_FTOL_ABS,
+    convergence_xtol_abs=CONVERGENCE_SECOND_BEST_XTOL_ABS,
+    batch_evaluator="joblib",
+):
     if x.ndim >= 1:
         x = x.ravel()  # check if the vector of initial values is one-dimensional
 
