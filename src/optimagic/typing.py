@@ -123,6 +123,7 @@ GtOneFloat = Annotated[float, Gt(1)]
 YesNoBool = Literal["yes", "no"] | bool
 DirectionLiteral = Literal["minimize", "maximize"]
 BatchEvaluatorLiteral = Literal["joblib", "pathos"]
+ErrorHandlingLiteral = Literal["raise", "continue"]
 
 
 @dataclass(frozen=True)

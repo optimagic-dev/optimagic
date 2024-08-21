@@ -2,8 +2,8 @@
 
 # Optimizers
 
-Check out {ref}`algorithms` to see how to select an algorithm and specify `algo_options`
-when using `maximize` or `minimize`.
+Check out {ref}`how-to-select-algorithms` to see how to select an algorithm and specify
+`algo_options` when using `maximize` or `minimize`.
 
 ## Optimizers from scipy
 

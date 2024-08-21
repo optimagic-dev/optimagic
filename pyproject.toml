@@ -356,6 +356,7 @@ module = [
     "bokeh.command.util",
     "fides",
     "petsc4py",
+    "petsc4py.PETSc",
     "tranquilo",
     "tranquilo.tranquilo",
     "dfols",

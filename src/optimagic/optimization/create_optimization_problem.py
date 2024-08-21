@@ -327,11 +327,7 @@ def create_optimization_problem(
     # ==================================================================================
     # Convert literals to enums
     # ==================================================================================
-    # TODO: Use Kristof's enum conversion
-    if error_handling == "raise":
-        error_handling = ErrorHandling.RAISE
-    elif error_handling == "continue":
-        error_handling = ErrorHandling.CONTINUE
+    error_handling = ErrorHandling(error_handling)
 
     # ==================================================================================
     # Set default values and check options

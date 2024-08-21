@@ -17,6 +17,8 @@ Notes for converting to the new algorithm interface:
 
 """
 
+from __future__ import annotations
+
 import contextlib
 import warnings
 from dataclasses import dataclass

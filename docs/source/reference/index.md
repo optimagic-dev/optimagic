@@ -8,6 +8,8 @@
 
 ## Optimization
 
+(api-maximize)=
+
 ```{eval-rst}
 .. dropdown:: maximize
 
@@ -44,6 +46,89 @@
 ```
 
 ```{eval-rst}
+.. dropdown:: OptimizeResult
+
+    .. autoclass:: OptimizeResult
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: Bounds
+
+    .. autoclass:: Bounds
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: Constraints
+
+    .. autoclass:: FixedConstraint
+        :members:
+
+    .. autoclass:: IncreasingConstraint
+        :members:
+
+    .. autoclass:: DecreasingConstraint
+        :members:
+
+    .. autoclass:: EqualityConstraint
+        :members:
+
+    .. autoclass:: ProbabilityConstraint
+        :members:
+
+    .. autoclass:: PairwiseEqualityConstraint
+        :members:
+
+    .. autoclass:: FlatCovConstraint
+        :members:
+
+    .. autoclass:: FlatSDCorrConstraint
+        :members:
+
+    .. autoclass:: LinearConstraint
+        :members:
+
+    .. autoclass:: NonlinearConstraint
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: NumdiffOptions
+
+    .. autoclass:: NumdiffOptions
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: MultistartOptions
+
+    .. autoclass:: MultistartOptions
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: ScalingOptions
+
+    .. autoclass:: ScalingOptions
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: LogOptions
+
+    .. autoclass:: SQLiteLogOptions
+        :members:
+
+```
+
+```{eval-rst}
 .. dropdown:: count_free_params
 
     .. autofunction:: count_free_params
@@ -54,14 +139,6 @@
 .. dropdown:: check_constraints
 
     .. autofunction:: check_constraints
-
-```
-
-```{eval-rst}
-.. dropdown:: OptimizeResult
-
-    .. autoclass:: OptimizeResult
-        :members:
 
 ```
 

@@ -11,6 +11,8 @@ Otherwise, the functions may be very slow.
 
 """
 
+from __future__ import annotations
+
 import warnings
 from dataclasses import dataclass
 

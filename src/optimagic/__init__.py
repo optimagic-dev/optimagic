@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optimagic import constraints, mark, utilities
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,

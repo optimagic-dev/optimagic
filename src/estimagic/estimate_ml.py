@@ -143,8 +143,7 @@ def estimate_ml(
             be calculated.
         hessian_kwargs (dict): Additional keyword arguments for the Hessian function.
         hessian_numdiff_options (dict): Keyword arguments for the calculation of
-            numerical derivatives for the calculation of standard errors. See
-            :ref:`second_derivative` for details.
+            numerical derivatives for the calculation of standard errors.
         design_info (pandas.DataFrame): DataFrame with one row per observation that
             contains some or all of the variables "psu" (primary sampling unit),
             "strata" and "fpc" (finite population corrector). See
