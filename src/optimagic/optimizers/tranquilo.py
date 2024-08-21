@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -33,11 +33,15 @@ if IS_TRANQUILO_INSTALLED:
     )
     from tranquilo.tranquilo import _tranquilo
 else:
-    raise NotInstalledError(
-        "The 'tranquilo' algorithms requires the tranquilo package "
-        "to be installed. You can install it with "
-        "'conda install -c conda-forge tranquilo'."
-    )
+    AcceptanceOptions = Any
+    FilterOptions = Any
+    FitterOptions = Any
+    NoiseAdaptationOptions = Any
+    RadiusOptions = Any
+    SamplerOptions = Any
+    StagnationOptions = Any
+    SubsolverOptions = Any
+    VarianceEstimatorOptions = Any
 
 
 @mark.minimizer(
