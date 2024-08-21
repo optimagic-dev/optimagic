@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 from optimagic.optimizers.pygmo_optimizers import (
     _convert_str_to_int,
-    _replace_none,
     get_population_size,
 )
 
@@ -30,8 +29,3 @@ def test_convert_str_to_int():
         _convert_str_to_int(d, 5)
     with pytest.raises(ValueError):
         _convert_str_to_int(d, "hello")
-
-
-def test_replace_none():
-    assert _replace_none(None, 5) == 5
-    assert _replace_none("a", 10) == "a"
