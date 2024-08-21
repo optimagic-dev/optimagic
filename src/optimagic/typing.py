@@ -122,6 +122,7 @@ NegativeFloat = Annotated[float, Lt(0)]
 GtOneFloat = Annotated[float, Gt(1)]
 YesNoBool = Literal["yes", "no"] | bool
 DirectionLiteral = Literal["minimize", "maximize"]
+BatchEvaluatorLiteral = Literal["joblib", "pathos"]
 
 
 @dataclass(frozen=True)
