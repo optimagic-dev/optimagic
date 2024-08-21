@@ -14,6 +14,7 @@ if not IS_PETSC4PY_INSTALLED:
 
 
 NUM_AGENTS = 2_000
+from optimagic import mark
 
 
 def get_random_params(
@@ -42,7 +43,9 @@ def test_robustness():
     start_params["value"] = get_random_params(2, rng)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
+    criterion_func = mark.least_squares(
+        functools.partial(_ols_criterion, endog=endog, exog=exog)
+    )
     result = minimize(criterion_func, start_params, "tao_pounders")
 
     x = np.column_stack([np.ones_like(exog), exog])
@@ -62,7 +65,9 @@ def test_box_constr():
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
+    criterion_func = mark.least_squares(
+        functools.partial(_ols_criterion, endog=endog, exog=exog)
+    )
     result = minimize(criterion_func, start_params, "tao_pounders")
 
     assert 0 <= result.params["value"].to_numpy()[0] <= 0.3
@@ -76,12 +81,14 @@ def test_max_iters():
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
+    criterion_func = mark.least_squares(
+        functools.partial(_ols_criterion, endog=endog, exog=exog)
+    )
     result = minimize(
         criterion_func,
         start_params,
         "tao_pounders",
-        algo_options={"stopping.max_iterations": 25},
+        algo_options={"stopping.maxiter": 25},
     )
 
     assert result.message in ("user defined", "step size small")
@@ -94,14 +101,16 @@ def test_grtol():
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
+    criterion_func = mark.least_squares(
+        functools.partial(_ols_criterion, endog=endog, exog=exog)
+    )
     result = minimize(
         criterion_func,
         start_params,
         "tao_pounders",
         algo_options={
-            "convergence.absolute_gradient_tolerance": False,
-            "convergence.scaled_gradient_tolerance": False,
+            "convergence.gtol_abs": False,
+            "convergence.gtol_scaled": False,
         },
     )
 
@@ -118,14 +127,16 @@ def test_gatol():
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
+    criterion_func = mark.least_squares(
+        functools.partial(_ols_criterion, endog=endog, exog=exog)
+    )
     result = minimize(
         criterion_func,
         start_params,
         "tao_pounders",
         algo_options={
-            "convergence.relative_gradient_tolerance": False,
-            "convergence.scaled_gradient_tolerance": False,
+            "convergence.gtol_rel": False,
+            "convergence.gtol_scaled": False,
         },
     )
 
@@ -142,14 +153,16 @@ def test_gttol():
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
+    criterion_func = mark.least_squares(
+        functools.partial(_ols_criterion, endog=endog, exog=exog)
+    )
     result = minimize(
         criterion_func,
         start_params,
         "tao_pounders",
         algo_options={
-            "convergence.relative_gradient_tolerance": False,
-            "convergence.absolute_gradient_tolerance": False,
+            "convergence.gtol_rel": False,
+            "convergence.gtol_abs": False,
         },
     )
 
@@ -166,48 +179,23 @@ def test_tol():
     start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
+    criterion_func = mark.least_squares(
+        functools.partial(_ols_criterion, endog=endog, exog=exog)
+    )
     minimize(
         criterion_func,
         start_params,
         "tao_pounders",
         algo_options={
-            "convergence.absolute_gradient_tolerance": 1e-7,
-            "convergence.relative_gradient_tolerance": 1e-7,
-            "convergence.scaled_gradient_tolerance": 1e-9,
+            "convergence.gtol_abs": 1e-7,
+            "convergence.gtol_rel": 1e-7,
+            "convergence.gtol_scaled": 1e-9,
         },
     )
 
 
-def _nonlinear_criterion(x, endog, exog):
-    error = endog - np.exp(-x.loc[0, "value"] * exog) / (
-        x.loc[1, "value"] + x.loc[2, "value"] * exog
-    )
-    return {
-        "value": np.sum(np.square(error)),
-        "root_contributions": error,
-    }
-
-
 def _ols_criterion(x, endog, exog):
-    error = endog - x.loc[0, "value"] - x.loc[1, "value"] * exog
-    return {
-        "value": np.sum(np.square(error)),
-        "root_contributions": error,
-    }
-
-
-def _simulate_sample(num_agents, paras, error_term_high=0.5):
-    rng = get_rng(seed=1234)
-    exog = rng.uniform(0, 1, num_agents)
-    error_term = rng.normal(0, error_term_high, num_agents)
-    endog = (
-        np.exp(-paras.at[0, "value"] * exog)
-        / (paras.at[1, "value"] + paras.at[2, "value"] * exog)
-        + error_term
-    )
-
-    return exog, endog
+    return endog - x.loc[0, "value"] - x.loc[1, "value"] * exog
 
 
 def _simulate_ols_sample(num_agents, paras):
