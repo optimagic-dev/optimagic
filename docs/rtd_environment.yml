@@ -27,7 +27,7 @@ dependencies:
   - patsy
   - joblib
   - plotly
-  - annotated_types
+  - annotated-types
   - pip:
       - ../
       - kaleido
