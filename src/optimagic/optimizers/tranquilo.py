@@ -32,6 +32,12 @@ if IS_TRANQUILO_INSTALLED:
         VarianceEstimatorOptions,
     )
     from tranquilo.tranquilo import _tranquilo
+else:
+    raise NotInstalledError(
+        "The 'tranquilo' algorithms requires the tranquilo package "
+        "to be installed. You can install it with "
+        "'conda install -c conda-forge tranquilo'."
+    )
 
 
 @mark.minimizer(
