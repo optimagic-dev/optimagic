@@ -258,7 +258,6 @@ module = [
     "optimagic.optimizers.nag_optimizers",
     "optimagic.optimizers.neldermead",
     "optimagic.optimizers.nlopt_optimizers",
-    "optimagic.optimizers.bhhh",
     "optimagic.optimizers.ipopt",
     "optimagic.optimizers.fides",
     "optimagic.optimizers.pounders",
