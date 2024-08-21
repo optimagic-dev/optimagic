@@ -8,8 +8,6 @@
 
 ## Optimization
 
-(api-maximize)=
-
 ```{eval-rst}
 .. dropdown:: maximize
 

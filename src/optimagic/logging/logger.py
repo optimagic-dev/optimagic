@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Type, TypeVar, cast
@@ -498,10 +497,6 @@ class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
             elif if_database_exists is ExistenceStrategy.REPLACE:
                 try:
                     os.remove(path)
-                    warnings.warn(
-                        f"Existing database file at {path} removed due to "
-                        f"if_database_exists=ExistenceStrategy.REPLACE."
-                    )
                 except PermissionError as e:
                     msg = (
                         f"Failed to remove file {path}. "
