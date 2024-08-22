@@ -154,10 +154,10 @@ class ScipySLSQP(Algorithm):
             "ftol": self.convergence_ftol_abs,
         }
         raw_res = scipy.optimize.minimize(
-            fun=problem.fun,
+            fun=problem.fun_and_jac,
             x0=x0,
             method="SLSQP",
-            jac=problem.jac,
+            jac=True,
             bounds=_get_scipy_bounds(problem.bounds),
             constraints=problem.nonlinear_constraints,
             options=options,
@@ -195,6 +195,7 @@ class ScipyNelderMead(Algorithm):
             "maxfev": self.stopping_maxfun,
             "xatol": self.convergence_xtol_abs,
             "fatol": self.convergence_ftol_abs,
+            # TODO: Benchmark if adaptive = True works better
             "adaptive": self.adaptive,
         }
         raw_res = scipy.optimize.minimize(
@@ -374,6 +375,7 @@ class ScipyCOBYLA(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
+        # TODO: Maybe we should leave the radius at their default
         if self.trustregion_initial_radius is None:
             radius = calculate_trustregion_initial_radius(x0)
         else:
@@ -434,6 +436,7 @@ class ScipyLSTRF(Algorithm):
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
+            # This optimizer does not work with fun_and_jac
             jac=problem.jac,
             bounds=(problem.bounds.lower, problem.bounds.upper),
             method="trf",
@@ -481,6 +484,7 @@ class ScipyLSDogbox(Algorithm):
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
+            # This optimizer does not work with fun_and_jac
             jac=problem.jac,
             bounds=(problem.bounds.lower, problem.bounds.upper),
             method="dogbox",
@@ -521,6 +525,7 @@ class ScipyLSLM(Algorithm):
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
+            # This optimizer does not work with fun_and_jac
             jac=problem.jac,
             method="lm",
             max_nfev=self.stopping_maxfun,
