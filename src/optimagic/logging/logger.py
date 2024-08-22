@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Type, TypeVar, cast
@@ -22,10 +21,10 @@ from optimagic.logging.sqlalchemy import (
     StepStore,
 )
 from optimagic.logging.types import (
-    CriterionEvaluationWithId,
     ExistenceStrategy,
     ExistenceStrategyLiteral,
     IterationState,
+    IterationStateWithId,
     ProblemInitialization,
     ProblemInitializationWithId,
     StepResult,
@@ -33,10 +32,10 @@ from optimagic.logging.types import (
     StepType,
 )
 from optimagic.typing import (
+    Direction,
+    DirectionLiteral,
     IterationHistory,
     MultiStartIterationHistory,
-    OptimizationType,
-    OptimizationTypeLiteral,
     PyTree,
 )
 
@@ -73,9 +72,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
     """
 
     _step_store: UpdatableKeyValueStore[StepResult, StepResultWithId]
-    _iteration_store: NonUpdatableKeyValueStore[
-        IterationState, CriterionEvaluationWithId
-    ]
+    _iteration_store: NonUpdatableKeyValueStore[IterationState, IterationStateWithId]
     _problem_store: UpdatableKeyValueStore[
         ProblemInitialization, ProblemInitializationWithId
     ]
@@ -102,7 +99,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
     def _create(cls, log_options: _LogOptionsType) -> LogReader[_LogOptionsType]:
         pass
 
-    def read_iteration(self, iteration: int) -> CriterionEvaluationWithId:
+    def read_iteration(self, iteration: int) -> IterationStateWithId:
         """Read a specific iteration from the iteration store.
 
         Args:
@@ -152,9 +149,9 @@ class LogReader(Generic[_LogOptionsType], ABC):
         criterion_list = []
         runtime_list = []
         for data in raw_res:
-            if data.value is not None:
+            if data.scalar_fun is not None:
                 params_list.append(data.params)
-                criterion_list.append(data.value)
+                criterion_list.append(data.scalar_fun)
                 runtime_list.append(data.timestamp)
 
         times = np.array(runtime_list)
@@ -164,10 +161,10 @@ class LogReader(Generic[_LogOptionsType], ABC):
 
     @staticmethod
     def _normalize_direction(
-        direction: OptimizationType | OptimizationTypeLiteral,
-    ) -> OptimizationType:
+        direction: Direction | DirectionLiteral,
+    ) -> Direction:
         if isinstance(direction, str):
-            direction = OptimizationType(direction)
+            direction = Direction(direction)
         return direction
 
     def _build_history_dataframe(self) -> pd.DataFrame:
@@ -176,21 +173,21 @@ class LogReader(Generic[_LogOptionsType], ABC):
 
         history: dict[str, list[Any]] = {
             "params": [],
-            "criterion": [],
-            "runtime": [],
+            "fun": [],
+            "time": [],
             "step": [],
         }
 
         for data in raw_res:
-            if data.value is not None:
+            if data.scalar_fun is not None:
                 history["params"].append(data.params)
-                history["criterion"].append(data.value)
-                history["runtime"].append(data.timestamp)
+                history["fun"].append(data.scalar_fun)
+                history["time"].append(data.timestamp)
                 history["step"].append(data.step)
 
-        times = np.array(history["runtime"])
+        times = np.array(history["time"])
         times -= times[0]
-        history["runtime"] = times.tolist()
+        history["time"] = times.tolist()
 
         df = pd.DataFrame(history)
         df = df.merge(
@@ -214,24 +211,22 @@ class LogReader(Generic[_LogOptionsType], ABC):
 
     @staticmethod
     def _sort_exploration(
-        exploration: pd.DataFrame | None, optimization_type: OptimizationType
+        exploration: pd.DataFrame | None, optimization_type: Direction
     ) -> IterationHistory | None:
         if exploration is not None:
-            is_minimization = optimization_type is OptimizationType.MINIMIZE
-            exploration = exploration.sort_values(
-                by="criterion", ascending=is_minimization
-            )
+            is_minimization = optimization_type is Direction.MINIMIZE
+            exploration = exploration.sort_values(by="fun", ascending=is_minimization)
             exploration_dict = cast(dict[str, Any], exploration.to_dict(orient="list"))
             return IterationHistory(**exploration_dict)
         return exploration
 
     @staticmethod
     def _extract_best_history(
-        histories: pd.DataFrame, optimization_type: OptimizationType
+        histories: pd.DataFrame, optimization_type: Direction
     ) -> tuple[IterationHistory, list[IterationHistory] | None]:
-        groupby_step_criterion = histories["criterion"].groupby(level="step")
+        groupby_step_criterion = histories["fun"].groupby(level="step")
 
-        if optimization_type is OptimizationType.MINIMIZE:
+        if optimization_type is Direction.MINIMIZE:
             best_idx = groupby_step_criterion.min().idxmin()
         else:
             best_idx = groupby_step_criterion.max().idxmax()
@@ -265,7 +260,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
         return IterationHistory(**best_history_dict), remaining_histories
 
     def read_multistart_history(
-        self, direction: OptimizationType | OptimizationTypeLiteral
+        self, direction: Direction | DirectionLiteral
     ) -> MultiStartIterationHistory:
         """Read and the multistart optimization history.
 
@@ -322,7 +317,7 @@ class LogStore(Generic[_LogOptionsType, _LogReaderType], ABC):
     def __init__(
         self,
         iteration_store: NonUpdatableKeyValueStore[
-            IterationState, CriterionEvaluationWithId
+            IterationState, IterationStateWithId
         ],
         step_store: UpdatableKeyValueStore[StepResult, StepResultWithId],
         problem_store: UpdatableKeyValueStore[
@@ -502,10 +497,6 @@ class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
             elif if_database_exists is ExistenceStrategy.REPLACE:
                 try:
                     os.remove(path)
-                    warnings.warn(
-                        f"Existing database file at {path} removed due to "
-                        f"if_database_exists=ExistenceStrategy.REPLACE."
-                    )
                 except PermissionError as e:
                     msg = (
                         f"Failed to remove file {path}. "

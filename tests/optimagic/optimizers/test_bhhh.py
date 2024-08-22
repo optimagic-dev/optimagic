@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal as aaae
+from optimagic import mark, minimize
 from optimagic.optimizers.bhhh import bhhh_internal
 from optimagic.utilities import get_rng
 from scipy.stats import norm
@@ -129,8 +130,32 @@ def test_maximum_likelihood(criterion_and_derivative, result_statsmodels, reques
     result_bhhh = bhhh_internal(
         criterion_and_derivative,
         x=x,
-        convergence_gtol_abs=1e-8,
-        stopping_maxiter=200,
+        gtol_abs=1e-8,
+        maxiter=200,
     )
 
-    aaae(result_bhhh["solution_x"], result_expected.params, decimal=4)
+    aaae(result_bhhh.x, result_expected.params, decimal=4)
+
+
+@pytest.mark.parametrize(
+    "criterion_and_derivative, result_statsmodels",
+    [
+        (criterion_and_derivative_logit, "result_statsmodels_logit"),
+        (criterion_and_derivative_probit, "result_statsmodels_probit"),
+    ],
+)
+def test_maximum_likelihood_external_interfaace(
+    criterion_and_derivative, result_statsmodels, request
+):
+    result_expected = request.getfixturevalue(result_statsmodels)
+
+    x = np.zeros(3)
+
+    result_bhhh = minimize(
+        fun=mark.likelihood(criterion_and_derivative),
+        jac=True,
+        params=x,
+        algorithm="bhhh",
+    )
+
+    aaae(result_bhhh.params, result_expected.params, decimal=4)

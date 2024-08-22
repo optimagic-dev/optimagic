@@ -12,6 +12,7 @@ from optimagic.logging.logger import (
 )
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import Direction
 from pybaum import tree_equal, tree_just_flatten
 
 
@@ -48,11 +49,11 @@ def test_log_reader_read_iteration(example_db):
     first_row = reader.read_iteration(0)
     assert first_row["params"] == {"a": 1, "b": 2, "c": 3}
     assert first_row["rowid"] == 1
-    assert first_row["value"] == 14
+    assert first_row["scalar_fun"] == 14
 
     last_row = reader.read_iteration(-1)
     assert list(last_row["params"]) == ["a", "b", "c"]
-    assert np.allclose(last_row["value"], 0)
+    assert np.allclose(last_row["scalar_fun"], 0)
 
 
 def test_log_reader_index_exception(example_db):
@@ -66,15 +67,15 @@ def test_log_reader_index_exception(example_db):
 def test_log_reader_read_history(example_db):
     reader = SQLiteLogReader(example_db)
     res = reader.read_history()
-    assert res["runtime"][0] == 0
-    assert res["criterion"][0] == 14
+    assert res["time"][0] == 0
+    assert res["fun"][0] == 14
     assert res["params"][0] == {"a": 1, "b": 2, "c": 3}
 
 
 def test_log_reader_read_multistart_history(example_db):
     reader = SQLiteLogReader(example_db)
     history, local_history, exploration = reader.read_multistart_history(
-        direction="minimize"
+        direction=Direction.MINIMIZE
     )
     assert local_history is None
     assert exploration is None

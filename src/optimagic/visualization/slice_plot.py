@@ -154,7 +154,7 @@ def slice_plot(
         constraints=None,
         bounds=bounds,
         func_eval=func_eval,
-        primary_key="value",
+        solver_type="value",
     )
 
     n_params = len(internal_params.values)

@@ -1,4 +1,4 @@
-(algorithms)=
+(specify-algorithm)=
 
 # How to specify algorithms and algorithm specific options
 

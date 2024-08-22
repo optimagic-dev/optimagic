@@ -9,7 +9,7 @@ from typing_extensions import NotRequired
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.deprecations import replace_and_warn_about_deprecated_multistart_options
 from optimagic.exceptions import InvalidMultistartError
-from optimagic.typing import PyTree
+from optimagic.typing import BatchEvaluator, PyTree
 
 # ======================================================================================
 # Public Options
@@ -71,8 +71,7 @@ class MultistartOptions:
     convergence_xtol_rel: float | None = None
     convergence_max_discoveries: int = 2
     n_cores: int = 1
-    # TODO: Add more informative type hint for batch_evaluator
-    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"  # type: ignore
+    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
     batch_size: int | None = None
     seed: int | np.random.Generator | None = None
     error_handling: Literal["raise", "continue"] | None = None
@@ -101,7 +100,7 @@ class MultistartOptionsDict(TypedDict):
     convergence_xtol_rel: NotRequired[float | None]
     convergence_max_discoveries: NotRequired[int]
     n_cores: NotRequired[int]
-    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
+    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | BatchEvaluator]
     batch_size: NotRequired[int | None]
     seed: NotRequired[int | np.random.Generator | None]
     error_handling: NotRequired[Literal["raise", "continue"] | None]
@@ -325,8 +324,7 @@ class InternalMultistartOptions:
     sample: NDArray[np.float64] | None
     seed: int | np.random.Generator | None
     n_cores: int
-    # TODO: Add more informative type hint for batch_evaluator
-    batch_evaluator: Callable  # type: ignore
+    batch_evaluator: BatchEvaluator
     batch_size: int
     error_handling: Literal["raise", "continue"]
     stopping_maxopt: int

@@ -50,6 +50,8 @@ conda install -c conda-forge petsc4py
 conda install -c conda-forge cyipopt
 ```
 
+*Note*: Make sure you have at least `cyipopt` 1.4.
+
 ```
 conda install -c conda-forge pygmo
 ```

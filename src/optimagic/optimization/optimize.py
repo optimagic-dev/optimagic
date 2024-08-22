@@ -12,109 +12,227 @@ is then passed to `_optimize` which handles the optimization logic.
 
 """
 
-import functools
-from typing import Any
+from __future__ import annotations
 
+from pathlib import Path
+from typing import Any, Callable, Sequence, Type, cast
+
+from scipy.optimize import Bounds as ScipyBounds
+
+from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic.constraints import Constraint
+from optimagic.differentiation.numdiff_options import NumdiffOptions, NumdiffOptionsDict
 from optimagic.exceptions import (
     InvalidFunctionError,
 )
 from optimagic.logging.logger import LogReader, LogStore
 from optimagic.logging.types import ProblemInitialization
+from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.create_optimization_problem import (
     OptimizationProblem,
     create_optimization_problem,
 )
 from optimagic.optimization.error_penalty import get_error_penalty_function
-from optimagic.optimization.get_algorithm import (
-    get_final_algorithm,
-)
-from optimagic.optimization.internal_criterion_template import (
-    internal_criterion_and_derivative_template,
+from optimagic.optimization.fun_value import FunctionValue
+from optimagic.optimization.internal_optimization_problem import (
+    InternalBounds,
+    InternalOptimizationProblem,
 )
 from optimagic.optimization.multistart import (
     run_multistart_optimization,
 )
 from optimagic.optimization.multistart_options import (
+    MultistartOptions,
+    MultistartOptionsDict,
     get_internal_multistart_options_from_public,
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.process_results import process_internal_optimizer_result
+from optimagic.optimization.process_results import (
+    ExtraResultFields,
+    process_multistart_result,
+    process_single_result,
+)
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from optimagic.typing import AggregationLevel
+from optimagic.parameters.scaling import ScalingOptions, ScalingOptionsDict
+from optimagic.typing import (
+    AggregationLevel,
+    Direction,
+    ErrorHandling,
+    ErrorHandlingLiteral,
+    NonNegativeFloat,
+    PyTree,
+)
+
+FunType = Callable[..., float | PyTree | FunctionValue]
+AlgorithmType = str | Algorithm | Type[Algorithm]
+ConstraintsType = Constraint | list[Constraint] | dict[str, Any] | list[dict[str, Any]]
+JacType = Callable[..., PyTree]
+FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
+HessType = Callable[..., PyTree]
+# TODO: refine this type
+CallbackType = Callable[..., Any]
+
+CriterionType = Callable[..., float | dict[str, Any]]
+CriterionAndDerivativeType = Callable[..., tuple[float | dict[str, Any], PyTree]]
+
+
+from optimagic.logging.logger import LogOptions
 
 
 def maximize(
-    fun=None,
-    params=None,
-    algorithm=None,
+    fun: FunType | CriterionType | None = None,
+    params: PyTree | None = None,
+    algorithm: AlgorithmType | None = None,
     *,
-    bounds=None,
-    constraints=None,
-    fun_kwargs=None,
-    algo_options=None,
-    jac=None,
-    jac_kwargs=None,
-    fun_and_jac=None,
-    fun_and_jac_kwargs=None,
-    numdiff_options=None,
-    logging=None,
-    error_handling="raise",
-    error_penalty=None,
-    scaling=False,
-    multistart=False,
-    collect_history=True,
-    skip_checks=False,
+    bounds: Bounds | ScipyBounds | Sequence[tuple[float, float]] | None = None,
+    constraints: ConstraintsType | None = None,
+    fun_kwargs: dict[str, Any] | None = None,
+    algo_options: dict[str, Any] | None = None,
+    jac: JacType | list[JacType] | None = None,
+    jac_kwargs: dict[str, Any] | None = None,
+    fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
+    fun_and_jac_kwargs: dict[str, Any] | None = None,
+    numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
+    # TODO: add typed-dict support?
+    logging: bool | str | Path | LogOptions | dict[str, Any] | None = None,
+    error_handling: ErrorHandling | ErrorHandlingLiteral = ErrorHandling.RAISE,
+    error_penalty: dict[str, float] | None = None,
+    scaling: bool | ScalingOptions | ScalingOptionsDict = False,
+    multistart: bool | MultistartOptions | MultistartOptionsDict = False,
+    collect_history: bool = True,
+    skip_checks: bool = False,
     # scipy aliases
-    x0=None,
-    method=None,
-    args=None,
+    x0: PyTree | None = None,
+    method: str | None = None,
+    args: tuple[Any] | None = None,
     # scipy arguments that are not yet supported
-    hess=None,
-    hessp=None,
-    callback=None,
+    hess: HessType | None = None,
+    hessp: HessType | None = None,
+    callback: CallbackType | None = None,
     # scipy arguments that will never be supported
-    options=None,
-    tol=None,
+    options: dict[str, Any] | None = None,
+    tol: NonNegativeFloat | None = None,
     # deprecated arguments
-    criterion=None,
-    criterion_kwargs=None,
-    derivative=None,
-    derivative_kwargs=None,
-    criterion_and_derivative=None,
-    criterion_and_derivative_kwargs=None,
-    log_options=None,
-    lower_bounds=None,
-    upper_bounds=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
-    scaling_options=None,
-    multistart_options=None,
-):
+    criterion: CriterionType | None = None,
+    criterion_kwargs: dict[str, Any] | None = None,
+    derivative: JacType | None = None,
+    derivative_kwargs: dict[str, Any] | None = None,
+    criterion_and_derivative: CriterionAndDerivativeType | None = None,
+    criterion_and_derivative_kwargs: dict[str, Any] | None = None,
+    log_options: dict[str, Any] | None = None,
+    lower_bounds: PyTree | None = None,
+    upper_bounds: PyTree | None = None,
+    soft_lower_bounds: PyTree | None = None,
+    soft_upper_bounds: PyTree | None = None,
+    scaling_options: dict[str, Any] | None = None,
+    multistart_options: dict[str, Any] | None = None,
+) -> OptimizeResult:
     """Maximize fun using algorithm subject to constraints.
-
-    TODO: Write docstring after enhancement proposals are implemented.
 
     Args:
         fun: The objective function of a scalar, least-squares or likelihood
             optimization problem. Non-scalar objective functions have to be marked
             with the `mark.likelihood` or `mark.least_squares` decorators. `fun` maps
-            params and fun_kwargs to an objective value.
+            params and fun_kwargs to an objective value. See :ref:`how-to-fun` for
+            details and examples.
+        params: The start parameters for the optimization. Params can be numpy arrays,
+            dictionaries, pandas.Series, pandas.DataFrames, NamedTuples, floats, lists,
+            and any nested combination thereof. See :ref:`params` for details and
+            examples.
+        algorithm: The optimization algorithm to use. Can be a string, subclass of
+            :class:`optimagic.Algorithm` or an instance of a subclass of
+            :class:`optimagic.Algorithm`. For guidelines on how to choose an algorithm
+            see :ref:`how-to-select-algorithms`. For examples of specifying and
+            configuring algorithms see :ref:`specify-algorithm`.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
-            way to specify bounds is an `optimagic.Bounds` object that collects lower,
-            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            way to specify bounds is an :class:`optimagic.Bounds` object that collects
+            lower, upper, soft_lower and soft_upper bounds. The soft bounds are used for
             sampling based optimizers but are not enforced during optimization. Each
-            bound type mirrors the structure of params. Check our how-to guide on bounds
-            for examples. If params is a flat numpy array, you can also provide bounds
-            via any format that is supported by scipy.optimize.minimize.
+            bound type mirrors the structure of params. See :ref:`how-to-bounds` for
+            details and examples. If params is a flat numpy array, you can also provide
+            bounds via any format that is supported by scipy.optimize.minimize.
+        constraints: Constraints for the optimization problem. Constraints can be
+            specified as a single :class:`optimagic.Constraint` object, a list of
+            Constraint objects. For details and examples check :ref:`constraints`.
+        fun_kwargs: Additional keyword arguments for the objective function.
+        algo_options: Additional options for the optimization algorithm. `algo_options`
+            is an alternative to configuring algorithm objects directly. See
+            :ref:`list_of_algorithms` for supported options of each algorithm.
+        jac: The first derivative of `fun`. Providing a closed form derivative can be
+            a great way to speed up your optimization. The easiest way to get
+            a derivative for your objective function are autodiff frameworks like
+            JAX. For details and examples see :ref:`how-to-jac`.
+        jac_kwargs: Additional keyword arguments for `jac`.
+        fun_and_jac: A function that returns both the objective value and the
+            derivative. This can be used do exploit synergies in the calculation of the
+            function value and its derivative. For details and examples see
+            :ref:`how-to-jac`.
+        fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
+        numdiff_options: Options for numerical differentiation. Can be a dictionary
+            or an instance of :class:`optimagic.NumdiffOptions`.
+        logging: If None, no logging is used. If a str or pathlib.Path is provided,
+            it is interpreted as path to an sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            and the optimization history will be stored in that database. For more
+            customization, provide LogOptions. For details and examples see
+            :ref:`how-to-logging`.
+        error_handling: If "raise" or ErrorHandling.RAISE, exceptions that occur during
+            the optimization are raised and the optimization is stopped. If "continue"
+            or ErrorHandling.CONTINUE, exceptions are caught and the function value and
+            its derivative are replaced by penalty values. The penalty values are
+            constructed such that the optimizer is guided back towards the start
+            parameters until a feasible region is reached and then continues the
+            optimization from there. For details see  :ref:`how-to-errors`.
+        error_penalty: A dictionary with the keys "slope" and "constant" that
+            influences the magnitude of the penalty values. For maximization problems
+            both should be negative. For details see :ref:`how-to-errors`.
+        scaling: If None or False, the parameter space is not rescaled. If True,
+            a heuristic is used to improve the conditioning of the optimization problem.
+            To choose which heuristic is used and to customize the scaling, provide
+            a dictionary or an instance of :class:`optimagic.ScalingOptions`.
+            For details and examples see :ref:`scaling`.
+        multistart: If None or False, no multistart approach is used. If True, the
+            optimization is restarted from multiple starting points. Note that this
+            requires finite bounds or soft bounds for all parameters. To customize the
+            multistart approach, provide a dictionary or an instance of
+            :class:`optimagic.MultistartOptions`. For details and examples see
+            :ref:`how-to-multistart`.
+        collect_history: If True, the optimization history is collected and returned
+            in the OptimizeResult. This is required to create `criterion_plot` or
+            `params_plot` from an OptimizeResult.
+        skip_checks: If True, some checks are skipped to speed up the optimization.
+            This is only relevant if your objective function is very fast, i.e. runs in
+            a few microseconds.
+        x0: Alias for params for scipy compatibility.
+        method: Alternative to algorithm for scipy compatibility. With `method` you can
+            select scipy optimizers via their original scipy name.
+        args: Alternative to fun_kwargs for scipy compatibility.
+        hess: Not yet supported.
+        hessp: Not yet supported.
+        callback: Not yet supported.
+        options: Not yet supported.
+        tol: Not yet supported.
+        criterion: Deprecated. Use fun instead.
+        criterion_kwargs: Deprecated. Use fun_kwargs instead.
+        derivative: Deprecated. Use jac instead.
+        derivative_kwargs: Deprecated. Use jac_kwargs instead.
+        criterion_and_derivative: Deprecated. Use fun_and_jac instead.
+        criterion_and_derivative_kwargs: Deprecated. Use fun_and_jac_kwargs instead.
+        lower_bounds: Deprecated. Use bounds instead.
+        upper_bounds: Deprecated. Use bounds instead.
+        soft_lower_bounds: Deprecated. Use bounds instead.
+        soft_upper_bounds: Deprecated. Use bounds instead.
+        scaling_options: Deprecated. Use scaling instead.
+        multistart_options: Deprecated. Use multistart instead.
 
     """
     problem = create_optimization_problem(
-        direction="maximize",
+        direction=Direction.MAXIMIZE,
         fun=fun,
         params=params,
         bounds=bounds,
@@ -164,72 +282,155 @@ def maximize(
 
 
 def minimize(
-    fun=None,
-    params=None,
-    algorithm=None,
+    fun: FunType | CriterionType | None = None,
+    params: PyTree | None = None,
+    algorithm: AlgorithmType | None = None,
     *,
-    bounds=None,
-    constraints=None,
-    fun_kwargs=None,
-    algo_options=None,
-    jac=None,
-    jac_kwargs=None,
-    fun_and_jac=None,
-    fun_and_jac_kwargs=None,
-    numdiff_options=None,
-    logging=None,
-    error_handling="raise",
-    error_penalty=None,
-    scaling=False,
-    multistart=False,
-    collect_history=True,
-    skip_checks=False,
+    bounds: Bounds | ScipyBounds | Sequence[tuple[float, float]] | None = None,
+    constraints: ConstraintsType | None = None,
+    fun_kwargs: dict[str, Any] | None = None,
+    algo_options: dict[str, Any] | None = None,
+    jac: JacType | list[JacType] | None = None,
+    jac_kwargs: dict[str, Any] | None = None,
+    fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
+    fun_and_jac_kwargs: dict[str, Any] | None = None,
+    numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
+    # TODO: add typed-dict support?
+    logging: bool | str | Path | LogOptions | dict[str, Any] | None = None,
+    error_handling: ErrorHandling | ErrorHandlingLiteral = ErrorHandling.RAISE,
+    error_penalty: dict[str, float] | None = None,
+    scaling: bool | ScalingOptions | ScalingOptionsDict = False,
+    multistart: bool | MultistartOptions | MultistartOptionsDict = False,
+    collect_history: bool = True,
+    skip_checks: bool = False,
     # scipy aliases
-    x0=None,
-    method=None,
-    args=None,
+    x0: PyTree | None = None,
+    method: str | None = None,
+    args: tuple[Any] | None = None,
     # scipy arguments that are not yet supported
-    hess=None,
-    hessp=None,
-    callback=None,
+    hess: HessType | None = None,
+    hessp: HessType | None = None,
+    callback: CallbackType | None = None,
     # scipy arguments that will never be supported
-    options=None,
-    tol=None,
+    options: dict[str, Any] | None = None,
+    tol: NonNegativeFloat | None = None,
     # deprecated arguments
-    criterion=None,
-    criterion_kwargs=None,
-    derivative=None,
-    derivative_kwargs=None,
-    criterion_and_derivative=None,
-    criterion_and_derivative_kwargs=None,
-    lower_bounds=None,
-    log_options=None,
-    upper_bounds=None,
-    soft_lower_bounds=None,
-    soft_upper_bounds=None,
-    scaling_options=None,
-    multistart_options=None,
-):
+    criterion: CriterionType | None = None,
+    criterion_kwargs: dict[str, Any] | None = None,
+    derivative: JacType | None = None,
+    derivative_kwargs: dict[str, Any] | None = None,
+    criterion_and_derivative: CriterionAndDerivativeType | None = None,
+    criterion_and_derivative_kwargs: dict[str, Any] | None = None,
+    log_options: dict[str, Any] | None = None,
+    lower_bounds: PyTree | None = None,
+    upper_bounds: PyTree | None = None,
+    soft_lower_bounds: PyTree | None = None,
+    soft_upper_bounds: PyTree | None = None,
+    scaling_options: dict[str, Any] | None = None,
+    multistart_options: dict[str, Any] | None = None,
+) -> OptimizeResult:
     """Minimize criterion using algorithm subject to constraints.
 
-    TODO: Write docstring after enhancement proposals are implemented.
-
     Args:
-        fun: The objective function of a scalar or likelihood optimization problem.
-            Non-scalar objective functions have to be marked with the `mark.likelihood`
-            decorator. `fun` maps params and fun_kwargs to an objective value.
+        fun: The objective function of a scalar, least-squares or likelihood
+            optimization problem. Non-scalar objective functions have to be marked
+            with the `mark.likelihood` or `mark.least_squares` decorators. `fun` maps
+            params and fun_kwargs to an objective value. See :ref:`how-to-fun` for
+            details and examples.
+        params: The start parameters for the optimization. Params can be numpy arrays,
+            dictionaries, pandas.Series, pandas.DataFrames, NamedTuples, floats, lists,
+            and any nested combination thereof. See :ref:`params` for details and
+            examples.
+        algorithm: The optimization algorithm to use. Can be a string, subclass of
+            :class:`optimagic.Algorithm` or an instance of a subclass of
+            :class:`optimagic.Algorithm`. For guidelines on how to choose an algorithm
+            see :ref:`how-to-select-algorithms`. For examples of specifying and
+            configuring algorithms see :ref:`specify-algorithm`.
         bounds: Lower and upper bounds on the parameters. The most general and preferred
-            way to specify bounds is an `optimagic.Bounds` object that collects lower,
-            upper, soft_lower and soft_upper bounds. The soft bounds are used for
+            way to specify bounds is an :class:`optimagic.Bounds` object that collects
+            lower, upper, soft_lower and soft_upper bounds. The soft bounds are used for
             sampling based optimizers but are not enforced during optimization. Each
-            bound type mirrors the structure of params. Check our how-to guide on bounds
-            for examples. If params is a flat numpy array, you can also provide bounds
-            via any format that is supported by scipy.optimize.minimize.
+            bound type mirrors the structure of params. See :ref:`how-to-bounds` for
+            details and examples. If params is a flat numpy array, you can also provide
+            bounds via any format that is supported by scipy.optimize.minimize.
+        constraints: Constraints for the optimization problem. Constraints can be
+            specified as a single :class:`optimagic.Constraint` object, a list of
+            Constraint objects. For details and examples check :ref:`constraints`.
+        fun_kwargs: Additional keyword arguments for the objective function.
+        algo_options: Additional options for the optimization algorithm. `algo_options`
+            is an alternative to configuring algorithm objects directly. See
+            :ref:`list_of_algorithms` for supported options of each algorithm.
+        jac: The first derivative of `fun`. Providing a closed form derivative can be
+            a great way to speed up your optimization. The easiest way to get
+            a derivative for your objective function are autodiff frameworks like
+            JAX. For details and examples see :ref:`how-to-jac`.
+        jac_kwargs: Additional keyword arguments for `jac`.
+        fun_and_jac: A function that returns both the objective value and the
+            derivative. This can be used do exploit synergies in the calculation of the
+            function value and its derivative. For details and examples see
+            :ref:`how-to-jac`.
+        fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
+        numdiff_options: Options for numerical differentiation. Can be a dictionary
+            or an instance of :class:`optimagic.NumdiffOptions`.
+        logging: If None, no logging is used. If a str or pathlib.Path is provided,
+            it is interpreted as path to an sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            and the optimization history will be stored in that database. For more
+            customization, provide LogOptions. For details and examples see
+            :ref:`how-to-logging`.
+        error_handling: If "raise" or ErrorHandling.RAISE, exceptions that occur during
+            the optimization are raised and the optimization is stopped. If "continue"
+            or ErrorHandling.CONTINUE, exceptions are caught and the function value and
+            its derivative are replaced by penalty values. The penalty values are
+            constructed such that the optimizer is guided back towards the start
+            parameters until a feasible region is reached and then continues the
+            optimization from there. For details see  :ref:`how-to-errors`.
+        error_penalty: A dictionary with the keys "slope" and "constant" that
+            influences the magnitude of the penalty values. For minimization problems
+            both should be positive. For details see :ref:`how-to-errors`.
+        scaling: If None or False, the parameter space is not rescaled. If True,
+            a heuristic is used to improve the conditioning of the optimization problem.
+            To choose which heuristic is used and to customize the scaling, provide
+            a dictionary or an instance of :class:`optimagic.ScalingOptions`.
+            For details and examples see :ref:`scaling`.
+        multistart: If None or False, no multistart approach is used. If True, the
+            optimization is restarted from multiple starting points. Note that this
+            requires finite bounds or soft bounds for all parameters. To customize the
+            multistart approach, provide a dictionary or an instance of
+            :class:`optimagic.MultistartOptions`. For details and examples see
+            :ref:`how-to-multistart`.
+        collect_history: If True, the optimization history is collected and returned
+            in the OptimizeResult. This is required to create `criterion_plot` or
+            `params_plot` from an OptimizeResult.
+        skip_checks: If True, some checks are skipped to speed up the optimization.
+            This is only relevant if your objective function is very fast, i.e. runs in
+            a few microseconds.
+        x0: Alias for params for scipy compatibility.
+        method: Alternative to algorithm for scipy compatibility. With `method` you can
+            select scipy optimizers via their original scipy name.
+        args: Alternative to fun_kwargs for scipy compatibility.
+        hess: Not yet supported.
+        hessp: Not yet supported.
+        callback: Not yet supported.
+        options: Not yet supported.
+        tol: Not yet supported.
+        criterion: Deprecated. Use fun instead.
+        criterion_kwargs: Deprecated. Use fun_kwargs instead.
+        derivative: Deprecated. Use jac instead.
+        derivative_kwargs: Deprecated. Use jac_kwargs instead.
+        criterion_and_derivative: Deprecated. Use fun_and_jac instead.
+        criterion_and_derivative_kwargs: Deprecated. Use fun_and_jac_kwargs instead.
+        lower_bounds: Deprecated. Use bounds instead.
+        upper_bounds: Deprecated. Use bounds instead.
+        soft_lower_bounds: Deprecated. Use bounds instead.
+        soft_upper_bounds: Deprecated. Use bounds instead.
+        scaling_options: Deprecated. Use scaling instead.
+        multistart_options: Deprecated. Use multistart instead.
 
     """
 
     problem = create_optimization_problem(
-        direction="minimize",
+        direction=Direction.MINIMIZE,
         fun=fun,
         params=params,
         algorithm=algorithm,
@@ -287,12 +488,12 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
     nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
 
-    algo_kwargs = set(problem.algo_info.arguments)
-    if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
-        raise ValueError(
-            f"Algorithm {problem.algo_info.name} does not support nonlinear "
-            "constraints."
-        )
+    if nonlinear_constraints:
+        if not problem.algorithm.algo_info.supports_nonlinear_constraints:
+            raise ValueError(
+                f"Algorithm {problem.algorithm.name} does not support "
+                "nonlinear constraints."
+            )
 
     # the following constraints will be handled via reparametrization
     constraints = [c for c in constraints if c["type"] != "nonlinear"]
@@ -336,7 +537,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         constraints=constraints,
         bounds=problem.bounds,
         func_eval=first_crit_eval.value,
-        primary_key=problem.algo_info.primary_criterion_entry,
+        solver_type=problem.algorithm.algo_info.solver_type,
         scaling=problem.scaling,
         derivative_eval=used_deriv,
         add_soft_bounds=problem.multistart is not None,
@@ -346,8 +547,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # initialize the log database
     # ==================================================================================
     logger: LogStore[Any, Any] | None
-    if problem.logger is not None:
-        logger = LogStore.from_options(problem.logger)
+
+    if problem.logging:
+        logger = LogStore.from_options(problem.logging)
         problem_data = ProblemInitialization(problem.direction, problem.params)
         logger.problem_store.insert(problem_data)
     else:
@@ -365,16 +567,15 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
     # get error penalty function
     error_penalty_func = get_error_penalty_function(
-        error_handling=problem.error_handling,
         start_x=internal_params.values,
         start_criterion=first_crit_eval,
         error_penalty=problem.error_penalty,
-        solver_type=problem.algo_info.solver_type,
+        solver_type=problem.algorithm.algo_info.solver_type,
         direction=problem.direction,
     )
 
     # process nonlinear constraints:
-    internal_constraints = process_nonlinear_constraints(
+    internal_nonlinear_constraints = process_nonlinear_constraints(
         nonlinear_constraints=nonlinear_constraints,
         params=problem.params,
         bounds=problem.bounds,
@@ -384,53 +585,38 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     )
 
     x = internal_params.values
-    internal_bounds = Bounds(
+    internal_bounds = InternalBounds(
         lower=internal_params.lower_bounds,
         upper=internal_params.upper_bounds,
     )
     # ==================================================================================
-    # get the internal algorithm
+    # Create a batch evaluator
     # ==================================================================================
-    internal_algorithm = get_final_algorithm(
-        raw_algorithm=problem.algorithm,
-        algo_info=problem.algo_info,
-        valid_kwargs=algo_kwargs,
-        lower_bounds=internal_params.lower_bounds,
-        upper_bounds=internal_params.upper_bounds,
-        nonlinear_constraints=internal_constraints,
-        algo_options=problem.algo_options,
-        logging=logger,
-        collect_history=problem.collect_history,
-    )
-    # ==================================================================================
-    # partial arguments into the internal_criterion_and_derivative_template
-    # ==================================================================================
-    to_partial = {
-        "direction": problem.direction,
-        "criterion": problem.fun,
-        "converter": converter,
-        "derivative": problem.jac,
-        "criterion_and_derivative": problem.fun_and_jac,
-        "numdiff_options": problem.numdiff_options,
-        "logging": logger,
-        "algo_info": problem.algo_info,
-        "error_handling": problem.error_handling,
-        "error_penalty_func": error_penalty_func,
-        "bounds": internal_bounds,
-    }
+    # TODO: Make batch evaluator an argument of maximize and minimize and move this
+    # to create_optimization_problem
+    batch_evaluator = process_batch_evaluator("joblib")
 
-    internal_criterion_and_derivative = functools.partial(
-        internal_criterion_and_derivative_template,
-        **to_partial,
-    )
+    # ==================================================================================
+    # Create the InternalOptimizationProblem
+    # ==================================================================================
 
-    problem_functions = {}
-    for task in ["criterion", "derivative", "criterion_and_derivative"]:
-        if task in algo_kwargs:
-            problem_functions[task] = functools.partial(
-                internal_criterion_and_derivative,
-                task=task,
-            )
+    internal_problem = InternalOptimizationProblem(
+        fun=problem.fun,
+        jac=problem.jac,
+        fun_and_jac=problem.fun_and_jac,
+        converter=converter,
+        solver_type=problem.algorithm.algo_info.solver_type,
+        direction=problem.direction,
+        bounds=internal_bounds,
+        numdiff_options=problem.numdiff_options,
+        error_handling=problem.error_handling,
+        error_penalty_func=error_penalty_func,
+        batch_evaluator=batch_evaluator,
+        # TODO: Actually pass through linear constraints if possible
+        linear_constraints=None,
+        nonlinear_constraints=internal_nonlinear_constraints,
+        logger=logger,
+    )
 
     # ==================================================================================
     # Do actual optimization
@@ -438,12 +624,14 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     if problem.multistart is None:
         steps = [{"type": "optimization", "name": "optimization"}]
 
-        step_ids = log_scheduled_steps_and_get_ids(
+        # TODO: Actually use the step ids
+        step_id = log_scheduled_steps_and_get_ids(  # noqa: F841
             steps=steps,
-            logging=logger,
-        )
+            logger=logger,
+        )[0]
 
-        raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
+        raw_res = problem.algorithm.solve_internal_problem(internal_problem, x, step_id)
+
     else:
         multistart_options = get_internal_multistart_options_from_public(
             options=problem.multistart,
@@ -451,15 +639,18 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             params_to_internal=converter.params_to_internal,
         )
 
+        sampling_bounds = InternalBounds(
+            lower=internal_params.soft_lower_bounds,
+            upper=internal_params.soft_upper_bounds,
+        )
+
         raw_res = run_multistart_optimization(
-            local_algorithm=internal_algorithm,
-            primary_key=problem.algo_info.primary_criterion_entry,
-            problem_functions=problem_functions,
+            local_algorithm=problem.algorithm,
+            internal_problem=internal_problem,
             x=x,
-            lower_sampling_bounds=internal_params.soft_lower_bounds,
-            upper_sampling_bounds=internal_params.soft_upper_bounds,
+            sampling_bounds=sampling_bounds,
             options=multistart_options,
-            logging=logger,
+            logger=logger,
             error_handling=problem.error_handling,
         )
 
@@ -467,28 +658,37 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Process the result
     # ==================================================================================
 
-    _scalar_start_criterion = first_crit_eval.internal_value(AggregationLevel.SCALAR)
-
-    fixed_result_kwargs = {
-        "start_fun": _scalar_start_criterion,
-        "start_params": problem.params,
-        "algorithm": problem.algo_info.name,
-        "direction": problem.direction,
-        "n_free": internal_params.free_mask.sum(),
-    }
-
-    res = process_internal_optimizer_result(
-        raw_res,
-        converter=converter,
-        solver_type=problem.algo_info.solver_type,
-        fixed_kwargs=fixed_result_kwargs,
-        skip_checks=problem.skip_checks,
+    _scalar_start_criterion = cast(
+        float, first_crit_eval.internal_value(AggregationLevel.SCALAR)
     )
     log_reader: LogReader[Any] | None
 
+    extra_fields = ExtraResultFields(
+        start_fun=_scalar_start_criterion,
+        start_params=problem.params,
+        algorithm=problem.algorithm.algo_info.name,
+        direction=problem.direction,
+        n_free=internal_params.free_mask.sum(),
+    )
+
+    if problem.multistart is None:
+        res = process_single_result(
+            raw_res=raw_res,
+            converter=converter,
+            solver_type=problem.algorithm.algo_info.solver_type,
+            extra_fields=extra_fields,
+        )
+    else:
+        res = process_multistart_result(
+            raw_res=raw_res,
+            converter=converter,
+            solver_type=problem.algorithm.algo_info.solver_type,
+            extra_fields=extra_fields,
+        )
+
     if logger is not None:
-        assert problem.logger is not None
-        log_reader = LogReader.from_options(problem.logger)
+        assert problem.logging is not None
+        log_reader = LogReader.from_options(problem.logging)
     else:
         log_reader = None
 

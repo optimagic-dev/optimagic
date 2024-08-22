@@ -27,8 +27,14 @@ dependencies:
   - patsy
   - joblib
   - plotly
+  - annotated-types
   - pip:
       - ../
       - kaleido
       - Py-BOBYQA
       - DFO-LS
+      - pandas-stubs  # dev, tests
+      - types-cffi  # dev, tests
+      - types-openpyxl  # dev, tests
+      - types-jinja2  # dev, tests
+      - sqlalchemy-stubs  # dev, tests

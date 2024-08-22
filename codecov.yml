@@ -9,19 +9,14 @@ coverage:
   status:
     patch:
       default:
-        target: 30%
+        target: 80%
     project:
       default:
         target: 90%
 ignore:
-  - .tox/**/*
-  - release.py
   - setup.py
+  # Uses numba
   - src/optimagic/benchmarking/cartis_roberts.py
-  - src/optimagic/optimization/subsolvers/bntr_fast.py
-  - src/optimagic/optimization/subsolvers/_trsbox_fast.py
-  - src/optimagic/optimization/subsolvers/_conjugate_gradient_fast.py
-  - src/optimagic/optimization/subsolvers/_steihaug_toint_fast.py
-  - src/optimagic/optimization/subsolvers/gqtpar_fast.py
-  - src/optimagic/optimization/tranquilo/clustering.py
+  # not installed on CI
+  - src/optimagic/optimizers/tranquilo.py
   - tests/**/*

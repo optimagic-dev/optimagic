@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import optimagic as om
 import pytest
+from optimagic.optimization.algorithm import AlgoInfo, Algorithm
 from optimagic.typing import AggregationLevel
 
 
@@ -45,3 +46,32 @@ def test_likelihood(func):
     got = om.mark.likelihood(func)
 
     assert got._problem_type == AggregationLevel.LIKELIHOOD
+
+
+def test_mark_minimizer():
+    @om.mark.minimizer(
+        name="test",
+        solver_type=AggregationLevel.LEAST_SQUARES,
+        is_available=True,
+        is_global=True,
+        needs_jac=True,
+        needs_hess=True,
+        supports_parallelism=True,
+        supports_bounds=True,
+        supports_linear_constraints=True,
+        supports_nonlinear_constraints=True,
+        disable_history=False,
+    )
+    @dataclass(frozen=True)
+    class DummyAlgorithm(Algorithm):
+        initial_radius: float = 1.0
+        max_radius: float = 10.0
+        convergence_ftol_rel: float = 1e-6
+        stopping_maxiter: int = 1000
+
+        def _solve_internal_problem(self, problem, x0):
+            pass
+
+    assert hasattr(DummyAlgorithm, "__algo_info__")
+    assert isinstance(DummyAlgorithm.__algo_info__, AlgoInfo)
+    assert DummyAlgorithm.__algo_info__.name == "test"

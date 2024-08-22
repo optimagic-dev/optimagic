@@ -7,13 +7,14 @@ from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.block_trees import block_tree_to_matrix
 from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import AggregationLevel
 
 
 def get_tree_converter(
     params,
     bounds,
     func_eval,
-    primary_key,
+    solver_type,
     derivative_eval=None,
     add_soft_bounds=False,
 ):
@@ -31,9 +32,8 @@ def get_tree_converter(
         params (pytree): The user provided parameters.
         lower_bounds (pytree): The user provided lower_bounds
         upper_bounds (pytree): The user provided upper bounds
-        primary_key (str): One of "value", "contributions" and "root_contributions".
-            Used to determine how the function and derivative output has to be
-            transformed for the optimzer.
+        solver_type: Used to determine how derivative output has to be
+            transformed for the optimizer.
         derivative_eval (dict, pytree or None): Evaluation of the derivative of
             func at params. Used for consistency checks.
         soft_lower_bounds (pytree): As lower_bounds
@@ -82,7 +82,7 @@ def get_tree_converter(
 
     _derivative_flatten = _get_derivative_flatten(
         registry=_registry,
-        primary_key=primary_key,
+        solver_type=solver_type,
         params=params,
         func_eval=func_eval,
         derivative_eval=derivative_eval,
@@ -138,9 +138,9 @@ def _get_best_key_and_aggregator(needed_key, available_keys):
     return key, aggregate
 
 
-def _get_derivative_flatten(registry, primary_key, params, func_eval, derivative_eval):
+def _get_derivative_flatten(registry, solver_type, params, func_eval, derivative_eval):
     # gradient case
-    if primary_key == "value":
+    if solver_type == AggregationLevel.SCALAR:
 
         def derivative_flatten(derivative_eval):
             flat = np.array(

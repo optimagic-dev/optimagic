@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 import yaml
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.optimizers._pounders.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
     create_initial_residual_model,
@@ -252,6 +251,9 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
     index_best_x = test_data["index_best_x"]
     x_accepted = test_data["history_x"][index_best_x]
 
+    def batch_fun(x_list, n_cores):
+        return [criterion(x) for x in x_list]
+
     inputs_dict = {
         "history": history,
         "main_model": main_model,
@@ -263,6 +265,7 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
         "criterion": criterion,
         "lower_bounds": None,
         "upper_bounds": None,
+        "batch_fun": batch_fun,
     }
 
     expected_dict = {
@@ -494,9 +497,7 @@ def test_add_points_until_main_model_fully_linear(
     (
         history_out,
         model_indices_out,
-    ) = add_geomtery_points_to_make_main_model_fully_linear(
-        **inputs, n_cores=1, batch_evaluator=joblib_batch_evaluator
-    )
+    ) = add_geomtery_points_to_make_main_model_fully_linear(**inputs, n_cores=1)
 
     aaae(model_indices_out, expected["model_indices"])
     for index_added in range(n - inputs["n_modelpoints"], 0, -1):

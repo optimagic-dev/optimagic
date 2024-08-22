@@ -173,6 +173,9 @@ filterwarnings = [
     "ignore:Widget.widgets is deprecated",
     "ignore:Parallelization together with",
     "ignore:Conversion of an array with ndim > 0 to a scalar is deprecated",
+    "ignore:The following exception was caught when evaluating",
+    "ignore:The following exception was caught when calculating",
+    "ignore:Usage of the parameter log_options",
 ]
 addopts = ["--doctest-modules"]
 markers = [
@@ -228,26 +231,12 @@ module = [
     "optimagic.examples",
     "optimagic.examples.numdiff_functions",
 
-
-    "optimagic.logging",
-    "optimagic.logging.create_tables",
-    "optimagic.logging.load_database",
-    "optimagic.logging.read_from_database",
-    "optimagic.logging.read_log",
-    "optimagic.logging.write_to_database",
-
     "optimagic.optimization",
     "optimagic.optimization.algo_options",
-    "optimagic.optimization.check_arguments",
     "optimagic.optimization.convergence_report",
-    "optimagic.optimization.error_penalty",
-    "optimagic.optimization.get_algorithm",
-    "optimagic.optimization.history_tools",
-    "optimagic.optimization.internal_criterion_template",
     "optimagic.optimization.optimization_logging",
     "optimagic.optimization.optimize_result",
     "optimagic.optimization.optimize",
-    "optimagic.optimization.process_results",
     "optimagic.optimization.multistart",
     "optimagic.optimization.scipy_aliases",
     "optimagic.optimization.create_optimization_problem",
@@ -269,7 +258,6 @@ module = [
     "optimagic.optimizers.nag_optimizers",
     "optimagic.optimizers.neldermead",
     "optimagic.optimizers.nlopt_optimizers",
-    "optimagic.optimizers.bhhh",
     "optimagic.optimizers.ipopt",
     "optimagic.optimizers.fides",
     "optimagic.optimizers.pounders",
@@ -305,8 +293,6 @@ module = [
     "optimagic.visualization.slice_plot",
 
     "optimagic",
-    "optimagic.batch_evaluators",
-    "optimagic.cli",
     "optimagic.decorators",
     "optimagic.exceptions",
     "optimagic.utilities",
@@ -370,8 +356,11 @@ module = [
     "bokeh.command.util",
     "fides",
     "petsc4py",
+    "petsc4py.PETSc",
     "tranquilo",
     "tranquilo.tranquilo",
+    "tranquilo.options",
+    "tranquilo.process_arguments",
     "dfols",
     "pybobyqa",
     "pygmo",
@@ -382,5 +371,6 @@ module = [
     "pathos",
     "pathos.pools",
     "optimagic._version",
+    "annotated_types",
   ]
 ignore_missing_imports = true

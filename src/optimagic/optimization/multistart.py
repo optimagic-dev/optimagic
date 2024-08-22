@@ -12,38 +12,42 @@ First implemented in Python by Alisdair McKay (
 """
 
 import warnings
-from functools import partial
+from dataclasses import replace
 from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import qmc, triang
 
-from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.decorators import AlgoInfo
+from optimagic.logging.logger import LogStore
 from optimagic.logging.types import StepStatus
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalBounds,
+    InternalOptimizationProblem,
+)
+from optimagic.optimization.multistart_options import InternalMultistartOptions
 from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
 )
+from optimagic.typing import AggregationLevel, ErrorHandling
 from optimagic.utilities import get_rng
 
 
 def run_multistart_optimization(
-    local_algorithm,
-    primary_key,
-    problem_functions,
-    x,
-    lower_sampling_bounds,
-    upper_sampling_bounds,
-    options,
-    logging,
-    error_handling,
-):
+    local_algorithm: Algorithm,
+    internal_problem: InternalOptimizationProblem,
+    x: NDArray[np.float64],
+    sampling_bounds: InternalBounds,
+    options: InternalMultistartOptions,
+    logger: LogStore | None,
+    error_handling: ErrorHandling,
+) -> InternalOptimizeResult:
     steps = determine_steps(options.n_samples, stopping_maxopt=options.stopping_maxopt)
 
     scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
-        logging=logging,
+        logger=logger,
     )
 
     if options.sample is not None:
@@ -51,8 +55,8 @@ def run_multistart_optimization(
     else:
         sample = _draw_exploration_sample(
             x=x,
-            lower=lower_sampling_bounds,
-            upper=upper_sampling_bounds,
+            lower=sampling_bounds.lower,
+            upper=sampling_bounds.upper,
             # -1 because we add start parameters
             n_samples=options.n_samples - 1,
             distribution=options.sampling_distribution,
@@ -62,27 +66,20 @@ def run_multistart_optimization(
 
         sample = np.vstack([x.reshape(1, -1), sample])
 
-    if logging:
-        logging.step_store.update(
+    if logger:
+        logger.step_store.update(
             scheduled_steps[0], {"status": StepStatus.RUNNING.value}
         )
 
-    if "criterion" in problem_functions:
-        criterion = problem_functions["criterion"]
-    else:
-        criterion = partial(list(problem_functions.values())[0], task="criterion")
-
     exploration_res = run_explorations(
-        criterion,
+        internal_problem=internal_problem,
         sample=sample,
-        batch_evaluator=options.batch_evaluator,
         n_cores=options.n_cores,
         step_id=scheduled_steps[0],
-        error_handling=options.error_handling,
     )
 
-    if logging:
-        logging.step_store.update(
+    if logger:
+        logger.step_store.update(
             scheduled_steps[0], {"status": StepStatus.COMPLETE.value}
         )
 
@@ -103,10 +100,10 @@ def run_multistart_optimization(
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
 
-        if logging:
+        if logger:
             for step in skipped_steps:
                 new_status = StepStatus.SKIPPED.value
-                logging.step_store.update(step, {"status": new_status})
+                logger.step_store.update(step, {"status": new_status})
 
     batched_sample = get_batched_optimization_sample(
         sorted_sample=sorted_sample,
@@ -129,12 +126,13 @@ def run_multistart_optimization(
         "max_discoveries": options.convergence_max_discoveries,
     }
 
-    problem_functions = {
-        name: partial(func, error_handling=error_handling)
-        for name, func in problem_functions.items()
-    }
-
     batch_evaluator = options.batch_evaluator
+
+    def single_optimization(x0, step_id):
+        """Closure for running a single optimization, given a starting point."""
+        problem = internal_problem.with_error_handling(error_handling)
+        res = local_algorithm.solve_internal_problem(problem, x0, step_id)
+        return res
 
     opt_counter = 0
     for batch in batched_sample:
@@ -142,12 +140,13 @@ def run_multistart_optimization(
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
         arguments = [
-            {**problem_functions, "x": x, "step_id": step}
-            for x, step in zip(starts, scheduled_steps, strict=False)
+            {"x0": x, "step_id": id_}
+            for x, id_ in zip(starts, scheduled_steps[: len(batch)], strict=False)
         ]
+        scheduled_steps = scheduled_steps[len(batch) :]
 
         batch_results = batch_evaluator(
-            func=local_algorithm,
+            func=single_optimization,
             arguments=arguments,
             unpack_symbol="**",
             n_cores=options.n_cores,
@@ -159,15 +158,14 @@ def run_multistart_optimization(
             starts=starts,
             results=batch_results,
             convergence_criteria=convergence_criteria,
-            primary_key=primary_key,
+            solver_type=local_algorithm.algo_info.solver_type,
         )
         opt_counter += len(batch)
-        scheduled_steps = scheduled_steps[len(batch) :]
         if is_converged:
-            if logging:
+            if logger:
                 for step in scheduled_steps:
                     new_status = StepStatus.SKIPPED.value
-                    logging.step_store.update(step, {"status": new_status})
+                    logger.step_store.update(step, {"status": new_status})
             break
 
     multistart_info = {
@@ -178,9 +176,9 @@ def run_multistart_optimization(
     }
 
     raw_res = state["best_res"]
-    raw_res["multistart_info"] = multistart_info
+    res = replace(raw_res, multistart_info=multistart_info)
 
-    return raw_res
+    return res
 
 
 def determine_steps(n_samples, stopping_maxopt):
@@ -218,8 +216,8 @@ def determine_steps(n_samples, stopping_maxopt):
 
 def _draw_exploration_sample(
     x: NDArray[np.float64],
-    lower: NDArray[np.float64],
-    upper: NDArray[np.float64],
+    lower: NDArray[np.float64] | None,
+    upper: NDArray[np.float64] | None,
     n_samples: int,
     distribution: Literal["uniform", "triangular"],
     method: Literal["sobol", "random", "halton", "latin_hypercube"],
@@ -246,6 +244,9 @@ def _draw_exploration_sample(
             values.
 
     """
+    if lower is None or upper is None:
+        raise ValueError("lower and upper bounds must be provided for multistart.")
+
     for name, bound in zip(["lower", "upper"], [lower, upper], strict=False):
         if not np.isfinite(bound).all():
             raise ValueError(
@@ -287,28 +288,21 @@ def _draw_exploration_sample(
     return sample_scaled
 
 
-def _aggregate_func_output_to_value(f_eval, primary_key):
-    if primary_key == "value":
-        return f_eval
-    elif primary_key == "contributions":
-        return f_eval.sum()
-    elif primary_key == "root_contributions":
-        return f_eval @ f_eval
-
-
-def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_handling):
+def run_explorations(
+    internal_problem: InternalOptimizationProblem,
+    sample: NDArray[np.float64],
+    n_cores: int,
+    step_id: int,
+) -> dict[str, NDArray[np.float64]]:
     """Do the function evaluations for the exploration phase.
 
     Args:
-        func (callable): An already partialled version of
-            ``internal_criterion_and_derivative_template`` where the following arguments
-            are still free: ``x``, ``task``, ``error_handling``, ``fixed_log_data``.
-        sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
+        internal_problem: The internal optimization problem.
+        sample: 2d numpy array where each row is a sampled internal
             parameter vector.
-        batch_evaluator (str or callable): See :ref:`batch_evaluators`.
-        n_cores (int): Number of cores.
-        step_id (int): The identifier of the exploration step.
-        error_handling (str): One of "raise" or "continue".
+        batch_evaluator: See :ref:`batch_evaluators`.
+        n_cores: Number of cores.
+        step_id: The identifier of the exploration step.
 
     Returns:
         dict: A dictionary with the the following entries:
@@ -316,42 +310,12 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
                 function values are excluded.
             "sorted_sample": 2d numpy array with corresponding internal parameter
                 vectors.
-            "contributions": None or 2d numpy array with the contributions entries of
-                the function evaluations.
-            "root_contributions": None or 2d numpy array with the root_contributions
-                entries of the function evaluations.
 
     """
-    algo_info = AlgoInfo(
-        primary_criterion_entry="value",
-        parallelizes=True,
-        needs_scaling=False,
-        name="tiktak_explorer",
-        is_available=True,
-        arguments=[],
-    )
+    internal_problem = internal_problem.with_step_id(step_id)
+    x_list = list(sample)
 
-    _func = partial(
-        func,
-        task="criterion",
-        algo_info=algo_info,
-        error_handling=error_handling,
-    )
-
-    arguments = [{"x": x, "fixed_log_data": {"step": int(step_id)}} for x in sample]
-
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
-
-    raw_values = batch_evaluator(
-        _func,
-        arguments=arguments,
-        n_cores=n_cores,
-        unpack_symbol="**",
-        # If desired, errors are caught inside criterion function.
-        error_handling="raise",
-    )
-
-    raw_values = np.array(raw_values)
+    raw_values = np.array(internal_problem.exploration_fun(x_list, n_cores=n_cores))
 
     is_valid = np.isfinite(raw_values)
 
@@ -407,7 +371,7 @@ def get_batched_optimization_sample(sorted_sample, stopping_maxopt, batch_size):
 
 
 def update_convergence_state(
-    current_state, starts, results, convergence_criteria, primary_key
+    current_state, starts, results, convergence_criteria, solver_type
 ):
     """Update the state of all quantities related to convergence.
 
@@ -423,7 +387,7 @@ def update_convergence_state(
         starts (list): List of starting points for local optimizations.
         results (list): List of results from local optimizations.
         convergence_criteria (dict): Dict with the entries "xtol" and "max_discoveries"
-        primary_key: The primary criterion entry of the local optimizer. Needed to
+        solver_type: The aggregation level of the local optimizer. Needed to
             interpret the output of the internal criterion function.
 
 
@@ -432,6 +396,7 @@ def update_convergence_state(
         bool: A bool that indicates if the optimizer has converged.
 
     """
+
     # ==================================================================================
     # unpack some variables
     # ==================================================================================
@@ -452,27 +417,25 @@ def update_convergence_state(
     # index errors later.
     if not valid_indices:
         return current_state, False
-
     # ==================================================================================
     # reduce eveything to valid optimizations
     # ==================================================================================
     valid_results = [results[i] for i in valid_indices]
     valid_starts = [starts[i] for i in valid_indices]
-    valid_new_x = [res["solution_x"] for res in valid_results]
+    valid_new_x = [res.x for res in valid_results]
     valid_new_y = []
 
     # make the criterion output scalar if a least squares optimizer returns an
     # array as solution_criterion.
     for res in valid_results:
-        if np.isscalar(res["solution_criterion"]):
-            valid_new_y.append(res["solution_criterion"])
-        else:
-            valid_new_y.append(
-                _aggregate_func_output_to_value(
-                    f_eval=res["solution_criterion"],
-                    primary_key=primary_key,
-                )
-            )
+        if np.isscalar(res.fun):
+            fun = float(res.fun)
+        elif solver_type == AggregationLevel.LIKELIHOOD:
+            fun = float(np.sum(res.fun))
+        elif solver_type == AggregationLevel.LEAST_SQUARES:
+            fun = np.dot(res.fun, res.fun)
+
+        valid_new_y.append(fun)
 
     # ==================================================================================
     # accept new best point if we find a new lowest function value

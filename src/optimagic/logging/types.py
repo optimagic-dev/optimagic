@@ -2,10 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
+from optimagic.optimization.fun_value import SpecificFunctionValue
 from optimagic.typing import (
     DictLikeAccess,
-    OptimizationType,
-    OptimizationTypeLiteral,
+    Direction,
+    DirectionLiteral,
     PyTree,
 )
 
@@ -83,17 +84,43 @@ class IterationState(DictLikeAccess):
 
     params: PyTree
     timestamp: float
-    value: float
+    scalar_fun: float | None
     valid: bool
-    criterion_eval: PyTree | None = None
-    internal_derivative: PyTree | None = None
-    step: int | None = None
-    exceptions: str | None = None
-    hash: str | None = None
+    raw_fun: SpecificFunctionValue | None
+    step: int | None
+    exceptions: str | None
+
+    def combine(self, other: "IterationState") -> "IterationState":
+        """Combine two iteration states.
+
+        Args:
+            other (IterationState): The second iteration state.
+
+        Returns:
+            IterationState: The combined iteration state.
+
+        """
+        raw = [e for e in [self.exceptions, other.exceptions] if e is not None]
+        exceptions: str | None = None
+        if raw:
+            exceptions = "\n\n".join(raw)
+
+        new = IterationState(
+            # one of the values must be None
+            params=self.params,
+            timestamp=min(self.timestamp, other.timestamp),
+            scalar_fun=self.scalar_fun or other.scalar_fun,
+            valid=self.valid and other.valid,
+            # one of the values must be None
+            raw_fun=self.raw_fun or other.raw_fun,
+            step=self.step,
+            exceptions=exceptions,
+        )
+        return new
 
 
 @dataclass(frozen=True)
-class CriterionEvaluationWithId(IterationState):
+class IterationStateWithId(IterationState):
     """Criterion evaluation result with an ID.
 
     Attributes:
@@ -161,12 +188,12 @@ class ProblemInitialization(DictLikeAccess):
 
     Attributes:
         direction: The direction of optimization,
-            either as `OptimizationType` or string literal.
+            either as `Direction` or string literal.
         params: The parameters for the initialization.
 
     """
 
-    direction: OptimizationType | OptimizationTypeLiteral
+    direction: Direction | DirectionLiteral
     params: PyTree
 
 

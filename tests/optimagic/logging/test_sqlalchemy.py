@@ -26,14 +26,12 @@ class TestIterationStore:
     def create_test_point(i: int):
         return IterationState(
             params=np.array([i, i + 1]),
-            internal_derivative=None,
             timestamp=123456.0 + i,
             exceptions=None,
             valid=True,
-            hash=f"abc{i}",
-            value=0.5 + i,
+            scalar_fun=0.5 + i,
             step=i,
-            criterion_eval=None,
+            raw_fun=None,
         )
 
     def test_table_creation(self, store):
@@ -46,7 +44,7 @@ class TestIterationStore:
         store.insert(result)
         queried_result = store.select(1)[0]
         assert queried_result is not None
-        assert queried_result.value == result.value
+        assert queried_result.scalar_fun == result.scalar_fun
 
     def test_update_raise(self, store):
         """Test updating an entry in the IterationStore."""
@@ -58,14 +56,12 @@ class TestIterationStore:
         # Update the value
         updated_result = IterationState(
             params=queried_result.params,
-            internal_derivative=queried_result.internal_derivative,
             timestamp=queried_result.timestamp,
             exceptions=queried_result.exceptions,
             valid=queried_result.valid,
-            hash=queried_result.hash,
-            value=1.0,  # New value
+            scalar_fun=1.0,  # New value
             step=queried_result.step,
-            criterion_eval=queried_result.criterion_eval,
+            raw_fun=queried_result.raw_fun,
         )
         msg = f"'{IterationStore.__name__}' object does not allow to update items in"
         "the store"
@@ -107,20 +103,6 @@ class TestIterationStore:
 
         result_last = store.select_last_rows(5)
         assert len(result_last) == 5
-
-    @pytest.mark.skipif(
-        sys.platform.startswith("win"),
-        reason="On windows this results in a RuntimeError caused by a PermissionError",
-    )
-    def test_db_replacement_warning(self, store):
-        store.insert(self.create_test_point(245))
-        with pytest.warns(match="Existing database file"):
-            LogStore.from_options(
-                SQLiteLogOptions(
-                    store._db_config.url.split("sqlite:///")[-1],
-                    if_database_exists=ExistenceStrategy.REPLACE,
-                )
-            )
 
     @pytest.mark.skipif(
         not sys.platform.startswith("win"),

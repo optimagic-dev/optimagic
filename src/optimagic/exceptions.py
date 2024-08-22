@@ -67,6 +67,14 @@ class NotAvailableError(OptimagicError):
     """Exception when something is not available, e.g. because a calculation failed."""
 
 
+class InvalidAlgoOptionError(OptimagicError):
+    """Exception for invalid user provided algorithm options."""
+
+
+class InvalidAlgoInfoError(OptimagicError):
+    """Exception for invalid user provided algorithm information."""
+
+
 class StopOptimizationError(OptimagicError):
     def __init__(self, message, current_status):
         super().__init__(message)

@@ -13,7 +13,7 @@ from optimagic.parameters.bounds import Bounds
 NLC_ALGORITHMS = [
     name
     for name, algo in AVAILABLE_ALGORITHMS.items()
-    if "nonlinear_constraints" in algo._algorithm_info.arguments
+    if algo.__algo_info__.supports_nonlinear_constraints
 ]
 
 # ======================================================================================
@@ -124,7 +124,7 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
         warnings.simplefilter("ignore")
         result = maximize(algorithm=algorithm, **kwargs[constr_type])
 
-    if AVAILABLE_ALGORITHMS[algorithm]._algorithm_info.is_global:
+    if AVAILABLE_ALGORITHMS[algorithm].__algo_info__.is_global:
         decimal = 0
     else:
         decimal = 4
@@ -212,11 +212,11 @@ def general_example():
     upper_bound = {"b": np.array([2, 2])}
 
     kwargs = {
-        "criterion": criterion,
+        "fun": criterion,
         "params": params,
         "constraints": constraints,
-        "lower_bound": lower_bound,
-        "upper_bound": upper_bound,
+        "lower_bounds": lower_bound,
+        "upper_bounds": upper_bound,
     }
     return kwargs
 

@@ -10,6 +10,7 @@ from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.history_tools import get_history_arrays
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import Direction
 
 
 def criterion_plot(
@@ -115,7 +116,9 @@ def criterion_plot(
         }
 
         for i, local_history in enumerate(data[0]["local_histories"]):
-            history = get_history_arrays(local_history, data[0]["direction"])[key]
+            history = get_history_arrays(
+                local_history, Direction(data[0]["direction"])
+            )[key]
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
@@ -225,7 +228,7 @@ def params_plot(
     if data["stacked_local_histories"] is not None:
         history = data["stacked_local_histories"]["params"]
     else:
-        history = data["history"]["params"]
+        history = data["history"].params
 
     # ==================================================================================
     # Create figure
@@ -322,7 +325,7 @@ def _extract_plotting_data_from_results_object(
 
     data = {
         "history": res.history,
-        "direction": res.direction,
+        "direction": Direction(res.direction),
         "is_multistart": is_multistart,
         "local_histories": local_histories,
         "stacked_local_histories": stacked,
@@ -386,11 +389,15 @@ def _get_stacked_local_histories(local_histories, history=None):
     append the best history at the end.
 
     """
-    # list of dicts to dict of lists
-    stacked = {key: [h[key] for h in local_histories] for key in local_histories[0]}
-    # flatten inner lists
-    stacked = {key: list(itertools.chain(*value)) for key, value in stacked.items()}
+    stacked = {"criterion": [], "params": [], "runtime": []}
+    for hist in local_histories:
+        stacked["criterion"].extend(hist.fun)
+        stacked["params"].extend(hist.params)
+        stacked["runtime"].extend(hist.time)
+
     # append additional history is necessary
     if history is not None:
-        stacked = {key: value + history[key] for key, value in stacked.items()}
+        stacked["criterion"].extend(history.fun)
+        stacked["params"].extend(history.params)
+        stacked["runtime"].extend(history.time)
     return stacked

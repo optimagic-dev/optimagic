@@ -13,6 +13,7 @@ import pytest
 from estimagic import (
     OptimizeLogReader,
     OptimizeResult,
+    batch_evaluators,
     check_constraints,
     convergence_plot,
     convergence_report,
@@ -1125,3 +1126,15 @@ def test_deprecated_log_reader(example_db):
         reader = OptimizeLogReader(example_db)
         res = reader.read_start_params()
         assert res == {"a": 1, "b": 2, "c": 3}
+
+
+def test_estimagic_joblib_batch_evaluator_is_deprecated():
+    msg = "estimagic.batch_evaluators.joblib_batch_evaluator has been deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        batch_evaluators.joblib_batch_evaluator(lambda x: x, [1, 2], n_cores=1)
+
+
+def test_estimagic_process_batch_evaluator_is_deprecated():
+    msg = "estimagic.batch_evaluators.process_batch_evaluator has been deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        batch_evaluators.process_batch_evaluator("joblib")
