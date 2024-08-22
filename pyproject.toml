@@ -14,23 +14,28 @@ dependencies = [
     "pybaum>=0.1.2",
     "scipy>=1.2.1",
     "sqlalchemy>=1.3",
+    "annotated-types",
+    "typing-extensions",
+    "nlopt",
 ]
 dynamic = ["version"]
 keywords = [
-    "econometrics",
+    "nonlinear optimization",
+    "optimization",
+    "derivative free optimization",
+    "global optimization",
+    "parallel optimization",
     "statistics",
     "estimation",
     "extremum estimation",
-    "optimization",
     "inference",
     "numerical differentiation",
     "finite differences",
-    "derivative free optimization",
     "method of simulated moments",
     "maximum likelihood",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS :: MacOS X",
