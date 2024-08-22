@@ -2,12 +2,19 @@
 
 import numpy as np
 import pandas as pd
+from optimagic import mark
 
 
 def logit_loglike_and_derivative(params, y, x):
-    return logit_loglike(params, y, x), logit_derivative(params, y, x)
+    return logit_loglike(params, y, x), logit_jac(params, y, x)
 
 
+@mark.scalar
+def scalar_logit_fun_and_jac(params, y, x):
+    return logit_loglike(params, y, x).sum(), logit_grad(params, y, x)
+
+
+@mark.likelihood
 def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
 
@@ -28,12 +35,15 @@ def logit_loglike(params, y, x):
     q = 2 * y - 1
     contribs = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
 
-    out = {"value": contribs.sum(), "contributions": contribs}
-
-    return out
+    return contribs
 
 
-def logit_derivative(params, y, x):
+@mark.scalar
+def logit_grad(params, y, x):
+    return logit_jac(params, y, x).sum(axis=0)
+
+
+def logit_jac(params, y, x):
     """Derivative of the log-likelihood for each observation of a logit model.
 
     Args:
@@ -55,12 +65,10 @@ def logit_derivative(params, y, x):
     y = y.to_numpy()
     c = 1 / (1 + np.exp(-(np.dot(x, p))))
     jac = (y - c)[:, None] * x
-    grad = jac.sum(axis=0)
-    out = {"value": grad, "contributions": jac}
-    return out
+    return jac
 
 
-def logit_hessian(params, y, x):  # noqa: ARG001
+def logit_hess(params, y, x):  # noqa: ARG001
     """Hessian matrix of the log-likelihood.
 
     Args:
