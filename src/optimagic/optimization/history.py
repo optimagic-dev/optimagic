@@ -88,6 +88,7 @@ class History:
         warnings.warn(msg, FutureWarning)
         return self.fun
 
+    @property
     def runtime(self) -> list[float]:
         msg = "The attribute `runtime` of History is deprecated. Use `time` instead."
         warnings.warn(msg, FutureWarning)
