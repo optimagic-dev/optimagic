@@ -10,22 +10,50 @@ we drop the official support for Python 3.9.
 
 ## 0.5.0
 
-This is a major release with several breaking changes and deprecations. On a high level,
-the major changes are:
+This is a major release with several breaking changes and deprecations. In this
+release we started implementing two major enhancement proposals and renamed the package
+from estimagic to optimagic (while keeping the `estimagic` namespace for the estimation
+capabilities).
 
-- Implement EP-02: Static typing
-- Implement EP-03: Alignment with SciPy
-- Rename the package from `estimagic` to `optimagic` (while keeping the `estimagic`
-  namespace for the estimation capabilities).
+- [EP-02: Static typing](https://estimagic.org/en/latest/development/ep-02-typing.html)
+- [EP-03: Alignment with SciPy](https://estimagic.org/en/latest/development/ep-03-alignment.html)
 
+The implementation of the two enhancement proposals is not complete and will likely
+take until version `0.6.0`. However, all breaking changes and deprecations (with the
+exception of a minor change in benchmarking) are already implemented such that updating
+to version `0.5.0` is future proof.
 
 - {gh}`500` removes the dashboard, the support for simopt optimizers and the
   `derivative_plot` ({ghuser}`janosg`)
+- {gh}`502` renames estimagic to optimagic ({ghuser}`janosg`)
 - {gh}`504` aligns `maximize` and `minimize` more closely with scipy. All related
   deprecations and breaking changes are listed below. As a result, scipy code that uses
   minimize with the arguments `x0`, `fun`, `jac` and `method` will run without changes
   in optimagic. Similarly, to `OptimizeResult` gets some aliases so it behaves more
   like SciPy's.
+- {gh}`506` introduces the new `Bounds` object and deprecates `lower_bounds`,
+  `upper_bounds`, `soft_lower_bounds` and `soft_upper_bounds` ({ghuser}`janosg`)
+- {gh}`507` updates the infrastructure so we can make parallel releases under the names
+  `optimagic` and `estimagic` ({ghuser}`timmens`)
+- {gh}`508` introduces the new `ScalingOptions` object and deprecates the
+  `scaling_options` argument of `maximize` and `minimize` ({ghuser}`timmens`)
+- {gh}`512` implements the new interface for objective functions and derivatives
+  ({ghuser}`janosg`)
+- {gh}`513` implements the new `optimagic.MultistartOptions` object and deprecates the
+  `multistart_options` argument of `maximize` and `minimize` ({ghuser}`timmens`)
+- {gh}`514` and {gh}`516` introduce the `NumdiffResult` object that is returned from
+  `first_derivative` and `second_derivative`. It also fixes several bugs in the
+  pytree handling in `first_derivative` and `second_derivative` and deprecates
+  Richardson Extrapolation and the `key` ({ghuser}`timmens`)
+- {gh}`517` introduces the new `NumdiffOptions` object for configuring numerical
+  differentiation during optimization or estimation ({ghuser}`timmens`)
+- {gh}`519` rewrites the logging code and introduces new `LogOptions` objects
+  ({ghuser}`schroedk`)
+- {gh}`521` introduces the new internal algorithm interface.
+  ({ghuser}`janosg` and {ghuser}`mpetrosian`)
+- {gh}`522` introduces the new `Constraint` objects and deprecates passing
+  dictionaries or lists of dictionaries as constraints ({ghuser}`timmens`)
+
 
 ### Breaking changes
 
@@ -33,8 +61,20 @@ the major changes are:
   `maximize` and `minimize` and the file already exists, the default
   behavior is to raise an error now. Replacement or extension
   of an existing file must be explicitly configured.
-- The argument `if_table_exists` has no effect anymore and a
+- The argument `if_table_exists` in `log_options` has no effect anymore and a
   corresponding warning is raised.
+- `OptimizeResult.history` is now a `optimagic.History` object instead of a
+  dictionary. Dictionary style access is implemented but deprecated. Other dictionary
+  methods might not work.
+- The result of `first_derivative` and `second_derivative` is now a
+  `optimagic.NumdiffResult` object instead of a dictionary. Dictionary style access is
+  implemented but other dictionary methods might not work.
+- The dashboard is removed
+- The `derivative_plot` is removed.
+- Optimizers from Simopt are removed.
+- Passing callables with the old internal algorithm interface as `algorithm` to
+  `minimize` and `maximize` is not supported anymore. Use the new
+  `Algorithm` objects instead. For examples see: https://tinyurl.com/24a5cner
 
 
 ### Deprecations
@@ -62,10 +102,29 @@ the major changes are:
     - `convergence_scaled_gradient_tolerance` -> `convergence_gtol_scaled`
     - `stopping_max_criterion_evaluations` -> `stopping_maxfun`
     - `stopping_max_iterations` -> `stopping_maxiter`
-- The `log_options` argument of `minimize` and `maximize` is deprecated,
-  an according FutureWarning is raised.
+- The arguments `lower_bounds`, `upper_bounds`, `soft_lower_bounds` and
+  `soft_upper_bounds` are deprecated and replaced by `optimagic.Bounds`. This affects
+  `maximize`, `minimize`, `estimate_ml`, `estimate_msm`, `slice_plot` and several
+  other functions.
+- The `log_options` argument of `minimize` and `maximize` is deprecated. Instead,
+  `LogOptions` objects can be passed under the `logging` argument.
 - The class `OptimizeLogReader` is deprecated and redirects to
   `SQLiteLogReader`.
+- The `scaling_options` argument of `maximize` and `minimize` is deprecated. Instead a
+  `ScalingOptions` object can be passed under the `scaling` argument that was previously
+  just a bool.
+- Objective functions that return a dictionary with the special keys "value",
+  "contributions" and "root_contributions" are deprecated. Instead, likelihood and
+  least-squares functions are marked with a `mark.likelihood` or `mark.least_squares`
+  decorator. There is a detailed how-to guide that shows the new behavior. This affects
+  `maximize`, `minimize`, `slice_plot` and other functions that work with objective
+  functions.
+- The `multistart_options` argument of `minimize` and `maximize` is deprecated. Instead,
+  a `MultistartOptions` object can be passed under the `multistart` argument.
+- Richardson Extrapolation is deprecated in `first_derivative` and `second_derivative`
+- The `key` argument is deprecated in `first_derivative` and `second_derivative`
+- Passing dictionaries or lists of dictionaries as `constraints` to `maximize` or
+  `minimize` is deprecated. Use the new `Constraint` objects instead.
 
 ## 0.4.7
 

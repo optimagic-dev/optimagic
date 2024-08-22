@@ -28,10 +28,20 @@ tools, parallel numerical derivatives and more.
 perform statistical inference on estimated parameters. *estimagic* is now a subpackage
 of *optimagic*.
 
+## Documentation
+
+The documentation is hosted at https://optimagic.readthedocs.io
+
 ## Installation
 
-The package can be installed via conda. To do so, type the following commands in a
-terminal:
+The package can be installed via pip or conda. To do so, type the following commands in
+a terminal:
+
+```bash
+pip install optimagic
+```
+
+or
 
 ```bash
 $ conda config --add channels conda-forge
@@ -66,10 +76,6 @@ To enable all algorithms at once, do the following:
 `conda install pygmo`
 
 `pip install fides>=0.7.4 (Make sure you have at least 0.7.1)`
-
-## Documentation
-
-The documentation is hosted ([on rtd](https://estimagic.readthedocs.io/en/latest/#))
 
 ## Citation
 
