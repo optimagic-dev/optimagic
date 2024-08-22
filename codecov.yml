@@ -9,11 +9,14 @@ coverage:
   status:
     patch:
       default:
-        target: 30%
+        target: 80%
     project:
       default:
-        target: 80%
+        target: 90%
 ignore:
   - setup.py
+  # Uses numba
   - src/optimagic/benchmarking/cartis_roberts.py
+  # not installed on CI
+  - src/optimagic/optimizers/tranquilo.py
   - tests/**/*

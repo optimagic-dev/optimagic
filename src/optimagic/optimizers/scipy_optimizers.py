@@ -726,8 +726,8 @@ class ScipyBasinhopping(Algorithm):
     interval: PositiveInt = 50
     convergence_n_unchanged_iterations: PositiveInt | None = None
     seed: int | np.random.Generator | np.random.RandomState | None = None
-    target_accept_rate: PositiveFloat = 0.5
-    stepwise_factor: PositiveFloat = 0.9
+    target_accept_rate: NonNegativeFloat = 0.5
+    stepwise_factor: NonNegativeFloat = 0.9
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
