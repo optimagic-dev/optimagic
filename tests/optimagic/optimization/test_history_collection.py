@@ -7,7 +7,6 @@ from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 from optimagic import SQLiteLogReader, mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
-from optimagic.decorators import mark_minimizer
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.optimize import minimize
@@ -48,35 +47,6 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
 
     # We cannot expect the order to be the same
     aaae(sorted(collected_hist.fun), sorted(log_hist.fun))
-
-
-@mark_minimizer(name="dummy")
-def _dummy_optimizer(criterion, x, n_cores, batch_size, batch_evaluator):
-    assert batch_size in [1, 2, 4]
-
-    xs = np.arange(15).repeat(len(x)).reshape(15, len(x))
-
-    for iteration in range(3):
-        start_index = iteration * 5
-        # do four evaluations in a batch evaluator
-        batch_evaluator(
-            func=criterion,
-            arguments=list(xs[start_index : start_index + 4]),
-            n_cores=n_cores,
-        )
-
-        # do one evaluation without the batch evaluator
-        criterion(xs[start_index + 4])
-
-    out = {
-        "solution_x": xs[-1],
-        "solution_criterion": 5,
-        "n_fun_evals": 15,
-        "n_iterations": 3,
-        "success": True,
-    }
-
-    return out
 
 
 @mark.minimizer(

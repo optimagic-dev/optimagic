@@ -32,7 +32,7 @@ FUNC_EVALS = [
 
 
 @pytest.mark.parametrize("func_eval", FUNC_EVALS)
-def test_tree_converter_primary_key_is_value(params, upper_bounds, func_eval):
+def test_tree_converter_scalar_solver(params, upper_bounds, func_eval):
     bounds = Bounds(
         upper=upper_bounds,
     )

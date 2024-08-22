@@ -387,7 +387,7 @@ def update_convergence_state(
         starts (list): List of starting points for local optimizations.
         results (list): List of results from local optimizations.
         convergence_criteria (dict): Dict with the entries "xtol" and "max_discoveries"
-        primary_key: The primary criterion entry of the local optimizer. Needed to
+        solver_type: The aggregation level of the local optimizer. Needed to
             interpret the output of the internal criterion function.
 
 
