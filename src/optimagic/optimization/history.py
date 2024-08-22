@@ -1,4 +1,6 @@
+import warnings
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -75,3 +77,23 @@ class History:
         else:
             batch = self._batches[-1] + 1
         return batch
+
+    # ==================================================================================
+    # Add deprecated dict access
+    # ==================================================================================
+
+    @property
+    def criterion(self) -> list[float | None]:
+        msg = "The attribute `criterion` of History is deprecated. Use `fun` instead."
+        warnings.warn(msg, FutureWarning)
+        return self.fun
+
+    def runtime(self) -> list[float]:
+        msg = "The attribute `runtime` of History is deprecated. Use `time` instead."
+        warnings.warn(msg, FutureWarning)
+        return self.time
+
+    def __getitem__(self, key: str) -> Any:
+        msg = "dict-like access to History is deprecated. Use attribute access instead."
+        warnings.warn(msg, FutureWarning)
+        return getattr(self, key)

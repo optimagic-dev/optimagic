@@ -127,6 +127,14 @@
 ```
 
 ```{eval-rst}
+.. dropdown:: History
+
+    .. autoclass:: History
+        :members:
+
+```
+
+```{eval-rst}
 .. dropdown:: count_free_params
 
     .. autofunction:: count_free_params

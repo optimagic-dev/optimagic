@@ -38,6 +38,7 @@ from optimagic.optimization.fun_value import (
     LikelihoodFunctionValue,
     ScalarFunctionValue,
 )
+from optimagic.optimization.history import History
 from optimagic.optimization.multistart_options import MultistartOptions
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
@@ -97,5 +98,6 @@ __all__ = [
     "ProbabilityConstraint",
     "PairwiseEqualityConstraint",
     "EqualityConstraint",
+    "History",
     "__version__",
 ]
