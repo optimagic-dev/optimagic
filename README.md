@@ -1,6 +1,6 @@
 # optimagic
 
-[![image](https://img.shields.io/pypi/v/estimagic?color=blue)](https://pypi.org/project/estimagic)
+![PyPI - Version](https://img.shields.io/pypi/v/optimagic)
 [![image](https://img.shields.io/pypi/pyversions/estimagic)](https://pypi.org/project/estimagic)
 [![image](https://img.shields.io/conda/vn/conda-forge/estimagic.svg)](https://anaconda.org/conda-forge/estimagic)
 [![image](https://img.shields.io/conda/pn/conda-forge/estimagic.svg)](https://anaconda.org/conda-forge/estimagic)
