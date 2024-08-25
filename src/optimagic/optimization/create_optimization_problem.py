@@ -282,7 +282,7 @@ def create_optimization_problem(
     if hess is not None:
         msg = (
             "The hess argument is not yet supported in optimagic. Creat an issue on "
-            "https://github.com/OpenSourceEconomics/optimagic/ if you have urgent need "
+            "https://github.com/optimagic-dev/optimagic/ if you have urgent need "
             "for this feature."
         )
         raise NotImplementedError(msg)
@@ -290,7 +290,7 @@ def create_optimization_problem(
     if hessp is not None:
         msg = (
             "The hessp argument is not yet supported in optimagic. Creat an issue on "
-            "https://github.com/OpenSourceEconomics/optimagic/ if you have urgent need "
+            "https://github.com/optimagic-dev/optimagic/ if you have urgent need "
             "for this feature."
         )
         raise NotImplementedError(msg)
@@ -298,7 +298,7 @@ def create_optimization_problem(
     if callback is not None:
         msg = (
             "The callback argument is not yet supported in optimagic. Creat an issue "
-            "on https://github.com/OpenSourceEconomics/optimagic/ if you have urgent "
+            "on https://github.com/optimagic-dev/optimagic/ if you have urgent "
             "need for this feature."
         )
         raise NotImplementedError(msg)

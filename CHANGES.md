@@ -2,7 +2,7 @@
 
 This is a record of all past optimagic releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
-releases are available on [Anaconda.org](https://anaconda.org/OpenSourceEconomics/optimagic).
+releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
 Following the [scientific python guidelines](https://scientific-python.org/specs/spec-0000/)
 we drop the official support for Python 3.9.

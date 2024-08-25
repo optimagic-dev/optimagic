@@ -627,7 +627,7 @@ three types of moments have to be aligned, i.e. be stored in a tree of the same
 structure. We will raise an error if the trees do not have the same structure.
 
 This is a generalization of an interface that has already proven useful in
-[respy](https://github.com/OpenSourceEconomics/respy),
+[respy](https://github.com/optimagic-dev/respy),
 [sid](https://github.com/covid-19-impact-lab/sid) and other applications. In the future,
 the project specific implementations of flatten and unflatten functions could simply be
 deleted.
@@ -734,4 +734,4 @@ arrays and numbers for automatic differentiation.
 If you want to use automatic differentiation with estimagic you will thus have to
 restrict yourself in the way you specify parameters.
 
-[pybaum]: https://github.com/OpenSourceEconomics/pybaum
+[pybaum]: https://github.com/optimagic-dev/pybaum
