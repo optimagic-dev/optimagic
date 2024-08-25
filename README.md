@@ -8,7 +8,7 @@
 [![image](https://readthedocs.org/projects/optimagic/badge/?version=latest)](https://optimagic.readthedocs.io/en/latest)
 [![image](https://img.shields.io/github/actions/workflow/status/optimagic-dev/optimagic/main.yml?branch=main)](https://github.com/optimagic-dev/optimagic/actions?query=branch%3Amain)
 [![image](https://codecov.io/gh/optimagic-dev/optimagic/branch/main/graph/badge.svg)](https://codecov.io/gh/optimagic-dev/optimagic)
-[![image](https://results.pre-commit.ci/badge/github/optimagic-dev/optimagic/main.svg)](https://github.com/optimagic-dev/optimagic/actions?query=branch%3Amain)
+[![image](https://results.pre-commit.ci/badge/github/optimagic-dev/optimagic/main.svg)](https://results.pre-commit.ci/latest/github/optimagic-dev/optimagic/main)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![image](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![image](https://pepy.tech/badge/optimagic/month)](https://pepy.tech/project/optimagic)
