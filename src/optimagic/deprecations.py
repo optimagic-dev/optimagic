@@ -279,7 +279,8 @@ def throw_dict_output_warning():
         "0.6.0 and later. Please use the optimagic.mark.scalar, optimagic.mark."
         "least_squares, or optimagic.mark.likelihood decorators to indicate the type "
         "of problem you are solving. Use optimagic.FunctionValue objects to return "
-        "additional information for the logging."
+        "additional information for the logging. Please see the documentation for more "
+        "details: https://optimagic.readthedocs.io/en/latest/how_to/how_to_criterion_function.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -448,7 +449,7 @@ def replace_and_warn_about_deprecated_base_steps(
 def replace_and_warn_about_deprecated_derivatives(candidate, name):
     msg = (
         f"Specifying a dictionary of {name} functions is deprecated and will be "
-        "removed in optimagic version 0.6.0. Please specify a single function that has "
+        "removed in optimagic version 0.6.0. Please specify a single function that "
         "returns the correct derivative for your optimizer or a list of functions that "
         "are decorated with the `mark.scalar`, `mark.likelihood` or "
         "`mark.least_squares` decorators."
