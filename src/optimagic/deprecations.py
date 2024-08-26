@@ -45,7 +45,9 @@ def throw_derivative_future_warning():
     msg = (
         "To align optimagic with scipy.optimize, the `derivative` argument has been "
         "renamed to `jac`. Please use `jac` instead of `derivative`. Using `derivative`"
-        " will become an error in optimagic version 0.6.0 and later."
+        " will become an error in optimagic version 0.6.0 and later. For more details "
+        "see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -55,7 +57,8 @@ def throw_derivative_kwargs_future_warning():
         "To align optimagic with scipy.optimize, the `derivative_kwargs` argument has "
         "been renamed to `jac_kwargs`. Please use `jac_kwargs` instead of "
         "`derivative_kwargs`. Using `derivative_kwargs` will become an error in "
-        "optimagic version 0.6.0 and later."
+        "optimagic version 0.6.0 and later. For more details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -65,7 +68,9 @@ def throw_criterion_and_derivative_future_warning():
         "To align optimagic with scipy.optimize, the `criterion_and_derivative` "
         "argument has been renamed to `fun_and_jac`. Please use `fun_and_jac` "
         "instead of `criterion_and_derivative`. Using `criterion_and_derivative` "
-        "will become an error in optimagic version 0.6.0 and later."
+        "will become an error in optimagic version 0.6.0 and later. For more details "
+        "see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -76,7 +81,8 @@ def throw_criterion_and_derivative_kwargs_future_warning():
         "argument has been renamed to `fun_and_jac_kwargs`. Please use "
         "`fun_and_jac_kwargs` instead of `criterion_and_derivative_kwargs`. Using "
         "`criterion_and_derivative_kwargs` will become an error in optimagic version "
-        "0.6.0 and later."
+        "0.6.0 and later. For more details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -94,7 +100,9 @@ def throw_multistart_options_future_warning():
     msg = (
         "Specifying multistart options via the argument `multistart_options` is "
         "deprecated and will be removed in optimagic version 0.6.0 and later. You can "
-        "pass these options directly to the `multistart` argument instead."
+        "pass these options directly to the `multistart` argument instead. For more "
+        "details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_multistart.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -465,7 +473,8 @@ def replace_and_warn_about_deprecated_derivatives(candidate, name):
         "removed in optimagic version 0.6.0. Please specify a single function that "
         "returns the correct derivative for your optimizer or a list of functions that "
         "are decorated with the `mark.scalar`, `mark.likelihood` or "
-        "`mark.least_squares` decorators."
+        "`mark.least_squares` decorators. For more details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
