@@ -368,6 +368,10 @@ def throw_dict_constraints_future_warning_if_required(
         )
         for t in types:
             msg += f"  {{'type': '{t}', ...}} -> {replacements[t]}(...)\n"
+        msg += (
+            "\nFor more details see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_constraints.html"
+        )
 
         warnings.warn(msg, FutureWarning)
 
@@ -388,14 +392,17 @@ def replace_and_warn_about_deprecated_multistart_options(options):
         msg = (
             "The `share_optimization` option is deprecated and will be removed in "
             "version 0.6.0. Use `stopping_maxopt` instead to specify the number of "
-            "optimizations directly."
+            "optimizations directly. For more details see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_multistart.html"
         )
         warnings.warn(msg, FutureWarning)
 
     if options.convergence_relative_params_tolerance is not None:
         msg = (
             "The `convergence_relative_params_tolerance` option is deprecated and will "
-            "be removed in version 0.6.0. Use `convergence_xtol_rel` instead."
+            "be removed in version 0.6.0. Use `convergence_xtol_rel` instead. For more "
+            "details see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_convergence.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.convergence_xtol_rel is None:
@@ -408,7 +415,9 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             "The `optimization_error_handling` option is deprecated and will be "
             "removed in version 0.6.0. Setting this attribute also sets the error "
             "handling for exploration. Use the new `error_handling` option to set the "
-            "error handling for both optimization and exploration."
+            "error handling for both optimization and exploration. For more details "
+            "see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_error_handling.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.error_handling is None:
@@ -419,7 +428,9 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             "The `exploration_error_handling` option is deprecated and will be "
             "removed in version 0.6.0. Setting this attribute also sets the error "
             "handling for exploration. Use the new `error_handling` option to set the "
-            "error handling for both optimization and exploration."
+            "error handling for both optimization and exploration. For more details "
+            "see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_error_handling.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.error_handling is None:
@@ -436,7 +447,9 @@ def replace_and_warn_about_deprecated_base_steps(
         msg = (
             "The `base_steps` argument is deprecated and will be removed alongside "
             "Richardson extrapolation in optimagic version 0.6.0. To specify the "
-            "step size use the `step_size` argument instead."
+            "step size use the `step_size` argument instead. For more details see the "
+            "documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_step_size.html"
         )
         warnings.warn(msg, FutureWarning)
 
@@ -553,7 +566,9 @@ def pre_process_constraints(
     else:
         msg = (
             f"Invalid constraint type: {type(constraints)}. Must be a constraint "
-            "object or list thereof imported from `optimagic`."
+            "object or list thereof imported from `optimagic`. For more details see "
+            "the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_constraints.html"
         )
         raise InvalidConstraintError(msg)
 
