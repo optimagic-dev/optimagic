@@ -410,7 +410,7 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             "The `convergence_relative_params_tolerance` option is deprecated and will "
             "be removed in version 0.6.0. Use `convergence_xtol_rel` instead. For more "
             "details see the documentation: "
-            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_convergence.html"
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_multistart.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.convergence_xtol_rel is None:
@@ -425,7 +425,7 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             "handling for exploration. Use the new `error_handling` option to set the "
             "error handling for both optimization and exploration. For more details "
             "see the documentation: "
-            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_error_handling.html"
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_multistart.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.error_handling is None:
@@ -438,7 +438,7 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             "handling for exploration. Use the new `error_handling` option to set the "
             "error handling for both optimization and exploration. For more details "
             "see the documentation: "
-            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_error_handling.html"
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_multistart.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.error_handling is None:
