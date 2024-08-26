@@ -12,7 +12,7 @@ conda install -c conda-forge optimagic
 Alternatively, you can install optimagic via pip:
 
 ```
-pip install estimagic
+pip install optimagic
 ```
 
 In both cases, you get optimagic and all of its mandatory dependencies.
