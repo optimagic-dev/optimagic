@@ -45,7 +45,9 @@ def throw_derivative_future_warning():
     msg = (
         "To align optimagic with scipy.optimize, the `derivative` argument has been "
         "renamed to `jac`. Please use `jac` instead of `derivative`. Using `derivative`"
-        " will become an error in optimagic version 0.6.0 and later."
+        " will become an error in optimagic version 0.6.0 and later. For more details "
+        "see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -55,7 +57,8 @@ def throw_derivative_kwargs_future_warning():
         "To align optimagic with scipy.optimize, the `derivative_kwargs` argument has "
         "been renamed to `jac_kwargs`. Please use `jac_kwargs` instead of "
         "`derivative_kwargs`. Using `derivative_kwargs` will become an error in "
-        "optimagic version 0.6.0 and later."
+        "optimagic version 0.6.0 and later. For more details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -65,7 +68,9 @@ def throw_criterion_and_derivative_future_warning():
         "To align optimagic with scipy.optimize, the `criterion_and_derivative` "
         "argument has been renamed to `fun_and_jac`. Please use `fun_and_jac` "
         "instead of `criterion_and_derivative`. Using `criterion_and_derivative` "
-        "will become an error in optimagic version 0.6.0 and later."
+        "will become an error in optimagic version 0.6.0 and later. For more details "
+        "see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -76,7 +81,8 @@ def throw_criterion_and_derivative_kwargs_future_warning():
         "argument has been renamed to `fun_and_jac_kwargs`. Please use "
         "`fun_and_jac_kwargs` instead of `criterion_and_derivative_kwargs`. Using "
         "`criterion_and_derivative_kwargs` will become an error in optimagic version "
-        "0.6.0 and later."
+        "0.6.0 and later. For more details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -94,7 +100,9 @@ def throw_multistart_options_future_warning():
     msg = (
         "Specifying multistart options via the argument `multistart_options` is "
         "deprecated and will be removed in optimagic version 0.6.0 and later. You can "
-        "pass these options directly to the `multistart` argument instead."
+        "pass these options directly to the `multistart` argument instead. For more "
+        "details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_multistart.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -279,7 +287,8 @@ def throw_dict_output_warning():
         "0.6.0 and later. Please use the optimagic.mark.scalar, optimagic.mark."
         "least_squares, or optimagic.mark.likelihood decorators to indicate the type "
         "of problem you are solving. Use optimagic.FunctionValue objects to return "
-        "additional information for the logging."
+        "additional information for the logging. Please see the documentation for more "
+        "details: https://optimagic.readthedocs.io/en/latest/how_to/how_to_criterion_function.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -367,6 +376,10 @@ def throw_dict_constraints_future_warning_if_required(
         )
         for t in types:
             msg += f"  {{'type': '{t}', ...}} -> {replacements[t]}(...)\n"
+        msg += (
+            "\nFor more details see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_constraints.html"
+        )
 
         warnings.warn(msg, FutureWarning)
 
@@ -387,14 +400,17 @@ def replace_and_warn_about_deprecated_multistart_options(options):
         msg = (
             "The `share_optimization` option is deprecated and will be removed in "
             "version 0.6.0. Use `stopping_maxopt` instead to specify the number of "
-            "optimizations directly."
+            "optimizations directly. For more details see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_multistart.html"
         )
         warnings.warn(msg, FutureWarning)
 
     if options.convergence_relative_params_tolerance is not None:
         msg = (
             "The `convergence_relative_params_tolerance` option is deprecated and will "
-            "be removed in version 0.6.0. Use `convergence_xtol_rel` instead."
+            "be removed in version 0.6.0. Use `convergence_xtol_rel` instead. For more "
+            "details see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_convergence.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.convergence_xtol_rel is None:
@@ -407,7 +423,9 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             "The `optimization_error_handling` option is deprecated and will be "
             "removed in version 0.6.0. Setting this attribute also sets the error "
             "handling for exploration. Use the new `error_handling` option to set the "
-            "error handling for both optimization and exploration."
+            "error handling for both optimization and exploration. For more details "
+            "see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_error_handling.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.error_handling is None:
@@ -418,7 +436,9 @@ def replace_and_warn_about_deprecated_multistart_options(options):
             "The `exploration_error_handling` option is deprecated and will be "
             "removed in version 0.6.0. Setting this attribute also sets the error "
             "handling for exploration. Use the new `error_handling` option to set the "
-            "error handling for both optimization and exploration."
+            "error handling for both optimization and exploration. For more details "
+            "see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_error_handling.html"
         )
         warnings.warn(msg, FutureWarning)
         if options.error_handling is None:
@@ -435,7 +455,9 @@ def replace_and_warn_about_deprecated_base_steps(
         msg = (
             "The `base_steps` argument is deprecated and will be removed alongside "
             "Richardson extrapolation in optimagic version 0.6.0. To specify the "
-            "step size use the `step_size` argument instead."
+            "step size use the `step_size` argument instead. For more details see the "
+            "documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_step_size.html"
         )
         warnings.warn(msg, FutureWarning)
 
@@ -448,10 +470,11 @@ def replace_and_warn_about_deprecated_base_steps(
 def replace_and_warn_about_deprecated_derivatives(candidate, name):
     msg = (
         f"Specifying a dictionary of {name} functions is deprecated and will be "
-        "removed in optimagic version 0.6.0. Please specify a single function that has "
+        "removed in optimagic version 0.6.0. Please specify a single function that "
         "returns the correct derivative for your optimizer or a list of functions that "
         "are decorated with the `mark.scalar`, `mark.likelihood` or "
-        "`mark.least_squares` decorators."
+        "`mark.least_squares` decorators. For more details see the documentation: "
+        "https://optimagic.readthedocs.io/en/latest/how_to/how_to_derivatives.html"
     )
     warnings.warn(msg, FutureWarning)
 
@@ -552,7 +575,9 @@ def pre_process_constraints(
     else:
         msg = (
             f"Invalid constraint type: {type(constraints)}. Must be a constraint "
-            "object or list thereof imported from `optimagic`."
+            "object or list thereof imported from `optimagic`. For more details see "
+            "the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_constraints.html"
         )
         raise InvalidConstraintError(msg)
 

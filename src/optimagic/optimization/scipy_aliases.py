@@ -31,7 +31,7 @@ def map_method_to_algorithm(method):
     elif method in not_implemented:
         msg = (
             f"The method {method} is not yet wrapped in optimagic. Create an issue on "
-            "https://github.com/OpenSourceEconomics/optimagic/ if you have urgent need "
+            "https://github.com/optimagic-dev/optimagic/ if you have urgent need "
             "for this method."
         )
         raise NotImplementedError(msg)

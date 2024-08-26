@@ -60,9 +60,9 @@ content-type = "text/markdown"
 text = "MIT"
 
 [project.urls]
-Repository = "https://github.com/opensourceeconomics/optimagic"
-Github = "https://github.com/opensourceeconomics/optimagic"
-Tracker = "https://github.com/OpenSourceEconomics/optimagic/issues"
+Repository = "https://github.com/optimagic-dev/optimagic"
+Github = "https://github.com/optimagic-dev/optimagic"
+Tracker = "https://github.com/optimagic-dev/optimagic/issues"
 
 
 # ======================================================================================

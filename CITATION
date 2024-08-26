@@ -1,11 +1,11 @@
 
-Please use one of the following samples to cite the estimagic version (change
+Please use one of the following samples to cite the optimagic version (change
 x.y) from this installation
 
 Text:
 
 [optimagic]  optimagic x.y, 2024
-Janos Gabler, https://github.com/OpenSourceEconomics/optimagic
+Janos Gabler, https://github.com/optimagic-dev/optimagic
 
 BibTeX:
 
@@ -13,7 +13,7 @@ BibTeX:
       Title  = {optimagic: A library for nonlinear optimization},
       Author = {Janos Gabler},
       Year   = {2024},
-      Url    = {https://github.com/OpenSourceEconomics/optimagic}
+      Url    = {https://github.com/optimagic-dev/optimagic}
     }
 
 If you are unsure about which version of optimagic you are using run: `conda list optimagic`.

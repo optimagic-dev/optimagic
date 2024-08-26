@@ -1,17 +1,17 @@
 # optimagic
 
 ![PyPI - Version](https://img.shields.io/pypi/v/optimagic)
-[![image](https://img.shields.io/pypi/pyversions/estimagic)](https://pypi.org/project/estimagic)
-[![image](https://img.shields.io/conda/vn/conda-forge/estimagic.svg)](https://anaconda.org/conda-forge/estimagic)
-[![image](https://img.shields.io/conda/pn/conda-forge/estimagic.svg)](https://anaconda.org/conda-forge/estimagic)
-[![image](https://img.shields.io/pypi/l/estimagic)](https://pypi.org/project/estimagic)
-[![image](https://readthedocs.org/projects/estimagic/badge/?version=latest)](https://estimagic.readthedocs.io/en/latest)
-[![image](https://img.shields.io/github/actions/workflow/status/OpenSourceEconomics/estimagic/main.yml?branch=main)](https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain)
-[![image](https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/main/graph/badge.svg)](https://codecov.io/gh/OpenSourceEconomics/optimagic)
-[![image](https://results.pre-commit.ci/badge/github/OpenSourceEconomics/estimagic/main.svg)](https://github.com/OpenSourceEconomics/optimagic/actions?query=branch%3Amain)
-[![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![image](https://img.shields.io/pypi/pyversions/optimagic)](https://pypi.org/project/optimagic)
+[![image](https://img.shields.io/conda/vn/conda-forge/optimagic.svg)](https://anaconda.org/conda-forge/optimagic)
+[![image](https://img.shields.io/conda/pn/conda-forge/optimagic.svg)](https://anaconda.org/conda-forge/optimagic)
+[![image](https://img.shields.io/pypi/l/optimagic)](https://pypi.org/project/optimagic)
+[![image](https://readthedocs.org/projects/optimagic/badge/?version=latest)](https://optimagic.readthedocs.io/en/latest)
+[![image](https://img.shields.io/github/actions/workflow/status/optimagic-dev/optimagic/main.yml?branch=main)](https://github.com/optimagic-dev/optimagic/actions?query=branch%3Amain)
+[![image](https://codecov.io/gh/optimagic-dev/optimagic/branch/main/graph/badge.svg)](https://codecov.io/gh/optimagic-dev/optimagic)
+[![image](https://results.pre-commit.ci/badge/github/optimagic-dev/optimagic/main.svg)](https://results.pre-commit.ci/latest/github/optimagic-dev/optimagic/main)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![image](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
-[![image](https://pepy.tech/badge/estimagic/month)](https://pepy.tech/project/estimagic)
+[![image](https://pepy.tech/badge/optimagic/month)](https://pepy.tech/project/optimagic)
 [![image](https://img.shields.io/badge/NumFOCUS-affiliated%20project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects)
 [![image](https://img.shields.io/twitter/follow/aiidateam.svg?style=social&label=Follow)](https://x.com/optimagic)
 
@@ -86,7 +86,7 @@ If you use optimagic for your research, please do not forget to cite it.
   Title  = {optimagic: A library for nonlinear optimization},
   Author = {Janos Gabler},
   Year   = {2022},
-  Url    = {https://github.com/OpenSourceEconomics/optimagic}
+  Url    = {https://github.com/optimagic-dev/optimagic}
 }
 ```
 
