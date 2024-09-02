@@ -5,9 +5,10 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.estimate_msm import estimate_msm
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
+
+from estimagic.estimate_msm import estimate_msm
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,

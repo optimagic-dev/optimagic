@@ -6,10 +6,12 @@ This also serves as an internal overview of deprecated functions.
 
 import warnings
 
-import estimagic as em
 import numpy as np
-import optimagic as om
 import pytest
+from numpy.testing import assert_almost_equal as aaae
+
+import estimagic as em
+import optimagic as om
 from estimagic import (
     OptimizeLogReader,
     OptimizeResult,
@@ -32,7 +34,6 @@ from estimagic import (
     traceback_report,
     utilities,
 )
-from numpy.testing import assert_almost_equal as aaae
 from optimagic.deprecations import (
     convert_dict_to_function_value,
     handle_log_options_throw_deprecated_warning,

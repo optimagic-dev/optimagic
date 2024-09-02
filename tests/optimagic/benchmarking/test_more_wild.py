@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from optimagic.benchmarking.more_wild import (
     MORE_WILD_PROBLEMS,
     get_start_points_mancino,

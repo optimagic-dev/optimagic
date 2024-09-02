@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 import yaml
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.optimizers._pounders.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
     create_initial_residual_model,

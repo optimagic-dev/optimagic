@@ -3,6 +3,7 @@ from copy import copy
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic import NumdiffOptions
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import CRITERION_PENALTY_CONSTANT, CRITERION_PENALTY_SLOPE

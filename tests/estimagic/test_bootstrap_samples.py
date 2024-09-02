@@ -1,15 +1,16 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal as aae
+from pandas.testing import assert_frame_equal as afe
+
 from estimagic.bootstrap_samples import (
     _convert_cluster_ids_to_indices,
     _get_bootstrap_samples_from_indices,
     get_bootstrap_indices,
     get_bootstrap_samples,
 )
-from numpy.testing import assert_array_equal as aae
 from optimagic.utilities import get_rng
-from pandas.testing import assert_frame_equal as afe
 
 
 @pytest.fixture()
