@@ -14,8 +14,9 @@ The main principles we describe here are:
 - Derivative free trust region algorithms
 - Derivative free direct search algorithms
 
-This covers a large range of the algorithms that come with optimagic. We do currently
-not cover:
+This covers a large range of the algorithms that come with optimagic. In contrast, the
+following classes of optimizers are also accessible via optimagic, but not yet covered
+in this overview:
 
 - Conjugate gradient methods
 - Genetic algorithms
