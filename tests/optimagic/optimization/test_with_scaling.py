@@ -1,6 +1,7 @@
 import numpy as np
-import optimagic as om
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic as om
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.parameters.scaling import ScalingOptions
 

@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from pybaum import tree_just_flatten
+
 from optimagic.examples.criterion_functions import (
     sos_gradient,
     sos_ls,
@@ -10,7 +12,6 @@ from optimagic.examples.criterion_functions import (
 )
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten
 
 REGISTRY = get_registry(extended=True)
 

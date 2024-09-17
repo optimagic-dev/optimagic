@@ -5,6 +5,7 @@ import math
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.optimizers._pounders.linear_subsolvers import (
     LinearModel,
     improve_geomtery_trsbox_linear,

@@ -3,6 +3,7 @@ import functools
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.optimization.error_penalty import (
     _likelihood_penalty,

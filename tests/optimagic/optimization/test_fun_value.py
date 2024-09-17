@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_almost_equal as aae
+
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.optimization.fun_value import (
     FunctionValue,

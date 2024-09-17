@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from optimagic.examples.criterion_functions import sos_scalar
 from optimagic.exceptions import InvalidFunctionError, InvalidNumdiffOptionsError
 from optimagic.optimization.optimize import maximize, minimize

@@ -1,9 +1,10 @@
 """Test the pc processing."""
 
 import numpy as np
-import optimagic as om
 import pandas as pd
 import pytest
+
+import optimagic as om
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.constraint_tools import check_constraints

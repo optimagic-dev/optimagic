@@ -10,11 +10,12 @@
 from copy import deepcopy
 
 import numpy as np
-import optimagic as om
 import pandas as pd
 import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic as om
 from optimagic import mark
 from optimagic.examples.criterion_functions import (
     rhe_function_value,

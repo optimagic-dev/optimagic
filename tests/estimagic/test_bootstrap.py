@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 import seaborn as sns
 import statsmodels.api as sm
+
 from estimagic import bootstrap
 
 

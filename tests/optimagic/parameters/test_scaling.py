@@ -1,4 +1,5 @@
 import pytest
+
 from optimagic.exceptions import InvalidScalingError
 from optimagic.parameters.scaling import (
     ScalingOptions,

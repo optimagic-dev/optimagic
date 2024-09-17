@@ -2,9 +2,10 @@ from functools import partial
 from itertools import product
 
 import numpy as np
-import optimagic.parameters.kernel_transformations as kt
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic.parameters.kernel_transformations as kt
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.parameters.kernel_transformations import cov_matrix_to_sdcorr_params
 from optimagic.utilities import get_rng

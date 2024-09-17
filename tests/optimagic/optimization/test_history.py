@@ -1,5 +1,6 @@
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.optimization.history import History, HistoryEntry
 from optimagic.typing import EvalTask
 

@@ -5,6 +5,7 @@ import functools
 import numpy as np
 import pandas as pd
 import pytest
+
 from optimagic.config import IS_PETSC4PY_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.utilities import get_rng
