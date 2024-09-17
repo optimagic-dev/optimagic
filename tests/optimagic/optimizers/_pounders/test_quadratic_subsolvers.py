@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.optimizers._pounders._conjugate_gradient import (
     minimize_trust_cg,
 )

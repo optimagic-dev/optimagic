@@ -2,6 +2,7 @@ import itertools
 import warnings
 
 import pytest
+
 from optimagic.batch_evaluators import process_batch_evaluator
 
 batch_evaluators = ["joblib"]

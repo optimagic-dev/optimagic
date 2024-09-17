@@ -1,11 +1,15 @@
 import itertools
 
 import numpy as np
-import optimagic as om
 import pandas as pd
 import pytest
 import scipy as sp
 import statsmodels.api as sm
+from numpy.testing import assert_array_equal
+from scipy.stats import multivariate_normal
+from statsmodels.base.model import GenericLikelihoodModel
+
+import optimagic as om
 from estimagic.estimate_ml import estimate_ml
 from estimagic.examples.logit import (
     logit_hess,
@@ -13,11 +17,8 @@ from estimagic.examples.logit import (
     logit_loglike,
     scalar_logit_fun_and_jac,
 )
-from numpy.testing import assert_array_equal
 from optimagic import mark
 from optimagic.parameters.bounds import Bounds
-from scipy.stats import multivariate_normal
-from statsmodels.base.model import GenericLikelihoodModel
 
 
 def aaae(obj1, obj2, decimal=3):

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.differentiation.derivatives import Evals
 from optimagic.differentiation.finite_differences import jacobian
 from optimagic.differentiation.generate_steps import Steps

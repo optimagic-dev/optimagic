@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic import ml_covs
 from estimagic.ml_covs import (
     _clustering,
@@ -15,7 +17,6 @@ from estimagic.ml_covs import (
     cov_robust,
     cov_strata_robust,
 )
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.fixture()

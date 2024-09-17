@@ -1,8 +1,9 @@
 import functools
 from dataclasses import dataclass
 
-import optimagic as om
 import pytest
+
+import optimagic as om
 from optimagic.optimization.algorithm import AlgoInfo, Algorithm
 from optimagic.typing import AggregationLevel
 

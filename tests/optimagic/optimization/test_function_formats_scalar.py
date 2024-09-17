@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.typing import NDArray
+
 from optimagic import mark, maximize, minimize
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.optimization.fun_value import FunctionValue, ScalarFunctionValue

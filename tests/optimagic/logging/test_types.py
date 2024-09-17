@@ -1,4 +1,5 @@
 import pytest
+
 from optimagic.logging.types import (
     IterationStateWithId,
     ProblemInitializationWithId,

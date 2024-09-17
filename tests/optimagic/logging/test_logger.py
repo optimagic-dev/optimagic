@@ -3,6 +3,8 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 import pytest
+from pybaum import tree_equal, tree_just_flatten
+
 from optimagic.logging.logger import (
     LogOptions,
     LogReader,
@@ -13,7 +15,6 @@ from optimagic.logging.logger import (
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import Direction
-from pybaum import tree_equal, tree_just_flatten
 
 
 @pytest.fixture()
