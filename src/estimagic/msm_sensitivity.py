@@ -10,11 +10,11 @@ epsilon 2-6: Honore, Jorgensen & de Paula
 
 import numpy as np
 import pandas as pd
-from optimagic.exceptions import INVALID_SENSITIVITY_MSG
-from optimagic.utilities import robust_inverse
 
 from estimagic.msm_covs import cov_robust
 from estimagic.shared_covs import process_pandas_arguments
+from optimagic.exceptions import INVALID_SENSITIVITY_MSG
+from optimagic.utilities import robust_inverse
 
 
 def calculate_sensitivity_to_bias(jac, weights):

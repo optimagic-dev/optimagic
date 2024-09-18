@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from optimagic.exceptions import InvalidMultistartError
 from optimagic.optimization.multistart_options import (
     MultistartOptions,

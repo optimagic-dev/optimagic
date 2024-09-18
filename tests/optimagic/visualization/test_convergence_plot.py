@@ -1,4 +1,5 @@
 import pytest
+
 from optimagic import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.visualization.convergence_plot import (

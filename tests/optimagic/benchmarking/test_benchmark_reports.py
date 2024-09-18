@@ -2,6 +2,7 @@ from itertools import product
 
 import numpy as np
 import pytest
+
 from optimagic import (
     OptimizeResult,
     convergence_report,

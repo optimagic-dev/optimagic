@@ -1,5 +1,6 @@
-import optimagic as om
 import pytest
+
+import optimagic as om
 from optimagic.exceptions import InvalidParamsError
 from optimagic.parameters.constraint_tools import check_constraints, count_free_params
 

@@ -4,6 +4,8 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import numpy as np
 import pytest
+from sqlalchemy import inspect
+
 from optimagic.logging import ExistenceStrategy
 from optimagic.logging.logger import LogStore, SQLiteLogOptions
 from optimagic.logging.sqlalchemy import IterationStore, StepStore
@@ -13,7 +15,6 @@ from optimagic.logging.types import (
     StepStatus,
     StepType,
 )
-from sqlalchemy import inspect
 
 
 class TestIterationStore:

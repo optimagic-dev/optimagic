@@ -876,8 +876,13 @@ def _process_nag_result(nag_result_obj, len_x):
         results (dict): See :ref:`internal_optimizer_output` for details.
 
     """
+    if hasattr(nag_result_obj, "f"):
+        solution_fun = nag_result_obj.f
+    else:
+        solution_fun = nag_result_obj.obj
+
     processed = {
-        "solution_criterion": nag_result_obj.f,
+        "solution_criterion": solution_fun,
         "n_fun_evals": nag_result_obj.nx,
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,

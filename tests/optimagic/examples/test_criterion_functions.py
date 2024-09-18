@@ -3,6 +3,8 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
+from pandas.testing import assert_frame_equal
+
 from optimagic.examples.criterion_functions import (
     rhe_fun_and_gradient,
     rhe_function_value,
@@ -26,7 +28,6 @@ from optimagic.examples.criterion_functions import (
     trid_scalar,
 )
 from optimagic.optimization.fun_value import FunctionValue
-from pandas.testing import assert_frame_equal
 
 TRID_GRAD = pd.DataFrame({"value": [7, 1, -6, 11, -19.0]})
 RHE_GRAD = pd.DataFrame({"value": [90, 72, 36, 28, -10.0]})

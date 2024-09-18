@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import statsmodels.api as sm
+from pandas.testing import assert_frame_equal as afe
+from pandas.testing import assert_series_equal as ase
+
 from estimagic.config import EXAMPLE_DIR
 from estimagic.estimation_table import (
     _apply_number_format,
@@ -25,8 +28,6 @@ from estimagic.estimation_table import (
     render_html,
     render_latex,
 )
-from pandas.testing import assert_frame_equal as afe
-from pandas.testing import assert_series_equal as ase
 
 
 # ======================================================================================

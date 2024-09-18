@@ -1,4 +1,5 @@
 import pytest
+
 from optimagic.optimization.create_optimization_problem import (
     pre_process_user_algorithm,
 )
