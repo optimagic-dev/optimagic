@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from optimagic.optimizers.pygmo_optimizers import (
     _convert_str_to_int,
     get_population_size,

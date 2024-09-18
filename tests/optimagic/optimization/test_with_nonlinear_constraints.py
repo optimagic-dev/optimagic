@@ -2,9 +2,10 @@ import itertools
 import warnings
 
 import numpy as np
-import optimagic as om
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic as om
 from optimagic import maximize, minimize
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.config import IS_CYIPOPT_INSTALLED

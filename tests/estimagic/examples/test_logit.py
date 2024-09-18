@@ -1,7 +1,8 @@
 """Tests for the logit example."""
 
-from estimagic.examples.logit import logit_grad, logit_hess, logit_jac, logit_loglike
 from numpy.testing import assert_array_almost_equal as aaae
+
+from estimagic.examples.logit import logit_grad, logit_hess, logit_jac, logit_loglike
 
 
 def test_logit_loglikes(logit_inputs, logit_object):

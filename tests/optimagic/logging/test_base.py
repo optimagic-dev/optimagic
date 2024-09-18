@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
+
 from optimagic.logging.base import InputType, NonUpdatableKeyValueStore, OutputType
 from optimagic.typing import DictLikeAccess
 

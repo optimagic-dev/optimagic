@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import EXAMPLE_DIR
-from estimagic.estimate_msm import estimate_msm
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy import stats
+
+from estimagic.config import EXAMPLE_DIR
+from estimagic.estimate_msm import estimate_msm
 
 
 def simulate_aggregated_moments(params, x, y):

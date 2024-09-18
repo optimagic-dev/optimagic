@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 from estimagic.lollipop_plot import lollipop_plot
 
 

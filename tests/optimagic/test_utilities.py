@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.config import IS_JAX_INSTALLED
 from optimagic.utilities import (
     calculate_trustregion_initial_radius,

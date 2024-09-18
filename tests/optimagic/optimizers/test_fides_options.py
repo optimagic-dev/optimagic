@@ -3,12 +3,14 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.config import IS_FIDES_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
 if IS_FIDES_INSTALLED:
     from fides.hessian_approximation import FX, SR1, Broyden
+
     from optimagic.optimizers.fides import Fides
 else:
     FX = lambda: None

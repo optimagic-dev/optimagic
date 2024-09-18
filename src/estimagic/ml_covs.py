@@ -2,10 +2,10 @@
 
 import numpy as np
 import pandas as pd
-from optimagic.exceptions import INVALID_INFERENCE_MSG
-from optimagic.utilities import robust_inverse
 
 from estimagic.shared_covs import process_pandas_arguments
+from optimagic.exceptions import INVALID_INFERENCE_MSG
+from optimagic.utilities import robust_inverse
 
 
 def cov_hessian(hess):
