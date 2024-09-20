@@ -9,7 +9,7 @@ internal optimizer interface.
 
 The advantages of using the algorithm with optimagic over using it directly are:
 
-- optimagic turns an unconstrained optimizer into constrained ones.
+- optimagic turns unconstrained optimizers into constrained ones.
 - You can use logging.
 - You get great error handling for exceptions in the criterion function or gradient.
 - You get a parallelized and customizable numerical gradient if the user did not provide
