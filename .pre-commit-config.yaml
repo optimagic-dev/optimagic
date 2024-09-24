@@ -18,6 +18,22 @@ repos:
         language: python
         always_run: true
         require_serial: true
+  - repo: local
+    hooks:
+      - id: install-local-package
+        name: Install Local Package
+        entry: pip install -e .
+        language: system
+        pass_filenames: false
+        always_run: true
+  - repo: local
+    hooks:
+      - id: update-algo-selection-code
+        name: update algo selection code
+        entry: python .tools/create_algo_selection_code.py
+        language: system
+        always_run: true
+        require_serial: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -78,12 +94,14 @@ repos:
           - jupyter
         args:
           - --fix
+        exclude: src/optimagic/algo_selection.py
       # Run the formatter.
       - id: ruff-format
         types_or:
           - python
           - pyi
           - jupyter
+        exclude: src/optimagic/algo_selection.py
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.17
     hooks:

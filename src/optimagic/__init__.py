@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from optimagic import constraints, mark, utilities
+from optimagic.algo_selection import Algorithms as _Algorithms
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,
@@ -49,6 +50,8 @@ from optimagic.visualization.convergence_plot import convergence_plot
 from optimagic.visualization.history_plots import criterion_plot, params_plot
 from optimagic.visualization.profile_plot import profile_plot
 from optimagic.visualization.slice_plot import slice_plot
+
+algos = _Algorithms()
 
 try:
     from ._version import version as __version__
