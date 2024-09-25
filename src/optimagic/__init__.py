@@ -103,4 +103,5 @@ __all__ = [
     "EqualityConstraint",
     "History",
     "__version__",
+    "algos",
 ]
