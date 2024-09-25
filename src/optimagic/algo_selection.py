@@ -1,73 +1,76 @@
-from typing import Type
 from dataclasses import dataclass
+from typing import Type, cast
+
 from optimagic.optimization.algorithm import Algorithm
-from typing import cast
-from optimagic.optimizers.ipopt import Ipopt
-from optimagic.optimizers.fides import Fides
-from optimagic.optimizers.nag_optimizers import NagDFOLS
-from optimagic.optimizers.nag_optimizers import NagPyBOBYQA
-from optimagic.optimizers.nlopt_optimizers import NloptBOBYQA
-from optimagic.optimizers.nlopt_optimizers import NloptCCSAQ
-from optimagic.optimizers.nlopt_optimizers import NloptCOBYLA
-from optimagic.optimizers.nlopt_optimizers import NloptCRS2LM
-from optimagic.optimizers.nlopt_optimizers import NloptDirect
-from optimagic.optimizers.nlopt_optimizers import NloptESCH
-from optimagic.optimizers.nlopt_optimizers import NloptISRES
-from optimagic.optimizers.nlopt_optimizers import NloptLBFGSB
-from optimagic.optimizers.nlopt_optimizers import NloptMMA
-from optimagic.optimizers.nlopt_optimizers import NloptNEWUOA
-from optimagic.optimizers.nlopt_optimizers import NloptNelderMead
-from optimagic.optimizers.nlopt_optimizers import NloptPRAXIS
-from optimagic.optimizers.nlopt_optimizers import NloptSLSQP
-from optimagic.optimizers.nlopt_optimizers import NloptSbplx
-from optimagic.optimizers.nlopt_optimizers import NloptTNewton
-from optimagic.optimizers.nlopt_optimizers import NloptVAR
-from optimagic.optimizers.pygmo_optimizers import PygmoBeeColony
-from optimagic.optimizers.pygmo_optimizers import PygmoCmaes
-from optimagic.optimizers.pygmo_optimizers import PygmoCompassSearch
-from optimagic.optimizers.pygmo_optimizers import PygmoDe
-from optimagic.optimizers.pygmo_optimizers import PygmoDe1220
-from optimagic.optimizers.pygmo_optimizers import PygmoGaco
-from optimagic.optimizers.pygmo_optimizers import PygmoGwo
-from optimagic.optimizers.pygmo_optimizers import PygmoIhs
-from optimagic.optimizers.pygmo_optimizers import PygmoMbh
-from optimagic.optimizers.pygmo_optimizers import PygmoPso
-from optimagic.optimizers.pygmo_optimizers import PygmoPsoGen
-from optimagic.optimizers.pygmo_optimizers import PygmoSade
-from optimagic.optimizers.pygmo_optimizers import PygmoSea
-from optimagic.optimizers.pygmo_optimizers import PygmoSga
-from optimagic.optimizers.pygmo_optimizers import PygmoSimulatedAnnealing
-from optimagic.optimizers.pygmo_optimizers import PygmoXnes
-from optimagic.optimizers.scipy_optimizers import ScipyBFGS
-from optimagic.optimizers.scipy_optimizers import ScipyBasinhopping
-from optimagic.optimizers.scipy_optimizers import ScipyBrute
-from optimagic.optimizers.scipy_optimizers import ScipyCOBYLA
-from optimagic.optimizers.scipy_optimizers import ScipyConjugateGradient
-from optimagic.optimizers.scipy_optimizers import ScipyDifferentialEvolution
-from optimagic.optimizers.scipy_optimizers import ScipyDirect
-from optimagic.optimizers.scipy_optimizers import ScipyDualAnnealing
-from optimagic.optimizers.scipy_optimizers import ScipyLBFGSB
-from optimagic.optimizers.scipy_optimizers import ScipyLSDogbox
-from optimagic.optimizers.scipy_optimizers import ScipyLSLM
-from optimagic.optimizers.scipy_optimizers import ScipyLSTRF
-from optimagic.optimizers.scipy_optimizers import ScipyNelderMead
-from optimagic.optimizers.scipy_optimizers import ScipyNewtonCG
-from optimagic.optimizers.scipy_optimizers import ScipyPowell
-from optimagic.optimizers.scipy_optimizers import ScipySHGO
-from optimagic.optimizers.scipy_optimizers import ScipySLSQP
-from optimagic.optimizers.scipy_optimizers import ScipyTruncatedNewton
-from optimagic.optimizers.scipy_optimizers import ScipyTrustConstr
-from optimagic.optimizers.tao_optimizers import TAOPounders
 from optimagic.optimizers.bhhh import BHHH
+from optimagic.optimizers.fides import Fides
+from optimagic.optimizers.ipopt import Ipopt
+from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
 from optimagic.optimizers.neldermead import NelderMeadParallel
+from optimagic.optimizers.nlopt_optimizers import (
+    NloptBOBYQA,
+    NloptCCSAQ,
+    NloptCOBYLA,
+    NloptCRS2LM,
+    NloptDirect,
+    NloptESCH,
+    NloptISRES,
+    NloptLBFGSB,
+    NloptMMA,
+    NloptNelderMead,
+    NloptNEWUOA,
+    NloptPRAXIS,
+    NloptSbplx,
+    NloptSLSQP,
+    NloptTNewton,
+    NloptVAR,
+)
 from optimagic.optimizers.pounders import Pounders
-from optimagic.optimizers.tranquilo import Tranquilo
-from optimagic.optimizers.tranquilo import TranquiloLS
+from optimagic.optimizers.pygmo_optimizers import (
+    PygmoBeeColony,
+    PygmoCmaes,
+    PygmoCompassSearch,
+    PygmoDe,
+    PygmoDe1220,
+    PygmoGaco,
+    PygmoGwo,
+    PygmoIhs,
+    PygmoMbh,
+    PygmoPso,
+    PygmoPsoGen,
+    PygmoSade,
+    PygmoSea,
+    PygmoSga,
+    PygmoSimulatedAnnealing,
+    PygmoXnes,
+)
+from optimagic.optimizers.scipy_optimizers import (
+    ScipyBasinhopping,
+    ScipyBFGS,
+    ScipyBrute,
+    ScipyCOBYLA,
+    ScipyConjugateGradient,
+    ScipyDifferentialEvolution,
+    ScipyDirect,
+    ScipyDualAnnealing,
+    ScipyLBFGSB,
+    ScipyLSDogbox,
+    ScipyLSLM,
+    ScipyLSTRF,
+    ScipyNelderMead,
+    ScipyNewtonCG,
+    ScipyPowell,
+    ScipySHGO,
+    ScipySLSQP,
+    ScipyTruncatedNewton,
+    ScipyTrustConstr,
+)
+from optimagic.optimizers.tao_optimizers import TAOPounders
+from optimagic.optimizers.tranquilo import Tranquilo, TranquiloLS
 
 
 @dataclass(frozen=True)
 class AlgoSelection:
-
     @property
     def All(self) -> list[Type[Algorithm]]:
         raw = [field.default for field in self.__dataclass_fields__.values()]
@@ -76,12 +79,17 @@ class AlgoSelection:
     @property
     def Available(self) -> list[Type[Algorithm]]:
         return [
-            a for a in self.All if a.__algo_info__.is_available # type: ignore
+            a
+            for a in self.All
+            if a.__algo_info__.is_available  # type: ignore
         ]
+
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
 
 @dataclass(frozen=True)
@@ -113,10 +121,14 @@ class BoundedGradientBasedLeastSquaresLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
-    def Parallel(self) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
+    def Parallel(
+        self,
+    ) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms()
 
 
@@ -125,19 +137,27 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
-    def NonlinearConstrained(self) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms()
 
 
 @dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
-    def Bounded(self) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
+    def Bounded(
+        self,
+    ) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms()
 
 
@@ -181,7 +201,9 @@ class GradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Global(self) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -200,10 +222,14 @@ class BoundedGradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
-    def GradientFree(self) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
+    def GradientFree(
+        self,
+    ) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms()
 
 
@@ -224,7 +250,9 @@ class BoundedGlobalGradientBasedAlgorithms(AlgoSelection):
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
 
     @property
-    def NonlinearConstrained(self) -> BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms()
 
 
@@ -258,9 +286,10 @@ class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
     def LeastSquares(self) -> BoundedGradientBasedLeastSquaresLocalAlgorithms:
         return BoundedGradientBasedLeastSquaresLocalAlgorithms()
 
-
     @property
-    def NonlinearConstrained(self) -> BoundedGradientBasedLocalNonlinearConstrainedAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGradientBasedLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientBasedLocalNonlinearConstrainedAlgorithms()
 
 
@@ -306,7 +335,6 @@ class BoundedGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
     def Global(self) -> BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms()
 
-
     @property
     def Local(self) -> BoundedGradientBasedLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientBasedLocalNonlinearConstrainedAlgorithms()
@@ -345,13 +373,16 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
 
     @property
-    def NonlinearConstrained(self) -> BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedGlobalGradientFreeParallelAlgorithms:
@@ -361,12 +392,13 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Bounded(self) -> BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> GlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -378,15 +410,18 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Bounded(self) -> BoundedGlobalGradientFreeParallelAlgorithms:
         return BoundedGlobalGradientFreeParallelAlgorithms()
 
-
     @property
-    def NonlinearConstrained(self) -> GlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> GlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedParallelAlgorithms()
 
 
@@ -410,11 +445,11 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
     def LeastSquares(self) -> BoundedGradientFreeLeastSquaresLocalAlgorithms:
         return BoundedGradientFreeLeastSquaresLocalAlgorithms()
 
-
     @property
-    def NonlinearConstrained(self) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedGradientFreeLocalParallelAlgorithms:
@@ -442,7 +477,6 @@ class GradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientFreeLeastSquaresLocalAlgorithms:
         return BoundedGradientFreeLeastSquaresLocalAlgorithms()
 
-
     @property
     def Parallel(self) -> GradientFreeLeastSquaresLocalParallelAlgorithms:
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
@@ -459,7 +493,6 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientFreeLocalParallelAlgorithms:
         return BoundedGradientFreeLocalParallelAlgorithms()
 
-
     @property
     def LeastSquares(self) -> GradientFreeLeastSquaresLocalParallelAlgorithms:
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
@@ -469,17 +502,17 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
 class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Global(self) -> BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms()
 
-
     @property
     def Local(self) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedGradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -497,7 +530,6 @@ class BoundedGradientFreeLeastSquaresAlgorithms(AlgoSelection):
     def Local(self) -> BoundedGradientFreeLeastSquaresLocalAlgorithms:
         return BoundedGradientFreeLeastSquaresLocalAlgorithms()
 
-
     @property
     def Parallel(self) -> BoundedGradientFreeLeastSquaresParallelAlgorithms:
         return BoundedGradientFreeLeastSquaresParallelAlgorithms()
@@ -508,7 +540,9 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -517,30 +551,30 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     def Global(self) -> BoundedGlobalGradientFreeParallelAlgorithms:
         return BoundedGlobalGradientFreeParallelAlgorithms()
 
-
     @property
     def LeastSquares(self) -> BoundedGradientFreeLeastSquaresParallelAlgorithms:
         return BoundedGradientFreeLeastSquaresParallelAlgorithms()
-
 
     @property
     def Local(self) -> BoundedGradientFreeLocalParallelAlgorithms:
         return BoundedGradientFreeLocalParallelAlgorithms()
 
-
     @property
-    def NonlinearConstrained(self) -> BoundedGradientFreeNonlinearConstrainedParallelAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGradientFreeNonlinearConstrainedParallelAlgorithms()
 
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Bounded(self) -> BoundedGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGradientFreeNonlinearConstrainedParallelAlgorithms()
-
 
     @property
     def Global(self) -> GlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -556,7 +590,6 @@ class GradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientFreeLeastSquaresParallelAlgorithms:
         return BoundedGradientFreeLeastSquaresParallelAlgorithms()
 
-
     @property
     def Local(self) -> GradientFreeLeastSquaresLocalParallelAlgorithms:
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
@@ -565,18 +598,18 @@ class GradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
 
     @property
     def GradientBased(self) -> BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms()
 
-
     @property
     def GradientFree(self) -> BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedGlobalNonlinearConstrainedParallelAlgorithms:
@@ -588,26 +621,30 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def GradientFree(self) -> BoundedGlobalGradientFreeParallelAlgorithms:
         return BoundedGlobalGradientFreeParallelAlgorithms()
 
-
     @property
-    def NonlinearConstrained(self) -> BoundedGlobalNonlinearConstrainedParallelAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGlobalNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalNonlinearConstrainedParallelAlgorithms()
 
 
 @dataclass(frozen=True)
 class GlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Bounded(self) -> BoundedGlobalNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalNonlinearConstrainedParallelAlgorithms()
-
 
     @property
     def GradientFree(self) -> GlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -627,7 +664,6 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     def GradientBased(self) -> BoundedGradientBasedLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientBasedLocalNonlinearConstrainedAlgorithms()
 
-
     @property
     def GradientFree(self) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedAlgorithms()
@@ -646,11 +682,9 @@ class BoundedLeastSquaresLocalAlgorithms(AlgoSelection):
     def GradientBased(self) -> BoundedGradientBasedLeastSquaresLocalAlgorithms:
         return BoundedGradientBasedLeastSquaresLocalAlgorithms()
 
-
     @property
     def GradientFree(self) -> BoundedGradientFreeLeastSquaresLocalAlgorithms:
         return BoundedGradientFreeLeastSquaresLocalAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedLeastSquaresLocalParallelAlgorithms:
@@ -667,7 +701,6 @@ class BoundedLocalParallelAlgorithms(AlgoSelection):
     def GradientFree(self) -> BoundedGradientFreeLocalParallelAlgorithms:
         return BoundedGradientFreeLocalParallelAlgorithms()
 
-
     @property
     def LeastSquares(self) -> BoundedLeastSquaresLocalParallelAlgorithms:
         return BoundedLeastSquaresLocalParallelAlgorithms()
@@ -682,7 +715,6 @@ class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedLeastSquaresLocalParallelAlgorithms:
         return BoundedLeastSquaresLocalParallelAlgorithms()
 
-
     @property
     def GradientFree(self) -> GradientFreeLeastSquaresLocalParallelAlgorithms:
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
@@ -690,12 +722,13 @@ class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Global(self) -> BoundedGlobalNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalNonlinearConstrainedParallelAlgorithms()
-
 
     @property
     def GradientFree(self) -> BoundedGradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -711,7 +744,6 @@ class BoundedLeastSquaresParallelAlgorithms(AlgoSelection):
     def GradientFree(self) -> BoundedGradientFreeLeastSquaresParallelAlgorithms:
         return BoundedGradientFreeLeastSquaresParallelAlgorithms()
 
-
     @property
     def Local(self) -> BoundedLeastSquaresLocalParallelAlgorithms:
         return BoundedLeastSquaresLocalParallelAlgorithms()
@@ -726,7 +758,6 @@ class GlobalGradientBasedAlgorithms(AlgoSelection):
     @property
     def Bounded(self) -> BoundedGlobalGradientBasedAlgorithms:
         return BoundedGlobalGradientBasedAlgorithms()
-
 
     @property
     def NonlinearConstrained(self) -> GlobalGradientBasedNonlinearConstrainedAlgorithms:
@@ -759,16 +790,13 @@ class GradientBasedLocalAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientBasedLocalAlgorithms:
         return BoundedGradientBasedLocalAlgorithms()
 
-
     @property
     def LeastSquares(self) -> GradientBasedLeastSquaresLocalAlgorithms:
         return GradientBasedLeastSquaresLocalAlgorithms()
 
-
     @property
     def Likelihood(self) -> GradientBasedLikelihoodLocalAlgorithms:
         return GradientBasedLikelihoodLocalAlgorithms()
-
 
     @property
     def NonlinearConstrained(self) -> GradientBasedLocalNonlinearConstrainedAlgorithms:
@@ -799,19 +827,18 @@ class BoundedGradientBasedAlgorithms(AlgoSelection):
     def Global(self) -> BoundedGlobalGradientBasedAlgorithms:
         return BoundedGlobalGradientBasedAlgorithms()
 
-
     @property
     def LeastSquares(self) -> BoundedGradientBasedLeastSquaresAlgorithms:
         return BoundedGradientBasedLeastSquaresAlgorithms()
-
 
     @property
     def Local(self) -> BoundedGradientBasedLocalAlgorithms:
         return BoundedGradientBasedLocalAlgorithms()
 
-
     @property
-    def NonlinearConstrained(self) -> BoundedGradientBasedNonlinearConstrainedAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> BoundedGradientBasedNonlinearConstrainedAlgorithms:
         return BoundedGradientBasedNonlinearConstrainedAlgorithms()
 
 
@@ -828,11 +855,9 @@ class GradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientBasedNonlinearConstrainedAlgorithms:
         return BoundedGradientBasedNonlinearConstrainedAlgorithms()
 
-
     @property
     def Global(self) -> GlobalGradientBasedNonlinearConstrainedAlgorithms:
         return GlobalGradientBasedNonlinearConstrainedAlgorithms()
-
 
     @property
     def Local(self) -> GradientBasedLocalNonlinearConstrainedAlgorithms:
@@ -848,7 +873,6 @@ class GradientBasedLeastSquaresAlgorithms(AlgoSelection):
     @property
     def Bounded(self) -> BoundedGradientBasedLeastSquaresAlgorithms:
         return BoundedGradientBasedLeastSquaresAlgorithms()
-
 
     @property
     def Local(self) -> GradientBasedLeastSquaresLocalAlgorithms:
@@ -887,18 +911,18 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
 
     @property
     def Bounded(self) -> BoundedGlobalGradientFreeAlgorithms:
         return BoundedGlobalGradientFreeAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> GlobalGradientFreeNonlinearConstrainedAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> GlobalGradientFreeParallelAlgorithms:
@@ -928,16 +952,13 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientFreeLocalAlgorithms:
         return BoundedGradientFreeLocalAlgorithms()
 
-
     @property
     def LeastSquares(self) -> GradientFreeLeastSquaresLocalAlgorithms:
         return GradientFreeLeastSquaresLocalAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> GradientFreeLocalNonlinearConstrainedAlgorithms:
         return GradientFreeLocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> GradientFreeLocalParallelAlgorithms:
@@ -974,7 +995,9 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
@@ -987,21 +1010,17 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     def Global(self) -> BoundedGlobalGradientFreeAlgorithms:
         return BoundedGlobalGradientFreeAlgorithms()
 
-
     @property
     def LeastSquares(self) -> BoundedGradientFreeLeastSquaresAlgorithms:
         return BoundedGradientFreeLeastSquaresAlgorithms()
-
 
     @property
     def Local(self) -> BoundedGradientFreeLocalAlgorithms:
         return BoundedGradientFreeLocalAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> BoundedGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedGradientFreeParallelAlgorithms:
@@ -1013,22 +1032,21 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Bounded(self) -> BoundedGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeNonlinearConstrainedAlgorithms()
 
-
     @property
     def Global(self) -> GlobalGradientFreeNonlinearConstrainedAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedAlgorithms()
 
-
     @property
     def Local(self) -> GradientFreeLocalNonlinearConstrainedAlgorithms:
         return GradientFreeLocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> GradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -1046,11 +1064,9 @@ class GradientFreeLeastSquaresAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientFreeLeastSquaresAlgorithms:
         return BoundedGradientFreeLeastSquaresAlgorithms()
 
-
     @property
     def Local(self) -> GradientFreeLeastSquaresLocalAlgorithms:
         return GradientFreeLeastSquaresLocalAlgorithms()
-
 
     @property
     def Parallel(self) -> GradientFreeLeastSquaresParallelAlgorithms:
@@ -1062,7 +1078,9 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
@@ -1072,24 +1090,22 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientFreeParallelAlgorithms:
         return BoundedGradientFreeParallelAlgorithms()
 
-
     @property
     def Global(self) -> GlobalGradientFreeParallelAlgorithms:
         return GlobalGradientFreeParallelAlgorithms()
-
 
     @property
     def LeastSquares(self) -> GradientFreeLeastSquaresParallelAlgorithms:
         return GradientFreeLeastSquaresParallelAlgorithms()
 
-
     @property
     def Local(self) -> GradientFreeLocalParallelAlgorithms:
         return GradientFreeLocalParallelAlgorithms()
 
-
     @property
-    def NonlinearConstrained(self) -> GradientFreeNonlinearConstrainedParallelAlgorithms:
+    def NonlinearConstrained(
+        self,
+    ) -> GradientFreeNonlinearConstrainedParallelAlgorithms:
         return GradientFreeNonlinearConstrainedParallelAlgorithms()
 
 
@@ -1117,7 +1133,9 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
@@ -1126,16 +1144,13 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     def GradientBased(self) -> BoundedGlobalGradientBasedAlgorithms:
         return BoundedGlobalGradientBasedAlgorithms()
 
-
     @property
     def GradientFree(self) -> BoundedGlobalGradientFreeAlgorithms:
         return BoundedGlobalGradientFreeAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> BoundedGlobalNonlinearConstrainedAlgorithms:
         return BoundedGlobalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedGlobalParallelAlgorithms:
@@ -1145,23 +1160,22 @@ class BoundedGlobalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
 
     @property
     def Bounded(self) -> BoundedGlobalNonlinearConstrainedAlgorithms:
         return BoundedGlobalNonlinearConstrainedAlgorithms()
 
-
     @property
     def GradientBased(self) -> GlobalGradientBasedNonlinearConstrainedAlgorithms:
         return GlobalGradientBasedNonlinearConstrainedAlgorithms()
 
-
     @property
     def GradientFree(self) -> GlobalGradientFreeNonlinearConstrainedAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> GlobalNonlinearConstrainedParallelAlgorithms:
@@ -1173,17 +1187,17 @@ class GlobalParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Bounded(self) -> BoundedGlobalParallelAlgorithms:
         return BoundedGlobalParallelAlgorithms()
 
-
     @property
     def GradientFree(self) -> GlobalGradientFreeParallelAlgorithms:
         return GlobalGradientFreeParallelAlgorithms()
-
 
     @property
     def NonlinearConstrained(self) -> GlobalNonlinearConstrainedParallelAlgorithms:
@@ -1224,21 +1238,17 @@ class BoundedLocalAlgorithms(AlgoSelection):
     def GradientBased(self) -> BoundedGradientBasedLocalAlgorithms:
         return BoundedGradientBasedLocalAlgorithms()
 
-
     @property
     def GradientFree(self) -> BoundedGradientFreeLocalAlgorithms:
         return BoundedGradientFreeLocalAlgorithms()
-
 
     @property
     def LeastSquares(self) -> BoundedLeastSquaresLocalAlgorithms:
         return BoundedLeastSquaresLocalAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> BoundedLocalNonlinearConstrainedAlgorithms:
         return BoundedLocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedLocalParallelAlgorithms:
@@ -1259,11 +1269,9 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedLocalNonlinearConstrainedAlgorithms:
         return BoundedLocalNonlinearConstrainedAlgorithms()
 
-
     @property
     def GradientBased(self) -> GradientBasedLocalNonlinearConstrainedAlgorithms:
         return GradientBasedLocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def GradientFree(self) -> GradientFreeLocalNonlinearConstrainedAlgorithms:
@@ -1284,16 +1292,13 @@ class LeastSquaresLocalAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedLeastSquaresLocalAlgorithms:
         return BoundedLeastSquaresLocalAlgorithms()
 
-
     @property
     def GradientBased(self) -> GradientBasedLeastSquaresLocalAlgorithms:
         return GradientBasedLeastSquaresLocalAlgorithms()
 
-
     @property
     def GradientFree(self) -> GradientFreeLeastSquaresLocalAlgorithms:
         return GradientFreeLeastSquaresLocalAlgorithms()
-
 
     @property
     def Parallel(self) -> LeastSquaresLocalParallelAlgorithms:
@@ -1320,11 +1325,9 @@ class LocalParallelAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedLocalParallelAlgorithms:
         return BoundedLocalParallelAlgorithms()
 
-
     @property
     def GradientFree(self) -> GradientFreeLocalParallelAlgorithms:
         return GradientFreeLocalParallelAlgorithms()
-
 
     @property
     def LeastSquares(self) -> LeastSquaresLocalParallelAlgorithms:
@@ -1338,7 +1341,9 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
     scipy_slsqp: Type[ScipySLSQP] = ScipySLSQP
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
@@ -1347,21 +1352,17 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
     def Global(self) -> BoundedGlobalNonlinearConstrainedAlgorithms:
         return BoundedGlobalNonlinearConstrainedAlgorithms()
 
-
     @property
     def GradientBased(self) -> BoundedGradientBasedNonlinearConstrainedAlgorithms:
         return BoundedGradientBasedNonlinearConstrainedAlgorithms()
-
 
     @property
     def GradientFree(self) -> BoundedGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeNonlinearConstrainedAlgorithms()
 
-
     @property
     def Local(self) -> BoundedLocalNonlinearConstrainedAlgorithms:
         return BoundedLocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedNonlinearConstrainedParallelAlgorithms:
@@ -1381,16 +1382,13 @@ class BoundedLeastSquaresAlgorithms(AlgoSelection):
     def GradientBased(self) -> BoundedGradientBasedLeastSquaresAlgorithms:
         return BoundedGradientBasedLeastSquaresAlgorithms()
 
-
     @property
     def GradientFree(self) -> BoundedGradientFreeLeastSquaresAlgorithms:
         return BoundedGradientFreeLeastSquaresAlgorithms()
 
-
     @property
     def Local(self) -> BoundedLeastSquaresLocalAlgorithms:
         return BoundedLeastSquaresLocalAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedLeastSquaresParallelAlgorithms:
@@ -1402,7 +1400,9 @@ class BoundedParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -1411,21 +1411,17 @@ class BoundedParallelAlgorithms(AlgoSelection):
     def Global(self) -> BoundedGlobalParallelAlgorithms:
         return BoundedGlobalParallelAlgorithms()
 
-
     @property
     def GradientFree(self) -> BoundedGradientFreeParallelAlgorithms:
         return BoundedGradientFreeParallelAlgorithms()
-
 
     @property
     def LeastSquares(self) -> BoundedLeastSquaresParallelAlgorithms:
         return BoundedLeastSquaresParallelAlgorithms()
 
-
     @property
     def Local(self) -> BoundedLocalParallelAlgorithms:
         return BoundedLocalParallelAlgorithms()
-
 
     @property
     def NonlinearConstrained(self) -> BoundedNonlinearConstrainedParallelAlgorithms:
@@ -1434,17 +1430,17 @@ class BoundedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class NonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
 
     @property
     def Bounded(self) -> BoundedNonlinearConstrainedParallelAlgorithms:
         return BoundedNonlinearConstrainedParallelAlgorithms()
 
-
     @property
     def Global(self) -> GlobalNonlinearConstrainedParallelAlgorithms:
         return GlobalNonlinearConstrainedParallelAlgorithms()
-
 
     @property
     def GradientFree(self) -> GradientFreeNonlinearConstrainedParallelAlgorithms:
@@ -1460,11 +1456,9 @@ class LeastSquaresParallelAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedLeastSquaresParallelAlgorithms:
         return BoundedLeastSquaresParallelAlgorithms()
 
-
     @property
     def GradientFree(self) -> GradientFreeLeastSquaresParallelAlgorithms:
         return GradientFreeLeastSquaresParallelAlgorithms()
-
 
     @property
     def Local(self) -> LeastSquaresLocalParallelAlgorithms:
@@ -1500,26 +1494,21 @@ class GradientBasedAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientBasedAlgorithms:
         return BoundedGradientBasedAlgorithms()
 
-
     @property
     def Global(self) -> GlobalGradientBasedAlgorithms:
         return GlobalGradientBasedAlgorithms()
-
 
     @property
     def LeastSquares(self) -> GradientBasedLeastSquaresAlgorithms:
         return GradientBasedLeastSquaresAlgorithms()
 
-
     @property
     def Likelihood(self) -> GradientBasedLikelihoodAlgorithms:
         return GradientBasedLikelihoodAlgorithms()
 
-
     @property
     def Local(self) -> GradientBasedLocalAlgorithms:
         return GradientBasedLocalAlgorithms()
-
 
     @property
     def NonlinearConstrained(self) -> GradientBasedNonlinearConstrainedAlgorithms:
@@ -1558,7 +1547,9 @@ class GradientFreeAlgorithms(AlgoSelection):
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
@@ -1572,26 +1563,21 @@ class GradientFreeAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGradientFreeAlgorithms:
         return BoundedGradientFreeAlgorithms()
 
-
     @property
     def Global(self) -> GlobalGradientFreeAlgorithms:
         return GlobalGradientFreeAlgorithms()
-
 
     @property
     def LeastSquares(self) -> GradientFreeLeastSquaresAlgorithms:
         return GradientFreeLeastSquaresAlgorithms()
 
-
     @property
     def Local(self) -> GradientFreeLocalAlgorithms:
         return GradientFreeLocalAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> GradientFreeNonlinearConstrainedAlgorithms:
         return GradientFreeNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> GradientFreeParallelAlgorithms:
@@ -1622,7 +1608,9 @@ class GlobalAlgorithms(AlgoSelection):
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
@@ -1631,21 +1619,17 @@ class GlobalAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedGlobalAlgorithms:
         return BoundedGlobalAlgorithms()
 
-
     @property
     def GradientBased(self) -> GlobalGradientBasedAlgorithms:
         return GlobalGradientBasedAlgorithms()
-
 
     @property
     def GradientFree(self) -> GlobalGradientFreeAlgorithms:
         return GlobalGradientFreeAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> GlobalNonlinearConstrainedAlgorithms:
         return GlobalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> GlobalParallelAlgorithms:
@@ -1694,31 +1678,25 @@ class LocalAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedLocalAlgorithms:
         return BoundedLocalAlgorithms()
 
-
     @property
     def GradientBased(self) -> GradientBasedLocalAlgorithms:
         return GradientBasedLocalAlgorithms()
-
 
     @property
     def GradientFree(self) -> GradientFreeLocalAlgorithms:
         return GradientFreeLocalAlgorithms()
 
-
     @property
     def LeastSquares(self) -> LeastSquaresLocalAlgorithms:
         return LeastSquaresLocalAlgorithms()
-
 
     @property
     def Likelihood(self) -> LikelihoodLocalAlgorithms:
         return LikelihoodLocalAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> LocalNonlinearConstrainedAlgorithms:
         return LocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> LocalParallelAlgorithms:
@@ -1764,7 +1742,9 @@ class BoundedAlgorithms(AlgoSelection):
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
@@ -1785,31 +1765,25 @@ class BoundedAlgorithms(AlgoSelection):
     def Global(self) -> BoundedGlobalAlgorithms:
         return BoundedGlobalAlgorithms()
 
-
     @property
     def GradientBased(self) -> BoundedGradientBasedAlgorithms:
         return BoundedGradientBasedAlgorithms()
-
 
     @property
     def GradientFree(self) -> BoundedGradientFreeAlgorithms:
         return BoundedGradientFreeAlgorithms()
 
-
     @property
     def LeastSquares(self) -> BoundedLeastSquaresAlgorithms:
         return BoundedLeastSquaresAlgorithms()
-
 
     @property
     def Local(self) -> BoundedLocalAlgorithms:
         return BoundedLocalAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> BoundedNonlinearConstrainedAlgorithms:
         return BoundedNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> BoundedParallelAlgorithms:
@@ -1824,7 +1798,9 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
     scipy_slsqp: Type[ScipySLSQP] = ScipySLSQP
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
@@ -1833,26 +1809,21 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedNonlinearConstrainedAlgorithms:
         return BoundedNonlinearConstrainedAlgorithms()
 
-
     @property
     def Global(self) -> GlobalNonlinearConstrainedAlgorithms:
         return GlobalNonlinearConstrainedAlgorithms()
-
 
     @property
     def GradientBased(self) -> GradientBasedNonlinearConstrainedAlgorithms:
         return GradientBasedNonlinearConstrainedAlgorithms()
 
-
     @property
     def GradientFree(self) -> GradientFreeNonlinearConstrainedAlgorithms:
         return GradientFreeNonlinearConstrainedAlgorithms()
 
-
     @property
     def Local(self) -> LocalNonlinearConstrainedAlgorithms:
         return LocalNonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> NonlinearConstrainedParallelAlgorithms:
@@ -1873,21 +1844,17 @@ class LeastSquaresAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedLeastSquaresAlgorithms:
         return BoundedLeastSquaresAlgorithms()
 
-
     @property
     def GradientBased(self) -> GradientBasedLeastSquaresAlgorithms:
         return GradientBasedLeastSquaresAlgorithms()
-
 
     @property
     def GradientFree(self) -> GradientFreeLeastSquaresAlgorithms:
         return GradientFreeLeastSquaresAlgorithms()
 
-
     @property
     def Local(self) -> LeastSquaresLocalAlgorithms:
         return LeastSquaresLocalAlgorithms()
-
 
     @property
     def Parallel(self) -> LeastSquaresParallelAlgorithms:
@@ -1902,7 +1869,6 @@ class LikelihoodAlgorithms(AlgoSelection):
     def GradientBased(self) -> GradientBasedLikelihoodAlgorithms:
         return GradientBasedLikelihoodAlgorithms()
 
-
     @property
     def Local(self) -> LikelihoodLocalAlgorithms:
         return LikelihoodLocalAlgorithms()
@@ -1913,7 +1879,9 @@ class ParallelAlgorithms(AlgoSelection):
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
@@ -1923,26 +1891,21 @@ class ParallelAlgorithms(AlgoSelection):
     def Bounded(self) -> BoundedParallelAlgorithms:
         return BoundedParallelAlgorithms()
 
-
     @property
     def Global(self) -> GlobalParallelAlgorithms:
         return GlobalParallelAlgorithms()
-
 
     @property
     def GradientFree(self) -> GradientFreeParallelAlgorithms:
         return GradientFreeParallelAlgorithms()
 
-
     @property
     def LeastSquares(self) -> LeastSquaresParallelAlgorithms:
         return LeastSquaresParallelAlgorithms()
 
-
     @property
     def Local(self) -> LocalParallelAlgorithms:
         return LocalParallelAlgorithms()
-
 
     @property
     def NonlinearConstrained(self) -> NonlinearConstrainedParallelAlgorithms:
@@ -1992,7 +1955,9 @@ class Algorithms(AlgoSelection):
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
-    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = ScipyDifferentialEvolution
+    scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
+        ScipyDifferentialEvolution
+    )
     scipy_direct: Type[ScipyDirect] = ScipyDirect
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
@@ -2017,41 +1982,33 @@ class Algorithms(AlgoSelection):
     def Bounded(self) -> BoundedAlgorithms:
         return BoundedAlgorithms()
 
-
     @property
     def Global(self) -> GlobalAlgorithms:
         return GlobalAlgorithms()
-
 
     @property
     def GradientBased(self) -> GradientBasedAlgorithms:
         return GradientBasedAlgorithms()
 
-
     @property
     def GradientFree(self) -> GradientFreeAlgorithms:
         return GradientFreeAlgorithms()
-
 
     @property
     def LeastSquares(self) -> LeastSquaresAlgorithms:
         return LeastSquaresAlgorithms()
 
-
     @property
     def Likelihood(self) -> LikelihoodAlgorithms:
         return LikelihoodAlgorithms()
-
 
     @property
     def Local(self) -> LocalAlgorithms:
         return LocalAlgorithms()
 
-
     @property
     def NonlinearConstrained(self) -> NonlinearConstrainedAlgorithms:
         return NonlinearConstrainedAlgorithms()
-
 
     @property
     def Parallel(self) -> ParallelAlgorithms:
