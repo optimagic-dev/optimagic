@@ -201,7 +201,7 @@ def estimate_msm(
     if not is_optimized:
         # If optimize_options is not a dictionary and not False, we assume it represents
         # an algorithm. The actual testing of whether it is a valid algorithm is done
-        # when `maximize` is called.
+        # when `minimize` is called.
         if not isinstance(optimize_options, dict):
             optimize_options = {"algorithm": optimize_options}
 
