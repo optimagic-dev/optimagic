@@ -1,15 +1,10 @@
 #!/bin/bash
+set -e  # Exit immediately if a command exits with a non-zero status
 
-# Check if the project is already installed locally
+# # Check if the project is already installed locally
 if ! pip show optimagic &> /dev/null; then
-    # Install the project locally
+    # install the project locally
     pip install -e .
-fi
-
-# Check if ruff is installed
-if ! ruff --version &> /dev/null; then
-    # Install ruff
-    pip install ruff
 fi
 
 # Run the Python script to create algo_selection.py

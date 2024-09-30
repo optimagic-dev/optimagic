@@ -27,6 +27,19 @@ repos:
         files: (src/optimagic/optimizers/.)
         always_run: false
         require_serial: true
+        additional_dependencies:
+          - hatchling
+          - ruff
+          - cloudpickle
+          - joblib
+          - numpy<2.0
+          - pandas
+          - plotly
+          - pybaum>=0.1.2
+          - scipy>=1.2.1
+          - sqlalchemy>=1.3
+          - annotated-types
+          - typing-extensions
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
