@@ -36,7 +36,7 @@ jobs:
       - name: run pytest
         shell: bash -l {0}
         run: |
-          micromamba activate optimagic
+          mamba activate optimagic
           pytest --cov-report=xml --cov=./
       - name: Upload coverage report.
         if: runner.os == 'Linux' && matrix.python-version == '3.10'
@@ -67,7 +67,7 @@ jobs:
       - name: run pytest
         shell: bash -l {0}
         run: |
-          micromamba activate optimagic
+          mamba activate optimagic
           pytest -m "not slow and not jax"
   run-tests-with-old-pandas:
     # This job is only for testing if optimagic works with older pandas versions, as
@@ -94,7 +94,7 @@ jobs:
       - name: run pytest
         shell: bash -l {0}
         run: |
-          micromamba activate optimagic
+          mamba activate optimagic
           pytest -m "not slow and not jax"
   code-in-docs:
     name: Run code snippets in documentation
@@ -112,7 +112,7 @@ jobs:
       - name: run sphinx
         shell: bash -l {0}
         run: |-
-          micromamba activate optimagic
+          mamba activate optimagic
           cd docs/source
           python -m doctest -v how_to/how_to_constraints.md
   run-mypy:
@@ -133,5 +133,5 @@ jobs:
       - name: Run mypy
         shell: bash -l {0}
         run: |-
-          micromamba activate optimagic
+          mamba activate optimagic
           mypy
