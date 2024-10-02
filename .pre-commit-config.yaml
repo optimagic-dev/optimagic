@@ -24,7 +24,7 @@ repos:
         name: update algo selection code
         entry: bash .tools/create_and_format_algo_selection_code.sh
         language: python
-        files: (src/optimagic/optimizers/.)
+        files: (src/optimagic/optimizers/.|src/optimagic/algo_selection.py|.tools/.)
         always_run: false
         require_serial: true
         additional_dependencies:
