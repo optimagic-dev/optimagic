@@ -12,7 +12,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from optimagic import mark
-from optimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
+from optimagic.algo_selection import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 

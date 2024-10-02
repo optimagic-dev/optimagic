@@ -4,7 +4,7 @@ from typing import Any
 
 import optimagic as om
 from optimagic import optimizers
-from optimagic.algorithms import Algorithm
+from optimagic.algo_selection import Algorithm
 
 
 def _explore_module(module: ModuleType, prefix: str = "") -> dict[str, Any]:

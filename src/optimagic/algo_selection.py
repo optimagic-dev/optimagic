@@ -94,6 +94,14 @@ class AlgoSelection:
             if a.__algo_info__.is_available  # type: ignore
         ]
 
+    @property
+    def _all_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
+        return {a.__algo_info__.name: a for a in self.All}  # type: ignore
+
+    @property
+    def _available_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
+        return {a.__algo_info__.name: a for a in self.Available}  # type: ignore
+
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
@@ -2023,3 +2031,11 @@ class Algorithms(AlgoSelection):
     @property
     def Parallel(self) -> ParallelAlgorithms:
         return ParallelAlgorithms()
+
+
+algos = Algorithms()
+global_algos = GlobalAlgorithms()
+
+ALL_ALGORITHMS = algos._all_algorithms_dict
+AVAILABLE_ALGORITHMS = algos._available_algorithms_dict
+GLOBAL_ALGORITHMS = global_algos._available_algorithms_dict

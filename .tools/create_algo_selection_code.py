@@ -313,6 +313,15 @@ def _get_base_class_code() -> str:
                 return [
                     a for a in self.All if a.__algo_info__.is_available # type: ignore
                 ]
+
+            @property
+            def _all_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
+                return {a.__algo_info__.name: a for a in self.All} # type: ignore
+
+            @property
+            def _available_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
+                return {a.__algo_info__.name: a for a in self.Available} # type: ignore
+
     """)
     return out
 
@@ -328,6 +337,18 @@ def _get_docstring_code() -> str:
         'algorithm-selection\n\n"""\n'
     )
     out = textwrap.dedent(raw)
+    return out
+
+
+def _get_instantiation_code() -> str:
+    out = textwrap.dedent("""
+        algos = Algorithms()
+        global_algos = GlobalAlgorithms()
+
+        ALL_ALGORITHMS = algos._all_algorithms_dict
+        AVAILABLE_ALGORITHMS = algos._available_algorithms_dict
+        GLOBAL_ALGORITHMS = global_algos._available_algorithms_dict
+    """)
     return out
 
 
@@ -361,6 +382,9 @@ def main():
         )
         dataclass_snippets.append(new_snippet)
 
+    # create the code for the instantiation
+    instantiation_snippet = _get_instantiation_code()
+
     # write code to the file
 
     with open(OPTIMAGIC_ROOT / "algo_selection.py", "w") as f:
@@ -368,6 +392,8 @@ def main():
         f.write(imports + "\n\n")
         f.write(parent_class_snippet + "\n")
         f.write("\n\n".join(dataclass_snippets))
+        f.write("\n\n")
+        f.write(instantiation_snippet)
 
 
 if __name__ == "__main__":

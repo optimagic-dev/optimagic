@@ -1,10 +1,10 @@
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Type, cast
+from typing import Any, Callable, Type
 
 from optimagic import deprecations
-from optimagic.algorithms import ALL_ALGORITHMS
+from optimagic.algo_selection import ALL_ALGORITHMS
 from optimagic.deprecations import (
     handle_log_options_throw_deprecated_warning,
     replace_and_warn_about_deprecated_algo_options,
@@ -591,4 +591,4 @@ def pre_process_user_algorithm(
     elif isinstance(algorithm, type) and issubclass(algorithm, Algorithm):
         algorithm = algorithm()
 
-    return cast(Algorithm, algorithm)
+    return algorithm
