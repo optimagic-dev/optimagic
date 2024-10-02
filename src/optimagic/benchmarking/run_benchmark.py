@@ -12,7 +12,7 @@ import numpy as np
 from pybaum import tree_just_flatten
 
 from optimagic import batch_evaluators
-from optimagic.algo_selection import AVAILABLE_ALGORITHMS
+from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
 

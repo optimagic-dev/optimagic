@@ -7,7 +7,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 
 from optimagic import SQLiteLogReader, mark
-from optimagic.algo_selection import AVAILABLE_ALGORITHMS
+from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.optimize import minimize

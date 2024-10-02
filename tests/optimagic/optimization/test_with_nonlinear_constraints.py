@@ -7,7 +7,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 import optimagic as om
 from optimagic import maximize, minimize
-from optimagic.algo_selection import NonlinearConstrainedAlgorithms
+from optimagic.algorithms import NonlinearConstrainedAlgorithms
 from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.parameters.bounds import Bounds
 

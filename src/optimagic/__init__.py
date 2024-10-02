@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from optimagic import constraints, mark, utilities
-from optimagic.algo_selection import algos
+from optimagic.algorithms import algos
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,

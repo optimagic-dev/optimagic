@@ -11,7 +11,7 @@ fi
 python .tools/create_algo_selection_code.py
 
 # Run ruff format on the created file
-ruff format src/optimagic/algo_selection.py --silent --config pyproject.toml
+ruff format src/optimagic/algorithms.py --silent --config pyproject.toml
 
 # Run ruff lint with fixes on the created file
-ruff check src/optimagic/algo_selection.py --fix --silent --config pyproject.toml
+ruff check src/optimagic/algorithms.py --fix --silent --config pyproject.toml

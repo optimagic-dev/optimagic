@@ -387,7 +387,7 @@ def main():
 
     # write code to the file
 
-    with open(OPTIMAGIC_ROOT / "algo_selection.py", "w") as f:
+    with open(OPTIMAGIC_ROOT / "algorithms.py", "w") as f:
         f.write(docstring)
         f.write(imports + "\n\n")
         f.write(parent_class_snippet + "\n")
