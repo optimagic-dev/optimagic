@@ -169,8 +169,8 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
-    tao_pounders: Type[TAOPounders] = TAOPounders
     pounders: Type[Pounders] = Pounders
+    tao_pounders: Type[TAOPounders] = TAOPounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -267,8 +267,8 @@ class GlobalGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -434,10 +434,10 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pounders: Type[Pounders] = Pounders
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -469,8 +469,8 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
-    tao_pounders: Type[TAOPounders] = TAOPounders
     pounders: Type[Pounders] = Pounders
+    tao_pounders: Type[TAOPounders] = TAOPounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -522,8 +522,8 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeLeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
-    tao_pounders: Type[TAOPounders] = TAOPounders
     pounders: Type[Pounders] = Pounders
+    tao_pounders: Type[TAOPounders] = TAOPounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -537,13 +537,13 @@ class BoundedGradientFreeLeastSquaresAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
+    pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -672,10 +672,10 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
+    pounders: Type[Pounders] = Pounders
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -766,8 +766,9 @@ class GlobalGradientBasedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientBasedLocalAlgorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -784,7 +785,6 @@ class GradientBasedLocalAlgorithms(AlgoSelection):
     scipy_slsqp: Type[ScipySLSQP] = ScipySLSQP
     scipy_truncated_newton: Type[ScipyTruncatedNewton] = ScipyTruncatedNewton
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
-    bhhh: Type[BHHH] = BHHH
 
     @property
     def Bounded(self) -> BoundedGradientBasedLocalAlgorithms:
@@ -805,8 +805,8 @@ class GradientBasedLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientBasedAlgorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -933,18 +933,18 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
 class GradientFreeLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pounders: Type[Pounders] = Pounders
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
     tao_pounders: Type[TAOPounders] = TAOPounders
-    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -978,6 +978,7 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pounders: Type[Pounders] = Pounders
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1002,7 +1003,6 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1056,8 +1056,8 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeLeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
-    tao_pounders: Type[TAOPounders] = TAOPounders
     pounders: Type[Pounders] = Pounders
+    tao_pounders: Type[TAOPounders] = TAOPounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -1075,14 +1075,14 @@ class GradientFreeLeastSquaresAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeParallelAlgorithms(AlgoSelection):
+    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
-    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1206,8 +1206,8 @@ class GlobalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedLocalAlgorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1221,6 +1221,7 @@ class BoundedLocalAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pounders: Type[Pounders] = Pounders
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
@@ -1230,7 +1231,6 @@ class BoundedLocalAlgorithms(AlgoSelection):
     scipy_truncated_newton: Type[ScipyTruncatedNewton] = ScipyTruncatedNewton
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1281,11 +1281,11 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
+    pounders: Type[Pounders] = Pounders
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_lm: Type[ScipyLSLM] = ScipyLSLM
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -1372,10 +1372,10 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
+    pounders: Type[Pounders] = Pounders
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -1397,13 +1397,13 @@ class BoundedLeastSquaresAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedParallelAlgorithms(AlgoSelection):
+    pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1467,8 +1467,9 @@ class LeastSquaresParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientBasedAlgorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -1488,7 +1489,6 @@ class GradientBasedAlgorithms(AlgoSelection):
     scipy_slsqp: Type[ScipySLSQP] = ScipySLSQP
     scipy_truncated_newton: Type[ScipyTruncatedNewton] = ScipyTruncatedNewton
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
-    bhhh: Type[BHHH] = BHHH
 
     @property
     def Bounded(self) -> BoundedGradientBasedAlgorithms:
@@ -1519,6 +1519,7 @@ class GradientBasedAlgorithms(AlgoSelection):
 class GradientFreeAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
@@ -1529,6 +1530,7 @@ class GradientFreeAlgorithms(AlgoSelection):
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pounders: Type[Pounders] = Pounders
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1554,8 +1556,6 @@ class GradientFreeAlgorithms(AlgoSelection):
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
     tao_pounders: Type[TAOPounders] = TAOPounders
-    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1638,10 +1638,12 @@ class GlobalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class LocalAlgorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1654,6 +1656,7 @@ class LocalAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pounders: Type[Pounders] = Pounders
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
@@ -1668,9 +1671,6 @@ class LocalAlgorithms(AlgoSelection):
     scipy_truncated_newton: Type[ScipyTruncatedNewton] = ScipyTruncatedNewton
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
     tao_pounders: Type[TAOPounders] = TAOPounders
-    bhhh: Type[BHHH] = BHHH
-    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1705,8 +1705,8 @@ class LocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedAlgorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1724,6 +1724,7 @@ class BoundedAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pounders: Type[Pounders] = Pounders
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1757,7 +1758,6 @@ class BoundedAlgorithms(AlgoSelection):
     scipy_truncated_newton: Type[ScipyTruncatedNewton] = ScipyTruncatedNewton
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1833,11 +1833,11 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
+    pounders: Type[Pounders] = Pounders
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_lm: Type[ScipyLSLM] = ScipyLSLM
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
     tao_pounders: Type[TAOPounders] = TAOPounders
-    pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
     @property
@@ -1876,14 +1876,14 @@ class LikelihoodAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class ParallelAlgorithms(AlgoSelection):
+    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
-    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
@@ -1914,10 +1914,12 @@ class ParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class Algorithms(AlgoSelection):
-    ipopt: Type[Ipopt] = Ipopt
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1934,6 +1936,7 @@ class Algorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pounders: Type[Pounders] = Pounders
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1972,9 +1975,6 @@ class Algorithms(AlgoSelection):
     scipy_truncated_newton: Type[ScipyTruncatedNewton] = ScipyTruncatedNewton
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
     tao_pounders: Type[TAOPounders] = TAOPounders
-    bhhh: Type[BHHH] = BHHH
-    neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 

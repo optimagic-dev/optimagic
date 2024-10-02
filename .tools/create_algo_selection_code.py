@@ -1,4 +1,6 @@
+import importlib
 import inspect
+import pkgutil
 import textwrap
 from itertools import combinations
 from types import ModuleType
@@ -6,37 +8,26 @@ from typing import Type
 
 from optimagic.config import OPTIMAGIC_ROOT
 from optimagic.optimization.algorithm import Algorithm
-from optimagic.optimizers import (
-    bhhh,
-    fides,
-    ipopt,
-    nag_optimizers,
-    neldermead,
-    nlopt_optimizers,
-    pounders,
-    pygmo_optimizers,
-    scipy_optimizers,
-    tao_optimizers,
-    tranquilo,
-)
 from optimagic.typing import AggregationLevel
 
 # ======================================================================================
 # Functions to collect algorithms
 # ======================================================================================
-MODULES = [
-    ipopt,
-    fides,
-    nag_optimizers,
-    nlopt_optimizers,
-    pygmo_optimizers,
-    scipy_optimizers,
-    tao_optimizers,
-    bhhh,
-    neldermead,
-    pounders,
-    tranquilo,
-]
+
+
+def _import_optimizer_modules(package_name):
+    package = importlib.import_module(package_name)
+    modules = []
+
+    for _, module_name, is_pkg in pkgutil.walk_packages(
+        package.__path__, package.__name__ + "."
+    ):
+        module_parts = module_name.split(".")
+        if all(not part.startswith("_") for part in module_parts) and not is_pkg:
+            module = importlib.import_module(module_name)
+            modules.append(module)
+
+    return modules
 
 
 def _get_all_algorithms(modules: list[ModuleType]) -> dict[str, Type[Algorithm]]:
@@ -334,12 +325,13 @@ def _get_abc_code() -> str:
 def main():
     """Create the source code for all dataclasses needed for algorithm selection."""
     # create some basic inputs
-    all_algos = _get_all_algorithms(MODULES)
+    modules = _import_optimizer_modules("optimagic.optimizers")
+    all_algos = _get_all_algorithms(modules)
     all_categories = list(FILTERS)
     selection_info = _create_selection_info(all_algos, all_categories)
 
     # create the code for imports
-    imports = _get_imports(MODULES)
+    imports = _get_imports(modules)
 
     # create the code for the ABC AlgoSelection class
     parent_class_snippet = _get_abc_code()
