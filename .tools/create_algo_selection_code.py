@@ -4,11 +4,57 @@ import pkgutil
 import textwrap
 from itertools import combinations
 from types import ModuleType
-from typing import Type
+from typing import Callable, Type
 
 from optimagic.config import OPTIMAGIC_ROOT
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.typing import AggregationLevel
+
+
+def main():
+    """Create the source code for algorithms.py.
+
+    The main part are nested dataclasses that enable filtered autocomplete for algorithm
+    selection.
+
+    """
+    # create some basic inputs
+    docstring = _get_docstring_code()
+    modules = _import_optimizer_modules("optimagic.optimizers")
+    all_algos = _get_all_algorithms(modules)
+    filters = _get_filters()
+    all_categories = list(filters)
+    selection_info = _create_selection_info(all_algos, all_categories)
+
+    # create the code for imports
+    imports = _get_imports(modules)
+
+    # create the code for the ABC AlgoSelection class
+    parent_class_snippet = _get_base_class_code()
+
+    # create the code for the dataclasses
+    dataclass_snippets = []
+    for active_categories in selection_info:
+        new_snippet = create_dataclass_code(
+            active_categories=active_categories,
+            all_categories=all_categories,
+            selection_info=selection_info,
+        )
+        dataclass_snippets.append(new_snippet)
+
+    # create the code for the instantiation
+    instantiation_snippet = _get_instantiation_code()
+
+    # write code to the file
+
+    with open(OPTIMAGIC_ROOT / "algorithms.py", "w") as f:
+        f.write(docstring)
+        f.write(imports + "\n\n")
+        f.write(parent_class_snippet + "\n")
+        f.write("\n\n".join(dataclass_snippets))
+        f.write("\n\n")
+        f.write(instantiation_snippet)
+
 
 # ======================================================================================
 # Functions to collect algorithms
@@ -16,6 +62,7 @@ from optimagic.typing import AggregationLevel
 
 
 def _import_optimizer_modules(package_name):
+    """Collect all public modules in a given package in a list."""
     package = importlib.import_module(package_name)
     modules = []
 
@@ -31,6 +78,7 @@ def _import_optimizer_modules(package_name):
 
 
 def _get_all_algorithms(modules: list[ModuleType]) -> dict[str, Type[Algorithm]]:
+    """Collect all algorithms in moudles."""
     out = {}
     for module in modules:
         out.update(_get_algorithms_in_module(module))
@@ -38,6 +86,7 @@ def _get_all_algorithms(modules: list[ModuleType]) -> dict[str, Type[Algorithm]]
 
 
 def _get_algorithms_in_module(module: ModuleType) -> dict[str, Type[Algorithm]]:
+    """Collect all algorithms in a single module."""
     candidate_dict = dict(inspect.getmembers(module, inspect.isclass))
     candidate_dict = {
         k: v for k, v in candidate_dict.items() if hasattr(v, "__algo_info__")
@@ -93,18 +142,21 @@ def _is_parallel(algo: Type[Algorithm]) -> bool:
     return algo.__algo_info__.supports_parallelism
 
 
-FILTERS = {
-    "GradientBased": _is_gradient_based,
-    "GradientFree": _is_gradient_free,
-    "Global": _is_global,
-    "Local": _is_local,
-    "Bounded": _is_bounded,
-    "LinearConstrained": _is_linear_constrained,
-    "NonlinearConstrained": _is_nonlinear_constrained,
-    "LeastSquares": _is_least_squares,
-    "Likelihood": _is_likelihood,
-    "Parallel": _is_parallel,
-}
+def _get_filters() -> dict[str, Callable[[Type[Algorithm]], bool]]:
+    """Create a dict mapping from category names to filter functions."""
+    filters = {
+        "GradientBased": _is_gradient_based,
+        "GradientFree": _is_gradient_free,
+        "Global": _is_global,
+        "Local": _is_local,
+        "Bounded": _is_bounded,
+        "LinearConstrained": _is_linear_constrained,
+        "NonlinearConstrained": _is_nonlinear_constrained,
+        "LeastSquares": _is_least_squares,
+        "Likelihood": _is_likelihood,
+        "Parallel": _is_parallel,
+    }
+    return filters
 
 
 # ======================================================================================
@@ -167,8 +219,9 @@ def _apply_filters(
 
     """
     filtered = all_algos
+    filters = _get_filters()
     for category in categories:
-        filter_func = FILTERS[category]
+        filter_func = filters[category]
         filtered = {name: algo for name, algo in filtered.items() if filter_func(algo)}
     return filtered
 
@@ -341,6 +394,7 @@ def _get_docstring_code() -> str:
 
 
 def _get_instantiation_code() -> str:
+    """Get the source code for instantiating some classes at the end of the module."""
     out = textwrap.dedent("""
         algos = Algorithms()
         global_algos = GlobalAlgorithms()
@@ -350,50 +404,6 @@ def _get_instantiation_code() -> str:
         GLOBAL_ALGORITHMS = global_algos._available_algorithms_dict
     """)
     return out
-
-
-# ======================================================================================
-# Main function
-# ======================================================================================
-
-
-def main():
-    """Create the source code for all dataclasses needed for algorithm selection."""
-    # create some basic inputs
-    docstring = _get_docstring_code()
-    modules = _import_optimizer_modules("optimagic.optimizers")
-    all_algos = _get_all_algorithms(modules)
-    all_categories = list(FILTERS)
-    selection_info = _create_selection_info(all_algos, all_categories)
-
-    # create the code for imports
-    imports = _get_imports(modules)
-
-    # create the code for the ABC AlgoSelection class
-    parent_class_snippet = _get_base_class_code()
-
-    # create the code for the dataclasses
-    dataclass_snippets = []
-    for active_categories in selection_info:
-        new_snippet = create_dataclass_code(
-            active_categories=active_categories,
-            all_categories=all_categories,
-            selection_info=selection_info,
-        )
-        dataclass_snippets.append(new_snippet)
-
-    # create the code for the instantiation
-    instantiation_snippet = _get_instantiation_code()
-
-    # write code to the file
-
-    with open(OPTIMAGIC_ROOT / "algorithms.py", "w") as f:
-        f.write(docstring)
-        f.write(imports + "\n\n")
-        f.write(parent_class_snippet + "\n")
-        f.write("\n\n".join(dataclass_snippets))
-        f.write("\n\n")
-        f.write(instantiation_snippet)
 
 
 if __name__ == "__main__":
