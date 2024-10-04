@@ -130,6 +130,10 @@ def _is_nonlinear_constrained(algo: Type[Algorithm]) -> bool:
     return algo.__algo_info__.supports_nonlinear_constraints
 
 
+def _is_scalar(algo: Type[Algorithm]) -> bool:
+    return algo.__algo_info__.solver_type == AggregationLevel.SCALAR
+
+
 def _is_least_squares(algo: Type[Algorithm]) -> bool:
     return algo.__algo_info__.solver_type == AggregationLevel.LEAST_SQUARES
 
@@ -152,6 +156,7 @@ def _get_filters() -> dict[str, Callable[[Type[Algorithm]], bool]]:
         "Bounded": _is_bounded,
         "LinearConstrained": _is_linear_constrained,
         "NonlinearConstrained": _is_nonlinear_constrained,
+        "Scalar": _is_scalar,
         "LeastSquares": _is_least_squares,
         "Likelihood": _is_likelihood,
         "Parallel": _is_parallel,
