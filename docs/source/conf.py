@@ -49,7 +49,6 @@ extensions = [
     "sphinx_panels",
     "sphinx_design",
     "sphinxcontrib.mermaid",
-    
 ]
 
 myst_enable_extensions = [
@@ -58,7 +57,6 @@ myst_enable_extensions = [
     "html_image",
 ]
 myst_fence_as_directive = ["mermaid"]
-
 
 
 copybutton_prompt_text = ">>> "
