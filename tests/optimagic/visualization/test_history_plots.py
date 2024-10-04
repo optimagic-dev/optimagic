@@ -2,6 +2,9 @@ import itertools
 
 import numpy as np
 import pytest
+
+import optimagic as om
+from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 from optimagic.visualization.history_plots import criterion_plot, params_plot
@@ -19,11 +22,9 @@ def minimize_result():
                 params=np.arange(5),
                 algorithm=algorithm,
                 bounds=bounds,
-                multistart=multistart,
-                multistart_options={
-                    "n_samples": 1000,
-                    "convergence.max_discoveries": 5,
-                },
+                multistart=om.MultistartOptions(
+                    n_samples=1000, convergence_max_discoveries=5
+                ),
             )
             res.append(_res)
         out[multistart] = res
@@ -102,10 +103,8 @@ def test_criterion_plot_different_input_types():
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         bounds=bounds,
-        multistart=True,
-        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
-        log_options={"fast_logging": True},
-        logging="test.db",
+        multistart=om.MultistartOptions(n_samples=1000, convergence_max_discoveries=5),
+        logging=SQLiteLogOptions("test.db", fast_logging=True),
     )
 
     res = minimize(
@@ -113,8 +112,7 @@ def test_criterion_plot_different_input_types():
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
         bounds=bounds,
-        multistart=True,
-        multistart_options={"n_samples": 1000, "convergence.max_discoveries": 5},
+        multistart=om.MultistartOptions(n_samples=1000, convergence_max_discoveries=5),
     )
 
     results = ["test.db", res]

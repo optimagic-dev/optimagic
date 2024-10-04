@@ -2,9 +2,10 @@ from functools import partial
 from itertools import product
 
 import numpy as np
-import optimagic.parameters.kernel_transformations as kt
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic.parameters.kernel_transformations as kt
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.parameters.kernel_transformations import cov_matrix_to_sdcorr_params
 from optimagic.utilities import get_rng
@@ -60,7 +61,7 @@ def test_covariance_from_internal_jacobian(dim, seed):  # noqa: ARG001
     numerical_deriv = first_derivative(func, internal)
     deriv = kt.covariance_from_internal_jacobian(internal, None)
 
-    aaae(deriv, numerical_deriv["derivative"], decimal=3)
+    aaae(deriv, numerical_deriv.derivative, decimal=3)
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
@@ -71,7 +72,7 @@ def test_covariance_to_internal_jacobian(dim, seed):  # noqa: ARG001
     numerical_deriv = first_derivative(func, external)
     deriv = kt.covariance_to_internal_jacobian(external, None)
 
-    aaae(deriv, numerical_deriv["derivative"], decimal=3)
+    aaae(deriv, numerical_deriv.derivative, decimal=3)
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
@@ -82,7 +83,7 @@ def test_probability_from_internal_jacobian(dim, seed):  # noqa: ARG001
     numerical_deriv = first_derivative(func, internal)
     deriv = kt.probability_from_internal_jacobian(internal, None)
 
-    aaae(deriv, numerical_deriv["derivative"], decimal=3)
+    aaae(deriv, numerical_deriv.derivative, decimal=3)
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
@@ -93,7 +94,7 @@ def test_probability_to_internal_jacobian(dim, seed):  # noqa: ARG001
     numerical_deriv = first_derivative(func, external)
     deriv = kt.probability_to_internal_jacobian(external, None)
 
-    aaae(deriv, numerical_deriv["derivative"], decimal=3)
+    aaae(deriv, numerical_deriv.derivative, decimal=3)
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
@@ -104,7 +105,7 @@ def test_sdcorr_from_internal_jacobian(dim, seed):  # noqa: ARG001
     numerical_deriv = first_derivative(func, internal)
     deriv = kt.sdcorr_from_internal_jacobian(internal, None)
 
-    aaae(deriv, numerical_deriv["derivative"], decimal=3)
+    aaae(deriv, numerical_deriv.derivative, decimal=3)
 
 
 @pytest.mark.parametrize("dim, seed", to_test)
@@ -115,4 +116,4 @@ def test_sdcorr_to_internal_jacobian(dim, seed):  # noqa: ARG001
     numerical_deriv = first_derivative(func, external)
     deriv = kt.sdcorr_to_internal_jacobian(external, None)
 
-    aaae(deriv, numerical_deriv["derivative"], decimal=3)
+    aaae(deriv, numerical_deriv.derivative, decimal=3)

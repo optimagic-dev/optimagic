@@ -11,22 +11,26 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.examples.criterion_functions import (
-    sos_dict_criterion,
-    sos_dict_derivative,
-)
-from optimagic.exceptions import TableExistsError
-from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
+from optimagic import mark
+from optimagic.examples.criterion_functions import (
+    sos_derivatives,
+    sos_ls,
+)
+from optimagic.logging.logger import SQLiteLogOptions
+from optimagic.logging.types import ExistenceStrategy
+from optimagic.optimization.optimize import minimize
+from optimagic.parameters.tree_registry import get_registry
 
+
+@mark.least_squares
 def flexible_sos_ls(params):
-    return {"root_contributions": params}
+    return params
 
 
 algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox"]
-derivatives = [None, sos_dict_derivative]
+derivatives = [None, sos_derivatives]
 params = [pd.DataFrame({"value": np.arange(3)}), np.arange(3), {"a": 1, "b": 2, "c": 3}]
 
 test_cases = []
@@ -50,37 +54,20 @@ def test_optimization_with_valid_logging(algorithm, params):
 
 def test_optimization_with_existing_exsting_database():
     minimize(
-        sos_dict_criterion,
+        sos_ls,
         pd.Series([1, 2, 3], name="value").to_frame(),
         algorithm="scipy_lbfgsb",
-        logging="logging.db",
-        log_options={"if_database_exists": "raise"},
+        logging=SQLiteLogOptions(
+            "logging.db", if_database_exists=ExistenceStrategy.REPLACE
+        ),
     )
 
     with pytest.raises(FileExistsError):
         minimize(
-            sos_dict_criterion,
+            sos_ls,
             pd.Series([1, 2, 3], name="value").to_frame(),
             algorithm="scipy_lbfgsb",
-            logging="logging.db",
-            log_options={"if_database_exists": "raise"},
-        )
-
-
-def test_optimization_with_existing_exsting_table():
-    minimize(
-        sos_dict_criterion,
-        pd.Series([1, 2, 3], name="value").to_frame(),
-        algorithm="scipy_lbfgsb",
-        logging="logging.db",
-        log_options={"if_database_exists": "raise"},
-    )
-
-    with pytest.raises(TableExistsError):
-        minimize(
-            sos_dict_criterion,
-            pd.Series([1, 2, 3], name="value").to_frame(),
-            algorithm="scipy_lbfgsb",
-            logging="logging.db",
-            log_options={"if_table_exists": "raise"},
+            logging=SQLiteLogOptions(
+                "logging.db", if_database_exists=ExistenceStrategy.RAISE
+            ),
         )

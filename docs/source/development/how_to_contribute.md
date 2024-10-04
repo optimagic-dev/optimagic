@@ -13,8 +13,8 @@ ideas and guide the development process from the beginning. You can start a conv
 by posting an issue on GitHub or by emailing [janosg](https://github.com/janosg).
 
 To get familiar with the codebase, we recommend checking out our
-[issue tracker](https://github.com/OpenSourceEconomics/optimagic/issues) for some
-immediate and clearly defined tasks.
+[issue tracker](https://github.com/optimagic-dev/optimagic/issues) for some immediate
+and clearly defined tasks.
 
 ## 2. Before you start
 
@@ -30,11 +30,11 @@ contribution process (see Notes below).
 
 ## 3. Step-by-step guide
 
-1. Fork the [optimagic repository](https://github.com/OpenSourceEconomics/optimagic/).
-   This action creates a copy of the repository with write access for you.
+1. Fork the [optimagic repository](https://github.com/optimagic-dev/optimagic/). This
+   action creates a copy of the repository with write access for you.
 
 ```{note}
-For regular contributors: **Clone** the [repository](https://github.com/OpenSourceEconomics/optimagic/) to your local machine and create a new branch for implementing your changes. You can push your branch directly to the remote optimagic repository and open a PR from there.
+For regular contributors: **Clone** the [repository](https://github.com/optimagic-dev/optimagic/) to your local machine and create a new branch for implementing your changes. You can push your branch directly to the remote optimagic repository and open a PR from there.
 ```
 
 2. Clone your forked repository to your disk. This is where you'll make all your
@@ -110,7 +110,7 @@ Skip the next paragraph if you haven't worked on the documentation.
    ```
 
    Follow the steps outlined in the optimagic
-   [PR template](https://github.com/OpenSourceEconomics/optimagic/blob/main/.github/PULL_REQUEST_TEMPLATE/pull_request_template.md)
+   [PR template](https://github.com/optimagic-dev/optimagic/blob/main/.github/PULL_REQUEST_TEMPLATE/pull_request_template.md)
    to describe your contribution, the problem it addresses, and your proposed solution.
 
    Opening a PR initiates a complete CI run, including the `pytest` suite, linters, code

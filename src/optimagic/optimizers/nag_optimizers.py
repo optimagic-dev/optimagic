@@ -9,13 +9,26 @@ The following arguments are not supported as ``algo_options``:
 """
 
 import warnings
+from dataclasses import dataclass
+from typing import Any, Callable, Literal, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
+from optimagic import mark
 from optimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
-from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import STOPPING_MAXFUN
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
+from optimagic.typing import (
+    AggregationLevel,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PositiveInt,
+)
 from optimagic.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
@@ -117,13 +130,6 @@ r"""float: Ratio of the current lower trust region (:math:`\rho_k`) by which to 
     the upper trust region radius (:math:`\Delta_k`) when the lower one is shrunk
     (:math:`\alpha_2` in the notation of the paper). Default is 0.95 if the
     criterion is noisy and 0.5 else."""
-
-
-INITIAL_DIRECTIONS = "coordinate"
-"""string: How to draw the initial directions. Possible values are "coordinate" for
-    coordinate directions (the default) or "random".
-
-"""
 
 RANDOM_DIRECTIONS_ORTHOGONAL = True
 """bool: Whether to make randomly drawn initial directions orthogonal."""
@@ -329,45 +335,141 @@ r"""dict: Options to start the optimization while building the full trust region
 """
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nag_dfols",
-    primary_criterion_entry="root_contributions",
-    needs_scaling=True,
+    solver_type=AggregationLevel.LEAST_SQUARES,
     is_available=IS_DFOLS_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nag_dfols(
+@dataclass(frozen=True)
+class NagDFOLS(Algorithm):
+    clip_criterion_if_overflowing: bool = CLIP_CRITERION_IF_OVERFLOWING
+    convergence_minimal_trustregion_radius_tolerance: NonNegativeFloat = (
+        CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE  # noqa: E501
+    )
+    convergence_noise_corrected_criterion_tolerance: NonNegativeFloat = (
+        CONVERGENCE_NOISE_CORRECTED_FTOL  # noqa: E501
+    )
+    convergence_ftol_scaled: NonNegativeFloat = 0.0
+    convergence_slow_progress: dict[str, Any] | None = None
+    initial_directions: Literal[
+        "coordinate",
+        "random",
+    ] = "coordinate"
+    interpolation_rounding_error: float = INTERPOLATION_ROUNDING_ERROR
+    noise_additive_level: float | None = None
+    noise_multiplicative_level: float | None = None
+    noise_n_evals_per_point: NonNegativeInt | None = None
+    random_directions_orthogonal: bool = RANDOM_DIRECTIONS_ORTHOGONAL
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    threshold_for_safety_step: NonNegativeFloat = THRESHOLD_FOR_SAFETY_STEP
+    trustregion_expansion_factor_successful: NonNegativeFloat = (
+        TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL
+    )
+    trustregion_expansion_factor_very_successful: NonNegativeFloat = (
+        TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL  # noqa: E501
+    )
+    trustregion_fast_start_options: dict[str, Any] | None = None
+    trustregion_initial_radius: NonNegativeFloat | None = None
+    trustregion_method_to_replace_extra_points: (
+        Literal["geometry_improving", "momentum"] | None
+    ) = "geometry_improving"
+    trustregion_n_extra_points_to_replace_successful: NonNegativeInt = 0
+    trustregion_n_interpolation_points: NonNegativeInt | None = None
+    trustregion_precondition_interpolation: bool = (
+        TRUSTREGION_PRECONDITION_INTERPOLATION
+    )
+    trustregion_reset_options: dict[str, Any] | None = None
+    trustregion_shrinking_factor_not_successful: NonNegativeFloat | None = (
+        TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL  # noqa: E501
+    )
+    trustregion_shrinking_factor_lower_radius: NonNegativeFloat | None = (
+        TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS
+    )
+    trustregion_shrinking_factor_upper_radius: NonNegativeFloat | None = (
+        TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS
+    )
+    trustregion_threshold_successful: float = TRUSTREGION_THRESHOLD_SUCCESSFUL
+    trustregion_threshold_very_successful: float = TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = nag_dfols_internal(
+            criterion=problem.fun,
+            x=x0,
+            lower_bounds=problem.bounds.lower,
+            upper_bounds=problem.bounds.upper,
+            clip_criterion_if_overflowing=self.clip_criterion_if_overflowing,
+            convergence_minimal_trustregion_radius_tolerance=self.convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
+            convergence_noise_corrected_criterion_tolerance=self.convergence_noise_corrected_criterion_tolerance,  # noqa: E501
+            convergence_ftol_scaled=self.convergence_ftol_scaled,
+            convergence_slow_progress=self.convergence_slow_progress,
+            initial_directions=self.initial_directions,
+            interpolation_rounding_error=self.interpolation_rounding_error,
+            noise_additive_level=self.noise_additive_level,
+            noise_multiplicative_level=self.noise_multiplicative_level,
+            noise_n_evals_per_point=self.noise_n_evals_per_point,
+            random_directions_orthogonal=self.random_directions_orthogonal,
+            stopping_maxfun=self.stopping_maxfun,
+            threshold_for_safety_step=self.threshold_for_safety_step,
+            trustregion_expansion_factor_successful=self.trustregion_expansion_factor_successful,
+            trustregion_expansion_factor_very_successful=self.trustregion_expansion_factor_very_successful,  # noqa: E501
+            trustregion_fast_start_options=self.trustregion_fast_start_options,
+            trustregion_initial_radius=self.trustregion_initial_radius,
+            trustregion_method_to_replace_extra_points=self.trustregion_method_to_replace_extra_points,
+            trustregion_n_extra_points_to_replace_successful=self.trustregion_n_extra_points_to_replace_successful,
+            trustregion_n_interpolation_points=self.trustregion_n_interpolation_points,
+            trustregion_precondition_interpolation=self.trustregion_precondition_interpolation,
+            trustregion_reset_options=self.trustregion_reset_options,
+            trustregion_shrinking_factor_not_successful=self.trustregion_shrinking_factor_not_successful,
+            trustregion_shrinking_factor_lower_radius=self.trustregion_shrinking_factor_lower_radius,
+            trustregion_shrinking_factor_upper_radius=self.trustregion_shrinking_factor_upper_radius,
+            trustregion_threshold_successful=self.trustregion_threshold_successful,
+            trustregion_threshold_very_successful=self.trustregion_threshold_very_successful,
+        )
+        return res
+
+
+def nag_dfols_internal(
     criterion,
     x,
     lower_bounds,
     upper_bounds,
-    *,
-    clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
-    convergence_minimal_trustregion_radius_tolerance=CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,  # noqa: E501
-    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_FTOL,  # noqa: E501
-    convergence_ftol_scaled=0.0,
-    convergence_slow_progress=None,
-    initial_directions=INITIAL_DIRECTIONS,
-    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
-    noise_additive_level=None,
-    noise_multiplicative_level=None,
-    noise_n_evals_per_point=None,
-    random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    stopping_maxfun=STOPPING_MAXFUN,
-    threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
-    trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
-    trustregion_fast_start_options=None,
-    trustregion_initial_radius=None,
-    trustregion_method_to_replace_extra_points="geometry_improving",
-    trustregion_n_extra_points_to_replace_successful=0,
-    trustregion_n_interpolation_points=None,
-    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
-    trustregion_reset_options=None,
-    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
-    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-    trustregion_shrinking_factor_upper_radius=TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS,
-    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
-    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
+    clip_criterion_if_overflowing,
+    convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
+    convergence_noise_corrected_criterion_tolerance,  # noqa: E501
+    convergence_ftol_scaled,
+    convergence_slow_progress,
+    initial_directions,
+    interpolation_rounding_error,
+    noise_additive_level,
+    noise_multiplicative_level,
+    noise_n_evals_per_point,
+    random_directions_orthogonal,
+    stopping_maxfun,
+    threshold_for_safety_step,
+    trustregion_expansion_factor_successful,
+    trustregion_expansion_factor_very_successful,  # noqa: E501
+    trustregion_fast_start_options,
+    trustregion_initial_radius,
+    trustregion_method_to_replace_extra_points,
+    trustregion_n_extra_points_to_replace_successful,
+    trustregion_n_interpolation_points,
+    trustregion_precondition_interpolation,
+    trustregion_reset_options,
+    trustregion_shrinking_factor_not_successful,  # noqa: E501
+    trustregion_shrinking_factor_lower_radius,
+    trustregion_shrinking_factor_upper_radius,
+    trustregion_threshold_successful,
+    trustregion_threshold_very_successful,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -506,7 +608,7 @@ def nag_dfols(
 
     advanced_options.update(dfols_options)
 
-    res = dfols.solve(
+    raw_res = dfols.solve(
         criterion,
         x0=x,
         bounds=(lower_bounds, upper_bounds),
@@ -522,46 +624,151 @@ def nag_dfols(
         user_params=advanced_options,
     )
 
-    return _process_nag_result(res, len(x))
+    res = _process_nag_result(raw_res, len(x))
+    out = InternalOptimizeResult(
+        x=res["solution_x"],
+        fun=res["solution_criterion"],
+        success=res["success"],
+        message=res["message"],
+        n_iterations=int(res["n_iterations"]),
+        n_fun_evals=res["n_fun_evals"],
+    )
+    return out
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="nag_pybobyqa",
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYBOBYQA_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def nag_pybobyqa(
+@dataclass(frozen=True)
+class NagPyBOBYQA(Algorithm):
+    clip_criterion_if_overflowing: bool = CLIP_CRITERION_IF_OVERFLOWING
+    convergence_minimal_trustregion_radius_tolerance: NonNegativeFloat = (
+        CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE  # noqa: E501
+    )
+    convergence_noise_corrected_criterion_tolerance: NonNegativeFloat = (
+        CONVERGENCE_NOISE_CORRECTED_FTOL  # noqa: E501
+    )
+    convergence_criterion_value: float | None = None
+    convergence_slow_progress: dict[str, Any] | None = None
+    initial_directions: Literal[
+        "coordinate",
+        "random",
+    ] = "coordinate"
+    interpolation_rounding_error: float = INTERPOLATION_ROUNDING_ERROR
+    noise_additive_level: float | None = None
+    noise_multiplicative_level: float | None = None
+    noise_n_evals_per_point: NonNegativeInt | None = None
+    random_directions_orthogonal: bool = RANDOM_DIRECTIONS_ORTHOGONAL
+    seek_global_optimum: bool = False
+    stopping_max_criterion_evaluations: PositiveInt = STOPPING_MAXFUN
+    threshold_for_safety_step: NonNegativeFloat = THRESHOLD_FOR_SAFETY_STEP
+    trustregion_expansion_factor_successful: NonNegativeFloat = (
+        TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL
+    )
+    trustregion_expansion_factor_very_successful: NonNegativeFloat = (
+        TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL  # noqa: E501
+    )
+    trustregion_initial_radius: NonNegativeFloat | None = None
+    trustregion_minimum_change_hession_for_underdetermined_interpolation: bool = True
+    trustregion_n_interpolation_points: NonNegativeInt | None = None
+    trustregion_precondition_interpolation: bool = (
+        TRUSTREGION_PRECONDITION_INTERPOLATION
+    )
+    trustregion_reset_options: dict[str, Any] | None = None
+    trustregion_shrinking_factor_not_successful: NonNegativeFloat | None = (
+        TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL  # noqa: E501
+    )
+    trustregion_shrinking_factor_lower_radius: NonNegativeFloat | None = (
+        TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS
+    )
+    trustregion_shrinking_factor_upper_radius: NonNegativeFloat | None = (
+        TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS
+    )
+    trustregion_threshold_successful: float = TRUSTREGION_THRESHOLD_SUCCESSFUL
+    trustregion_threshold_very_successful: float = TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        res = nag_pybobyqa_internal(
+            criterion=cast(
+                Callable[[NDArray[np.float64]], NDArray[np.float64]],
+                problem.fun,
+            ),
+            x=x0,
+            lower_bounds=problem.bounds.lower,
+            upper_bounds=problem.bounds.upper,
+            clip_criterion_if_overflowing=self.clip_criterion_if_overflowing,
+            convergence_minimal_trustregion_radius_tolerance=self.convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
+            convergence_noise_corrected_criterion_tolerance=self.convergence_noise_corrected_criterion_tolerance,  # noqa: E501
+            convergence_slow_progress=self.convergence_slow_progress,
+            convergence_criterion_value=self.convergence_criterion_value,
+            initial_directions=self.initial_directions,
+            interpolation_rounding_error=self.interpolation_rounding_error,
+            noise_additive_level=self.noise_additive_level,
+            noise_multiplicative_level=self.noise_multiplicative_level,
+            noise_n_evals_per_point=self.noise_n_evals_per_point,
+            random_directions_orthogonal=self.random_directions_orthogonal,
+            seek_global_optimum=self.seek_global_optimum,
+            stopping_max_criterion_evaluations=self.stopping_max_criterion_evaluations,
+            threshold_for_safety_step=self.threshold_for_safety_step,
+            trustregion_expansion_factor_successful=self.trustregion_expansion_factor_successful,
+            trustregion_expansion_factor_very_successful=self.trustregion_expansion_factor_very_successful,  # noqa: E501
+            trustregion_initial_radius=self.trustregion_initial_radius,
+            trustregion_minimum_change_hession_for_underdetermined_interpolation=self.trustregion_minimum_change_hession_for_underdetermined_interpolation,  # noqa: E501
+            trustregion_n_interpolation_points=self.trustregion_n_interpolation_points,
+            trustregion_precondition_interpolation=self.trustregion_precondition_interpolation,
+            trustregion_reset_options=self.trustregion_reset_options,
+            trustregion_shrinking_factor_not_successful=self.trustregion_shrinking_factor_not_successful,
+            trustregion_shrinking_factor_lower_radius=self.trustregion_shrinking_factor_lower_radius,
+            trustregion_shrinking_factor_upper_radius=self.trustregion_shrinking_factor_upper_radius,
+            trustregion_threshold_successful=self.trustregion_threshold_successful,
+            trustregion_threshold_very_successful=self.trustregion_threshold_very_successful,
+        )
+        return res
+
+
+def nag_pybobyqa_internal(
     criterion,
     x,
     lower_bounds,
     upper_bounds,
-    *,
-    clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
-    convergence_criterion_value=None,
-    convergence_minimal_trustregion_radius_tolerance=CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,  # noqa: E501
-    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_FTOL,  # noqa: E501
-    convergence_slow_progress=None,
-    initial_directions=INITIAL_DIRECTIONS,
-    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
-    noise_additive_level=None,
-    noise_multiplicative_level=None,
-    noise_n_evals_per_point=None,
-    random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    seek_global_optimum=False,
-    stopping_max_criterion_evaluations=STOPPING_MAXFUN,
-    threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
-    trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
-    trustregion_initial_radius=None,
-    trustregion_minimum_change_hession_for_underdetermined_interpolation=True,
-    trustregion_n_interpolation_points=None,
-    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
-    trustregion_reset_options=None,
-    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
-    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-    trustregion_shrinking_factor_upper_radius=TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS,
-    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
-    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
+    clip_criterion_if_overflowing,
+    convergence_criterion_value,
+    convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
+    convergence_noise_corrected_criterion_tolerance,  # noqa: E501
+    convergence_slow_progress,
+    initial_directions,
+    interpolation_rounding_error,
+    noise_additive_level,
+    noise_multiplicative_level,
+    noise_n_evals_per_point,
+    random_directions_orthogonal,
+    seek_global_optimum,
+    stopping_max_criterion_evaluations,
+    threshold_for_safety_step,
+    trustregion_expansion_factor_successful,
+    trustregion_expansion_factor_very_successful,  # noqa: E501
+    trustregion_initial_radius,
+    trustregion_minimum_change_hession_for_underdetermined_interpolation,
+    trustregion_n_interpolation_points,
+    trustregion_precondition_interpolation,
+    trustregion_reset_options,
+    trustregion_shrinking_factor_not_successful,  # noqa: E501
+    trustregion_shrinking_factor_lower_radius,
+    trustregion_shrinking_factor_upper_radius,
+    trustregion_threshold_successful,
+    trustregion_threshold_very_successful,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -626,7 +833,7 @@ def nag_pybobyqa(
 
     advanced_options.update(pybobyqa_options)
 
-    res = pybobyqa.solve(
+    raw_res = pybobyqa.solve(
         criterion,
         x0=x,
         bounds=(lower_bounds, upper_bounds),
@@ -643,7 +850,17 @@ def nag_pybobyqa(
         seek_global_minimum=seek_global_optimum,
     )
 
-    return _process_nag_result(res, len(x))
+    res = _process_nag_result(raw_res, len(x))
+
+    out = InternalOptimizeResult(
+        x=res["solution_x"],
+        fun=res["solution_criterion"],
+        success=res["success"],
+        message=res["message"],
+        n_iterations=int(res["n_iterations"]),
+    )
+
+    return out
 
 
 def _process_nag_result(nag_result_obj, len_x):
@@ -659,8 +876,13 @@ def _process_nag_result(nag_result_obj, len_x):
         results (dict): See :ref:`internal_optimizer_output` for details.
 
     """
+    if hasattr(nag_result_obj, "f"):
+        solution_fun = nag_result_obj.f
+    else:
+        solution_fun = nag_result_obj.obj
+
     processed = {
-        "solution_criterion": nag_result_obj.f,
+        "solution_criterion": solution_fun,
         "n_fun_evals": nag_result_obj.nx,
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,

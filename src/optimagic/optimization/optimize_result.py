@@ -1,10 +1,13 @@
 import warnings
-from dataclasses import dataclass, field
-from typing import Any, Dict
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
 
+from optimagic import deprecations
+from optimagic.logging.logger import LogReader
+from optimagic.optimization.history import History
 from optimagic.shared.compat import pd_df_map
 from optimagic.typing import PyTree
 from optimagic.utilities import to_pickle
@@ -54,14 +57,15 @@ class OptimizeResult:
     jac: PyTree | None = None
     hess: PyTree | None = None
     hess_inv: PyTree | None = None
-    max_constaint_violation: float | None = None
+    max_constraint_violation: float | None = None
 
-    history: Dict | None = None
+    history: History | None = None
 
     convergence_report: Dict | None = None
 
-    multistart_info: Dict | None = None
-    algorithm_output: Dict = field(default_factory=dict)
+    multistart_info: Optional["MultistartInfo"] = None
+    algorithm_output: Dict[str, Any] | None = None
+    logger: LogReader | None = None
 
     # ==================================================================================
     # Deprecations
@@ -128,6 +132,7 @@ class OptimizeResult:
     def nhev(self) -> int | None:
         return self.n_hess_evals
 
+    # Enable attribute access using dictionary-style notation for scipy compatibility
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -196,6 +201,33 @@ class OptimizeResult:
 
         """
         to_pickle(self, path=path)
+
+
+@dataclass(frozen=True)
+class MultistartInfo:
+    """Information about the multistart optimization.
+
+    Attributes:
+        start_parameters: List of start parameters for each optimization.
+        local_optima: List of optimization results.
+        exploration_sample: List of parameters used for exploration.
+        exploration_results: List of function values corresponding to exploration.
+        n_optimizations: Number of local optimizations that were run.
+
+    """
+
+    start_parameters: list[PyTree]
+    local_optima: list[OptimizeResult]
+    exploration_sample: list[PyTree]
+    exploration_results: list[float]
+
+    def __getitem__(self, key):
+        deprecations.throw_dict_access_future_warning(key, obj_name=type(self).__name__)
+        return getattr(self, key)
+
+    @property
+    def n_optimizations(self) -> int:
+        return len(self.local_optima)
 
 
 def _format_convergence_report(report, algorithm):

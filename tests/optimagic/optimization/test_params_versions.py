@@ -2,39 +2,21 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.differentiation.derivatives import first_derivative
+from pybaum import tree_just_flatten
+
+from optimagic.examples.criterion_functions import (
+    sos_gradient,
+    sos_ls,
+    sos_ls_jacobian,
+    sos_scalar,
+)
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten, tree_map
 
 REGISTRY = get_registry(extended=True)
 
-
-def flexible_sos_scalar(params):
-    flat = np.array(tree_just_flatten(params, registry=REGISTRY))
-    return flat @ flat
-
-
-def flexible_sos_scalar_derivative(params):
-    return tree_map(lambda x: 2.0 * x, params)
-
-
-def flexible_sos_ls(params):
-    return {"root_contributions": params}
-
-
-def flexible_sos_ls_derivative(params):
-    deriv_dict = first_derivative(
-        flexible_sos_ls,
-        params,
-        key="root_contributions",
-    )
-
-    return deriv_dict["derivative"]
-
-
 PARAMS = [
-    {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5},
+    {"a": 1.0, "b": 2, "c": 3, "d": 4, "e": 5},
     np.arange(5),
     list(range(5)),
     tuple(range(5)),
@@ -51,7 +33,7 @@ def test_tree_params_numerical_derivative_scalar_criterion(params):
     expected = np.zeros_like(flat)
 
     res = minimize(
-        fun=flexible_sos_scalar,
+        fun=sos_scalar,
         params=params,
         algorithm="scipy_lbfgsb",
     )
@@ -65,8 +47,8 @@ def test_tree_params_scalar_criterion(params):
     expected = np.zeros_like(flat)
 
     res = minimize(
-        fun=flexible_sos_scalar,
-        jac=flexible_sos_scalar_derivative,
+        fun=sos_scalar,
+        jac=sos_gradient,
         params=params,
         algorithm="scipy_lbfgsb",
     )
@@ -86,7 +68,7 @@ def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
     expected = np.zeros_like(flat)
 
     res = minimize(
-        fun=flexible_sos_ls,
+        fun=sos_ls,
         params=params,
         algorithm=algorithm,
     )
@@ -99,13 +81,9 @@ def test_tree_params_sos_ls(params, algorithm):
     flat = np.array(tree_just_flatten(params, registry=REGISTRY))
     expected = np.zeros_like(flat)
 
-    derivatives = {
-        "value": flexible_sos_scalar_derivative,
-        "root_contributions": flexible_sos_ls_derivative,
-    }
-
+    derivatives = [sos_gradient, sos_ls_jacobian]
     res = minimize(
-        fun=flexible_sos_ls,
+        fun=sos_ls,
         jac=derivatives,
         params=params,
         algorithm=algorithm,

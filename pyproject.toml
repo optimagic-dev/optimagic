@@ -14,30 +14,35 @@ dependencies = [
     "pybaum>=0.1.2",
     "scipy>=1.2.1",
     "sqlalchemy>=1.3",
+    "annotated-types",
+    "typing-extensions",
 ]
 dynamic = ["version"]
 keywords = [
-    "econometrics",
+    "nonlinear optimization",
+    "optimization",
+    "derivative free optimization",
+    "global optimization",
+    "parallel optimization",
     "statistics",
     "estimation",
     "extremum estimation",
-    "optimization",
     "inference",
     "numerical differentiation",
     "finite differences",
-    "derivative free optimization",
     "method of simulated moments",
     "maximum likelihood",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
 ]
 authors = [
@@ -56,9 +61,9 @@ content-type = "text/markdown"
 text = "MIT"
 
 [project.urls]
-Repository = "https://github.com/opensourceeconomics/optimagic"
-Github = "https://github.com/opensourceeconomics/optimagic"
-Tracker = "https://github.com/OpenSourceEconomics/optimagic/issues"
+Repository = "https://github.com/optimagic-dev/optimagic"
+Github = "https://github.com/optimagic-dev/optimagic"
+Tracker = "https://github.com/optimagic-dev/optimagic/issues"
 
 
 # ======================================================================================
@@ -173,6 +178,9 @@ filterwarnings = [
     "ignore:Widget.widgets is deprecated",
     "ignore:Parallelization together with",
     "ignore:Conversion of an array with ndim > 0 to a scalar is deprecated",
+    "ignore:The following exception was caught when evaluating",
+    "ignore:The following exception was caught when calculating",
+    "ignore:Usage of the parameter log_options",
 ]
 addopts = ["--doctest-modules"]
 markers = [
@@ -226,30 +234,14 @@ module = [
     "optimagic.differentiation.richardson_extrapolation",
 
     "optimagic.examples",
-    "optimagic.examples.criterion_functions",
     "optimagic.examples.numdiff_functions",
-
-
-    "optimagic.logging",
-    "optimagic.logging.create_tables",
-    "optimagic.logging.load_database",
-    "optimagic.logging.read_from_database",
-    "optimagic.logging.read_log",
-    "optimagic.logging.write_to_database",
 
     "optimagic.optimization",
     "optimagic.optimization.algo_options",
-    "optimagic.optimization.check_arguments",
     "optimagic.optimization.convergence_report",
-    "optimagic.optimization.error_penalty",
-    "optimagic.optimization.get_algorithm",
-    "optimagic.optimization.history_tools",
-    "optimagic.optimization.internal_criterion_template",
     "optimagic.optimization.optimization_logging",
     "optimagic.optimization.optimize_result",
     "optimagic.optimization.optimize",
-    "optimagic.optimization.process_multistart_sample",
-    "optimagic.optimization.process_results",
     "optimagic.optimization.multistart",
     "optimagic.optimization.scipy_aliases",
     "optimagic.optimization.create_optimization_problem",
@@ -271,7 +263,6 @@ module = [
     "optimagic.optimizers.nag_optimizers",
     "optimagic.optimizers.neldermead",
     "optimagic.optimizers.nlopt_optimizers",
-    "optimagic.optimizers.bhhh",
     "optimagic.optimizers.ipopt",
     "optimagic.optimizers.fides",
     "optimagic.optimizers.pounders",
@@ -307,8 +298,6 @@ module = [
     "optimagic.visualization.slice_plot",
 
     "optimagic",
-    "optimagic.batch_evaluators",
-    "optimagic.cli",
     "optimagic.decorators",
     "optimagic.exceptions",
     "optimagic.utilities",
@@ -372,8 +361,11 @@ module = [
     "bokeh.command.util",
     "fides",
     "petsc4py",
+    "petsc4py.PETSc",
     "tranquilo",
     "tranquilo.tranquilo",
+    "tranquilo.options",
+    "tranquilo.process_arguments",
     "dfols",
     "pybobyqa",
     "pygmo",
@@ -384,5 +376,6 @@ module = [
     "pathos",
     "pathos.pools",
     "optimagic._version",
+    "annotated_types",
   ]
 ignore_missing_imports = true

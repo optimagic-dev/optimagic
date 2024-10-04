@@ -1,12 +1,18 @@
 """Implement the POUNDERS algorithm."""
 
 import warnings
+from dataclasses import dataclass
+from typing import Any, Literal
 
 import numpy as np
+from numpy.typing import NDArray
 
-from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic import mark
 from optimagic.config import DEFAULT_N_CORES
-from optimagic.decorators import mark_minimizer
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
 from optimagic.optimizers._pounders.pounders_auxiliary import (
     add_accepted_point_to_residual_model,
     add_geomtery_points_to_make_main_model_fully_linear,
@@ -24,115 +30,134 @@ from optimagic.optimizers._pounders.pounders_auxiliary import (
     update_trustregion_radius,
 )
 from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
-
-
-@mark_minimizer(
-    name="pounders",
-    primary_criterion_entry="root_contributions",
-    needs_scaling=True,
-    is_available=True,
+from optimagic.typing import (
+    AggregationLevel,
+    NonNegativeFloat,
+    PositiveFloat,
+    PositiveInt,
 )
-def pounders(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    convergence_gtol_abs=1e-8,
-    convergence_gtol_rel=1e-8,
-    convergence_gtol_scaled=False,
-    max_interpolation_points=None,
-    stopping_maxiter=2_000,
-    trustregion_initial_radius=0.1,
-    trustregion_minimal_radius=1e-6,
-    trustregion_maximal_radius=1e6,
-    trustregion_shrinking_factor_not_successful=0.5,
-    trustregion_expansion_factor_successful=2,
-    theta1=1e-5,
-    theta2=1e-4,
-    trustregion_threshold_acceptance=0,
-    trustregion_threshold_successful=0.1,
-    c1=None,
-    c2=10,
-    trustregion_subproblem_solver="bntr",
-    trustregion_subsolver_options=None,
-    batch_evaluator="joblib",
-    n_cores=DEFAULT_N_CORES,
-):
-    """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
-    For details, see
-    :ref: `_own_algorithms`.
 
-    """
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
+@mark.minimizer(
+    name="pounders",
+    solver_type=AggregationLevel.LEAST_SQUARES,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class Pounders(Algorithm):
+    convergence_gtol_abs: NonNegativeFloat = 1e-8
+    convergence_gtol_rel: NonNegativeFloat = 1e-8
+    # TODO: Why can this a bool
+    convergence_gtol_scaled: NonNegativeFloat | bool = False
+    max_interpolation_points: PositiveInt | None = None
+    # TODO: Why is this not higher?
+    stopping_maxiter: PositiveInt = 2_000
+    trustregion_initial_radius: PositiveFloat = 0.1
+    trustregion_minimal_radius: PositiveFloat = 1e-6
+    trustregion_maximal_radius: PositiveFloat = 1e6
+    trustregion_shrinking_factor_not_successful: PositiveFloat = 0.5
+    trustregion_expansion_factor_successful: PositiveFloat = 2
+    theta1: PositiveFloat = 1e-5
+    theta2: PositiveFloat = 1e-4
+    trustregion_threshold_acceptance: NonNegativeFloat = 0
+    trustregion_threshold_successful: NonNegativeFloat = 0.1
+    c1: NonNegativeFloat | None = None
+    c2: NonNegativeFloat = 10
+    trustregion_subproblem_solver: Literal[
+        "bntr",
+        "gqtpar",
+    ] = "bntr"
+    trustregion_subsolver_options: dict[str, Any] | None = None
+    n_cores: PositiveInt = DEFAULT_N_CORES
 
-    if max_interpolation_points is None:
-        max_interpolation_points = 2 * len(x) + 1
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.max_interpolation_points is None:
+            max_interpolation_points = 2 * len(x0) + 1
+        else:
+            max_interpolation_points = self.max_interpolation_points
 
-    if c1 is None:
-        c1 = np.sqrt(x.shape[0])
+        if self.c1 is None:
+            c1 = np.sqrt(x0.shape[0])
+        else:
+            c1 = self.c1
 
-    if trustregion_subsolver_options is None:
-        trustregion_subsolver_options = {}
+        if self.trustregion_subsolver_options is None:
+            trustregion_subsolver_options = {}
+        else:
+            trustregion_subsolver_options = self.trustregion_subsolver_options
 
-    default_options = {
-        "conjugate_gradient_method": "trsbox",
-        "maxiter": 50,
-        "maxiter_gradient_descent": 5,
-        "gtol_abs": 1e-8,
-        "gtol_rel": 1e-8,
-        "gtol_scaled": 0,
-        "gtol_abs_cg": 1e-8,
-        "gtol_rel_cg": 1e-6,
-        "k_easy": 0.1,
-        "k_hard": 0.2,
-    }
-    trustregion_subsolver_options = {
-        **default_options,
-        **trustregion_subsolver_options,
-    }
+        default_options = {
+            "conjugate_gradient_method": "trsbox",
+            "maxiter": 50,
+            "maxiter_gradient_descent": 5,
+            "gtol_abs": 1e-8,
+            "gtol_rel": 1e-8,
+            "gtol_scaled": 0,
+            "gtol_abs_cg": 1e-8,
+            "gtol_rel_cg": 1e-6,
+            "k_easy": 0.1,
+            "k_hard": 0.2,
+        }
+        trustregion_subsolver_options = {
+            **default_options,
+            **trustregion_subsolver_options,
+        }
 
-    result = internal_solve_pounders(
-        criterion=criterion,
-        x0=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        gtol_abs=convergence_gtol_abs,
-        gtol_rel=convergence_gtol_rel,
-        gtol_scaled=convergence_gtol_scaled,
-        maxinterp=max_interpolation_points,
-        maxiter=stopping_maxiter,
-        delta=trustregion_initial_radius,
-        delta_min=trustregion_minimal_radius,
-        delta_max=trustregion_maximal_radius,
-        gamma0=trustregion_shrinking_factor_not_successful,
-        gamma1=trustregion_expansion_factor_successful,
-        theta1=theta1,
-        theta2=theta2,
-        eta0=trustregion_threshold_acceptance,
-        eta1=trustregion_threshold_successful,
-        c1=c1,
-        c2=c2,
-        solver_sub=trustregion_subproblem_solver,
-        conjugate_gradient_method_sub=trustregion_subsolver_options[
-            "conjugate_gradient_method"
-        ],
-        maxiter_sub=trustregion_subsolver_options["maxiter"],
-        maxiter_gradient_descent_sub=trustregion_subsolver_options[
-            "maxiter_gradient_descent"
-        ],
-        gtol_abs_sub=trustregion_subsolver_options["gtol_abs"],
-        gtol_rel_sub=trustregion_subsolver_options["gtol_rel"],
-        gtol_scaled_sub=trustregion_subsolver_options["gtol_scaled"],
-        gtol_abs_conjugate_gradient_sub=trustregion_subsolver_options["gtol_abs_cg"],
-        gtol_rel_conjugate_gradient_sub=trustregion_subsolver_options["gtol_rel_cg"],
-        k_easy_sub=trustregion_subsolver_options["k_easy"],
-        k_hard_sub=trustregion_subsolver_options["k_hard"],
-        batch_evaluator=batch_evaluator,
-        n_cores=n_cores,
-    )
+        result = internal_solve_pounders(
+            criterion=problem.fun,
+            x0=x0,
+            lower_bounds=problem.bounds.lower,
+            upper_bounds=problem.bounds.upper,
+            gtol_abs=self.convergence_gtol_abs,
+            gtol_rel=self.convergence_gtol_rel,
+            gtol_scaled=self.convergence_gtol_scaled,
+            maxinterp=max_interpolation_points,
+            maxiter=self.stopping_maxiter,
+            delta=self.trustregion_initial_radius,
+            delta_min=self.trustregion_minimal_radius,
+            delta_max=self.trustregion_maximal_radius,
+            gamma0=self.trustregion_shrinking_factor_not_successful,
+            gamma1=self.trustregion_expansion_factor_successful,
+            theta1=self.theta1,
+            theta2=self.theta2,
+            eta0=self.trustregion_threshold_acceptance,
+            eta1=self.trustregion_threshold_successful,
+            c1=c1,
+            c2=self.c2,
+            solver_sub=self.trustregion_subproblem_solver,
+            conjugate_gradient_method_sub=trustregion_subsolver_options[
+                "conjugate_gradient_method"
+            ],
+            maxiter_sub=trustregion_subsolver_options["maxiter"],
+            maxiter_gradient_descent_sub=trustregion_subsolver_options[
+                "maxiter_gradient_descent"
+            ],
+            gtol_abs_sub=trustregion_subsolver_options["gtol_abs"],
+            gtol_rel_sub=trustregion_subsolver_options["gtol_rel"],
+            gtol_scaled_sub=trustregion_subsolver_options["gtol_scaled"],
+            gtol_abs_conjugate_gradient_sub=trustregion_subsolver_options[
+                "gtol_abs_cg"
+            ],
+            gtol_rel_conjugate_gradient_sub=trustregion_subsolver_options[
+                "gtol_rel_cg"
+            ],
+            k_easy_sub=trustregion_subsolver_options["k_easy"],
+            k_hard_sub=trustregion_subsolver_options["k_hard"],
+            batch_fun=problem.batch_fun,
+            n_cores=self.n_cores,
+        )
 
-    return result
+        return result
 
 
 def internal_solve_pounders(
@@ -167,7 +192,7 @@ def internal_solve_pounders(
     gtol_rel_conjugate_gradient_sub,
     k_easy_sub,
     k_hard_sub,
-    batch_evaluator,
+    batch_fun,
     n_cores,
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
@@ -278,7 +303,7 @@ def internal_solve_pounders(
         x1[i] += delta
         xs.append(x1)
 
-    residuals = batch_evaluator(criterion, arguments=xs, n_cores=n_cores)
+    residuals = batch_fun(x_list=xs, n_cores=n_cores)
 
     history.add_entries(xs, residuals)
     accepted_index = history.get_best_index()
@@ -389,7 +414,7 @@ def internal_solve_pounders(
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
-                    batch_evaluator=batch_evaluator,
+                    batch_fun=batch_fun,
                     n_cores=n_cores,
                 )
                 n_modelpoints = n
@@ -460,7 +485,7 @@ def internal_solve_pounders(
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
-                    batch_evaluator=batch_evaluator,
+                    batch_fun=batch_fun,
                     n_cores=n_cores,
                 )
 
@@ -554,17 +579,15 @@ def internal_solve_pounders(
         if converged:
             break
 
-    result_dict = {
-        "solution_x": history.get_xs(index=accepted_index),
-        "solution_criterion": history.get_best_residuals(),
-        "history_x": history.get_xs(),
-        "history_criterion": history.get_residuals(),
-        "n_iterations": niter,
-        "success": converged,
-        "message": convergence_reason,
-    }
+    result = InternalOptimizeResult(
+        x=history.get_xs(index=accepted_index),
+        fun=history.get_best_residuals(),
+        n_iterations=niter,
+        success=converged,
+        message=convergence_reason,
+    )
 
-    return result_dict
+    return result
 
 
 def _check_for_convergence(

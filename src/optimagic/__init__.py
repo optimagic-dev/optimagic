@@ -1,4 +1,6 @@
-from optimagic import utilities
+from __future__ import annotations
+
+from optimagic import constraints, mark, utilities
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,
@@ -6,8 +8,38 @@ from optimagic.benchmarking.benchmark_reports import (
 )
 from optimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
+from optimagic.constraints import (
+    DecreasingConstraint,
+    EqualityConstraint,
+    FixedConstraint,
+    FlatCovConstraint,
+    FlatSDCorrConstraint,
+    IncreasingConstraint,
+    LinearConstraint,
+    NonlinearConstraint,
+    PairwiseEqualityConstraint,
+    ProbabilityConstraint,
+)
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
+from optimagic.differentiation.numdiff_options import NumdiffOptions
+from optimagic.logging import (
+    ExistenceStrategy as ExistenceStrategy,
+)
+from optimagic.logging import (
+    SQLiteLogOptions as SQLiteLogOptions,
+)
+from optimagic.logging import (
+    SQLiteLogReader as SQLiteLogReader,
+)
 from optimagic.logging.read_log import OptimizeLogReader
+from optimagic.optimization.fun_value import (
+    FunctionValue,
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
+from optimagic.optimization.history import History
+from optimagic.optimization.multistart_options import MultistartOptions
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.bounds import Bounds
@@ -47,6 +79,25 @@ __all__ = [
     "OptimizeLogReader",
     "OptimizeResult",
     "Bounds",
+    "mark",
     "ScalingOptions",
+    "MultistartOptions",
+    "NumdiffOptions",
+    "FunctionValue",
+    "LeastSquaresFunctionValue",
+    "ScalarFunctionValue",
+    "LikelihoodFunctionValue",
+    "constraints",
+    "FlatCovConstraint",
+    "FlatSDCorrConstraint",
+    "IncreasingConstraint",
+    "DecreasingConstraint",
+    "FixedConstraint",
+    "NonlinearConstraint",
+    "LinearConstraint",
+    "ProbabilityConstraint",
+    "PairwiseEqualityConstraint",
+    "EqualityConstraint",
+    "History",
     "__version__",
 ]

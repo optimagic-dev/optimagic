@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+from scipy import stats
+
 from estimagic.config import EXAMPLE_DIR
 from estimagic.msm_covs import cov_optimal
 from estimagic.msm_sensitivity import (
@@ -11,9 +14,7 @@ from estimagic.msm_sensitivity import (
     calculate_sensitivity_to_bias,
     calculate_sensitivity_to_weighting,
 )
-from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.differentiation.derivatives import first_derivative
-from scipy import stats
 
 
 def simulate_aggregated_moments(params, x, y):
@@ -82,7 +83,7 @@ def jac(params, func_kwargs):
         func_kwargs=func_kwargs,
     )
 
-    g = derivative_dict["derivative"]
+    g = derivative_dict.derivative
     return g.to_numpy()
 
 

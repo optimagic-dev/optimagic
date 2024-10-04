@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from optimagic.benchmarking.get_benchmark_problems import _sample_from_distribution
 from optimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 from optimagic.utilities import get_rng

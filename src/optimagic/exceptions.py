@@ -51,12 +51,28 @@ class InvalidScalingError(OptimagicError):
     """Exception for invalid user provided scaling."""
 
 
+class InvalidMultistartError(OptimagicError):
+    """Exception for invalid user provided multistart options."""
+
+
+class InvalidNumdiffOptionsError(OptimagicError):
+    """Exception for invalid user provided numdiff options."""
+
+
 class NotInstalledError(OptimagicError):
     """Exception when optional dependencies are needed but not installed."""
 
 
 class NotAvailableError(OptimagicError):
     """Exception when something is not available, e.g. because a calculation failed."""
+
+
+class InvalidAlgoOptionError(OptimagicError):
+    """Exception for invalid user provided algorithm options."""
+
+
+class InvalidAlgoInfoError(OptimagicError):
+    """Exception for invalid user provided algorithm information."""
 
 
 class StopOptimizationError(OptimagicError):

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
+
 from optimagic import first_derivative
 from optimagic.parameters.conversion import InternalParams
 from optimagic.parameters.scale_conversion import get_scale_converter
@@ -56,7 +57,7 @@ def test_get_scale_converter_active(method, expected):
 
     numerical_jacobian = first_derivative(
         converter.params_from_internal, expected.values
-    )["derivative"]
+    ).derivative
 
     aaae(calculated_jacobian, numerical_jacobian)
 

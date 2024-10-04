@@ -11,6 +11,7 @@ maxdepth: 1
 ---
 how_to_criterion_function
 how_to_start_parameters
+how_to_derivatives
 how_to_algorithm_selection
 how_to_bounds
 how_to_constraints
@@ -22,6 +23,4 @@ how_to_logging
 how_to_errors_during_optimization
 how_to_slice_plot
 how_to_benchmarking
-how_to_first_derivative
-how_to_second_derivative
 ```

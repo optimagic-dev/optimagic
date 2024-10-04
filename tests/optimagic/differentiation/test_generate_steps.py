@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.differentiation.generate_steps import (
     _calculate_or_validate_base_steps,
     _fillna,
@@ -183,7 +184,7 @@ def test_generate_steps_binding_min_step():
         target="first_derivative",
         base_steps=np.array([0.1, 0.2, 0.3]),
         bounds=Bounds(lower=np.full(3, -np.inf), upper=np.full(3, 2.5)),
-        step_ratio=2.0,
+        step_ratio=2,
         min_steps=np.full(3, 1e-8),
         scaling_factor=1.0,
     )
@@ -203,7 +204,7 @@ def test_generate_steps_min_step_equals_base_step():
         target="first_derivative",
         base_steps=np.array([0.1, 0.2, 0.3]),
         bounds=Bounds(lower=np.full(3, -np.inf), upper=np.full(3, 2.5)),
-        step_ratio=2.0,
+        step_ratio=2,
         min_steps=None,
         scaling_factor=1.0,
     )

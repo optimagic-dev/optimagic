@@ -5,12 +5,13 @@
 
 """
 
-import inspect
 import sys
 
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
+from optimagic import mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
@@ -26,15 +27,14 @@ GLOBAL_ALGORITHMS_AVAILABLE = [
 ]
 
 BOUNDED_ALGORITHMS = []
-for name, func in LOCAL_ALGORITHMS.items():
-    arguments = list(inspect.signature(func).parameters)
-    if "lower_bounds" in arguments and "upper_bounds" in arguments:
+for name, algo in LOCAL_ALGORITHMS.items():
+    if algo.__algo_info__.supports_bounds:
         BOUNDED_ALGORITHMS.append(name)
 
 
+@mark.least_squares
 def sos(x):
-    contribs = x**2
-    return {"value": contribs.sum(), "contributions": contribs, "root_contributions": x}
+    return x
 
 
 @pytest.mark.parametrize("algorithm", LOCAL_ALGORITHMS)
@@ -73,7 +73,7 @@ skip_msg = (
 )
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason=skip_msg)
+@pytest.mark.skipif(sys.platform == "win32", reason=skip_msg)
 @pytest.mark.parametrize("algorithm", GLOBAL_ALGORITHMS_AVAILABLE)
 def test_global_algorithms_on_sum_of_squares(algorithm):
     res = minimize(

@@ -1,79 +1,100 @@
 import sys
+from dataclasses import dataclass
 
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
+
+from optimagic import SQLiteLogReader, mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
-from optimagic.decorators import mark_minimizer
-from optimagic.logging.read_log import OptimizeLogReader
+from optimagic.logging import SQLiteLogOptions
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import AggregationLevel
 
 OPTIMIZERS = []
 BOUNDED = []
 for name, algo in AVAILABLE_ALGORITHMS.items():
-    args = algo._algorithm_info.arguments
-    if not algo._algorithm_info.disable_history:
-        if "n_cores" in args:
+    info = algo.__algo_info__
+    if not info.disable_history:
+        if info.supports_parallelism:
             OPTIMIZERS.append(name)
-        if "lower_bounds" in args:
+        if info.supports_bounds:
             BOUNDED.append(name)
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason="Slow on other platforms.")
+@pytest.mark.skipif(sys.platform == "win32", reason="Slow on windows.")
 @pytest.mark.parametrize("algorithm", OPTIMIZERS)
 def test_history_collection_with_parallelization(algorithm, tmp_path):
     lb = np.zeros(5) if algorithm in BOUNDED else None
     ub = np.full(5, 10) if algorithm in BOUNDED else None
 
-    logging = tmp_path / "log.db"
+    path = tmp_path / "log.db"
 
     collected_hist = minimize(
-        fun=lambda x: {"root_contributions": x, "value": x @ x},
+        fun=mark.least_squares(lambda x: x),
         params=np.arange(5),
         algorithm=algorithm,
         bounds=Bounds(lower=lb, upper=ub),
-        algo_options={"n_cores": 2, "stopping.max_iterations": 3},
-        logging=logging,
-        log_options={"if_database_exists": "replace", "fast_logging": True},
+        algo_options={"n_cores": 2, "stopping_maxiter": 3},
+        logging=SQLiteLogOptions(path=path, if_database_exists="replace"),
     ).history
 
-    reader = OptimizeLogReader(logging)
+    reader = SQLiteLogReader(path)
 
     log_hist = reader.read_history()
 
     # We cannot expect the order to be the same
-    aaae(sorted(collected_hist["criterion"]), sorted(log_hist["criterion"]))
+    aaae(sorted(collected_hist.fun), sorted(log_hist.fun))
 
 
-@mark_minimizer(name="dummy")
-def _dummy_optimizer(criterion, x, n_cores, batch_size, batch_evaluator):
-    assert batch_size in [1, 2, 4]
+@mark.minimizer(
+    name="dummy",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class DummyOptimizer(Algorithm):
+    n_cores: int = 1
+    batch_size: int = 1
 
-    xs = np.arange(15).repeat(len(x)).reshape(15, len(x))
+    def _solve_internal_problem(self, problem, x0):
+        assert self.batch_size in [1, 2, 4]
 
-    for iteration in range(3):
-        start_index = iteration * 5
-        # do four evaluations in a batch evaluator
-        batch_evaluator(
-            func=criterion,
-            arguments=list(xs[start_index : start_index + 4]),
-            n_cores=n_cores,
+        xs = np.arange(15).repeat(len(x0)).reshape(15, len(x0))
+
+        start_index = 0
+
+        for iteration in range(3):
+            start_index = iteration * 5
+            # do four evaluations in a batch evaluator
+            problem.batch_fun(
+                list(xs[start_index : start_index + 4]),
+                n_cores=self.n_cores,
+                batch_size=self.batch_size,
+            )
+
+            # do one evaluation without the batch evaluator
+            problem.fun(xs[start_index + 4])
+
+        out = InternalOptimizeResult(
+            x=xs[-1],
+            fun=5,
+            success=True,
+            n_fun_evals=15,
+            n_iterations=3,
         )
-
-        # do one evaluation without the batch evaluator
-        criterion(xs[start_index + 4])
-
-    out = {
-        "solution_x": xs[-1],
-        "solution_criterion": 5,
-        "n_fun_evals": 15,
-        "n_iterations": 3,
-        "success": True,
-    }
-
-    return out
+        return out
 
 
 def _get_fake_history(batch_size):
@@ -102,11 +123,10 @@ def _fake_criterion(x):
 CASES = [(1, 1), (1, 2), (2, 2), (1, 4), (2, 4)]
 
 
-@pytest.mark.skipif(sys.platform != "linux", reason="Slow on other platforms.")
+@pytest.mark.skipif(sys.platform == "win32", reason="Slow on windows.")
 @pytest.mark.parametrize("n_cores, batch_size", CASES)
 def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
     options = {
-        "batch_evaluator": "joblib",
         "batch_size": batch_size,
         "n_cores": n_cores,
     }
@@ -114,7 +134,7 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
     res = minimize(
         fun=_fake_criterion,
         params=np.arange(5),
-        algorithm=_dummy_optimizer,
+        algorithm=DummyOptimizer,
         algo_options=options,
     )
 
@@ -122,8 +142,6 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
 
     expected_history = _get_fake_history(batch_size)
 
-    assert isinstance(got_history, dict)
-    assert set(got_history.keys()) == {"params", "criterion", "batches", "runtime"}
-    aae(got_history["batches"], expected_history["batches"])
-    assert got_history["criterion"] == expected_history["criterion"]
-    aaae(got_history["params"], expected_history["params"])
+    aae(got_history.batches, expected_history["batches"])
+    assert got_history.fun == expected_history["criterion"][: len(got_history.fun)]
+    aaae(got_history.params, expected_history["params"][: len(got_history.params)])

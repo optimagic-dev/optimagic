@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic import first_derivative
 from optimagic.parameters.space_conversion import (
     InternalParams,
@@ -286,7 +287,7 @@ def test_space_converter_with_params(constraints, params, expected_internal):
 
     numerical_jacobian = first_derivative(
         converter.params_from_internal, expected_internal.values
-    )["derivative"]
+    ).derivative
 
     calculated_jacobian = converter.derivative_to_internal(
         external_derivative=np.eye(len(params.values)),

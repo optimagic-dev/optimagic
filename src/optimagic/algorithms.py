@@ -1,5 +1,6 @@
 import inspect
 
+from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimizers import (
     bhhh,
     fides,
@@ -31,14 +32,18 @@ MODULES = [
 ALL_ALGORITHMS = {}
 AVAILABLE_ALGORITHMS = {}
 for module in MODULES:
-    func_dict = dict(inspect.getmembers(module, inspect.isfunction))
-    for name, func in func_dict.items():
-        if hasattr(func, "_algorithm_info"):
-            ALL_ALGORITHMS[name] = func
-            if func._algorithm_info.is_available:
-                AVAILABLE_ALGORITHMS[name] = func
+    candidate_dict = dict(inspect.getmembers(module, inspect.isclass))
+    candidate_dict = {
+        k: v for k, v in candidate_dict.items() if hasattr(v, "__algo_info__")
+    }
+    for candidate in candidate_dict.values():
+        name = candidate.__algo_info__.name
+        if issubclass(candidate, Algorithm) and candidate is not Algorithm:
+            ALL_ALGORITHMS[name] = candidate
+            if candidate.__algo_info__.is_available:
+                AVAILABLE_ALGORITHMS[name] = candidate
 
 
 GLOBAL_ALGORITHMS = [
-    name for name, func in ALL_ALGORITHMS.items() if func._algorithm_info.is_global
+    name for name, algo in ALL_ALGORITHMS.items() if algo.__algo_info__.is_global
 ]

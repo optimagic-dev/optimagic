@@ -5,13 +5,20 @@ import pandas as pd
 import pytest
 import scipy as sp
 import statsmodels.api as sm
-from estimagic.estimate_ml import estimate_ml
-from estimagic.examples.logit import logit_derivative, logit_hessian, logit_loglike
-from estimagic.examples.logit import logit_loglike_and_derivative as llad
 from numpy.testing import assert_array_equal
-from optimagic.parameters.bounds import Bounds
 from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel
+
+import optimagic as om
+from estimagic.estimate_ml import estimate_ml
+from estimagic.examples.logit import (
+    logit_hess,
+    logit_jac,
+    logit_loglike,
+    scalar_logit_fun_and_jac,
+)
+from optimagic import mark
+from optimagic.parameters.bounds import Bounds
 
 
 def aaae(obj1, obj2, decimal=3):
@@ -25,15 +32,12 @@ def aaae(obj1, obj2, decimal=3):
 # ==================================================================================
 
 
+@mark.likelihood
 def multivariate_normal_loglike(params, data):
     mean = params["mean"]
     cov = params["cov"]
     mn = multivariate_normal(mean=mean, cov=cov)
-    contributions = mn.logpdf(data)
-    return {
-        "contributions": contributions,
-        "value": contributions.sum(),
-    }
+    return mn.logpdf(data)
 
 
 @pytest.fixture()
@@ -57,8 +61,8 @@ def test_estimate_ml_with_constraints(multivariate_normal_example):
     params, true_params, loglike_kwargs = multivariate_normal_example
 
     constraints = [
-        {"type": "fixed", "selector": lambda p: p["mean"][0]},
-        {"type": "covariance", "selector": lambda p: p["cov"][np.tril_indices(3)]},
+        om.FixedConstraint(selector=lambda p: p["mean"][0]),
+        om.FlatCovConstraint(selector=lambda p: p["cov"][np.tril_indices(3)]),
     ]
 
     results = estimate_ml(
@@ -116,15 +120,6 @@ def fitted_logit_model(logit_object):
     return generic_logit.fit()
 
 
-def logit_jacobian(params, y, x):
-    return logit_derivative(params, y, x)["contributions"]
-
-
-def logit_loglike_and_derivative(params, y, x):
-    loglike, loglike_derivative = llad(params, y, x)
-    return loglike, loglike_derivative["value"]
-
-
 test_cases = list(
     itertools.product(
         [
@@ -132,13 +127,17 @@ test_cases = list(
             "scipy_lbfgsb",
             {
                 "algorithm": "scipy_lbfgsb",
-                "fun_and_jac": logit_loglike_and_derivative,
+                "fun_and_jac": scalar_logit_fun_and_jac,
             },
-        ],  # optimize_options
-        [None, logit_jacobian, False],  # jacobian
-        [None, logit_hessian, False],  # hessian
+        ],
+        [None, logit_jac, False],
+        [None, logit_hess, False],
     )
 )
+
+test_cases = [
+    case for case in test_cases if not (case[1] is False and case[2] is False)
+]
 
 
 @pytest.mark.parametrize("optimize_options, jacobian, hessian", test_cases)
@@ -151,9 +150,6 @@ def test_estimate_ml_with_logit_no_constraints(
 ):
     """Test that estimate_ml computes correct params and covariances under different
     scenarios."""
-
-    if jacobian is False and hessian is False:
-        pytest.xfail("jacobian and hessian cannot both be False.")
 
     # ==================================================================================
     # estimate
@@ -237,11 +233,13 @@ def test_estimate_ml_with_logit_no_constraints(
 
 test_cases_constr = list(
     itertools.product(
-        [None, logit_jacobian],  # jacobian
+        [None, logit_jac],  # jacobian
         [
-            {"loc": [1, 2, 3], "type": "covariance"},
-            {"loc": [0, 1], "type": "linear", "lower_bound": -20, "weights": 1},
-            {"loc": [0, 1], "type": "increasing"},
+            om.FlatCovConstraint(selector=lambda x: x[[1, 2, 3]]),
+            om.LinearConstraint(
+                selector=lambda x: x[[0, 1]], lower_bound=-20, weights=1
+            ),
+            om.IncreasingConstraint(selector=lambda x: x[[0, 1]]),
         ],
     )
 )
@@ -356,12 +354,9 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_np_inputs)
 # ======================================================================================
 
 
+@mark.likelihood
 def normal_loglike(params, y):
-    contribs = sp.stats.norm.logpdf(y, loc=params["mean"], scale=params["sd"])
-    return {
-        "value": contribs.sum(),
-        "contributions": np.array(contribs),
-    }
+    return sp.stats.norm.logpdf(y, loc=params["mean"], scale=params["sd"])
 
 
 @pytest.fixture()
@@ -391,7 +386,7 @@ def test_estimate_ml_general_pytree(normal_inputs):
         optimize_options="scipy_lbfgsb",
         bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
-        constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
+        constraints=om.FlatSDCorrConstraint(selector=lambda p: p["sd"]),
     )
 
     # ==================================================================================
@@ -418,7 +413,7 @@ def test_to_pickle(normal_inputs, tmp_path):
         optimize_options="scipy_lbfgsb",
         bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
-        constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
+        constraints=om.FlatSDCorrConstraint(selector=lambda p: p["sd"]),
     )
 
     got.to_pickle(tmp_path / "bla.pkl")
@@ -436,7 +431,7 @@ def test_caching(normal_inputs):
         optimize_options="scipy_lbfgsb",
         bounds=Bounds(lower={"sd": 0.0001}),
         jacobian_kwargs=kwargs,
-        constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
+        constraints=om.FlatSDCorrConstraint(selector=lambda p: p["sd"]),
     )
 
     assert got._cache == {}

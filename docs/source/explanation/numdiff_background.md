@@ -1,4 +1,4 @@
-# Background and methods
+# Numerical differentiation: methods
 
 In this section we explain the mathematical background of forward, backward and central
 differences. The main ideas in this chapter are taken from {cite}`Dennis1996`. x is used
@@ -24,9 +24,9 @@ The central difference for the gradient is given by:
 
 $$
 \nabla f(x) =
-\begin{pmatrix}\frac{f(x + e_0 * h_0) - f(x - e_0 * h_0)}{h_0}\\
-\frac{f(x + e_1 * h_1) - f(x - e_1 * h_1)}{h_1}\\.\\.\\.\\ \frac{f(x + e_n * h_n)
-- f(x - e_n * h_n)}{h_n} \end{pmatrix}
+\begin{pmatrix}\frac{f(x + e_0 * h_0) - f(x - e_0 * h_0)}{2 h_0}\\
+\frac{f(x + e_1 * h_1) - f(x - e_1 * h_1)}{2 h_1}\\.\\.\\.\\ \frac{f(x + e_n * h_n)
+- f(x - e_n * h_n)}{2 h_n} \end{pmatrix}
 $$
 
 For the optimal stepsize h the following rule of thumb is applied:

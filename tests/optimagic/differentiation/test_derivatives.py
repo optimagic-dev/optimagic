@@ -1,12 +1,18 @@
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
+from typing import get_type_hints
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from pandas.testing import assert_frame_equal
+from scipy.optimize._numdiff import approx_derivative
+
 from optimagic.differentiation.derivatives import (
     Evals,
+    NumdiffResult,
     _consolidate_one_step_derivatives,
     _convert_evaluation_data_to_frame,
     _convert_richardson_candidates_to_frame,
@@ -28,8 +34,6 @@ from optimagic.examples.numdiff_functions import (
     logit_loglikeobs_jacobian,
 )
 from optimagic.parameters.bounds import Bounds
-from pandas.testing import assert_frame_equal
-from scipy.optimize._numdiff import approx_derivative
 
 
 @pytest.fixture()
@@ -57,18 +61,16 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
         func=func,
         method=method,
         params=fix["params_np"],
-        n_steps=1,
-        base_steps=None,
+        step_size=None,
         bounds=bounds,
         min_steps=1e-8,
-        step_ratio=2.0,
         f0=func(fix["params_np"]),
         n_cores=1,
     )
 
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
 
-    aaae(calculated["derivative"], expected, decimal=6)
+    aaae(calculated.derivative, expected, decimal=6)
 
 
 def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
@@ -76,7 +78,7 @@ def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
     calculated = first_derivative(func=func, params=fix["params_np"], n_cores=1)
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
-    aaae(calculated["derivative"], expected, decimal=6)
+    aaae(calculated.derivative, expected, decimal=6)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -88,14 +90,13 @@ def test_first_derivative_gradient(binary_choice_inputs, method):
         func=func,
         method=method,
         params=fix["params_np"],
-        n_steps=1,
         f0=func(fix["params_np"]),
         n_cores=1,
     )
 
     expected = logit_loglike_gradient(fix["params_np"], fix["y"], fix["x"])
 
-    aaae(calculated["derivative"], expected, decimal=4)
+    aaae(calculated.derivative, expected, decimal=4)
 
 
 @pytest.mark.parametrize("method", methods_second_derivative)
@@ -107,15 +108,14 @@ def test_second_derivative_hessian(binary_choice_inputs, method):
         func=func,
         method=method,
         params=fix["params_np"],
-        n_steps=1,
         f0=func(fix["params_np"]),
         n_cores=1,
     )
 
     expected = logit_loglike_hessian(fix["params_np"], fix["y"], fix["x"])
 
-    assert np.max(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-2)
-    assert np.mean(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-3)
+    assert np.max(np.abs(calculated.derivative - expected)) < 1.5 * 10 ** (-2)
+    assert np.mean(np.abs(calculated.derivative - expected)) < 1.5 * 10 ** (-3)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -125,7 +125,7 @@ def test_first_derivative_scalar(method):  # noqa: ARG001
 
     calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
-    assert calculated["derivative"] == expected
+    assert calculated.derivative == expected
 
 
 @pytest.mark.parametrize("method", methods_second_derivative)
@@ -136,33 +136,7 @@ def test_second_derivative_scalar(method):  # noqa: ARG001
     calculated = second_derivative(f, 3.0, n_cores=1)
     expected = 2.0
 
-    assert np.abs(calculated["derivative"] - expected) < 1.5 * 10 ** (-6)
-
-
-@pytest.mark.parametrize("method", methods)
-def test_first_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
-    def f(x):
-        return x**2
-
-    calculated = first_derivative(
-        f, 3.0, return_func_value=True, return_info=False, n_cores=1
-    )
-    expected = {"derivative": 6.0, "func_value": 9.0}
-    assert calculated == expected
-
-
-@pytest.mark.parametrize("method", methods_second_derivative)
-def test_second_derivative_scalar_with_return_func_value(method):  # noqa: ARG001
-    def f(x):
-        return x**3
-
-    calculated = second_derivative(
-        f, 3.0, return_func_value=True, return_info=False, n_cores=1
-    )
-    expected = {"derivative": 18.0, "func_value": 27.0}
-
-    assert calculated["func_value"] == expected["func_value"]
-    assert np.abs(calculated["derivative"] - expected["derivative"]) < 1.5 * 10 ** (-6)
+    assert np.abs(calculated.derivative - expected) < 1.5 * 10 ** (-6)
 
 
 def test_nan_skipping_batch_evaluator():
@@ -234,28 +208,32 @@ def example_function_jacobian_fixtures():
     return {"func": f, "func_prime": fprime}
 
 
+@pytest.mark.filterwarnings("ignore:The `n_steps` argument")
 def test_first_derivative_gradient_richardson(example_function_gradient_fixtures):
     f = example_function_gradient_fixtures["func"]
     fprime = example_function_gradient_fixtures["func_prime"]
 
     true_fprime = fprime(np.ones(3))
     scipy_fprime = approx_derivative(f, np.ones(3))
+
     our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(scipy_fprime, our_fprime["derivative"])
-    aaae(true_fprime, our_fprime["derivative"])
+    aaae(scipy_fprime, our_fprime.derivative)
+    aaae(true_fprime, our_fprime.derivative)
 
 
+@pytest.mark.filterwarnings("ignore:The `n_steps` argument")
 def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures):
     f = example_function_jacobian_fixtures["func"]
     fprime = example_function_jacobian_fixtures["func_prime"]
 
     true_fprime = fprime(np.ones(3))
     scipy_fprime = approx_derivative(f, np.ones(3))
+
     our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(scipy_fprime, our_fprime["derivative"])
-    aaae(true_fprime, our_fprime["derivative"])
+    aaae(scipy_fprime, our_fprime.derivative)
+    aaae(true_fprime, our_fprime.derivative)
 
 
 def test_convert_evaluation_data_to_frame():
@@ -369,3 +347,125 @@ def test_is_scalar_nan():
     assert _is_scalar_nan(np.nan)
     assert not _is_scalar_nan(1.0)
     assert not _is_scalar_nan(np.array([np.nan]))
+
+
+@dataclass
+class MyOutput:
+    value: float
+    message: str
+
+
+def test_first_derivative_with_unpacking():
+    def f(x):
+        return MyOutput(x @ x, "success")
+
+    got = first_derivative(
+        func=f,
+        params=np.ones(3),
+        unpacker=lambda out: out.value,
+    )
+
+    assert isinstance(got.func_value, MyOutput)
+    aaae(got.derivative, np.ones(3) * 2)
+
+
+def test_second_derivative_with_unpacking():
+    def f(x):
+        return MyOutput(x @ x, "success")
+
+    got = second_derivative(
+        func=f,
+        params=np.ones(3),
+        unpacker=lambda out: out.value,
+    )
+
+    assert isinstance(got.func_value, MyOutput)
+    aaae(got.derivative, np.eye(3) * 2, decimal=4)
+
+
+@pytest.mark.filterwarnings("ignore:The dictionary access for")
+def test_numdiff_result_getitem():
+    res = NumdiffResult(
+        derivative=1,
+        func_value=2,
+        _func_evals=pd.DataFrame([0, 1]),
+        _derivative_candidates=pd.DataFrame([2, 3]),
+    )
+    assert res["derivative"] == res.derivative
+    assert res["func_value"] == res.func_value
+    assert_frame_equal(res["_func_evals"], res._func_evals)
+    assert_frame_equal(res["_derivative_candidates"], res._derivative_candidates)
+
+
+def test_first_and_second_derivative_have_same_type_hints():
+    # exclude method from comparison, as the argument options differ here
+    exclude = ["method"]
+    first_hints = {
+        k: v for k, v in get_type_hints(first_derivative).items() if k not in exclude
+    }
+    second_hints = {
+        k: v for k, v in get_type_hints(second_derivative).items() if k not in exclude
+    }
+    assert first_hints == second_hints
+
+
+def test_first_derivative_pytree_step_size():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+
+    got = first_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        step_size=params,
+    )
+    assert np.allclose(got.derivative["a"], np.array([2, 4, 6]))
+    assert np.allclose(got.derivative["b"], 2)
+
+
+def test_second_derivative_pytree_step_size():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+
+    got = second_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        step_size=params,
+    )
+    assert np.allclose(got.derivative["a"]["a"], np.eye(3) * 2)
+    assert np.allclose(got.derivative["a"]["b"], np.zeros(3))
+    assert np.allclose(got.derivative["b"]["b"], 0)
+
+
+def test_first_derivative_pytree_min_steps():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+    bounds = Bounds(
+        lower={"a": np.array([0, 1, 2]), "b": 3},
+        upper={"a": np.array([2, 3, 4]), "b": 5},
+    )
+    min_steps = {"a": np.array([0.2, 0.5, 0.7]), "b": 0.2}
+
+    got = first_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        bounds=bounds,
+        min_steps=min_steps,
+    )
+    assert np.allclose(got.derivative["a"], np.array([2, 4, 6]))
+    assert np.allclose(got.derivative["b"], 2)
+
+
+def test_second_derivative_pytree_min_steps():
+    params = {"a": np.array([1, 2, 3]), "b": 4}
+    bounds = Bounds(
+        lower={"a": np.array([0, 1, 2]), "b": 3},
+        upper={"a": np.array([2, 3, 4]), "b": 5},
+    )
+    min_steps = {"a": np.array([0.2, 0.5, 0.7]), "b": 0.2}
+
+    got = second_derivative(
+        lambda params: params["a"] @ params["a"] + 2 * params["b"],
+        params=params,
+        bounds=bounds,
+        min_steps=min_steps,
+    )
+    assert np.allclose(got.derivative["a"]["a"], np.eye(3) * 2)
+    assert np.allclose(got.derivative["a"]["b"], np.zeros(3))
+    assert np.allclose(got.derivative["b"]["b"], 0)

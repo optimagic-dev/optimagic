@@ -1,18 +1,49 @@
-"""Implement pygmo optimizers."""
+"""Implement pygmo optimizers.
+
+Notes for converting to the new algorithm interface:
+
+- `create_algo_options` is not needed anymore because the only thing it did was mixing
+  options that are supported by all optimizers (e.g. population_size, seed) with
+  specific options. Then later they had to be taken appart again. Instead you need
+  to pass  a few more arguments directly to `_minimize_pygmo`.
+- Calling `_check_that_every_param_is_bounded` is not needed anymore. I do that check
+  once in `_minimize_pygmo`.
+- The documentation often just says float where I suspect PositiveFloats; Leave it at
+  float for now and add todos where needed. Don't spend a lot of time on it.
+- There are some specific type checks and type conversions that should not be needed
+  anymore after switching to the new interface.
+- Whenever we had batch_evaluator as `algo_option` we don't need it anymore but we
+  should have `n_cores` in those algorithms.
+
+"""
+
+from __future__ import annotations
 
 import contextlib
 import warnings
+from dataclasses import dataclass
+from typing import Any, List, Literal
 
 import numpy as np
+from numpy.typing import NDArray
 
-from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic import mark
 from optimagic.config import IS_PYGMO_INSTALLED
-from optimagic.decorators import mark_minimizer
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
     CONVERGENCE_XTOL_REL,
     STOPPING_MAXFUN_GLOBAL,
     get_population_size,
+)
+from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.internal_optimization_problem import (
+    InternalOptimizationProblem,
+)
+from optimagic.typing import (
+    AggregationLevel,
+    NonNegativeFloat,
+    PositiveFloat,
+    PositiveInt,
 )
 
 STOPPING_MAX_ITERATIONS_GENETIC = 250
@@ -21,1202 +52,1212 @@ with contextlib.suppress(ImportError):
     import pygmo as pg
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_gaco",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_gaco(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    kernel_size=63,
-    speed_parameter_q=1.0,
-    oracle=0.0,
-    accuracy=0.01,
-    threshold=1,
-    speed_of_std_values_convergence=7,
-    stopping_max_n_without_improvements=100000,
-    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
-    focus=0.0,
-    cache=False,
-):
-    """Minimize a scalar function using the generalized ant colony algorithm.
+@dataclass(frozen=True)
+class PygmoGaco(Algorithm):
+    population_size: int | None = None
+    n_cores: int = 1
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    kernel_size: PositiveInt = 63
+    speed_parameter_q: PositiveFloat = 1.0
+    oracle: float = 0.0
+    accuracy: PositiveFloat = 0.01
+    threshold: PositiveInt = 1
+    speed_of_std_values_convergence: int = 7
+    stopping_max_n_without_improvements: PositiveInt = 100000
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    focus: NonNegativeFloat = 0.0
+    cache: bool = False
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
 
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "ker": self.kernel_size,
+            "q": self.speed_parameter_q,
+            "oracle": self.oracle,
+            "acc": self.accuracy,
+            "threshold": self.threshold,
+            "n_gen_mark": self.speed_of_std_values_convergence,
+            "impstop": self.stopping_max_n_without_improvements,
+            "evalstop": self.stopping_maxfun,
+            "focus": self.focus,
+            "memory": self.cache,
+        }
 
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="gaco",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="pygmo_bee_colony",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoBeeColony(Algorithm):
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    seed: int | None = None
+    discard_start_params: bool = False
+    max_n_trials: PositiveInt = 1
+    population_size: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=20
+        )
+
+        algo_specific_options = {
+            "limit": self.max_n_trials,
+            "gen": self.stopping_maxiter,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="bee_colony",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="pygmo_de",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoDe(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,2]
+    weight_coefficient: NonNegativeFloat = 0.8
+    # TODO: Probably refine type to fix range [0,1]
+    crossover_probability: NonNegativeFloat = 0.9
+    mutation_variant: Literal[
+        "best/1/exp",
+        "rand/1/exp",
+        "rand-to-best/1/exp",
+        "best/2/exp",
+        "rand/2/exp",
+        "best/1/bin",
+        "rand/1/bin",
+        "rand-to-best/1/bin",
+        "best/2/bin",
+        "rand/2/bin",
+    ] = "rand/1/exp"
+    convergence_criterion_tolerance: NonNegativeFloat = 1e-6
+    convergence_relative_params_tolerance: NonNegativeFloat = CONVERGENCE_XTOL_REL
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+        # support both integer and string specification of the mutation variant
+        mutation_variant_str_to_int = {
+            "best/1/exp": 1,
+            "rand/1/exp": 2,
+            "rand-to-best/1/exp": 3,
+            "best/2/exp": 4,
+            "rand/2/exp": 5,
+            "best/1/bin": 6,
+            "rand/1/bin": 7,
+            "rand-to-best/1/bin": 8,
+            "best/2/bin": 9,
+            "rand/2/bin": 10,
+        }
+        mutation_variant = _convert_str_to_int(
+            str_to_int=mutation_variant_str_to_int, value=self.mutation_variant
+        )
+
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "F": self.weight_coefficient,
+            "CR": self.crossover_probability,
+            "variant": mutation_variant,
+            "ftol": self.convergence_criterion_tolerance,
+            "xtol": self.convergence_relative_params_tolerance,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="de",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="pygmo_sea",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoSea(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = (
+        10_000  # Each generation will compute the objective once
     )
 
-    if isinstance(speed_of_std_values_convergence, float):
-        if not speed_of_std_values_convergence.is_integer():
-            raise ValueError(
-                "The speed_of_std_values_convergence parameter must be an integer. "
-                f"You specified {speed_of_std_values_convergence}."
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="sea",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="pygmo_sga",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoSga(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,1]
+    crossover_probability: NonNegativeFloat = 0.9
+    crossover_strategy: Literal[
+        "exponential",
+        "sbx",
+        "single",
+        "binomial",
+    ] = "exponential"
+    # TODO: Refine type to fix range [1,100]
+    eta_c: PositiveFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    mutation_probability: NonNegativeFloat = 0.02
+    mutation_strategy: Literal["uniform", "polynomial"] = "polynomial"
+    # TODO: Refine type to fix range [0,1]
+    mutation_polynomial_distribution_index: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    mutation_gaussian_width: NonNegativeFloat | None = None
+    selection_strategy: Literal["tournament", "truncated"] = "tournament"
+    # TODO: Check if should be NonNegativeInt
+    selection_truncated_n_best: int | None = None
+    # TODO Check if should be NonNegativeInt
+    selection_tournament_size: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
+
+        if self.eta_c is not None and self.crossover_strategy != "sbx":
+            warnings.warn(
+                f"You specified crossover strategy {self.crossover_strategy}"
+                "and eta_c. However, eta_c is ignored because it is only used when "
+                "the crossover_strategy is set to sbx."
+            )
+        eta_c = 1.0 if self.eta_c is None else self.eta_c
+
+        if (
+            self.mutation_polynomial_distribution_index is not None
+        ) and self.mutation_strategy != "polynomial":
+            warnings.warn(
+                "You specified a mutation_polynomial_distribution_index but"
+                "did not choose polynomial as your mutation_strategy. Thus, "
+                "mutation_polynomial_distribution_index will be ignored."
+            )
+        if (
+            self.mutation_gaussian_width is not None
+            and self.mutation_strategy != "gaussian"
+        ):
+            warnings.warn(
+                "You specified a mutation_gaussian_width but "
+                "did not choose gaussion as your mutation_strategy. "
+                "Thus, mutation_gaussian_width will be ignored."
+            )
+        if (
+            self.selection_strategy != "truncated"
+            and self.selection_truncated_n_best is not None
+        ):
+            warnings.warn(
+                "You specified selection_truncated_n_best but "
+                "did not specify truncated as your selection strategy. "
+                "Therefore, selection_truncated_n_best is ignored."
+            )
+        if (
+            self.selection_strategy != "tournament"
+            and self.selection_tournament_size is not None
+        ):
+            warnings.warn(
+                "You specified selection_tournament_size but "
+                "did not specify tournament as your selection strategy. "
+                "Therefore, selection_tournament_size is ignored."
             )
 
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "ker": kernel_size,
-        "q": speed_parameter_q,
-        "oracle": oracle,
-        "acc": accuracy,
-        "threshold": threshold,
-        "n_gen_mark": int(speed_of_std_values_convergence),
-        "impstop": stopping_max_n_without_improvements,
-        "evalstop": stopping_maxfun,
-        "focus": focus,
-        "memory": cache,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        n_cores=n_cores,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
-        algo_specific_options=algo_specific_options,
-    )
+        if (
+            self.mutation_strategy == "gaussian"
+            and self.mutation_gaussian_width is not None
+        ):
+            param_m = self.mutation_gaussian_width
+        elif (
+            self.mutation_strategy == "polynomial"
+            and self.mutation_polynomial_distribution_index is not None
+        ):
+            param_m = self.mutation_polynomial_distribution_index
+        else:
+            param_m = 1.0
 
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="gaco",
-        algo_options=algo_options,
-    )
-    return res
+        if (
+            self.selection_strategy == "truncated"
+            and self.selection_truncated_n_best is not None
+        ):
+            param_s = self.selection_truncated_n_best
+        elif (
+            self.selection_strategy == "tournament"
+            and self.selection_tournament_size is not None
+        ):
+            param_s = self.selection_tournament_size
+        else:
+            param_s = 2
 
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "cr": self.crossover_probability,
+            "eta_c": eta_c,
+            "m": self.mutation_probability,
+            "param_m": param_m,
+            "crossover": self.crossover_strategy,
+            "mutation": self.mutation_strategy,
+            "selection": self.selection_strategy,
+            "param_s": param_s,
+        }
 
-@mark_minimizer(
-    name="pygmo_bee_colony",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
-    is_available=IS_PYGMO_INSTALLED,
-)
-def pygmo_bee_colony(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    seed=None,
-    discard_start_params=False,
-    max_n_trials=1,
-    population_size=None,
-):
-    """Minimize a scalar function using the artifical bee colony algorithm.
-
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=20
-    )
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options={
-            "limit": max_n_trials,
-            "gen": int(stopping_maxiter),
-        },
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="bee_colony",
-        algo_options=algo_options,
-    )
-    return res
-
-
-@mark_minimizer(
-    name="pygmo_de",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
-    is_available=IS_PYGMO_INSTALLED,
-)
-def pygmo_de(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    weight_coefficient=0.8,
-    crossover_probability=0.9,
-    mutation_variant="rand/1/exp",
-    convergence_criterion_tolerance=1e-6,
-    convergence_relative_params_tolerance=CONVERGENCE_XTOL_REL,
-):
-    """Minimize a scalar function using the differential evolution algorithm.
-
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=10
-    )
-
-    # support both integer and string specification of the mutation variant
-    mutation_variant_str_to_int = {
-        "best/1/exp": 1,
-        "rand/1/exp": 2,
-        "rand-to-best/1/exp": 3,
-        "best/2/exp": 4,
-        "rand/2/exp": 5,
-        "best/1/bin": 6,
-        "rand/1/bin": 7,
-        "rand-to-best/1/bin": 8,
-        "best/2/bin": 9,
-        "rand/2/bin": 10,
-    }
-    mutation_variant = _convert_str_to_int(
-        str_to_int=mutation_variant_str_to_int, value=mutation_variant
-    )
-
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "F": weight_coefficient,
-        "CR": crossover_probability,
-        "variant": mutation_variant,
-        "ftol": convergence_criterion_tolerance,
-        "xtol": convergence_relative_params_tolerance,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="de",
-        algo_options=algo_options,
-    )
-    return res
-
-
-@mark_minimizer(
-    name="pygmo_sea",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
-    is_available=IS_PYGMO_INSTALLED,
-)
-def pygmo_sea(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=10_000,  # Each generation will compute the objective once
-):
-    r"""Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
-
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=10
-    )
-
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options={"gen": int(stopping_maxiter)},
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="sea",
-        algo_options=algo_options,
-    )
-    return res
-
-
-@mark_minimizer(
-    name="pygmo_sga",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
-    is_available=IS_PYGMO_INSTALLED,
-)
-def pygmo_sga(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    crossover_probability=0.9,
-    crossover_strategy="exponential",
-    eta_c=None,
-    mutation_probability=0.02,
-    mutation_strategy="polynomial",
-    mutation_polynomial_distribution_index=None,
-    mutation_gaussian_width=None,
-    selection_strategy="tournament",
-    selection_truncated_n_best=None,
-    selection_tournament_size=None,
-):
-    """Minimize a scalar function using a simple genetic algorithm.
-
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
-    )
-
-    if eta_c is not None and crossover_strategy != "sbx":
-        warnings.warn(
-            f"You specified crossover strategy {crossover_strategy} and eta_c. "
-            "However, eta_c is ignored because it is only used when the "
-            "crossover_strategy is set to sbx."
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="sga",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
         )
-    eta_c = 1.0 if eta_c is None else eta_c
-
-    if (
-        mutation_polynomial_distribution_index is not None
-    ) and mutation_strategy != "polynomial":
-        warnings.warn(
-            "You specified a mutation_polynomial_distribution_index but did not choose "
-            "polynomial as your mutation_strategy. Thus, "
-            "mutation_polynomial_distribution_index will be ignored."
-        )
-    if mutation_gaussian_width is not None and mutation_strategy != "gaussian":
-        warnings.warn(
-            "You specified a mutation_gaussian_width but did not choose gaussion as "
-            "your mutation_strategy. Thus, mutation_gaussian_width will be ignored."
-        )
-    if selection_strategy != "truncated" and selection_truncated_n_best is not None:
-        warnings.warn(
-            "You specified selection_truncated_n_best but did not specify truncated as "
-            "your selection strategy. Therefore, selection_truncated_n_best is ignored."
-        )
-    if selection_strategy != "tournament" and selection_tournament_size is not None:
-        warnings.warn(
-            "You specified selection_tournament_size but did not specify tournament as "
-            "your selection strategy. Therefore, selection_tournament_size is ignored."
-        )
-
-    if mutation_strategy == "gaussian" and mutation_gaussian_width is not None:
-        param_m = mutation_gaussian_width
-    elif (
-        mutation_strategy == "polynomial"
-        and mutation_polynomial_distribution_index is not None
-    ):
-        param_m = mutation_polynomial_distribution_index
-    else:
-        param_m = 1.0
-
-    if selection_strategy == "truncated" and selection_truncated_n_best is not None:
-        param_s = selection_truncated_n_best
-    elif selection_strategy == "tournament" and selection_tournament_size is not None:
-        param_s = selection_tournament_size
-    else:
-        param_s = 2
-
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "cr": crossover_probability,
-        "eta_c": eta_c,
-        "m": mutation_probability,
-        "param_m": param_m,
-        "crossover": crossover_strategy,
-        "mutation": mutation_strategy,
-        "selection": selection_strategy,
-        "param_s": param_s,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="sga",
-        algo_options=algo_options,
-    )
-    return res
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_sade",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_sade(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    jde=True,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    mutation_variant="rand/1/exp",
-    keep_adapted_params=False,
-    ftol=1e-6,
-    xtol=1e-6,
-):
-    """Minimize a scalar function using Self-adaptive Differential Evolution.
+@dataclass(frozen=True)
+class PygmoSade(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    jde: bool = True
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    mutation_variant: Literal[
+        "best/1/exp",
+        "rand/1/exp",
+        "rand-to-best/1/exp",
+        "best/2/exp",
+        "rand/2/exp",
+        "best/1/bin",
+        "rand/1/bin",
+        "rand-to-best/1/bin",
+        "best/2/bin",
+        "rand/2/bin",
+        "rand/3/exp",
+        "rand/3/bin",
+        "best/3/exp",
+        "best/3/bin",
+        "rand-to-current/2/exp",
+        "rand-to-current/2/bin",
+        "rand-to-best-and-current/2/exp",
+        "rand-to-best-and-current/2/bin",
+    ] = "rand/1/exp"
+    keep_adapted_params: bool = False
+    ftol: NonNegativeFloat = 1e-6
+    xtol: NonNegativeFloat = 1e-6
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
+        mutation_variant_str_to_int = {
+            "best/1/exp": 1,
+            "rand/1/exp": 2,
+            "rand-to-best/1/exp": 3,
+            "best/2/exp": 4,
+            "rand/2/exp": 5,
+            "best/1/bin": 6,
+            "rand/1/bin": 7,
+            "rand-to-best/1/bin": 8,
+            "best/2/bin": 9,
+            "rand/2/bin": 10,
+            "rand/3/exp": 11,
+            "rand/3/bin": 12,
+            "best/3/exp": 13,
+            "best/3/bin": 14,
+            "rand-to-current/2/exp": 15,
+            "rand-to-current/2/bin": 16,
+            "rand-to-best-and-current/2/exp": 17,
+            "rand-to-best-and-current/2/bin": 18,
+        }
+        mutation_variant = _convert_str_to_int(
+            str_to_int=mutation_variant_str_to_int, value=self.mutation_variant
+        )
 
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "variant": mutation_variant,
+            "variant_adptv": 1 if self.jde else 2,
+            "ftol": self.ftol,
+            "xtol": self.xtol,
+            "memory": self.keep_adapted_params,
+        }
 
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
-    )
-    mutation_variant_str_to_int = {
-        "best/1/exp": 1,
-        "rand/1/exp": 2,
-        "rand-to-best/1/exp": 3,
-        "best/2/exp": 4,
-        "rand/2/exp": 5,
-        "best/1/bin": 6,
-        "rand/1/bin": 7,
-        "rand-to-best/1/bin": 8,
-        "best/2/bin": 9,
-        "rand/2/bin": 10,
-        "rand/3/exp": 11,
-        "rand/3/bin": 12,
-        "best/3/exp": 13,
-        "best/3/bin": 14,
-        "rand-to-current/2/exp": 15,
-        "rand-to-current/2/bin": 16,
-        "rand-to-best-and-current/2/exp": 17,
-        "rand-to-best-and-current/2/bin": 18,
-    }
-    mutation_variant = _convert_str_to_int(
-        str_to_int=mutation_variant_str_to_int, value=mutation_variant
-    )
-
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "variant": mutation_variant,
-        "variant_adptv": 1 if jde else 2,
-        "ftol": ftol,
-        "xtol": xtol,
-        "memory": keep_adapted_params,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="sade",
-        algo_options=algo_options,
-    )
-    return res
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="sade",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_cmaes",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_cmaes(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    backward_horizon=None,
-    variance_loss_compensation=None,
-    learning_rate_rank_one_update=None,
-    learning_rate_rank_mu_update=None,
-    initial_step_size=0.5,
-    ftol=1e-6,
-    xtol=1e-6,
-    keep_adapted_params=False,
-):
-    r"""Minimize a scalar function using the Covariance Matrix Evolutionary Strategy.
+@dataclass(frozen=True)
+class PygmoCmaes(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,1]
+    backward_horizon: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    variance_loss_compensation: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_rank_one_update: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_rank_mu_update: NonNegativeFloat | None = None
+    # TODO: Check if should be NonNegativeFloat
+    initial_step_size: float = 0.5
+    ftol: NonNegativeFloat = 1e-6
+    xtol: NonNegativeFloat = 1e-6
+    keep_adapted_params: bool = False
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
 
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "cc": self.backward_horizon if self.backward_horizon is not None else -1.0,
+            "cs": self.variance_loss_compensation
+            if self.variance_loss_compensation is not None
+            else -1.0,
+            "c1": self.learning_rate_rank_one_update
+            if self.learning_rate_rank_one_update is not None
+            else -1.0,
+            "cmu": self.learning_rate_rank_mu_update
+            if self.learning_rate_rank_mu_update is not None
+            else -1.0,
+            "sigma0": self.initial_step_size,
+            "ftol": self.ftol,
+            "xtol": self.xtol,
+            "memory": self.keep_adapted_params,
+            "force_bounds": True,
+        }
 
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
-    )
-
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "cc": _replace_none(var=backward_horizon, none_value=-1.0),
-        "cs": _replace_none(var=variance_loss_compensation, none_value=-1.0),
-        "c1": _replace_none(var=learning_rate_rank_one_update, none_value=-1.0),
-        "cmu": _replace_none(var=learning_rate_rank_mu_update, none_value=-1.0),
-        "sigma0": initial_step_size,
-        "ftol": ftol,
-        "xtol": xtol,
-        "memory": keep_adapted_params,
-        "force_bounds": True,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="cmaes",
-        algo_options=algo_options,
-    )
-    return res
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="cmaes",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_simulated_annealing",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_simulated_annealing(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    start_temperature=10.0,
-    end_temperature=0.01,
-    n_temp_adjustments=10,
-    n_range_adjustments=10,
-    bin_size=10,
-    start_range=1.0,
-):
-    """Minimize a function with the simulated annealing algorithm.
+@dataclass(frozen=True)
+class PygmoSimulatedAnnealing(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    start_temperature: PositiveFloat = 10.0
+    # TODO: Check if type should be same as start_temperature
+    end_temperature: float = 0.01
+    # TODO: Check if type should be NonNegativeInt
+    n_temp_adjustments: int = 10
+    # TODO: Check if type should be NonNegativeInt
+    n_range_adjustments: int = 10
+    # TODO: Check if type should be NonNegativeInt
+    bin_size: int = 10
+    # TODO: Refine type to fix range [0,1]
+    start_range: NonNegativeFloat = 1.0
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
 
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+        algo_specific_options = {
+            "Ts": self.start_temperature,
+            "Tf": self.end_temperature,
+            "n_T_adj": self.n_temp_adjustments,
+            "n_range_adj": self.n_range_adjustments,
+            "bin_size": self.bin_size,
+            "start_range": self.start_range,
+        }
 
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
-    )
-
-    algo_specific_options = {
-        "Ts": start_temperature,
-        "Tf": end_temperature,
-        "n_T_adj": int(n_temp_adjustments),
-        "n_range_adj": int(n_range_adjustments),
-        "bin_size": bin_size,
-        "start_range": start_range,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="simulated_annealing",
-        algo_options=algo_options,
-    )
-    return res
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="simulated_annealing",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_pso",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_pso(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    omega=0.7298,
-    force_of_previous_best=2.05,
-    force_of_best_in_neighborhood=2.05,
-    max_velocity=0.5,
-    algo_variant=5,
-    neighbor_definition="lbest",
-    neighbor_param=None,
-    keep_velocities=False,
-):
-    r"""Minimize a scalar function using Particle Swarm Optimization.
+@dataclass(frozen=True)
+class PygmoPso(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,1]
+    omega: NonNegativeFloat = 0.7298
+    # TODO: Refine type to fix range [0,4]
+    force_of_previous_best: NonNegativeFloat = 2.05
+    # TODO: Refine type to fix range [0,4]
+    force_of_best_in_neighborhood: NonNegativeFloat = 2.05
+    # TODO: Refine type to fix range [0,1]
+    max_velocity: NonNegativeFloat = 0.5
+    algo_variant: Literal[
+        "canonical_inertia",
+        "social_and_cog_rand",
+        "all_components_rand",
+        "one_rand",
+        "canonical_constriction",
+        "fips",
+    ] = "canonical_constriction"
+    neighbor_definition: Literal[
+        "gbest",
+        "lbest",
+        "Von Neumann",
+        "Adaptive random",
+    ] = "lbest"
+    neighbor_param: int | None = None
+    keep_velocities: bool = False
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if (
+            self.neighbor_definition in ["gbest", "Von Neumann"]
+            and self.neighbor_param is not None
+        ):
+            warnings.warn(
+                "You gave a neighbor parameter but selected a neighbor_definition "
+                "that ignores this parameter."
+            )
 
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+        neighbor_param = 4 if self.neighbor_param is None else self.neighbor_param
 
-    if neighbor_definition in [1, 3] and neighbor_param is not None:
-        warnings.warn(
-            "You gave a neighbor parameter but selected a neighbor_definition "
-            "that ignores this parameter."
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
         )
 
-    neighbor_param = _replace_none(neighbor_param, 4)
+        neighbor_definition_str_to_int = {
+            "gbest": 1,
+            "lbest": 2,
+            "Von Neumann": 3,
+            "Adaptive random": 4,
+        }
+        algo_variant_str_to_int = {
+            "canonical_inertia": 1,
+            "social_and_cog_rand": 2,
+            "all_components_rand": 3,
+            "one_rand": 4,
+            "canonical_constriction": 5,
+            "fips": 6,
+        }
 
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=10
-    )
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "omega": self.omega,
+            "eta1": self.force_of_previous_best,
+            "eta2": self.force_of_best_in_neighborhood,
+            "max_vel": self.max_velocity,
+            "variant": _convert_str_to_int(algo_variant_str_to_int, self.algo_variant),
+            "neighb_type": _convert_str_to_int(
+                neighbor_definition_str_to_int, self.neighbor_definition
+            ),
+            "neighb_param": neighbor_param,
+            "memory": self.keep_velocities,
+        }
 
-    neighbor_definition_str_to_int = {
-        "gbest": 1,
-        "lbest": 2,
-        "Von Neumann": 3,
-        "Adaptive random": 4,
-    }
-    algo_variant_str_to_int = {
-        "canonical_inertia": 1,
-        "social_and_cog_rand": 2,
-        "all_components_rand": 3,
-        "one_rand": 4,
-        "canonical_constriction": 5,
-        "fips": 6,
-    }
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="pso",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
 
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "omega": omega,
-        "eta1": force_of_previous_best,
-        "eta2": force_of_best_in_neighborhood,
-        "max_vel": max_velocity,
-        "variant": _convert_str_to_int(algo_variant_str_to_int, algo_variant),
-        "neighb_type": _convert_str_to_int(
-            neighbor_definition_str_to_int, neighbor_definition
-        ),
-        "neighb_param": neighbor_param,
-        "memory": keep_velocities,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="pso",
-        algo_options=algo_options,
-    )
-    return res
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_pso_gen",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_pso_gen(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    batch_evaluator=None,
-    n_cores=1,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    omega=0.7298,
-    force_of_previous_best=2.05,
-    force_of_best_in_neighborhood=2.05,
-    max_velocity=0.5,
-    algo_variant="canonical_constriction",
-    neighbor_definition=2,
-    neighbor_param=None,
-    keep_velocities=False,
-):
-    r"""Minimize a scalar function with generational Particle Swarm Optimization.
+@dataclass(frozen=True)
+class PygmoPsoGen(Algorithm):
+    population_size: int | None = None
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,1]
+    omega: NonNegativeFloat = 0.7298
+    # TODO: Refine type to fix range [0,4]
+    force_of_previous_best: NonNegativeFloat = 2.05
+    # TODO: Refine type to fix range [0,4]
+    force_of_best_in_neighborhood: NonNegativeFloat = 2.05
+    # TODO: Refine type to fix range [0,1]
+    max_velocity: NonNegativeFloat = 0.5
+    algo_variant: Literal[
+        "canonical_inertia",
+        "social_and_cog_rand",
+        "all_components_rand",
+        "one_rand",
+        "canonical_constriction",
+        "fips",
+    ] = "canonical_constriction"
+    neighbor_definition: Literal[
+        "gbest",
+        "lbest",
+        "Von Neumann",
+        "Adaptive random",
+    ] = "lbest"
+    neighbor_param: int | None = None
+    keep_velocities: bool = False
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-
-    if neighbor_definition in [1, 3] and neighbor_param is not None:
-        warnings.warn(
-            "You gave a neighbor parameter but selected a neighbor_definition "
-            "that ignores this parameter."
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if (
+            self.neighbor_definition in ["gbest", "Von Neumann"]
+            and self.neighbor_param is not None
+        ):
+            warnings.warn(
+                "You gave a neighbor parameter but selected a neighbor_definition "
+                "that ignores this parameter."
+            )
+        neighbor_param = 4 if self.neighbor_param is None else self.neighbor_param
+        neighbor_str_to_int = {
+            "gbest": 1,
+            "lbest": 2,
+            "Von Neumann": 3,
+            "Adaptive random": 4,
+        }
+        neighbor_type = _convert_str_to_int(
+            neighbor_str_to_int, self.neighbor_definition
         )
-    neighbor_param = _replace_none(neighbor_param, 4)
-    neighbor_str_to_int = {
-        "gbest": 1,
-        "lbest": 2,
-        "Von Neumann": 3,
-        "Adaptive random": 4,
-    }
-    neighbor_param = _convert_str_to_int(neighbor_str_to_int, neighbor_param)
+        algo_variant_str_to_int = {
+            "canonical_inertia": 1,
+            "social_and_cog_rand": 2,
+            "all_components_rand": 3,
+            "one_rand": 4,
+            "canonical_constriction": 5,
+            "fips": 6,
+        }
+        algo_variant = _convert_str_to_int(algo_variant_str_to_int, self.algo_variant)
 
-    algo_variant_str_to_int = {
-        "canonical_inertia": 1,
-        "social_and_cog_rand": 2,
-        "all_components_rand": 3,
-        "one_rand": 4,
-        "canonical_constriction": 5,
-        "fips": 6,
-    }
-    algo_variant = _convert_str_to_int(algo_variant_str_to_int, algo_variant)
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
 
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=10
-    )
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "omega": self.omega,
+            "eta1": self.force_of_previous_best,
+            "eta2": self.force_of_best_in_neighborhood,
+            "max_vel": self.max_velocity,
+            "variant": algo_variant,
+            "neighb_type": neighbor_type,
+            "neighb_param": neighbor_param,
+            "memory": self.keep_velocities,
+        }
 
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "omega": omega,
-        "eta1": force_of_previous_best,
-        "eta2": force_of_best_in_neighborhood,
-        "max_vel": max_velocity,
-        "variant": algo_variant,
-        "neighb_type": neighbor_definition,
-        "neighb_param": neighbor_param,
-        "memory": keep_velocities,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        n_cores=n_cores,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        batch_evaluator=batch_evaluator,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="pso_gen",
-        algo_options=algo_options,
-    )
-    return res
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="pso_gen",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_mbh",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_mbh(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    inner_algorithm=None,
+@dataclass(frozen=True)
+class PygmoMbh(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    inner_algorithm: pg.algorithm | None = None
     # this is 30 instead of 5 in pygmo for our sum of squares test to pass
-    stopping_max_inner_runs_without_improvement=30,
-    perturbation=0.01,
-):
-    """Minimize a scalar function using generalized Monotonic Basin Hopping.
+    stopping_max_inner_runs_without_improvement: PositiveInt = 30
+    perturbation: float = 0.01
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-
-    # the min default population size is this large to pass our sum of squares tests.
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=250
-    )
-
-    algo_specific_options = {
-        "algo": inner_algorithm,
-        "stop": stopping_max_inner_runs_without_improvement,
-        "perturb": perturbation,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="mbh",
-        algo_options=algo_options,
-    )
-    return res
-
-
-@mark_minimizer(
-    name="pygmo_xnes",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
-    is_available=IS_PYGMO_INSTALLED,
-)
-def pygmo_xnes(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    learning_rate_mean_update=1.0,
-    learning_rate_step_size_update=None,
-    learning_rate_cov_matrix_update=None,
-    initial_search_share=1.0,
-    ftol=1e-6,
-    xtol=1e-6,
-    keep_adapted_params=False,
-):
-    r"""Minimize a scalar function using Exponential Evolution Strategies.
-
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
-    )
-
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "eta_mu": _replace_none(learning_rate_mean_update, -1),
-        "eta_sigma": _replace_none(learning_rate_step_size_update, -1),
-        "eta_b": _replace_none(learning_rate_cov_matrix_update, -1),
-        "sigma0": initial_search_share,
-        "ftol": ftol,
-        "xtol": xtol,
-        "memory": keep_adapted_params,
-        "force_bounds": True,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="xnes",
-        algo_options=algo_options,
-    )
-    return res
-
-
-@mark_minimizer(
-    name="pygmo_gwo",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
-    is_available=IS_PYGMO_INSTALLED,
-)
-def pygmo_gwo(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-):
-    """Minimize a scalar function using the Grey Wolf Optimizer.
-
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
-    )
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options={"gen": int(stopping_maxiter)},
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="gwo",
-        algo_options=algo_options,
-    )
-    return res
-
-
-@mark_minimizer(
-    name="pygmo_compass_search",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
-    is_available=IS_PYGMO_INSTALLED,
-)
-def pygmo_compass_search(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxfun=STOPPING_MAXFUN_GLOBAL,
-    start_range=0.1,
-    stop_range=0.01,
-    reduction_coeff=0.5,
-):
-    """Minimize a scalar function using compass search.
-
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
-
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    if population_size is not None:
-        warnings.warn(
-            f"You specified population size {population_size}. "
-            "compass_search does not have a population so this argument is ignored."
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        # the min default population size is this large to pass our sum of
+        # squares tests.
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=250
         )
-    else:
-        # if discard_start_params is False population_size - 1 must still be positive
-        population_size = 100
 
-    algo_specific_options = {
-        "max_fevals": stopping_maxfun,
-        "start_range": start_range,
-        "stop_range": stop_range,
-        "reduction_coeff": reduction_coeff,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
+        algo_specific_options = {
+            "algo": self.inner_algorithm,
+            "stop": self.stopping_max_inner_runs_without_improvement,
+            "perturb": self.perturbation,
+        }
 
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="compass_search",
-        algo_options=algo_options,
-    )
-    return res
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="mbh",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+            n_cores=1,
+        )
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
+    name="pygmo_xnes",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoXnes(Algorithm):
+    population_size: float | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_mean_update: NonNegativeFloat | None = 1.0
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_step_size_update: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    learning_rate_cov_matrix_update: NonNegativeFloat | None = None
+    # TODO: Refine type to fix range [0,1]
+    initial_search_share: NonNegativeFloat | None = 1.0
+    ftol: NonNegativeFloat = 1e-6
+    xtol: NonNegativeFloat = 1e-6
+    keep_adapted_params: bool = False
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
+        eta_mu = (
+            -1
+            if self.learning_rate_mean_update is None
+            else self.learning_rate_mean_update
+        )
+        eta_sigma = (
+            -1
+            if self.learning_rate_step_size_update is None
+            else self.learning_rate_step_size_update
+        )
+        eta_b = (
+            -1
+            if self.learning_rate_cov_matrix_update is None
+            else self.learning_rate_cov_matrix_update
+        )
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "eta_mu": eta_mu,
+            "eta_sigma": eta_sigma,
+            "eta_b": eta_b,
+            "sigma0": self.initial_search_share,
+            "ftol": self.ftol,
+            "xtol": self.xtol,
+            "memory": self.keep_adapted_params,
+            "force_bounds": True,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="xnes",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="pygmo_gwo",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoGwo(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+        }
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="gwo",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="pygmo_compass_search",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class PygmoCompassSearch(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    # TODO: Refine type to fix range (0,1]
+    start_range: PositiveFloat = 0.1
+    # TODO?: mus be in (0,start_range]
+    stop_range: PositiveFloat = 0.01
+    # TODO: Refine type to fix range (0,1)
+    reduction_coeff: PositiveFloat = 0.5
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.population_size is not None:
+            warnings.warn(
+                f"You specified population size {self.population_size}. "
+                "compass_search does not have a population so this argument is ignored."
+            )
+            population_size = self.population_size
+        else:
+            # if discard_start_params is False population_size - 1
+            # must still be positive
+            population_size = 100
+
+        algo_specific_options = {
+            "max_fevals": self.stopping_maxfun,
+            "start_range": self.start_range,
+            "stop_range": self.stop_range,
+            "reduction_coeff": self.reduction_coeff,
+        }
+
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="compass_search",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
+
+
+@mark.minimizer(
     name="pygmo_ihs",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_ihs(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    choose_from_memory_probability=0.85,
-    min_pitch_adjustment_rate=0.35,
-    max_pitch_adjustment_rate=0.99,
-    min_distance_bandwidth=1e-5,
-    max_distance_bandwidth=1.0,
-):
-    """Minimize a scalar function using the improved harmony search algorithm.
+@dataclass(frozen=True)
+class PygmoIhs(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    # TODO: Probably refine type to fix range [0,1]
+    choose_from_memory_probability: NonNegativeFloat = 0.85
+    # TODO: Refine type to fix range [0,1]
+    min_pitch_adjustment_rate: NonNegativeFloat = 0.35
+    # TODO: Refine type to fix range [0,1]
+    max_pitch_adjustment_rate: NonNegativeFloat = 0.99
+    min_distance_bandwidth: PositiveFloat = 1e-5
+    max_distance_bandwidth: PositiveFloat = 1.0
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.population_size is not None:
+            warnings.warn("The population size has no effect on IHS' performance.")
 
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=1
+        )
 
-    if population_size is not None:
-        warnings.warn("The population size has no effect on IHS' performance.")
-
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=1
-    )
-
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "phmcr": choose_from_memory_probability,
-        "ppar_min": min_pitch_adjustment_rate,
-        "ppar_max": max_pitch_adjustment_rate,
-        "bw_min": min_distance_bandwidth,
-        "bw_max": max_distance_bandwidth,
-    }
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="ihs",
-        algo_options=algo_options,
-    )
-    return res
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "phmcr": self.choose_from_memory_probability,
+            "ppar_min": self.min_pitch_adjustment_rate,
+            "ppar_max": self.max_pitch_adjustment_rate,
+            "bw_min": self.min_distance_bandwidth,
+            "bw_max": self.max_distance_bandwidth,
+        }
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="ihs",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
 
 
-@mark_minimizer(
+@mark.minimizer(
     name="pygmo_de1220",
-    primary_criterion_entry="value",
-    is_global=True,
-    needs_scaling=True,
+    solver_type=AggregationLevel.SCALAR,
     is_available=IS_PYGMO_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
 )
-def pygmo_de1220(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    *,
-    population_size=None,
-    seed=None,
-    discard_start_params=False,
-    jde=True,
-    stopping_maxiter=STOPPING_MAX_ITERATIONS_GENETIC,
-    allowed_variants=None,
-    keep_adapted_params=False,
-    ftol=1e-6,
-    xtol=1e-6,
-):
-    """Minimize a scalar function using Self-adaptive Differential Evolution, pygmo
-    flavor.
+@dataclass(frozen=True)
+class PygmoDe1220(Algorithm):
+    population_size: int | None = None
+    seed: int | None = None
+    discard_start_params: bool = False
+    jde: bool = True
+    stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
+    allowed_variants: List[str] | None = None
+    keep_adapted_params: bool = False
+    ftol: NonNegativeFloat = 1e-6
+    xtol: NonNegativeFloat = 1e-6
 
-    For details see
-    :ref: `list_of_pygmo_algorithms`.
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        variant_str_to_int = {
+            "best/1/exp": 1,
+            "rand/1/exp": 2,
+            "rand-to-best/1/exp": 3,
+            "best/2/exp": 4,
+            "rand/2/exp": 5,
+            "best/1/bin": 6,
+            "rand/1/bin": 7,
+            "rand-to-best/1/bin": 8,
+            "best/2/bin": 9,
+            "rand/2/bin": 10,
+            "rand/3/exp": 11,
+            "rand/3/bin": 12,
+            "best/3/exp": 13,
+            "best/3/bin": 14,
+            "rand-to-current/2/exp": 15,
+            "rand-to-current/2/bin": 16,
+            "rand-to-best-and-current/2/exp": 17,
+            "rand-to-best-and-current/2/bin": 18,
+        }
+        if self.allowed_variants is None:
+            allowed_variant_codes = [2, 3, 7, 10, 13, 14, 15, 16]
+        else:
+            allowed_variant_codes = [
+                _convert_str_to_int(variant_str_to_int, variant)
+                for variant in self.allowed_variants
+            ]
 
-    """
-    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    variant_str_to_int = {
-        "best/1/exp": 1,
-        "rand/1/exp": 2,
-        "rand-to-best/1/exp": 3,
-        "best/2/exp": 4,
-        "rand/2/exp": 5,
-        "best/1/bin": 6,
-        "rand/1/bin": 7,
-        "rand-to-best/1/bin": 8,
-        "best/2/bin": 9,
-        "rand/2/bin": 10,
-        "rand/3/exp": 11,
-        "rand/3/bin": 12,
-        "best/3/exp": 13,
-        "best/3/bin": 14,
-        "rand-to-current/2/exp": 15,
-        "rand-to-current/2/bin": 16,
-        "rand-to-best-and-current/2/exp": 17,
-        "rand-to-best-and-current/2/bin": 18,
-    }
-    if allowed_variants is None:
-        allowed_variant_codes = [2, 3, 7, 10, 13, 14, 15, 16]
-    else:
-        allowed_variant_codes = [
-            _convert_str_to_int(variant_str_to_int, variant)
-            for variant in allowed_variants
-        ]
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=64
+        )
 
-    population_size = get_population_size(
-        population_size=population_size, x=x, lower_bound=64
-    )
+        algo_specific_options = {
+            "gen": self.stopping_maxiter,
+            "variant_adptv": 1 if self.jde else 2,
+            "ftol": self.ftol,
+            "xtol": self.xtol,
+            "memory": self.keep_adapted_params,
+            "allowed_variants": allowed_variant_codes,
+        }
 
-    algo_specific_options = {
-        "gen": int(stopping_maxiter),
-        "variant_adptv": 1 if jde else 2,
-        "ftol": ftol,
-        "xtol": xtol,
-        "memory": keep_adapted_params,
-        "allowed_variants": allowed_variant_codes,
-    }
-
-    algo_options = _create_algo_options(
-        population_size=population_size,
-        seed=seed,
-        discard_start_params=discard_start_params,
-        algo_specific_options=algo_specific_options,
-    )
-
-    res = _minimize_pygmo(
-        criterion=criterion,
-        x=x,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        method="de1220",
-        algo_options=algo_options,
-    )
-    return res
+        res = _minimize_pygmo(
+            problem=problem,
+            x0=x0,
+            method="de1220",
+            specific_options=algo_specific_options,
+            population_size=population_size,
+            n_cores=1,
+            seed=self.seed,
+            discard_start_params=self.discard_start_params,
+        )
+        return res
 
 
 # ====================================================================================
 
 
 def _minimize_pygmo(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    method,
-    algo_options,
-    derivative=None,  # noqa: ARG001
-):
-    """Minimize a function with pygmo.
-
-    Args:
-        criterion (callable):
-        x (np.ndarray): Starting values of the parameters.
-        lower_bounds (np.ndarray):
-        upper_bounds (np.ndarray):
-        method (str): One of the optimizers of the pygmo package.
-        algo_options (dict): Options for the optimizer. In addition to
-            the algo options that will be passed directly to the pygmo
-            algorithms we have the following entries:
-            - population_size (int): Population size for genetic algorithms.
-            - batch_evaluator (str or callable): An optimagic batch evaluator,
-                default joblib batch evaluator.
-            - n_cores (int): Number of cores used for parallel evaluation of
-                the criterion function. Default 1.
-            - seed (int or None): Random seed for drawing the initial
-                population.
-            - discard_start_params (bool): If True, the start params are not
-                guaranteed to be part of the initial population. This saves one
-                criterion function evaluation that cannot be done in parallel
-                with other evaluations. Default False.
-
-    Returns:
-        results (dict): Dictionary with optimization results.
-
-    """
-    algo_options = algo_options.copy()
+    problem: InternalOptimizationProblem,
+    x0: NDArray[np.float64],
+    method: str,
+    specific_options: dict[str, Any],
+    population_size: PositiveInt,
+    n_cores: int,
+    seed: int | None,
+    discard_start_params: bool,
+) -> InternalOptimizeResult:
     if not IS_PYGMO_INSTALLED:
         raise NotInstalledError(
             f"The {method} algorithm requires the pygmo package to be installed. "
@@ -1225,59 +1266,52 @@ def _minimize_pygmo(
             "instructions."
         )
 
-    population_size = algo_options.pop("population_size", 1)
-    batch_evaluator = algo_options.pop("batch_evaluator", "joblib")
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
-    n_cores = algo_options.pop("n_cores", 1)
-    seed = algo_options.pop("seed", None)
-    discard_start_params = algo_options.pop("discard_start_params", False)
+    bounds = problem.bounds
+    if bounds is None or bounds.lower is None or bounds.upper is None:
+        raise ValueError(f"{method} requires finitel bounds for all parameters.")
+    elif not np.isfinite(bounds.lower).all() or not np.isfinite(bounds.upper).all():
+        raise ValueError(f"{method} requires finite bounds for all parameters.")
 
-    bounds = (lower_bounds, upper_bounds)
-    prob = _create_problem(
-        func=criterion,
-        bounds=bounds,
-        dim=len(x),
-        batch_evaluator=batch_evaluator,
-        n_cores=n_cores,
-    )
-    algo = _create_algorithm(method, algo_options, n_cores)
+    pygmo_problem = _create_pygmo_problem(problem, len(x0), n_cores)
+    algo = _create_algorithm(method, specific_options, n_cores)
     pop = _create_population(
-        prob, population_size, x, seed=seed, discard_start_params=discard_start_params
+        problem=pygmo_problem,
+        population_size=population_size,
+        x=x0,
+        seed=seed,
+        discard_start_params=discard_start_params,
     )
     evolved = algo.evolve(pop)
-    result = _process_pygmo_results(evolved)
-
+    result = _process_pygmo_result(evolved)
     return result
 
 
-def _create_problem(func, bounds, dim, batch_evaluator, n_cores):
+def _create_pygmo_problem(
+    problem: InternalOptimizationProblem, dim: int, n_cores: int
+) -> pg.problem:
     class Problem:
         def fitness(self, x):
-            return [func(x)]
+            return [problem.fun(x)]
 
         def get_bounds(self):
-            return bounds
+            return (problem.bounds.lower, problem.bounds.upper)
 
         def gradient(self, dv):  # noqa: ARG002
             raise ValueError("No pygmo optimizer should use a gradient.")
 
         def batch_fitness(self, dvs):
-            dv_list = dvs.reshape(-1, dim)
-            eval_list = batch_evaluator(
-                func=func,
-                arguments=dv_list,
-                n_cores=n_cores,
-                # Error handling is done on a higher level
-                error_handling="raise",
-            )
+            x_list = list(dvs.reshape(-1, dim))
+            eval_list = problem.batch_fun(x_list, n_cores=n_cores)
             evals = np.array(eval_list)
             return evals
 
-    problem = pg.problem(Problem())
-    return problem
+    pygmo_problem = pg.problem(Problem())
+    return pygmo_problem
 
 
-def _create_algorithm(method, algo_options, n_cores):
+def _create_algorithm(
+    method: str, algo_options: dict[str, Any], n_cores: int
+) -> pg.algorithm:
     """Create a pygmo algorithm."""
     pygmo_uda = getattr(pg, method)
     algo = pygmo_uda(**algo_options)
@@ -1293,18 +1327,13 @@ def _create_algorithm(method, algo_options, n_cores):
     return out
 
 
-def _create_population(problem, population_size, x, seed, discard_start_params):
-    """Create a pygmo population object.
-
-    Args:
-        problem (pygmo.Problem)
-        algo_options (dict)
-        x (np.ndarray)
-
-    Todo:
-        - constrain random initial values to be in some bounds
-
-    """
+def _create_population(
+    problem: InternalOptimizationProblem,
+    population_size: int,
+    x: NDArray[np.float64],
+    seed: int | None,
+    discard_start_params: bool,
+) -> pg.population:
     if not discard_start_params:
         population_size = population_size - 1
 
@@ -1319,48 +1348,17 @@ def _create_population(problem, population_size, x, seed, discard_start_params):
     return pop
 
 
-def _process_pygmo_results(evolved):
-    results = {
-        # Harmonized results.
-        "solution_x": evolved.champion_x,
-        "solution_criterion": evolved.champion_f[0],
-        "solution_derivative": None,
-        "solution_hessian": None,
-        "n_fun_evals": evolved.problem.get_fevals(),
-        "n_jac_evals": evolved.problem.get_gevals(),
-        "n_iterations": None,
-        "success": True,
-        "reached_convergence_criterion": "Number of generations reached.",
-        "message": None,
-    }
+def _process_pygmo_result(evolved: pg.population) -> InternalOptimizeResult:
+    result = InternalOptimizeResult(
+        x=evolved.champion_x,
+        fun=evolved.champion_f[0],
+        success=True,
+        message="Number of generations reached.",
+        n_fun_evals=evolved.problem.get_fevals(),
+        n_jac_evals=evolved.problem.get_gevals(),
+    )
 
-    return results
-
-
-def _create_algo_options(
-    population_size,
-    seed,
-    discard_start_params,
-    algo_specific_options,
-    n_cores=1,
-    batch_evaluator=None,
-):
-    algo_options = {
-        "population_size": _replace_none(population_size, -1),
-        "n_cores": n_cores,
-        "seed": seed,
-        "discard_start_params": discard_start_params,
-    }
-    if batch_evaluator is not None:
-        algo_options["batch_evaluator"] = batch_evaluator
-
-    algo_options.update(**algo_specific_options)
-    return algo_options
-
-
-def _check_that_every_param_is_bounded(lower_bounds, upper_bounds):
-    assert np.isfinite(lower_bounds).all(), "The lower bounds must all be finite."
-    assert np.isfinite(upper_bounds).all(), "The upper bounds must all be finite."
+    return result
 
 
 def _convert_str_to_int(str_to_int, value):
@@ -1373,9 +1371,4 @@ def _convert_str_to_int(str_to_int, value):
         )
     else:
         out = value
-    return out
-
-
-def _replace_none(var, none_value):
-    out = var if var is not None else none_value
     return out

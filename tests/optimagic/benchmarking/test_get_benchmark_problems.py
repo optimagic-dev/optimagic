@@ -2,6 +2,7 @@ from itertools import product
 
 import numpy as np
 import pytest
+
 from optimagic.benchmarking.get_benchmark_problems import (
     _step_func,
     get_benchmark_problems,
@@ -29,13 +30,13 @@ def test_get_problems(name, additive_noise, multiplicative_noise, scaling):
     func = first["inputs"]["fun"]
     params = first["inputs"]["params"]
 
-    first_eval = func(params)["value"]
-    second_eval = func(params)["value"]
+    first_eval = func(params)
+    second_eval = func(params)
 
     if is_noisy:
-        assert first_eval != second_eval
+        assert not np.allclose(first_eval, second_eval)
     else:
-        assert first_eval == second_eval
+        assert np.allclose(first_eval, second_eval)
 
     for problem in problems.values():
         assert isinstance(problem["inputs"]["params"], np.ndarray)

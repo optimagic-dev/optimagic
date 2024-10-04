@@ -6,13 +6,16 @@ This also serves as an internal overview of deprecated functions.
 
 import warnings
 
-import estimagic as em
 import numpy as np
-import optimagic as om
 import pytest
+from numpy.testing import assert_almost_equal as aaae
+
+import estimagic as em
+import optimagic as om
 from estimagic import (
     OptimizeLogReader,
     OptimizeResult,
+    batch_evaluators,
     check_constraints,
     convergence_plot,
     convergence_report,
@@ -31,7 +34,23 @@ from estimagic import (
     traceback_report,
     utilities,
 )
+from optimagic.deprecations import (
+    convert_dict_to_function_value,
+    handle_log_options_throw_deprecated_warning,
+    infer_problem_type_from_dict_output,
+    is_dict_output,
+    pre_process_constraints,
+)
+from optimagic.differentiation.derivatives import NumdiffResult
+from optimagic.exceptions import InvalidConstraintError
+from optimagic.logging.logger import SQLiteLogOptions
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import AggregationLevel
 
 # ======================================================================================
 # Deprecated in 0.5.0, remove in 0.6.0
@@ -106,7 +125,8 @@ def test_estimagic_check_constraints_is_deprecated():
     msg = "estimagic.check_constraints has been deprecated"
     with pytest.warns(FutureWarning, match=msg):
         check_constraints(
-            params=np.arange(3), constraints=[{"loc": 0, "type": "fixed"}]
+            params=np.arange(3),
+            constraints=om.FixedConstraint(lambda x: x[0]),
         )
 
 
@@ -114,7 +134,8 @@ def test_estimagic_count_free_params_is_deprecated():
     msg = "estimagic.count_free_params has been deprecated"
     with pytest.warns(FutureWarning, match=msg):
         count_free_params(
-            params=np.arange(3), constraints=[{"loc": 0, "type": "fixed"}]
+            params=np.arange(3),
+            constraints=om.FixedConstraint(lambda x: x[0]),
         )
 
 
@@ -136,7 +157,8 @@ def example_db(tmp_path):
 
 
 def test_estimagic_log_reader_is_deprecated(example_db):
-    msg = "estimagic.OptimizeLogReader has been deprecated"
+    msg = "OptimizeLogReader is deprecated and will be removed in a future "
+    "version. Please use optimagic.logging.SQLiteLogger instead."
     with pytest.warns(FutureWarning, match=msg):
         OptimizeLogReader(example_db)
 
@@ -456,11 +478,32 @@ def test_old_bounds_are_deprecated_in_second_derivative(bounds_kwargs):
 def test_old_bounds_are_deprecated_in_estimate_ml(bounds_kwargs):
     msg = "Specifying bounds via the arguments"
     with pytest.warns(FutureWarning, match=msg):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
         em.estimate_ml(
-            loglike=lambda x: {"contributions": -(x**2), "value": -x @ x},
+            loglike=loglike,
             params=np.arange(3),
             optimize_options={"algorithm": "scipy_lbfgsb"},
             **bounds_kwargs,
+        )
+
+
+def test_numdiff_options_is_deprecated_in_estimate_ml():
+    msg = "The argument `numdiff_options` is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            numdiff_options={"method": "forward"},
         )
 
 
@@ -478,13 +521,26 @@ def test_old_bounds_are_deprecated_in_estimate_msm(bounds_kwargs):
         )
 
 
+def test_numdiff_options_is_deprecated_in_estimate_msm():
+    msg = "The argument `numdiff_options` is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            numdiff_options={"method": "forward"},
+        )
+
+
 @pytest.mark.parametrize("bounds_kwargs", BOUNDS_KWARGS)
 def test_old_bounds_are_deprecated_in_count_free_params(bounds_kwargs):
     msg = "Specifying bounds via the arguments"
     with pytest.warns(FutureWarning, match=msg):
         om.count_free_params(
             np.arange(3),
-            constraints=[{"loc": 0, "type": "fixed"}],
+            constraints=om.FixedConstraint(lambda x: x[0]),
             **bounds_kwargs,
         )
 
@@ -495,7 +551,7 @@ def test_old_bounds_are_deprecated_in_check_constraints(bounds_kwargs):
     with pytest.warns(FutureWarning, match=msg):
         om.check_constraints(
             np.arange(3),
-            constraints=[{"loc": 0, "type": "fixed"}],
+            constraints=om.FixedConstraint(lambda x: x[0]),
             **bounds_kwargs,
         )
 
@@ -509,6 +565,41 @@ def test_old_bounds_are_deprecated_in_slice_plot():
             lower_bounds=np.full(3, -1),
             upper_bounds=np.full(3, 2),
         )
+
+
+def test_is_dict_output():
+    assert is_dict_output({"value": 1})
+    assert not is_dict_output(1)
+
+
+def test_infer_problem_type_from_dict_output():
+    assert infer_problem_type_from_dict_output({"value": 1}) == AggregationLevel.SCALAR
+    assert (
+        infer_problem_type_from_dict_output({"value": 1, "root_contributions": 2})
+        == AggregationLevel.LEAST_SQUARES
+    )
+    assert (
+        infer_problem_type_from_dict_output({"value": 1, "contributions": 2})
+        == AggregationLevel.LIKELIHOOD
+    )
+
+
+def test_convert_value_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 1})
+    assert isinstance(got, ScalarFunctionValue)
+    assert got.value == 1
+
+
+def test_convert_root_contributions_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 5, "root_contributions": [1, 2]})
+    assert isinstance(got, LeastSquaresFunctionValue)
+    assert got.value == [1, 2]
+
+
+def test_convert_contributions_dict_to_function_value():
+    got = convert_dict_to_function_value({"value": 5, "contributions": [1, 4]})
+    assert isinstance(got, LikelihoodFunctionValue)
+    assert got.value == [1, 4]
 
 
 def test_old_scaling_options_are_deprecated_in_minimize():
@@ -531,3 +622,520 @@ def test_old_scaling_options_are_deprecated_in_maximize():
             algorithm="scipy_lbfgsb",
             scaling_options={"method": "start_values", "magnitude": 1},
         )
+
+
+def test_old_multistart_options_are_deprecated_in_minimize():
+    msg = "Specifying multistart options via the argument `multistart_options` is"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            multistart_options={"n_samples": 10},
+        )
+
+
+def test_old_multistart_options_are_deprecated_in_maximize():
+    msg = "Specifying multistart options via the argument `multistart_options` is"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            multistart_options={"n_samples": 10},
+        )
+
+
+def test_multistart_option_share_optimization_option_is_deprecated():
+    msg = "The `share_optimization` option is deprecated and will be removed in"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"share_optimization": 0.1},
+        )
+
+
+def test_multistart_option_convergence_relative_params_tolerance_option_is_deprecated():
+    msg = "The `convergence_relative_params_tolerance` option is deprecated and will"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"convergence_relative_params_tolerance": 0.01},
+        )
+
+
+def test_multistart_option_optimization_error_handling_option_is_deprecated():
+    msg = "The `optimization_error_handling` option is deprecated and will be removed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"optimization_error_handling": "continue"},
+        )
+
+
+def test_multistart_option_exploration_error_handling_option_is_deprecated():
+    msg = "The `exploration_error_handling` option is deprecated and will be removed"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+            multistart={"exploration_error_handling": "continue"},
+        )
+
+
+def test_deprecated_dict_access_of_multistart_info():
+    res = om.minimize(
+        lambda x: x @ x,
+        np.arange(3),
+        algorithm="scipy_lbfgsb",
+        multistart=True,
+        bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
+    )
+    msg = "The dictionary access for 'local_optima' is deprecated and will be removed"
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.multistart_info["local_optima"]
+
+
+def test_base_steps_in_first_derivatives_is_deprecated():
+    msg = "The `base_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), base_steps=1e-3)
+
+
+def test_step_ratio_in_first_derivatives_is_deprecated():
+    msg = "The `step_ratio` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), step_ratio=2)
+
+
+def test_n_steps_in_first_derivatives_is_deprecated():
+    msg = "The `n_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), n_steps=2)
+
+
+def test_return_info_in_first_derivatives_is_deprecated():
+    msg = "The `return_info` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), return_info=True)
+
+
+def test_return_func_value_in_first_derivatives_is_deprecated():
+    msg = "The `return_func_value` argument is deprecated and will be removed in"
+    with pytest.warns(FutureWarning, match=msg):
+        om.first_derivative(lambda x: x @ x, np.arange(3), return_func_value=True)
+
+
+def test_base_steps_in_second_derivatives_is_deprecated():
+    msg = "The `base_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), base_steps=1e-3)
+
+
+def test_step_ratio_in_second_derivatives_is_deprecated():
+    msg = "The `step_ratio` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), step_ratio=2)
+
+
+def test_n_steps_in_second_derivatives_is_deprecated():
+    msg = "The `n_steps` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), n_steps=1)
+
+
+def test_return_func_value_in_second_derivatives_is_deprecated():
+    msg = "The `return_func_value` argument is deprecated and will be removed in"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), return_func_value=True)
+
+
+def test_return_info_in_second_derivatives_is_deprecated():
+    msg = "The `return_info` argument is deprecated and will be removed alongside"
+    with pytest.warns(FutureWarning, match=msg):
+        om.second_derivative(lambda x: x @ x, np.arange(3), return_info=True)
+
+
+def test_numdiff_result_func_evals_is_deprecated():
+    msg = "The `func_evals` attribute is deprecated and will be removed in optimagic"
+    res = NumdiffResult(derivative=1)
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.func_evals
+
+
+def test_numdiff_result_derivative_candidates_is_deprecated():
+    msg = "The `derivative_candidates` attribute is deprecated and will be removed"
+    res = NumdiffResult(derivative=1)
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res.derivative_candidates
+
+
+def test_numdiff_result_dict_access_is_deprecated():
+    msg = "The dictionary access for 'derivative' is deprecated and will be removed"
+    res = NumdiffResult(derivative=1)
+    with pytest.warns(FutureWarning, match=msg):
+        _ = res["derivative"]
+
+
+def test_key_argument_is_deprecated_in_first_derivative():
+    with pytest.warns(FutureWarning, match="The `key` argument in"):
+        om.first_derivative(lambda x: {"value": x @ x}, np.arange(3), key="value")
+
+
+def test_key_argument_is_deprecated_in_second_derivative():
+    with pytest.warns(FutureWarning, match="The `key` argument in"):
+        om.second_derivative(lambda x: {"value": x @ x}, np.arange(3), key="value")
+
+
+def test_jac_dicts_are_deprecated_in_minimize():
+    msg = "Specifying a dictionary of jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            jac={"value": lambda x: 2 * x},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_jac_dicts_are_deprecated_in_maximize():
+    msg = "Specifying a dictionary of jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            jac={"value": lambda x: -2 * x},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_and_jac_dicts_are_deprecated_in_minimize():
+    msg = "Specifying a dictionary of fun_and_jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            fun_and_jac={"value": lambda x: (x @ x, 2 * x)},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_and_jac_dicts_are_deprecated_in_maximize():
+    msg = "Specifying a dictionary of fun_and_jac functions is deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            fun_and_jac={"value": lambda x: (-x @ x, -2 * x)},
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_with_dict_return_is_deprecated_in_minimize():
+    msg = "Returning a dictionary with the special keys"
+    with pytest.warns(FutureWarning, match=msg):
+        res = om.minimize(
+            lambda x: {"value": x @ x},
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+        )
+        aaae(res.params, np.zeros(3))
+
+
+def test_fun_with_dict_return_is_deprecated_in_slice_plot():
+    msg = "Functions that return dictionaries"
+    with pytest.warns(FutureWarning, match=msg):
+        om.slice_plot(
+            lambda x: {"value": x @ x},
+            np.arange(3),
+            bounds=om.Bounds(lower=np.zeros(3), upper=np.ones(3) * 5),
+        )
+
+
+def test_handle_log_options():
+    msg = (
+        "Usage of the parameter log_options is deprecated "
+        "and will be removed in a future version. "
+        "Provide a LogOptions instance for the parameter `logging`, if you need to "
+        "configure the logging."
+    )
+    log_options = {"fast_logging": True}
+    with pytest.warns(FutureWarning, match=msg):
+        logger = None
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options, logger
+        )
+        assert handled_logger is None
+
+    creation_warning = (
+        f"\nUsing {log_options=} to create an instance of SQLiteLogOptions. "
+        f"This mechanism will be removed in the future."
+    )
+
+    with pytest.warns(match=creation_warning):
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options, ":memory:"
+        )
+        assert isinstance(handled_logger, SQLiteLogOptions)
+
+    incompatibility_msg = "Found string or path for logger argument, but parameter"
+    f" {log_options=} is not compatible "
+    log_options_typo = {"fast_lugging": False}
+
+    with pytest.raises(ValueError, match=incompatibility_msg):
+        handled_logger = handle_log_options_throw_deprecated_warning(
+            log_options_typo, ":memory:"
+        )
+        assert handled_logger == ":memory:"
+
+
+def test_log_options_are_deprecated_in_estimate_ml(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_estimate_msm(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_minimize(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_log_options_are_deprecated_in_maximize(tmp_path):
+    with pytest.warns(FutureWarning, match="LogOptions"):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log.db",
+            log_options={"fast_logging": True, "if_database_exists": "replace"},
+        )
+
+    with pytest.warns(FutureWarning, match="if_table_exists"):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            logging=tmp_path / "log_1.db",
+            log_options={"fast_logging": True, "if_table_exists": "replace"},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_minimize():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_maximize():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        om.maximize(
+            lambda x: -x @ x,
+            np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_estimate_ml():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+
+        @om.mark.likelihood
+        def loglike(x):
+            return -(x**2)
+
+        em.estimate_ml(
+            loglike=loglike,
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+def test_dict_constraints_are_deprecated_in_estimate_msm():
+    msg = "Specifying constraints as a dictionary is deprecated and"
+    with pytest.warns(FutureWarning, match=msg):
+        em.estimate_msm(
+            simulate_moments=lambda x: x,
+            empirical_moments=np.zeros(3),
+            moments_cov=np.eye(3),
+            params=np.arange(3),
+            optimize_options={"algorithm": "scipy_lbfgsb"},
+            constraints={"type": "fixed", "loc": [0, 1]},
+        )
+
+
+@pytest.fixture
+def dummy_func():
+    return lambda x: x
+
+
+def test_pre_process_constraints_trivial_case(dummy_func):
+    constraints = om.FixedConstraint(selector=dummy_func)
+    expected = [{"type": "fixed", "selector": dummy_func}]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_list_of_constraints(dummy_func):
+    constraints = [
+        om.FixedConstraint(selector=dummy_func),
+        om.IncreasingConstraint(selector=dummy_func),
+    ]
+    expected = [
+        {"type": "fixed", "selector": dummy_func},
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_none_case():
+    assert pre_process_constraints(None) == []
+
+
+def test_pre_process_constraints_mixed_case(dummy_func):
+    constraints = [
+        om.FixedConstraint(selector=dummy_func),
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    expected = [
+        {"type": "fixed", "selector": dummy_func},
+        {"type": "increasing", "selector": dummy_func},
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_dict_case(dummy_func):
+    constraints = {"type": "fixed", "selector": dummy_func}
+    expected = [{"type": "fixed", "selector": dummy_func}]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_invalid_case():
+    constraints = "invalid"
+    msg = "Invalid constraint type: <class 'str'>"
+    with pytest.raises(InvalidConstraintError, match=msg):
+        pre_process_constraints(constraints)
+
+
+def test_pre_process_constraints_invalid_mixed_case():
+    constraints = [
+        {"type": "fixed", "loc": [0, 1]},
+        om.FixedConstraint(),
+        "invalid",
+    ]
+    msg = "Invalid constraint types: {<class 'str'>}"
+    with pytest.raises(InvalidConstraintError, match=msg):
+        pre_process_constraints(constraints)
+
+
+def test_deprecated_log_reader(example_db):
+    with pytest.warns(FutureWarning, match="SQLiteLogReader"):
+        reader = OptimizeLogReader(example_db)
+        res = reader.read_start_params()
+        assert res == {"a": 1, "b": 2, "c": 3}
+
+
+def test_estimagic_joblib_batch_evaluator_is_deprecated():
+    msg = "estimagic.batch_evaluators.joblib_batch_evaluator has been deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        batch_evaluators.joblib_batch_evaluator(lambda x: x, [1, 2], n_cores=1)
+
+
+def test_estimagic_process_batch_evaluator_is_deprecated():
+    msg = "estimagic.batch_evaluators.process_batch_evaluator has been deprecated"
+    with pytest.warns(FutureWarning, match=msg):
+        batch_evaluators.process_batch_evaluator("joblib")

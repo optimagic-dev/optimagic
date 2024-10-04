@@ -3,8 +3,11 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.config import IS_CYIPOPT_INSTALLED
-from optimagic.optimizers.ipopt import ipopt
+from optimagic.optimization.optimize import minimize
+from optimagic.optimizers.ipopt import Ipopt
+from optimagic.parameters.bounds import Bounds
 
 test_cases = [
     {},
@@ -206,12 +209,15 @@ def derivative(x):
 @pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="cyipopt not installed.")
 @pytest.mark.parametrize("algo_options", test_cases)
 def test_ipopt_algo_options(algo_options):
-    res = ipopt(
-        criterion=criterion,
-        derivative=derivative,
-        x=np.array([1, 2, 3]),
-        lower_bounds=np.array([-np.inf, -np.inf, -np.inf]),
-        upper_bounds=np.array([np.inf, np.inf, np.inf]),
-        **algo_options,
+    algorithm = Ipopt(**algo_options)
+    res = minimize(
+        fun=criterion,
+        jac=derivative,
+        algorithm=algorithm,
+        x0=np.array([1, 2, 3]),
+        bounds=Bounds(
+            lower=np.array([-np.inf, -np.inf, -np.inf]),
+            upper=np.array([np.inf, np.inf, np.inf]),
+        ),
     )
-    aaae(res["solution_x"], np.zeros(3), decimal=7)
+    aaae(res.params, np.zeros(3), decimal=7)

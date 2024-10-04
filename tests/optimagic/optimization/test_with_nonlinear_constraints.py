@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic as om
 from optimagic import maximize, minimize
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.config import IS_CYIPOPT_INSTALLED
@@ -12,7 +14,7 @@ from optimagic.parameters.bounds import Bounds
 NLC_ALGORITHMS = [
     name
     for name, algo in AVAILABLE_ALGORITHMS.items()
-    if "nonlinear_constraints" in algo._algorithm_info.arguments
+    if algo.__algo_info__.supports_nonlinear_constraints
 ]
 
 # ======================================================================================
@@ -41,49 +43,38 @@ def nlc_2d_example():
     def constraint_jac(x):
         return 2 * np.row_stack((x.reshape(1, -1), -x.reshape(1, -1)))
 
-    constraints_long = [
-        {
-            "type": "nonlinear",
-            "func": constraint_func,
-            "derivative": constraint_jac,
-            "lower_bounds": np.zeros(2),
-            "tol": 1e-8,
-        }
-    ]
+    constraints_long = om.NonlinearConstraint(
+        func=constraint_func,
+        derivative=constraint_jac,
+        lower_bound=np.zeros(2),
+        tol=1e-8,
+    )
 
-    constraints_flat = [
-        {
-            "type": "nonlinear",
-            "func": lambda x: np.dot(x, x),
-            "derivative": lambda x: 2 * x,
-            "lower_bounds": 1,
-            "upper_bounds": 2,
-            "tol": 1e-8,
-        }
-    ]
+    constraints_flat = om.NonlinearConstraint(
+        func=lambda x: np.dot(x, x),
+        derivative=lambda x: 2 * x,
+        lower_bound=1,
+        upper_bound=2,
+        tol=1e-8,
+    )
 
-    constraints_equality = [
-        {
-            "type": "nonlinear",
-            "func": lambda x: np.dot(x, x),
-            "derivative": lambda x: 2 * x,
-            "value": 2,
-        }
-    ]
+    constraints_equality = om.NonlinearConstraint(
+        func=lambda x: np.dot(x, x),
+        derivative=lambda x: 2 * x,
+        value=2,
+    )
 
     constraints_equality_and_inequality = [
-        {
-            "type": "nonlinear",
-            "func": lambda x: np.dot(x, x),
-            "derivative": lambda x: 2 * x,
-            "lower_bounds": 1,
-        },
-        {
-            "type": "nonlinear",
-            "func": lambda x: np.dot(x, x),
-            "derivative": lambda x: 2 * x,
-            "value": 2,
-        },
+        om.NonlinearConstraint(
+            func=lambda x: np.dot(x, x),
+            derivative=lambda x: 2 * x,
+            lower_bound=1,
+        ),
+        om.NonlinearConstraint(
+            func=lambda x: np.dot(x, x),
+            derivative=lambda x: 2 * x,
+            value=2,
+        ),
     ]
 
     _kwargs = {
@@ -134,7 +125,7 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
         warnings.simplefilter("ignore")
         result = maximize(algorithm=algorithm, **kwargs[constr_type])
 
-    if AVAILABLE_ALGORITHMS[algorithm]._algorithm_info.is_global:
+    if AVAILABLE_ALGORITHMS[algorithm].__algo_info__.is_global:
         decimal = 0
     else:
         decimal = 4
@@ -169,12 +160,11 @@ def test_documentation_example(algorithm):
         fun=criterion,
         params=np.ones(6),
         algorithm=algorithm,
-        constraints={
-            "type": "nonlinear",
-            "selector": lambda x: x[:-1],
-            "func": lambda x: np.prod(x),
-            "value": 1.0,
-        },
+        constraints=om.NonlinearConstraint(
+            func=lambda x: np.prod(x),
+            selector=lambda x: x[:-1],
+            value=1.0,
+        ),
         **kwargs,
     )
 
@@ -202,25 +192,32 @@ def general_example():
         return selected["probs"] @ selected["probs"]
 
     constraints = [
-        {"type": "probability", "selector": selector_probability_constraint},
-        {
-            "type": "nonlinear",
-            "selector": selector_nonlinear_constraint,
-            "upper_bounds": 0.8,
-            "func": constraint,
-            "tol": 0.01,
-        },
+        om.ProbabilityConstraint(
+            selector=selector_probability_constraint,
+        ),
+        om.NonlinearConstraint(
+            selector=selector_nonlinear_constraint,
+            upper_bound=0.8,
+            func=constraint,
+            tol=0.01,
+        ),
+        om.NonlinearConstraint(
+            selector=selector_nonlinear_constraint,
+            func=constraint,
+            upper_bound=0.8,
+            tol=0.01,
+        ),
     ]
 
-    lower_bounds = {"b": np.array([0, 0])}
-    upper_bounds = {"b": np.array([2, 2])}
+    lower_bound = {"b": np.array([0, 0])}
+    upper_bound = {"b": np.array([2, 2])}
 
     kwargs = {
-        "criterion": criterion,
+        "fun": criterion,
         "params": params,
         "constraints": constraints,
-        "lower_bounds": lower_bounds,
-        "upper_bounds": upper_bounds,
+        "lower_bounds": lower_bound,
+        "upper_bounds": upper_bound,
     }
     return kwargs
 

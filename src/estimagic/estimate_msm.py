@@ -3,27 +3,12 @@
 import functools
 import warnings
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from functools import cached_property
 from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
-from optimagic.differentiation.derivatives import first_derivative
-from optimagic.exceptions import InvalidFunctionError
-from optimagic.optimization.optimize import minimize
-from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
-from optimagic.parameters.bounds import Bounds, pre_process_bounds
-from optimagic.parameters.conversion import Converter, get_converter
-from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.shared.check_option_dicts import (
-    check_numdiff_options,
-    check_optimization_options,
-)
-from optimagic.utilities import get_rng, to_pickle
 from pybaum import leaf_names, tree_just_flatten
 
 from estimagic.msm_covs import cov_optimal, cov_robust
@@ -48,6 +33,29 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
+from optimagic import deprecations, mark
+from optimagic.deprecations import (
+    replace_and_warn_about_deprecated_bounds,
+)
+from optimagic.differentiation.derivatives import first_derivative
+from optimagic.differentiation.numdiff_options import (
+    NumdiffPurpose,
+    get_default_numdiff_options,
+    pre_process_numdiff_options,
+)
+from optimagic.exceptions import InvalidFunctionError
+from optimagic.optimization.fun_value import LeastSquaresFunctionValue
+from optimagic.optimization.optimize import minimize
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.conversion import Converter, get_converter
+from optimagic.parameters.space_conversion import InternalParams
+from optimagic.parameters.tree_registry import get_registry
+from optimagic.shared.check_option_dicts import (
+    check_optimization_options,
+)
+from optimagic.utilities import get_rng, to_pickle
 
 
 def estimate_msm(
@@ -59,16 +67,17 @@ def estimate_msm(
     *,
     bounds=None,
     constraints=None,
-    logging=False,
-    log_options=None,
+    logging=None,
     simulate_moments_kwargs=None,
     weights="diagonal",
-    numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
+    jacobian_numdiff_options=None,
     # deprecated
+    log_options=None,
     lower_bounds=None,
     upper_bounds=None,
+    numdiff_options=None,
 ):
     """Do a method of simulated moments or indirect inference estimation.
 
@@ -138,15 +147,15 @@ def estimate_msm(
             - "if_database_exists" (str):
                 One of "extend", "replace", "raise". What to do if the database we want
                 to write to already exists. Default "extend".
-        numdiff_options (dict): Keyword arguments for the calculation of numerical
-            derivatives for the calculation of standard errors. See
-            :ref:`first_derivative` for details. Note that by default we increase the
-            step_size by a factor of 2 compared to the rule of thumb for optimal
-            step sizes. This is because many msm criterion functions are slightly noisy.
         jacobian (callable): A function that take ``params`` and
             potentially other keyword arguments and returns the jacobian of
             simulate_moments with respect to the params.
         jacobian_kwargs (dict): Additional keyword arguments for the jacobian function.
+        jacobian_numdiff_options (dict): Keyword arguments for the calculation of
+            numerical derivatives for the calculation of standard errors. See
+            :ref:`first_derivative` for details. Note that by default we increase the
+            step_size by a factor of 2 compared to the rule of thumb for optimal
+            step sizes. This is because many msm criterion functions are slightly noisy.
 
         Returns:
             dict: The estimated parameters, standard errors and sensitivity measures
@@ -162,11 +171,27 @@ def estimate_msm(
         upper_bounds=upper_bounds,
         bounds=bounds,
     )
+
+    if numdiff_options is not None:
+        deprecations.throw_numdiff_options_deprecated_in_estimate_msm_future_warning()
+        if jacobian_numdiff_options is not None:
+            jacobian_numdiff_options = numdiff_options
+
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
+
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
+    # TODO: Replace dict_constraints with constraints, once we deprecate dictionary
+    # constraints.
+    dict_constraints = deprecations.pre_process_constraints(constraints)
+    jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
+    if jacobian_numdiff_options is None:
+        jacobian_numdiff_options = get_default_numdiff_options(
+            purpose=NumdiffPurpose.ESTIMATE_JACOBIAN
+        )
 
     if weights not in ["diagonal", "optimal", "identity"]:
         raise NotImplementedError("Custom weighting matrices are not yet implemented.")
@@ -185,12 +210,6 @@ def estimate_msm(
 
     jac_case = get_derivative_case(jacobian)
 
-    check_numdiff_options(numdiff_options, "estimate_msm")
-
-    numdiff_options = {} if numdiff_options in (None, False) else numdiff_options.copy()
-    if "scaling_factor" not in numdiff_options:
-        numdiff_options["scaling_factor"] = 2
-
     weights, internal_weights = get_weighting_matrix(
         moments_cov=moments_cov,
         method=weights,
@@ -204,7 +223,6 @@ def estimate_msm(
         inner_tree=empirical_moments,
     )
 
-    constraints = [] if constraints is None else constraints
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
     simulate_moments_kwargs = (
         {} if simulate_moments_kwargs is None else simulate_moments_kwargs
@@ -269,14 +287,6 @@ def estimate_msm(
     # get converter for params and function outputs
     # ==================================================================================
 
-    def helper(params):
-        raw = simulate_moments(params, **simulate_moments_kwargs)
-        if isinstance(raw, dict) and "simulated_moments" in raw:
-            out = {"contributions": raw["simulated_moments"]}
-        else:
-            out = {"contributions": raw}
-        return out
-
     if isinstance(sim_mom_eval, dict) and "simulated_moments" in sim_mom_eval:
         func_eval = {"contributions": sim_mom_eval["simulated_moments"]}
     else:
@@ -284,10 +294,10 @@ def estimate_msm(
 
     converter, internal_estimates = get_converter(
         params=estimates,
-        constraints=constraints,
+        constraints=dict_constraints,
         bounds=bounds,
         func_eval=func_eval,
-        primary_key="contributions",
+        solver_type="contributions",
         derivative_eval=jacobian_eval,
     )
 
@@ -301,9 +311,12 @@ def estimate_msm(
     else:
 
         def func(x):
-            p = converter.params_from_internal(x)
-            sim_mom_eval = helper(p)
-            out = converter.func_to_internal(sim_mom_eval)
+            params = converter.params_from_internal(x)
+            sim_mom = simulate_moments(params, **simulate_moments_kwargs)
+            if isinstance(sim_mom, dict) and "simulated_moments" in sim_mom:
+                sim_mom = sim_mom["simulated_moments"]
+            registry = get_registry(extended=True)
+            out = np.array(tree_just_flatten(sim_mom, registry=registry))
             return out
 
         int_jac = first_derivative(
@@ -313,14 +326,15 @@ def estimate_msm(
                 lower=internal_estimates.lower_bounds,
                 upper=internal_estimates.upper_bounds,
             ),
-            **numdiff_options,
-        )["derivative"]
+            error_handling="continue",
+            **asdict(jacobian_numdiff_options),
+        ).derivative
 
     # ==================================================================================
     # Calculate external jac (if no constraints and not closed form )
     # ==================================================================================
 
-    if constraints in [None, []] and jacobian_eval is None and int_jac is not None:
+    if dict_constraints in [None, []] and jacobian_eval is None and int_jac is not None:
         jacobian_eval = matrix_to_block_tree(
             int_jac,
             outer_tree=empirical_moments,
@@ -353,7 +367,7 @@ def estimate_msm(
         _empirical_moments=empirical_moments,
         _internal_estimates=internal_estimates,
         _free_estimates=free_estimates,
-        _has_constraints=constraints not in [None, []],
+        _has_constraints=dict_constraints not in [None, []],
     )
     return res
 
@@ -407,12 +421,14 @@ def get_msm_optimization_functions(
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
 
-    criterion = functools.partial(
-        _msm_criterion,
-        simulate_moments=_simulate_moments,
-        flat_empirical_moments=flat_emp_mom,
-        chol_weights=chol_weights,
-        registry=registry,
+    criterion = mark.least_squares(
+        functools.partial(
+            _msm_criterion,
+            simulate_moments=_simulate_moments,
+            flat_empirical_moments=flat_emp_mom,
+            chol_weights=chol_weights,
+            registry=registry,
+        )
     )
 
     out = {"fun": criterion}
@@ -438,14 +454,9 @@ def _msm_criterion(
         simulated_flat = np.array(tree_just_flatten(simulated, registry=registry))
 
     deviations = simulated_flat - flat_empirical_moments
-    root_contribs = deviations @ chol_weights
+    residuals = deviations @ chol_weights
 
-    value = root_contribs @ root_contribs
-    out = {
-        "value": value,
-        "root_contributions": root_contribs,
-    }
-    return out
+    return LeastSquaresFunctionValue(value=residuals)
 
 
 def _partial_kwargs(func, kwargs):

@@ -51,7 +51,7 @@ The unconstrained optimum of a six-dimensional version of this problem is:
     ...    fun=fun,
     ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     ...    algorithm="scipy_lbfgsb",
-    ...    )
+    ... )
     >>> res.params.round(3)
     array([1. , 0.8, 0.6, 0.4, 0.2, 0. ])
 
@@ -64,8 +64,8 @@ criterion function in a additively separable way.
 
 Below, we show a very simple example of each type of constraint implemented in
 optimagic. For each constraint, we will select a subset of the parameters on which the
-constraint is imposed via the "loc" key. Generalizations for selecting subsets of
-`params` that are not a flat numpy array are explained in the next section.
+constraint is imposed via the `selector` argument, which is a function that takes in the
+full parameter vector and returns the subset of parameters that should be constrained.
 
 ```{eval-rst}
 .. dropdown:: fixed
@@ -81,8 +81,10 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"loc": [0, 5], "type": "fixed"},
-        ...    )
+        ...    constraints=om.FixedConstraint(
+        ...        selector=lambda params: params[[0, 5]]
+        ...    ),
+        ... )
 
     Looking at the optimization result, we get:
 
@@ -94,7 +96,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
 ```
 
-````{eval-rst}
+```{eval-rst}
 .. dropdown:: increasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
@@ -108,15 +110,17 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"loc": [1, 2, 3], "type": "increasing"},
-        ...    )
+        ...    constraints=om.IncreasingConstraint(
+        ...        selector=lambda params: params[[1, 2, 3]]
+        ...    ),
+        ... )
 
 
-    Imposing the constraint on positions ``"loc": [1, 2, 3]``` means that the parameter value
+    Imposing the constraint on positions ``params[[1, 2, 3]]`` means that the parameter value
     at index position ``2`` has to be (weakly) greater than the value at position ``1``.
     Likewise, the parameter value at index position ``3`` has to be (weakly) greater than the
     value at position ``2``. Hence, imposing an increasing constraint with
-    only one entry in "loc" has no effect. We need to specify at least two parameters to make
+    only one selected parameter has no effect. We need to specify at least two parameters to make
     a meaningful *relative* comparison.
     Note that the increasing constraint affect all three parameters, i.e. ``params[1]``,
     ``params[2]``, and ``params[3]`` because the optimal parameters in the unconstrained case
@@ -130,9 +134,9 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
     Which is indeed the correct constrained optimum. Increasing constraints are only
     compatible with optimizers that support bounds.
 
-````
+```
 
-````{eval-rst}
+```{eval-rst}
 .. dropdown:: decreasing
 
     In our unconstrained example, the optimal parameters are decreasing from left to
@@ -147,14 +151,16 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"loc": [3, 0, 4], "type": "decreasing"},
-        ...    )
+        ...    constraints=om.DecreasingConstraint(
+        ...        selector=lambda params: params[[3, 0, 4]]
+        ...    ),
+        ... )
 
-    Imposing the constraint on positions ``"loc": [3, 0, 4]``` means that the parameter value
+    Imposing the constraint on positions ``params[[3, 0, 4]]`` means that the parameter value
     at index position ``0`` has to be (weakly) smaller than the value at position ``3``.
     Likewise, the parameter value at index position ``4`` has to be (weakly) smaller than the
     value at position ``0``. Hence, imposing a decreasing constraint with
-    only one entry in "loc" has no effect. We need to specify at least two parameters to make
+    only one selected parameter has no effect. We need to specify at least two parameters to make
     a meaningful *relative* comparison.
     Note that the decreasing constraint should have no effect on ``params[4]`` because it is
     smaller than the other two anyways in the unconstrained optimum, but it will change
@@ -165,7 +171,7 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
 
     Which is the correct optimum. Decreasing constraints are only compatible with
     optimizers that support bounds.
-````
+```
 
 ```{eval-rst}
 .. dropdown:: equality
@@ -179,8 +185,10 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"loc": [0, 5], "type": "equality"},
-        ...    )
+        ...    constraints=om.EqualityConstraint(
+        ...        selector=lambda params: params[[0, 5]]
+        ...    ),
+        ... )
 
     This yields:
 
@@ -204,8 +212,13 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.array([1, 1, 1, 1, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"locs": [[0, 1], [2, 3]], "type": "pairwise_equality"},
-        ...    )
+        ...    constraints=om.PairwiseEqualityConstraint(
+        ...        selectors=[
+        ...            lambda params: params[[0, 1]],
+        ...            lambda params: params[[2, 3]]
+        ...        ],
+        ...    ),
+        ... )
 
 
 
@@ -229,8 +242,10 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.array([0.3, 0.2, 0.25, 0.25, 1, 1]),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"loc": [0, 1, 2, 3], "type": "probability"},
-        ...    )
+        ...    constraints=om.ProbabilityConstraint(
+        ...        selector=lambda params: params[:4]
+        ...    ),
+        ... )
 
     This yields again the correct result:
 
@@ -260,8 +275,10 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"loc": [0, 1, 2], "type": "covariance"},
-        ...    )
+        ...    constraints=om.FlatCovConstraint(
+        ...        selector=lambda params: params[:3]
+        ...    ),
+        ... )
 
     This yields the same solution as an unconstrained estimation because the constraint
     is not binding:
@@ -298,8 +315,10 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={"loc": [0, 1, 2], "type": "sdcorr"},
-        ...    )
+        ...    constraints=om.FlatSDCorrConstraint(
+        ...        selector=lambda params: params[:3]
+        ...    ),
+        ... )
 
 
     This yields the same solution as an unconstrained estimation because the constraint
@@ -345,13 +364,12 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_lbfgsb",
-        ...    constraints={
-        ...    "loc": [0, 1, 2, 3],
-        ...    "type": "linear",
-        ...    "lower_bound": 0.95,
-        ...    "weights": 0.25,
-        ...    },
-        ...    )
+        ...    constraints=om.LinearConstraint(
+        ...        selector=lambda params: params[:4],
+        ...        lower_bound=0.95,
+        ...        weights=0.25,
+        ...    ),
+        ... )
 
     This yields:
 
@@ -391,13 +409,12 @@ constraint is imposed via the "loc" key. Generalizations for selecting subsets o
         ...    fun=fun,
         ...    params=np.ones(6),
         ...    algorithm="scipy_slsqp",
-        ...    constraints={
-        ...    "type": "nonlinear",
-        ...    "selector": lambda x: x[:-1],
-        ...    "func": lambda x: np.prod(x),
-        ...    "value": 1.0,
-        ...    },
-        ...    )
+        ...    constraints=om.NonlinearConstraint(
+        ...        selector=lambda params: params[:-1],
+        ...        func=lambda x: np.prod(x),
+        ...        value=1.0,
+        ...    ),
+        ... )
 
     This yields:
 
@@ -426,10 +443,14 @@ constraints simultaneously, simple pass in a list of constraints. For example:
     ...    params=np.ones(6),
     ...    algorithm="scipy_lbfgsb",
     ...    constraints=[
-    ...    {"loc": [0, 1], "type": "equality"},
-    ...    {"loc": [2, 3, 4], "type": "linear", "weights": 1, "value": 3},
+    ...        om.EqualityConstraint(selector=lambda params: params[:2]),
+    ...        om.LinearConstraint(
+    ...            selector=lambda params: params[2:5],
+    ...            weights=1,
+    ...            value=3,
+    ...        ),
     ...    ],
-    ...    )
+    ... )
 
     This yields:
 
@@ -443,155 +464,48 @@ get a descriptive error message if your constraints are not compatible.
 
 ## How to select the parameters?
 
-All the above examples use a `"loc"` entry in the constraint dictionary to select the
-subset of `params` on which the constraint is imposed. This is just one out of several
-ways to do it. Which methods are available also depends on whether your parameters are a
-numpy array, DataFrame, or general pytree.
+The parameters can be selected via a `selector` function. This function takes in the
+full parameter vector and returns the subset of parameters that should be constrained.
 
-```{eval-rst}
-+---------------+---------------+----------------+---------------+
-|               | loc           | query          | selector      |
-+---------------+---------------+----------------+---------------+
-| 1d-array      | ✅ (positions)| ❌             | ✅            |
-+---------------+---------------+----------------+---------------+
-| DataFrame     | ✅ (labels)   | ✅             | ✅            |
-+---------------+---------------+----------------+---------------+
-| Pytree        | ❌            | ❌             | ✅            |
-+---------------+---------------+----------------+---------------+
+Let's assume we have defined parameters in a nested dictionary:
+
+```python
+params = {"a": np.ones(2), "b": {"c": 3, "d": pd.Series([4, 5])}}
 ```
 
-Below we show how to use each of these selection methods in simple examples
+It is probably not a good idea to use a nested dictionary for so few parameters, but
+let's ignore that.
 
-```{eval-rst}
-.. dropdown:: loc
+Now assume we want to fix the parameters in the pandas Series at their start values. We
+can do so as follows:
 
-    In all the examples above, we imposed constraints where our params are
-    a numpy array and the ``loc`` method is used to select the constraint parameters.
-    So now, we turn to DataFrame params.
-
-    Let's assume our ``params`` are a DataFrame with a two level index. The names of
-    the index levels are ``category`` and ``name``. Something like this could, for
-    example, be the params of an Ordered Logit model.
-
-    +----------------+---------------+----------------+
-    |                |               | **value**      |
-    +----------------+---------------+----------------+
-    | **category**   | **name**      |                |
-    +----------------+---------------+----------------+
-    | **betas**      | **a**         | 0.95           |
-    +----------------+---------------+----------------+
-    | **betas**      | **b**         | 0.9            |
-    +----------------+---------------+----------------+
-    | **cutoffs**    | **a**         | 0              |
-    +----------------+---------------+----------------+
-    | **cutoffs**    | **b**         | 0.4            |
-    +----------------+---------------+----------------+
-
-    Now, let;s impose the constraint that the cutoffs (i.e. the last two parameters)
-    are increasing.
-
-    .. code-block:: python
-
-        res = om.minimize(
-            fun=some_fun,
-            params=params,
-            algorithm="scipy_lbfgsb",
-            constraints={"loc": "cutoffs", "type": "increasing"},
-        )
-
-    The value corresponding to ``"loc"`` can be anything you would pass to pandas'
-    ``DataFrame.loc`` method, too. So, if you know pandas, imposing constraints in optimagic
-    via ``"loc"`` should feel already familiar.
-    Imposing constraints this way can be extremely powerful
-    if you have a well designed MultiIndex, as you can easily select groups of parameters
-    or single paramaters.
-
+```python
+res = om.minimize(
+    fun=some_fun,
+    params=params,
+    algorithm="scipy_lbfgsb",
+    constraints=om.FixedConstraint(selector=lambda params: params["b"]["d"]),
+)
 ```
 
-```{eval-rst}
-.. dropdown:: query
+I.e. the value corresponding to `selector` is a python function that takes the full
+`params` and returns a subset. The selected subset does not have to be a numpy array, it
+can be an arbitrary pytree.
 
-    Let's assume our ``params`` are a DataFrame with a two level index. The names of
-    the index levels are ``category`` and ``name``. Something like this could for
-    example be the params of an Ordered Logit model.
+Using lambda functions if often convenient, but we could have just as well defined the
+selector function using def.
 
-    +----------------+---------------+----------------+
-    |                |               | **value**      |
-    +----------------+---------------+----------------+
-    | **category**   | **name**      |                |
-    +----------------+---------------+----------------+
-    | **betas**      | **a**         | 0.95           |
-    +----------------+---------------+----------------+
-    | **betas**      | **b**         | 0.9            |
-    +----------------+---------------+----------------+
-    | **cutoffs**    | **a**         | 0              |
-    +----------------+---------------+----------------+
-    | **cutoffs**    | **b**         | 0.4            |
-    +----------------+---------------+----------------+
-
-    This time, we want to fix all betas as well as all parameters where the second index
-    level is equal to ``"a"``. If we wanted to do that using ``loc``, we would have to
-    type out three index tuples. So let's do that with a query instead:
-
-    .. code-block:: python
-
-        res = om.minimize(
-            fun=some_fun,
-            params=params,
-            algorithm="scipy_lbfgsb",
-            constraints={"query": "category == 'betas' | name == 'a'", "type": "fixed"},
-        )
-
-    The value corresponding to ``"query"`` can be anything you would pass to pandas'
-    ``DataFrame.query`` method, too. So, if you know pandas, imposing constraints in optimagic
-    via ``"query"`` should feel just the same.
-
-```
-
-```{eval-rst}
-.. dropdown:: selector
-
-    Using ``selector`` to select the parameters is the most general way and works for
-    all params. Let's assume we have defined parameters in a nested dictionary:
-
-    .. code-block:: python
-
-        params = {"a": np.ones(2), "b": {"c": 3, "d": pd.Series([4, 5])}}
-
-    It is probably not a good idea to use a nested dictionary for so few parameters, but
-    let's ignore that.
-
-    Now assume we want to fix the parameters in the pandas Series at their start
-    values. We can do so as follows:
-
-    .. code-block:: python
-
-        res = om.minimize(
-            fun=some_fun,
-            params=params,
-            algorithm="scipy_lbfgsb",
-            constraints={"selector": lambda params: params["b"]["d"], "type": "fixed"},
-        )
-
-    I.e. the value corresponding to ``selector`` is a python function that takes the
-    full ``params`` and returns a subset. The selected subset does not have to be a
-    numpy array, it can be an arbitrary pytree.
-
-    Using lambda functions if often convenient, but we could have just as well defined
-    the selector function using def.
-
-    .. code-block:: python
-
-        def my_selector(params):
-            return params["b"]["d"]
+```python
+def my_selector(params):
+    return params["b"]["d"]
 
 
-        res = om.minimize(
-            fun=some_fun,
-            params=params,
-            algorithm="scipy_lbfgsb",
-            constraints={"selector": my_selector, "type": "fixed"},
-        )
+res = om.minimize(
+    fun=some_fun,
+    params=params,
+    algorithm="scipy_lbfgsb",
+    constraints=om.FixedConstraint(selector=my_selector),
+)
 ```
 
 [here]: ../../explanation/implementation_of_constraints.md

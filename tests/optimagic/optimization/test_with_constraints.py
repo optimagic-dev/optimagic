@@ -14,23 +14,27 @@ import pandas as pd
 import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic as om
+from optimagic import mark
 from optimagic.examples.criterion_functions import (
-    rosenbrock_dict_criterion,
+    rhe_function_value,
+    rhe_gradient,
+    rosenbrock_function_value,
     rosenbrock_gradient,
-    rotated_hyper_ellipsoid_dict_criterion,
-    rotated_hyper_ellipsoid_gradient,
-    sos_dict_criterion,
     sos_gradient,
-    sos_jacobian,
+    sos_likelihood_jacobian,
+    sos_ls,
     sos_ls_jacobian,
     trid_gradient,
-    trid_scalar_criterion,
+    trid_scalar,
 )
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.parameters.bounds import Bounds
 
 
+@mark.likelihood
 def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
 
@@ -49,18 +53,16 @@ def logit_loglike(params, y, x):
     else:
         p = params
     q = 2 * y - 1
-    contribs = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
+    loglikes = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
 
-    out = {"value": contribs.sum(), "contributions": contribs}
-
-    return out
+    return loglikes
 
 
 FUNC_INFO = {
     "sos": {
-        "criterion": sos_dict_criterion,
+        "criterion": sos_ls,
         "gradient": sos_gradient,
-        "jacobian": sos_jacobian,
+        "jacobian": sos_likelihood_jacobian,
         "ls_jacobian": sos_ls_jacobian,
         "default_result": np.zeros(3),
         "fixed_result": [1, 0, 0],
@@ -69,8 +71,8 @@ FUNC_INFO = {
         "probability_result": [0.5, 0.5, 0],
     },
     "rotated_hyper_ellipsoid": {
-        "criterion": rotated_hyper_ellipsoid_dict_criterion,
-        "gradient": rotated_hyper_ellipsoid_gradient,
+        "criterion": rhe_function_value,
+        "gradient": rhe_gradient,
         "entries": ["value", "contributions", "root_contributions"],
         "default_result": np.zeros(3),
         "fixed_result": [1, 0, 0],
@@ -78,7 +80,7 @@ FUNC_INFO = {
         "probability_result": [0.4, 0.6, 0],
     },
     "rosenbrock": {
-        "criterion": rosenbrock_dict_criterion,
+        "criterion": rosenbrock_function_value,
         "gradient": rosenbrock_gradient,
         "entries": ["value", "contributions"],
         "default_result": np.ones(3),
@@ -86,7 +88,7 @@ FUNC_INFO = {
         "probability_result": "unknown",
     },
     "trid": {
-        "criterion": trid_scalar_criterion,
+        "criterion": trid_scalar,
         "gradient": trid_gradient,
         "entries": ["value"],
         "default_result": [3, 4, 3],
@@ -102,17 +104,37 @@ FUNC_INFO = {
     },
 }
 
-
 CONSTR_INFO = {
-    "fixed": {"loc": [0], "type": "fixed", "value": 1},
-    "equality": [{"loc": [0, 1, 2], "type": "equality"}],
-    "pairwise_equality": {"locs": [0, 1], "type": "pairwise_equality"},
-    "increasing": [{"loc": [1, 2], "type": "increasing"}],
-    "decreasing": [{"loc": [0, 1], "type": "decreasing"}],
-    "linear": [{"loc": [0, 1], "type": "linear", "value": 4, "weights": [1, 2]}],
-    "probability": [{"loc": [0, 1], "type": "probability"}],
-    "covariance": [{"loc": [0, 1, 2], "type": "covariance"}],
-    "sdcorr": [{"loc": [0, 1, 2], "type": "sdcorr"}],
+    "numpy": {
+        "fixed": om.FixedConstraint(selector=lambda x: x[0]),
+        "equality": om.EqualityConstraint(selector=lambda x: x[[0, 1, 2]]),
+        "pairwise_equality": om.PairwiseEqualityConstraint(
+            selectors=[lambda x: x[0], lambda x: x[1]]
+        ),
+        "increasing": om.IncreasingConstraint(selector=lambda x: x[[1, 2]]),
+        "decreasing": om.DecreasingConstraint(selector=lambda x: x[[0, 1]]),
+        "linear": om.LinearConstraint(
+            selector=lambda x: x[[0, 1]], value=4, weights=[1, 2]
+        ),
+        "probability": om.ProbabilityConstraint(selector=lambda x: x[[0, 1]]),
+        "covariance": om.FlatCovConstraint(selector=lambda x: x[[0, 1, 2]]),
+        "sdcorr": om.FlatSDCorrConstraint(selector=lambda x: x[[0, 1, 2]]),
+    },
+    "pandas": {
+        "fixed": om.FixedConstraint(selector=lambda p: p.loc[0]),
+        "equality": om.EqualityConstraint(selector=lambda p: p.loc[[0, 1, 2]]),
+        "pairwise_equality": om.PairwiseEqualityConstraint(
+            selectors=[lambda p: p.loc[0], lambda p: p.loc[1]]
+        ),
+        "increasing": om.IncreasingConstraint(selector=lambda p: p.loc[[1, 2]]),
+        "decreasing": om.DecreasingConstraint(selector=lambda p: p.loc[[0, 1]]),
+        "linear": om.LinearConstraint(
+            selector=lambda p: p.loc[[0, 1]], value=4, weights=[1, 2]
+        ),
+        "probability": om.ProbabilityConstraint(selector=lambda p: p.loc[[0, 1]]),
+        "covariance": om.FlatCovConstraint(selector=lambda p: p.loc[[0, 1, 2]]),
+        "sdcorr": om.FlatSDCorrConstraint(selector=lambda p: p.loc[[0, 1, 2]]),
+    },
 }
 
 
@@ -137,8 +159,8 @@ PARAMS_TYPES = ["numpy", "pandas"]
 
 test_cases = []
 for crit_name in FUNC_INFO:
-    for constr_name in CONSTR_INFO:
-        for ptype in PARAMS_TYPES:
+    for ptype in PARAMS_TYPES:
+        for constr_name in CONSTR_INFO[ptype]:
             unknown_res = FUNC_INFO[crit_name].get(f"{constr_name}_result") == "unknown"
             known_failure = (crit_name, constr_name) in KNOWN_FAILURES
             if not any([unknown_res, known_failure]):
@@ -161,7 +183,7 @@ for crit_name in FUNC_INFO:
 def test_constrained_minimization(
     criterion_name, algorithm, derivative, constraint_name, params_type
 ):
-    constraints = CONSTR_INFO[constraint_name]
+    constraints = CONSTR_INFO[params_type][constraint_name]
     criterion = FUNC_INFO[criterion_name]["criterion"]
     if params_type == "pandas":
         params = pd.Series(START_INFO[constraint_name], name="value").to_frame()
@@ -189,13 +211,17 @@ def test_constrained_minimization(
     aaae(calculated, expected, decimal=4)
 
 
+@pytest.mark.filterwarnings("ignore:Specifying constraints as a dictionary is")
 def test_fix_that_differs_from_start_value_raises_an_error():
+    # We use the old constraint interface here, as the new interface prohibits the
+    # usage of the 'value' attribute, rendering the test useless.
+    # TODO: Remove this test when the old constraint interface is deprecated.
     with pytest.raises(InvalidParamsError):
         minimize(
             fun=lambda x: x @ x,
             params=np.arange(3),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [1], "type": "fixed", "value": 10}],
+            constraints=[{"selector": lambda x: x[1], "value": 10, "type": "fixed"}],
         )
 
 
@@ -204,9 +230,9 @@ def test_three_independent_constraints():
     params[0] = 2
 
     constraints = [
-        {"loc": [0, 1, 2], "type": "covariance"},
-        {"loc": [4, 5], "type": "fixed"},
-        {"loc": [7, 8], "type": "linear", "value": 15, "weights": 1},
+        om.FlatCovConstraint(lambda x: x[[0, 1, 2]]),
+        om.FixedConstraint(lambda x: x[[4, 5]]),
+        om.LinearConstraint(lambda x: x[[7, 8]], value=15, weights=1),
     ]
 
     res = minimize(
@@ -222,10 +248,13 @@ def test_three_independent_constraints():
 
 
 INVALID_CONSTRAINT_COMBIS = [
-    [{"loc": [1, 0, 2], "type": "covariance"}, {"loc": [0, 1], "type": "probability"}],
     [
-        {"loc": [6, 3, 5, 2, 1, 4], "type": "covariance"},
-        {"loc": [0, 1, 2], "type": "increasing"},
+        om.FlatCovConstraint(lambda x: x[[1, 0, 2]]),
+        om.ProbabilityConstraint(lambda x: x[[0, 1]]),
+    ],
+    [
+        om.FlatCovConstraint(lambda x: x[[6, 3, 5, 2, 1, 4]]),
+        om.IncreasingConstraint(lambda x: x[[0, 1, 2]]),
     ],
 ]
 
@@ -263,11 +292,8 @@ def test_bug_from_copenhagen_presentation():
         params=start_params,
         algorithm="scipy_lbfgsb",
         constraints=[
-            {"selector": return_all_but_working_hours, "type": "fixed"},
-            {
-                "selector": lambda p: [p["work"]["hours"], p["time_budget"]],
-                "type": "increasing",
-            },
+            om.FixedConstraint(selector=return_all_but_working_hours),
+            om.IncreasingConstraint(lambda p: [p["work"]["hours"], p["time_budget"]]),
         ],
         bounds=Bounds(lower={"work": {"hours": 0}}),
     )
@@ -279,14 +305,23 @@ def test_constraint_inheritance():
     """Test that probability constraint applies both sets of parameters in a pairwise
     equality constraint, no matter to which set they were applied originally."""
     for loc in [[0, 1], [2, 3]]:
+
+        def selector(x, loc=loc):
+            # bind loc to the function
+            return x[loc]
+
+        constraints = [
+            om.PairwiseEqualityConstraint(
+                selectors=[lambda x: x[[0, 1]], lambda x: x[[3, 2]]]
+            ),
+            om.ProbabilityConstraint(selector),
+        ]
+
         res = minimize(
             fun=lambda x: x @ x,
             params=np.array([0.1, 0.9, 0.9, 0.1]),
             algorithm="scipy_lbfgsb",
-            constraints=[
-                {"locs": [[0, 1], [3, 2]], "type": "pairwise_equality"},
-                {"loc": loc, "type": "probability"},
-            ],
+            constraints=constraints,
         )
         aaae(res.params, [0.5] * 4)
 
@@ -302,7 +337,7 @@ def test_invalid_start_params():
             criterion,
             params=x,
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [1, 2], "type": "probability"}],
+            constraints=om.ProbabilityConstraint(selector=lambda x: x[[1, 2]]),
         )
 
 
@@ -319,7 +354,7 @@ def test_covariance_constraint_in_2_by_2_case():
         fun_kwargs=kwargs,
         params=start_params,
         algorithm="scipy_lbfgsb",
-        constraints={"loc": [1, 2, 3], "type": "covariance"},
+        constraints=om.FlatCovConstraint(selector=lambda x: x[[1, 2, 3]]),
     )
 
     expected = np.array([-13.0213351, 2.82611417, 0.09515704, 2.37867869])

@@ -14,18 +14,24 @@ try:
 except ImportError:
     pathos_is_available = False
 
+from typing import Any, Callable, Literal, TypeVar, cast
+
 from optimagic.config import DEFAULT_N_CORES as N_CORES
 from optimagic.decorators import catch, unpack
+from optimagic.typing import BatchEvaluator, ErrorHandling
+
+T = TypeVar("T")
 
 
 def pathos_mp_batch_evaluator(
-    func,
-    arguments,
+    func: Callable[..., T],
+    arguments: list[Any],
     *,
-    n_cores=N_CORES,
-    error_handling="continue",
-    unpack_symbol=None,
-):
+    n_cores: int = N_CORES,
+    error_handling: ErrorHandling
+    | Literal["raise", "continue"] = ErrorHandling.CONTINUE,
+    unpack_symbol: Literal["*", "**"] | None = None,
+) -> list[T]:
     """Batch evaluator based on pathos.multiprocess.ProcessPool.
 
     This uses a patched but older version of python multiprocessing that replaces
@@ -62,11 +68,15 @@ def pathos_mp_batch_evaluator(
     _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol)
     n_cores = int(n_cores)
 
-    reraise = error_handling == "raise"
+    reraise = error_handling in [
+        "raise",
+        ErrorHandling.RAISE,
+        ErrorHandling.RAISE_STRICT,
+    ]
 
     @unpack(symbol=unpack_symbol)
     @catch(default="__traceback__", reraise=reraise)
-    def internal_func(*args, **kwargs):
+    def internal_func(*args: Any, **kwargs: Any) -> T:
         return func(*args, **kwargs)
 
     if n_cores <= 1:
@@ -83,13 +93,14 @@ def pathos_mp_batch_evaluator(
 
 
 def joblib_batch_evaluator(
-    func,
-    arguments,
+    func: Callable[..., T],
+    arguments: list[Any],
     *,
-    n_cores=N_CORES,
-    error_handling="continue",
-    unpack_symbol=None,
-):
+    n_cores: int = N_CORES,
+    error_handling: ErrorHandling
+    | Literal["raise", "continue"] = ErrorHandling.CONTINUE,
+    unpack_symbol: Literal["*", "**"] | None = None,
+) -> list[T]:
     """Batch evaluator based on joblib's Parallel.
 
     Args:
@@ -117,11 +128,15 @@ def joblib_batch_evaluator(
     _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol)
     n_cores = int(n_cores) if int(n_cores) >= 2 else 1
 
-    reraise = error_handling == "raise"
+    reraise = error_handling in [
+        "raise",
+        ErrorHandling.RAISE,
+        ErrorHandling.RAISE_STRICT,
+    ]
 
     @unpack(symbol=unpack_symbol)
     @catch(default="__traceback__", reraise=reraise)
-    def internal_func(*args, **kwargs):
+    def internal_func(*args: Any, **kwargs: Any) -> T:
         return func(*args, **kwargs)
 
     if n_cores == 1:
@@ -132,7 +147,13 @@ def joblib_batch_evaluator(
     return res
 
 
-def _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol):
+def _check_inputs(
+    func: Callable[..., T],
+    arguments: list[Any],
+    n_cores: int,
+    error_handling: ErrorHandling | Literal["raise", "continue"],
+    unpack_symbol: Literal["*", "**"] | None,
+) -> None:
     if not callable(func):
         raise TypeError("func must be callable.")
 
@@ -151,21 +172,30 @@ def _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol):
             f"unpack_symbol must be None, '*' or '**', not {unpack_symbol}"
         )
 
-    if error_handling not in ["raise", "continue"]:
+    if error_handling not in [
+        "raise",
+        "continue",
+        ErrorHandling.RAISE,
+        ErrorHandling.CONTINUE,
+        ErrorHandling.RAISE_STRICT,
+    ]:
         raise ValueError(
-            f"error_handling must be 'raise' or 'continue', not {error_handling}"
+            "error_handling must be 'raise' or 'continue' or ErrorHandling not "
+            f"{error_handling}"
         )
 
 
-def process_batch_evaluator(batch_evaluator="joblib"):
+def process_batch_evaluator(
+    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib",
+) -> BatchEvaluator:
     batch_evaluator = "joblib" if batch_evaluator is None else batch_evaluator
     if callable(batch_evaluator):
         out = batch_evaluator
     elif isinstance(batch_evaluator, str):
         if batch_evaluator == "joblib":
-            out = joblib_batch_evaluator
+            out = cast(BatchEvaluator, joblib_batch_evaluator)
         elif batch_evaluator == "pathos":
-            out = pathos_mp_batch_evaluator
+            out = cast(BatchEvaluator, pathos_mp_batch_evaluator)
         else:
             raise ValueError(
                 "Invalid batch evaluator requested. Currently only 'pathos' and "

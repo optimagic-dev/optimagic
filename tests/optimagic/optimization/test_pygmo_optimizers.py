@@ -2,23 +2,11 @@
 
 import numpy as np
 import pytest
+
 from optimagic.optimizers.pygmo_optimizers import (
-    _check_that_every_param_is_bounded,
     _convert_str_to_int,
-    _replace_none,
     get_population_size,
 )
-
-
-def test_check_that_every_param_is_bounded():
-    _check_that_every_param_is_bounded([1, 2, 3], [4, 5, 6])
-    with pytest.raises(AssertionError):
-        _check_that_every_param_is_bounded([-np.inf, 2, 3], [4, 5, 6])
-    with pytest.raises(AssertionError):
-        _check_that_every_param_is_bounded([np.nan, 2, 3], [4, 5, 6])
-    with pytest.raises(AssertionError):
-        _check_that_every_param_is_bounded([np.inf, 2, 3], [4, 5, 6])
-
 
 test_cases = [
     # popsize, x, lower_bound, expected
@@ -42,8 +30,3 @@ def test_convert_str_to_int():
         _convert_str_to_int(d, 5)
     with pytest.raises(ValueError):
         _convert_str_to_int(d, "hello")
-
-
-def test_replace_none():
-    assert _replace_none(None, 5) == 5
-    assert _replace_none("a", 10) == "a"

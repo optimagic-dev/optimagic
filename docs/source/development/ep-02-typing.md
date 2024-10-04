@@ -323,7 +323,7 @@ om.minimize(
     lower_bounds=params - 1,
     upper_bounds=params + 1,
     soft_lower_bounds=params - 2,
-    soft_lower_bounds=params + 2,
+    soft_upper_bounds=params + 2,
     # ...
 )
 ```
@@ -345,7 +345,7 @@ bounds = om.Bounds(
     lower=params - 1,
     upper=params + 1,
     soft_lower=params - 2,
-    soft_lower=params + 2,
+    soft_upper=params + 2,
 )
 om.minimize(
     # ...

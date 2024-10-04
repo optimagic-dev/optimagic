@@ -5,7 +5,8 @@ channels:
   - nodefaults
 dependencies:
   - python=3.10  # dev
-  - cyipopt<=1.2.0  # dev
+  - cyipopt>=1.4.0  # dev, tests
+  - pygmo>=2.19.0  # dev, tests
   - jupyterlab  # dev, docs
   - nlopt  # dev, tests
   - pdbpp  # dev
@@ -35,6 +36,7 @@ dependencies:
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - furo  # dev, docs
+  - annotated-types  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
@@ -47,3 +49,4 @@ dependencies:
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
+      - sqlalchemy-stubs  # dev, tests

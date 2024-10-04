@@ -27,12 +27,11 @@ def main():
 
     ## linux
     test_env_linux = deepcopy(test_env)
-    test_env_linux.insert(_insert_idx, "  - pygmo")
     test_env_linux.insert(_insert_idx, "  - jax")
+    test_env_linux.insert(_insert_idx, "  - petsc4py")
 
     ## test environment others
     test_env_others = deepcopy(test_env)
-    test_env_others.insert(_insert_idx, "  - cyipopt<=1.2.0")
 
     ## test environment for pandas version 1
     test_env_pandas = deepcopy(test_env)

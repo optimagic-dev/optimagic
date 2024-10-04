@@ -18,11 +18,18 @@ class ScalingOptions:
         magnitude: A factor by which the scaled parameters are multiplied to adjust
             their magnitude. Must be a positive number. Default is 1.0.
 
+    Raises:
+        InvalidScalingError: If scaling options cannot be processed, e.g. because they
+            do not have the correct type.
+
     """
 
     method: Literal["start_values", "bounds"] = "start_values"
     clipping_value: float = 0.1
     magnitude: float = 1.0
+
+    def __post_init__(self) -> None:
+        _validate_attribute_types_and_values(self)
 
 
 class ScalingOptionsDict(TypedDict):
@@ -47,8 +54,8 @@ def pre_process_scaling(
         The scaling options in the optimagic format.
 
     Raises:
-        InvalidScalingOptionsError: If scaling options cannot be processed, e.g. because
-            they do not have the correct type.
+        InvalidScalingError: If scaling options cannot be processed, e.g. because they
+            do not have the correct type.
 
     """
     if isinstance(scaling, bool):
@@ -61,6 +68,8 @@ def pre_process_scaling(
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
+            if isinstance(e, InvalidScalingError):
+                raise e
             raise InvalidScalingError(
                 f"Invalid scaling options of type: {type(scaling)}. Scaling options "
                 "must be of type optimagic.ScalingOptions, a dictionary with a subset "
@@ -68,23 +77,27 @@ def pre_process_scaling(
                 "boolean."
             ) from e
 
-    if isinstance(scaling, ScalingOptions):
-        if scaling.method not in ("start_values", "bounds"):
-            raise InvalidScalingError(
-                f"Invalid scaling method: {scaling.method}. Valid methods are "
-                "'start_values' and 'bounds'."
-            )
-
-        if not isinstance(scaling.clipping_value, (int, float)):
-            raise InvalidScalingError(
-                f"Invalid clipping value: {scaling.clipping_value}. Clipping value "
-                "must be a number."
-            )
-
-        if not isinstance(scaling.magnitude, (int, float)) or scaling.magnitude <= 0:
-            raise InvalidScalingError(
-                f"Invalid scaling magnitude: {scaling.magnitude}. Scaling magnitude "
-                "must be a positive number."
-            )
-
     return scaling
+
+
+def _validate_attribute_types_and_values(options: ScalingOptions) -> None:
+    if options.method not in ("start_values", "bounds"):
+        raise InvalidScalingError(
+            f"Invalid scaling method: {options.method}. Valid methods are "
+            "'start_values' and 'bounds'."
+        )
+
+    if (
+        not isinstance(options.clipping_value, int | float)
+        or options.clipping_value <= 0
+    ):
+        raise InvalidScalingError(
+            f"Invalid clipping value: {options.clipping_value}. Clipping value "
+            "must be a positive number."
+        )
+
+    if not isinstance(options.magnitude, int | float) or options.magnitude <= 0:
+        raise InvalidScalingError(
+            f"Invalid scaling magnitude: {options.magnitude}. Scaling magnitude "
+            "must be a positive number."
+        )

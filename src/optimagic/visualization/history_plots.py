@@ -6,13 +6,11 @@ import plotly.graph_objects as go
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
 from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
-from optimagic.logging.read_log import (
-    OptimizeLogReader,
-    read_optimization_problem_table,
-)
+from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.history_tools import get_history_arrays
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import Direction
 
 
 def criterion_plot(
@@ -118,7 +116,9 @@ def criterion_plot(
         }
 
         for i, local_history in enumerate(data[0]["local_histories"]):
-            history = get_history_arrays(local_history, data[0]["direction"])[key]
+            history = get_history_arrays(
+                local_history, Direction(data[0]["direction"])
+            )[key]
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
@@ -228,7 +228,7 @@ def params_plot(
     if data["stacked_local_histories"] is not None:
         history = data["stacked_local_histories"]["params"]
     else:
-        history = data["history"]["params"]
+        history = data["history"].params
 
     # ==================================================================================
     # Create figure
@@ -306,7 +306,7 @@ def _extract_plotting_data_from_results_object(
     is_multistart = res.multistart_info is not None
 
     if is_multistart:
-        local_histories = [opt.history for opt in res.multistart_info["local_optima"]]
+        local_histories = [opt.history for opt in res.multistart_info.local_optima]
     else:
         local_histories = None
 
@@ -314,10 +314,10 @@ def _extract_plotting_data_from_results_object(
         stacked = _get_stacked_local_histories(local_histories)
         if show_exploration:
             stacked["params"] = (
-                res.multistart_info["exploration_sample"][::-1] + stacked["params"]
+                res.multistart_info.exploration_sample[::-1] + stacked["params"]
             )
             stacked["criterion"] = (
-                res.multistart_info["exploration_results"].tolist()[::-1]
+                res.multistart_info.exploration_results.tolist()[::-1]
                 + stacked["criterion"]
             )
     else:
@@ -325,7 +325,7 @@ def _extract_plotting_data_from_results_object(
 
     data = {
         "history": res.history,
-        "direction": res.direction,
+        "direction": Direction(res.direction),
         "is_multistart": is_multistart,
         "local_histories": local_histories,
         "stacked_local_histories": stacked,
@@ -355,8 +355,8 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         are stacked into a single one.
 
     """
-    reader = OptimizeLogReader(res)
-    _problem_table = read_optimization_problem_table(res)
+    reader = LogReader.from_options(SQLiteLogOptions(res))
+    _problem_table = reader.problem_df
 
     direction = _problem_table["direction"].tolist()[-1]
 
@@ -389,11 +389,15 @@ def _get_stacked_local_histories(local_histories, history=None):
     append the best history at the end.
 
     """
-    # list of dicts to dict of lists
-    stacked = {key: [h[key] for h in local_histories] for key in local_histories[0]}
-    # flatten inner lists
-    stacked = {key: list(itertools.chain(*value)) for key, value in stacked.items()}
+    stacked = {"criterion": [], "params": [], "runtime": []}
+    for hist in local_histories:
+        stacked["criterion"].extend(hist.fun)
+        stacked["params"].extend(hist.params)
+        stacked["runtime"].extend(hist.time)
+
     # append additional history is necessary
     if history is not None:
-        stacked = {key: value + history[key] for key, value in stacked.items()}
+        stacked["criterion"].extend(history.fun)
+        stacked["params"].extend(history.params)
+        stacked["runtime"].extend(history.time)
     return stacked

@@ -5,12 +5,12 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.estimate_msm import estimate_msm
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
+
+from estimagic.estimate_msm import estimate_msm
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.shared.check_option_dicts import (
-    check_numdiff_options,
     check_optimization_options,
 )
 
@@ -98,11 +98,6 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
     aaae(summary["value"], np.zeros(3))
     aaae(summary["p_value"], np.ones(3))
     assert summary["stars"].tolist() == [""] * 3
-
-
-def test_check_and_process_numdiff_options_with_invalid_entries():
-    with pytest.raises(ValueError):
-        check_numdiff_options({"func": lambda x: x}, "estimate_msm")
 
 
 def test_check_and_process_optimize_options_with_invalid_entries():

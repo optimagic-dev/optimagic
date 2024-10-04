@@ -2,11 +2,12 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal as aae
+from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
+
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.process_selectors import process_selectors
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import get_registry
-from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 
 @pytest.mark.parametrize("constraints", [None, []])
@@ -40,7 +41,6 @@ def tree_params_converter(tree_params):
         params_unflatten=lambda x: tree_unflatten(
             treedef, x.tolist(), registry=registry
         ),
-        func_flatten=None,
         derivative_flatten=None,
     )
     return converter
@@ -49,7 +49,6 @@ def tree_params_converter(tree_params):
 @pytest.fixture()
 def np_params_converter():
     converter = TreeConverter(
-        lambda x: x,
         lambda x: x,
         lambda x: x,
         lambda x: x,
@@ -69,7 +68,6 @@ def df_params_converter(df_params):
     converter = TreeConverter(
         lambda x: x["value"].to_numpy(),
         lambda x: df_params.assign(value=x),
-        None,
         None,
     )
     return converter

@@ -7,9 +7,10 @@ This test module only runs if jax is installed.
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from pybaum import tree_equal
+
 from optimagic.config import IS_JAX_INSTALLED
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
-from pybaum import tree_equal
 
 if not IS_JAX_INSTALLED:
     pytestmark = pytest.mark.skip(reason="jax is not installed.")
@@ -39,10 +40,10 @@ def _compute_testable_optimagic_and_jax_derivatives(func, params, func_jax=None)
     """
     func_jax = func if func_jax is None else func_jax
 
-    optimagic_jac = first_derivative(func, params)["derivative"]
+    optimagic_jac = first_derivative(func, params).derivative
     jax_jac = jax.jacobian(func_jax)(params)
 
-    optimagic_hess = second_derivative(func, params)["derivative"]
+    optimagic_hess = second_derivative(func, params).derivative
     jax_hess = jax.hessian(func_jax)(params)
 
     out = {

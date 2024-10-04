@@ -1,14 +1,15 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     _is_fast_deriv_eval,
-    _is_fast_func_eval,
     _is_fast_path,
     get_converter,
 )
 from optimagic.parameters.scaling import ScalingOptions
+from optimagic.typing import AggregationLevel
 
 
 def test_get_converter_fast_case():
@@ -18,7 +19,7 @@ def test_get_converter_fast_case():
         bounds=None,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
     )
 
     aaae(internal.values, np.arange(3))
@@ -31,7 +32,6 @@ def test_get_converter_fast_case():
         converter.derivative_to_internal(2 * np.arange(3), np.arange(3)),
         2 * np.arange(3),
     )
-    aaae(converter.func_to_internal(3), 3)
 
 
 def test_get_converter_with_constraints_and_bounds():
@@ -45,7 +45,7 @@ def test_get_converter_with_constraints_and_bounds():
         bounds=bounds,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
     )
 
     aaae(internal.values, np.arange(2))
@@ -58,7 +58,6 @@ def test_get_converter_with_constraints_and_bounds():
         converter.derivative_to_internal(2 * np.arange(3), np.arange(2)),
         2 * np.arange(2),
     )
-    aaae(converter.func_to_internal(3), 3)
 
 
 def test_get_converter_with_scaling():
@@ -72,7 +71,7 @@ def test_get_converter_with_scaling():
         bounds=bounds,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
         scaling=ScalingOptions(method="start_values", clipping_value=0.5),
     )
 
@@ -86,7 +85,6 @@ def test_get_converter_with_scaling():
         converter.derivative_to_internal(2 * np.arange(3), np.arange(3)),
         np.array([0, 2, 8]),
     )
-    aaae(converter.func_to_internal(3), 3)
 
 
 def test_get_converter_with_trees():
@@ -95,9 +93,9 @@ def test_get_converter_with_trees():
         params=params,
         constraints=None,
         bounds=None,
-        func_eval={"contributions": {"d": 1, "e": 2}},
+        func_eval={"d": 1, "e": 2},
         derivative_eval={"a": 0, "b": 2, "c": 4},
-        primary_key="value",
+        solver_type=AggregationLevel.SCALAR,
     )
 
     aaae(internal.values, np.arange(3))
@@ -110,7 +108,6 @@ def test_get_converter_with_trees():
         converter.derivative_to_internal(params, np.arange(3)),
         np.arange(3),
     )
-    aaae(converter.func_to_internal({"contributions": {"d": 1, "e": 2}}), 3)
 
 
 @pytest.fixture()
@@ -118,8 +115,7 @@ def fast_kwargs():
     kwargs = {
         "params": np.arange(3),
         "constraints": None,
-        "func_eval": 3,
-        "primary_key": "value",
+        "solver_type": AggregationLevel.SCALAR,
         "scaling": None,
         "derivative_eval": np.arange(3),
         "add_soft_bounds": False,
@@ -130,8 +126,6 @@ def fast_kwargs():
 STILL_FAST = [
     ("params", np.arange(3)),
     ("constraints", []),
-    ("func_eval", {"value": 3}),
-    ("derivative_eval", {"value": np.arange(3)}),
 ]
 
 
@@ -146,8 +140,6 @@ SLOW = [
     ("params", {"a": 1}),
     ("params", np.arange(4).reshape(2, 2)),
     ("constraints", [{}]),
-    ("func_eval", np.array([1])),
-    ("func_eval", {"a": 1}),
     ("scaling", ScalingOptions()),
     ("derivative_eval", {"bla": 3}),
     ("derivative_eval", np.arange(3).reshape(1, 3)),
@@ -162,29 +154,14 @@ def test_is_fast_path_when_false(fast_kwargs, name, value):
     assert not _is_fast_path(**kwargs)
 
 
-FAST_EVAL_CASES = [
-    ("contributions", np.arange(3)),
-    ("contributions", {"contributions": np.arange(3)}),
-    ("root_contributions", np.arange(3)),
-    ("root_contributions", {"root_contributions": np.arange(3)}),
-]
-
-
-@pytest.mark.parametrize("key, f", FAST_EVAL_CASES)
-def test_is_fast_func_eval_true(key, f):
-    assert _is_fast_func_eval(f, key)
-
-
 helper = np.arange(6).reshape(3, 2)
 
 FAST_DERIV_CASES = [
-    ("contributions", helper),
-    ("contributions", {"contributions": helper}),
-    ("root_contributions", helper),
-    ("root_contributions", {"root_contributions": helper}),
-    ("value", None),
-    ("contributions", None),
-    ("root_contributions", None),
+    (AggregationLevel.LIKELIHOOD, helper),
+    (AggregationLevel.LEAST_SQUARES, helper),
+    (AggregationLevel.SCALAR, None),
+    (AggregationLevel.LIKELIHOOD, None),
+    (AggregationLevel.LEAST_SQUARES, None),
 ]
 
 
@@ -193,24 +170,14 @@ def test_is_fast_deriv_eval_true(key, f):
     assert _is_fast_deriv_eval(f, key)
 
 
-SLOW_EVAL_CASES = [
-    ("contributions", {"a": 1, "b": 2, "c": 3}),
-    ("contributions", {"contributions": {"a": 1, "b": 2, "c": 3}}),
-    ("root_contributions", {"a": 1, "b": 2, "c": 3}),
-    ("root_contributions", {"root_contributions": {"a": 1, "b": 2, "c": 3}}),
-]
-
-
-@pytest.mark.parametrize("key, f", SLOW_EVAL_CASES)
-def test_is_fast_func_eval_false(key, f):
-    assert not _is_fast_func_eval(f, key)
-
-
 SLOW_DERIV_CASES = [
-    ("contributions", np.arange(8).reshape(2, 2, 2)),
-    ("contributions", {"contributions": np.arange(8).reshape(2, 2, 2)}),
-    ("root_contributions", np.arange(8).reshape(2, 2, 2)),
-    ("root_contributions", {"root_contributions": np.arange(8).reshape(2, 2, 2)}),
+    (AggregationLevel.LIKELIHOOD, np.arange(8).reshape(2, 2, 2)),
+    (AggregationLevel.LIKELIHOOD, {"contributions": np.arange(8).reshape(2, 2, 2)}),
+    (AggregationLevel.LEAST_SQUARES, np.arange(8).reshape(2, 2, 2)),
+    (
+        AggregationLevel.LEAST_SQUARES,
+        {"root_contributions": np.arange(8).reshape(2, 2, 2)},
+    ),
 ]
 
 

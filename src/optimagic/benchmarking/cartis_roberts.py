@@ -19,6 +19,7 @@ from functools import partial
 
 import numpy as np
 
+from optimagic import mark
 from optimagic.config import IS_NUMBA_INSTALLED
 from optimagic.parameters.bounds import Bounds
 
@@ -38,6 +39,7 @@ from optimagic.benchmarking.more_wild import (
 )
 
 
+@mark.least_squares
 def luksan11(x):
     dim_in = len(x)
     fvec = np.zeros(2 * (dim_in - 1))
@@ -46,6 +48,7 @@ def luksan11(x):
     return fvec
 
 
+@mark.least_squares
 def luksan12(x):
     dim_in = len(x)
     n = (dim_in - 2) // 3
@@ -60,6 +63,7 @@ def luksan12(x):
     return fvec
 
 
+@mark.least_squares
 def luksan13(x):
     dim_in = len(x)
     n = (dim_in - 2) // 3
@@ -77,6 +81,7 @@ def luksan13(x):
     return fvec
 
 
+@mark.least_squares
 def luksan14(x):
     dim_in = len(x)
     dim_out = 7 * (dim_in - 2) // 3
@@ -97,6 +102,7 @@ def luksan14(x):
     return fvec
 
 
+@mark.least_squares
 def luksan15(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
@@ -118,6 +124,7 @@ def luksan15(x):
     return fvec
 
 
+@mark.least_squares
 def luksan16(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
@@ -138,6 +145,7 @@ def luksan16(x):
     return fvec
 
 
+@mark.least_squares
 def luksan17(x):
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
@@ -158,6 +166,7 @@ def luksan17(x):
     return fvec
 
 
+@mark.least_squares
 def luksan21(x):
     dim_out = len(x)
     h = 1 / (dim_out + 1)
@@ -177,6 +186,7 @@ def luksan21(x):
     return fvec
 
 
+@mark.least_squares
 def luksan22(x):
     dim_out = 2 * len(x) - 2
     fvec = np.zeros(dim_out)
@@ -189,6 +199,7 @@ def luksan22(x):
     return fvec
 
 
+@mark.least_squares
 def morebvne(x):
     dim_in = len(x)
     h = 1 / (dim_in + 1)
@@ -204,6 +215,7 @@ def morebvne(x):
     return fvec
 
 
+@mark.least_squares
 @njit
 def flosp2(x, a, b, ra=1.0e7):
     n = 5
@@ -316,6 +328,7 @@ def flosp2(x, a, b, ra=1.0e7):
     return fvec
 
 
+@mark.least_squares
 def oscigrne(x):
     dim_in = len(x)
     rho = 500
@@ -331,6 +344,7 @@ def oscigrne(x):
     return fvec
 
 
+@mark.least_squares
 def spmsqrt(x):
     m = (len(x) + 2) // 3
     xmat = np.diag(x[2:-1:3], -1) + np.diag(x[::3], 0) + np.diag(x[1:-2:3], 1)
@@ -405,6 +419,7 @@ def spmsqrt(x):
     return fmat.flatten()
 
 
+@mark.least_squares
 def semicon2(x):
     n = len(x) // 1
     ln = 9 * n // 10
@@ -451,6 +466,7 @@ def semicon2(x):
     return fvec
 
 
+@mark.least_squares
 def qr3d(x, m=5):
     q = x[: m**2].reshape(m, m)
     r = np.zeros((m, m), dtype=np.float64)
@@ -492,6 +508,7 @@ def qr3d(x, m=5):
     return np.concatenate((omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()))
 
 
+@mark.least_squares
 def qr3dbd(x, m=5):
     q = x[: m**2].reshape(m, m)
     r = np.zeros((m, m), dtype=np.float64)
@@ -539,6 +556,7 @@ def qr3dbd(x, m=5):
     return np.concatenate((omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()))
 
 
+@mark.least_squares
 def eigen(x, param):
     dim_in = int(np.sqrt(len(x) + 0.25))
     dvec = x[:dim_in]
@@ -548,6 +566,7 @@ def eigen(x, param):
     return np.concatenate((emat.flatten(), omat.flatten()))
 
 
+@mark.least_squares
 def powell_singular(x):
     dim_in = len(x)
     fvec = np.zeros(dim_in)
@@ -558,6 +577,7 @@ def powell_singular(x):
     return fvec
 
 
+@mark.least_squares
 @njit
 def hydcar(
     x_in,
@@ -679,6 +699,7 @@ def hydcar(
     return out
 
 
+@mark.least_squares
 def methane(x):
     fvec = np.zeros(31, dtype=np.float64)
     fvec[0] = 0.01 * (
@@ -1061,6 +1082,7 @@ def methane(x):
     return fvec
 
 
+@mark.least_squares
 def argtrig(x):
     dim_in = len(x)
     fvec = (
@@ -1071,6 +1093,7 @@ def argtrig(x):
     return fvec
 
 
+@mark.least_squares
 def artif(x):
     dim_in = len(x)
     xvec = np.zeros(dim_in + 2, dtype=np.float64)
@@ -1083,6 +1106,7 @@ def artif(x):
     return fvec
 
 
+@mark.least_squares
 def arwhdne(x):
     dim_in = len(x)
     fvec = np.zeros(2 * (dim_in - 1))
@@ -1091,6 +1115,7 @@ def arwhdne(x):
     return fvec
 
 
+@mark.least_squares
 @njit
 def bdvalues(x):
     dim_in = len(x)
@@ -1109,6 +1134,7 @@ def bdvalues(x):
     return fvec
 
 
+@mark.least_squares
 def bratu_2d(x, alpha):
     x = x.reshape((int(np.sqrt(len(x))), int(np.sqrt(len(x)))))
     p = x.shape[0] + 2
@@ -1130,6 +1156,7 @@ def bratu_2d(x, alpha):
     return fvec.flatten()
 
 
+@mark.least_squares
 def bratu_3d(x, alpha):
     n = int(np.cbrt(len(x)))
     x = x.reshape((n, n, n))
@@ -1155,6 +1182,7 @@ def bratu_3d(x, alpha):
     return fvec.flatten()
 
 
+@mark.least_squares
 def broydn_3d(x):
     kappa_1 = 2
     kappa_2 = 1
@@ -1167,6 +1195,7 @@ def broydn_3d(x):
     return fvec
 
 
+@mark.least_squares
 def broydn_bd(x):
     dim_in = len(x)
     fvec = np.zeros(dim_in, dtype=np.float64)
@@ -1183,6 +1212,7 @@ def broydn_bd(x):
     return fvec
 
 
+@mark.least_squares
 def cbratu_2d(x):
     n = int(np.sqrt(len(x) / 2))
     x = x.reshape((2, n, n))
@@ -1215,6 +1245,7 @@ def cbratu_2d(x):
     return fvec.flatten()
 
 
+@mark.least_squares
 def chandheq(x):
     dim_in = len(x)
     constant = 1
@@ -1226,6 +1257,7 @@ def chandheq(x):
     return fvec
 
 
+@mark.least_squares
 @njit
 def chemrcta(x):
     dim_in = int(len(x) / 2)
@@ -1268,6 +1300,7 @@ def chemrcta(x):
     return fvec
 
 
+@mark.least_squares
 @njit
 def chemrctb(x):
     dim_in = int(len(x))
@@ -1295,6 +1328,7 @@ def chemrctb(x):
     return fvec
 
 
+@mark.least_squares
 def chnrsbne(x):
     alfa = np.array(
         [
@@ -1357,6 +1391,7 @@ def chnrsbne(x):
     return fvec
 
 
+@mark.least_squares
 @njit
 def drcavty(x, r):
     m = int(np.sqrt(len(x)))
@@ -1412,6 +1447,7 @@ def drcavty(x, r):
     return fvec.flatten()
 
 
+@mark.least_squares
 def freurone(x):
     dim_in = len(x)
     fvec = np.zeros((2, dim_in - 1), dtype=np.float64)
@@ -1421,6 +1457,7 @@ def freurone(x):
     return fvec.flatten()
 
 
+@mark.least_squares
 def hatfldg(x):
     dim_in = len(x)
     fvec = np.zeros(dim_in, dtype=np.float64)
@@ -1431,6 +1468,7 @@ def hatfldg(x):
     return fvec
 
 
+@mark.least_squares
 def integreq(x):
     dim_in = len(x)
     h = 1 / (dim_in + 1)
@@ -1460,6 +1498,7 @@ def integreq(x):
     return fvec
 
 
+@mark.least_squares
 def msqrta(x):
     dim_in = int(np.sqrt(len(x)))
     xmat = x.reshape((dim_in, dim_in))
@@ -1477,12 +1516,14 @@ def msqrta(x):
     return fmat.flatten()
 
 
+@mark.least_squares
 def penalty_1(x, a=1e-5):
     fvec = np.sqrt(a) * (x - 2)
     fvec = np.concatenate([fvec, [x @ x - 1 / 4]])
     return fvec
 
 
+@mark.least_squares
 def penalty_2(x, a=1e-10):
     dim_in = len(x)
     y = np.exp(np.arange(1, 2 * dim_in + 1) / 10) + np.exp(np.arange(2 * dim_in) / 10)
@@ -1496,6 +1537,7 @@ def penalty_2(x, a=1e-10):
     return fvec
 
 
+@mark.least_squares
 def vardimne(x):
     dim_in = len(x)
     fvec = np.zeros(dim_in + 2)
@@ -1505,6 +1547,7 @@ def vardimne(x):
     return fvec
 
 
+@mark.least_squares
 def yatpsq_1(x, dim_in):
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
@@ -1527,6 +1570,7 @@ def yatpsq_1(x, dim_in):
     return fvec
 
 
+@mark.least_squares
 def yatpsq_2(x, dim_in):
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))

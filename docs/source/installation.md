@@ -12,7 +12,7 @@ conda install -c conda-forge optimagic
 Alternatively, you can install optimagic via pip:
 
 ```
-pip install estimagic
+pip install optimagic
 ```
 
 In both cases, you get optimagic and all of its mandatory dependencies.
@@ -49,6 +49,8 @@ conda install -c conda-forge petsc4py
 ```
 conda install -c conda-forge cyipopt
 ```
+
+*Note*: Make sure you have at least `cyipopt` 1.4.
 
 ```
 conda install -c conda-forge pygmo

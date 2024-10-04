@@ -1,13 +1,19 @@
 """Process user provided functions."""
 
 import inspect
-from functools import partial
+from functools import partial, update_wrapper
 
 from optimagic.exceptions import InvalidFunctionError, InvalidKwargsError
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+)
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import propose_alternatives
 
 
-def process_func_of_params(func, kwargs, name="your function", skip_checks=False):
+def partial_func_of_params(func, kwargs, name="your function", skip_checks=False):
     # fast path
     if skip_checks and kwargs in (None, {}):
         return func
@@ -27,7 +33,9 @@ def process_func_of_params(func, kwargs, name="your function", skip_checks=False
 
         raise InvalidKwargsError(msg)
 
-    out = partial(func, **kept)
+    # update_wrapper preserves static fields that might have been added to the function
+    # via mark decorators.
+    out = update_wrapper(partial(func, **kept), func)
 
     if not skip_checks:
         unpartialled_args = get_unpartialled_arguments(out)
@@ -108,3 +116,25 @@ def get_kwargs_from_args(args, func, offset=0):
     names = list(inspect.signature(func).parameters)[offset:]
     kwargs = {name: arg for name, arg in zip(names, args, strict=False)}
     return kwargs
+
+
+def infer_aggregation_level(func):
+    """Infer the problem type from type hints or attributes left by mark decorators.
+
+    The problem type is either inferred from a `._problem_type` attribute or from type
+    hints. If neither is present, we assume the problem type is scalar. This assumption
+    is motivated by compatibility with the `scipy.optimize` interface.
+
+    """
+    return_type = inspect.signature(func).return_annotation
+    if hasattr(func, "_problem_type"):
+        out = func._problem_type
+    elif return_type in (ScalarFunctionValue, float):
+        out = AggregationLevel.SCALAR
+    elif return_type == LeastSquaresFunctionValue:
+        out = AggregationLevel.LEAST_SQUARES
+    elif return_type == LikelihoodFunctionValue:
+        out = AggregationLevel.LIKELIHOOD
+    else:
+        out = AggregationLevel.SCALAR
+    return out

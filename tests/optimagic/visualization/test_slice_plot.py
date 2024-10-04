@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+
+from optimagic import mark
 from optimagic.parameters.bounds import Bounds
 from optimagic.visualization.slice_plot import slice_plot
 
@@ -19,9 +21,10 @@ def fixed_inputs():
     return out
 
 
-def sphere_with_contributions(params):
+@mark.likelihood
+def sphere_loglike(params):
     x = np.array(list(params.values()))
-    return {"value": x @ x, "contributions": x**2}
+    return x**2
 
 
 def sphere(params):
@@ -39,7 +42,7 @@ KWARGS = [
     {"return_dict": True},
 ]
 parametrization = [
-    (func, kwargs) for func in [sphere_with_contributions, sphere] for kwargs in KWARGS
+    (func, kwargs) for func in [sphere_loglike, sphere] for kwargs in KWARGS
 ]
 
 

@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 import pytest
+
+import optimagic as om
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.constraint_tools import check_constraints
@@ -24,6 +26,7 @@ def test_replace_pairwise_equality_by_equality():
     assert calculated == expected
 
 
+@pytest.mark.filterwarnings("ignore:Specifying constraints as a dictionary is")
 def test_empty_constraints_work():
     params = pd.DataFrame()
     params["value"] = np.arange(5)
@@ -39,5 +42,5 @@ def test_to_many_bounds_in_increasing_constraint_raise_good_error():
         check_constraints(
             params=np.arange(3),
             bounds=Bounds(lower=np.arange(3) - 1),
-            constraints={"loc": [0, 1, 2], "type": "increasing"},
+            constraints=om.IncreasingConstraint(selector=lambda x: x[:3]),
         )

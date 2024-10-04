@@ -1,13 +1,14 @@
+from dataclasses import dataclass
 from itertools import product
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
+from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.multistart import (
-    _linear_weights,
-    _tiktak_weights,
-    draw_exploration_sample,
+    _draw_exploration_sample,
     get_batched_optimization_sample,
     run_explorations,
     update_convergence_state,
@@ -42,13 +43,13 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
 
     for _ in range(2):
         results.append(
-            draw_exploration_sample(
+            _draw_exploration_sample(
                 x=np.ones_like(lower) * 0.5,
                 lower=lower,
                 upper=upper,
                 n_samples=3,
-                sampling_distribution=dist,
-                sampling_method=rule,
+                distribution=dist,
+                method=rule,
                 seed=1234,
             )
         )
@@ -59,40 +60,38 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
 
 
 def test_run_explorations():
-    def _dummy(x, **kwargs):
-        assert set(kwargs) == {
-            "task",
-            "algo_info",
-            "error_handling",
-            "fixed_log_data",
-        }
-        if x.sum() == 5:
-            out = np.nan
-        else:
-            out = -x.sum()
-        return out
+    @dataclass
+    class Dummy:
+        def exploration_fun(self, x, n_cores):
+            out = []
+            for vec in x:
+                if vec.sum() == 5:
+                    out.append(np.inf)
+                else:
+                    out.append(-vec.sum())
+            return out
+
+        def with_step_id(self, step_id):
+            return self
 
     calculated = run_explorations(
-        func=_dummy,
-        primary_key="value",
+        internal_problem=Dummy(),
         sample=np.arange(6).reshape(3, 2),
-        batch_evaluator="joblib",
         n_cores=1,
         step_id=0,
-        error_handling="raise",
     )
 
     exp_values = np.array([-9, -1])
     exp_sample = np.array([[4, 5], [0, 1]])
 
-    aaae(calculated["sorted_values"], exp_values)
     aaae(calculated["sorted_sample"], exp_sample)
+    aaae(calculated["sorted_values"], exp_values)
 
 
 def test_get_batched_optimization_sample():
     calculated = get_batched_optimization_sample(
         sorted_sample=np.arange(12).reshape(6, 2),
-        n_optimizations=5,
+        stopping_maxopt=5,
         batch_size=4,
     )
     expected = [[[0, 1], [2, 3], [4, 5], [6, 7]], [[8, 9]]]
@@ -106,17 +105,6 @@ def test_get_batched_optimization_sample():
         for calc_entry, exp_entry in zip(calc_batch, exp_batch, strict=False):
             assert isinstance(calc_entry, np.ndarray)
             assert calc_entry.tolist() == exp_entry
-
-
-def test_linear_weights():
-    calculated = _linear_weights(5, 10, 0.4, 0.8)
-    expected = 0.6
-    assert np.allclose(calculated, expected)
-
-
-def test_tiktak_weights():
-    assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
-    assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
 
 
 @pytest.fixture()
@@ -141,7 +129,11 @@ def starts():
 
 @pytest.fixture()
 def results():
-    return [{"solution_x": np.arange(3) + 1e-10, "solution_criterion": 4}]
+    res = InternalOptimizeResult(
+        x=np.arange(3) + 1e-10,
+        fun=4,
+    )
+    return [res]
 
 
 def test_update_state_converged(current_state, starts, results):
@@ -155,15 +147,14 @@ def test_update_state_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
-        primary_key="value",
+        solver_type="value",
     )
 
     aaae(new_state["best_x"], np.arange(3))
     assert new_state["best_y"] == 4
     assert new_state["y_history"] == [6, 5, 4]
-    assert new_state["result_history"][0]["solution_criterion"] == 4
+    assert new_state["result_history"][0].fun == 4
     aaae(new_state["start_history"][0], np.zeros(3))
-    assert new_state["best_res"].keys() == results[0].keys()
 
     assert is_converged
 
@@ -179,7 +170,7 @@ def test_update_state_not_converged(current_state, starts, results):
         starts=starts,
         results=results,
         convergence_criteria=criteria,
-        primary_key="value",
+        solver_type="value",
     )
 
     assert not is_converged

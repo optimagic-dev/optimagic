@@ -4,8 +4,10 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
+  - petsc4py
   - jax
-  - pygmo
+  - cyipopt>=1.4.0  # dev, tests
+  - pygmo>=2.19.0  # dev, tests
   - nlopt  # dev, tests
   - pip  # dev, tests, docs
   - pytest  # dev, tests
@@ -24,6 +26,7 @@ dependencies:
   - mypy>=1.11  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
+  - annotated-types  # dev, tests
   - pip:  # dev, tests, docs
       - DFO-LS  # dev, tests
       - Py-BOBYQA  # dev, tests
@@ -33,4 +36,5 @@ dependencies:
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
+      - sqlalchemy-stubs  # dev, tests
       - -e ../../

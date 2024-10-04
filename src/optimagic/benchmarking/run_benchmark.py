@@ -153,10 +153,10 @@ def _get_optimization_arguments_and_keys(problems, opt_options):
                 if algo not in AVAILABLE_ALGORITHMS:
                     raise ValueError(f"Invalid algorithm: {algo}")
                 else:
-                    valid_options = AVAILABLE_ALGORITHMS[algo]._algorithm_info.arguments
+                    valid_options = set(AVAILABLE_ALGORITHMS[algo].__dataclass_fields__)
 
             else:
-                valid_options = algo._algorithm_info.arguments
+                valid_options = set(algo.__dataclass_fields__)
 
             algo_options = options["algo_options"]
             algo_options = {k: v for k, v in algo_options.items() if k in valid_options}
@@ -197,7 +197,7 @@ def _process_one_result(optimize_result, problem):
         batches_history = [0]
     else:
         history = optimize_result.history
-        params_history = history["params"]
+        params_history = history.params
         params_history_flat = [
             tree_just_flatten(p, registry=_registry) for p in params_history
         ]
@@ -206,10 +206,10 @@ def _process_one_result(optimize_result, problem):
             if criterion_history.ndim == 2:
                 criterion_history = (criterion_history**2).sum(axis=1)
         else:
-            criterion_history = history["criterion"]
+            criterion_history = history.fun
         criterion_history = np.clip(criterion_history, _solution_crit, np.inf)
-        batches_history = history["batches"]
-        time_history = history["runtime"]
+        batches_history = history.batches
+        time_history = history.time
 
     return {
         "params_history": params_history_flat,

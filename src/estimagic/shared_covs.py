@@ -3,9 +3,10 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import scipy
+from pybaum import tree_just_flatten, tree_unflatten
+
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import get_registry
-from pybaum import tree_just_flatten, tree_unflatten
 
 
 def transform_covariance(
