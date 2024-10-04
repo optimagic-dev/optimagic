@@ -43,7 +43,7 @@ editor will show you all algorithms you can choose from.
 ## Configuring an algorithm
 
 To configure an algorithm with advanced options, you can create an instance of the
-class.
+class:
 
 ```python
 algo = om.algos.scipy_neldermead(
