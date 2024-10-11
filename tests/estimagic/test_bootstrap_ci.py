@@ -3,11 +3,12 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from pybaum import tree_just_flatten
+
 from estimagic.bootstrap_ci import calculate_ci, check_inputs
 from estimagic.bootstrap_samples import get_bootstrap_indices
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.utilities import get_rng
-from pybaum import tree_just_flatten
 
 
 def aaae(obj1, obj2, decimal=6):
