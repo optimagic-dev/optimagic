@@ -119,6 +119,7 @@ repos:
           - --wrap
           - '88'
         files: (docs/.)
+        exclude: docs/source/how_to/how_to_specify_algorithm_and_algo_options.md
   - repo: https://github.com/kynan/nbstripout
     rev: 0.7.1
     hooks:

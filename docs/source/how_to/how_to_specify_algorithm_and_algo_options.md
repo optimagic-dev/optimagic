@@ -16,7 +16,9 @@ As the name suggests, the *scipy way* is more familiar for users of scipy.optimi
 way*, you don't need to look things up in the documentation and rarely have to leave
 your editor, notebook or IDE.
 
-::::\{tab-set} :::\{tab-item} The optimagic way :sync: optimagic
+::::{tab-set}
+:::{tab-item} The optimagic way
+:sync: optimagic
 
 ## Selecting an algorithm
 
@@ -100,7 +102,9 @@ for algo in algorithms:
     )
 ```
 
-::: :::\{tab-item} The scipy way :sync: scipy
+:::
+:::{tab-item} The scipy way
+:sync: scipy
 
 ## Selecting an algorithm
 
@@ -145,4 +149,5 @@ ignored and you get a warning.
 
 To find out which options are supported by an optimizer, see {ref}`list_of_algorithms`.
 
-::: ::::
+:::
+::::
