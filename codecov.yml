@@ -9,20 +9,14 @@ coverage:
   status:
     patch:
       default:
-        target: 30%
+        target: 80%
     project:
       default:
         target: 90%
 ignore:
-  - .tox/**/*
-  - release.py
   - setup.py
-  - estimagic/tests/**/*
-  - src/estimagic/benchmarking/cartis_roberts.py
-  - src/estimagic/optimization/subsolvers/bntr_fast.py
-  - src/estimagic/optimization/subsolvers/_trsbox_fast.py
-  - src/estimagic/optimization/subsolvers/_conjugate_gradient_fast.py
-  - src/estimagic/optimization/subsolvers/_steihaug_toint_fast.py
-  - src/estimagic/optimization/subsolvers/gqtpar_fast.py
-  - src/estimagic/optimization/tranquilo/clustering.py
-  - tests/optimization/test_tao_optimizers.py
+  # Uses numba
+  - src/optimagic/benchmarking/cartis_roberts.py
+  # not installed on CI
+  - src/optimagic/optimizers/tranquilo.py
+  - tests/**/*
