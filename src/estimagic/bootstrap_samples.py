@@ -26,7 +26,7 @@ def get_bootstrap_indices(
 
     """
     n_obs = len(data)
-    probs = _get_probs_for_bootstrap_indices(data, weight_by, cluster_by)
+    probs = _calculate_bootstrap_indices_weights(data, weight_by, cluster_by)
 
     if cluster_by is None:
         bootstrap_indices = list(
@@ -45,8 +45,12 @@ def get_bootstrap_indices(
     return bootstrap_indices
 
 
-def _get_probs_for_bootstrap_indices(data, weight_by, cluster_by):
-    """Calculate probabilities for drawing bootstrap indices.
+def _calculate_bootstrap_indices_weights(data, weight_by, cluster_by):
+    """Calculate weights for drawing bootstrap indices.
+
+    If weights_by is not None and cluster_by is None, the weights are normalized to sum
+    to one. If weights_by and cluster_by are both not None, the weights are normalized
+    to sum to one within each cluster.
 
     Args:
         data (pandas.DataFrame): original dataset.
@@ -54,7 +58,7 @@ def _get_probs_for_bootstrap_indices(data, weight_by, cluster_by):
         cluster_by (str): column name of the variable to cluster by.
 
     Returns:
-        list: numpy array with probabilities.
+        list: None or pd.Series of weights.
 
     """
     if weight_by is None:

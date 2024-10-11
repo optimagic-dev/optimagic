@@ -3,10 +3,11 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from pybaum import tree_just_flatten
-
 from estimagic.bootstrap_ci import calculate_ci, check_inputs
+from estimagic.bootstrap_samples import get_bootstrap_indices
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.utilities import get_rng
+from pybaum import tree_just_flatten
 
 
 def aaae(obj1, obj2, decimal=6):
@@ -89,12 +90,26 @@ def test_check_inputs_data():
 
 
 def test_check_inputs_weight_by(setup):
-    weights = "this is not a column name of df"
-    expected = "Input 'weight_by' must be None or a column name of 'data'."
+    expected_error_msg = "Input 'weight_by' must be None or a column name of 'data'."
+    with pytest.raises(ValueError, match=expected_error_msg):
+        check_inputs(data=setup["df"], weight_by="this is not a column name of df")
 
-    with pytest.raises(ValueError) as error:
-        check_inputs(data=setup["df"], weight_by=weights)
-    assert str(error.value) == expected
+
+def test_get_bootstrap_indices_heterogeneous_weights():
+    data = pd.DataFrame(
+        {"id": [0, 1], "w_homogenous": [0.5, 0.5], "w_heterogenous": [0.1, 0.9]}
+    )
+
+    res_homogenous = get_bootstrap_indices(
+        data, weight_by="w_homogenous", n_draws=1_000, rng=get_rng(seed=0)
+    )
+    res_heterogenous = get_bootstrap_indices(
+        data, weight_by="w_heterogenous", n_draws=1_000, rng=get_rng(seed=0)
+    )
+
+    # Given the weights, the first sample mean should be close to 0.5,
+    # while the second one should be close to 0.9
+    assert np.mean(res_homogenous) < 0.75 < np.mean(res_heterogenous)
 
 
 def test_check_inputs_cluster_by(setup):
