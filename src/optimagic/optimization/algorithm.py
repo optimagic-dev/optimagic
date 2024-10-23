@@ -154,7 +154,7 @@ class Algorithm(ABC):
     def __post_init__(self) -> None:
         for field in self.__dataclass_fields__:
             raw_value = getattr(self, field)
-            target_type = self.__dataclass_fields__[field].type
+            target_type = typing.cast(type, self.__dataclass_fields__[field].type)
             if target_type in TYPE_CONVERTERS:
                 try:
                     value = TYPE_CONVERTERS[target_type](raw_value)

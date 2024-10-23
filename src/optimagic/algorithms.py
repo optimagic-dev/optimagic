@@ -40,10 +40,12 @@ for module in MODULES:
         name = candidate.__algo_info__.name
         if issubclass(candidate, Algorithm) and candidate is not Algorithm:
             ALL_ALGORITHMS[name] = candidate
-            if candidate.__algo_info__.is_available:
+            if candidate.__algo_info__.is_available:  # type: ignore[attr-defined]
                 AVAILABLE_ALGORITHMS[name] = candidate
 
 
 GLOBAL_ALGORITHMS = [
-    name for name, algo in ALL_ALGORITHMS.items() if algo.__algo_info__.is_global
+    name
+    for name, algo in ALL_ALGORITHMS.items()
+    if algo.__algo_info__.is_global  # type: ignore[attr-defined]
 ]
