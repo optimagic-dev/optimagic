@@ -38,6 +38,11 @@ def main():
     test_env_pandas = [line for line in test_env_pandas if "pandas" not in line]
     test_env_pandas.insert(_insert_idx, "  - pandas<2.0.0")
 
+    ## test environment for numpy version 1
+    test_env_numpy = deepcopy(test_env)
+    test_env_numpy = [line for line in test_env_numpy if "numpy" not in line]
+    test_env_numpy.insert(_insert_idx, "  - numpy<2")
+
     # create docs testing environment
 
     docs_env = [line for line in lines if _keep_line(line, "docs")]
@@ -45,8 +50,8 @@ def main():
 
     # write environments
     for name, env in zip(
-        ["linux", "others", "pandas"],
-        [test_env_linux, test_env_others, test_env_pandas],
+        ["linux", "others", "pandas", "numpy"],
+        [test_env_linux, test_env_others, test_env_pandas, test_env_numpy],
         strict=False,
     ):
         # Specify newline to avoid wrong line endings on Windows.

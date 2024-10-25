@@ -96,6 +96,31 @@ jobs:
         run: |
           micromamba activate optimagic
           pytest -m "not slow and not jax"
+  run-tests-with-old-numpy:
+    # This job is only for testing if optimagic works with numpy<2.
+    name: Run tests for ${{ matrix.os}} on ${{ matrix.python-version }} with numpy 1
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - '3.10'
+    steps:
+      - uses: actions/checkout@v4
+      - name: create build environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: ./.tools/envs/testenv-numpy.yml
+          cache-environment: true
+          create-args: |
+            python=${{ matrix.python-version }}
+      - name: run pytest
+        shell: bash -l {0}
+        run: |
+          micromamba activate optimagic
+          pytest -m "not slow and not jax"
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest

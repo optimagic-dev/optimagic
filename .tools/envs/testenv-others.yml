@@ -14,7 +14,7 @@ dependencies:
   - statsmodels  # dev, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numpy  # run, tests
+  - numpy >= 2  # run, tests
   - pandas  # run, tests
   - plotly  # run, tests
   - pybaum >= 0.1.2  # run, tests
