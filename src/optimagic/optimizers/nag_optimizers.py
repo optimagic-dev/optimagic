@@ -630,7 +630,7 @@ def nag_dfols_internal(
         fun=res["solution_criterion"],
         success=res["success"],
         message=res["message"],
-        n_iterations=int(res["n_iterations"]),
+        n_iterations=res["n_iterations"],
         n_fun_evals=res["n_fun_evals"],
     )
     return out
@@ -857,7 +857,7 @@ def nag_pybobyqa_internal(
         fun=res["solution_criterion"],
         success=res["success"],
         message=res["message"],
-        n_iterations=int(res["n_iterations"]),
+        n_iterations=res["n_iterations"],
     )
 
     return out
@@ -890,9 +890,8 @@ def _process_nag_result(nag_result_obj, len_x):
         "diagnostic_info": nag_result_obj.diagnostic_info,
     }
     try:
-        processed["n_iterations"] = nag_result_obj.diagnostic_info["iters_total"].iloc[
-            -1
-        ]
+        n_iterations = int(nag_result_obj.diagnostic_info["iters_total"].iloc[-1])
+        processed["n_iterations"] = n_iterations
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
