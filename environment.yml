@@ -42,7 +42,7 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido  # dev, tests
-      - pre-commit  # dev
+      - pre-commit>=4  # dev
       - -e .  # dev
       # type stubs
       - pandas-stubs  # dev, tests
