@@ -70,9 +70,10 @@ jobs:
           micromamba activate optimagic
           pytest -m "not slow and not jax"
   run-tests-with-old-pandas:
-    # This job is only for testing if optimagic works with older pandas versions, as
-    # many pandas functions we use will be deprecated in pandas 3. optimagic's behavior
-    # for older verions is handled in src/optimagic/compat.py.
+    # This job is only for testing if optimagic works with pandas<2, as many pandas
+    # functions we use will be deprecated in pandas 3. optimagic's behavior for older
+    # verions is handled in src/optimagic/compat.py. For compatibility with we have to
+    # restrict numpy<2.
     name: Run tests for ${{ matrix.os}} on ${{ matrix.python-version }} with pandas 1
     runs-on: ${{ matrix.os }}
     strategy:
@@ -97,7 +98,8 @@ jobs:
           micromamba activate optimagic
           pytest -m "not slow and not jax"
   run-tests-with-old-numpy:
-    # This job is only for testing if optimagic works with numpy<2.
+    # This job is only for testing if optimagic works with numpy<2. Because we already
+    # test pandas<2 with numpy<2, in this environment we restrict pandas>=2.
     name: Run tests for ${{ matrix.os}} on ${{ matrix.python-version }} with numpy 1
     runs-on: ${{ matrix.os }}
     strategy:

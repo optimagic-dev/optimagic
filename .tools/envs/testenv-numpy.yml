@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
+  - pandas>=2
   - numpy<2
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests
@@ -15,7 +16,6 @@ dependencies:
   - statsmodels  # dev, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - pandas  # run, tests
   - plotly  # run, tests
   - pybaum >= 0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
@@ -30,7 +30,6 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido  # dev, tests
-      - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
