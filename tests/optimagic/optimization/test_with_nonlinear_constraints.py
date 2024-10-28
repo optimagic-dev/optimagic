@@ -41,7 +41,7 @@ def nlc_2d_example():
         return np.array([value - 1, 2 - value])
 
     def constraint_jac(x):
-        return 2 * np.row_stack((x.reshape(1, -1), -x.reshape(1, -1)))
+        return 2 * np.vstack((x.reshape(1, -1), -x.reshape(1, -1)))
 
     constraints_long = om.NonlinearConstraint(
         func=constraint_func,
