@@ -496,7 +496,7 @@ def _transformation_matrix(dim):
 
     rows = [_unit_vector_or_zeros(i, dim**2) for i in indices]
 
-    transformer = np.row_stack(rows)
+    transformer = np.vstack(rows)
     return transformer
 
 

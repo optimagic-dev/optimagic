@@ -272,7 +272,7 @@ def _compute_step_ratio(steps):
 
     """
     ratios = steps[1:, :] / steps[:-1, :]
-    ratios = ratios[np.isfinite(ratios)]
+    finite_ratios = ratios[np.isfinite(ratios)]
 
-    step_ratio = ratios.flat[0]
+    step_ratio = finite_ratios.item(0)
     return step_ratio
