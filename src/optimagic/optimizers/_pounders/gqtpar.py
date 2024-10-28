@@ -75,7 +75,7 @@ def gqtpar(model, x_candidate, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     zero_threshold = (
         model.square_terms.shape[0]
         * np.finfo(float).eps
-        * np.linalg.norm(model.square_terms, np.Inf)
+        * np.linalg.norm(model.square_terms, np.inf)
     )
     stopping_criteria = {
         "k_easy": k_easy,
@@ -175,7 +175,7 @@ def _get_initial_guess_for_lambdas(
     gradient_norm = np.linalg.norm(main_model.linear_terms)
     model_hessian = main_model.square_terms
 
-    hessian_infinity_norm = np.linalg.norm(model_hessian, np.Inf)
+    hessian_infinity_norm = np.linalg.norm(model_hessian, np.inf)
     hessian_frobenius_norm = np.linalg.norm(model_hessian, "fro")
 
     hessian_gershgorin_lower, hessian_gershgorin_upper = _compute_gershgorin_bounds(
