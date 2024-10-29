@@ -9,29 +9,6 @@ from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-from optimagic import deprecations, mark
-from optimagic.deprecations import (
-    replace_and_warn_about_deprecated_bounds,
-)
-from optimagic.differentiation.derivatives import first_derivative
-from optimagic.differentiation.numdiff_options import (
-    NumdiffPurpose,
-    get_default_numdiff_options,
-    pre_process_numdiff_options,
-)
-from optimagic.exceptions import InvalidFunctionError
-from optimagic.optimization.fun_value import LeastSquaresFunctionValue
-from optimagic.optimization.optimize import minimize
-from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
-from optimagic.parameters.bounds import Bounds, pre_process_bounds
-from optimagic.parameters.conversion import Converter, get_converter
-from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.shared.check_option_dicts import (
-    check_optimization_options,
-)
-from optimagic.utilities import get_rng, to_pickle
 from pybaum import leaf_names, tree_just_flatten
 
 from estimagic.msm_covs import cov_optimal, cov_robust
@@ -56,6 +33,29 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
+from optimagic import deprecations, mark
+from optimagic.deprecations import (
+    replace_and_warn_about_deprecated_bounds,
+)
+from optimagic.differentiation.derivatives import first_derivative
+from optimagic.differentiation.numdiff_options import (
+    NumdiffPurpose,
+    get_default_numdiff_options,
+    pre_process_numdiff_options,
+)
+from optimagic.exceptions import InvalidFunctionError
+from optimagic.optimization.fun_value import LeastSquaresFunctionValue
+from optimagic.optimization.optimize import minimize
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
+from optimagic.parameters.bounds import Bounds, pre_process_bounds
+from optimagic.parameters.conversion import Converter, get_converter
+from optimagic.parameters.space_conversion import InternalParams
+from optimagic.parameters.tree_registry import get_registry
+from optimagic.shared.check_option_dicts import (
+    check_optimization_options,
+)
+from optimagic.utilities import get_rng, to_pickle
 
 
 def estimate_msm(
@@ -107,8 +107,8 @@ def estimate_msm(
             optimize_options to False. Pytrees can be a numpy array, a pandas Series, a
             DataFrame with "value" column, a float and any kind of (nested) dictionary
             or list containing these elements. See :ref:`params` for examples.
-        optimize_options (dict, str or False): Keyword arguments that govern the
-            numerical optimization. Valid entries are all arguments of
+        optimize_options (dict, Algorithm, str or False): Keyword arguments that govern
+            the numerical optimization. Valid entries are all arguments of
             :func:`~estimagic.optimization.optimize.minimize` except for those that can
             be passed explicitly to ``estimate_msm``.  If you pass False as
             ``optimize_options`` you signal that ``params`` are already
@@ -199,7 +199,10 @@ def estimate_msm(
     is_optimized = optimize_options is False
 
     if not is_optimized:
-        if isinstance(optimize_options, str):
+        # If optimize_options is not a dictionary and not False, we assume it represents
+        # an algorithm. The actual testing of whether it is a valid algorithm is done
+        # when `minimize` is called.
+        if not isinstance(optimize_options, dict):
             optimize_options = {"algorithm": optimize_options}
 
         check_optimization_options(

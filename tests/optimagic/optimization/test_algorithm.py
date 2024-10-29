@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
+
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.optimization.algorithm import AlgoInfo, Algorithm, InternalOptimizeResult
 from optimagic.optimization.history import HistoryEntry

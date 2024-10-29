@@ -2,10 +2,11 @@
 
 import numpy as np
 import pandas as pd
-from estimagic.estimate_msm import estimate_msm
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
+
+from estimagic.estimate_msm import estimate_msm
+from optimagic.parameters.tree_registry import get_registry
 
 
 def test_estimate_msm_dict_params_and_moments():

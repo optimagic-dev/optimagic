@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     _is_fast_deriv_eval,

@@ -1,4 +1,5 @@
 import pytest
+
 from optimagic.constraints import (
     Constraint,
     DecreasingConstraint,

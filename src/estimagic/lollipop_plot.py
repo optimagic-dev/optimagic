@@ -2,6 +2,7 @@ import math
 
 import pandas as pd
 import plotly.graph_objects as go
+
 from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
 from optimagic.visualization.plotting_utilities import create_grid_plot, create_ind_dict
 

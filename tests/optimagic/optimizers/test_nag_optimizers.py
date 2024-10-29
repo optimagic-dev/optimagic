@@ -1,4 +1,5 @@
 import pytest
+
 from optimagic.optimizers.nag_optimizers import (
     _build_options_dict,
     _change_evals_per_point_interface,

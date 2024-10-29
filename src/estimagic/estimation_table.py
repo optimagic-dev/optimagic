@@ -6,6 +6,7 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
+
 from optimagic.shared.compat import pd_df_map
 
 suppress_performance_warnings = np.testing.suppress_warnings()
@@ -1473,8 +1474,7 @@ def _get_digits_after_decimal(df):
             )
         except KeyError:
             trail_length = 0
-        if trail_length > max_trail:
-            max_trail = trail_length
+        max_trail = max(trail_length, max_trail)
     return max_trail
 
 

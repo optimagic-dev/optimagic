@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.typing import NDArray
+
 from optimagic import mark
 from optimagic.exceptions import InvalidKwargsError
 from optimagic.optimization.fun_value import (

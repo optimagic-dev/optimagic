@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from optimagic import mark
 from optimagic.parameters.bounds import Bounds
 from optimagic.visualization.slice_plot import slice_plot

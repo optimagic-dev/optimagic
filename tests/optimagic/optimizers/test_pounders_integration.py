@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from optimagic.optimizers.pounders import internal_solve_pounders
 
+from optimagic.optimizers.pounders import internal_solve_pounders
 from tests.optimagic.optimizers._pounders.test_pounders_unit import FIXTURES_DIR
 
 

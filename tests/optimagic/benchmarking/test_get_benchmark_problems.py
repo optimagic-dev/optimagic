@@ -2,6 +2,7 @@ from itertools import product
 
 import numpy as np
 import pytest
+
 from optimagic.benchmarking.get_benchmark_problems import (
     _step_func,
     get_benchmark_problems,

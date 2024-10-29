@@ -5,10 +5,12 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.estimate_msm import estimate_msm
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
+
+from estimagic.estimate_msm import estimate_msm
 from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.optimizers import scipy_optimizers
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
@@ -158,6 +160,40 @@ def test_estimate_msm_with_jacobian():
 
     aaae(calculated.params, expected_params)
     aaae(calculated.cov(), cov_np)
+
+
+def test_estimate_msm_with_algorithm_type():
+    start_params = np.array([3, 2, 1])
+    expected_params = np.zeros(3)
+    empirical_moments = _sim_np(expected_params)
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    estimate_msm(
+        simulate_moments=_sim_np,
+        empirical_moments=empirical_moments,
+        moments_cov=cov_np,
+        params=start_params,
+        optimize_options=scipy_optimizers.ScipyLBFGSB,
+        jacobian=lambda x: np.eye(len(x)),
+    )
+
+
+def test_estimate_msm_with_algorithm():
+    start_params = np.array([3, 2, 1])
+    expected_params = np.zeros(3)
+    empirical_moments = _sim_np(expected_params)
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    estimate_msm(
+        simulate_moments=_sim_np,
+        empirical_moments=empirical_moments,
+        moments_cov=cov_np,
+        params=start_params,
+        optimize_options=scipy_optimizers.ScipyLBFGSB(stopping_maxfun=10),
+        jacobian=lambda x: np.eye(len(x)),
+    )
 
 
 def test_to_pickle(tmp_path):

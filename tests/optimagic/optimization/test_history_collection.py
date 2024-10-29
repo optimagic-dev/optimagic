@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
+
 from optimagic import SQLiteLogReader, mark
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.logging import SQLiteLogOptions

@@ -5,6 +5,26 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
+
+from estimagic.ml_covs import (
+    cov_cluster_robust,
+    cov_hessian,
+    cov_jacobian,
+    cov_robust,
+    cov_strata_robust,
+)
+from estimagic.shared_covs import (
+    FreeParams,
+    calculate_ci,
+    calculate_estimation_summary,
+    calculate_free_estimates,
+    calculate_p_values,
+    calculate_summary_data_estimation,
+    get_derivative_case,
+    transform_covariance,
+    transform_free_cov_to_cov,
+    transform_free_values_to_params_tree,
+)
 from optimagic import deprecations, mark
 from optimagic.deprecations import (
     replace_and_warn_about_deprecated_bounds,
@@ -31,26 +51,6 @@ from optimagic.shared.check_option_dicts import (
 )
 from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng, to_pickle
-
-from estimagic.ml_covs import (
-    cov_cluster_robust,
-    cov_hessian,
-    cov_jacobian,
-    cov_robust,
-    cov_strata_robust,
-)
-from estimagic.shared_covs import (
-    FreeParams,
-    calculate_ci,
-    calculate_estimation_summary,
-    calculate_free_estimates,
-    calculate_p_values,
-    calculate_summary_data_estimation,
-    get_derivative_case,
-    transform_covariance,
-    transform_free_cov_to_cov,
-    transform_free_values_to_params_tree,
-)
 
 
 def estimate_ml(
@@ -95,8 +95,8 @@ def estimate_ml(
             optimize_options to False. Pytrees can be a numpy array, a pandas Series, a
             DataFrame with "value" column, a float and any kind of (nested) dictionary
             or list containing these elements. See :ref:`params` for examples.
-        optimize_options (dict, str or False): Keyword arguments that govern the
-            numerical optimization. Valid entries are all arguments of
+        optimize_options (dict, Algorithm, str or False): Keyword arguments that govern
+            the numerical optimization. Valid entries are all arguments of
             :func:`~estimagic.optimization.optimize.minimize` except for those that are
             passed explicilty to ``estimate_ml``. If you pass False as optimize_options
             you signal that ``params`` are already the optimal parameters and no
@@ -199,7 +199,10 @@ def estimate_ml(
     is_optimized = optimize_options is False
 
     if not is_optimized:
-        if isinstance(optimize_options, str):
+        # If optimize_options is not a dictionary and not False, we assume it represents
+        # an algorithm. The actual testing of whether it is a valid algorithm is done
+        # when `maximize` is called.
+        if not isinstance(optimize_options, dict):
             optimize_options = {"algorithm": optimize_options}
 
         check_optimization_options(

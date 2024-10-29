@@ -1,8 +1,9 @@
 import itertools
 
 import numpy as np
-import optimagic as om
 import pytest
+
+import optimagic as om
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds

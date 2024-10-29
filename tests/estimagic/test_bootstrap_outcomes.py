@@ -3,11 +3,12 @@ import functools
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.bootstrap_outcomes import (
     _get_bootstrap_outcomes_from_indices,
     get_bootstrap_outcomes,
 )
-from numpy.testing import assert_array_almost_equal as aaae
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.utilities import get_rng
 

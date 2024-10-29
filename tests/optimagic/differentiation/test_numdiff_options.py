@@ -1,4 +1,5 @@
 import pytest
+
 from optimagic.differentiation.numdiff_options import (
     NumdiffOptions,
     pre_process_numdiff_options,

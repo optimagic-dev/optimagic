@@ -2,9 +2,10 @@ import itertools
 import warnings
 
 import numpy as np
-import optimagic as om
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+
+import optimagic as om
 from optimagic import maximize, minimize
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.config import IS_CYIPOPT_INSTALLED
@@ -40,7 +41,7 @@ def nlc_2d_example():
         return np.array([value - 1, 2 - value])
 
     def constraint_jac(x):
-        return 2 * np.row_stack((x.reshape(1, -1), -x.reshape(1, -1)))
+        return 2 * np.vstack((x.reshape(1, -1), -x.reshape(1, -1)))
 
     constraints_long = om.NonlinearConstraint(
         func=constraint_func,

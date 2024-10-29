@@ -4,7 +4,8 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - pandas<2.0.0
+  - pandas<2
+  - numpy<2
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests
   - nlopt  # dev, tests
@@ -15,13 +16,12 @@ dependencies:
   - statsmodels  # dev, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numpy<2.0  # run, tests
   - plotly  # run, tests
   - pybaum >= 0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
   - seaborn  # dev, tests
-  - mypy>=1.11  # dev, tests
+  - mypy=1.13  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
