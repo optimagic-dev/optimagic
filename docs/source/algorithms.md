@@ -392,7 +392,7 @@ install optimagic.
     .. warning::
         In our benchmark using a quadratic objective function, the trust_constr
         algorithm did not find the optimum very precisely (less than 4 decimal places).
-        If you require high precision, you should refine an optimum found with Powell
+        If you require high precision, you should refine an optimum found with trust_constr
         with another local optimizer.
 
     .. note::

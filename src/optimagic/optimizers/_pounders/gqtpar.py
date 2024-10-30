@@ -55,7 +55,7 @@ def gqtpar(model, x_candidate, *, k_easy=0.1, k_hard=0.2, maxiter=200):
             - ``linear_terms``, a np.ndarray of shape (n,) and
             - ``square_terms``, a np.ndarray of shape (n,n).
         x_candidate (np.ndarray): Initial guess for the solution of the subproblem.
-        k_easy (float): topping criterion for the "easy" case.
+        k_easy (float): Stopping criterion for the "easy" case.
         k_hard (float): Stopping criterion for the "hard" case.
         maxiter (int): Maximum number of iterations to perform. If reached,
             terminate.

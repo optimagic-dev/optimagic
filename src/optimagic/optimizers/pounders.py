@@ -262,7 +262,7 @@ def internal_solve_pounders(
         gtol_rel_conjugate_gradient_sub (float): Convergence tolerance for the
             relative gradient norm in the conjugate gradient step of the trust-region
             subproblem if "cg" is used as ``conjugate_gradient_method_sub`` ("bntr").
-        k_easy_sub (float): topping criterion for the "easy" case in the trust-region
+        k_easy_sub (float): Stopping criterion for the "easy" case in the trust-region
             subproblem ("gqtpar").
         k_hard_sub (float): Stopping criterion for the "hard" case in the trust-region
             subproblem ("gqtpar").
