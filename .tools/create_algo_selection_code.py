@@ -14,8 +14,18 @@ from optimagic.typing import AggregationLevel
 def main():
     """Create the source code for algorithms.py.
 
-    The main part are nested dataclasses that enable filtered autocomplete for algorithm
-    selection.
+    The main part of the generated code are nested dataclasses that enable filtered
+    autocomplete for algorithm selection. Creating them entails the following steps:
+
+    - Discover all modules that contain optimizer classes
+    - Collect all optimizer classes
+    - Create a mapping from a tuple of categories (e.g. Global, Bounded, ...) to the
+      optimizer classes that belong to them. To find out which optimizers need to be
+      included we use the attributes stored in optimizer_class.__algo_info__.
+    - Create the dataclasses that enable autocomplete for algorithm selection
+
+    In addition we need to create the code for import statements, a AlgoSelection base
+    class and some code to instantiate the dataclasses.
 
     """
     # create some basic inputs
@@ -45,15 +55,21 @@ def main():
     # create the code for the instantiation
     instantiation_snippet = _get_instantiation_code()
 
-    # write code to the file
+    # Combine all the content into a single string
+    content = (
+        docstring
+        + imports
+        + "\n\n"
+        + parent_class_snippet
+        + "\n"
+        + "\n\n".join(dataclass_snippets)
+        + "\n\n"
+        + instantiation_snippet
+    )
 
-    with open(OPTIMAGIC_ROOT / "algorithms.py", "w") as f:
-        f.write(docstring)
-        f.write(imports + "\n\n")
-        f.write(parent_class_snippet + "\n")
-        f.write("\n\n".join(dataclass_snippets))
-        f.write("\n\n")
-        f.write(instantiation_snippet)
+    # Write the combined content to the file
+    with (OPTIMAGIC_ROOT / "algorithms.py").open("w") as f:
+        f.write(content)
 
 
 # ======================================================================================
@@ -61,7 +77,7 @@ def main():
 # ======================================================================================
 
 
-def _import_optimizer_modules(package_name):
+def _import_optimizer_modules(package_name: str) -> list[ModuleType]:
     """Collect all public modules in a given package in a list."""
     package = importlib.import_module(package_name)
     modules = []
@@ -78,7 +94,7 @@ def _import_optimizer_modules(package_name):
 
 
 def _get_all_algorithms(modules: list[ModuleType]) -> dict[str, Type[Algorithm]]:
-    """Collect all algorithms in moudles."""
+    """Collect all algorithms in modules."""
     out = {}
     for module in modules:
         out.update(_get_algorithms_in_module(module))

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e  # Exit immediately if a command exits with a non-zero status
 
-# # Check if the project is already installed locally
+# Check if the project is already installed locally
 if ! pip show optimagic &> /dev/null; then
     # install the project locally
     pip install -e .
