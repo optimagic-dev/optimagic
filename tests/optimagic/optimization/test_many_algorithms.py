@@ -86,3 +86,15 @@ def test_global_algorithms_on_sum_of_squares(algorithm):
     )
     assert res.success in [True, None]
     aaae(res.params, np.array([0.2, 0]), decimal=1)
+
+
+def test_nag_dfols_starting_at_optimum():
+    # From issue: https://github.com/optimagic-dev/optimagic/issues/538
+    params = np.zeros(2, dtype=float)
+    res = minimize(
+        fun=sos,
+        params=params,
+        algorithm="nag_dfols",
+        bounds=Bounds(-1 * np.ones_like(params), np.ones_like(params)),
+    )
+    aaae(res.params, params)
