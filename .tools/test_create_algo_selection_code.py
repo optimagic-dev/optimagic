@@ -1,7 +1,7 @@
-from algo_selector import _generate_category_combinations
+from create_algo_selection_code import _generate_category_combinations
 
 
-def test_generate_category_combinations():
+def test_generate_category_combinations() -> None:
     categories = ["a", "b", "c"]
     got = _generate_category_combinations(categories)
     expected = [

@@ -208,7 +208,7 @@ none_representation = "null"
 # Mypy configuration
 # ======================================================================================
 [tool.mypy]
-files = ["src", "tests"]
+files = ["src", "tests", ".tools"]
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_untyped_defs = true
@@ -322,6 +322,7 @@ module = [
     "estimagic.msm_sensitivity",
     "estimagic.estimation_table",
     "estimagic.lollipop_plot",
+
 ]
 check_untyped_defs = false
 disallow_any_generics = false

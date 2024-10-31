@@ -11,7 +11,7 @@ from optimagic.optimization.algorithm import Algorithm
 from optimagic.typing import AggregationLevel
 
 
-def main():
+def main() -> None:
     """Create the source code for algorithms.py.
 
     The main part of the generated code are nested dataclasses that enable filtered
@@ -119,7 +119,7 @@ def _get_algorithms_in_module(module: ModuleType) -> dict[str, Type[Algorithm]]:
 # Functions to filter algorithms by selectors
 # ======================================================================================
 def _is_gradient_based(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.needs_jac
+    return algo.__algo_info__.needs_jac  # type: ignore
 
 
 def _is_gradient_free(algo: Type[Algorithm]) -> bool:
@@ -127,7 +127,7 @@ def _is_gradient_free(algo: Type[Algorithm]) -> bool:
 
 
 def _is_global(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.is_global
+    return algo.__algo_info__.is_global  # type: ignore
 
 
 def _is_local(algo: Type[Algorithm]) -> bool:
@@ -135,36 +135,36 @@ def _is_local(algo: Type[Algorithm]) -> bool:
 
 
 def _is_bounded(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_bounds
+    return algo.__algo_info__.supports_bounds  # type: ignore
 
 
 def _is_linear_constrained(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_linear_constraints
+    return algo.__algo_info__.supports_linear_constraints  # type: ignore
 
 
 def _is_nonlinear_constrained(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_nonlinear_constraints
+    return algo.__algo_info__.supports_nonlinear_constraints  # type: ignore
 
 
 def _is_scalar(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.solver_type == AggregationLevel.SCALAR
+    return algo.__algo_info__.solver_type == AggregationLevel.SCALAR  # type: ignore
 
 
 def _is_least_squares(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.solver_type == AggregationLevel.LEAST_SQUARES
+    return algo.__algo_info__.solver_type == AggregationLevel.LEAST_SQUARES  # type: ignore
 
 
 def _is_likelihood(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.solver_type == AggregationLevel.LIKELIHOOD
+    return algo.__algo_info__.solver_type == AggregationLevel.LIKELIHOOD  # type: ignore
 
 
 def _is_parallel(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_parallelism
+    return algo.__algo_info__.supports_parallelism  # type: ignore
 
 
 def _get_filters() -> dict[str, Callable[[Type[Algorithm]], bool]]:
     """Create a dict mapping from category names to filter functions."""
-    filters = {
+    filters: dict[str, Callable[[Type[Algorithm]], bool]] = {
         "GradientBased": _is_gradient_based,
         "GradientFree": _is_gradient_free,
         "Global": _is_global,
@@ -220,7 +220,7 @@ def _generate_category_combinations(categories: list[str]) -> list[tuple[str, ..
         A list of tuples, where each tuple represents a combination of categories.
 
     """
-    result = []
+    result: list[tuple[str, ...]] = []
     for r in range(len(categories) + 1):
         result.extend(map(tuple, map(sorted, combinations(categories, r))))
     return sorted(result, key=len, reverse=True)
@@ -256,7 +256,7 @@ def create_dataclass_code(
     active_categories: tuple[str, ...],
     all_categories: list[str],
     selection_info: dict[tuple[str, ...], dict[str, Type[Algorithm]]],
-):
+) -> str:
     """Create the source code for a dataclass representing a selection of algorithms.
 
     Args:
@@ -320,7 +320,7 @@ def _get_children(
     active_categories: tuple[str, ...],
     all_categories: list[str],
     selection_info: dict[tuple[str, ...], dict[str, Type[Algorithm]]],
-) -> list[tuple[str, ...]]:
+) -> dict[str, tuple[str, ...]]:
     """Get the children of the active categories.
 
     Args:
