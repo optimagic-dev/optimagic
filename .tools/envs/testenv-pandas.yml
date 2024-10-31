@@ -26,7 +26,7 @@ dependencies:
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
   - pip:  # dev, tests, docs
-      - DFO-LS  # dev, tests
+      - DFO-LS>=1.5.3  # dev, tests
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido  # dev, tests
