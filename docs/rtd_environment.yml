@@ -27,6 +27,7 @@ dependencies:
   - patsy
   - joblib
   - plotly
+  - nlopt
   - annotated-types
   - pip:
       - ../
