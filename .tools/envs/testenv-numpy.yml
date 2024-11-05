@@ -8,7 +8,7 @@ dependencies:
   - numpy<2
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests
-  - nlopt  # dev, tests
+  - nlopt  # dev, tests, docs
   - pip  # dev, tests, docs
   - pytest  # dev, tests
   - pytest-cov  # tests
@@ -34,4 +34,5 @@ dependencies:
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
+      - sphinxcontrib-mermaid  # dev, tests, docs
       - -e ../../
