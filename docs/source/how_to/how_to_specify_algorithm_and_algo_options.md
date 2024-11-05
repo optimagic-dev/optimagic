@@ -124,7 +124,14 @@ om.minimize(
 )
 ```
 
+
 For a list of all supported algorithm names, see {ref}`list_of_algorithms`.
+
+```{note}
+To provide full compatibility with scipy, you can also select algorithms with the
+argument `method` under their original scipy name, e.g. `method="L-BFGS-B"` instead
+of `algorithm="scipy_lbfgsb"`.
+```
 
 ## Configuring an algorithm
 

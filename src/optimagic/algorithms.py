@@ -81,26 +81,36 @@ from optimagic.optimizers.tranquilo import Tranquilo, TranquiloLS
 
 @dataclass(frozen=True)
 class AlgoSelection:
-    @property
-    def All(self) -> list[Type[Algorithm]]:
+    def _all(self) -> list[Type[Algorithm]]:
         raw = [field.default for field in self.__dataclass_fields__.values()]
         return cast(list[Type[Algorithm]], raw)
 
-    @property
-    def Available(self) -> list[Type[Algorithm]]:
+    def _available(self) -> list[Type[Algorithm]]:
+        _all = self._all()
         return [
             a
-            for a in self.All
+            for a in _all
             if a.__algo_info__.is_available  # type: ignore
         ]
 
     @property
+    def All(self) -> list[str]:
+        return [a.__algo_info__.name for a in self._all()]  # type: ignore
+
+    @property
+    def Available(self) -> list[str]:
+        return [a.__algo_info__.name for a in self._available()]  # type: ignore
+
+    @property
     def _all_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
-        return {a.__algo_info__.name: a for a in self.All}  # type: ignore
+        return {a.__algo_info__.name: a for a in self._all()}  # type: ignore
 
     @property
     def _available_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
-        return {a.__algo_info__.name: a for a in self.Available}  # type: ignore
+        return {
+            a.__algo_info__.name: a  # type: ignore
+            for a in self._available()
+        }
 
 
 @dataclass(frozen=True)
