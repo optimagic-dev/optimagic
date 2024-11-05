@@ -18,6 +18,18 @@ repos:
         language: python
         always_run: true
         require_serial: true
+  - repo: local
+    hooks:
+      - id: update-algo-selection-code
+        name: update algo selection code
+        entry: bash .tools/create_and_format_algo_selection_code.sh
+        language: python
+        files: (src/optimagic/optimizers/.|src/optimagic/algorithms.py|.tools/.)
+        always_run: false
+        require_serial: true
+        additional_dependencies:
+          - hatchling
+          - ruff
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -107,6 +119,7 @@ repos:
           - --wrap
           - '88'
         files: (docs/.)
+        exclude: docs/source/how_to/how_to_specify_algorithm_and_algo_options.md
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.0
     hooks:
@@ -135,3 +148,5 @@ repos:
           - --config=pyproject.toml
 ci:
   autoupdate_schedule: monthly
+  skip:
+    - update-algo-selection-code

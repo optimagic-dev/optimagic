@@ -151,6 +151,7 @@ extend-ignore = [
 "docs/source/conf.py" = ["E501", "ERA001", "DTZ005"]
 "src/optimagic/parameters/kernel_transformations.py" = ["ARG001", "N806"]
 "docs/source/*" = ["B018"]
+"src/optimagic/algorithms.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -207,7 +208,7 @@ none_representation = "null"
 # Mypy configuration
 # ======================================================================================
 [tool.mypy]
-files = ["src", "tests"]
+files = ["src", "tests", ".tools"]
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_untyped_defs = true
@@ -321,6 +322,7 @@ module = [
     "estimagic.msm_sensitivity",
     "estimagic.estimation_table",
     "estimagic.lollipop_plot",
+
 ]
 check_untyped_defs = false
 disallow_any_generics = false
