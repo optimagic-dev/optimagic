@@ -12,7 +12,7 @@ There are two ways to specify and configure optimizers. The *optimagic way* and 
 an optimizer and both are super easy to use.
 
 As the name suggests, the *scipy way* is more familiar for users of scipy.optimize. The
-*optimagic way* has much better discoverability and autocomplete. Using the *optimagic
+*optimagic way* adds discoverability and autocomplete. Using the *optimagic
 way*, you don't need to look things up in the documentation and rarely have to leave
 your editor, notebook or IDE.
 
