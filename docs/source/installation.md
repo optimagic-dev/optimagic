@@ -40,6 +40,10 @@ pip install Py-BOBYQA
 pip install DFO-LS
 ```
 
+*Note*: We recommend to install `DFO-LS` version 1.5.3 or higher. Versions of 1.5.0 or
+lower also work but the versions `1.5.1` and `1.5.2` contain bugs that can lead to
+errors being raised.
+
 ```
 conda install -c conda-forge petsc4py
 ```
