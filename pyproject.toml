@@ -184,7 +184,7 @@ filterwarnings = [
     "ignore:The following exception was caught when calculating",
     "ignore:Usage of the parameter log_options",
 ]
-addopts = ["--doctest-modules"]
+addopts = ["--doctest-modules", "-s"]
 markers = [
     "wip: Tests that are work-in-progress.",
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
@@ -380,5 +380,6 @@ module = [
     "pathos.pools",
     "optimagic._version",
     "annotated_types",
+    "pdbp",
   ]
 ignore_missing_imports = true
