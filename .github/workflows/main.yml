@@ -30,12 +30,12 @@ jobs:
       - name: Create environment file without cyipopt for Python 3.13
         if: matrix.python-version == '3.13'
         run: |
-          grep -v 'cyipopt' ./.tools/envs/testenv-linux.yml > ./.tools/envs/no-cyipopt.yml
+          grep -v 'cyipopt' ./.tools/envs/testenv-linux.yml > ./.tools/envs/py313.yml
       - name: create build environment on Python 3.13
         if: matrix.python-version == '3.13'
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./.tools/envs/testenv-linux-no-cyipopt.yml'
+          environment-file: ./.tools/envs/py313.yml'
           cache-environment: true
           create-args: |
             python=3.13
