@@ -8,7 +8,7 @@ dependencies:
   - jax
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests
-  - nlopt  # dev, tests
+  - nlopt  # dev, tests, docs
   - pip  # dev, tests, docs
   - pytest  # dev, tests
   - pytest-cov  # tests
@@ -16,19 +16,19 @@ dependencies:
   - statsmodels  # dev, tests
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numpy<2.0  # run, tests
+  - numpy >= 2  # run, tests
   - pandas  # run, tests
   - plotly  # run, tests
-  - pybaum >= 0.1.2  # run, tests
+  - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
   - seaborn  # dev, tests
-  - mypy>=1.11  # dev, tests
+  - mypy=1.13  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
   - pip:  # dev, tests, docs
-      - DFO-LS  # dev, tests
+      - DFO-LS>=1.5.3  # dev, tests
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido  # dev, tests
@@ -37,4 +37,5 @@ dependencies:
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
+      - sphinxcontrib-mermaid  # dev, tests, docs
       - -e ../../

@@ -14,7 +14,7 @@ def _keep_line(line: str, flag: str) -> bool:
     return flag in line or "#" not in line
 
 
-def main():
+def main() -> None:
     lines = Path("environment.yml").read_text().splitlines()
 
     # create standard testing environments
@@ -33,20 +33,27 @@ def main():
     ## test environment others
     test_env_others = deepcopy(test_env)
 
-    ## test environment for pandas version 1
+    ## test environment for pandas version < 2 (requires numpy < 2)
     test_env_pandas = deepcopy(test_env)
-    test_env_pandas = [line for line in test_env_pandas if "pandas" not in line]
-    test_env_pandas.insert(_insert_idx, "  - pandas<2.0.0")
+    for pkg in ["numpy", "pandas"]:
+        test_env_pandas = [line for line in test_env_pandas if pkg not in line]
+        test_env_pandas.insert(_insert_idx, f"  - {pkg}<2")
 
-    # create docs testing environment
+    ## test environment for numpy version < 2 (with pandas >= 2)
+    test_env_numpy = deepcopy(test_env)
+    for pkg in ["numpy", "pandas"]:
+        test_env_numpy = [line for line in test_env_numpy if pkg not in line]
+    test_env_numpy.insert(_insert_idx, "  - numpy<2")
+    test_env_numpy.insert(_insert_idx, "  - pandas>=2")
 
+    # test environment for documentation
     docs_env = [line for line in lines if _keep_line(line, "docs")]
     docs_env.append("      - -e ../../")  # add local installation
 
     # write environments
     for name, env in zip(
-        ["linux", "others", "pandas"],
-        [test_env_linux, test_env_others, test_env_pandas],
+        ["linux", "others", "pandas", "numpy"],
+        [test_env_linux, test_env_others, test_env_pandas, test_env_numpy],
         strict=False,
     ):
         # Specify newline to avoid wrong line endings on Windows.

@@ -18,8 +18,20 @@ repos:
         language: python
         always_run: true
         require_serial: true
+  - repo: local
+    hooks:
+      - id: update-algo-selection-code
+        name: update algo selection code
+        entry: bash .tools/create_and_format_algo_selection_code.sh
+        language: python
+        files: (src/optimagic/optimizers/.|src/optimagic/algorithms.py|.tools/.)
+        always_run: false
+        require_serial: true
+        additional_dependencies:
+          - hatchling
+          - ruff
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
         args:
@@ -56,7 +68,7 @@ repos:
       - id: yamllint
         exclude: tests/optimagic/optimizers/_pounders/fixtures
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
+    rev: eb1df34
     hooks:
       - id: docformatter
         args:
@@ -68,7 +80,7 @@ repos:
           - --blank
         exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.3
+    rev: v0.7.2
     hooks:
       # Run the linter.
       - id: ruff
@@ -85,7 +97,7 @@ repos:
           - pyi
           - jupyter
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.17
+    rev: 0.7.18
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -97,7 +109,7 @@ repos:
           - '88'
         files: (README\.md)
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.17
+    rev: 0.7.18
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -107,8 +119,9 @@ repos:
           - --wrap
           - '88'
         files: (docs/.)
+        exclude: docs/source/how_to/how_to_specify_algorithm_and_algo_options.md
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.7.1
+    rev: 0.8.0
     hooks:
       - id: nbstripout
         exclude: |
@@ -119,12 +132,12 @@ repos:
         args:
           - --drop-empty-cells
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.2
+    rev: v1.13.0
     hooks:
       - id: mypy
         files: src|tests
         additional_dependencies:
-          - numpy<2.0
+          - numpy
           - packaging
           - pandas-stubs
           - sqlalchemy-stubs
@@ -135,3 +148,5 @@ repos:
           - --config=pyproject.toml
 ci:
   autoupdate_schedule: monthly
+  skip:
+    - update-algo-selection-code

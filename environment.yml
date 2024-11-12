@@ -8,7 +8,7 @@ dependencies:
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests
   - jupyterlab  # dev, docs
-  - nlopt  # dev, tests
+  - nlopt  # dev, tests, docs
   - pdbpp  # dev
   - pip  # dev, tests, docs
   - pytest  # dev, tests
@@ -19,10 +19,10 @@ dependencies:
   - toml  # dev
   - cloudpickle  # run, tests
   - joblib  # run, tests
-  - numpy<2.0  # run, tests
+  - numpy >= 2  # run, tests
   - pandas  # run, tests
   - plotly  # run, tests
-  - pybaum >= 0.1.2  # run, tests
+  - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
   - myst-nb  # docs
@@ -32,17 +32,17 @@ dependencies:
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
   - seaborn  # dev, tests
-  - mypy>=1.11  # dev, tests
+  - mypy=1.13  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - furo  # dev, docs
   - annotated-types  # dev, tests
   - pip:  # dev, tests, docs
-      - DFO-LS  # dev, tests
+      - DFO-LS>=1.5.3  # dev, tests
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido  # dev, tests
-      - pre-commit  # dev
+      - pre-commit>=4  # dev
       - -e .  # dev
       # type stubs
       - pandas-stubs  # dev, tests
@@ -50,3 +50,4 @@ dependencies:
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
+      - sphinxcontrib-mermaid  # dev, tests, docs

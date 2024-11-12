@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - pandas<2
+  - pandas>=2
   - numpy<2
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests
