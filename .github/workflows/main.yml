@@ -28,7 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        if: matrix.python-version != '3.13'
         uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: ${{ matrix.python-version == '3.13' && './.tools/envs/testenv-linux-py313.yml' || './.tools/envs/testenv-linux.yml' }}  # yamllint disable-line rule:line-length
