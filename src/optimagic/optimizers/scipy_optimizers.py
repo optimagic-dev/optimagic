@@ -98,6 +98,21 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 )
 @dataclass(frozen=True)
 class ScipyLBFGSB(Algorithm):
+    """Minimize a scalar differentiable function using the lbfgsb algorithm.
+
+    Attributes:
+        convergence_ftol_rel: Converge if the relative change in the objective function
+            is less than this value.
+        convergence_gtol_abs: Converge if the absolute values in the gradient of the
+            objective function are less than this value.
+        stopping_maxfun: Maximum number of function evaluations.
+        stopping_maxiter: Maximum number of iterations.
+        limited_memory_storage_length: The maximum number of variable metric corrections
+            used to define the limited memory matrix.
+        max_line_search_steps: The maximum number of line search steps.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
