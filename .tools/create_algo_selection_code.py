@@ -389,11 +389,19 @@ def _get_base_class_code() -> str:
                 ]
 
             @property
-            def All(self) -> list[str]:
+            def All(self) -> list[Type[Algorithm]]:
+                return self._all()
+
+            @property
+            def Available(self) -> list[Type[Algorithm]]:
+                return self._available()
+
+            @property
+            def AllNames(self) -> list[str]:
                 return [a.__algo_info__.name for a in self._all()]  # type: ignore
 
             @property
-            def Available(self) -> list[str]:
+            def AvailableNames(self) -> list[str]:
                 return [a.__algo_info__.name for a in self._available()]  # type: ignore
 
             @property

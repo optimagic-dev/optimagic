@@ -1,5 +1,7 @@
+import inspect
 import itertools
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
@@ -7,6 +9,7 @@ from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
 from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
+from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history_tools import get_history_arrays
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
@@ -50,23 +53,7 @@ def criterion_plot(
     # Process inputs
     # ==================================================================================
 
-    if not isinstance(names, list) and names is not None:
-        names = [names]
-
-    if not isinstance(results, dict):
-        if isinstance(results, list):
-            names = range(len(results)) if names is None else names
-            if len(names) != len(results):
-                raise ValueError("len(results) needs to be equal to len(names).")
-            results = dict(zip(names, results, strict=False))
-        else:
-            name = 0 if names is None else names
-            if isinstance(name, list):
-                if len(name) > 1:
-                    raise ValueError("len(results) needs to be equal to len(names).")
-                else:
-                    name = name[0]
-            results = {name: results}
+    results = _harmonize_inputs_to_dict(results, names)
 
     if not isinstance(palette, list):
         palette = [palette]
@@ -178,6 +165,46 @@ def criterion_plot(
         legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
     )
     return fig
+
+
+def _harmonize_inputs_to_dict(results, names):
+    """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
+    # convert scalar case to list case
+    if not isinstance(names, list) and names is not None:
+        names = [names]
+
+    if isinstance(results, OptimizeResult):
+        results = [results]
+
+    if names is not None and len(names) != len(results):
+        raise ValueError("len(results) needs to be equal to len(names).")
+
+    # handle dict case
+    if isinstance(results, dict):
+        if names is not None:
+            results_dict = dict(zip(names, results, strict=False))
+        else:
+            results_dict = results
+
+    # unlabeled iterable of results
+    else:
+        names = range(len(results)) if names is None else names
+        results_dict = dict(zip(names, results, strict=False))
+
+    # convert keys to strings
+    results_dict = {_convert_key_to_str(k): v for k, v in results_dict.items()}
+
+    return results_dict
+
+
+def _convert_key_to_str(key: Any) -> str:
+    if inspect.isclass(key) and issubclass(key, Algorithm):
+        out = key.__algo_info__.name  # type: ignore
+    elif isinstance(key, Algorithm):
+        out = key.__algo_info__.name  # type: ignore
+    else:
+        out = str(key)
+    return out
 
 
 def params_plot(
