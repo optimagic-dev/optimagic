@@ -24,3 +24,9 @@ def test_scipy_cobyla_is_present():
     assert hasattr(algos.NonlinearConstrained.GradientFree.Local, "scipy_cobyla")
     assert hasattr(algos.NonlinearConstrained.Local.GradientFree, "scipy_cobyla")
     assert hasattr(algos.Local.NonlinearConstrained.GradientFree, "scipy_cobyla")
+
+
+def test_algorithm_lists():
+    assert len(algos.All) >= len(algos.Available)
+    assert len(algos.AllNames) == len(algos.All)
+    assert len(algos.AvailableNames) == len(algos.Available)

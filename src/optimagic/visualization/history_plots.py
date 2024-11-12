@@ -182,7 +182,7 @@ def _harmonize_inputs_to_dict(results, names):
     # handle dict case
     if isinstance(results, dict):
         if names is not None:
-            results_dict = dict(zip(names, results, strict=False))
+            results_dict = dict(zip(names, list(results.values()), strict=False))
         else:
             results_dict = results
 
