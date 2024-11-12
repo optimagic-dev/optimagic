@@ -392,7 +392,7 @@ install optimagic.
     .. warning::
         In our benchmark using a quadratic objective function, the trust_constr
         algorithm did not find the optimum very precisely (less than 4 decimal places).
-        If you require high precision, you should refine an optimum found with Powell
+        If you require high precision, you should refine an optimum found with trust_constr
         with another local optimizer.
 
     .. note::
@@ -907,12 +907,6 @@ We implement a few algorithms from scratch. They are currently considered experi
     and therefore may require fewer iterations to arrive at a local optimum than
     Nelder-Mead.
 
-    The criterion function :func:`func` should return a dictionary with the following
-    fields:
-
-    1. ``"value"``: The sum of squared (potentially weighted) errors.
-    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
-
     Scaling the problem is necessary such that bounds correspond to the unit hypercube
     :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
     changes in parameters result in similar order-of-magnitude changes in the criterion
@@ -1014,12 +1008,6 @@ need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
     POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
     and therefore may require fewer iterations to arrive at a local optimum than
     Nelder-Mead.
-
-    The criterion function :func:`func` should return a dictionary with the following
-    fields:
-
-    1. ``"value"``: The sum of squared (potentially weighted) errors.
-    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
 
     Scaling the problem is necessary such that bounds correspond to the unit hypercube
     :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
