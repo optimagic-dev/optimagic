@@ -1,11 +1,5 @@
-import contextlib
 import warnings
 from dataclasses import dataclass
-
-try:
-    import pdbp  # noqa: F401
-except ImportError:
-    contextlib.suppress(Exception)
 
 from estimagic import utilities
 from estimagic.bootstrap import BootstrapResult, bootstrap
