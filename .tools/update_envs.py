@@ -50,7 +50,7 @@ def main() -> None:
     docs_env = [line for line in lines if _keep_line(line, "docs")]
     docs_env.append("      - -e ../../")  # add local installation
 
-    # write environments
+    # write environments for python < 3.13
     for name, env in zip(
         ["linux", "others", "pandas", "numpy"],
         [test_env_linux, test_env_others, test_env_pandas, test_env_numpy],
@@ -60,6 +60,17 @@ def main() -> None:
         # See: https://stackoverflow.com/a/69869641
         Path(f".tools/envs/testenv-{name}.yml").write_text(
             "\n".join(env) + "\n", newline="\n"
+        )
+
+    # write environments for python = 3.13
+    for name, env in zip(
+        ["linux", "others"], [test_env_linux, test_env_others], strict=False
+    ):
+        # Remove cyipopt from the environment
+        env_without_cyipopt = [line for line in env if "cyipopt" not in line]
+        # Write the environment to file
+        Path(f".tools/envs/testenv-{name}-py313.yml").write_text(
+            "\n".join(env_without_cyipopt) + "\n", newline="\n"
         )
 
 

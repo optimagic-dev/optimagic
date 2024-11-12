@@ -27,23 +27,11 @@ jobs:
           - '3.13'
     steps:
       - uses: actions/checkout@v4
-      - name: Create environment file without cyipopt for Python 3.13
-        if: matrix.python-version == '3.13'
-        run: |
-          grep -v 'cyipopt' ./.tools/envs/testenv-linux.yml > ./.tools/envs/py313.yml
-      - name: create build environment on Python 3.13
-        if: matrix.python-version == '3.13'
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          environment-file: ./.tools/envs/py313.yml'
-          cache-environment: true
-          create-args: |
-            python=3.13
-      - name: create build environment on Python < 3.13
+      - name: create build environment
         if: matrix.python-version != '3.13'
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ./.tools/envs/testenv-linux.yml
+          environment-file: ${{ matrix.python-version == '3.13' && './.tools/envs/testenv-linux-py313.yml' || './.tools/envs/testenv-linux.yml' }}  # yamllint disable-line rule:line-length
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
@@ -69,13 +57,15 @@ jobs:
         python-version:
           - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
           micromamba-version: 1.5.6-0
-          environment-file: ./.tools/envs/testenv-others.yml
+          environment-file: ${{ matrix.python-version == '3.13' && './.tools/envs/testenv-others-py313.yml' || './.tools/envs/testenv-others.yml' }}  # yamllint disable-line rule:line-length
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
