@@ -28,7 +28,7 @@ GLOBAL_ALGORITHMS_AVAILABLE = [
 
 BOUNDED_ALGORITHMS = []
 for name, algo in LOCAL_ALGORITHMS.items():
-    if algo.__algo_info__.supports_bounds:
+    if algo.algo_info.supports_bounds:
         BOUNDED_ALGORITHMS.append(name)
 
 

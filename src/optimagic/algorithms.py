@@ -90,7 +90,7 @@ class AlgoSelection:
         return [
             a
             for a in _all
-            if a.__algo_info__.is_available  # type: ignore
+            if a.algo_info.is_available  # type: ignore
         ]
 
     @property
@@ -103,22 +103,19 @@ class AlgoSelection:
 
     @property
     def AllNames(self) -> list[str]:
-        return [a.__algo_info__.name for a in self._all()]  # type: ignore
+        return [str(a.name) for a in self._all()]
 
     @property
     def AvailableNames(self) -> list[str]:
-        return [a.__algo_info__.name for a in self._available()]  # type: ignore
+        return [str(a.name) for a in self._available()]
 
     @property
     def _all_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
-        return {a.__algo_info__.name: a for a in self._all()}  # type: ignore
+        return {str(a.name): a for a in self._all()}
 
     @property
     def _available_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
-        return {
-            a.__algo_info__.name: a  # type: ignore
-            for a in self._available()
-        }
+        return {str(a.name): a for a in self._available()}
 
 
 @dataclass(frozen=True)

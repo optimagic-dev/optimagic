@@ -199,9 +199,9 @@ def _harmonize_inputs_to_dict(results, names):
 
 def _convert_key_to_str(key: Any) -> str:
     if inspect.isclass(key) and issubclass(key, Algorithm):
-        out = key.__algo_info__.name  # type: ignore
+        out = str(key.name)
     elif isinstance(key, Algorithm):
-        out = key.__algo_info__.name  # type: ignore
+        out = str(key.name)
     else:
         out = str(key)
     return out
