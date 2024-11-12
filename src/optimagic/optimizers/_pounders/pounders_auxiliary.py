@@ -240,7 +240,7 @@ def solve_subproblem(
         gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
             gradient norm in the conjugate gradient step of the trust-region
             subproblem ("bntr").
-        k_easy (float): topping criterion for the "easy" case in the trust-region
+        k_easy (float): Stopping criterion for the "easy" case in the trust-region
             subproblem ("gqtpar").
         k_hard (float): Stopping criterion for the "hard" case in the trust-region
             subproblem ("gqtpar").
