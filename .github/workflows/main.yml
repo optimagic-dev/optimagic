@@ -30,7 +30,7 @@ jobs:
       - name: create build environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: ${{ matrix.python-version == '3.13' && './.tools/envs/testenv-linux-py313.yml' || './.tools/envs/testenv-linux.yml' }}  # yamllint disable-line rule:line-length
+          environment-file: ./.tools/envs/testenv-linux.yml
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
@@ -64,7 +64,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         with:
           micromamba-version: 1.5.6-0
-          environment-file: ${{ matrix.python-version == '3.13' && './.tools/envs/testenv-others-py313.yml' || './.tools/envs/testenv-others.yml' }}  # yamllint disable-line rule:line-length
+          environment-file: ./.tools/envs/testenv-others.yml
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
