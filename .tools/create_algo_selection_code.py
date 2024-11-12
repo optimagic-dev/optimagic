@@ -119,7 +119,7 @@ def _get_algorithms_in_module(module: ModuleType) -> dict[str, Type[Algorithm]]:
 # Functions to filter algorithms by selectors
 # ======================================================================================
 def _is_gradient_based(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.needs_jac
+    return algo.algo_info.needs_jac  # type: ignore
 
 
 def _is_gradient_free(algo: Type[Algorithm]) -> bool:
@@ -127,7 +127,7 @@ def _is_gradient_free(algo: Type[Algorithm]) -> bool:
 
 
 def _is_global(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.is_global
+    return algo.algo_info.is_global  # type: ignore
 
 
 def _is_local(algo: Type[Algorithm]) -> bool:
@@ -135,31 +135,31 @@ def _is_local(algo: Type[Algorithm]) -> bool:
 
 
 def _is_bounded(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.supports_bounds
+    return algo.algo_info.supports_bounds  # type: ignore
 
 
 def _is_linear_constrained(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.supports_linear_constraints
+    return algo.algo_info.supports_linear_constraints  # type: ignore
 
 
 def _is_nonlinear_constrained(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.supports_nonlinear_constraints
+    return algo.algo_info.supports_nonlinear_constraints  # type: ignore
 
 
 def _is_scalar(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.solver_type == AggregationLevel.SCALAR
+    return algo.algo_info.solver_type == AggregationLevel.SCALAR  # type: ignore
 
 
 def _is_least_squares(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.solver_type == AggregationLevel.LEAST_SQUARES
+    return algo.algo_info.solver_type == AggregationLevel.LEAST_SQUARES  # type: ignore
 
 
 def _is_likelihood(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.solver_type == AggregationLevel.LIKELIHOOD
+    return algo.algo_info.solver_type == AggregationLevel.LIKELIHOOD  # type: ignore
 
 
 def _is_parallel(algo: Type[Algorithm]) -> bool:
-    return algo.algo_info.supports_parallelism
+    return algo.algo_info.supports_parallelism  # type: ignore
 
 
 def _get_filters() -> dict[str, Callable[[Type[Algorithm]], bool]]:
