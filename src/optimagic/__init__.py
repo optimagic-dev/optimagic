@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import contextlib
-
 try:
     import pdbp  # noqa: F401
 except ImportError:
-    contextlib.suppress(Exception)
+    pass
 
 from optimagic import constraints, mark, utilities
 from optimagic.algorithms import algos
