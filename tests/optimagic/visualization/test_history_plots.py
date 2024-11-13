@@ -157,8 +157,10 @@ def test_harmonize_inputs_to_dict_list_results():
 
 def test_harmonize_inputs_to_dict_dict_input():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
-    results = {"bla": res, "blub": res}
-    assert _harmonize_inputs_to_dict(results=results, names=None) == results
+    results = {"bla": res, om.algos.scipy_lbfgsb(): res, om.algos.scipy_neldermead: res}
+    got = _harmonize_inputs_to_dict(results=results, names=None)
+    expected = {"bla": res, "scipy_lbfgsb": res, "scipy_neldermead": res}
+    assert got == expected
 
 
 def test_harmonize_inputs_to_dict_dict_input_with_names():
