@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-try:
-    import pdbp  # noqa: F401
-except ImportError:
-    pass
-
 from optimagic import constraints, mark, utilities
 from optimagic.algorithms import algos
 from optimagic.benchmarking.benchmark_reports import (

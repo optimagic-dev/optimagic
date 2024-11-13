@@ -1,11 +1,6 @@
 import warnings
 from dataclasses import dataclass
 
-try:
-    import pdbp  # noqa: F401
-except ImportError:
-    pass
-
 from estimagic import utilities
 from estimagic.bootstrap import BootstrapResult, bootstrap
 from estimagic.estimate_ml import LikelihoodResult, estimate_ml
