@@ -1,6 +1,6 @@
 import typing
 import warnings
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -143,8 +143,38 @@ class InternalOptimizeResult:
             raise TypeError(msg)
 
 
+class AlgorithmMeta(ABCMeta):
+    """Metaclass to get repr, algo_info and name for classes, not just instances."""
+
+    def __repr__(self) -> str:
+        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+            out = f"om.algos.{self.__algo_info__.name}"
+        else:
+            out = self.__class__.__name__
+        return out
+
+    @property
+    def name(self) -> str:
+        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+            out = self.__algo_info__.name
+        else:
+            out = self.__class__.__name__
+        return out
+
+    @property
+    def algo_info(self) -> AlgoInfo:
+        if not hasattr(self, "__algo_info__") or self.__algo_info__ is None:
+            msg = (
+                f"The algorithm {self.name} does not have have the __algo_info__ "
+                "attribute. Use the `mark.minimizer` decorator to add this attribute."
+            )
+            raise AttributeError(msg)
+
+        return self.__algo_info__
+
+
 @dataclass(frozen=True)
-class Algorithm(ABC):
+class Algorithm(ABC, metaclass=AlgorithmMeta):
     @abstractmethod
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]

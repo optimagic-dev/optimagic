@@ -1,6 +1,5 @@
 """This module implements the POUNDERs algorithm."""
 
-import contextlib
 import functools
 from dataclasses import dataclass
 
@@ -23,8 +22,10 @@ from optimagic.optimization.internal_optimization_problem import (
 from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 from optimagic.utilities import calculate_trustregion_initial_radius
 
-with contextlib.suppress(ImportError):
+try:
     from petsc4py import PETSc
+except ImportError:
+    pass
 
 
 @mark.minimizer(
