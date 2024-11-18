@@ -4,9 +4,27 @@ This is a record of all past optimagic releases and what went into them in rever
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
-Following the [scientific python guidelines](https://scientific-python.org/specs/spec-0000/)
-we drop the official support for Python 3.9.
 
+## 0.5.1
+
+This is a minor release that introduces the new algorithm selection tool and several
+small improvements.
+
+To learn more about the algorithm selection feature check out the following resources:
+
+- [How to specify and configure algorithms](https://optimagic.readthedocs.io/en/latest/how_to/how_to_specify_algorithm_and_algo_options.html)
+- [How to select local optimizers](https://optimagic.readthedocs.io/en/latest/how_to/how_to_algorithm_selection.html)
+
+- {gh}`549` Add support for Python 3.13 ({ghuser}`timmens`)
+- {gh}`550` and {gh}`534` implement the new algorithm selection tool ({ghuser}`janosg`)
+- {gh}`548` and {gh}`531` improve the documentation ({ghuser}`ChristianZimpelmann`)
+- {gh}`544` Adjusts the results processing of the nag optimizers to be compatible
+  with the latest releases ({ghuser}`timmens`)
+- {gh}`543` Adds support for numpy 2.x ({ghuser}`timmens`)
+- {gh}`536` Adds a how-to guide for choosing local optimizers ({ghuser}`mpetrosian`)
+- {gh}`535` Allows algorithm classes and instances in estimation functions
+  ({ghuser}`timmens`)
+- {gh}`532` Makes several small improvements to the documentation.
 
 ## 0.5.0
 

@@ -17,7 +17,7 @@ from optimagic.typing import AggregationLevel
 OPTIMIZERS = []
 BOUNDED = []
 for name, algo in AVAILABLE_ALGORITHMS.items():
-    info = algo.__algo_info__
+    info = algo.algo_info
     if not info.disable_history:
         if info.supports_parallelism:
             OPTIMIZERS.append(name)

@@ -9,7 +9,6 @@ dependencies:
   - pygmo>=2.19.0  # dev, tests
   - jupyterlab  # dev, docs
   - nlopt  # dev, tests, docs
-  - pdbpp  # dev
   - pip  # dev, tests, docs
   - pytest  # dev, tests
   - pytest-cov  # tests
@@ -51,3 +50,4 @@ dependencies:
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
       - sphinxcontrib-mermaid  # dev, tests, docs
+      - pdbp  # dev

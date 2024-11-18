@@ -43,6 +43,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
 ]
 authors = [
@@ -183,7 +184,7 @@ filterwarnings = [
     "ignore:The following exception was caught when calculating",
     "ignore:Usage of the parameter log_options",
 ]
-addopts = ["--doctest-modules"]
+addopts = ["--doctest-modules", "--pdbcls=pdbp:Pdb"]
 markers = [
     "wip: Tests that are work-in-progress.",
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
@@ -195,9 +196,6 @@ norecursedirs = ["docs", ".tools"]
 # ======================================================================================
 # Misc configuration
 # ======================================================================================
-[tool.pytask]
-infer_latex_dependencies = true
-
 [tool.yamlfix]
 line_length = 88
 sequence_style = "block_style"
@@ -379,5 +377,6 @@ module = [
     "pathos.pools",
     "optimagic._version",
     "annotated_types",
+    "pdbp",
   ]
 ignore_missing_imports = true
