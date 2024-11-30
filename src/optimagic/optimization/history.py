@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 
-from optimagic.typing import EvalTask, PyTree
+from optimagic.typing import Direction, EvalTask, PyTree
 
 
 @dataclass(frozen=True)
@@ -17,7 +17,9 @@ class HistoryEntry:
 
 class History:
     # TODO: add counters for the relevant evaluations
-    def __init__(self) -> None:
+    def __init__(self, direction: Direction) -> None:
+        self.direction = direction
+        # Initialize lists to store the history
         self._params: list[PyTree] = []
         self._fun: list[float | None] = []
         self._time: list[float] = []

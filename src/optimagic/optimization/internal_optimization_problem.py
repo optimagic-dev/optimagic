@@ -68,7 +68,7 @@ class InternalOptimizationProblem:
         self._error_handling = error_handling
         self._error_penalty_func = error_penalty_func
         self._batch_evaluator = batch_evaluator
-        self._history = History()
+        self._history = History(direction)
         self._linear_constraints = linear_constraints
         self._nonlinear_constraints = nonlinear_constraints
         self._logger = logger
@@ -177,7 +177,7 @@ class InternalOptimizationProblem:
 
     def with_new_history(self) -> Self:
         new = copy(self)
-        new._history = History()
+        new._history = History(self.direction)
         return new
 
     def with_error_handling(self, error_handling: ErrorHandling) -> Self:
