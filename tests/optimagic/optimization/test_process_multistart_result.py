@@ -1,4 +1,4 @@
-from optimagic.optimization.process_results import _sum_or_none
+from optimagic.optimization.process_multistart_result import _sum_or_none
 
 
 def test_sum_or_none():

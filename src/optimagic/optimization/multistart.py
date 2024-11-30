@@ -30,7 +30,7 @@ from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
 )
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.process_results import process_multistart_result
+from optimagic.optimization.process_multistart_result import process_multistart_result
 from optimagic.typing import AggregationLevel, ErrorHandling
 from optimagic.utilities import get_rng
 
