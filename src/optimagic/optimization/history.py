@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -23,7 +23,7 @@ class History:
     # TODO: add counters for the relevant evaluations
     def __init__(
         self,
-        direction: Direction,
+        direction: Direction | Literal["minimize", "maximize"],
         params: list[PyTree] | None = None,
         fun: list[float | None] | None = None,
         time: list[float] | None = None,
@@ -38,9 +38,13 @@ class History:
         recover a history from a log.
 
         """
-        if direction not in [Direction.MINIMIZE, Direction.MAXIMIZE]:
-            raise ValueError(f"Invalid direction: {direction}.")
-        self.direction = direction
+        try:
+            self.direction = Direction(direction)
+        except ValueError:
+            valid_options = list(Direction.__members__.values())
+            msg = f"Invalid direction: '{direction}'. Choose from {valid_options}."
+            raise ValueError(msg) from None
+
         self._params = params if params is not None else []
         self._fun = fun if fun is not None else []
         self._time = time if time is not None else []
