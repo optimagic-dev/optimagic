@@ -49,7 +49,6 @@ from optimagic.optimization.multistart_options import (
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.optimization.process_results import (
-    ExtraResultFields,
     process_multistart_result,
     process_single_result,
 )
@@ -64,6 +63,7 @@ from optimagic.typing import (
     Direction,
     ErrorHandling,
     ErrorHandlingLiteral,
+    ExtraResultFields,
     NonNegativeFloat,
     PyTree,
 )
@@ -544,18 +544,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     )
 
     # ==================================================================================
-    # initialize the log database
-    # ==================================================================================
-    logger: LogStore[Any, Any] | None
-
-    if problem.logging:
-        logger = LogStore.from_options(problem.logging)
-        problem_data = ProblemInitialization(problem.direction, problem.params)
-        logger.problem_store.insert(problem_data)
-    else:
-        logger = None
-
-    # ==================================================================================
     # Do some things that require internal parameters or bounds
     # ==================================================================================
 
@@ -583,12 +571,37 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         numdiff_options=problem.numdiff_options,
         skip_checks=problem.skip_checks,
     )
+    # Define static information that will be added to the OptimizeResult
+    _scalar_start_criterion = cast(
+        float, first_crit_eval.internal_value(AggregationLevel.SCALAR)
+    )
+    extra_fields = ExtraResultFields(
+        start_fun=_scalar_start_criterion,
+        start_params=problem.params,
+        algorithm=problem.algorithm.algo_info.name,
+        direction=problem.direction,
+        n_free=internal_params.free_mask.sum(),
+    )
 
+    # create x and internal_bounds
     x = internal_params.values
     internal_bounds = InternalBounds(
         lower=internal_params.lower_bounds,
         upper=internal_params.upper_bounds,
     )
+
+    # ==================================================================================
+    # initialize the log database
+    # ==================================================================================
+    logger: LogStore[Any, Any] | None
+
+    if problem.logging:
+        logger = LogStore.from_options(problem.logging)
+        problem_data = ProblemInitialization(problem.direction, problem.params)
+        logger.problem_store.insert(problem_data)
+    else:
+        logger = None
+
     # ==================================================================================
     # Create a batch evaluator
     # ==================================================================================
@@ -616,6 +629,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         linear_constraints=None,
         nonlinear_constraints=internal_nonlinear_constraints,
         logger=logger,
+        static_result_fields=extra_fields,
     )
 
     # ==================================================================================
@@ -658,19 +672,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Process the result
     # ==================================================================================
 
-    _scalar_start_criterion = cast(
-        float, first_crit_eval.internal_value(AggregationLevel.SCALAR)
-    )
-    log_reader: LogReader[Any] | None
-
-    extra_fields = ExtraResultFields(
-        start_fun=_scalar_start_criterion,
-        start_params=problem.params,
-        algorithm=problem.algorithm.algo_info.name,
-        direction=problem.direction,
-        n_free=internal_params.free_mask.sum(),
-    )
-
     if problem.multistart is None:
         res = process_single_result(
             raw_res=raw_res,
@@ -686,6 +687,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             extra_fields=extra_fields,
         )
 
+    log_reader: LogReader[Any] | None
     if logger is not None:
         assert problem.logging is not None
         log_reader = LogReader.from_options(problem.logging)

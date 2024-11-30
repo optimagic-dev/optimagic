@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -7,19 +7,8 @@ from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.convergence_report import get_convergence_report
 from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
 from optimagic.parameters.conversion import Converter
-from optimagic.typing import AggregationLevel, Direction, PyTree
+from optimagic.typing import AggregationLevel, Direction, ExtraResultFields
 from optimagic.utilities import isscalar
-
-
-@dataclass(frozen=True)
-class ExtraResultFields:
-    """Fields for OptimizeResult that are not part of InternalOptimizeResult."""
-
-    start_fun: float
-    start_params: PyTree
-    algorithm: str
-    direction: Direction
-    n_free: int
 
 
 def process_single_result(
@@ -79,12 +68,7 @@ def process_multistart_result(
     solver_type: AggregationLevel,
     extra_fields: ExtraResultFields,
 ) -> OptimizeResult:
-    """Process results of internal optimizers.
-
-    Args:
-        res (dict): Results dictionary of an internal optimizer or multistart optimizer.
-
-    """
+    """Process results of internal optimizers."""
     if raw_res.multistart_info is None:
         raise ValueError("Multistart info is missing.")
 
