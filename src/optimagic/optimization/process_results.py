@@ -5,6 +5,7 @@ import numpy as np
 
 from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.convergence_report import get_convergence_report
+from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
 from optimagic.parameters.conversion import Converter
 from optimagic.typing import AggregationLevel, Direction, PyTree
@@ -41,9 +42,7 @@ def process_single_result(
         fun = -fun
 
     if raw_res.history is not None:
-        conv_report = get_convergence_report(
-            history=raw_res.history, direction=extra_fields.direction
-        )
+        conv_report = get_convergence_report(raw_res.history)
     else:
         conv_report = None
 
@@ -109,15 +108,13 @@ def process_multistart_result(
         # create a convergence report for the multistart optimization; This is not
         # the same as the convergence report for the individual local optimizations.
         # ==============================================================================
-        crit_hist = [opt.fun for opt in info.local_optima]
-        params_hist = [opt.params for opt in info.local_optima]
-        time_hist = [np.nan for opt in info.local_optima]
-        hist = {"criterion": crit_hist, "params": params_hist, "runtime": time_hist}
-
-        conv_report = get_convergence_report(
-            history=hist,
+        report_history = History(
             direction=extra_fields.direction,
+            fun=[opt.fun for opt in info.local_optima],
+            params=[opt.params for opt in info.local_optima],
+            time=[np.nan for _ in info.local_optima],
         )
+        conv_report = get_convergence_report(report_history)
 
         res.convergence_report = conv_report
 

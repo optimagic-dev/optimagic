@@ -1,16 +1,14 @@
 import numpy as np
+from numpy.typing import NDArray
 
-from optimagic.optimization.history_tools import get_history_arrays
+from optimagic.optimization.history import History
 
 
-def get_convergence_report(history, direction):
-    history_arrs = get_history_arrays(
-        history=history,
-        direction=direction,
-    )
+def get_convergence_report(history: History) -> dict[str, dict[str, float]] | None:
+    is_accepted = history.is_accepted
 
-    critvals = history_arrs.fun[history_arrs.is_accepted]
-    params = history_arrs.params[history_arrs.is_accepted]
+    critvals = history.fun_array[is_accepted]
+    params = history.flat_params_array[is_accepted]
 
     if len(critvals) < 2:
         out = None
@@ -35,7 +33,7 @@ def get_convergence_report(history, direction):
     return out
 
 
-def _get_max_f_changes(critvals):
+def _get_max_f_changes(critvals: NDArray[np.float64]) -> tuple[float, float]:
     best_val = critvals[-1]
     worst_val = critvals[0]
 
@@ -47,7 +45,7 @@ def _get_max_f_changes(critvals):
     return max_change_rel, max_change_abs
 
 
-def _get_max_x_changes(params):
+def _get_max_x_changes(params: NDArray[np.float64]) -> tuple[float, float]:
     best_x = params[-1]
     diffs = params - best_x
     denom = np.clip(np.abs(best_x), 0.1, np.inf)
