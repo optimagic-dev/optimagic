@@ -12,7 +12,6 @@ First implemented in Python by Alisdair McKay (
 """
 
 import warnings
-from dataclasses import replace
 from typing import Literal
 
 import numpy as np
@@ -21,7 +20,7 @@ from scipy.stats import qmc, triang
 
 from optimagic.logging.logger import LogStore
 from optimagic.logging.types import StepStatus
-from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
+from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
     InternalOptimizationProblem,
@@ -30,6 +29,8 @@ from optimagic.optimization.multistart_options import InternalMultistartOptions
 from optimagic.optimization.optimization_logging import (
     log_scheduled_steps_and_get_ids,
 )
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.optimization.process_results import process_multistart_result
 from optimagic.typing import AggregationLevel, ErrorHandling
 from optimagic.utilities import get_rng
 
@@ -42,7 +43,7 @@ def run_multistart_optimization(
     options: InternalMultistartOptions,
     logger: LogStore | None,
     error_handling: ErrorHandling,
-) -> InternalOptimizeResult:
+) -> OptimizeResult:
     steps = determine_steps(options.n_samples, stopping_maxopt=options.stopping_maxopt)
 
     scheduled_steps = log_scheduled_steps_and_get_ids(
@@ -159,6 +160,7 @@ def run_multistart_optimization(
             results=batch_results,
             convergence_criteria=convergence_criteria,
             solver_type=local_algorithm.algo_info.solver_type,
+            converter=internal_problem.converter,
         )
         opt_counter += len(batch)
         if is_converged:
@@ -176,7 +178,12 @@ def run_multistart_optimization(
     }
 
     raw_res = state["best_res"]
-    res = replace(raw_res, multistart_info=multistart_info)
+    res = process_multistart_result(
+        raw_res=raw_res,
+        converter=internal_problem.converter,
+        extra_fields=internal_problem.static_result_fields,
+        multistart_info=multistart_info,
+    )
 
     return res
 
@@ -371,7 +378,12 @@ def get_batched_optimization_sample(sorted_sample, stopping_maxopt, batch_size):
 
 
 def update_convergence_state(
-    current_state, starts, results, convergence_criteria, solver_type
+    current_state,
+    starts,
+    results,
+    convergence_criteria,
+    solver_type,
+    converter,
 ):
     """Update the state of all quantities related to convergence.
 
@@ -389,6 +401,7 @@ def update_convergence_state(
         convergence_criteria (dict): Dict with the entries "xtol" and "max_discoveries"
         solver_type: The aggregation level of the local optimizer. Needed to
             interpret the output of the internal criterion function.
+        converter: The converter to map between internal and external parameter spaces.
 
 
     Returns:
@@ -422,7 +435,7 @@ def update_convergence_state(
     # ==================================================================================
     valid_results = [results[i] for i in valid_indices]
     valid_starts = [starts[i] for i in valid_indices]
-    valid_new_x = [res.x for res in valid_results]
+    valid_new_x = [converter.params_to_internal(res.params) for res in valid_results]
     valid_new_y = []
 
     # make the criterion output scalar if a least squares optimizer returns an

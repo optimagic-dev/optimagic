@@ -10,12 +10,16 @@ from typing_extensions import Self
 
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.logging.types import StepStatus
+from optimagic.optimization.convergence_report import get_convergence_report
 from optimagic.optimization.history import History
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
+from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.parameters.conversion import Converter
 from optimagic.type_conversion import TYPE_CONVERTERS
-from optimagic.typing import AggregationLevel
+from optimagic.typing import AggregationLevel, Direction, ExtraResultFields
+from optimagic.utilities import isscalar
 
 
 @dataclass(frozen=True)
@@ -142,6 +146,56 @@ class InternalOptimizeResult:
             )
             raise TypeError(msg)
 
+    def create_optimize_result(
+        self,
+        converter: Converter,
+        solver_type: AggregationLevel,
+        extra_fields: ExtraResultFields,
+    ) -> OptimizeResult:
+        """Process an internal optimizer result."""
+        params = converter.params_from_internal(self.x)
+        if isscalar(self.fun):
+            fun = float(self.fun)
+        elif solver_type == AggregationLevel.LIKELIHOOD:
+            fun = float(np.sum(self.fun))
+        elif solver_type == AggregationLevel.LEAST_SQUARES:
+            fun = np.dot(self.fun, self.fun)
+
+        if extra_fields.direction == Direction.MAXIMIZE:
+            fun = -fun
+
+        if self.history is not None:
+            conv_report = get_convergence_report(
+                history=self.history, direction=extra_fields.direction
+            )
+        else:
+            conv_report = None
+
+        out = OptimizeResult(
+            params=params,
+            fun=fun,
+            start_fun=extra_fields.start_fun,
+            start_params=extra_fields.start_params,
+            algorithm=extra_fields.algorithm,
+            direction=extra_fields.direction.value,
+            n_free=extra_fields.n_free,
+            message=self.message,
+            success=self.success,
+            n_fun_evals=self.n_fun_evals,
+            n_jac_evals=self.n_jac_evals,
+            n_hess_evals=self.n_hess_evals,
+            n_iterations=self.n_iterations,
+            status=self.status,
+            jac=self.jac,
+            hess=self.hess,
+            hess_inv=self.hess_inv,
+            max_constraint_violation=self.max_constraint_violation,
+            history=self.history,
+            algorithm_output=self.info,
+            convergence_report=conv_report,
+        )
+        return out
+
 
 class AlgorithmMeta(ABCMeta):
     """Metaclass to get repr, algo_info and name for classes, not just instances."""
@@ -234,7 +288,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
         problem: InternalOptimizationProblem,
         x0: NDArray[np.float64],
         step_id: int,
-    ) -> InternalOptimizeResult:
+    ) -> OptimizeResult:
         problem = problem.with_new_history().with_step_id(step_id)
 
         if problem.logger:
@@ -242,17 +296,23 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
                 step_id, {"status": str(StepStatus.RUNNING.value)}
             )
 
-        result = self._solve_internal_problem(problem, x0)
+        raw_res = self._solve_internal_problem(problem, x0)
 
-        if (not self.algo_info.disable_history) and (result.history is None):
-            result = replace(result, history=problem.history)
+        if (not self.algo_info.disable_history) and (raw_res.history is None):
+            raw_res = replace(raw_res, history=problem.history)
 
         if problem.logger:
             problem.logger.step_store.update(
                 step_id, {"status": str(StepStatus.COMPLETE.value)}
             )
 
-        return result
+        res = raw_res.create_optimize_result(
+            converter=problem.converter,
+            solver_type=self.algo_info.solver_type,
+            extra_fields=problem.static_result_fields,
+        )
+
+        return res
 
     def with_option_if_applicable(self, **kwargs: Any) -> Self:
         """Call with_option only with applicable keyword arguments."""

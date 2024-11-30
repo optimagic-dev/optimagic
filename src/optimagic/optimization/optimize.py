@@ -48,10 +48,6 @@ from optimagic.optimization.multistart_options import (
 )
 from optimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.optimization.process_results import (
-    process_multistart_result,
-    process_single_result,
-)
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     get_converter,
@@ -644,7 +640,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             logger=logger,
         )[0]
 
-        raw_res = problem.algorithm.solve_internal_problem(internal_problem, x, step_id)
+        res = problem.algorithm.solve_internal_problem(internal_problem, x, step_id)
 
     else:
         multistart_options = get_internal_multistart_options_from_public(
@@ -658,7 +654,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             upper=internal_params.soft_upper_bounds,
         )
 
-        raw_res = run_multistart_optimization(
+        res = run_multistart_optimization(
             local_algorithm=problem.algorithm,
             internal_problem=internal_problem,
             x=x,
@@ -671,21 +667,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     # Process the result
     # ==================================================================================
-
-    if problem.multistart is None:
-        res = process_single_result(
-            raw_res=raw_res,
-            converter=converter,
-            solver_type=problem.algorithm.algo_info.solver_type,
-            extra_fields=extra_fields,
-        )
-    else:
-        res = process_multistart_result(
-            raw_res=raw_res,
-            converter=converter,
-            solver_type=problem.algorithm.algo_info.solver_type,
-            extra_fields=extra_fields,
-        )
 
     log_reader: LogReader[Any] | None
     if logger is not None:

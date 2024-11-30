@@ -1,91 +1,29 @@
-from dataclasses import replace
+import copy
 from typing import Any
 
 import numpy as np
 
-from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.convergence_report import get_convergence_report
 from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
 from optimagic.parameters.conversion import Converter
-from optimagic.typing import AggregationLevel, Direction, ExtraResultFields
-from optimagic.utilities import isscalar
-
-
-def process_single_result(
-    raw_res: InternalOptimizeResult,
-    converter: Converter,
-    solver_type: AggregationLevel,
-    extra_fields: ExtraResultFields,
-) -> OptimizeResult:
-    """Process an internal optimizer result."""
-    params = converter.params_from_internal(raw_res.x)
-    if isscalar(raw_res.fun):
-        fun = float(raw_res.fun)
-    elif solver_type == AggregationLevel.LIKELIHOOD:
-        fun = float(np.sum(raw_res.fun))
-    elif solver_type == AggregationLevel.LEAST_SQUARES:
-        fun = np.dot(raw_res.fun, raw_res.fun)
-
-    if extra_fields.direction == Direction.MAXIMIZE:
-        fun = -fun
-
-    if raw_res.history is not None:
-        conv_report = get_convergence_report(
-            history=raw_res.history, direction=extra_fields.direction
-        )
-    else:
-        conv_report = None
-
-    out = OptimizeResult(
-        params=params,
-        fun=fun,
-        start_fun=extra_fields.start_fun,
-        start_params=extra_fields.start_params,
-        algorithm=extra_fields.algorithm,
-        direction=extra_fields.direction.value,
-        n_free=extra_fields.n_free,
-        message=raw_res.message,
-        success=raw_res.success,
-        n_fun_evals=raw_res.n_fun_evals,
-        n_jac_evals=raw_res.n_jac_evals,
-        n_hess_evals=raw_res.n_hess_evals,
-        n_iterations=raw_res.n_iterations,
-        status=raw_res.status,
-        jac=raw_res.jac,
-        hess=raw_res.hess,
-        hess_inv=raw_res.hess_inv,
-        max_constraint_violation=raw_res.max_constraint_violation,
-        history=raw_res.history,
-        algorithm_output=raw_res.info,
-        convergence_report=conv_report,
-    )
-    return out
+from optimagic.typing import Direction, ExtraResultFields
 
 
 def process_multistart_result(
-    raw_res: InternalOptimizeResult,
+    raw_res: OptimizeResult,
     converter: Converter,
-    solver_type: AggregationLevel,
     extra_fields: ExtraResultFields,
+    multistart_info: dict[str, Any],
 ) -> OptimizeResult:
     """Process results of internal optimizers."""
-    if raw_res.multistart_info is None:
-        raise ValueError("Multistart info is missing.")
 
     if isinstance(raw_res, str):
         res = _dummy_result_from_traceback(raw_res, extra_fields)
     else:
-        res = process_single_result(
-            raw_res=raw_res,
-            converter=converter,
-            solver_type=solver_type,
-            extra_fields=extra_fields,
-        )
-
+        res = raw_res
         info = _process_multistart_info(
-            raw_res.multistart_info,
+            multistart_info,
             converter=converter,
-            solver_type=solver_type,
             extra_fields=extra_fields,
         )
 
@@ -118,24 +56,15 @@ def process_multistart_result(
 def _process_multistart_info(
     info: dict[str, Any],
     converter: Converter,
-    solver_type: AggregationLevel,
     extra_fields: ExtraResultFields,
 ) -> MultistartInfo:
     starts = [converter.params_from_internal(x) for x in info["start_parameters"]]
 
     optima = []
     for res, start in zip(info["local_optima"], starts, strict=False):
-        replacements = {
-            "start_params": start,
-            "start_fun": None,
-        }
-
-        processed = process_single_result(
-            res,
-            converter=converter,
-            solver_type=solver_type,
-            extra_fields=replace(extra_fields, **replacements),
-        )
+        processed = copy.copy(res)
+        processed.start_params = start
+        processed.start_fun = None
         optima.append(processed)
 
     sample = [converter.params_from_internal(x) for x in info["exploration_sample"]]
