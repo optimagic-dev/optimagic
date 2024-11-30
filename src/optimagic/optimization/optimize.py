@@ -665,7 +665,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         )
 
     # ==================================================================================
-    # Process the result
+    # Add the log reader to the result
     # ==================================================================================
 
     log_reader: LogReader[Any] | None
