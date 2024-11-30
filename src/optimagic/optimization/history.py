@@ -17,14 +17,29 @@ class HistoryEntry:
 
 class History:
     # TODO: add counters for the relevant evaluations
-    def __init__(self, direction: Direction) -> None:
+    def __init__(
+        self,
+        direction: Direction,
+        params: list[PyTree] | None = None,
+        fun: list[float | None] | None = None,
+        time: list[float] | None = None,
+        batches: list[int] | None = None,
+        task: list[EvalTask] | None = None,
+    ) -> None:
+        """Initialize a history.
+
+        The history must know the direction of the optimization problem in order to
+        correctly return monotone sequences. The history can be initialized empty, for
+        example for usage during an optimization process, or with data, for example to
+        recover a history from a log.
+
+        """
         self.direction = direction
-        # Initialize lists to store the history
-        self._params: list[PyTree] = []
-        self._fun: list[float | None] = []
-        self._time: list[float] = []
-        self._batches: list[int] = []
-        self._task: list[EvalTask] = []
+        self._params = params if params is not None else []
+        self._fun = fun if fun is not None else []
+        self._time = time if time is not None else []
+        self._batches = batches if batches is not None else []
+        self._task = task if task is not None else []
 
     def add_entry(self, entry: HistoryEntry, batch_id: int | None = None) -> None:
         if batch_id is None:
