@@ -156,3 +156,14 @@ class MultiStartIterationHistory(TupleLikeAccess):
     history: IterationHistory
     local_histories: list[IterationHistory] | None = None
     exploration: IterationHistory | None = None
+
+
+@dataclass(frozen=True)
+class ExtraResultFields:
+    """Fields for OptimizeResult that are not part of InternalOptimizeResult."""
+
+    start_fun: float | None
+    start_params: PyTree
+    algorithm: str
+    direction: Direction
+    n_free: int

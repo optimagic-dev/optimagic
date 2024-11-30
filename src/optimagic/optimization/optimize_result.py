@@ -41,7 +41,7 @@ class OptimizeResult:
 
     params: Any
     fun: float
-    start_fun: float
+    start_fun: float | None
     start_params: Any
     algorithm: str
     direction: str
@@ -78,7 +78,7 @@ class OptimizeResult:
         return self.fun
 
     @property
-    def start_criterion(self) -> float:
+    def start_criterion(self) -> float | None:
         msg = (
             "The start_criterion attribute is deprecated. Use the start_fun attribute "
             "instead."

@@ -6,13 +6,13 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from optimagic.optimization.algorithm import InternalOptimizeResult
 from optimagic.optimization.multistart import (
     _draw_exploration_sample,
     get_batched_optimization_sample,
     run_explorations,
     update_convergence_state,
 )
+from optimagic.optimization.optimize_result import OptimizeResult
 
 
 @pytest.fixture()
@@ -129,11 +129,21 @@ def starts():
 
 @pytest.fixture()
 def results():
-    res = InternalOptimizeResult(
-        x=np.arange(3) + 1e-10,
+    res = OptimizeResult(
+        params=np.arange(3) + 1e-10,
         fun=4,
+        start_fun=5,
+        start_params=np.arange(3),
+        algorithm="bla",
+        direction="minimize",
+        n_free=3,
     )
     return [res]
+
+
+class DummyConverter:
+    def params_to_internal(self, params):
+        return params
 
 
 def test_update_state_converged(current_state, starts, results):
@@ -148,6 +158,7 @@ def test_update_state_converged(current_state, starts, results):
         results=results,
         convergence_criteria=criteria,
         solver_type="value",
+        converter=DummyConverter(),
     )
 
     aaae(new_state["best_x"], np.arange(3))
@@ -171,6 +182,7 @@ def test_update_state_not_converged(current_state, starts, results):
         results=results,
         convergence_criteria=criteria,
         solver_type="value",
+        converter=DummyConverter(),
     )
 
     assert not is_converged
