@@ -1,19 +1,17 @@
-import copy
-from typing import Any
-
 import numpy as np
+from numpy.typing import NDArray
 
 from optimagic.optimization.convergence_report import get_convergence_report
 from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
-from optimagic.parameters.conversion import Converter
 from optimagic.typing import Direction, ExtraResultFields
 
 
 def process_multistart_result(
     raw_res: OptimizeResult,
-    converter: Converter,
     extra_fields: ExtraResultFields,
-    multistart_info: dict[str, Any],
+    local_optima: list[OptimizeResult],
+    exploration_sample: list[NDArray[np.float64]],
+    exploration_results: list[float],
 ) -> OptimizeResult:
     """Process results of internal optimizers."""
 
@@ -21,10 +19,14 @@ def process_multistart_result(
         res = _dummy_result_from_traceback(raw_res, extra_fields)
     else:
         res = raw_res
-        info = _process_multistart_info(
-            multistart_info,
-            converter=converter,
-            extra_fields=extra_fields,
+        if extra_fields.direction == Direction.MAXIMIZE:
+            exploration_results = [-res for res in exploration_results]
+
+        info = MultistartInfo(
+            start_parameters=[opt.start_params for opt in local_optima],
+            local_optima=local_optima,
+            exploration_sample=exploration_sample,
+            exploration_results=exploration_results,
         )
 
         # ==============================================================================
@@ -53,42 +55,18 @@ def process_multistart_result(
     return res
 
 
-def _process_multistart_info(
-    info: dict[str, Any],
-    converter: Converter,
-    extra_fields: ExtraResultFields,
-) -> MultistartInfo:
-    starts = [converter.params_from_internal(x) for x in info["start_parameters"]]
-
-    optima = []
-    for res, start in zip(info["local_optima"], starts, strict=False):
-        processed = copy.copy(res)
-        processed.start_params = start
-        processed.start_fun = None
-        optima.append(processed)
-
-    sample = [converter.params_from_internal(x) for x in info["exploration_sample"]]
-
-    if extra_fields.direction == Direction.MINIMIZE:
-        exploration_res = info["exploration_results"]
-    else:
-        exploration_res = [-res for res in info["exploration_results"]]
-
-    return MultistartInfo(
-        start_parameters=starts,
-        local_optima=optima,
-        exploration_sample=sample,
-        exploration_results=exploration_res,
-    )
-
-
 def _dummy_result_from_traceback(
     candidate: str, extra_fields: ExtraResultFields
 ) -> OptimizeResult:
+    if extra_fields.start_fun is None:
+        start_fun = np.inf
+    else:
+        start_fun = extra_fields.start_fun
+
     out = OptimizeResult(
         params=extra_fields.start_params,
-        fun=extra_fields.start_fun,
-        start_fun=extra_fields.start_fun,
+        fun=start_fun,
+        start_fun=start_fun,
         start_params=extra_fields.start_params,
         algorithm=extra_fields.algorithm,
         direction=extra_fields.direction.value,

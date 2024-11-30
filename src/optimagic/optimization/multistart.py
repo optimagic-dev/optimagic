@@ -170,19 +170,19 @@ def run_multistart_optimization(
                     logger.step_store.update(step, {"status": new_status})
             break
 
-    multistart_info = {
-        "start_parameters": state["start_history"],
-        "local_optima": state["result_history"],
-        "exploration_sample": sorted_sample,
-        "exploration_results": exploration_res["sorted_values"],
-    }
-
     raw_res = state["best_res"]
+
+    expl_sample = [
+        internal_problem.converter.params_from_internal(s) for s in sorted_sample
+    ]
+    expl_res = list(exploration_res["sorted_values"])
+
     res = process_multistart_result(
         raw_res=raw_res,
-        converter=internal_problem.converter,
         extra_fields=internal_problem.static_result_fields,
-        multistart_info=multistart_info,
+        local_optima=state["result_history"],
+        exploration_sample=expl_sample,
+        exploration_results=expl_res,
     )
 
     return res

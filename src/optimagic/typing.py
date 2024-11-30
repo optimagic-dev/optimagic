@@ -162,7 +162,7 @@ class MultiStartIterationHistory(TupleLikeAccess):
 class ExtraResultFields:
     """Fields for OptimizeResult that are not part of InternalOptimizeResult."""
 
-    start_fun: float
+    start_fun: float | None
     start_params: PyTree
     algorithm: str
     direction: Direction

@@ -305,6 +305,15 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
                 step_id, {"status": str(StepStatus.COMPLETE.value)}
             )
 
+        # make sure the start params provided in static_result_fields are the same as x0
+        extra_fields = problem.static_result_fields
+        x0_problem = problem.converter.params_to_internal(extra_fields.start_params)
+        if not np.allclose(x0_problem, x0):
+            start_params = problem.converter.params_from_internal(x0)
+            extra_fields = replace(
+                extra_fields, start_params=start_params, start_fun=None
+            )
+
         res = raw_res.create_optimize_result(
             converter=problem.converter,
             solver_type=self.algo_info.solver_type,
