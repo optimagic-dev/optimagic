@@ -112,7 +112,7 @@ def process_multistart_result(
             direction=extra_fields.direction,
             fun=[opt.fun for opt in info.local_optima],
             params=[opt.params for opt in info.local_optima],
-            time=[np.nan for _ in info.local_optima],
+            start_time=[np.nan for _ in info.local_optima],
         )
         conv_report = get_convergence_report(report_history)
 

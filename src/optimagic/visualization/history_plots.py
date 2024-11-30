@@ -399,7 +399,7 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         direction=direction,
         fun=_history["fun"],
         params=_history["params"],
-        time=_history["time"],
+        start_time=_history["time"],
     )
 
     data = {
@@ -437,5 +437,5 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
         direction=direction,
         fun=stacked["criterion"],
         params=stacked["params"],
-        time=stacked["runtime"],
+        start_time=stacked["runtime"],
     )

@@ -7,8 +7,8 @@ from optimagic.optimization.history import History
 def get_convergence_report(history: History) -> dict[str, dict[str, float]] | None:
     is_accepted = history.is_accepted
 
-    critvals = history.fun_array[is_accepted]
-    params = history.flat_params_array[is_accepted]
+    critvals = np.array(history.fun, dtype=np.float64)[is_accepted]
+    params = np.array(history.flat_params, dtype=np.float64)[is_accepted]
 
     if len(critvals) < 2:
         out = None

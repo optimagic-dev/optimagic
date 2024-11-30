@@ -78,7 +78,7 @@ def test_history_from_data():
         params=params,
         task=task,
         batches=batches,
-        time=time,
+        start_time=time,
     )
 
     assert history.direction == Direction.MAXIMIZE
@@ -95,8 +95,3 @@ def test_history_from_data():
         history.flat_params_array, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
     )
     aaae(history.time_array, np.array(time))
-
-
-def test_history_invalid_direction():
-    with pytest.raises(ValueError, match="Invalid direction: 'invalid'. Choose from"):
-        History("invalid")

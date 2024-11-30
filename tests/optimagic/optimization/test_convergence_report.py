@@ -12,7 +12,7 @@ def test_get_convergence_report_minimize():
         direction=Direction.MINIMIZE,
         params=[{"a": 0}, {"a": 2.1}, {"a": 2.5}, {"a": 2.0}],
         fun=[5, 4.1, 4.4, 4.0],
-        time=[0, 1, 2, 3],
+        start_time=[0, 1, 2, 3],
     )
 
     calculated = pd.DataFrame.from_dict(get_convergence_report(hist))
@@ -26,7 +26,7 @@ def test_get_convergence_report_maximize():
         direction=Direction.MAXIMIZE,
         params=[{"a": 0}, {"a": 2.1}, {"a": 2.5}, {"a": 2.0}],
         fun=[-5, -4.1, -4.4, -4.0],
-        time=[0, 1, 2, 3],
+        start_time=[0, 1, 2, 3],
     )
 
     calculated = pd.DataFrame.from_dict(get_convergence_report(hist))
@@ -41,7 +41,7 @@ def test_history_is_too_short():
         direction=Direction.MAXIMIZE,
         params=[{"a": 0}, {"a": 2.1}, {"a": 2.5}, {"a": 2.0}],
         fun=[5, 4.1, 4.4, 4.0],
-        time=[0, 1, 2, 3],
+        start_time=[0, 1, 2, 3],
     )
 
     calculated = get_convergence_report(hist)

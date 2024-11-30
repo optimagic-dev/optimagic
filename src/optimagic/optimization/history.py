@@ -1,12 +1,13 @@
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Literal
+from typing import Any
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
+from pybaum import leaf_names, tree_just_flatten
 
-from optimagic.parameters.tree_conversion import tree_just_flatten
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import Direction, EvalTask, PyTree
 
@@ -19,14 +20,18 @@ class HistoryEntry:
     task: EvalTask
 
 
+class CostModel:
+    pass
+
+
 class History:
     # TODO: add counters for the relevant evaluations
     def __init__(
         self,
-        direction: Direction | Literal["minimize", "maximize"],
+        direction: Direction,
         params: list[PyTree] | None = None,
         fun: list[float | None] | None = None,
-        time: list[float] | None = None,
+        start_time: list[float] | None = None,
         batches: list[int] | None = None,
         task: list[EvalTask] | None = None,
     ) -> None:
@@ -38,16 +43,10 @@ class History:
         recover a history from a log.
 
         """
-        try:
-            self.direction = Direction(direction)
-        except ValueError:
-            valid_options = list(Direction.__members__.values())
-            msg = f"Invalid direction: '{direction}'. Choose from {valid_options}."
-            raise ValueError(msg) from None
-
+        self.direction = direction
         self._params = params if params is not None else []
         self._fun = fun if fun is not None else []
-        self._time = time if time is not None else []
+        self._start_time = start_time if start_time is not None else []
         self._batches = batches if batches is not None else []
         self._task = task if task is not None else []
 
@@ -60,7 +59,7 @@ class History:
             batch_id = self._get_next_batch_id()
         self._params.append(entry.params)
         self._fun.append(entry.fun)
-        self._time.append(entry.time)
+        self._start_time.append(entry.time)
         self._batches.append(batch_id)
         self._task.append(entry.task)
 
@@ -95,65 +94,84 @@ class History:
     # Function value and monotone function value
     # ----------------------------------------------------------------------------------
 
+    def fun_data(self, cost_model: CostModel, monotone: bool) -> pd.DataFrame:
+        """Return the function value data.
+
+        Args:
+            cost_model: The cost model that is used to calculate the time measure.
+            monotone: Whether to return the monotone function values.
+
+        Returns:
+            pd.DataFrame: The function value data. The columns are: 'task', 'time' and
+                'value'. If monotone is False, value is the fun value, otherwise the
+                monotone function value.
+
+        """
+
     @property
     def fun(self) -> list[float | None]:
         return self._fun
 
     @property
-    def fun_array(self) -> NDArray[np.float64]:
-        return np.array(self._valid_fun, dtype=np.float64)
-
-    @property
-    def _valid_fun(self) -> list[float]:
-        return [f for f in self.fun if f is not None]
-
-    @property
     def monotone_fun(self) -> NDArray[np.float64]:
-        if self.direction == Direction.MINIMIZE:
-            return np.minimum.accumulate(self.fun_array)
-        elif self.direction == Direction.MAXIMIZE:
-            return np.maximum.accumulate(self.fun_array)
+        """The monotone function value of the history.
+
+        If the value is None, the output at that position is nan.
+
+        """
+        return _calculate_monotone_sequence(self.fun, direction=self.direction)
 
     # Acceptance
     # ----------------------------------------------------------------------------------
 
     @property
     def is_accepted(self) -> NDArray[np.bool_]:
+        """Boolean indicator whether a function value is accepted.
+
+        A function value is accepted if it is smaller (or equal) than the monotone
+        function value counterpart in the case of minimization, or larger (or equal) in
+        the case of maximization. If the value is None, the output at that position is
+        False.
+
+        """
+        fun_arr = np.array(self.fun, dtype=np.float64)
         if self.direction == Direction.MINIMIZE:
-            return self.fun_array <= self.monotone_fun
+            return fun_arr <= self.monotone_fun
         elif self.direction == Direction.MAXIMIZE:
-            return self.fun_array >= self.monotone_fun
+            return fun_arr >= self.monotone_fun
 
     # Parameters
     # ----------------------------------------------------------------------------------
+
+    def params_data(self, cost_model: CostModel) -> pd.DataFrame:
+        """Return the parameter data.
+
+        Args:
+            cost_model: The cost model that is used to calculate the time measure.
+
+        Returns:
+            pd.DataFrame: The parameter data. The columns are: 'name' (the parameter
+                names), 'task', 'time' and 'value' (the parameter values).
+
+        """
 
     @property
     def params(self) -> list[PyTree]:
         return self._params
 
     @property
-    def flat_params_array(self) -> NDArray[np.float64]:
-        return np.array(_flatten_params(self._valid_params), dtype=np.float64)
+    def flat_params(self) -> list[list[float]]:
+        return _get_flat_params(self._params)
 
     @property
-    def _valid_params(self) -> list[PyTree]:
-        return [p for p, f in zip(self.params, self.fun, strict=True) if f is not None]
+    def flat_param_names(self) -> list[str]:
+        return _get_flat_param_names(self._params)
 
     # Time
     # ----------------------------------------------------------------------------------
 
-    @property
-    def time(self) -> list[float]:
-        arr = np.array(self._time)
-        return (arr - arr[0]).tolist()
-
-    @property
-    def time_array(self) -> NDArray[np.float64]:
-        return np.array(self._valid_time, dtype=np.float64)
-
-    @property
-    def _valid_time(self) -> list[float]:
-        return [t for t, f in zip(self.time, self.fun, strict=True) if f is not None]
+    def get_time(self, cost_model: CostModel) -> list[float]:
+        pass
 
     # Batches
     # ----------------------------------------------------------------------------------
@@ -174,6 +192,16 @@ class History:
     # ==================================================================================
 
     @property
+    def time(self) -> list[float]:
+        msg = (
+            "The attribute `time` of History will be deprecated soon. Use the "
+            f"`{self.get_time.__name__}` method instead."
+        )
+        warnings.warn(msg, FutureWarning)
+        arr = np.array(self._start_time)
+        return (arr - arr[0]).tolist()
+
+    @property
     def criterion(self) -> list[float | None]:
         msg = "The attribute `criterion` of History is deprecated. Use `fun` instead."
         warnings.warn(msg, FutureWarning)
@@ -181,7 +209,10 @@ class History:
 
     @property
     def runtime(self) -> list[float]:
-        msg = "The attribute `runtime` of History is deprecated. Use `time` instead."
+        msg = (
+            "The attribute `runtime` of History will be deprecated soon. Use the "
+            f"`{self.get_time.__name__}` method instead."
+        )
         warnings.warn(msg, FutureWarning)
         return self.time
 
@@ -191,17 +222,47 @@ class History:
         return getattr(self, key)
 
 
-def _flatten_params(valid_params: list[PyTree]) -> list[list[float]]:
-    is_flat = (
-        len(valid_params) > 0
-        and isinstance(valid_params[0], np.ndarray)
-        and valid_params[0].ndim == 1
-    )
+# ======================================================================================
+# Methods
+# ======================================================================================
 
-    if is_flat:
+
+def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
+    if len(params) > 0 and _is_1d_numpy_array(params[0]):
+        # fast path
         flatten = lambda x: x.tolist()
     else:
         registry = get_registry(extended=True)
         flatten = partial(tree_just_flatten, registry=registry)
 
-    return [flatten(p) for p in valid_params]
+    return [flatten(p) for p in params]
+
+
+def _get_flat_param_names(params: list[PyTree]) -> list[str]:
+    if _is_1d_numpy_array(params[0]):
+        # fast path
+        return np.arange(params[0].size).astype(str).tolist()
+
+    registry = get_registry(extended=True)
+    return leaf_names(params[0], registry=registry)
+
+
+def _is_1d_numpy_array(param: PyTree) -> bool:
+    return isinstance(param, np.ndarray) and param.ndim == 1
+
+
+def _calculate_monotone_sequence(
+    sequence: list[float | None], direction: Direction
+) -> NDArray[np.float64]:
+    sequence_arr = np.array(sequence, dtype=np.float64)  # converts None to nan
+    none_mask = np.isnan(sequence_arr)
+
+    if direction == Direction.MINIMIZE:
+        sequence_arr[none_mask] = np.inf
+        out = np.minimum.accumulate(sequence_arr)
+    elif direction == Direction.MAXIMIZE:
+        sequence_arr[none_mask] = -np.inf
+        out = np.maximum.accumulate(sequence_arr)
+
+    out[none_mask] = np.nan
+    return out
