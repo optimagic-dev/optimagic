@@ -17,8 +17,8 @@ from optimagic.typing import Direction, EvalTask, PyTree
 class HistoryEntry:
     params: PyTree
     fun: float | None
-    time: float
-    # TODO: add stop time
+    start_time: float
+    stop_time: float
     task: EvalTask
 
 
@@ -63,8 +63,8 @@ class History:
             batch_id = self._get_next_batch_id()
         self._params.append(entry.params)
         self._fun.append(entry.fun)
-        self._start_time.append(entry.time)
-        # TODO: add stop time
+        self._start_time.append(entry.start_time)
+        self._stop_time.append(entry.stop_time)
         self._batches.append(batch_id)
         self._task.append(entry.task)
 
@@ -192,7 +192,7 @@ class History:
         # TODO: validate that cost_model is either a CostModel or "wall_time"
 
         if cost_model == "wall_time":
-            return np.array(self._stop_time, dtype=np.float64) - self._start_time[0]
+            return np.array(self.stop_time, dtype=np.float64) - self.start_time[0]
 
         fun_time = self._get_time_per_task(
             task=EvalTask.FUN, cost_factor=cost_model.fun
@@ -210,10 +210,18 @@ class History:
     ) -> NDArray[np.float64]:
         dummy_task = np.array([1 if t == task else 0 for t in self.task])
         if cost_factor is None:
-            cost_factor = np.array(self._stop_time, dtype=np.float64) - np.array(
-                self._start_time, dtype=np.float64
+            cost_factor = np.array(self.stop_time, dtype=np.float64) - np.array(
+                self.start_time, dtype=np.float64
             )
         return np.cumsum(cost_factor * dummy_task)
+
+    @property
+    def start_time(self) -> list[float]:
+        return self._start_time
+
+    @property
+    def stop_time(self) -> list[float]:
+        return self._stop_time
 
     # Batches
     # ----------------------------------------------------------------------------------

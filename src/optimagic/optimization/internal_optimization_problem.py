@@ -306,7 +306,7 @@ class InternalOptimizationProblem:
         issued.
 
         """
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         params = self._converter.params_from_internal(x)
         traceback: None | str = None
         try:
@@ -333,17 +333,19 @@ class InternalOptimizationProblem:
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value, solver_type=self._solver_type, direction=self._direction
         )
+        stop_time = time.perf_counter()
 
         hist_entry = HistoryEntry(
             params=params,
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.FUN,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,
@@ -359,7 +361,7 @@ class InternalOptimizationProblem:
         if self._jac is None:
             raise ValueError("The jac function is not defined.")
 
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         traceback: None | str = None
 
         params = self._converter.params_from_internal(x)
@@ -389,16 +391,19 @@ class InternalOptimizationProblem:
             value=jac_value, direction=self._direction, converter=self._converter, x=x
         )
 
+        stop_time = time.perf_counter()
+
         hist_entry = HistoryEntry(
             params=params,
             fun=None,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.JAC,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=None,
             valid=not bool(traceback),
             raw_fun=None,
@@ -415,7 +420,7 @@ class InternalOptimizationProblem:
         HistoryEntry,
         IterationState,
     ]:
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         traceback: None | str = None
 
         def func(x: NDArray[np.float64]) -> SpecificFunctionValue:
@@ -466,16 +471,19 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             jac_value = -jac_value
 
+        stop_time = time.perf_counter()
+
         hist_entry = HistoryEntry(
             params=self._converter.params_from_internal(x),
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.FUN_AND_JAC,
         )
 
         log_entry = IterationState(
             params=self._converter.params_from_internal(x),
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,
@@ -488,7 +496,7 @@ class InternalOptimizationProblem:
     def _pure_exploration_fun(
         self, x: NDArray[np.float64]
     ) -> tuple[float, HistoryEntry, IterationState]:
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         params = self._converter.params_from_internal(x)
         traceback: None | str = None
 
@@ -521,16 +529,19 @@ class InternalOptimizationProblem:
             if self._direction == Direction.MAXIMIZE:
                 hist_fun_value = np.inf
 
+        stop_time = time.perf_counter()
+
         hist_entry = HistoryEntry(
             params=params,
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.EXPLORATION,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,
@@ -550,7 +561,7 @@ class InternalOptimizationProblem:
         if self._fun_and_jac is None:
             raise ValueError("The fun_and_jac function is not defined.")
 
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         traceback: None | str = None
         params = self._converter.params_from_internal(x)
 
@@ -590,16 +601,19 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             out_jac = -out_jac
 
+        stop_time = time.perf_counter()
+
         hist_entry = HistoryEntry(
             params=params,
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.FUN_AND_JAC,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,

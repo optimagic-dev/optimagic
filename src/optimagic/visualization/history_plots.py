@@ -339,11 +339,18 @@ def _extract_plotting_data_from_results_object(
     if stack_multistart and local_histories is not None:
         stacked = _get_stacked_local_histories(local_histories, res.direction)
         if show_exploration:
+            fun = res.multistart_info.exploration_results.tolist()[::-1] + stacked.fun
+            params = res.multistart_info.exploration_sample[::-1] + stacked.params
+
             stacked = History(
                 direction=stacked.direction,
-                fun=res.multistart_info.exploration_results.tolist()[::-1]
-                + stacked.fun,
-                params=res.multistart_info.exploration_sample[::-1] + stacked.params,
+                fun=fun,
+                params=params,
+                # TODO: This needs to be fixed
+                start_time=len(fun) * [None],
+                stop_time=len(fun) * [None],
+                batches=len(fun) * [None],
+                task=len(fun) * [None],
             )
     else:
         stacked = None
@@ -400,6 +407,10 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         fun=_history["fun"],
         params=_history["params"],
         start_time=_history["time"],
+        # TODO: This needs to be updated
+        stop_time=len(_history["fun"]) * [None],
+        batches=len(_history["fun"]) * [None],
+        task=len(_history["fun"]) * [None],
     )
 
     data = {
@@ -438,4 +449,8 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
         fun=stacked["criterion"],
         params=stacked["params"],
         start_time=stacked["runtime"],
+        # TODO: This needs to be fixed
+        stop_time=len(stacked["criterion"]) * [None],
+        task=len(stacked["criterion"]) * [None],
+        batches=len(stacked["criterion"]) * [None],
     )

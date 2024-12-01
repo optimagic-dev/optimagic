@@ -14,9 +14,27 @@ from optimagic.typing import Direction, EvalTask
 @pytest.fixture
 def history_entries():
     return [
-        HistoryEntry(params={"a": 1, "b": [2, 3]}, fun=1, time=0.1, task=EvalTask.FUN),
-        HistoryEntry(params={"a": 4, "b": [5, 6]}, fun=3, time=0.2, task=EvalTask.FUN),
-        HistoryEntry(params={"a": 7, "b": [8, 9]}, fun=2, time=0.3, task=EvalTask.FUN),
+        HistoryEntry(
+            params={"a": 1, "b": [2, 3]},
+            fun=1,
+            start_time=0.1,
+            stop_time=0.2,
+            task=EvalTask.FUN,
+        ),
+        HistoryEntry(
+            params={"a": 4, "b": [5, 6]},
+            fun=3,
+            start_time=0.2,
+            stop_time=0.3,
+            task=EvalTask.FUN,
+        ),
+        HistoryEntry(
+            params={"a": 7, "b": [8, 9]},
+            fun=2,
+            start_time=0.3,
+            stop_time=0.4,
+            task=EvalTask.FUN,
+        ),
     ]
 
 
@@ -35,8 +53,8 @@ def test_history_add_entry(history_entries):
     assert history.fun == [1, 3, 2]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 1, 2]
-    with pytest.warns(FutureWarning):
-        aaae(history.time, [0.0, 0.1, 0.2])
+    aaae(history.start_time, [0.1, 0.2, 0.3])
+    aaae(history.stop_time, [0.2, 0.3, 0.4])
 
     assert_array_equal(history.monotone_fun, np.array([1, 1, 1], dtype=np.float64))
     assert_array_equal(
@@ -58,8 +76,8 @@ def test_history_add_batch(history_entries):
     assert history.fun == [1, 3, 2]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 0, 0]
-    with pytest.warns(FutureWarning):
-        aaae(history.time, [0.0, 0.1, 0.2])
+    aaae(history.start_time, [0.1, 0.2, 0.3])
+    aaae(history.stop_time, [0.2, 0.3, 0.4])
 
     assert_array_equal(history.monotone_fun, np.array([1, 3, 3], dtype=np.float64))
     assert_array_equal(
@@ -96,8 +114,8 @@ def test_history_from_data(history_data):
     assert history.fun == history_data["fun"]
     assert history.task == history_data["task"]
     assert history.batches == history_data["batches"]
-    with pytest.warns(FutureWarning):
-        aaae(history.time, history_data["start_time"])
+    aaae(history.start_time, history_data["start_time"])
+    aaae(history.stop_time, history_data["stop_time"])
 
     assert_array_equal(history.monotone_fun, np.array([1, 3, 3], dtype=np.float64))
     assert_array_equal(
@@ -128,9 +146,3 @@ def history():
     }
 
     return History(direction=Direction.MINIMIZE, **data)
-
-
-def test_get_time_only_fun_time(history):
-    got = history.get_time(cost_model=only_fun_time)
-    exp = [1, 1, 2, 2, 3]
-    aaae(got, exp)
