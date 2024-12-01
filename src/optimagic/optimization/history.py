@@ -251,7 +251,7 @@ class History:
     def time(self) -> list[float]:
         msg = (
             "The attribute `time` of History will be deprecated soon. Use the "
-            f"`{self._get_time.__name__}` method instead."
+            "`start_time` method instead."
         )
         warnings.warn(msg, FutureWarning)
         arr = np.array(self._start_time)
@@ -267,7 +267,7 @@ class History:
     def runtime(self) -> list[float]:
         msg = (
             "The attribute `runtime` of History will be deprecated soon. Use the "
-            f"`{self._get_time.__name__}` method instead."
+            "`start_time` method instead."
         )
         warnings.warn(msg, FutureWarning)
         return self.time
