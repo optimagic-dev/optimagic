@@ -96,7 +96,7 @@ class History:
     # Properties to access the history
     # ==================================================================================
 
-    # Function value and monotone function value
+    # Function data, function value, and monotone function value
     # ----------------------------------------------------------------------------------
 
     def fun_data(self, cost_model: CostModel, monotone: bool) -> pd.DataFrame:
@@ -152,7 +152,7 @@ class History:
         elif self.direction == Direction.MAXIMIZE:
             return fun_arr >= self.monotone_fun
 
-    # Parameters
+    # Parameter data, params, flat params, and flat params names
     # ----------------------------------------------------------------------------------
 
     def params_data(self, cost_model: CostModel) -> pd.DataFrame:
@@ -163,13 +163,16 @@ class History:
 
         Returns:
             pd.DataFrame: The parameter data. The columns are: 'name' (the parameter
-                names), 'task', 'time' and 'value' (the parameter values).
+                names), 'value' (the parameter values), 'task', and 'time'.
 
         """
-        data = pd.DataFrame(self.flat_params, columns=self.flat_param_names)
-        data["task"] = _task_as_categorical(self.task)
-        data["time"] = self.get_time(cost_model)
-        return data
+        wide = pd.DataFrame(self.flat_params, columns=self.flat_param_names)
+        wide["task"] = _task_as_categorical(self.task)
+        wide["time"] = self.get_time(cost_model)
+        data = pd.melt(
+            wide, var_name="name", value_name="value", id_vars=["task", "time"]
+        )
+        return data.reindex(columns=["name", "value", "task", "time"])
 
     @property
     def params(self) -> list[PyTree]:

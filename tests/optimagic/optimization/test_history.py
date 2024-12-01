@@ -3,7 +3,10 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
+from pandas.testing import assert_frame_equal
+from pybaum import tree_map
 
+import optimagic as om
 from optimagic.optimization.history import (
     History,
     HistoryEntry,
@@ -17,7 +20,7 @@ from optimagic.optimization.history import (
 from optimagic.typing import Direction, EvalTask
 
 # ======================================================================================
-# Test histories add entries and batches methods
+# Test methods to add data to History (add_entry, add_batch, init)
 # ======================================================================================
 
 
@@ -95,14 +98,8 @@ def test_history_add_batch(history_entries):
     )
 
 
-# ======================================================================================
-# Test history from data method
-# ======================================================================================
-
-
-@pytest.fixture
-def history_data():
-    return {
+def test_history_from_data():
+    data = {
         "params": [{"a": 1, "b": [2, 3]}, {"a": 4, "b": [5, 6]}, {"a": 7, "b": [8, 9]}],
         "fun": [1, 3, 2],
         "task": [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN],
@@ -111,26 +108,218 @@ def history_data():
         "stop_time": [0.1, 0.25, 0.4],
     }
 
-
-def test_history_from_data(history_data):
     history = History(
         direction=Direction.MAXIMIZE,
-        **history_data,
+        **data,
     )
 
     assert history.direction == Direction.MAXIMIZE
 
-    assert history.params == history_data["params"]
-    assert history.fun == history_data["fun"]
-    assert history.task == history_data["task"]
-    assert history.batches == history_data["batches"]
-    aaae(history.start_time, history_data["start_time"])
-    aaae(history.stop_time, history_data["stop_time"])
+    assert history.params == data["params"]
+    assert history.fun == data["fun"]
+    assert history.task == data["task"]
+    assert history.batches == data["batches"]
+    aaae(history.start_time, data["start_time"])
+    aaae(history.stop_time, data["stop_time"])
 
     assert_array_equal(history.monotone_fun, np.array([1, 3, 3], dtype=np.float64))
     assert_array_equal(
         history.flat_params, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
     )
+
+
+# ======================================================================================
+# Test functionality of History
+# ======================================================================================
+
+
+@pytest.fixture
+def params():
+    params_tree = {"a": None, "b": {"c": None, "d": (None, None)}}
+    return [
+        tree_map(lambda _: k, params_tree, is_leaf=lambda l: l is None)  # noqa: B023
+        for k in range(6)
+    ]
+
+
+@pytest.fixture
+def history(params):
+    data = {
+        "fun": [10, None, 9, None, 2, 5],
+        "task": [
+            EvalTask.FUN,
+            EvalTask.JAC,
+            EvalTask.FUN,
+            EvalTask.JAC,
+            EvalTask.FUN,
+            EvalTask.FUN_AND_JAC,
+        ],
+        "start_time": [0, 2, 5, 7, 10, 12],
+        "stop_time": [1, 4, 6, 9, 11, 14],
+        "params": params,
+        "batches": [0, 0, 1, 1, 2, 2],
+    }
+
+    return History(direction=Direction.MINIMIZE, **data)
+
+
+# Function data, function value, and monotone function value
+# --------------------------------------------------------------------------------------
+
+
+def test_history_fun_data_with_fun_evaluations_cost_model(history):
+    got = history.fun_data(
+        cost_model=om.timing.fun_evaluations,
+        monotone=False,
+    )
+    exp = pd.DataFrame(
+        {
+            "fun": [10, np.nan, 9, np.nan, 2, 5],
+            "task": [
+                "fun",
+                "jac",
+                "fun",
+                "jac",
+                "fun",
+                "fun_and_jac",
+            ],
+            "time": [1, 1, 2, 2, 3, 4],
+        }
+    )
+    assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
+
+
+def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history):
+    got = history.fun_data(
+        cost_model=om.timing.fun_evaluations,
+        monotone=True,
+    )
+    exp = pd.DataFrame(
+        {
+            "fun": [10, np.nan, 9, np.nan, 2, 2],
+            "task": [
+                "fun",
+                "jac",
+                "fun",
+                "jac",
+                "fun",
+                "fun_and_jac",
+            ],
+            "time": [1, 1, 2, 2, 3, 4],
+        }
+    )
+    assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
+
+
+@pytest.mark.xfail(reason="Must be fixed!")
+def test_history_fun_data_with_fun_batches_cost_model(history):
+    got = history.fun_data(
+        cost_model=om.timing.fun_batches,
+        monotone=False,
+    )
+    exp = pd.DataFrame(
+        {
+            "fun": [10, np.nan, 9, np.nan, 2, 5],
+            "task": [
+                "fun",
+                "jac",
+                "fun",
+                "jac",
+                "fun",
+                "fun_and_jac",
+            ],
+            "time": [1, 1, 2, 2, 3, 3],
+        }
+    )
+    assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
+
+
+def test_history_fun_data_with_evaluation_time_cost_model(history):
+    got = history.fun_data(
+        cost_model=om.timing.evaluation_time,
+        monotone=False,
+    )
+    exp = pd.DataFrame(
+        {
+            "fun": [10, np.nan, 9, np.nan, 2, 5],
+            "task": [
+                "fun",
+                "jac",
+                "fun",
+                "jac",
+                "fun",
+                "fun_and_jac",
+            ],
+            "time": [1, 3, 4, 6, 7, 9],
+        }
+    )
+    assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
+
+
+def test_fun_property(history):
+    assert_array_equal(history.fun, [10, None, 9, None, 2, 5])
+
+
+def test_monotone_fun_property(history):
+    assert_array_equal(history.monotone_fun, np.array([10, np.nan, 9, np.nan, 2, 2]))
+
+
+# Acceptance
+# --------------------------------------------------------------------------------------
+
+
+def test_is_accepted_property(history):
+    got = history.is_accepted
+    exp = np.array([True, False, True, False, True, False])
+    assert_array_equal(got, exp)
+
+
+# Parameter data, params, flat params, and flat params names
+# --------------------------------------------------------------------------------------
+
+
+def test_params_data_fun_evaluations_cost_model(history):
+    got = history.params_data(cost_model=om.timing.fun_evaluations)
+    exp = pd.DataFrame(
+        {
+            "name": np.repeat(
+                [
+                    "a",
+                    "b_c",
+                    "b_d_0",
+                    "b_d_1",
+                ],
+                6,
+            ),
+            "value": np.tile(list(range(6)), 4),
+            "task": np.tile(
+                [
+                    "fun",
+                    "jac",
+                    "fun",
+                    "jac",
+                    "fun",
+                    "fun_and_jac",
+                ],
+                4,
+            ),
+            "time": np.tile([1, 1, 2, 2, 3, 4], 4),
+        }
+    )
+    assert_frame_equal(got, exp, check_categorical=False, check_dtype=False)
+
+
+def test_params_property(history, params):
+    assert history.params == params
+
+
+def test_flat_params_property(history):
+    got = history.flat_params
+    assert_array_equal(got, [[k for _ in range(4)] for k in range(6)])
+
+
+def test_flat_param_names(history):
+    assert history.flat_param_names == ["a", "b_c", "b_d_0", "b_d_1"]
 
 
 # ======================================================================================
@@ -200,23 +389,3 @@ def test_task_as_categorical():
     got = _task_as_categorical(task)
     assert got.tolist() == ["fun", "jac", "fun_and_jac"]
     assert isinstance(got.dtype, pd.CategoricalDtype)
-
-
-@pytest.fixture
-def history():
-    data = {
-        "fun": [10, None, 9, None, 5],
-        "task": [
-            EvalTask.FUN,
-            EvalTask.JAC,
-            EvalTask.FUN,
-            EvalTask.JAC,
-            EvalTask.FUN,
-        ],
-        "start_time": [0, 2, 5, 7, 10],
-        "stop_time": [1, 4, 6, 9, 11],
-        "params": [3, 3, 2, 2, 1],
-        "batches": [0, 1, 2, 3, 4],
-    }
-
-    return History(direction=Direction.MINIMIZE, **data)
