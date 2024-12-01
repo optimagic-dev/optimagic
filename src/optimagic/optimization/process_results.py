@@ -8,7 +8,7 @@ from optimagic.optimization.convergence_report import get_convergence_report
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import MultistartInfo, OptimizeResult
 from optimagic.parameters.conversion import Converter
-from optimagic.typing import AggregationLevel, Direction, PyTree
+from optimagic.typing import AggregationLevel, Direction, EvalTask, PyTree
 from optimagic.utilities import isscalar
 
 
@@ -115,7 +115,7 @@ def process_multistart_result(
             start_time=[np.nan for _ in info.local_optima],
             stop_time=[np.nan for _ in info.local_optima],
             batches=list(range(len(info.local_optima))),
-            task=len(info.local_optima) * [None],
+            task=len(info.local_optima) * [EvalTask.FUN],
         )
         conv_report = get_convergence_report(report_history)
 

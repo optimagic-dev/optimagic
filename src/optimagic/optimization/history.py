@@ -113,7 +113,7 @@ class History:
 
         """
         if monotone:
-            fun = self.monotone_fun
+            fun: list[float | None] | NDArray[np.float64] = self.monotone_fun
         else:
             fun = self.fun
         task = _task_as_categorical(self.task)
@@ -213,10 +213,13 @@ class History:
     ) -> NDArray[np.float64]:
         dummy_task = np.array([1 if t == task else 0 for t in self.task])
         if cost_factor is None:
-            cost_factor = np.array(self.stop_time, dtype=np.float64) - np.array(
-                self.start_time, dtype=np.float64
-            )
-        return np.cumsum(cost_factor * dummy_task)
+            factor: float | NDArray[np.float64] = np.array(
+                self.stop_time, dtype=np.float64
+            ) - np.array(self.start_time, dtype=np.float64)
+        else:
+            factor = cost_factor
+
+        return np.cumsum(factor * dummy_task)
 
     @property
     def start_time(self) -> list[float]:
@@ -326,13 +329,15 @@ def _calculate_monotone_sequence(
 # ======================================================================================
 
 
-def _validate_args_are_all_none_or_lists_of_same_length(*args):
+def _validate_args_are_all_none_or_lists_of_same_length(
+    *args: list[Any] | None,
+) -> None:
     all_none = all(arg is None for arg in args)
     all_list = all(isinstance(arg, list) for arg in args)
 
     if not all_none:
         if all_list:
-            unique_list_lengths = set(map(len, args))
+            unique_list_lengths = set(map(len, args))  # type: ignore[arg-type]
 
             if len(unique_list_lengths) != 1:
                 raise ValueError("All list arguments must have the same length.")
@@ -341,7 +346,7 @@ def _validate_args_are_all_none_or_lists_of_same_length(*args):
             raise ValueError("All arguments must be lists of the same length or None.")
 
 
-def _task_as_categorical(task: list[EvalTask]) -> pd.Series:
+def _task_as_categorical(task: list[EvalTask]) -> pd.Categorical:
     return pd.Categorical(
         [t.value for t in task], categories=[t.value for t in EvalTask]
     )
