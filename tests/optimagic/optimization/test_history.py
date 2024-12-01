@@ -3,8 +3,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
 
-from optimagic.optimization.cost_model import CostModel, TimeType
-from optimagic.optimization.history import History, HistoryEntry, _get_time
+from optimagic.optimization.history import History, HistoryEntry
 from optimagic.typing import Direction, EvalTask
 
 # ======================================================================================
@@ -125,13 +124,13 @@ def history():
         "start_time": [0, 2, 5, 7, 10],
         "stop_time": [1, 4, 6, 9, 11],
         "params": [3, 3, 2, 2, 1],
+        "batches": [0, 1, 2, 3, 4],
     }
 
     return History(direction=Direction.MINIMIZE, **data)
 
 
 def test_get_time_only_fun_time(history):
-    only_fun_time = CostModel(fun=TimeType.FUNC_TIME, label="Function time (seconds)")
-    got = _get_time(history, cost_model=only_fun_time)
+    got = history.get_time(cost_model=only_fun_time)
     exp = [1, 1, 2, 2, 3]
     aaae(got, exp)

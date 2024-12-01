@@ -1,15 +1,15 @@
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pybaum import leaf_names, tree_just_flatten
 
-from optimagic.optimization.cost_model import CostModel
 from optimagic.parameters.tree_registry import get_registry
+from optimagic.timing import CostModel
 from optimagic.typing import Direction, EvalTask, PyTree
 
 
@@ -42,7 +42,7 @@ class History:
         recover a history from a log.
 
         """
-        _validate_history_args_are_none_or_same_length(
+        _validate_history_args_are_all_none_or_lists_of_same_length(
             params, fun, start_time, stop_time, batches, task
         )
 
@@ -112,6 +112,17 @@ class History:
                 monotone function value.
 
         """
+        time = self.get_time(cost_model)
+        if monotone:
+            fun = self.monotone_fun
+        else:
+            fun = self.fun
+
+        task_cat = pd.Categorical(
+            [t.value for t in self.task], categories=[t.value for t in EvalTask]
+        )
+
+        return pd.DataFrame({"fun": fun, "task": task_cat, "time": time})
 
     @property
     def fun(self) -> list[float | None]:
@@ -175,8 +186,34 @@ class History:
     # Time
     # ----------------------------------------------------------------------------------
 
-    def get_time(self, cost_model: CostModel) -> list[float]:
-        pass
+    def get_time(
+        self, cost_model: CostModel | Literal["wall_time"]
+    ) -> NDArray[np.float64]:
+        # TODO: validate that cost_model is either a CostModel or "wall_time"
+
+        if cost_model == "wall_time":
+            return np.array(self._stop_time, dtype=np.float64) - self._start_time[0]
+
+        fun_time = self._get_time_per_task(
+            task=EvalTask.FUN, cost_factor=cost_model.fun
+        )
+        jac_time = self._get_time_per_task(
+            task=EvalTask.JAC, cost_factor=cost_model.jac
+        )
+        fun_and_jac_time = self._get_time_per_task(
+            task=EvalTask.FUN_AND_JAC, cost_factor=cost_model.fun_and_jac
+        )
+        return fun_time + jac_time + fun_and_jac_time
+
+    def _get_time_per_task(
+        self, task: EvalTask, cost_factor: float | None
+    ) -> NDArray[np.float64]:
+        dummy_task = np.array([1 if t == task else 0 for t in self.task])
+        if cost_factor is None:
+            cost_factor = np.array(self._stop_time, dtype=np.float64) - np.array(
+                self._start_time, dtype=np.float64
+            )
+        return np.cumsum(cost_factor * dummy_task)
 
     # Batches
     # ----------------------------------------------------------------------------------
@@ -273,16 +310,12 @@ def _calculate_monotone_sequence(
     return out
 
 
-def _get_time(history: History, cost_model: CostModel) -> list[float]:
-    pass
-
-
 # ======================================================================================
 # Misc
 # ======================================================================================
 
 
-def _validate_history_args_are_none_or_same_length(*args):
+def _validate_history_args_are_all_none_or_lists_of_same_length(*args):
     """Validate the arguments of the History class initializer, except for `direction`.
 
     Checks that all arguments are either None or lists of the same length.
