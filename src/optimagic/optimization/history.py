@@ -18,6 +18,7 @@ class HistoryEntry:
     params: PyTree
     fun: float | None
     time: float
+    # TODO: add stop time
     task: EvalTask
 
 
@@ -29,6 +30,7 @@ class History:
         params: list[PyTree] | None = None,
         fun: list[float | None] | None = None,
         start_time: list[float] | None = None,
+        stop_time: list[float] | None = None,
         batches: list[int] | None = None,
         task: list[EvalTask] | None = None,
     ) -> None:
@@ -40,10 +42,15 @@ class History:
         recover a history from a log.
 
         """
+        _validate_history_args_are_none_or_same_length(
+            params, fun, start_time, stop_time, batches, task
+        )
+
         self.direction = direction
         self._params = params if params is not None else []
         self._fun = fun if fun is not None else []
         self._start_time = start_time if start_time is not None else []
+        self._stop_time = stop_time if stop_time is not None else []
         self._batches = batches if batches is not None else []
         self._task = task if task is not None else []
 
@@ -57,6 +64,7 @@ class History:
         self._params.append(entry.params)
         self._fun.append(entry.fun)
         self._start_time.append(entry.time)
+        # TODO: add stop time
         self._batches.append(batch_id)
         self._task.append(entry.task)
 
@@ -267,3 +275,28 @@ def _calculate_monotone_sequence(
 
 def _get_time(history: History, cost_model: CostModel) -> list[float]:
     pass
+
+
+# ======================================================================================
+# Misc
+# ======================================================================================
+
+
+def _validate_history_args_are_none_or_same_length(*args):
+    """Validate the arguments of the History class initializer, except for `direction`.
+
+    Checks that all arguments are either None or lists of the same length.
+
+    """
+    all_none = all(arg is None for arg in args)
+    all_list = all(isinstance(arg, list) for arg in args)
+
+    if not all_none:
+        if all_list:
+            unique_list_lengths = set(map(len, args))
+
+            if len(unique_list_lengths) != 1:
+                raise ValueError("All list arguments must have the same length.")
+
+        else:
+            raise ValueError("All arguments must be lists of the same length or None.")
