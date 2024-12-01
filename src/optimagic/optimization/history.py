@@ -8,6 +8,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from pybaum import leaf_names, tree_just_flatten
 
+from optimagic.optimization.cost_model import CostModel
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import Direction, EvalTask, PyTree
 
@@ -18,10 +19,6 @@ class HistoryEntry:
     fun: float | None
     time: float
     task: EvalTask
-
-
-class CostModel:
-    pass
 
 
 class History:
@@ -266,3 +263,7 @@ def _calculate_monotone_sequence(
 
     out[none_mask] = np.nan
     return out
+
+
+def _get_time(history: History, cost_model: CostModel) -> list[float]:
+    pass

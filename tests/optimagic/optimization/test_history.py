@@ -6,6 +6,10 @@ from numpy.testing import assert_array_equal
 from optimagic.optimization.history import History, HistoryEntry
 from optimagic.typing import Direction, EvalTask
 
+# ======================================================================================
+# Test histories add entries and batches methods
+# ======================================================================================
+
 
 @pytest.fixture
 def history_entries():
@@ -31,14 +35,13 @@ def test_history_add_entry(history_entries):
     assert history.fun == [1, 3, 2]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 1, 2]
-    aaae(history.time, [0.0, 0.1, 0.2])
+    with pytest.warns(FutureWarning):
+        aaae(history.time, [0.0, 0.1, 0.2])
 
-    assert_array_equal(history.fun_array, np.array([1, 3, 2], dtype=np.float64))
     assert_array_equal(history.monotone_fun, np.array([1, 1, 1], dtype=np.float64))
     assert_array_equal(
-        history.flat_params_array, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
+        history.flat_params, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
     )
-    aaae(history.time_array, np.array([0.0, 0.1, 0.2]))
 
 
 def test_history_add_batch(history_entries):
@@ -55,43 +58,47 @@ def test_history_add_batch(history_entries):
     assert history.fun == [1, 3, 2]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 0, 0]
-    aaae(history.time, [0.0, 0.1, 0.2])
+    with pytest.warns(FutureWarning):
+        aaae(history.time, [0.0, 0.1, 0.2])
 
-    assert_array_equal(history.fun_array, np.array([1, 3, 2], dtype=np.float64))
     assert_array_equal(history.monotone_fun, np.array([1, 3, 3], dtype=np.float64))
     assert_array_equal(
-        history.flat_params_array, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
+        history.flat_params, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
     )
-    aaae(history.time_array, np.array([0.0, 0.1, 0.2]))
 
 
-def test_history_from_data():
-    params = [{"a": 1, "b": [2, 3]}, {"a": 4, "b": [5, 6]}, {"a": 7, "b": [8, 9]}]
-    fun = [1, 3, 2]
-    task = [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
-    batches = [0, 0, 0]
-    time = [0.0, 0.1, 0.2]
+# ======================================================================================
+# Test history from data method
+# ======================================================================================
 
+
+@pytest.fixture
+def history_data():
+    return {
+        "params": [{"a": 1, "b": [2, 3]}, {"a": 4, "b": [5, 6]}, {"a": 7, "b": [8, 9]}],
+        "fun": [1, 3, 2],
+        "task": [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN],
+        "batches": [0, 0, 0],
+        "start_time": [0.0, 0.1, 0.2],
+    }
+
+
+def test_history_from_data(history_data):
     history = History(
         direction=Direction.MAXIMIZE,
-        fun=fun,
-        params=params,
-        task=task,
-        batches=batches,
-        start_time=time,
+        **history_data,
     )
 
     assert history.direction == Direction.MAXIMIZE
 
-    assert history.params == params
-    assert history.fun == fun
-    assert history.task == task
-    assert history.batches == batches
-    aaae(history.time, time)
+    assert history.params == history_data["params"]
+    assert history.fun == history_data["fun"]
+    assert history.task == history_data["task"]
+    assert history.batches == history_data["batches"]
+    with pytest.warns(FutureWarning):
+        aaae(history.time, history_data["start_time"])
 
-    assert_array_equal(history.fun_array, np.array(fun, dtype=np.float64))
     assert_array_equal(history.monotone_fun, np.array([1, 3, 3], dtype=np.float64))
     assert_array_equal(
-        history.flat_params_array, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
+        history.flat_params, np.arange(1, 10, dtype=np.float64).reshape(3, 3)
     )
-    aaae(history.time_array, np.array(time))
