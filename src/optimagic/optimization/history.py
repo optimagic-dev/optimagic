@@ -117,7 +117,7 @@ class History:
         else:
             fun = self.fun
         task = _task_as_categorical(self.task)
-        time = self.get_time(cost_model)
+        time = self._get_time(cost_model)
         return pd.DataFrame({"fun": fun, "task": task, "time": time})
 
     @property
@@ -168,7 +168,7 @@ class History:
         """
         wide = pd.DataFrame(self.flat_params, columns=self.flat_param_names)
         wide["task"] = _task_as_categorical(self.task)
-        wide["time"] = self.get_time(cost_model)
+        wide["time"] = self._get_time(cost_model)
         data = pd.melt(
             wide, var_name="name", value_name="value", id_vars=["task", "time"]
         )
@@ -189,7 +189,7 @@ class History:
     # Time
     # ----------------------------------------------------------------------------------
 
-    def get_time(
+    def _get_time(
         self, cost_model: CostModel | Literal["wall_time"]
     ) -> NDArray[np.float64]:
         # TODO: validate that cost_model is either a CostModel or "wall_time"
@@ -248,7 +248,7 @@ class History:
     def time(self) -> list[float]:
         msg = (
             "The attribute `time` of History will be deprecated soon. Use the "
-            f"`{self.get_time.__name__}` method instead."
+            f"`{self._get_time.__name__}` method instead."
         )
         warnings.warn(msg, FutureWarning)
         arr = np.array(self._start_time)
@@ -264,7 +264,7 @@ class History:
     def runtime(self) -> list[float]:
         msg = (
             "The attribute `runtime` of History will be deprecated soon. Use the "
-            f"`{self.get_time.__name__}` method instead."
+            f"`{self._get_time.__name__}` method instead."
         )
         warnings.warn(msg, FutureWarning)
         return self.time

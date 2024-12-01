@@ -137,7 +137,7 @@ def test_history_from_data():
 def params():
     params_tree = {"a": None, "b": {"c": None, "d": (None, None)}}
     return [
-        tree_map(lambda _: k, params_tree, is_leaf=lambda l: l is None)  # noqa: B023
+        tree_map(lambda _: k, params_tree, is_leaf=lambda leaf: leaf is None)  # noqa: B023
         for k in range(6)
     ]
 
@@ -320,6 +320,83 @@ def test_flat_params_property(history):
 
 def test_flat_param_names(history):
     assert history.flat_param_names == ["a", "b_c", "b_d_0", "b_d_1"]
+
+
+# Time
+# --------------------------------------------------------------------------------------
+
+
+def test_get_time_per_task_fun(history):
+    got = history._get_time_per_task(EvalTask.FUN, cost_factor=1)
+    exp = np.array([1, 1, 2, 2, 3, 3])
+    assert_array_equal(got, exp)
+
+
+def test_get_time_per_task_jac(history):
+    got = history._get_time_per_task(EvalTask.JAC, cost_factor=1)
+    exp = np.array([0, 1, 1, 2, 2, 2])
+    assert_array_equal(got, exp)
+
+
+def test_get_time_per_task_fun_and_jac(history):
+    got = history._get_time_per_task(EvalTask.FUN_AND_JAC, cost_factor=1)
+    exp = np.array([0, 0, 0, 0, 0, 1])
+    assert_array_equal(got, exp)
+
+
+def test_get_time_cost_model(history):
+    cost_model = om.timing.CostModel(
+        fun=0.5, jac=1, fun_and_jac=2, label="test", aggregate_batch_time=sum
+    )
+    got = history._get_time(cost_model)
+    exp = np.array(
+        [
+            0.5,
+            0.5 + 1,
+            1 + 1,
+            1 + 2,
+            1.5 + 2,
+            1.5 + 2 + 2,
+        ]
+    )
+    assert_array_equal(got, exp)
+
+
+def test_get_time_wall_time(history):
+    got = history._get_time(cost_model="wall_time")
+    exp = np.array([1, 4, 6, 9, 11, 14])
+    assert_array_equal(got, exp)
+
+
+def test_start_time_property(history):
+    assert history.start_time == [0, 2, 5, 7, 10, 12]
+
+
+def test_stop_time_property(history):
+    assert history.stop_time == [1, 4, 6, 9, 11, 14]
+
+
+# Batches
+# --------------------------------------------------------------------------------------
+
+
+def test_batches_property(history):
+    assert history.batches == [0, 0, 1, 1, 2, 2]
+
+
+# Tasks
+# --------------------------------------------------------------------------------------
+
+
+def test_task_property(history):
+    assert history.task == [
+        EvalTask.FUN,
+        EvalTask.JAC,
+        EvalTask.FUN,
+        EvalTask.JAC,
+        EvalTask.FUN,
+        EvalTask.FUN_AND_JAC,
+    ]
 
 
 # ======================================================================================
