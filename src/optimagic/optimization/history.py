@@ -42,7 +42,7 @@ class History:
         recover a history from a log.
 
         """
-        _validate_history_args_are_all_none_or_lists_of_same_length(
+        _validate_args_are_all_none_or_lists_of_same_length(
             params, fun, start_time, stop_time, batches, task
         )
 
@@ -112,17 +112,13 @@ class History:
                 monotone function value.
 
         """
-        time = self.get_time(cost_model)
         if monotone:
             fun = self.monotone_fun
         else:
             fun = self.fun
-
-        task_cat = pd.Categorical(
-            [t.value for t in self.task], categories=[t.value for t in EvalTask]
-        )
-
-        return pd.DataFrame({"fun": fun, "task": task_cat, "time": time})
+        task = _task_as_categorical(self.task)
+        time = self.get_time(cost_model)
+        return pd.DataFrame({"fun": fun, "task": task, "time": time})
 
     @property
     def fun(self) -> list[float | None]:
@@ -170,6 +166,10 @@ class History:
                 names), 'task', 'time' and 'value' (the parameter values).
 
         """
+        data = pd.DataFrame(self.flat_params, columns=self.flat_param_names)
+        data["task"] = _task_as_categorical(self.task)
+        data["time"] = self.get_time(cost_model)
+        return data
 
     @property
     def params(self) -> list[PyTree]:
@@ -181,7 +181,7 @@ class History:
 
     @property
     def flat_param_names(self) -> list[str]:
-        return _get_flat_param_names(self._params)
+        return _get_flat_param_names(param=self._params[0])
 
     # Time
     # ----------------------------------------------------------------------------------
@@ -278,7 +278,7 @@ class History:
 
 
 def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
-    if len(params) > 0 and _is_1d_numpy_array(params[0]):
+    if len(params) > 0 and _is_1d_array(params[0]):
         # fast path
         flatten = lambda x: x.tolist()
     else:
@@ -288,16 +288,16 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
     return [flatten(p) for p in params]
 
 
-def _get_flat_param_names(params: list[PyTree]) -> list[str]:
-    if _is_1d_numpy_array(params[0]):
+def _get_flat_param_names(param: PyTree) -> list[str]:
+    if _is_1d_array(param):
         # fast path
-        return np.arange(params[0].size).astype(str).tolist()
+        return np.arange(param.size).astype(str).tolist()
 
     registry = get_registry(extended=True)
-    return leaf_names(params[0], registry=registry)
+    return leaf_names(param, registry=registry)
 
 
-def _is_1d_numpy_array(param: PyTree) -> bool:
+def _is_1d_array(param: PyTree) -> bool:
     return isinstance(param, np.ndarray) and param.ndim == 1
 
 
@@ -323,12 +323,7 @@ def _calculate_monotone_sequence(
 # ======================================================================================
 
 
-def _validate_history_args_are_all_none_or_lists_of_same_length(*args):
-    """Validate the arguments of the History class initializer, except for `direction`.
-
-    Checks that all arguments are either None or lists of the same length.
-
-    """
+def _validate_args_are_all_none_or_lists_of_same_length(*args):
     all_none = all(arg is None for arg in args)
     all_list = all(isinstance(arg, list) for arg in args)
 
@@ -341,3 +336,9 @@ def _validate_history_args_are_all_none_or_lists_of_same_length(*args):
 
         else:
             raise ValueError("All arguments must be lists of the same length or None.")
+
+
+def _task_as_categorical(task: list[EvalTask]) -> pd.Series:
+    return pd.Categorical(
+        [t.value for t in task], categories=[t.value for t in EvalTask]
+    )

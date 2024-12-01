@@ -1,9 +1,19 @@
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
 
-from optimagic.optimization.history import History, HistoryEntry
+from optimagic.optimization.history import (
+    History,
+    HistoryEntry,
+    _calculate_monotone_sequence,
+    _get_flat_param_names,
+    _get_flat_params,
+    _is_1d_array,
+    _task_as_categorical,
+    _validate_args_are_all_none_or_lists_of_same_length,
+)
 from optimagic.typing import Direction, EvalTask
 
 # ======================================================================================
@@ -124,8 +134,72 @@ def test_history_from_data(history_data):
 
 
 # ======================================================================================
-# Test _get_time method
+# Unit tests
 # ======================================================================================
+
+
+def test_is_1d_array():
+    assert _is_1d_array(np.arange(2)) is True
+    assert _is_1d_array(np.eye(2)) is False
+    assert _is_1d_array([0, 1]) is False
+
+
+def test_get_flat_params_pytree():
+    params = [
+        {"a": 1, "b": [0, 1], "c": np.arange(2)},
+        {"a": 2, "b": [1, 2], "c": np.arange(2)},
+    ]
+    got = _get_flat_params(params)
+    exp = [
+        [1, 0, 1, 0, 1],
+        [2, 1, 2, 0, 1],
+    ]
+    assert_array_equal(got, exp)
+
+
+def test_get_flat_params_fast_path():
+    params = [np.arange(2)]
+    got = _get_flat_params(params)
+    exp = [[0, 1]]
+    assert_array_equal(got, exp)
+
+
+def test_get_flat_param_names():
+    got = _get_flat_param_names(param={"a": 0, "b": [0, 1], "c": np.arange(2)})
+    exp = ["a", "b_0", "b_1", "c_0", "c_1"]
+    assert got == exp
+
+
+def test_calculate_monotone_sequence_maximize():
+    sequence = [0, 1, 0, 0, 2, 10, 0]
+    exp = [0, 1, 1, 1, 2, 10, 10]
+    got = _calculate_monotone_sequence(sequence, direction=Direction.MAXIMIZE)
+    assert_array_equal(exp, got)
+
+
+def test_calculate_monotone_sequence_minimize():
+    sequence = [10, 11, 8, 12, 0, 5]
+    exp = [10, 10, 8, 8, 0, 0]
+    got = _calculate_monotone_sequence(sequence, direction=Direction.MINIMIZE)
+    assert_array_equal(exp, got)
+
+
+def test_validate_args_are_all_none_or_lists_of_same_length():
+    _validate_args_are_all_none_or_lists_of_same_length(None, None)
+    _validate_args_are_all_none_or_lists_of_same_length([1], [1])
+
+    with pytest.raises(ValueError, match="All list arguments must have the same"):
+        _validate_args_are_all_none_or_lists_of_same_length([1], [1, 2])
+
+    with pytest.raises(ValueError, match="All arguments must be lists of the same"):
+        _validate_args_are_all_none_or_lists_of_same_length(None, [1])
+
+
+def test_task_as_categorical():
+    task = [EvalTask.FUN, EvalTask.JAC, EvalTask.FUN_AND_JAC]
+    got = _task_as_categorical(task)
+    assert got.tolist() == ["fun", "jac", "fun_and_jac"]
+    assert isinstance(got.dtype, pd.CategoricalDtype)
 
 
 @pytest.fixture
