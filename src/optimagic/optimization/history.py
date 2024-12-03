@@ -192,7 +192,8 @@ class History:
     def _get_time(
         self, cost_model: CostModel | Literal["wall_time"]
     ) -> NDArray[np.float64]:
-        # TODO: validate that cost_model is either a CostModel or "wall_time"
+        if not isinstance(cost_model, CostModel) and cost_model != "wall_time":
+            raise ValueError("cost_model must be a CostModel or 'wall_time'.")
 
         if cost_model == "wall_time":
             return np.array(self.stop_time, dtype=np.float64) - self.start_time[0]
