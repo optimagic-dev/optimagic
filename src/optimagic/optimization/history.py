@@ -403,17 +403,17 @@ def _batch_apply(
         other values of that batch are set to zero.
 
     """
-    batch_start = _get_batch_start(batch_ids)
-    batch_stop = [*batch_start, len(data)][1:]
+    batch_starts = _get_batch_start(batch_ids)
+    batch_stops = [*batch_starts, len(data)][1:]
 
-    batch_result = []
+    batch_results = []
     for batch, (start, stop) in zip(
-        batch_ids, zip(batch_start, batch_stop, strict=False), strict=False
+        batch_ids, zip(batch_starts, batch_stops, strict=False), strict=False
     ):
         try:
             batch_data = data[start:stop]
             reduced = func(batch_data)
-            batch_result.append(reduced)
+            batch_results.append(reduced)
         except Exception as e:
             msg = (
                 f"Calling function {func.__name__} on batch {batch} of the History "
@@ -423,7 +423,7 @@ def _batch_apply(
             raise ValueError(msg) from e
 
     out = np.zeros_like(data)
-    out[batch_start] = batch_result
+    out[batch_starts] = batch_results
     return out
 
 
