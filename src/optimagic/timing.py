@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Iterable
 
 
 @dataclass(frozen=True)
@@ -8,7 +8,7 @@ class CostModel:
     jac: float | None
     fun_and_jac: float | None
     label: str
-    aggregate_batch_time: Callable[[list[float]], float]
+    aggregate_batch_time: Callable[[Iterable[float]], float]
 
 
 evaluation_time = CostModel(

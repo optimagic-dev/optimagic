@@ -10,7 +10,9 @@ import optimagic as om
 from optimagic.optimization.history import (
     History,
     HistoryEntry,
+    _batch_apply,
     _calculate_monotone_sequence,
+    _get_batch_start,
     _get_flat_param_names,
     _get_flat_params,
     _is_1d_array,
@@ -143,8 +145,8 @@ def params():
 
 
 @pytest.fixture
-def history(params):
-    data = {
+def history_data(params):
+    return {
         "fun": [10, None, 9, None, 2, 5],
         "task": [
             EvalTask.FUN,
@@ -157,9 +159,19 @@ def history(params):
         "start_time": [0, 2, 5, 7, 10, 12],
         "stop_time": [1, 4, 6, 9, 11, 14],
         "params": params,
-        "batches": [0, 0, 1, 1, 2, 2],
+        "batches": [0, 1, 2, 3, 4, 5],
     }
 
+
+@pytest.fixture
+def history(history_data):
+    return History(direction=Direction.MINIMIZE, **history_data)
+
+
+@pytest.fixture
+def history_with_batch_data(history_data):
+    data = history_data.copy()
+    data["batches"] = [0, 0, 1, 1, 2, 2]
     return History(direction=Direction.MINIMIZE, **data)
 
 
@@ -211,9 +223,8 @@ def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history):
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-@pytest.mark.xfail(reason="Must be fixed!")
-def test_history_fun_data_with_fun_batches_cost_model(history):
-    got = history.fun_data(
+def test_history_fun_data_with_fun_batches_cost_model(history_with_batch_data):
+    got = history_with_batch_data.fun_data(
         cost_model=om.timing.fun_batches,
         monotone=False,
     )
@@ -328,23 +339,23 @@ def test_flat_param_names(history):
 
 def test_get_time_per_task_fun(history):
     got = history._get_time_per_task(EvalTask.FUN, cost_factor=1)
-    exp = np.array([1, 1, 2, 2, 3, 3])
+    exp = np.array([1, 0, 1, 0, 1, 0])
     assert_array_equal(got, exp)
 
 
-def test_get_time_per_task_jac(history):
-    got = history._get_time_per_task(EvalTask.JAC, cost_factor=1)
-    exp = np.array([0, 1, 1, 2, 2, 2])
+def test_get_time_per_task_jac_cost_factor_none(history):
+    got = history._get_time_per_task(EvalTask.JAC, cost_factor=None)
+    exp = np.array([0, 2, 0, 2, 0, 0])
     assert_array_equal(got, exp)
 
 
 def test_get_time_per_task_fun_and_jac(history):
-    got = history._get_time_per_task(EvalTask.FUN_AND_JAC, cost_factor=1)
-    exp = np.array([0, 0, 0, 0, 0, 1])
+    got = history._get_time_per_task(EvalTask.FUN_AND_JAC, cost_factor=-0.5)
+    exp = np.array([0, 0, 0, 0, 0, -0.5])
     assert_array_equal(got, exp)
 
 
-def test_get_time_cost_model(history):
+def test_get_time_custom_cost_model(history):
     cost_model = om.timing.CostModel(
         fun=0.5, jac=1, fun_and_jac=2, label="test", aggregate_batch_time=sum
     )
@@ -359,6 +370,30 @@ def test_get_time_cost_model(history):
             1.5 + 2 + 2,
         ]
     )
+    assert_array_equal(got, exp)
+
+
+def test_get_time_fun_evaluations(history):
+    got = history._get_time(cost_model=om.timing.fun_evaluations)
+    exp = np.array([1, 1, 2, 2, 3, 4])
+    assert_array_equal(got, exp)
+
+
+def test_get_time_fun_batches(history):
+    got = history._get_time(cost_model=om.timing.fun_batches)
+    exp = np.array([1, 1, 2, 2, 3, 4])
+    assert_array_equal(got, exp)
+
+
+def test_get_time_fun_batches_with_batch_data(history_with_batch_data):
+    got = history_with_batch_data._get_time(cost_model=om.timing.fun_batches)
+    exp = np.array([1, 1, 2, 2, 3, 3])
+    assert_array_equal(got, exp)
+
+
+def test_get_time_evaluation_time(history):
+    got = history._get_time(cost_model=om.timing.evaluation_time)
+    exp = np.array([1, 3, 4, 6, 7, 9])
     assert_array_equal(got, exp)
 
 
@@ -381,7 +416,7 @@ def test_stop_time_property(history):
 
 
 def test_batches_property(history):
-    assert history.batches == [0, 0, 1, 1, 2, 2]
+    assert history.batches == [0, 1, 2, 3, 4, 5]
 
 
 # Tasks
@@ -466,3 +501,25 @@ def test_task_as_categorical():
     got = _task_as_categorical(task)
     assert got.tolist() == ["fun", "jac", "fun_and_jac"]
     assert isinstance(got.dtype, pd.CategoricalDtype)
+
+
+def test_get_batch_start():
+    batches = [0, 0, 1, 1, 1, 2, 2, 3]
+    got = _get_batch_start(batches)
+    assert got == [0, 2, 5, 7]
+
+
+def test_batch_apply_sum():
+    data = np.array([0, 1, 2, 3, 4])
+    batch_ids = [0, 0, 1, 1, 2]
+    exp = np.array([1, 0, 5, 0, 4])
+    got = _batch_apply(data, batch_ids, sum)
+    assert_array_equal(exp, got)
+
+
+def test_batch_apply_max():
+    data = np.array([0, 1, 2, 3, 4])
+    batch_ids = [0, 0, 1, 1, 2]
+    exp = np.array([1, 0, 3, 0, 4])
+    got = _batch_apply(data, batch_ids, max)
+    assert_array_equal(exp, got)

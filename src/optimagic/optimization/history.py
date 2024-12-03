@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Literal
+from typing import Any, Callable, Iterable, Literal
 
 import numpy as np
 import pandas as pd
@@ -192,6 +192,16 @@ class History:
     def _get_time(
         self, cost_model: CostModel | Literal["wall_time"]
     ) -> NDArray[np.float64]:
+        """Return the cumulative time measure.
+
+        Args:
+            cost_model: The cost model that is used to calculate the time measure. If
+                "wall_time", the wall time is returned.
+
+        Returns:
+            np.ndarray: The time measure.
+
+        """
         if not isinstance(cost_model, CostModel) and cost_model != "wall_time":
             raise ValueError("cost_model must be a CostModel or 'wall_time'.")
 
@@ -207,11 +217,31 @@ class History:
         fun_and_jac_time = self._get_time_per_task(
             task=EvalTask.FUN_AND_JAC, cost_factor=cost_model.fun_and_jac
         )
-        return fun_time + jac_time + fun_and_jac_time
+
+        time = fun_time + jac_time + fun_and_jac_time
+        batch_time = _batch_apply(
+            data=time,
+            batch_ids=self.batches,
+            func=cost_model.aggregate_batch_time,
+        )
+        return np.cumsum(batch_time)
 
     def _get_time_per_task(
         self, task: EvalTask, cost_factor: float | None
     ) -> NDArray[np.float64]:
+        """Return the time measure per task.
+
+        Args:
+            task: The task for which the time is calculated.
+            cost_factor: The cost factor used to calculate the time. If None, the time
+                is the difference between the start and stop time, otherwise the time
+                is given by the cost factor.
+
+        Returns:
+            np.ndarray: The time per task. For entries where the task is not the
+                requested task, the time is 0.
+
+        """
         dummy_task = np.array([1 if t == task else 0 for t in self.task])
         if cost_factor is None:
             factor: float | NDArray[np.float64] = np.array(
@@ -220,7 +250,7 @@ class History:
         else:
             factor = cost_factor
 
-        return np.cumsum(factor * dummy_task)
+        return factor * dummy_task
 
     @property
     def start_time(self) -> list[float]:
@@ -351,3 +381,58 @@ def _task_as_categorical(task: list[EvalTask]) -> pd.Categorical:
     return pd.Categorical(
         [t.value for t in task], categories=[t.value for t in EvalTask]
     )
+
+
+def _batch_apply(
+    data: NDArray[np.float64],
+    batch_ids: list[int],
+    func: Callable[[Iterable[float]], float],
+) -> NDArray[np.float64]:
+    """Apply a reduction operator on batches of data.
+
+    Args:
+        data: 1d array with data.
+        batch_ids: A list whose length is equal to the size of data. Values need to be
+            sorted and can be repeated.
+        func: A reduction function that takes an iterable of floats as input (e.g., a
+            numpy array or a list) and returns a scalar.
+
+    Returns:
+        The transformed data. Has the same length as data. For each batch, the result of
+        the reduction operation is stored at the first index of that batch, and all
+        other values of that batch are set to zero.
+
+    """
+    batch_start = _get_batch_start(batch_ids)
+    batch_stop = [*batch_start, len(data)][1:]
+
+    batch_result = []
+    for batch, (start, stop) in zip(
+        batch_ids, zip(batch_start, batch_stop, strict=False), strict=False
+    ):
+        try:
+            batch_data = data[start:stop]
+            reduced = func(batch_data)
+            batch_result.append(reduced)
+        except Exception as e:
+            msg = (
+                f"Calling function {func.__name__} on batch {batch} of the History "
+                f"History raised an Exception. Please verify that {func.__name__} is "
+                "properly defined."
+            )
+            raise ValueError(msg) from e
+
+    out = np.zeros_like(data)
+    out[batch_start] = batch_result
+    return out
+
+
+def _get_batch_start(batch_ids: list[int]) -> list[int]:
+    """Get start indices of batch.
+
+    This function assumes that batch_ids non-empty and sorted.
+
+    """
+    ids_arr = np.array(batch_ids, dtype=np.int64)
+    indices = np.where(ids_arr[:-1] != ids_arr[1:])[0] + 1
+    return np.insert(indices, 0, 0).tolist()
