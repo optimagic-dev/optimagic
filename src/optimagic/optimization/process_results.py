@@ -112,8 +112,8 @@ def process_multistart_result(
             direction=extra_fields.direction,
             fun=[opt.fun for opt in info.local_optima],
             params=[opt.params for opt in info.local_optima],
-            start_time=[np.nan for _ in info.local_optima],
-            stop_time=[np.nan for _ in info.local_optima],
+            start_time=len(info.local_optima) * [np.nan],
+            stop_time=len(info.local_optima) * [np.nan],
             batches=list(range(len(info.local_optima))),
             task=len(info.local_optima) * [EvalTask.FUN],
         )

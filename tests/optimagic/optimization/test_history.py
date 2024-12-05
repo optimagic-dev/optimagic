@@ -169,7 +169,7 @@ def history(history_data):
 
 
 @pytest.fixture
-def history_with_batch_data(history_data):
+def history_parallel(history_data):
     data = history_data.copy()
     data["batches"] = [0, 0, 1, 1, 2, 2]
     return History(direction=Direction.MINIMIZE, **data)
@@ -223,8 +223,8 @@ def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history):
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-def test_history_fun_data_with_fun_batches_cost_model(history_with_batch_data):
-    got = history_with_batch_data.fun_data(
+def test_history_fun_data_with_fun_batches_cost_model(history_parallel):
+    got = history_parallel.fun_data(
         cost_model=om.timing.fun_batches,
         monotone=False,
     )
@@ -385,8 +385,8 @@ def test_get_time_fun_batches(history):
     assert_array_equal(got, exp)
 
 
-def test_get_time_fun_batches_with_batch_data(history_with_batch_data):
-    got = history_with_batch_data._get_time(cost_model=om.timing.fun_batches)
+def test_get_time_fun_batches_parallel(history_parallel):
+    got = history_parallel._get_time(cost_model=om.timing.fun_batches)
     exp = np.array([1, 1, 2, 2, 3, 3])
     assert_array_equal(got, exp)
 

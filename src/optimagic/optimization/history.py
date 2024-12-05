@@ -93,7 +93,7 @@ class History:
         return batch
 
     # ==================================================================================
-    # Properties to access the history
+    # Properties and methods to access the history
     # ==================================================================================
 
     # Function data, function value, and monotone function value
@@ -243,10 +243,11 @@ class History:
 
         """
         dummy_task = np.array([1 if t == task else 0 for t in self.task])
+        factor: float | NDArray[np.float64]
         if cost_factor is None:
-            factor: float | NDArray[np.float64] = np.array(
-                self.stop_time, dtype=np.float64
-            ) - np.array(self.start_time, dtype=np.float64)
+            factor = np.array(self.stop_time, dtype=np.float64) - np.array(
+                self.start_time, dtype=np.float64
+            )
         else:
             factor = cost_factor
 
@@ -342,16 +343,16 @@ def _calculate_monotone_sequence(
     sequence: list[float | None], direction: Direction
 ) -> NDArray[np.float64]:
     sequence_arr = np.array(sequence, dtype=np.float64)  # converts None to nan
-    none_mask = np.isnan(sequence_arr)
+    nan_mask = np.isnan(sequence_arr)
 
     if direction == Direction.MINIMIZE:
-        sequence_arr[none_mask] = np.inf
+        sequence_arr[nan_mask] = np.inf
         out = np.minimum.accumulate(sequence_arr)
     elif direction == Direction.MAXIMIZE:
-        sequence_arr[none_mask] = -np.inf
+        sequence_arr[nan_mask] = -np.inf
         out = np.maximum.accumulate(sequence_arr)
 
-    out[none_mask] = np.nan
+    out[nan_mask] = np.nan
     return out
 
 
@@ -404,7 +405,7 @@ def _apply_to_batch(
 
     """
     batch_starts = _get_batch_start(batch_ids)
-    batch_stops = [*batch_starts, len(data)][1:]
+    batch_stops = [*batch_starts[1:], len(data)]
 
     batch_results = []
     for batch, (start, stop) in zip(
