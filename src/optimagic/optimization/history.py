@@ -391,6 +391,8 @@ def _apply_to_batch(
 ) -> NDArray[np.float64]:
     """Apply a reduction operator on batches of data.
 
+    This function assumes that batch_ids non-empty and sorted.
+
     Args:
         data: 1d array with data.
         batch_ids: A list with batch ids whose length is equal to the size of data.
