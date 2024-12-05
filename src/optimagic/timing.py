@@ -10,6 +10,13 @@ class CostModel:
     label: str
     aggregate_batch_time: Callable[[Iterable[float]], float]
 
+    def __post_init__(self) -> None:
+        if not callable(self.aggregate_batch_time):
+            raise ValueError(
+                "aggregate_batch_time must be a callable, got "
+                f"{self.aggregate_batch_time}"
+            )
+
 
 evaluation_time = CostModel(
     fun=None,

@@ -219,12 +219,12 @@ class History:
         )
 
         time = fun_time + jac_time + fun_and_jac_time
-        batch_time = _batch_apply(
+        batch_aware_time = _apply_to_batch(
             data=time,
             batch_ids=self.batches,
             func=cost_model.aggregate_batch_time,
         )
-        return np.cumsum(batch_time)
+        return np.cumsum(batch_aware_time)
 
     def _get_time_per_task(
         self, task: EvalTask, cost_factor: float | None
@@ -383,7 +383,7 @@ def _task_as_categorical(task: list[EvalTask]) -> pd.Categorical:
     )
 
 
-def _batch_apply(
+def _apply_to_batch(
     data: NDArray[np.float64],
     batch_ids: list[int],
     func: Callable[[Iterable[float]], float],
@@ -392,10 +392,10 @@ def _batch_apply(
 
     Args:
         data: 1d array with data.
-        batch_ids: A list whose length is equal to the size of data. Values need to be
-            sorted and can be repeated.
+        batch_ids: A list with batch ids whose length is equal to the size of data.
+            Values need to be sorted and can be repeated.
         func: A reduction function that takes an iterable of floats as input (e.g., a
-            numpy array or a list) and returns a scalar.
+            numpy.ndarray or list) and returns a scalar.
 
     Returns:
         The transformed data. Has the same length as data. For each batch, the result of
@@ -410,17 +410,29 @@ def _batch_apply(
     for batch, (start, stop) in zip(
         batch_ids, zip(batch_starts, batch_stops, strict=False), strict=False
     ):
+        batch_data = data[start:stop]
+
         try:
-            batch_data = data[start:stop]
             reduced = func(batch_data)
-            batch_results.append(reduced)
         except Exception as e:
             msg = (
                 f"Calling function {func.__name__} on batch {batch} of the History "
-                f"History raised an Exception. Please verify that {func.__name__} is "
-                "properly defined."
+                f"raised an Exception. Please verify that {func.__name__} is "
+                "well-defined and takes a list of floats as input and returns a scalar."
             )
             raise ValueError(msg) from e
+
+        try:
+            assert np.isscalar(reduced)
+        except AssertionError:
+            msg = (
+                f"Function {func.__name__} did not return a scalar for batch {batch}. "
+                f"Please verify that {func.__name__} returns a scalar when called on a "
+                "list of floats."
+            )
+            raise ValueError(msg) from None
+
+        batch_results.append(reduced)
 
     out = np.zeros_like(data)
     out[batch_starts] = batch_results
@@ -428,7 +440,7 @@ def _batch_apply(
 
 
 def _get_batch_start(batch_ids: list[int]) -> list[int]:
-    """Get start indices of batch.
+    """Get start indices of batches.
 
     This function assumes that batch_ids non-empty and sorted.
 

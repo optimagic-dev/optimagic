@@ -10,7 +10,7 @@ import optimagic as om
 from optimagic.optimization.history import (
     History,
     HistoryEntry,
-    _batch_apply,
+    _apply_to_batch,
     _calculate_monotone_sequence,
     _get_batch_start,
     _get_flat_param_names,
@@ -403,6 +403,13 @@ def test_get_time_wall_time(history):
     assert_array_equal(got, exp)
 
 
+def test_get_time_invalid_cost_model(history):
+    with pytest.raises(
+        ValueError, match="cost_model must be a CostModel or 'wall_time'."
+    ):
+        history._get_time(cost_model="invalid")
+
+
 def test_start_time_property(history):
     assert history.start_time == [0, 2, 5, 7, 10, 12]
 
@@ -465,9 +472,15 @@ def test_get_flat_params_fast_path():
     assert_array_equal(got, exp)
 
 
-def test_get_flat_param_names():
+def test_get_flat_param_names_pytree():
     got = _get_flat_param_names(param={"a": 0, "b": [0, 1], "c": np.arange(2)})
     exp = ["a", "b_0", "b_1", "c_0", "c_1"]
+    assert got == exp
+
+
+def test_get_flat_param_names_fast_path():
+    got = _get_flat_param_names(param=np.arange(2))
+    exp = ["0", "1"]
     assert got == exp
 
 
@@ -509,17 +522,31 @@ def test_get_batch_start():
     assert got == [0, 2, 5, 7]
 
 
-def test_batch_apply_sum():
+def test_apply_to_batch_sum():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
     exp = np.array([1, 0, 5, 0, 4])
-    got = _batch_apply(data, batch_ids, sum)
+    got = _apply_to_batch(data, batch_ids, sum)
     assert_array_equal(exp, got)
 
 
-def test_batch_apply_max():
+def test_apply_to_batch_max():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
     exp = np.array([1, 0, 3, 0, 4])
-    got = _batch_apply(data, batch_ids, max)
+    got = _apply_to_batch(data, batch_ids, max)
     assert_array_equal(exp, got)
+
+
+def test_apply_to_batch_broken_func():
+    data = np.array([0, 1, 2, 3, 4])
+    batch_ids = [0, 0, 1, 1, 2]
+    with pytest.raises(ValueError, match="Calling function <lambda> on batch [0, 0]"):
+        _apply_to_batch(data, batch_ids, func=lambda _: 1 / 0)
+
+
+def test_apply_to_batch_func_with_non_scalar_return():
+    data = np.array([0, 1, 2, 3, 4])
+    batch_ids = [0, 0, 1, 1, 2]
+    with pytest.raises(ValueError, match="Function <lambda> did not return a scalar"):
+        _apply_to_batch(data, batch_ids, func=lambda _list: _list)
