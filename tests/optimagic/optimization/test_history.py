@@ -405,7 +405,7 @@ def test_get_time_wall_time(history):
 
 def test_get_time_invalid_cost_model(history):
     with pytest.raises(
-        ValueError, match="cost_model must be a CostModel or 'wall_time'."
+        TypeError, match="cost_model must be a CostModel or 'wall_time'."
     ):
         history._get_time(cost_model="invalid")
 

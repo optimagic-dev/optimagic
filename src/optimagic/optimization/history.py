@@ -203,7 +203,7 @@ class History:
 
         """
         if not isinstance(cost_model, CostModel) and cost_model != "wall_time":
-            raise ValueError("cost_model must be a CostModel or 'wall_time'.")
+            raise TypeError("cost_model must be a CostModel or 'wall_time'.")
 
         if cost_model == "wall_time":
             return np.array(self.stop_time, dtype=np.float64) - self.start_time[0]
@@ -242,7 +242,7 @@ class History:
                 requested task, the time is 0.
 
         """
-        dummy_task = np.array([1 if t == task else 0 for t in self.task])
+        task_mask = np.array([1 if t == task else 0 for t in self.task])
         factor: float | NDArray[np.float64]
         if cost_factor is None:
             factor = np.array(self.stop_time, dtype=np.float64) - np.array(
@@ -251,7 +251,7 @@ class History:
         else:
             factor = cost_factor
 
-        return factor * dummy_task
+        return factor * task_mask
 
     @property
     def start_time(self) -> list[float]:
@@ -410,30 +410,27 @@ def _apply_to_batch(
     batch_stops = [*batch_starts[1:], len(data)]
 
     batch_results = []
-    for batch, (start, stop) in zip(
-        batch_ids, zip(batch_starts, batch_stops, strict=False), strict=False
-    ):
+    for start, stop in zip(batch_starts, batch_stops, strict=True):
         batch_data = data[start:stop]
+        batch_id = batch_ids[start]
 
         try:
             reduced = func(batch_data)
         except Exception as e:
             msg = (
-                f"Calling function {func.__name__} on batch {batch} of the History "
+                f"Calling function {func.__name__} on batch {batch_id} of the History "
                 f"raised an Exception. Please verify that {func.__name__} is "
-                "well-defined and takes a list of floats as input and returns a scalar."
+                "well-defined, takes a list of floats as input, and returns a scalar."
             )
             raise ValueError(msg) from e
 
-        try:
-            assert np.isscalar(reduced)
-        except AssertionError:
+        if not np.isscalar(reduced):
             msg = (
-                f"Function {func.__name__} did not return a scalar for batch {batch}. "
-                f"Please verify that {func.__name__} returns a scalar when called on a "
-                "list of floats."
+                f"Function {func.__name__} did not return a scalar for batch "
+                f"{batch_id}. Please verify that {func.__name__} returns a "
+                "scalar when called on a list of floats."
             )
-            raise ValueError(msg) from None
+            raise ValueError(msg)
 
         batch_results.append(reduced)
 

@@ -407,7 +407,7 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         fun=_history["fun"],
         params=_history["params"],
         start_time=_history["time"],
-        # TODO (@janosg): Retrieve that information from `hist` once it is available.
+        # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available.
         # https://github.com/optimagic-dev/optimagic/pull/553
         stop_time=len(_history["fun"]) * [None],
         task=len(_history["fun"]) * [None],
@@ -450,8 +450,8 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
         fun=stacked["criterion"],
         params=stacked["params"],
         start_time=stacked["runtime"],
-        # TODO (@janosg): Retrieve that information from `hist` once it is available
-        # for the IterationHistory.
+        # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available for the
+        # IterationHistory.
         # https://github.com/optimagic-dev/optimagic/pull/553
         stop_time=len(stacked["criterion"]) * [None],
         task=len(stacked["criterion"]) * [None],
