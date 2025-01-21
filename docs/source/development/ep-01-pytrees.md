@@ -384,7 +384,7 @@ much complexity by avoiding complex pytrees as inputs and outputs at the same ti
 To see this in action, let's look at an example. We repeat the example from the JAX
 interface above with the following changes:
 
-1. The 1d numpy array in x\["a"\] is replaced by a DataFrame with `"value"` column
+1. The 1d numpy array in x["a"] is replaced by a DataFrame with `"value"` column
 1. The "d" entry in the output becomes a Series instead of a 1d numpy array.
 
 ```python
@@ -460,7 +460,7 @@ very first jacobian:
 +--------+----------+----------+----------+----------+----------+----------+----------+
 ```
 
-The indices \["j", "k", "l", "m"\] unfortunately never made it into the result because
+The indices ["j", "k", "l", "m"] unfortunately never made it into the result because
 they were only applied to elements that already came from a 2d array and thus always
 have a 3d Jacobian, i.e. the result entry `["c"][b"]` is a reshaped version of the upper
 right 2 by 4 array and the result entry `["d"]["b"]` is a reshaped version of the lower

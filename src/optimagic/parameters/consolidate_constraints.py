@@ -205,9 +205,9 @@ def _consolidate_fixes_with_equality_constraints(
     for eq in equality_constraints:
         if np.isfinite(fixed_value[eq["index"]]).any():
             valcounts = _unique_values(fixed_value[eq["index"]])
-            assert (
-                len(valcounts) == 1
-            ), "Equality constrained parameters cannot be fixed to different values."
+            assert len(valcounts) == 1, (
+                "Equality constrained parameters cannot be fixed to different values."
+            )
             fixed_value[eq["index"]] = valcounts[0]
 
     return fixed_value

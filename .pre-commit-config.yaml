@@ -68,7 +68,7 @@ repos:
       - id: yamllint
         exclude: tests/optimagic/optimizers/_pounders/fixtures
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
+    rev: eb1df34
     hooks:
       - id: docformatter
         args:
@@ -80,7 +80,7 @@ repos:
           - --blank
         exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    rev: v0.9.2
     hooks:
       # Run the linter.
       - id: ruff
