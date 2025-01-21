@@ -244,7 +244,7 @@ def test_three_independent_constraints():
     )
     expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
 
-    # TODO: Increase precision back to decimal=4. The current precision is due to the
+    # TODO: Increase precision back to decimal=4. The reduced precision is due to the
     # re-written scipy_lbfgsb algorithm in SciPy 1.15.
     aaae(res.params, expected, decimal=3)
 

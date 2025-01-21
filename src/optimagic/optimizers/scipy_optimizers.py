@@ -799,7 +799,7 @@ class ScipyBrute(Algorithm):
             )
         raw_res = scipy.optimize.brute(
             func=problem.fun,
-            ranges=tuple(zip(problem.bounds.lower, problem.bounds.upper, strict=False)),
+            ranges=tuple(zip(problem.bounds.lower, problem.bounds.upper, strict=True)),
             Ns=self.n_grid_points,
             full_output=True,
             finish=self.polishing_function,
