@@ -126,13 +126,15 @@ def test_bootstrap_existing_outcomes(setup):
         n_draws=2,
     )
     assert len(result.outcomes) == 2
-    result = bootstrap(
-        outcome=_outcome_func,
-        data=setup["df"],
-        existing_result=result,
-        n_draws=1,
-    )
-    assert len(result.outcomes) == 1
+    with pytest.warns(RuntimeWarning):
+        # As there is only one draw, multiple warnings are raised that can be ignored
+        result = bootstrap(
+            outcome=_outcome_func,
+            data=setup["df"],
+            existing_result=result,
+            n_draws=1,
+        )
+        assert len(result.outcomes) == 1
 
 
 def test_bootstrap_from_outcomes(setup, expected):
