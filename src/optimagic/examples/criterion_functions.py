@@ -114,7 +114,7 @@ def rosenbrock_gradient(params: PyTree) -> PyTree:
     l4 = np.delete(x, [0])
     l4 = np.append(l4, 0)
     l5 = np.full((len(x) - 1), 2)
-    l5 = np.append(l5, 0)
+    l5 = np.append(l5, 0)  # type: ignore[assignment]
     flat = 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
     return _unflatten_gradient(flat, params)
 

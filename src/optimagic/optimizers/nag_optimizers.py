@@ -1051,8 +1051,9 @@ def _build_options_dict(user_input, default_options):
     invalid = [x for x in user_input if x not in full_options]
     if len(invalid) > 0:
         raise ValueError(
-            f"You specified illegal options {', '.join(invalid)}. Allowed are: "
-            ", ".join(full_options.keys())
+            f"You specified illegal options {', '.join(invalid)}. Allowed are: , ".join(
+                full_options.keys()
+            )
         )
     full_options.update(user_input)
     return full_options

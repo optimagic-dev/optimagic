@@ -328,7 +328,7 @@ def first_derivative(
         f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
-    raw_evals = _convert_evals_to_numpy(
+    raw_evals_arr = _convert_evals_to_numpy(
         raw_evals=raw_evals,
         unpacker=unpacker,
         registry=registry,
@@ -337,9 +337,9 @@ def first_derivative(
     )
 
     # apply finite difference formulae
-    evals_data = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
-    evals_data = np.transpose(evals_data, axes=(0, 1, 3, 2))
-    evals = Evals(pos=evals_data[0], neg=evals_data[1])
+    evals_data = np.array(raw_evals_arr).reshape(2, n_steps, len(x), -1)
+    evals_data_transposed = np.transpose(evals_data, axes=(0, 1, 3, 2))
+    evals = Evals(pos=evals_data_transposed[0], neg=evals_data_transposed[1])
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:

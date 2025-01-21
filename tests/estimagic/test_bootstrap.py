@@ -123,16 +123,16 @@ def test_bootstrap_existing_outcomes(setup):
     result = bootstrap(
         data=setup["df"],
         outcome=_outcome_func,
-        n_draws=2,
+        n_draws=3,
     )
-    assert len(result.outcomes) == 2
+    assert len(result.outcomes) == 3
     result = bootstrap(
         outcome=_outcome_func,
         data=setup["df"],
         existing_result=result,
-        n_draws=1,
+        n_draws=2,
     )
-    assert len(result.outcomes) == 1
+    assert len(result.outcomes) == 2
 
 
 def test_bootstrap_from_outcomes(setup, expected):
