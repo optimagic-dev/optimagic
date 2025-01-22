@@ -23,6 +23,7 @@ from optimagic.typing import (
     Direction,
     ErrorHandling,
     EvalTask,
+    ExtraResultFields,
     PyTree,
 )
 
@@ -55,6 +56,7 @@ class InternalOptimizationProblem:
         linear_constraints: list[dict[str, Any]] | None,
         nonlinear_constraints: list[dict[str, Any]] | None,
         logger: LogStore[Any, Any] | None,
+        static_result_fields: ExtraResultFields,
         # TODO: add hess and hessp
     ):
         self._fun = fun
@@ -73,6 +75,7 @@ class InternalOptimizationProblem:
         self._nonlinear_constraints = nonlinear_constraints
         self._logger = logger
         self._step_id: int | None = None
+        self._static_result_fields = static_result_fields
 
     # ==================================================================================
     # Public methods used by optimizers
@@ -217,6 +220,14 @@ class InternalOptimizationProblem:
     @property
     def logger(self) -> LogStore[Any, Any] | None:
         return self._logger
+
+    @property
+    def converter(self) -> Converter:
+        return self._converter
+
+    @property
+    def static_result_fields(self) -> ExtraResultFields:
+        return self._static_result_fields
 
     # ==================================================================================
     # Implementation of the public functions; The main difference is that the lower-

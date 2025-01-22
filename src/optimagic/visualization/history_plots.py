@@ -344,7 +344,7 @@ def _extract_plotting_data_from_results_object(
                 res.multistart_info.exploration_sample[::-1] + stacked["params"]
             )
             stacked["criterion"] = (
-                res.multistart_info.exploration_results.tolist()[::-1]
+                list(res.multistart_info.exploration_results)[::-1]
                 + stacked["criterion"]
             )
     else:

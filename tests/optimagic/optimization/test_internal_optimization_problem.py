@@ -18,11 +18,29 @@ from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
 from optimagic.parameters.conversion import Converter
-from optimagic.typing import AggregationLevel, Direction, ErrorHandling, EvalTask
+from optimagic.typing import (
+    AggregationLevel,
+    Direction,
+    ErrorHandling,
+    EvalTask,
+    ExtraResultFields,
+)
 
 
 @pytest.fixture
-def base_problem():
+def extra_fields():
+    out = ExtraResultFields(
+        start_fun=100,
+        start_params=np.arange(3),
+        algorithm="bla",
+        direction=Direction.MINIMIZE,
+        n_free=3,
+    )
+    return out
+
+
+@pytest.fixture
+def base_problem(extra_fields):
     """Set up a basic InternalOptimizationProblem that can be modified for tests."""
 
     def fun(params):
@@ -72,6 +90,7 @@ def base_problem():
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        static_result_fields=extra_fields,
     )
 
     return problem
@@ -413,7 +432,7 @@ def test_max_problem_exploration_fun(max_problem):
 
 
 @pytest.fixture
-def pytree_problem(base_problem):
+def pytree_problem(extra_fields):
     def fun(params):
         assert isinstance(params, dict)
         return LeastSquaresFunctionValue(value=params)
@@ -479,6 +498,7 @@ def pytree_problem(base_problem):
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        static_result_fields=extra_fields,
     )
 
     return problem
@@ -543,7 +563,7 @@ def test_numerical_fun_and_jac_for_pytree_problem(pytree_problem):
 
 
 @pytest.fixture
-def error_min_problem():
+def error_min_problem(extra_fields):
     """Set up a basic InternalOptimizationProblem that can be modified for tests."""
 
     def fun(params):
@@ -603,6 +623,7 @@ def error_min_problem():
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        static_result_fields=extra_fields,
     )
 
     return problem
