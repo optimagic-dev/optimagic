@@ -187,7 +187,10 @@ class LogReader(Generic[_LogOptionsType], ABC):
 
         times = np.array(history["time"])
         times -= times[0]
-        history["time"] = times.tolist()
+        # For numpy arrays with ndim = 0, tolist() returns a scalar, which violates the
+        # type hinting list[Any] from above. As history["time"] is always a list, this
+        # case is safe to ignore.
+        history["time"] = times.tolist()  # type: ignore[assignment]
 
         df = pd.DataFrame(history)
         df = df.merge(

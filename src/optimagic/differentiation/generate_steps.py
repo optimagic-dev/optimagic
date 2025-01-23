@@ -90,9 +90,9 @@ def generate_steps(
     )
     min_steps = base_steps if min_steps is None else min_steps
 
-    assert (
-        bounds.upper - bounds.lower >= 2 * min_steps
-    ).all(), "min_steps is too large to fit into bounds."
+    assert (bounds.upper - bounds.lower >= 2 * min_steps).all(), (
+        "min_steps is too large to fit into bounds."
+    )
 
     upper_step_bounds = bounds.upper - x
     lower_step_bounds = bounds.lower - x
