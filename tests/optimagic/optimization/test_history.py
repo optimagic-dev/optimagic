@@ -10,13 +10,13 @@ import optimagic as om
 from optimagic.optimization.history import (
     History,
     HistoryEntry,
-    _apply_to_batch,
+    _apply_reduction_to_batches,
     _calculate_monotone_sequence,
-    _get_batch_start,
+    _get_batch_starts_and_stops,
     _get_flat_param_names,
     _get_flat_params,
     _is_1d_array,
-    _task_as_categorical,
+    _task_to_categorical,
     _validate_args_are_all_none_or_lists_of_same_length,
 )
 from optimagic.typing import Direction, EvalTask
@@ -65,9 +65,9 @@ def test_history_add_entry(history_entries):
         {"a": 4, "b": [5, 6]},
         {"a": 7, "b": [8, 9]},
     ]
-    assert history.fun == [1, 3, 2]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 1, 2]
+    aaae(history.fun, [1, 3, 2])
     aaae(history.start_time, [0.1, 0.2, 0.3])
     aaae(history.stop_time, [0.2, 0.3, 0.4])
 
@@ -88,9 +88,9 @@ def test_history_add_batch(history_entries):
         {"a": 4, "b": [5, 6]},
         {"a": 7, "b": [8, 9]},
     ]
-    assert history.fun == [1, 3, 2]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 0, 0]
+    aaae(history.fun, [1, 3, 2])
     aaae(history.start_time, [0.1, 0.2, 0.3])
     aaae(history.stop_time, [0.2, 0.3, 0.4])
 
@@ -118,9 +118,9 @@ def test_history_from_data():
     assert history.direction == Direction.MAXIMIZE
 
     assert history.params == data["params"]
-    assert history.fun == data["fun"]
     assert history.task == data["task"]
     assert history.batches == data["batches"]
+    aaae(history.fun, data["fun"])
     aaae(history.start_time, data["start_time"])
     aaae(history.stop_time, data["stop_time"])
 
@@ -179,7 +179,7 @@ def history_parallel(history_data):
 # --------------------------------------------------------------------------------------
 
 
-def test_history_fun_data_with_fun_evaluations_cost_model(history):
+def test_history_fun_data_with_fun_evaluations_cost_model(history: History):
     got = history.fun_data(
         cost_model=om.timing.fun_evaluations,
         monotone=False,
@@ -187,6 +187,7 @@ def test_history_fun_data_with_fun_evaluations_cost_model(history):
     exp = pd.DataFrame(
         {
             "fun": [10, np.nan, 9, np.nan, 2, 5],
+            "time": [1, 1, 2, 2, 3, 4],
             "task": [
                 "fun",
                 "jac",
@@ -195,13 +196,12 @@ def test_history_fun_data_with_fun_evaluations_cost_model(history):
                 "fun",
                 "fun_and_jac",
             ],
-            "time": [1, 1, 2, 2, 3, 4],
         }
-    )
+    ).rename_axis("counter")
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history):
+def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history: History):
     got = history.fun_data(
         cost_model=om.timing.fun_evaluations,
         monotone=True,
@@ -209,6 +209,7 @@ def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history):
     exp = pd.DataFrame(
         {
             "fun": [10, np.nan, 9, np.nan, 2, 2],
+            "time": [1, 1, 2, 2, 3, 4],
             "task": [
                 "fun",
                 "jac",
@@ -217,35 +218,26 @@ def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history):
                 "fun",
                 "fun_and_jac",
             ],
-            "time": [1, 1, 2, 2, 3, 4],
         }
-    )
+    ).rename_axis("counter")
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-def test_history_fun_data_with_fun_batches_cost_model(history_parallel):
+def test_history_fun_data_with_fun_batches_cost_model(history_parallel: History):
     got = history_parallel.fun_data(
         cost_model=om.timing.fun_batches,
         monotone=False,
     )
     exp = pd.DataFrame(
         {
-            "fun": [10, np.nan, 9, np.nan, 2, 5],
-            "task": [
-                "fun",
-                "jac",
-                "fun",
-                "jac",
-                "fun",
-                "fun_and_jac",
-            ],
-            "time": [1, 1, 2, 2, 3, 3],
+            "fun": [10, 9, 2],
+            "time": [1, 2, 3],
         }
-    )
+    ).rename_axis("counter")
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-def test_history_fun_data_with_evaluation_time_cost_model(history):
+def test_history_fun_data_with_evaluation_time_cost_model(history: History):
     got = history.fun_data(
         cost_model=om.timing.evaluation_time,
         monotone=False,
@@ -253,6 +245,7 @@ def test_history_fun_data_with_evaluation_time_cost_model(history):
     exp = pd.DataFrame(
         {
             "fun": [10, np.nan, 9, np.nan, 2, 5],
+            "time": [1, 3, 4, 6, 7, 9],
             "task": [
                 "fun",
                 "jac",
@@ -261,17 +254,16 @@ def test_history_fun_data_with_evaluation_time_cost_model(history):
                 "fun",
                 "fun_and_jac",
             ],
-            "time": [1, 3, 4, 6, 7, 9],
         }
-    )
+    ).rename_axis("counter")
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-def test_fun_property(history):
-    assert_array_equal(history.fun, [10, None, 9, None, 2, 5])
+def test_fun_property(history: History):
+    assert_array_equal(history.fun, np.array([10, np.nan, 9, np.nan, 2, 5]))
 
 
-def test_monotone_fun_property(history):
+def test_monotone_fun_property(history: History):
     assert_array_equal(history.monotone_fun, np.array([10, np.nan, 9, np.nan, 2, 2]))
 
 
@@ -279,7 +271,7 @@ def test_monotone_fun_property(history):
 # --------------------------------------------------------------------------------------
 
 
-def test_is_accepted_property(history):
+def test_is_accepted_property(history: History):
     got = history.is_accepted
     exp = np.array([True, False, True, False, True, False])
     assert_array_equal(got, exp)
@@ -289,8 +281,8 @@ def test_is_accepted_property(history):
 # --------------------------------------------------------------------------------------
 
 
-def test_params_data_fun_evaluations_cost_model(history):
-    got = history.params_data(cost_model=om.timing.fun_evaluations)
+def test_params_data_fun_evaluations_cost_model(history: History):
+    got = history.params_data()
     exp = pd.DataFrame(
         {
             "name": np.repeat(
@@ -314,9 +306,28 @@ def test_params_data_fun_evaluations_cost_model(history):
                 ],
                 4,
             ),
+        }
+    ).rename_axis("counter")
+    assert_frame_equal(got, exp, check_categorical=False, check_dtype=False)
+
+
+def test_params_data_fun_evaluations_cost_model(history_parallel: History):
+    got = history_parallel.params_data()
+    exp = pd.DataFrame(
+        {
+            "name": np.repeat(
+                [
+                    "a",
+                    "b_c",
+                    "b_d_0",
+                    "b_d_1",
+                ],
+                3,
+            ),
+            "value": np.tile(list(range(3)), 4),
             "time": np.tile([1, 1, 2, 2, 3, 4], 4),
         }
-    )
+    ).rename_axis("counter")
     assert_frame_equal(got, exp, check_categorical=False, check_dtype=False)
 
 
@@ -324,12 +335,12 @@ def test_params_property(history, params):
     assert history.params == params
 
 
-def test_flat_params_property(history):
+def test_flat_params_property(history: History):
     got = history.flat_params
     assert_array_equal(got, [[k for _ in range(4)] for k in range(6)])
 
 
-def test_flat_param_names(history):
+def test_flat_param_names(history: History):
     assert history.flat_param_names == ["a", "b_c", "b_d_0", "b_d_1"]
 
 
@@ -337,84 +348,84 @@ def test_flat_param_names(history):
 # --------------------------------------------------------------------------------------
 
 
-def test_get_time_per_task_fun(history):
-    got = history._get_time_per_task(EvalTask.FUN, cost_factor=1)
+def test_get_total_timings_per_task_fun(history: History):
+    got = history._get_timings_per_task(EvalTask.FUN, cost_factor=1)
     exp = np.array([1, 0, 1, 0, 1, 0])
     assert_array_equal(got, exp)
 
 
-def test_get_time_per_task_jac_cost_factor_none(history):
-    got = history._get_time_per_task(EvalTask.JAC, cost_factor=None)
+def test_get_total_timings_per_task_jac_cost_factor_none(history: History):
+    got = history._get_timings_per_task(EvalTask.JAC, cost_factor=None)
     exp = np.array([0, 2, 0, 2, 0, 0])
     assert_array_equal(got, exp)
 
 
-def test_get_time_per_task_fun_and_jac(history):
-    got = history._get_time_per_task(EvalTask.FUN_AND_JAC, cost_factor=-0.5)
+def test_get_total_timings_per_task_fun_and_jac(history: History):
+    got = history._get_timings_per_task(EvalTask.FUN_AND_JAC, cost_factor=-0.5)
     exp = np.array([0, 0, 0, 0, 0, -0.5])
     assert_array_equal(got, exp)
 
 
-def test_get_time_custom_cost_model(history):
+def test_get_total_timings_custom_cost_model(history: History):
     cost_model = om.timing.CostModel(
         fun=0.5, jac=1, fun_and_jac=2, label="test", aggregate_batch_time=sum
     )
-    got = history._get_time(cost_model)
+    got = history._get_total_timings(cost_model)
     exp = np.array(
         [
             0.5,
-            0.5 + 1,
-            1 + 1,
-            1 + 2,
-            1.5 + 2,
-            1.5 + 2 + 2,
+            1,
+            0.5,
+            1,
+            0.5,
+            2,
         ]
     )
     assert_array_equal(got, exp)
 
 
-def test_get_time_fun_evaluations(history):
-    got = history._get_time(cost_model=om.timing.fun_evaluations)
-    exp = np.array([1, 1, 2, 2, 3, 4])
+def test_get_total_timings_fun_evaluations(history: History):
+    got = history._get_total_timings(cost_model=om.timing.fun_evaluations)
+    exp = np.array([1, 0, 1, 0, 1, 1])
     assert_array_equal(got, exp)
 
 
-def test_get_time_fun_batches(history):
-    got = history._get_time(cost_model=om.timing.fun_batches)
-    exp = np.array([1, 1, 2, 2, 3, 4])
+def test_get_total_timings_fun_batches(history: History):
+    got = history._get_total_timings(cost_model=om.timing.fun_batches)
+    exp = np.array([1, 0, 1, 0, 1, 1])
     assert_array_equal(got, exp)
 
 
-def test_get_time_fun_batches_parallel(history_parallel):
-    got = history_parallel._get_time(cost_model=om.timing.fun_batches)
-    exp = np.array([1, 1, 2, 2, 3, 3])
+def test_get_total_timings_fun_batches_parallel(history_parallel: History):
+    got = history_parallel._get_total_timings(cost_model=om.timing.fun_batches)
+    exp = np.array([1, 0, 1, 0, 1, 1])
     assert_array_equal(got, exp)
 
 
-def test_get_time_evaluation_time(history):
-    got = history._get_time(cost_model=om.timing.evaluation_time)
-    exp = np.array([1, 3, 4, 6, 7, 9])
+def test_get_total_timings_evaluation_time(history: History):
+    got = history._get_total_timings(cost_model=om.timing.evaluation_time)
+    exp = np.array([1, 2, 1, 2, 1, 2])
     assert_array_equal(got, exp)
 
 
-def test_get_time_wall_time(history):
-    got = history._get_time(cost_model="wall_time")
+def test_get_total_timings_wall_time(history: History):
+    got = history._get_total_timings(cost_model="wall_time")
     exp = np.array([1, 4, 6, 9, 11, 14])
     assert_array_equal(got, exp)
 
 
-def test_get_time_invalid_cost_model(history):
+def test_get_total_timings_invalid_cost_model(history: History):
     with pytest.raises(
         TypeError, match="cost_model must be a CostModel or 'wall_time'."
     ):
-        history._get_time(cost_model="invalid")
+        history._get_total_timings(cost_model="invalid")
 
 
-def test_start_time_property(history):
+def test_start_time_property(history: History):
     assert history.start_time == [0, 2, 5, 7, 10, 12]
 
 
-def test_stop_time_property(history):
+def test_stop_time_property(history: History):
     assert history.stop_time == [1, 4, 6, 9, 11, 14]
 
 
@@ -422,7 +433,7 @@ def test_stop_time_property(history):
 # --------------------------------------------------------------------------------------
 
 
-def test_batches_property(history):
+def test_batches_property(history: History):
     assert history.batches == [0, 1, 2, 3, 4, 5]
 
 
@@ -430,7 +441,7 @@ def test_batches_property(history):
 # --------------------------------------------------------------------------------------
 
 
-def test_task_property(history):
+def test_task_property(history: History):
     assert history.task == [
         EvalTask.FUN,
         EvalTask.JAC,
@@ -511,30 +522,31 @@ def test_validate_args_are_all_none_or_lists_of_same_length():
 
 def test_task_as_categorical():
     task = [EvalTask.FUN, EvalTask.JAC, EvalTask.FUN_AND_JAC]
-    got = _task_as_categorical(task)
+    got = _task_to_categorical(task)
     assert got.tolist() == ["fun", "jac", "fun_and_jac"]
     assert isinstance(got.dtype, pd.CategoricalDtype)
 
 
-def test_get_batch_start():
+def test_get_batch_starts_and_stops():
     batches = [0, 0, 1, 1, 1, 2, 2, 3]
-    got = _get_batch_start(batches)
-    assert got == [0, 2, 5, 7]
+    got_starts, got_stops = _get_batch_starts_and_stops(batches)
+    assert got_starts == [0, 2, 5, 7]
+    assert got_stops == [2, 5, 7, 8]
 
 
 def test_apply_to_batch_sum():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
-    exp = np.array([1, 0, 5, 0, 4])
-    got = _apply_to_batch(data, batch_ids, sum)
+    exp = np.array([1, 5, 4])
+    got = _apply_reduction_to_batches(data, batch_ids, sum)
     assert_array_equal(exp, got)
 
 
 def test_apply_to_batch_max():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
-    exp = np.array([1, 0, 3, 0, 4])
-    got = _apply_to_batch(data, batch_ids, max)
+    exp = np.array([1, 3, 4])
+    got = _apply_reduction_to_batches(data, batch_ids, max)
     assert_array_equal(exp, got)
 
 
@@ -542,11 +554,11 @@ def test_apply_to_batch_broken_func():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
     with pytest.raises(ValueError, match="Calling function <lambda> on batch [0, 0]"):
-        _apply_to_batch(data, batch_ids, func=lambda _: 1 / 0)
+        _apply_reduction_to_batches(data, batch_ids, reduction_function=lambda _: 1 / 0)
 
 
 def test_apply_to_batch_func_with_non_scalar_return():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
     with pytest.raises(ValueError, match="Function <lambda> did not return a scalar"):
-        _apply_to_batch(data, batch_ids, func=lambda _list: _list)
+        _apply_reduction_to_batches(data, batch_ids, reduction_function=lambda _list: _list)
