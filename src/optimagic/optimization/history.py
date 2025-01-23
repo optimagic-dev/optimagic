@@ -99,7 +99,9 @@ class History:
     # Function data, function value, and monotone function value
     # ----------------------------------------------------------------------------------
 
-    def fun_data(self, cost_model: CostModel, monotone: bool, dropna: bool = False) -> pd.DataFrame:
+    def fun_data(
+        self, cost_model: CostModel, monotone: bool, dropna: bool = False
+    ) -> pd.DataFrame:
         """Return the function value data.
 
         Args:
@@ -119,14 +121,15 @@ class History:
         timings = self._get_total_timings(cost_model)
 
         if not self.is_serial:
-
             timings = _apply_reduction_to_batches(
                 data=timings,
                 batch_ids=self.batches,
                 reduction_function=cost_model.aggregate_batch_time,
             )
 
-            min_or_max = np.nanmin if self.direction == Direction.MINIMIZE else np.nanmax
+            min_or_max = (
+                np.nanmin if self.direction == Direction.MINIMIZE else np.nanmax
+            )
             fun = _apply_reduction_to_batches(
                 data=fun,
                 batch_ids=self.batches,
@@ -138,7 +141,7 @@ class History:
 
         if self.is_serial:
             data["task"] = _task_to_categorical(self.task)
-            
+
         if dropna:
             data = data.dropna()
 
@@ -202,7 +205,6 @@ class History:
         # 2. Make long
 
         if not self.is_serial:
-
             if self.direction == Direction.MINIMIZE:
                 loc = data.groupby("batches")["fun"].idxmin()
             elif self.direction == Direction.MAXIMIZE:
@@ -215,16 +217,18 @@ class History:
         data = data.drop(columns=["batches", "fun"])
 
         long = pd.melt(
-            wide, var_name="name", value_name="value", id_vars=["task", "batches", "fun"]
+            wide,
+            var_name="name",
+            value_name="value",
+            id_vars=["task", "batches", "fun"],
         )
 
         data = long.reindex(columns=["name", "value", "task", "batches", "fun"])
-        
+
         if dropna:
             data = data.dropna()
 
         return data.rename_axis("counter")
-
 
     @property
     def params(self) -> list[PyTree]:
@@ -272,7 +276,6 @@ class History:
 
         return fun_time + jac_time + fun_and_jac_time
 
-
     def _get_timings_per_task(
         self, task: EvalTask, cost_factor: float | None
     ) -> NDArray[np.float64]:
@@ -314,7 +317,7 @@ class History:
     @property
     def batches(self) -> list[int]:
         return self._batches
-    
+
     @property
     def is_serial(self) -> bool:
         return all(self.batches == np.arange(len(self.batches)))
@@ -455,7 +458,7 @@ def _apply_reduction_to_batches(
 
     Returns:
         The transformed data. Has one entry per unique batch id, equal to the result of
-        applying the reduction function to the data of that batch. 
+        applying the reduction function to the data of that batch.
 
     """
     batch_starts, batch_stops = _get_batch_starts_and_stops(batch_ids)

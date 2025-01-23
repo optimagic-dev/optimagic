@@ -201,7 +201,9 @@ def test_history_fun_data_with_fun_evaluations_cost_model(history: History):
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history: History):
+def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(
+    history: History,
+):
     got = history.fun_data(
         cost_model=om.timing.fun_evaluations,
         monotone=True,
@@ -561,4 +563,6 @@ def test_apply_to_batch_func_with_non_scalar_return():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
     with pytest.raises(ValueError, match="Function <lambda> did not return a scalar"):
-        _apply_reduction_to_batches(data, batch_ids, reduction_function=lambda _list: _list)
+        _apply_reduction_to_batches(
+            data, batch_ids, reduction_function=lambda _list: _list
+        )
