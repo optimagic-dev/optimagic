@@ -99,54 +99,66 @@ class History:
     # Function data, function value, and monotone function value
     # ----------------------------------------------------------------------------------
 
-    def fun_data(self, cost_model: CostModel, monotone: bool, dropna: bool = False) -> pd.DataFrame:
+    def fun_data(
+        self, cost_model: CostModel, monotone: bool = False, dropna: bool = False
+    ) -> pd.DataFrame:
         """Return the function value data.
 
         Args:
             cost_model: The cost model that is used to calculate the time measure.
-            monotone: Whether to return the monotone function values.
+            monotone: Whether to return the monotone function values. Defaults to False.
+            dropna: Whether to drop rows with missing values. These correspond to
+                parameters that were used to calculate a pure jacobian. Defaults to
+                False.
 
         Returns:
-            pd.DataFrame: The function value data. The columns are: 'task', 'time' and
-                'value'. If monotone is False, value is the fun value, otherwise the
-                monotone function value.
+            pd.DataFrame: The function value data. The columns are: 'fun', 'time' and
+                'task'. If monotone is False, value is the fun value, otherwise the
+                monotone function value. If dropna is True, rows with missing values
+                are dropped.
 
         """
         if monotone:
-            fun: list[float | None] | NDArray[np.float64] = self.monotone_fun
+            fun = self.monotone_fun
         else:
-            fun = self.fun
+            fun = np.array(self.fun, dtype=np.float64)  # converts None to nan
+
         timings = self._get_total_timings(cost_model)
 
         if not self.is_serial:
-
+            # In the non-serial case, we take the batching into account and reduce
+            # timings and fun to one value per batch.
             timings = _apply_reduction_to_batches(
                 data=timings,
                 batch_ids=self.batches,
                 reduction_function=cost_model.aggregate_batch_time,
             )
 
-            min_or_max = np.nanmin if self.direction == Direction.MINIMIZE else np.nanmax
+            min_or_max = (
+                np.nanmin if self.direction == Direction.MINIMIZE else np.nanmax
+            )
             fun = _apply_reduction_to_batches(
                 data=fun,
                 batch_ids=self.batches,
-                reduction_function=min_or_max,
+                reduction_function=min_or_max,  # type: ignore[arg-type]
             )
 
         time = np.cumsum(timings)
         data = pd.DataFrame({"fun": fun, "time": time})
 
         if self.is_serial:
+            # In the non-serial case, the task column is meaningless, since multiple
+            # tasks would need to be reduced to one.
             data["task"] = _task_to_categorical(self.task)
-            
+
         if dropna:
             data = data.dropna()
 
         return data.rename_axis("counter")
 
     @property
-    def fun(self) -> NDArray[np.float64]:
-        return np.array(self._fun, dtype=np.float64)
+    def fun(self) -> list[float | None]:
+        return self._fun
 
     @property
     def monotone_fun(self) -> NDArray[np.float64]:
@@ -184,7 +196,8 @@ class History:
 
         Args:
             dropna: Whether to drop rows with missing values. These correspond to
-                parameters that were used to calculate a pure jacobian.
+                parameters that were used to calculate a pure jacobian. Defaults to
+                False.
 
         Returns:
             pd.DataFrame: The parameter data. The columns are: 'name' (the parameter
@@ -195,36 +208,35 @@ class History:
         """
         wide = pd.DataFrame(self.flat_params, columns=self.flat_param_names)
         wide["task"] = _task_to_categorical(self.task)
-        wide["batches"] = self.batches
         wide["fun"] = self.fun
 
-        # 1. Get the location of the best function value in each batch and corre. params
-        # 2. Make long
-
+        # In the batch case, we select only the parameters in a batch that led to the
+        # minimal (or maximal) function value in that batch.
         if not self.is_serial:
+            wide["batches"] = self.batches
 
             if self.direction == Direction.MINIMIZE:
-                loc = data.groupby("batches")["fun"].idxmin()
+                loc_of_fun_optimizer = wide.groupby("batches")["fun"].idxmin()
             elif self.direction == Direction.MAXIMIZE:
-                loc = data.groupby("batches")["fun"].idxmax()
+                loc_of_fun_optimizer = wide.groupby("batches")["fun"].idxmax()
 
-            breakpoint()
+            wide = wide.loc[loc_of_fun_optimizer].drop(columns="batches")
 
-            data = data.loc[loc]
-
-        data = data.drop(columns=["batches", "fun"])
+        wide["counter"] = np.arange(len(wide))
 
         long = pd.melt(
-            wide, var_name="name", value_name="value", id_vars=["task", "batches", "fun"]
+            wide,
+            var_name="name",
+            value_name="value",
+            id_vars=["task", "fun", "counter"],
         )
 
-        data = long.reindex(columns=["name", "value", "task", "batches", "fun"])
-        
+        data = long.reindex(columns=["counter", "name", "value", "task", "fun"])
+
         if dropna:
             data = data.dropna()
 
-        return data.rename_axis("counter")
-
+        return data.set_index(["counter", "name"]).sort_index()
 
     @property
     def params(self) -> list[PyTree]:
@@ -272,7 +284,6 @@ class History:
 
         return fun_time + jac_time + fun_and_jac_time
 
-
     def _get_timings_per_task(
         self, task: EvalTask, cost_factor: float | None
     ) -> NDArray[np.float64]:
@@ -314,10 +325,10 @@ class History:
     @property
     def batches(self) -> list[int]:
         return self._batches
-    
+
     @property
     def is_serial(self) -> bool:
-        return all(self.batches == np.arange(len(self.batches)))
+        return np.array_equal(self.batches, np.arange(len(self.batches)))
 
     # Tasks
     # ----------------------------------------------------------------------------------
@@ -444,7 +455,7 @@ def _apply_reduction_to_batches(
 ) -> NDArray[np.float64]:
     """Apply a reduction operator on batches of data.
 
-    This function assumes that batch_ids non-empty and sorted.
+    This function assumes that batch_ids are non-empty and sorted.
 
     Args:
         data: 1d array with data.
@@ -455,7 +466,7 @@ def _apply_reduction_to_batches(
 
     Returns:
         The transformed data. Has one entry per unique batch id, equal to the result of
-        applying the reduction function to the data of that batch. 
+        applying the reduction function to the data of that batch.
 
     """
     batch_starts, batch_stops = _get_batch_starts_and_stops(batch_ids)

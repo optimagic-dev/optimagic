@@ -201,7 +201,9 @@ def test_history_fun_data_with_fun_evaluations_cost_model(history: History):
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
-def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(history: History):
+def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(
+    history: History,
+):
     got = history.fun_data(
         cost_model=om.timing.fun_evaluations,
         monotone=True,
@@ -260,7 +262,7 @@ def test_history_fun_data_with_evaluation_time_cost_model(history: History):
 
 
 def test_fun_property(history: History):
-    assert_array_equal(history.fun, np.array([10, np.nan, 9, np.nan, 2, 5]))
+    assert_array_equal(history.fun, [10, None, 9, None, 2, 5])
 
 
 def test_monotone_fun_property(history: History):
@@ -283,51 +285,63 @@ def test_is_accepted_property(history: History):
 
 def test_params_data_fun_evaluations_cost_model(history: History):
     got = history.params_data()
-    exp = pd.DataFrame(
-        {
-            "name": np.repeat(
-                [
-                    "a",
-                    "b_c",
-                    "b_d_0",
-                    "b_d_1",
-                ],
-                6,
-            ),
-            "value": np.tile(list(range(6)), 4),
-            "task": np.tile(
-                [
-                    "fun",
-                    "jac",
-                    "fun",
-                    "jac",
-                    "fun",
-                    "fun_and_jac",
-                ],
-                4,
-            ),
-        }
-    ).rename_axis("counter")
+    exp = (
+        pd.DataFrame(
+            {
+                "counter": np.tile(np.arange(6), reps=4),
+                "name": np.repeat(
+                    [
+                        "a",
+                        "b_c",
+                        "b_d_0",
+                        "b_d_1",
+                    ],
+                    6,
+                ),
+                "value": np.tile(list(range(6)), 4),
+                "task": np.tile(
+                    [
+                        "fun",
+                        "jac",
+                        "fun",
+                        "jac",
+                        "fun",
+                        "fun_and_jac",
+                    ],
+                    4,
+                ),
+                "fun": np.tile(np.array(history.fun, dtype=np.float64), reps=4),
+            }
+        )
+        .set_index(["counter", "name"])
+        .sort_index()
+    )
     assert_frame_equal(got, exp, check_categorical=False, check_dtype=False)
 
 
-def test_params_data_fun_evaluations_cost_model(history_parallel: History):
+def test_params_data_fun_evaluations_cost_model_parallel(history_parallel: History):
     got = history_parallel.params_data()
-    exp = pd.DataFrame(
-        {
-            "name": np.repeat(
-                [
-                    "a",
-                    "b_c",
-                    "b_d_0",
-                    "b_d_1",
-                ],
-                3,
-            ),
-            "value": np.tile(list(range(3)), 4),
-            "time": np.tile([1, 1, 2, 2, 3, 4], 4),
-        }
-    ).rename_axis("counter")
+    exp = (
+        pd.DataFrame(
+            {
+                "counter": np.tile([0, 1, 2], reps=4),
+                "name": np.repeat(
+                    [
+                        "a",
+                        "b_c",
+                        "b_d_0",
+                        "b_d_1",
+                    ],
+                    3,
+                ),
+                "value": np.tile([0, 2, 4], 4),
+                "task": 12 * ["fun"],
+                "fun": np.tile([10, 9, 2], reps=4),
+            }
+        )
+        .set_index(["counter", "name"])
+        .sort_index()
+    )
     assert_frame_equal(got, exp, check_categorical=False, check_dtype=False)
 
 
@@ -561,4 +575,6 @@ def test_apply_to_batch_func_with_non_scalar_return():
     data = np.array([0, 1, 2, 3, 4])
     batch_ids = [0, 0, 1, 1, 2]
     with pytest.raises(ValueError, match="Function <lambda> did not return a scalar"):
-        _apply_reduction_to_batches(data, batch_ids, reduction_function=lambda _list: _list)
+        _apply_reduction_to_batches(
+            data, batch_ids, reduction_function=lambda _list: _list
+        )
