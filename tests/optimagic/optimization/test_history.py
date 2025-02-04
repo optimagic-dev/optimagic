@@ -147,11 +147,11 @@ def params():
 @pytest.fixture
 def history_data(params):
     return {
-        "fun": [10, None, 9, None, 2, 5],
+        "fun": [10, 9, None, None, 2, 5],
         "task": [
             EvalTask.FUN,
-            EvalTask.JAC,
             EvalTask.FUN,
+            EvalTask.JAC,
             EvalTask.JAC,
             EvalTask.FUN,
             EvalTask.FUN_AND_JAC,
@@ -171,7 +171,7 @@ def history(history_data):
 @pytest.fixture
 def history_parallel(history_data):
     data = history_data.copy()
-    data["batches"] = [0, 0, 1, 1, 2, 2]
+    data["batches"] = [0, 0, 1, 1, 2, 3]
     return History(direction=Direction.MINIMIZE, **data)
 
 
@@ -186,18 +186,18 @@ def test_history_fun_data_with_fun_evaluations_cost_model(history: History):
     )
     exp = pd.DataFrame(
         {
-            "fun": [10, np.nan, 9, np.nan, 2, 5],
-            "time": [1, 1, 2, 2, 3, 4],
+            "fun": [10, 9, np.nan, np.nan, 2, 5],
+            "time": [1, 2, 2, 2, 3, 4],
             "task": [
                 "fun",
-                "jac",
                 "fun",
+                "jac",
                 "jac",
                 "fun",
                 "fun_and_jac",
             ],
         }
-    ).rename_axis("counter")
+    )
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
@@ -210,18 +210,18 @@ def test_history_fun_data_with_fun_evaluations_cost_model_and_monotone(
     )
     exp = pd.DataFrame(
         {
-            "fun": [10, np.nan, 9, np.nan, 2, 2],
-            "time": [1, 1, 2, 2, 3, 4],
+            "fun": [10, 9, np.nan, np.nan, 2, 2],
+            "time": [1, 2, 2, 2, 3, 4],
             "task": [
                 "fun",
-                "jac",
                 "fun",
+                "jac",
                 "jac",
                 "fun",
                 "fun_and_jac",
             ],
         }
-    ).rename_axis("counter")
+    )
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
@@ -232,10 +232,16 @@ def test_history_fun_data_with_fun_batches_cost_model(history_parallel: History)
     )
     exp = pd.DataFrame(
         {
-            "fun": [10, 9, 2],
-            "time": [1, 2, 3],
+            "fun": [9, np.nan, 2, 5],
+            "time": [1.0, 1.0, 2.0, 3.0],
+            "task": [
+                "fun",
+                "jac",
+                "fun",
+                "fun_and_jac",
+            ],
         }
-    ).rename_axis("counter")
+    )
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
@@ -246,27 +252,27 @@ def test_history_fun_data_with_evaluation_time_cost_model(history: History):
     )
     exp = pd.DataFrame(
         {
-            "fun": [10, np.nan, 9, np.nan, 2, 5],
+            "fun": [10, 9, np.nan, np.nan, 2, 5],
             "time": [1, 3, 4, 6, 7, 9],
             "task": [
                 "fun",
-                "jac",
                 "fun",
+                "jac",
                 "jac",
                 "fun",
                 "fun_and_jac",
             ],
         }
-    ).rename_axis("counter")
+    )
     assert_frame_equal(got, exp, check_dtype=False, check_categorical=False)
 
 
 def test_fun_property(history: History):
-    assert_array_equal(history.fun, [10, None, 9, None, 2, 5])
+    assert_array_equal(history.fun, [10, 9, None, None, 2, 5])
 
 
 def test_monotone_fun_property(history: History):
-    assert_array_equal(history.monotone_fun, np.array([10, np.nan, 9, np.nan, 2, 2]))
+    assert_array_equal(history.monotone_fun, np.array([10, 9, np.nan, np.nan, 2, 2]))
 
 
 # Acceptance
@@ -275,7 +281,7 @@ def test_monotone_fun_property(history: History):
 
 def test_is_accepted_property(history: History):
     got = history.is_accepted
-    exp = np.array([True, False, True, False, True, False])
+    exp = np.array([True, True, False, False, True, False])
     assert_array_equal(got, exp)
 
 
@@ -302,15 +308,14 @@ def test_params_data_fun_evaluations_cost_model(history: History):
                 "task": np.tile(
                     [
                         "fun",
-                        "jac",
                         "fun",
+                        "jac",
                         "jac",
                         "fun",
                         "fun_and_jac",
                     ],
                     4,
                 ),
-                "fun": np.tile(np.array(history.fun, dtype=np.float64), reps=4),
             }
         )
         .set_index(["counter", "name"])
@@ -324,7 +329,7 @@ def test_params_data_fun_evaluations_cost_model_parallel(history_parallel: Histo
     exp = (
         pd.DataFrame(
             {
-                "counter": np.tile([0, 1, 2], reps=4),
+                "counter": np.tile(np.arange(6), reps=4),
                 "name": np.repeat(
                     [
                         "a",
@@ -332,11 +337,47 @@ def test_params_data_fun_evaluations_cost_model_parallel(history_parallel: Histo
                         "b_d_0",
                         "b_d_1",
                     ],
-                    3,
+                    6,
                 ),
-                "value": np.tile([0, 2, 4], 4),
-                "task": 12 * ["fun"],
-                "fun": np.tile([10, 9, 2], reps=4),
+                "value": np.tile(list(range(6)), 4),
+                "task": np.tile(
+                    [
+                        "fun",
+                        "fun",
+                        "jac",
+                        "jac",
+                        "fun",
+                        "fun_and_jac",
+                    ],
+                    4,
+                ),
+            }
+        )
+        .set_index(["counter", "name"])
+        .sort_index()
+    )
+    assert_frame_equal(got, exp, check_categorical=False, check_dtype=False)
+
+
+def test_params_data_fun_evaluations_cost_model_parallel_collapse_batches(
+    history_parallel: History,
+):
+    got = history_parallel.params_data(collapse_batches=True)
+    exp = (
+        pd.DataFrame(
+            {
+                "counter": np.tile([0, 1, 2, 3], reps=4),
+                "name": np.repeat(
+                    [
+                        "a",
+                        "b_c",
+                        "b_d_0",
+                        "b_d_1",
+                    ],
+                    4,
+                ),
+                "value": np.tile([1, 2, 4, 5], 4),
+                "task": np.tile(["fun", "jac", "fun", "fun_and_jac"], 4),
             }
         )
         .set_index(["counter", "name"])
@@ -364,13 +405,13 @@ def test_flat_param_names(history: History):
 
 def test_get_total_timings_per_task_fun(history: History):
     got = history._get_timings_per_task(EvalTask.FUN, cost_factor=1)
-    exp = np.array([1, 0, 1, 0, 1, 0])
+    exp = np.array([1, 1, 0, 0, 1, 0])
     assert_array_equal(got, exp)
 
 
 def test_get_total_timings_per_task_jac_cost_factor_none(history: History):
     got = history._get_timings_per_task(EvalTask.JAC, cost_factor=None)
-    exp = np.array([0, 2, 0, 2, 0, 0])
+    exp = np.array([0, 0, 1, 2, 0, 0])
     assert_array_equal(got, exp)
 
 
@@ -388,8 +429,8 @@ def test_get_total_timings_custom_cost_model(history: History):
     exp = np.array(
         [
             0.5,
-            1,
             0.5,
+            1,
             1,
             0.5,
             2,
@@ -400,19 +441,19 @@ def test_get_total_timings_custom_cost_model(history: History):
 
 def test_get_total_timings_fun_evaluations(history: History):
     got = history._get_total_timings(cost_model=om.timing.fun_evaluations)
-    exp = np.array([1, 0, 1, 0, 1, 1])
+    exp = np.array([1, 1, 0, 0, 1, 1])
     assert_array_equal(got, exp)
 
 
 def test_get_total_timings_fun_batches(history: History):
     got = history._get_total_timings(cost_model=om.timing.fun_batches)
-    exp = np.array([1, 0, 1, 0, 1, 1])
+    exp = np.array([1, 1, 0, 0, 1, 1])
     assert_array_equal(got, exp)
 
 
 def test_get_total_timings_fun_batches_parallel(history_parallel: History):
     got = history_parallel._get_total_timings(cost_model=om.timing.fun_batches)
-    exp = np.array([1, 0, 1, 0, 1, 1])
+    exp = np.array([1, 1, 0, 0, 1, 1])
     assert_array_equal(got, exp)
 
 
@@ -458,8 +499,8 @@ def test_batches_property(history: History):
 def test_task_property(history: History):
     assert history.task == [
         EvalTask.FUN,
-        EvalTask.JAC,
         EvalTask.FUN,
+        EvalTask.JAC,
         EvalTask.JAC,
         EvalTask.FUN,
         EvalTask.FUN_AND_JAC,
