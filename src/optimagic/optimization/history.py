@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 from dataclasses import dataclass
 from functools import partial
@@ -461,7 +459,7 @@ def _validate_args_are_all_none_or_lists_of_same_length(
             raise ValueError("All arguments must be lists of the same length or None.")
 
 
-def _task_to_categorical(task: list[EvalTask]) -> pd.Series[str]:
+def _task_to_categorical(task: list[EvalTask]) -> "pd.Series[str]":
     EvalTaskDtype = pd.CategoricalDtype(categories=[t.value for t in EvalTask])
     return pd.Series([t.value for t in task], dtype=EvalTaskDtype)
 
