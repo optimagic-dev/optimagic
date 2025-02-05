@@ -316,6 +316,17 @@ def test_params_data_fun_evaluations_cost_model(history: History):
                     ],
                     4,
                 ),
+                "fun": np.tile(
+                    [
+                        10,
+                        9,
+                        np.nan,
+                        np.nan,
+                        2,
+                        5,
+                    ],
+                    4,
+                ),
             }
         )
         .set_index(["counter", "name"])
@@ -351,6 +362,17 @@ def test_params_data_fun_evaluations_cost_model_parallel(history_parallel: Histo
                     ],
                     4,
                 ),
+                "fun": np.tile(
+                    [
+                        10,
+                        9,
+                        np.nan,
+                        np.nan,
+                        2,
+                        5,
+                    ],
+                    4,
+                ),
             }
         )
         .set_index(["counter", "name"])
@@ -378,6 +400,7 @@ def test_params_data_fun_evaluations_cost_model_parallel_collapse_batches(
                 ),
                 "value": np.tile([1, 2, 4, 5], 4),
                 "task": np.tile(["fun", "jac", "fun", "fun_and_jac"], 4),
+                "fun": np.tile([9, np.nan, 2, 5], 4),
             }
         )
         .set_index(["counter", "name"])

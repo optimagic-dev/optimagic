@@ -240,8 +240,7 @@ class History:
         # that were used to calculate pure jacobians. This step must be done before
         # dropping the fun column and before setting the counter.
         if dropna:
-            wide = wide.dropna()
-        wide = wide.drop(columns="fun")
+            wide = wide.dropna(subset="fun")
 
         wide["counter"] = np.arange(len(wide))
 
@@ -249,10 +248,10 @@ class History:
             wide,
             var_name="name",
             value_name="value",
-            id_vars=["task", "counter"],
+            id_vars=["task", "counter", "fun"],
         )
 
-        data = long.reindex(columns=["counter", "name", "value", "task"])
+        data = long.reindex(columns=["counter", "name", "value", "task", "fun"])
 
         return data.set_index(["counter", "name"]).sort_index()
 
