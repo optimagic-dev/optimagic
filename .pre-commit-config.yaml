@@ -137,7 +137,7 @@ repos:
       - id: mypy
         files: src|tests
         additional_dependencies:
-          - numpy
+          - numpy >= 2
           - packaging
           - pandas-stubs
           - sqlalchemy-stubs

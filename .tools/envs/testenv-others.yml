@@ -16,7 +16,7 @@ dependencies:
   - joblib  # run, tests
   - numpy >= 2  # run, tests
   - pandas  # run, tests
-  - plotly  # run, tests
+  - plotly<6.0.0  # run, tests
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests

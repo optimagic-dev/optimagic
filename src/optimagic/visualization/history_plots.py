@@ -10,7 +10,7 @@ from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
-from optimagic.optimization.history_tools import get_history_arrays
+from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import Direction
@@ -59,7 +59,7 @@ def criterion_plot(
         palette = [palette]
     palette = itertools.cycle(palette)
 
-    key = "monotone_criterion" if monotone else "criterion"
+    fun_or_monotone_fun = "monotone_fun" if monotone else "fun"
 
     # ==================================================================================
     # Extract plotting data from results objects / data base
@@ -103,9 +103,7 @@ def criterion_plot(
         }
 
         for i, local_history in enumerate(data[0]["local_histories"]):
-            history = get_history_arrays(
-                local_history, Direction(data[0]["direction"])
-            )[key]
+            history = getattr(local_history, fun_or_monotone_fun)
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
@@ -128,7 +126,8 @@ def criterion_plot(
             _history = _data["stacked_local_histories"]
         else:
             _history = _data["history"]
-        history = get_history_arrays(_history, _data["direction"])[key]
+
+        history = getattr(_history, fun_or_monotone_fun)
 
         if max_evaluations is not None and len(history) > max_evaluations:
             history = history[:max_evaluations]
@@ -253,7 +252,7 @@ def params_plot(
         raise TypeError("result must be an OptimizeResult or a path to a log file.")
 
     if data["stacked_local_histories"] is not None:
-        history = data["stacked_local_histories"]["params"]
+        history = data["stacked_local_histories"].params
     else:
         history = data["history"].params
 
@@ -338,14 +337,20 @@ def _extract_plotting_data_from_results_object(
         local_histories = None
 
     if stack_multistart and local_histories is not None:
-        stacked = _get_stacked_local_histories(local_histories)
+        stacked = _get_stacked_local_histories(local_histories, res.direction)
         if show_exploration:
-            stacked["params"] = (
-                res.multistart_info.exploration_sample[::-1] + stacked["params"]
-            )
-            stacked["criterion"] = (
-                res.multistart_info.exploration_results.tolist()[::-1]
-                + stacked["criterion"]
+            fun = res.multistart_info.exploration_results.tolist()[::-1] + stacked.fun
+            params = res.multistart_info.exploration_sample[::-1] + stacked.params
+
+            stacked = History(
+                direction=stacked.direction,
+                fun=fun,
+                params=params,
+                # TODO: This needs to be fixed
+                start_time=len(fun) * [None],
+                stop_time=len(fun) * [None],
+                batches=len(fun) * [None],
+                task=len(fun) * [None],
             )
     else:
         stacked = None
@@ -387,15 +392,27 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
 
     direction = _problem_table["direction"].tolist()[-1]
 
-    history, local_histories, exploration = reader.read_multistart_history(direction)
+    _history, local_histories, exploration = reader.read_multistart_history(direction)
 
     if stack_multistart and local_histories is not None:
-        stacked = _get_stacked_local_histories(local_histories, history)
+        stacked = _get_stacked_local_histories(local_histories, direction, _history)
         if show_exploration:
             stacked["params"] = exploration["params"][::-1] + stacked["params"]
             stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]
     else:
         stacked = None
+
+    history = History(
+        direction=direction,
+        fun=_history["fun"],
+        params=_history["params"],
+        start_time=_history["time"],
+        # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available.
+        # https://github.com/optimagic-dev/optimagic/pull/553
+        stop_time=len(_history["fun"]) * [None],
+        task=len(_history["fun"]) * [None],
+        batches=list(range(len(_history["fun"]))),
+    )
 
     data = {
         "history": history,
@@ -408,7 +425,7 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
     return data
 
 
-def _get_stacked_local_histories(local_histories, history=None):
+def _get_stacked_local_histories(local_histories, direction, history=None):
     """Stack local histories.
 
     Local histories is a list of dictionaries, each of the same structure. We transform
@@ -427,4 +444,16 @@ def _get_stacked_local_histories(local_histories, history=None):
         stacked["criterion"].extend(history.fun)
         stacked["params"].extend(history.params)
         stacked["runtime"].extend(history.time)
-    return stacked
+
+    return History(
+        direction=direction,
+        fun=stacked["criterion"],
+        params=stacked["params"],
+        start_time=stacked["runtime"],
+        # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available for the
+        # IterationHistory.
+        # https://github.com/optimagic-dev/optimagic/pull/553
+        stop_time=len(stacked["criterion"]) * [None],
+        task=len(stacked["criterion"]) * [None],
+        batches=list(range(len(stacked["criterion"]))),
+    )
