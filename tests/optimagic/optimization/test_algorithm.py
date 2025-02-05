@@ -117,7 +117,7 @@ class DummyAlgorithm(Algorithm):
         hist_entry = HistoryEntry(
             params=x0,
             fun=0.0,
-            time=0.0,
+            start_time=0.0,
             task=EvalTask.FUN,
         )
         problem.history.add_entry(hist_entry)

@@ -209,7 +209,7 @@ def _process_one_result(optimize_result, problem):
             criterion_history = history.fun
         criterion_history = np.clip(criterion_history, _solution_crit, np.inf)
         batches_history = history.batches
-        time_history = history.time
+        time_history = history.start_time
 
     return {
         "params_history": params_history_flat,
