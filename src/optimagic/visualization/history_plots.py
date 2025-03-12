@@ -175,6 +175,9 @@ def _harmonize_inputs_to_dict(results, names):
     if isinstance(results, OptimizeResult):
         results = [results]
 
+    if isinstance(results, (str, Path)):
+        results = [results]
+
     if names is not None and len(names) != len(results):
         raise ValueError("len(results) needs to be equal to len(names).")
 
