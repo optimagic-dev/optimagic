@@ -172,10 +172,7 @@ def _harmonize_inputs_to_dict(results, names):
     if not isinstance(names, list) and names is not None:
         names = [names]
 
-    if isinstance(results, OptimizeResult):
-        results = [results]
-
-    if isinstance(results, (str, Path)):
+    if isinstance(results, (OptimizeResult, str, Path)):
         results = [results]
 
     if names is not None and len(names) != len(results):
