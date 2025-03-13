@@ -294,7 +294,6 @@ class BoundedGradientBasedLocalScalarAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
     scipy_slsqp: Type[ScipySLSQP] = ScipySLSQP
     scipy_truncated_newton: Type[ScipyTruncatedNewton] = ScipyTruncatedNewton
@@ -849,7 +848,6 @@ class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
@@ -967,7 +965,6 @@ class BoundedGradientBasedScalarAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
@@ -1692,7 +1689,6 @@ class BoundedLocalScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
@@ -1999,7 +1995,6 @@ class BoundedGradientBasedAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
@@ -2601,7 +2596,6 @@ class BoundedLocalAlgorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
@@ -2837,7 +2831,6 @@ class BoundedScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3349,7 +3342,6 @@ class BoundedAlgorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
-    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch

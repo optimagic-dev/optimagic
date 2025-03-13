@@ -8,6 +8,8 @@ from numpy.typing import NDArray
 
 from optimagic import mark
 from optimagic.optimization.algo_options import (
+    CONVERGENCE_FTOL_REL,
+    CONVERGENCE_GTOL_ABS,
     MAX_LINE_SEARCH_STEPS,
     STOPPING_MAXITER,
 )
@@ -15,9 +17,19 @@ from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.typing import (
-    AggregationLevel,
-)
+from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
+
+LIMITED_MEMORY_MAX_HISTORY = 10
+"""Number of memory points to be stored (default 10)."""
+MIN_LINE_SEARCH_STEPS = 1e-20
+"""The minimum step of the line search."""
+MAX_LINE_SEARCH_TRIALS = 50
+"""The maximum number of trials for the line search (before giving up)."""
+ARMIJO_CONSTANT = 1e-4
+"""Controls the accuracy of the line search routine for determining the Armijo
+condition."""
+WOLFE_CONDITION = 0.9
+"""Parameter for detecting the Wolfe condition."""
 
 
 @mark.minimizer(
@@ -28,23 +40,37 @@ from optimagic.typing import (
     needs_jac=True,
     needs_hess=False,
     supports_parallelism=False,
-    supports_bounds=True,
+    supports_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
 class EnsmallenLBFGS(Algorithm):
-    stopping_maxiter = STOPPING_MAXITER
-    max_step_for_line_search = MAX_LINE_SEARCH_STEPS
-    # min_step_for_line_search = MIN_LINE_SEARCH_STEPS
+    limited_memory_max_history: PositiveInt = LIMITED_MEMORY_MAX_HISTORY
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    armijo_constant: NonNegativeFloat = ARMIJO_CONSTANT  # needs review
+    wolfe_condition: NonNegativeFloat = WOLFE_CONDITION  # needs review
+    convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    max_line_search_trials: PositiveInt = MAX_LINE_SEARCH_TRIALS
+    min_step_for_line_search: NonNegativeFloat = MIN_LINE_SEARCH_STEPS
+    max_step_for_line_search: NonNegativeFloat = MAX_LINE_SEARCH_STEPS
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        optimizer = pye.L_BFGS()
-
-        print(type(problem.fun(x0)))
+        optimizer = pye.L_BFGS(
+            numBasis=self.limited_memory_max_history,
+            maxIterations=self.stopping_maxiter,
+            armijoConstant=self.armijo_constant,
+            wolfe=self.wolfe_condition,
+            minGradientNorm=self.convergence_gtol_abs,
+            factr=self.convergence_ftol_rel,
+            maxLineSearchTrials=self.max_line_search_trials,
+            minStep=self.min_step_for_line_search,
+            maxStep=self.max_step_for_line_search,
+        )
 
         def objective_function(
             x: NDArray[np.float64], grad: NDArray[np.float64]
@@ -52,11 +78,11 @@ class EnsmallenLBFGS(Algorithm):
             grad[:] = problem.jac(x)
             return np.float64(problem.fun(x))
 
-        raw_res = optimizer.optimize(objective_function, x0)
+        raw = optimizer.optimize(objective_function, x0)
 
         res = InternalOptimizeResult(
-            x=raw_res,
-            fun=problem.fun(raw_res),
+            x=raw,  # only best x is available
+            fun=problem.fun(raw),  # best f(x) value is not available
         )
 
         return res
