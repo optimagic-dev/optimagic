@@ -177,8 +177,18 @@ def test_harmonize_inputs_to_dict_invalid_names():
     with pytest.raises(ValueError):
         _harmonize_inputs_to_dict(results=results, names=names)
 
-def test_harmonize_inputs_to_dict_with_log_file_name():
-    log_options = om.SQLiteLogOptions("test_log.db", if_database_exists=om.ExistenceStrategy.REPLACE,)
-    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb", logging=log_options,)
-    assert _harmonize_inputs_to_dict(results="test_log.db", names=None) == {"0": "test_log.db"}
 
+def test_harmonize_inputs_to_dict_with_log_file_name():
+    log_options = om.SQLiteLogOptions(
+        "test_log.db",
+        if_database_exists=om.ExistenceStrategy.REPLACE,
+    )
+    res = minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+        logging=log_options,
+    )
+    assert _harmonize_inputs_to_dict(results="test_log.db", names=None) == {
+        "0": "test_log.db"
+    }
