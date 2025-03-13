@@ -1,4 +1,5 @@
 import itertools
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -126,6 +127,7 @@ def test_criterion_plot_different_input_types():
     criterion_plot(results, stack_multistart=True)
     criterion_plot(results, monotone=True, stack_multistart=True)
     criterion_plot(results, show_exploration=True)
+    criterion_plot("test.db")
 
 
 def test_criterion_plot_wrong_inputs():
@@ -178,17 +180,10 @@ def test_harmonize_inputs_to_dict_invalid_names():
         _harmonize_inputs_to_dict(results=results, names=names)
 
 
-def test_harmonize_inputs_to_dict_with_log_file_name():
-    log_options = om.SQLiteLogOptions(
-        "test_log.db",
-        if_database_exists=om.ExistenceStrategy.REPLACE,
-    )
-    minimize(
-        fun=lambda x: x @ x,
-        params=np.arange(5),
-        algorithm="scipy_lbfgsb",
-        logging=log_options,
-    )
-    assert _harmonize_inputs_to_dict(results="test_log.db", names=None) == {
-        "0": "test_log.db"
-    }
+def test_harmonize_inputs_to_dict_str_input():
+    assert _harmonize_inputs_to_dict(results="test.db", names=None) == {"0": "test.db"}
+
+
+def test_harmonize_inputs_to_dict_path_input():
+    path = Path("test.db")
+    assert _harmonize_inputs_to_dict(results=path, names=None) == {"0": path}
