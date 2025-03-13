@@ -16,6 +16,7 @@ dependencies = [
     "sqlalchemy>=1.3",
     "annotated-types",
     "typing-extensions",
+    "pyensmallen",
 ]
 dynamic = ["version"]
 keywords = [
@@ -334,6 +335,7 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
+    "pyensmallen",
     "pybaum",
     "scipy",
     "scipy.linalg",
