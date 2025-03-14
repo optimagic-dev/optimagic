@@ -140,10 +140,11 @@ def create_optimization_problem(
     # error handling needed as long as fun is an optional argument
     # ==================================================================================
 
-    if fun is None and criterion is None:
+    if fun_and_jac is None and fun is None and criterion is None:
         msg = (
             "Missing objective function. Please provide an objective function as the "
-            "first positional argument or as the keyword argument `fun`."
+            "first positional argument or as the keyword argument `fun` or "
+            " with `fun_and_jac`."
         )
         raise MissingInputError(msg)
 
@@ -160,6 +161,10 @@ def create_optimization_problem(
             "argument or as the keyword argument `algorithm`."
         )
         raise MissingInputError(msg)
+
+    if fun_and_jac is not None:
+        if fun is None:
+            fun = split_fun_and_jac(fun_and_jac, target="fun")
 
     # ==================================================================================
     # deprecations

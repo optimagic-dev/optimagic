@@ -44,3 +44,18 @@ def test_with_invalid_numdiff_options():
             algorithm="scipy_lbfgsb",
             numdiff_options={"bla": 15},
         )
+
+
+# provided fun or fun_and_jac is provided
+def test_with_optional_fun_argument():
+    expected = minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+    )
+    res = minimize(
+        fun_and_jac=lambda x: (x @ x, 2 * x),
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+    )
+    assert res == expected
