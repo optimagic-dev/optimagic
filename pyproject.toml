@@ -16,6 +16,7 @@ dependencies = [
     "sqlalchemy>=1.3",
     "annotated-types",
     "typing-extensions",
+    "iminuit",
 ]
 dynamic = ["version"]
 keywords = [

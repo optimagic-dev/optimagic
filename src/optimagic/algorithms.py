@@ -14,6 +14,7 @@ from typing import Type, cast
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
+from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
 from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
 from optimagic.optimizers.neldermead import NelderMeadParallel
@@ -485,6 +486,7 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1150,6 +1152,7 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1199,6 +1202,7 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalScalarAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1290,6 +1294,7 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1674,6 +1679,7 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -2160,6 +2166,7 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -2200,6 +2207,7 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -2296,6 +2304,7 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -2577,6 +2586,7 @@ class GlobalParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -2659,6 +2669,7 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -2809,6 +2820,7 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -3115,6 +3127,7 @@ class GradientBasedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3246,6 +3259,7 @@ class GlobalAlgorithms(AlgoSelection):
 class LocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3316,6 +3330,7 @@ class LocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3451,6 +3466,7 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class ScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3625,6 +3641,7 @@ class ParallelAlgorithms(AlgoSelection):
 class Algorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
