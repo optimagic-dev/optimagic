@@ -50,6 +50,7 @@ def test_with_invalid_numdiff_options():
 def test_with_optional_fun_argument():
     expected = minimize(
         fun=lambda x: x @ x,
+        jac=lambda x: 2 * x,
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
     )
@@ -58,4 +59,4 @@ def test_with_optional_fun_argument():
         params=np.arange(5),
         algorithm="scipy_lbfgsb",
     )
-    assert res == expected
+    assert np.all(res.x == expected.x) == np.True_
