@@ -77,10 +77,18 @@ def process_minuit_result(minuit_result: Minuit) -> InternalOptimizeResult:
     if hasattr(minuit_result, "gradient"):
         jac = np.array(minuit_result.gradient)
 
+    hessian = np.array(minuit_result.hesse().params)
+    covariance = np.array(minuit_result.covariance)
+
+    info = {"minos": minuit_result.minos()}
+
     return InternalOptimizeResult(
         x=x,
         fun=fun,
         success=success,
         message=message,
         jac=jac,
+        hess=hessian,
+        hess_inv=covariance,
+        info=info,
     )
