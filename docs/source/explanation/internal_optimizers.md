@@ -94,26 +94,29 @@ optimagic. To see them in action look at
 
 ## Naming conventions for algorithm specific arguments
 
-Many optimizers have similar but slightly different names for arguments that configure
-the convergence criteria, other stopping conditions, and so on. We try to harmonize
-those names and their default values where possible.
+To make switching between different algorithm as simple as possible, we align the names
+of commonly used convergence and stopping criteria. We also align the default values for
+stopping and convergence criteria as much as possible.
 
-Since some optimizers support many tuning parameters we group some of them by the first
-part of their name (e.g. all convergence criteria names start with `convergence`). See
-{ref}`list_of_algorithms` for the signatures of the provided internal optimizers.
+You can find the harmonized names and value [here](algo_options_docs).
 
-The preferred default values can be imported from `optimagic.optimization.algo_options`
-which are documented in {ref}`algo_options`. If you add a new optimizer to optimagic you
-should only deviate from them if you have good reasons.
-
-Note that a complete harmonization is not possible nor desirable, because often
-convergence criteria that clearly are the same are implemented slightly different for
-different optimizers. However, complete transparency is possible and we try to document
-the exact meaning of all options for all optimizers.
+To align the names of other tuning parameters as much as possible with what is already
+there, simple have a look at the optimizers we already wrapped. For example, if you are
+wrapping a bfgs or lbfgs algorithm from some libray, try to look at all existing
+wrappers of bfgs algorithms and use the same names for the same options.
 
 ## Algorithms that parallelize
 
-(to be written)
+Algorithms that evaluate the objective function or derivatives in parallel should only
+do so via `InternalOptimizationProblem.batch_fun`,
+`InternalOptimizationProblem.batch_jac` or
+`InternalOptimizationProblem.batch_fun_and_jac`.
+
+If you parallelize in any other way, the automatic history collection will stop to work.
+
+In that case, call `om.mark.minimizer` with `disable_history=True`. In that case you can
+either do your own history collection and add that history to `InternalOptimizeResult`
+or the user has to rely on logging.
 
 ## Nonlinear constraints
 
