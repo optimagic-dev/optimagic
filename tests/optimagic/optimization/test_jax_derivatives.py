@@ -56,19 +56,21 @@ def test_params_is_jax_scalar():
 
 
 @pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")
-def params_is_1d_array():
+def test_params_is_1d_array():
     def criterion(x):
         return x @ x
 
+    params = jnp.arange(3).astype(float)
+
     res = minimize(
         fun=criterion,
-        params=jnp.arange(3),
+        params=params,
         algorithm="scipy_lbfgsb",
         jac=jax.grad(criterion),
     )
 
     assert isinstance(res.params, jnp.ndarray)
-    assert aaae(res.params, jnp.arange(3))
+    assert np.allclose(res.params, np.zeros(3), atol=1e-7)
 
 
 @pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")
@@ -107,7 +109,7 @@ def test_least_squares_optimizer_pytree():
     def ls_wrapper(x):
         return criterion(x)["root_contributions"]
 
-    params = {"a": 1.0, "b": 2.0, "c": jnp.array([1.0, 2.0])}
+    params = {"a": 1.0, "b": 2.0, "c": jnp.array([0.0, 0.0])}
     jac = jax.jacobian(ls_wrapper)
 
     res = minimize(

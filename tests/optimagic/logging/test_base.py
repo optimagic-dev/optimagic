@@ -12,16 +12,16 @@ def test_key_value_store_raise_errors():
             super().__init__({1}, [], "key")
 
         def insert(self, value: InputType) -> None:
-            pass
+            pass  # pragma: no cover
 
         def _select_by_key(self, key: int) -> list[OutputType]:
-            pass
+            pass  # pragma: no cover
 
         def _select_all(self) -> list[OutputType]:
-            pass
+            pass  # pragma: no cover
 
         def select_last_rows(self, n_rows: int) -> list[OutputType]:
-            pass
+            pass  # pragma: no cover
 
     class WrongPrimaryKey(NonUpdatableKeyValueStore):
         @dataclass(frozen=True)
@@ -39,16 +39,16 @@ def test_key_value_store_raise_errors():
             )
 
         def insert(self, value: InputType) -> None:
-            pass
+            pass  # pragma: no cover
 
         def _select_by_key(self, key: int) -> list[OutputType]:
-            pass
+            pass  # pragma: no cover
 
         def _select_all(self) -> list[OutputType]:
-            pass
+            pass  # pragma: no cover
 
         def select_last_rows(self, n_rows: int) -> list[OutputType]:
-            pass
+            pass  # pragma: no cover[]
 
     with pytest.raises(ValueError):
         NoDataClass()

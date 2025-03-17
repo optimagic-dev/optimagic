@@ -94,12 +94,8 @@ def test_estimate_msm_dict_params_and_moments():
 
 
 def assert_almost_equal(x, y, decimal=6):
-    if isinstance(x, np.ndarray):
-        x_flat = x
-        y_flat = y
-    else:
-        registry = get_registry(extended=True)
-        x_flat = np.array(tree_just_flatten(x, registry=registry))
-        y_flat = np.array(tree_just_flatten(x, registry=registry))
+    registry = get_registry(extended=True)
+    x_flat = np.array(tree_just_flatten(x, registry=registry))
+    y_flat = np.array(tree_just_flatten(x, registry=registry))
 
     aaae(x_flat, y_flat, decimal=decimal)

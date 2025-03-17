@@ -76,3 +76,9 @@ def test_mark_minimizer():
     assert hasattr(DummyAlgorithm, "__algo_info__")
     assert isinstance(DummyAlgorithm.__algo_info__, AlgoInfo)
     assert DummyAlgorithm.__algo_info__.name == "test"
+
+
+@pytest.mark.parametrize("func", CALLABLES)
+def test_callable_execution(func):
+    result = func(0)
+    assert result is None

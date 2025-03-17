@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
-from pybaum import tree_just_flatten
 
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.exceptions import InvalidConstraintError
@@ -22,17 +21,12 @@ from optimagic.parameters.nonlinear_constraints import (
     process_nonlinear_constraints,
     vector_as_list_of_scalar_constraints,
 )
-from optimagic.parameters.tree_registry import get_registry
 
 
 @dataclass
 class Converter:
     def params_from_internal(self, x):
         return x
-
-    def params_to_internal(self, params):
-        registry = get_registry(extended=True)
-        return np.array(tree_just_flatten(params, registry=registry))
 
 
 # ======================================================================================
@@ -184,7 +178,7 @@ TEST_CASES = [
     (
         [
             {
-                "type": "ineq",
+                "type": "eq",
                 "fun": lambda x: np.array([x]),
                 "jac": lambda x: np.array([[1]]),  # noqa: ARG005
                 "n_constr": 1,
@@ -192,10 +186,10 @@ TEST_CASES = [
         ],  # constraints
         [
             {
-                "type": "eq",
+                "type": "ineq",
                 "fun": lambda x: np.array([x, -x]).reshape(-1, 1),
                 "jac": lambda x: np.array([[1], [-1]]),  # noqa: ARG005
-                "n_constr": 1,
+                "n_constr": 2,
             }
         ],  # expected
     ),

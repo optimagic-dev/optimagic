@@ -323,7 +323,7 @@ def test_maximize_with_dict_inputs(fun, jac, fun_and_jac_case):
 
 def test_invalid_marker_for_jac_in_minimize():
     @mark.least_squares
-    def jac(x):
+    def jac(x):  # pragma: no cover
         return 2 * x
 
     with pytest.warns(UserWarning):
@@ -337,7 +337,7 @@ def test_invalid_marker_for_jac_in_minimize():
 
 def test_invalid_marker_for_fun_and_jac_in_minimize():
     @mark.least_squares
-    def fun_and_jac(x):
+    def fun_and_jac(x):  # pragma: no cover
         return x @ x, 2 * x
 
     with pytest.warns(UserWarning):

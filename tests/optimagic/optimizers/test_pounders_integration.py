@@ -13,23 +13,6 @@ from optimagic.optimizers.pounders import internal_solve_pounders
 from tests.optimagic.optimizers._pounders.test_pounders_unit import FIXTURES_DIR
 
 
-def load_history(start_vec, solver_sub):
-    start_vec_str = np.array2string(
-        start_vec, precision=3, separator=",", suppress_small=False
-    )
-
-    history_x = np.genfromtxt(
-        FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
-        delimiter=",",
-    )
-    history_criterion = np.genfromtxt(
-        FIXTURES_DIR / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
-        delimiter=",",
-    )
-
-    return history_x, history_criterion
-
-
 @pytest.fixture()
 def criterion():
     data = pd.read_csv(FIXTURES_DIR / "pounders_example_data.csv")

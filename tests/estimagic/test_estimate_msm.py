@@ -71,8 +71,6 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
 
     # check that cov works
     calculated_cov = calculated.cov()
-    if isinstance(calculated_cov, pd.DataFrame):
-        calculated_cov = calculated_cov.to_numpy()
 
     # this works only in the very special case with diagonal moments cov and
     # jac = identity matrix
@@ -146,8 +144,6 @@ def test_estimate_msm_with_jacobian():
 
     # abuse simulate_moments to get empirical moments in correct format
     empirical_moments = _sim_np(expected_params)
-    if isinstance(empirical_moments, dict):
-        empirical_moments = empirical_moments["simulated_moments"]
 
     calculated = estimate_msm(
         simulate_moments=_sim_np,
@@ -156,7 +152,7 @@ def test_estimate_msm_with_jacobian():
         params=start_params,
         optimize_options="scipy_lbfgsb",
         jacobian=lambda x: np.eye(len(x)),
-    )
+    )  # pargma: no cover
 
     aaae(calculated.params, expected_params)
     aaae(calculated.cov(), cov_np)
@@ -166,8 +162,6 @@ def test_estimate_msm_with_algorithm_type():
     start_params = np.array([3, 2, 1])
     expected_params = np.zeros(3)
     empirical_moments = _sim_np(expected_params)
-    if isinstance(empirical_moments, dict):
-        empirical_moments = empirical_moments["simulated_moments"]
 
     estimate_msm(
         simulate_moments=_sim_np,
@@ -176,15 +170,13 @@ def test_estimate_msm_with_algorithm_type():
         params=start_params,
         optimize_options=scipy_optimizers.ScipyLBFGSB,
         jacobian=lambda x: np.eye(len(x)),
-    )
+    )  # pargma: no cover
 
 
 def test_estimate_msm_with_algorithm():
     start_params = np.array([3, 2, 1])
     expected_params = np.zeros(3)
     empirical_moments = _sim_np(expected_params)
-    if isinstance(empirical_moments, dict):
-        empirical_moments = empirical_moments["simulated_moments"]
 
     estimate_msm(
         simulate_moments=_sim_np,
@@ -193,7 +185,7 @@ def test_estimate_msm_with_algorithm():
         params=start_params,
         optimize_options=scipy_optimizers.ScipyLBFGSB(stopping_maxfun=10),
         jacobian=lambda x: np.eye(len(x)),
-    )
+    )  # pargma: no cover
 
 
 def test_to_pickle(tmp_path):
@@ -201,8 +193,6 @@ def test_to_pickle(tmp_path):
 
     # abuse simulate_moments to get empirical moments in correct format
     empirical_moments = _sim_np(np.zeros(3))
-    if isinstance(empirical_moments, dict):
-        empirical_moments = empirical_moments["simulated_moments"]
 
     calculated = estimate_msm(
         simulate_moments=_sim_np,
@@ -210,7 +200,7 @@ def test_to_pickle(tmp_path):
         moments_cov=cov_np,
         params=start_params,
         optimize_options="scipy_lbfgsb",
-    )
+    )  # pargma: no cover
 
     calculated.to_pickle(tmp_path / "bla.pkl")
 
@@ -220,8 +210,6 @@ def test_caching():
 
     # abuse simulate_moments to get empirical moments in correct format
     empirical_moments = _sim_np(np.zeros(3))
-    if isinstance(empirical_moments, dict):
-        empirical_moments = empirical_moments["simulated_moments"]
 
     got = estimate_msm(
         simulate_moments=_sim_np,
@@ -229,7 +217,7 @@ def test_caching():
         moments_cov=cov_np,
         params=start_params,
         optimize_options="scipy_lbfgsb",
-    )
+    )  # pargma: no cover
 
     assert got._cache == {}
     cov = got.cov(method="robust", return_type="array")

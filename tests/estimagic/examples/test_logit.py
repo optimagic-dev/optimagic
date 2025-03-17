@@ -1,10 +1,12 @@
 """Tests for the logit example."""
 
+import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.examples.logit import logit_grad, logit_hess, logit_jac, logit_loglike
 
 
+@pytest.mark.usefixtures("logit_inputs", "logit_object")
 def test_logit_loglikes(logit_inputs, logit_object):
     x = logit_inputs["params"]["value"].to_numpy()
     expected = logit_object.loglikeobs(x)
@@ -13,6 +15,7 @@ def test_logit_loglikes(logit_inputs, logit_object):
     aaae(got, expected)
 
 
+@pytest.mark.usefixtures("logit_inputs", "logit_object")
 def test_logit_jac(logit_inputs, logit_object):
     x = logit_inputs["params"]["value"].to_numpy()
     expected = logit_object.score_obs(x)
@@ -22,6 +25,7 @@ def test_logit_jac(logit_inputs, logit_object):
     aaae(got, expected)
 
 
+@pytest.mark.usefixtures("logit_inputs", "logit_object")
 def test_logit_grad(logit_inputs, logit_object):
     x = logit_inputs["params"]["value"].to_numpy()
     expected = logit_object.score(x)
@@ -29,6 +33,7 @@ def test_logit_grad(logit_inputs, logit_object):
     aaae(calculated, expected)
 
 
+@pytest.mark.usefixtures("logit_inputs", "logit_object")
 def test_logit_hessian(logit_inputs, logit_object):
     x = logit_inputs["params"]["value"].to_numpy()
     expected = logit_object.hessian(x)

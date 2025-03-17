@@ -235,7 +235,7 @@ def _equality_to_inequality(c):
             "fun": partial(transform, func=c["fun"]),
             "jac": partial(transform, func=c["jac"]),
             "n_constr": 2 * c["n_constr"],
-            "tol": c["tol"],
+            "tol": c.get("tol", None),
             "type": "ineq",
         }
     else:

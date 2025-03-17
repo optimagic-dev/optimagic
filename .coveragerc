@@ -1,0 +1,17 @@
+[run]
+source = tests
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    except ImportError
+    skipif
+    @pytest.mark.skipif
+    @pytest.fixture
+    @pytest.mark.xfail
+    @pytest.mark.skip

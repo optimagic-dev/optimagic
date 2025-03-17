@@ -166,8 +166,5 @@ def _tree_equal_up_to_dtype(left, right):
 
 
 def _frame_equal(left, right):
-    try:
-        pd.testing.assert_frame_equal(left, right, check_dtype=False)
-        return True
-    except AssertionError:
-        return False
+    pd.testing.assert_frame_equal(left, right, check_dtype=False)
+    return True

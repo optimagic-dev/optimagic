@@ -13,7 +13,7 @@ from optimagic.config import IS_JAX_INSTALLED
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 
 if not IS_JAX_INSTALLED:
-    pytestmark = pytest.mark.skip(reason="jax is not installed.")
+    pytestmark = pytest.mark.skip(reason="jax is not installed.")  # pragma: no cover
 else:
     import jax
     import jax.numpy as jnp

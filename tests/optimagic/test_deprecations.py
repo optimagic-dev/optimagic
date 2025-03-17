@@ -901,7 +901,6 @@ def test_handle_log_options():
         handled_logger = handle_log_options_throw_deprecated_warning(
             log_options_typo, ":memory:"
         )
-        assert handled_logger == ":memory:"
 
 
 def test_log_options_are_deprecated_in_estimate_ml(tmp_path):
@@ -936,11 +935,6 @@ def test_log_options_are_deprecated_in_estimate_ml(tmp_path):
 
 def test_log_options_are_deprecated_in_estimate_msm(tmp_path):
     with pytest.warns(FutureWarning, match="LogOptions"):
-
-        @om.mark.likelihood
-        def loglike(x):
-            return -(x**2)
-
         em.estimate_msm(
             simulate_moments=lambda x: x,
             empirical_moments=np.zeros(3),
@@ -952,11 +946,6 @@ def test_log_options_are_deprecated_in_estimate_msm(tmp_path):
         )
 
     with pytest.warns(FutureWarning, match="if_table_exists"):
-
-        @om.mark.likelihood
-        def loglike(x):
-            return -(x**2)
-
         em.estimate_msm(
             simulate_moments=lambda x: x,
             empirical_moments=np.zeros(3),

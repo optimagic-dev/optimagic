@@ -11,7 +11,9 @@ from optimagic.optimization.optimize import minimize
 from optimagic.utilities import get_rng
 
 if not IS_PETSC4PY_INSTALLED:
-    pytestmark = pytest.mark.skip(reason="petsc4py is not installed.")
+    pytestmark = pytest.mark.skip(
+        reason="petsc4py is not installed."
+    )  # pragma: no cover
 
 
 NUM_AGENTS = 2_000

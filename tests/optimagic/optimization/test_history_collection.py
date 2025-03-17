@@ -104,8 +104,6 @@ def _get_fake_history(batch_size):
         batches = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 7, 7, 8]
     elif batch_size == 4:
         batches = [0, 0, 0, 0, 1, 2, 2, 2, 2, 3, 4, 4, 4, 4, 5]
-    else:
-        raise ValueError("batch_size must be 1, 2 or 4.")
 
     out = {
         "params": list(np.arange(15).repeat(5).reshape(15, 5)),

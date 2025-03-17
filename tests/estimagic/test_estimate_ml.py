@@ -268,9 +268,6 @@ def test_estimate_ml_with_logit_constraints(
         "algo_options": {"convergence.ftol_rel": 1e-12},
     }
 
-    if "fun_and_jac" in optimize_options:
-        optimize_options["fun_and_jac_kwargs"] = kwargs
-
     got = estimate_ml(
         loglike=logit_loglike,
         params=logit_np_inputs["params"],

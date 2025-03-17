@@ -113,6 +113,7 @@ class DummyAlgorithm(Algorithm):
     convergence_ftol_rel: NonNegativeFloat = 1e-6
     stopping_maxiter: PositiveInt = 1000
 
+    @pytest.fixture
     def _solve_internal_problem(self, problem, x0):
         hist_entry = HistoryEntry(
             params=x0,

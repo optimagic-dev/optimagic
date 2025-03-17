@@ -205,7 +205,7 @@ def test_isscalar_false(element):
 
 
 @pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")
-def tets_isscalar_jax_true():
+def test_isscalar_jax_true():
     x = jnp.arange(3)
     element = x @ x
     assert isscalar(element) is True

@@ -48,10 +48,7 @@ def logit_loglike(params, y, x):
         loglike (np.array): 1d numpy array with likelihood contribution  per individual
 
     """
-    if isinstance(params, pd.DataFrame):
-        p = params["value"].to_numpy()
-    else:
-        p = params
+    p = params
     q = 2 * y - 1
     loglikes = np.log(1 / (1 + np.exp(-(q * np.dot(x, p)))))
 

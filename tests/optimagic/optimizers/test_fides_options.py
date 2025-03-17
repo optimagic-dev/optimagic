@@ -13,9 +13,9 @@ if IS_FIDES_INSTALLED:
 
     from optimagic.optimizers.fides import Fides
 else:
-    FX = lambda: None
-    SR1 = lambda: None
-    Broyden = lambda phi: None  # noqa: ARG005
+    FX = lambda: None  # pragma: no cover
+    SR1 = lambda: None  # pragma: no cover
+    Broyden = lambda phi: None  # pragma: no cover
 
 test_cases_no_contribs_needed = [
     {},
