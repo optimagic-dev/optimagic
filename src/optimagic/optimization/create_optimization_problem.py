@@ -163,6 +163,11 @@ def create_optimization_problem(
         raise MissingInputError(msg)
 
     if fun_and_jac is not None:
+        if isinstance(fun_and_jac, list):
+            raise NotImplementedError(
+                "`fun_and_jac` cannot be a list, this is not yet supported. Instead, "
+                "please provide `fun` and `jac` through keyword arguments."
+            )
         if fun is None:
             fun = split_fun_and_jac(fun_and_jac, target="fun")
 
