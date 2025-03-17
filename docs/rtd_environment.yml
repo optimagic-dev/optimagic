@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.10
+  - python=3.11
   - typing-extensions
   - pip
   - setuptools_scm
@@ -29,6 +29,7 @@ dependencies:
   - plotly
   - nlopt
   - annotated-types
+  - pygmo>=2.19.0
   - pip:
       - ../
       - kaleido

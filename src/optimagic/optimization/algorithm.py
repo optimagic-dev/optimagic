@@ -67,6 +67,27 @@ class AlgoInfo:
 
 @dataclass(frozen=True)
 class InternalOptimizeResult:
+    """Internal representation of the result of an optimization problem.
+
+    Args:
+        x: The optimal parameters.
+        fun: The function value at the optimal parameters.
+        success: Whether the optimization was successful.
+        message: A message from the optimizer.
+        status: The status of the optimization.
+        n_fun_evals: The number of function evaluations.
+        n_jac_evals: The number of gradient or jacobian evaluations.
+        n_hess_evals: The number of Hessian evaluations.
+        n_iterations: The number of iterations.
+        jac: The Jacobian of the objective function at the optimal parameters.
+        hess: The Hessian of the objective function at the optimal parameters.
+        hess_inv: The inverse of the Hessian of the objective function at the optimal
+            parameters.
+        max_constraint_violation: The maximum constraint violation.
+        info: Additional information from the optimizer.
+
+    """
+
     x: NDArray[np.float64]
     fun: float | NDArray[np.float64]
     success: bool | None = None
@@ -175,6 +196,13 @@ class AlgorithmMeta(ABCMeta):
 
 @dataclass(frozen=True)
 class Algorithm(ABC, metaclass=AlgorithmMeta):
+    """Base class for all optimization algorithms in optimagic.
+
+    To add an optimizer to optimagic you need to subclass Algorithm and overide the
+    ``_solve_internal_problem`` method.
+
+    """
+
     @abstractmethod
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -200,6 +228,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
                 object.__setattr__(self, field, value)
 
     def with_option(self, **kwargs: Any) -> Self:
+        """Create a modified copy with the given options."""
         valid_keys = set(self.__dataclass_fields__) - {"__algo_info__"}
         invalid = set(kwargs) - valid_keys
         if invalid:
@@ -210,6 +239,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
         return replace(self, **kwargs)
 
     def with_stopping(self, **kwargs: Any) -> Self:
+        """Create a modified copy with the given stopping options."""
         options = {}
         for k, v in kwargs.items():
             if k.startswith("stopping_"):
@@ -220,6 +250,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
         return self.with_option(**options)
 
     def with_convergence(self, **kwargs: Any) -> Self:
+        """Create a modified copy with the given convergence options."""
         options = {}
         for k, v in kwargs.items():
             if k.startswith("convergence_"):
@@ -235,6 +266,12 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
         x0: NDArray[np.float64],
         step_id: int,
     ) -> InternalOptimizeResult:
+        """Solve the internal optimization problem.
+
+        This method is called internally by `minimize` or `maximize` to solve the
+        internal optimization problem and process the results.
+
+        """
         problem = problem.with_new_history().with_step_id(step_id)
 
         if problem.logger:
@@ -270,6 +307,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
 
     @property
     def name(self) -> str:
+        """The name of the algorithm."""
         # cannot call algo_info here because it would be an infinite recursion
         if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
             return self.__algo_info__.name
@@ -277,6 +315,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
 
     @property
     def algo_info(self) -> AlgoInfo:
+        """Information about the algorithm."""
         if not hasattr(self, "__algo_info__") or self.__algo_info__ is None:
             msg = (
                 f"The algorithm {self.name} does not have have the __algo_info__ "
