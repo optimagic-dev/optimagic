@@ -196,9 +196,15 @@ def threading_batch_evaluator(
     else:
         results = [None] * len(arguments)
         threads = []
+        errors = []
+        error_lock = threading.Lock()
 
         def thread_func(index: int, arg: Any) -> None:
-            results[index] = internal_func(arg)
+            try:
+                results[index] = internal_func(arg)
+            except Exception as e:
+                with error_lock:
+                    errors.append(e)
 
         for i, arg in enumerate(arguments):
             thread = threading.Thread(target=thread_func, args=(i, arg))
@@ -207,6 +213,9 @@ def threading_batch_evaluator(
 
         for thread in threads:
             thread.join()
+
+        if errors:
+            raise errors[0]
 
         res = cast(list[T], results)
     return res
@@ -262,6 +271,8 @@ def process_batch_evaluator(
             out = cast(BatchEvaluator, joblib_batch_evaluator)
         elif batch_evaluator == "pathos":
             out = cast(BatchEvaluator, pathos_mp_batch_evaluator)
+        elif batch_evaluator == "threading":
+            out = cast(BatchEvaluator, threading_batch_evaluator)
         else:
             raise ValueError(
                 "Invalid batch evaluator requested. Currently only 'pathos' and "
