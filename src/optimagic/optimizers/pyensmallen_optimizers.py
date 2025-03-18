@@ -78,8 +78,9 @@ class EnsmallenLBFGS(Algorithm):
         def objective_function(
             x: NDArray[np.float64], grad: NDArray[np.float64]
         ) -> np.float64:
-            grad[:] = problem.jac(x)
-            return np.float64(problem.fun(x))
+            fun, jac = problem.fun_and_jac(x)
+            grad[:] = jac
+            return np.float64(fun)
 
         raw = optimizer.optimize(objective_function, x0)
 

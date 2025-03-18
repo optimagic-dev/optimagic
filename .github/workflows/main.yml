@@ -34,13 +34,13 @@ jobs:
           cache-environment: true
           create-args: |
             python=${{ matrix.python-version }}
-      - name: run pytest
+      - name: run pytest (for python 3.13)
         shell: bash -l {0}
         if: runner.os == 'Linux' && matrix.python-version == '3.13'
         run: |
           micromamba activate optimagic
           pytest --cov-report=xml --cov=./
-      - name: run pytest (and install pyensmallen)
+      - name: run pytest (for python < 3.13 with pip install pyensmallen)
         shell: bash -l {0}
         if: runner.os == 'Linux' && matrix.python-version < '3.13'
         run: |

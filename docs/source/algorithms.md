@@ -3913,6 +3913,34 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
       10 * (number of parameters + 1).
 ```
 
+## Optimizers from the Ensmallen C++ library
+
+```{eval-rst}
+.. dropdown:: ensmallen_lbfgs
+
+    .. code-block::
+
+        "ensmallen_lbfgs"
+
+    Minimize a scalar function using the “LBFGS” algorithm.
+
+    L-BFGS is an optimization algorithm in the family of quasi-Newton methods that approximates the Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm using a limited amount of computer memory.
+
+    Detailed description of the algorithm is given in :cite:`Matthies1979`.
+
+    - **limited_memory_max_history** (int): Number of memory points to be stored. default is 10.
+    - **stopping.maxiter** (int): Maximum number of iterations for the optimization (0 means no limit and may run indefinitely).
+    - **armijo_constant** (float): Controls the accuracy of the line search routine for determining the Armijo condition. default is 1e-4.
+    - **wolfe_condition** (float): Parameter for detecting the Wolfe condition. default is 0.9.
+    - **convergence.gtol_abs** (float): Stop when the absolute gradient norm is smaller than this.
+    - **convergence.ftol_rel** (float): Stop when the relative improvement between two iterations is below this.
+    - **max_line_search_trials** (int): The maximum number of trials for the line search (before giving up). default is 50.
+    - **min_step_for_line_search** (float): The minimum step of the line search. default is 1e-20.
+    - **max_step_for_line_search** (float): The maximum step of the line search. default is 1e20.
+
+
+```
+
 ## References
 
 ```{eval-rst}
