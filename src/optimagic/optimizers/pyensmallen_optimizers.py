@@ -3,10 +3,10 @@
 from dataclasses import dataclass
 
 import numpy as np
-import pyensmallen as pye
 from numpy.typing import NDArray
 
 from optimagic import mark
+from optimagic.config import IS_PYENSMALLEN_INSTALLED
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_REL,
     CONVERGENCE_GTOL_ABS,
@@ -18,6 +18,9 @@ from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
 from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
+
+if IS_PYENSMALLEN_INSTALLED:
+    import pyensmallen as pye
 
 LIMITED_MEMORY_MAX_HISTORY = 10
 """Number of memory points to be stored (default 10)."""
@@ -35,7 +38,7 @@ WOLFE_CONDITION = 0.9
 @mark.minimizer(
     name="ensmallen_lbfgs",
     solver_type=AggregationLevel.SCALAR,
-    is_available=True,
+    is_available=IS_PYENSMALLEN_INSTALLED,
     is_global=False,
     needs_jac=True,
     needs_hess=False,

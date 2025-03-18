@@ -36,8 +36,16 @@ jobs:
             python=${{ matrix.python-version }}
       - name: run pytest
         shell: bash -l {0}
+        if: runner.os == 'Linux' && matrix.python-version == '3.13'
         run: |
           micromamba activate optimagic
+          pytest --cov-report=xml --cov=./
+      - name: run pytest (and install pyensmallen)
+        shell: bash -l {0}
+        if: runner.os == 'Linux' && matrix.python-version < '3.13'
+        run: |
+          micromamba activate optimagic
+          pip install pyensmallen
           pytest --cov-report=xml --cov=./
       - name: Upload coverage report.
         if: runner.os == 'Linux' && matrix.python-version == '3.10'
