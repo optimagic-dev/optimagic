@@ -65,6 +65,3 @@ def test_fun_and_jac_list():
             params=np.arange(5),
             algorithm="scipy_lbfgsb",
         )
-
-
-test_with_optional_fun_argument()
