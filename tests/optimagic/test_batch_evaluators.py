@@ -5,7 +5,7 @@ import pytest
 
 from optimagic.batch_evaluators import process_batch_evaluator
 
-batch_evaluators = ["joblib"]
+batch_evaluators = ["joblib", "threading"]
 
 n_core_list = [1, 2]
 
