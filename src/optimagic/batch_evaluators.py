@@ -14,6 +14,7 @@ try:
 except ImportError:
     pathos_is_available = False
 
+import threading
 from typing import Any, Callable, Literal, TypeVar, cast
 
 from optimagic.config import DEFAULT_N_CORES as N_CORES
@@ -147,6 +148,79 @@ def joblib_batch_evaluator(
     return res
 
 
+def threading_batch_evaluator(
+    func: Callable[..., T],
+    arguments: list[Any],
+    *,
+    n_cores: int = N_CORES,
+    error_handling: ErrorHandling
+    | Literal["raise", "continue"] = ErrorHandling.CONTINUE,
+    unpack_symbol: Literal["*", "**"] | None = None,
+) -> list[T]:
+    """Batch evaluator based on Python's threading.
+
+    Args:
+        func (Callable): The function that is evaluated.
+        arguments (Iterable): Arguments for the functions. Their interperation
+            depends on the unpack argument.
+        n_cores (int): Number of threads used to evaluate the function in parallel.
+            Value below one are interpreted as one.
+        error_handling (str): Can take the values "raise" (raise the error and stop all
+            tasks as soon as one task fails) and "continue" (catch exceptions and set
+            the output of failed tasks to the traceback of the raised exception.
+            KeyboardInterrupt and SystemExit are always raised.
+        unpack_symbol (str or None). Can be "**", "*" or None. If None, func just takes
+            one argument. If "*", the elements of arguments are positional arguments for
+            func. If "**", the elements of arguments are keyword arguments for func.
+
+    Returns:
+        list: The function evaluations.
+
+    """
+    _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol)
+    n_cores = int(n_cores) if int(n_cores) >= 2 else 1
+
+    reraise = error_handling in [
+        "raise",
+        ErrorHandling.RAISE,
+        ErrorHandling.RAISE_STRICT,
+    ]
+
+    @unpack(symbol=unpack_symbol)
+    @catch(default="__traceback__", reraise=reraise)
+    def internal_func(*args: Any, **kwargs: Any) -> T:
+        return func(*args, **kwargs)
+
+    if n_cores == 1:
+        res = [internal_func(arg) for arg in arguments]
+    else:
+        results = [None] * len(arguments)
+        threads = []
+        errors = []
+        error_lock = threading.Lock()
+
+        def thread_func(index: int, arg: Any) -> None:
+            try:
+                results[index] = internal_func(arg)
+            except Exception as e:
+                with error_lock:
+                    errors.append(e)
+
+        for i, arg in enumerate(arguments):
+            thread = threading.Thread(target=thread_func, args=(i, arg))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        if errors:
+            raise errors[0]
+
+        res = cast(list[T], results)
+    return res
+
+
 def _check_inputs(
     func: Callable[..., T],
     arguments: list[Any],
@@ -186,7 +260,8 @@ def _check_inputs(
 
 
 def process_batch_evaluator(
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib",
+    batch_evaluator: Literal["joblib", "pathos", "threading"]
+    | BatchEvaluator = "joblib",
 ) -> BatchEvaluator:
     batch_evaluator = "joblib" if batch_evaluator is None else batch_evaluator
     if callable(batch_evaluator):
@@ -196,6 +271,8 @@ def process_batch_evaluator(
             out = cast(BatchEvaluator, joblib_batch_evaluator)
         elif batch_evaluator == "pathos":
             out = cast(BatchEvaluator, pathos_mp_batch_evaluator)
+        elif batch_evaluator == "threading":
+            out = cast(BatchEvaluator, threading_batch_evaluator)
         else:
             raise ValueError(
                 "Invalid batch evaluator requested. Currently only 'pathos' and "
