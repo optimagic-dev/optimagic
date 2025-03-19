@@ -3928,7 +3928,7 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
 
     Detailed description of the algorithm is given in :cite:`Matthies1979`.
 
-    - **limited_memory_max_history** (int): Number of memory points to be stored. default is 10.
+    - **limited_memory_storage_length** (int): Maximum number of saved gradients used to approximate the hessian matrix..
     - **stopping.maxiter** (int): Maximum number of iterations for the optimization (0 means no limit and may run indefinitely).
     - **armijo_constant** (float): Controls the accuracy of the line search routine for determining the Armijo condition. default is 1e-4.
     - **wolfe_condition** (float): Parameter for detecting the Wolfe condition. default is 0.9.

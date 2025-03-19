@@ -10,6 +10,7 @@ from optimagic.config import IS_PYENSMALLEN_INSTALLED
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_REL,
     CONVERGENCE_GTOL_ABS,
+    LIMITED_MEMORY_STORAGE_LENGTH,
     MAX_LINE_SEARCH_STEPS,
     STOPPING_MAXITER,
 )
@@ -22,8 +23,6 @@ from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 if IS_PYENSMALLEN_INSTALLED:
     import pyensmallen as pye
 
-LIMITED_MEMORY_MAX_HISTORY = 10
-"""Number of memory points to be stored (default 10)."""
 MIN_LINE_SEARCH_STEPS = 1e-20
 """The minimum step of the line search."""
 MAX_LINE_SEARCH_TRIALS = 50
@@ -33,6 +32,15 @@ ARMIJO_CONSTANT = 1e-4
 condition."""
 WOLFE_CONDITION = 0.9
 """Parameter for detecting the Wolfe condition."""
+
+STEP_SIZE = 0.001
+"""Step size for each iteration."""
+BATCH_SIZE = 32
+"""Step size for each iteration."""
+EXP_DECAY_RATE_FOR_FIRST_MOMENT = 0.9
+"""Exponential decay rate for the first moment estimates."""
+EXP_DECAY_RATE_FOR_WEIGHTED_INF_NORM = 0.999
+"""Exponential decay rate for the first moment estimates."""
 
 
 @mark.minimizer(
@@ -50,7 +58,7 @@ WOLFE_CONDITION = 0.9
 )
 @dataclass(frozen=True)
 class EnsmallenLBFGS(Algorithm):
-    limited_memory_max_history: PositiveInt = LIMITED_MEMORY_MAX_HISTORY
+    limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     armijo_constant: NonNegativeFloat = ARMIJO_CONSTANT  # needs review
     wolfe_condition: NonNegativeFloat = WOLFE_CONDITION  # needs review
@@ -64,7 +72,7 @@ class EnsmallenLBFGS(Algorithm):
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         optimizer = pye.L_BFGS(
-            numBasis=self.limited_memory_max_history,
+            numBasis=self.limited_memory_storage_length,
             maxIterations=self.stopping_maxiter,
             armijoConstant=self.armijo_constant,
             wolfe=self.wolfe_condition,
