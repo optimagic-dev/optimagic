@@ -162,11 +162,10 @@ def create_optimization_problem(
         )
         raise MissingInputError(msg)
 
-    if fun_and_jac is not None and fun is None:
+    if fun_and_jac is not None and fun is None and criterion is None:
         if isinstance(fun_and_jac, list):
             raise NotImplementedError(
-                "`fun_and_jac` cannot be a list, this is not yet supported."
-                "Please provide `fun` through keyword arguments."
+                "If `fun_and_jac` is a list of callables, `fun` is not optional. "
             )
         fun = split_fun_and_jac(fun_and_jac, target="fun")
 
