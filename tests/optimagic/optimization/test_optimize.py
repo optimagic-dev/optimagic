@@ -60,3 +60,12 @@ def test_with_optional_fun_argument():
         algorithm="scipy_lbfgsb",
     )
     assert np.all(res.x == expected.x) == np.True_
+
+
+def test_fun_and_jac_list():
+    with pytest.raises(NotImplementedError):
+        minimize(
+            fun_and_jac=[lambda x: (x @ x, 2 * x)],
+            params=np.arange(5),
+            algorithm="scipy_lbfgsb",
+        )
