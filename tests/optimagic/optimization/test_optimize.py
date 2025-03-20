@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 
 from optimagic.examples.criterion_functions import sos_scalar
 from optimagic.exceptions import InvalidFunctionError, InvalidNumdiffOptionsError
@@ -43,4 +44,24 @@ def test_with_invalid_numdiff_options():
             params=np.arange(5),
             algorithm="scipy_lbfgsb",
             numdiff_options={"bla": 15},
+        )
+
+
+# provided fun or fun_and_jac is provided
+def test_with_optional_fun_argument():
+    expected = np.zeros(5)
+    res = minimize(
+        fun_and_jac=lambda x: (x @ x, 2 * x),
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+    )
+    aaae(res.x, expected)
+
+
+def test_fun_and_jac_list():
+    with pytest.raises(NotImplementedError):
+        minimize(
+            fun_and_jac=[lambda x: (x @ x, 2 * x)],
+            params=np.arange(5),
+            algorithm="scipy_lbfgsb",
         )
