@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 from iminuit import Minuit  # type: ignore
@@ -8,7 +8,6 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.optimization.algo_options import (
     STOPPING_MAXFUN,
-    STOPPING_MAXITER,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -22,7 +21,7 @@ from optimagic.typing import AggregationLevel
     solver_type=AggregationLevel.SCALAR,
     is_available=True,
     is_global=False,
-    needs_jac=False,
+    needs_jac=True,
     needs_hess=False,
     supports_parallelism=False,
     supports_bounds=True,
@@ -33,8 +32,6 @@ from optimagic.typing import AggregationLevel
 @dataclass(frozen=True)
 class IminuitMigrad(Algorithm):
     stopping_maxfun: int = STOPPING_MAXFUN
-    stopping_maxiter: int = STOPPING_MAXITER
-    errordef: Optional[float] = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, params: NDArray[np.float64]
@@ -42,10 +39,23 @@ class IminuitMigrad(Algorithm):
         def wrapped_objective(x: NDArray[np.float64]) -> float:
             return float(problem.fun(x))
 
-        m = Minuit(
-            wrapped_objective,
-            params,
-        )
+        wrapped_gradient = None
+        jac_func = None
+        if problem.jac is not None:
+
+            def wrapped_gradient(x: NDArray[np.float64]) -> NDArray[np.float64]:
+                return problem.jac(x)
+
+            jac_func = problem.jac
+        elif problem.fun_and_jac is not None:
+
+            def wrapped_gradient(x: NDArray[np.float64]) -> NDArray[np.float64]:
+                _, jac = problem.fun_and_jac(x)
+                return jac
+
+            jac_func = lambda x: problem.fun_and_jac(x)[1]
+
+        m = Minuit(wrapped_objective, params, grad=wrapped_gradient)
 
         if problem.bounds:
             lower_bounds = problem.bounds.lower
@@ -58,37 +68,35 @@ class IminuitMigrad(Algorithm):
                     if lower is not None or upper is not None:
                         m.limits[i] = (lower, upper)
 
-        m.migrad(
-            ncall=self.stopping_maxfun,
-            iterate=self.stopping_maxiter,
-        )
-        print(m.params)
+        m.migrad(ncall=self.stopping_maxfun)
 
-        res = process_minuit_result(m)
+        res = process_minuit_result(m, jac_func)
         return res
 
 
-def process_minuit_result(minuit_result: Minuit) -> InternalOptimizeResult:
-    x = np.array(minuit_result.values)
-    fun = minuit_result.fval
-    success = minuit_result.valid
-    message = repr(minuit_result.fmin)
-    jac: Optional[NDArray[np.float64]] = None
-    if hasattr(minuit_result, "gradient"):
-        jac = np.array(minuit_result.gradient)
+def process_minuit_result(
+    minuit_result: Minuit,
+    jac_fun: Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]] = None,
+) -> InternalOptimizeResult:
+    jac = None
+    if jac_fun is not None:
+        jac = jac_fun(np.array(minuit_result.values))
 
-    hessian = np.array(minuit_result.hesse().params)
-    covariance = np.array(minuit_result.covariance)
-
-    info = {"minos": minuit_result.minos()}
-
-    return InternalOptimizeResult(
-        x=x,
-        fun=fun,
-        success=success,
-        message=message,
+    res = InternalOptimizeResult(
+        x=np.array(minuit_result.values),
+        fun=minuit_result.fval,
+        success=minuit_result.valid,
+        message=repr(minuit_result.fmin),
+        n_fun_evals=minuit_result.nfcn,
+        n_jac_evals=minuit_result.ngrad,
+        n_hess_evals=None,
+        n_iterations=None,
+        status=None,
         jac=jac,
-        hess=hessian,
-        hess_inv=covariance,
-        info=info,
+        hess=np.array(minuit_result.hesse()),
+        hess_inv=np.array(minuit_result.covariance),
+        max_constraint_violation=None,
+        info={"minos": minuit_result.minos()},
+        history=None,
     )
+    return res

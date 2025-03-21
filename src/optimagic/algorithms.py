@@ -287,6 +287,7 @@ class BoundedGradientBasedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientBasedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -486,7 +487,6 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -842,6 +842,7 @@ class GlobalGradientBasedScalarAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -891,6 +892,7 @@ class GradientBasedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientBasedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -958,6 +960,7 @@ class BoundedGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientBasedScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -1152,7 +1155,6 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1202,7 +1204,6 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalScalarAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1294,7 +1295,6 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1949,6 +1949,7 @@ class GlobalGradientBasedAlgorithms(AlgoSelection):
 class GradientBasedLocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -1991,6 +1992,7 @@ class GradientBasedLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientBasedAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -2060,6 +2062,7 @@ class GradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientBasedScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -2166,7 +2169,6 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -2207,7 +2209,6 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -2304,7 +2305,6 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -3075,6 +3075,7 @@ class LeastSquaresParallelAlgorithms(AlgoSelection):
 class GradientBasedAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_lbfgsb: Type[NloptLBFGSB] = NloptLBFGSB
@@ -3127,7 +3128,6 @@ class GradientBasedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
-    iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
