@@ -53,11 +53,11 @@ class IminuitMigrad(Algorithm):
             iterate=self.stopping_maxiter,  # review
         )
 
-        res = process_minuit_result(m)
+        res = _process_minuit_result(m)
         return res
 
 
-def process_minuit_result(minuit_result: Minuit) -> InternalOptimizeResult:
+def _process_minuit_result(minuit_result: Minuit) -> InternalOptimizeResult:
     """Convert iminuit result to Optimagic's internal result format."""
 
     res = InternalOptimizeResult(
