@@ -379,5 +379,6 @@ module = [
     "optimagic._version",
     "annotated_types",
     "pdbp",
+    "iminuit",
   ]
 ignore_missing_imports = true

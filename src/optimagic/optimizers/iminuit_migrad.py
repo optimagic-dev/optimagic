@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from iminuit import Minuit  # type: ignore
 from numpy.typing import NDArray
 
 from optimagic import mark
+from optimagic.config import IS_IMINUIT_INSTALLED
 from optimagic.optimization.algo_options import (
     STOPPING_MAXFUN,
     STOPPING_MAXITER,
@@ -16,11 +16,14 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import AggregationLevel
 
+if IS_IMINUIT_INSTALLED:
+    from iminuit import Minuit
+
 
 @mark.minimizer(
     name="iminuit_migrad",
     solver_type=AggregationLevel.SCALAR,
-    is_available=True,
+    is_available=IS_IMINUIT_INSTALLED,
     is_global=False,
     needs_jac=True,
     needs_hess=False,
