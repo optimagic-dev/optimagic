@@ -7,8 +7,8 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.config import IS_IMINUIT_INSTALLED
 from optimagic.optimization.algo_options import (
+    N_RESTARTS,
     STOPPING_MAXFUN,
-    STOPPING_MAXITER,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -36,7 +36,7 @@ if IS_IMINUIT_INSTALLED:
 @dataclass(frozen=True)
 class IminuitMigrad(Algorithm):
     stopping_maxfun: int = STOPPING_MAXFUN
-    stopping_maxiter: int = STOPPING_MAXITER
+    n_restarts: int = N_RESTARTS
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, params: NDArray[np.float64]
@@ -49,11 +49,14 @@ class IminuitMigrad(Algorithm):
         bounds = _convert_bounds_to_minuit_limits(
             problem.bounds.lower, problem.bounds.upper
         )
-        _set_minuit_limits(m, bounds)
+
+        for i, (lower, upper) in enumerate(bounds):
+            if lower is not None or upper is not None:
+                m.limits[i] = (lower, upper)
 
         m.migrad(
             ncall=self.stopping_maxfun,
-            iterate=self.stopping_maxiter,  # review
+            iterate=self.n_restarts,
         )
 
         res = _process_minuit_result(m)
@@ -125,30 +128,3 @@ def _convert_bounds_to_minuit_limits(
         )
         for lower, upper in zip(lower_bounds, upper_bounds, strict=True)
     ]
-
-
-def _set_minuit_limits(
-    m: Minuit, bounds: list[tuple[Optional[float], Optional[float]]]
-) -> None:
-    """Set parameter limits on a Minuit minimizer instance.
-
-    Applies the converted bounds to an iminuit.Minuit object. Minuit expects
-    parameter limits as tuples of (lower, upper) for each parameter, where
-    None indicates an unbounded direction.
-
-    Parameters
-    ----------
-    m : Minuit
-        The iminuit minimizer instance to configure.
-    bounds : list[tuple[Optional[float], Optional[float]]]
-        List of parameter bounds as (lower, upper) tuples in Minuit format.
-        For each tuple:
-        - (None, None): Fully unbounded parameter
-        - (value, None): Lower bound only
-        - (None, value): Upper bound only
-        - (min, max): Two-sided constraint
-
-    """
-    for i, (lower, upper) in enumerate(bounds):
-        if lower is not None or upper is not None:
-            m.limits[i] = (lower, upper)
