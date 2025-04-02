@@ -19,10 +19,7 @@ from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.typing import (
-    AggregationLevel,
-    PositiveInt,
-)
+from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 
 
 @mark.minimizer(
@@ -41,10 +38,10 @@ from optimagic.typing import (
 @dataclass(frozen=True)
 class NevergradOnePlusOne(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    n_cores: int = 1
-    convergence_ftol_abs: float = CONVERGENCE_FTOL_ABS
+    n_cores: PositiveInt = 1
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
     # time limit in seconds
-    max_time: float = np.inf
+    max_time: NonNegativeFloat = np.inf
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
