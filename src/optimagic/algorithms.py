@@ -120,13 +120,6 @@ class AlgoSelection:
 
 
 @dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(
     AlgoSelection
 ):
@@ -136,92 +129,10 @@ class BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(
 
 
 @dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Parallel(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Scalar(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms(
     AlgoSelection
 ):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -295,72 +206,9 @@ class GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelecti
 
 
 @dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Parallel(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
 
     @property
     def Parallel(
@@ -374,14 +222,6 @@ class BoundedGradientFreeLocalNonlinearConstrainedParallelAlgorithms(AlgoSelecti
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
     def Scalar(
         self,
     ) -> BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
@@ -392,12 +232,6 @@ class BoundedGradientFreeLocalNonlinearConstrainedParallelAlgorithms(AlgoSelecti
 class BoundedGradientFreeLocalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     tranquilo: Type[Tranquilo] = Tranquilo
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
 
     @property
     def NonlinearConstrained(
@@ -413,63 +247,6 @@ class BoundedGradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
 
@@ -478,75 +255,6 @@ class GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelectio
         self,
     ) -> BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -563,39 +271,10 @@ class BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelect
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
     def Local(
         self,
     ) -> BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def Local(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -612,67 +291,6 @@ class BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedLocalParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
 
@@ -681,56 +299,6 @@ class BoundedLocalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         self,
     ) -> BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
-class LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> (
-        BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms
-    ):
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def Local(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            BoundedLinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-        )
 
 
 @dataclass(frozen=True)
@@ -969,34 +537,9 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedLocalAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
 
     @property
     def Parallel(
@@ -1021,12 +564,6 @@ class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
     tranquilo: Type[Tranquilo] = Tranquilo
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms()
 
     @property
     def NonlinearConstrained(
@@ -1063,12 +600,6 @@ class BoundedGradientFreeLocalParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresLocalParallelAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
     def NonlinearConstrained(
         self,
     ) -> BoundedGradientFreeLocalNonlinearConstrainedParallelAlgorithms:
@@ -1080,71 +611,6 @@ class BoundedGradientFreeLocalParallelAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return (
-            GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Scalar(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(self) -> GradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return (
-            GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Scalar(self) -> GradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1153,12 +619,6 @@ class GradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     @property
     def Bounded(self) -> BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
 
     @property
     def Parallel(self) -> GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
@@ -1174,14 +634,6 @@ class GradientFreeLocalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalNonlinearConstrainedParallelAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return (
-            GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
     def Scalar(self) -> GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
         return GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms()
 
@@ -1195,12 +647,6 @@ class GradientFreeLocalParallelScalarAlgorithms(AlgoSelection):
     @property
     def Bounded(self) -> BoundedGradientFreeLocalParallelScalarAlgorithms:
         return BoundedGradientFreeLocalParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
 
     @property
     def NonlinearConstrained(
@@ -1220,75 +666,6 @@ class GradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Scalar(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(self) -> BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-        )
-
-    @property
-    def Parallel(self) -> BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(self) -> BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Scalar(self) -> BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1300,14 +677,6 @@ class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     @property
     def Global(self) -> BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-        )
 
     @property
     def Local(self) -> BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms:
@@ -1330,14 +699,6 @@ class BoundedGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     @property
     def Global(self) -> BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-        )
 
     @property
     def Local(self) -> BoundedGradientFreeLocalNonlinearConstrainedParallelAlgorithms:
@@ -1364,12 +725,6 @@ class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeParallelScalarAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms()
-
-    @property
     def Local(self) -> BoundedGradientFreeLocalParallelScalarAlgorithms:
         return BoundedGradientFreeLocalParallelScalarAlgorithms()
 
@@ -1391,85 +746,6 @@ class BoundedGradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-        )
-
-    @property
-    def Local(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms(
-    AlgoSelection
-):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Local(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return (
-            GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Scalar(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def Local(self) -> GradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-
-@dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1485,14 +761,6 @@ class GradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     @property
     def Global(self) -> GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-        )
 
     @property
     def Local(self) -> GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
@@ -1579,69 +847,6 @@ class GlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedLocalScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(self) -> BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(self) -> BoundedLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedLinearConstrainedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedLocalParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> BoundedLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedLinearConstrainedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
@@ -1664,12 +869,6 @@ class BoundedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
     def Parallel(self) -> BoundedLocalNonlinearConstrainedParallelScalarAlgorithms:
         return BoundedLocalNonlinearConstrainedParallelScalarAlgorithms()
 
@@ -1685,12 +884,6 @@ class BoundedLocalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalNonlinearConstrainedParallelAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
     def Scalar(self) -> BoundedLocalNonlinearConstrainedParallelScalarAlgorithms:
         return BoundedLocalNonlinearConstrainedParallelScalarAlgorithms()
 
@@ -1703,12 +896,6 @@ class BoundedLocalParallelScalarAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> BoundedGradientFreeLocalParallelScalarAlgorithms:
         return BoundedGradientFreeLocalParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedLinearConstrainedLocalParallelScalarAlgorithms()
 
     @property
     def NonlinearConstrained(
@@ -1728,75 +915,6 @@ class BoundedLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return (
-            GradientFreeLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Scalar(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedLocalParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedLinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class LocalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
 
@@ -1809,83 +927,6 @@ class LocalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         self,
     ) -> GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms:
         return GradientFreeLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-        )
-
-    @property
-    def Local(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return (
-            BoundedGradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-        )
-
-    @property
-    def Local(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def Local(self) -> BoundedLinearConstrainedLocalParallelScalarAlgorithms:
-        return BoundedLinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -1906,39 +947,8 @@ class BoundedNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
     def Local(self) -> BoundedLocalNonlinearConstrainedParallelScalarAlgorithms:
         return BoundedLocalNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return (
-            GradientFreeLinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-        )
-
-    @property
-    def Local(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -2321,10 +1331,6 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresLocalAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedGradientFreeLinearConstrainedLocalAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalAlgorithms()
-
-    @property
     def NonlinearConstrained(
         self,
     ) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
@@ -2340,29 +1346,6 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class GradientFreeLinearConstrainedLocalAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedGradientFreeLinearConstrainedLocalAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> GradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> GradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -2371,12 +1354,6 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     @property
     def Bounded(self) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
 
     @property
     def Parallel(self) -> GradientFreeLocalNonlinearConstrainedParallelAlgorithms:
@@ -2406,10 +1383,6 @@ class GradientFreeLocalScalarAlgorithms(AlgoSelection):
     @property
     def Bounded(self) -> BoundedGradientFreeLocalScalarAlgorithms:
         return BoundedGradientFreeLocalScalarAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> GradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalScalarAlgorithms()
 
     @property
     def NonlinearConstrained(
@@ -2455,10 +1428,6 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
 
     @property
-    def LinearConstrained(self) -> GradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
     def NonlinearConstrained(
         self,
     ) -> GradientFreeLocalNonlinearConstrainedParallelAlgorithms:
@@ -2467,29 +1436,6 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
     @property
     def Scalar(self) -> GradientFreeLocalParallelScalarAlgorithms:
         return GradientFreeLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedGradientFreeLinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Local(self) -> BoundedGradientFreeLinearConstrainedLocalAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> BoundedGradientFreeLinearConstrainedParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> BoundedGradientFreeLinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -2504,12 +1450,6 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     @property
     def Global(self) -> BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms()
 
     @property
     def Local(self) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
@@ -2567,10 +1507,6 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeScalarAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedGradientFreeLinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedScalarAlgorithms()
-
-    @property
     def Local(self) -> BoundedGradientFreeLocalScalarAlgorithms:
         return BoundedGradientFreeLocalScalarAlgorithms()
 
@@ -2623,12 +1559,6 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresParallelAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelAlgorithms()
-
-    @property
     def Local(self) -> BoundedGradientFreeLocalParallelAlgorithms:
         return BoundedGradientFreeLocalParallelAlgorithms()
 
@@ -2641,79 +1571,6 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     @property
     def Scalar(self) -> BoundedGradientFreeParallelScalarAlgorithms:
         return BoundedGradientFreeParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def Local(self) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedGradientFreeLinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedScalarAlgorithms()
-
-    @property
-    def Local(self) -> GradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(self) -> GradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedGradientFreeLinearConstrainedParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelAlgorithms()
-
-    @property
-    def Local(self) -> GradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> GradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -2733,12 +1590,6 @@ class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     @property
     def Global(self) -> GlobalGradientFreeNonlinearConstrainedScalarAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
 
     @property
     def Local(self) -> GradientFreeLocalNonlinearConstrainedScalarAlgorithms:
@@ -2763,12 +1614,6 @@ class GradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     @property
     def Global(self) -> GlobalGradientFreeNonlinearConstrainedParallelAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
 
     @property
     def Local(self) -> GradientFreeLocalNonlinearConstrainedParallelAlgorithms:
@@ -2798,12 +1643,6 @@ class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     @property
     def Global(self) -> GlobalGradientFreeParallelScalarAlgorithms:
         return GlobalGradientFreeParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedParallelScalarAlgorithms()
 
     @property
     def Local(self) -> GradientFreeLocalParallelScalarAlgorithms:
@@ -2996,29 +1835,6 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class BoundedLinearConstrainedLocalAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(self) -> BoundedGradientFreeLinearConstrainedLocalAlgorithms:
-        return BoundedGradientFreeLinearConstrainedLocalAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> BoundedLinearConstrainedLocalParallelAlgorithms:
-        return BoundedLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> BoundedLinearConstrainedLocalScalarAlgorithms:
-        return BoundedLinearConstrainedLocalScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
@@ -3035,12 +1851,6 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> BoundedGradientFreeLocalNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms()
 
     @property
     def Parallel(self) -> BoundedLocalNonlinearConstrainedParallelAlgorithms:
@@ -3083,10 +1893,6 @@ class BoundedLocalScalarAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> BoundedGradientFreeLocalScalarAlgorithms:
         return BoundedGradientFreeLocalScalarAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> BoundedLinearConstrainedLocalScalarAlgorithms:
-        return BoundedLinearConstrainedLocalScalarAlgorithms()
 
     @property
     def NonlinearConstrained(self) -> BoundedLocalNonlinearConstrainedScalarAlgorithms:
@@ -3135,10 +1941,6 @@ class BoundedLocalParallelAlgorithms(AlgoSelection):
         return BoundedLeastSquaresLocalParallelAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedLinearConstrainedLocalParallelAlgorithms:
-        return BoundedLinearConstrainedLocalParallelAlgorithms()
-
-    @property
     def NonlinearConstrained(
         self,
     ) -> BoundedLocalNonlinearConstrainedParallelAlgorithms:
@@ -3147,75 +1949,6 @@ class BoundedLocalParallelAlgorithms(AlgoSelection):
     @property
     def Scalar(self) -> BoundedLocalParallelScalarAlgorithms:
         return BoundedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedLocalScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedLocalScalarAlgorithms:
-        return BoundedLinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def GradientFree(self) -> GradientFreeLinearConstrainedLocalScalarAlgorithms:
-        return GradientFreeLinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(self) -> LinearConstrainedLocalParallelScalarAlgorithms:
-        return LinearConstrainedLocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedLocalParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedLocalParallelAlgorithms:
-        return BoundedLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def GradientFree(self) -> GradientFreeLinearConstrainedLocalParallelAlgorithms:
-        return GradientFreeLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> LinearConstrainedLocalParallelScalarAlgorithms:
-        return LinearConstrainedLocalParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -3242,12 +1975,6 @@ class LocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return GradientFreeLocalNonlinearConstrainedScalarAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
     def Parallel(self) -> LocalNonlinearConstrainedParallelScalarAlgorithms:
         return LocalNonlinearConstrainedParallelScalarAlgorithms()
 
@@ -3263,12 +1990,6 @@ class LocalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeLocalNonlinearConstrainedParallelAlgorithms:
         return GradientFreeLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
 
     @property
     def Scalar(self) -> LocalNonlinearConstrainedParallelScalarAlgorithms:
@@ -3290,10 +2011,6 @@ class LocalParallelScalarAlgorithms(AlgoSelection):
         return GradientFreeLocalParallelScalarAlgorithms()
 
     @property
-    def LinearConstrained(self) -> LinearConstrainedLocalParallelScalarAlgorithms:
-        return LinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
     def NonlinearConstrained(self) -> LocalNonlinearConstrainedParallelScalarAlgorithms:
         return LocalNonlinearConstrainedParallelScalarAlgorithms()
 
@@ -3310,77 +2027,6 @@ class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeLeastSquaresLocalParallelAlgorithms:
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(
-        self,
-    ) -> BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def Local(self) -> BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(self) -> BoundedGradientFreeLinearConstrainedScalarAlgorithms:
-        return BoundedGradientFreeLinearConstrainedScalarAlgorithms()
-
-    @property
-    def Local(self) -> BoundedLinearConstrainedLocalScalarAlgorithms:
-        return BoundedLinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(self) -> BoundedLinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(self) -> BoundedGradientFreeLinearConstrainedParallelAlgorithms:
-        return BoundedGradientFreeLinearConstrainedParallelAlgorithms()
-
-    @property
-    def Local(self) -> BoundedLinearConstrainedLocalParallelAlgorithms:
-        return BoundedLinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> BoundedLinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -3411,12 +2057,6 @@ class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeNonlinearConstrainedScalarAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-    @property
     def Local(self) -> BoundedLocalNonlinearConstrainedScalarAlgorithms:
         return BoundedLocalNonlinearConstrainedScalarAlgorithms()
 
@@ -3439,12 +2079,6 @@ class BoundedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> BoundedGradientFreeNonlinearConstrainedParallelAlgorithms:
         return BoundedGradientFreeNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms()
 
     @property
     def Local(self) -> BoundedLocalNonlinearConstrainedParallelAlgorithms:
@@ -3475,10 +2109,6 @@ class BoundedParallelScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeParallelScalarAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedLinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedParallelScalarAlgorithms()
-
-    @property
     def Local(self) -> BoundedLocalParallelScalarAlgorithms:
         return BoundedLocalParallelScalarAlgorithms()
 
@@ -3504,75 +2134,6 @@ class BoundedLeastSquaresParallelAlgorithms(AlgoSelection):
 
 
 @dataclass(frozen=True)
-class LinearConstrainedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Local(self) -> LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(self) -> LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Local(self) -> LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedParallelScalarAlgorithms:
-        return BoundedLinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def GradientFree(self) -> GradientFreeLinearConstrainedParallelScalarAlgorithms:
-        return GradientFreeLinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def Local(self) -> LinearConstrainedLocalParallelScalarAlgorithms:
-        return LinearConstrainedLocalParallelScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
 class NonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3590,12 +2151,6 @@ class NonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeNonlinearConstrainedParallelScalarAlgorithms:
         return GradientFreeNonlinearConstrainedParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedNonlinearConstrainedParallelScalarAlgorithms()
 
     @property
     def Local(self) -> LocalNonlinearConstrainedParallelScalarAlgorithms:
@@ -3869,10 +2424,6 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
         return GradientFreeLeastSquaresLocalAlgorithms()
 
     @property
-    def LinearConstrained(self) -> GradientFreeLinearConstrainedLocalAlgorithms:
-        return GradientFreeLinearConstrainedLocalAlgorithms()
-
-    @property
     def NonlinearConstrained(self) -> GradientFreeLocalNonlinearConstrainedAlgorithms:
         return GradientFreeLocalNonlinearConstrainedAlgorithms()
 
@@ -3936,10 +2487,6 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedGradientFreeLinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedAlgorithms()
-
-    @property
     def Local(self) -> BoundedGradientFreeLocalAlgorithms:
         return BoundedGradientFreeLocalAlgorithms()
 
@@ -3954,33 +2501,6 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     @property
     def Scalar(self) -> BoundedGradientFreeScalarAlgorithms:
         return BoundedGradientFreeScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class GradientFreeLinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedGradientFreeLinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedAlgorithms()
-
-    @property
-    def Local(self) -> GradientFreeLinearConstrainedLocalAlgorithms:
-        return GradientFreeLinearConstrainedLocalAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> GradientFreeLinearConstrainedParallelAlgorithms:
-        return GradientFreeLinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> GradientFreeLinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -4000,12 +2520,6 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     @property
     def Global(self) -> GlobalGradientFreeNonlinearConstrainedAlgorithms:
         return GlobalGradientFreeNonlinearConstrainedAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedAlgorithms()
 
     @property
     def Local(self) -> GradientFreeLocalNonlinearConstrainedAlgorithms:
@@ -4070,10 +2584,6 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
         return GlobalGradientFreeScalarAlgorithms()
 
     @property
-    def LinearConstrained(self) -> GradientFreeLinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedScalarAlgorithms()
-
-    @property
     def Local(self) -> GradientFreeLocalScalarAlgorithms:
         return GradientFreeLocalScalarAlgorithms()
 
@@ -4131,10 +2641,6 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     @property
     def LeastSquares(self) -> GradientFreeLeastSquaresParallelAlgorithms:
         return GradientFreeLeastSquaresParallelAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> GradientFreeLinearConstrainedParallelAlgorithms:
-        return GradientFreeLinearConstrainedParallelAlgorithms()
 
     @property
     def Local(self) -> GradientFreeLocalParallelAlgorithms:
@@ -4354,10 +2860,6 @@ class BoundedLocalAlgorithms(AlgoSelection):
         return BoundedLeastSquaresLocalAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedLinearConstrainedLocalAlgorithms:
-        return BoundedLinearConstrainedLocalAlgorithms()
-
-    @property
     def NonlinearConstrained(self) -> BoundedLocalNonlinearConstrainedAlgorithms:
         return BoundedLocalNonlinearConstrainedAlgorithms()
 
@@ -4368,33 +2870,6 @@ class BoundedLocalAlgorithms(AlgoSelection):
     @property
     def Scalar(self) -> BoundedLocalScalarAlgorithms:
         return BoundedLocalScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedLocalAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedLocalAlgorithms:
-        return BoundedLinearConstrainedLocalAlgorithms()
-
-    @property
-    def GradientFree(self) -> GradientFreeLinearConstrainedLocalAlgorithms:
-        return GradientFreeLinearConstrainedLocalAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> LinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> LinearConstrainedLocalParallelAlgorithms:
-        return LinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> LinearConstrainedLocalScalarAlgorithms:
-        return LinearConstrainedLocalScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -4419,10 +2894,6 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeLocalNonlinearConstrainedAlgorithms:
         return GradientFreeLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> LinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedAlgorithms()
 
     @property
     def Parallel(self) -> LocalNonlinearConstrainedParallelAlgorithms:
@@ -4475,10 +2946,6 @@ class LocalScalarAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeLocalScalarAlgorithms:
         return GradientFreeLocalScalarAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> LinearConstrainedLocalScalarAlgorithms:
-        return LinearConstrainedLocalScalarAlgorithms()
 
     @property
     def NonlinearConstrained(self) -> LocalNonlinearConstrainedScalarAlgorithms:
@@ -4546,43 +3013,12 @@ class LocalParallelAlgorithms(AlgoSelection):
         return LeastSquaresLocalParallelAlgorithms()
 
     @property
-    def LinearConstrained(self) -> LinearConstrainedLocalParallelAlgorithms:
-        return LinearConstrainedLocalParallelAlgorithms()
-
-    @property
     def NonlinearConstrained(self) -> LocalNonlinearConstrainedParallelAlgorithms:
         return LocalNonlinearConstrainedParallelAlgorithms()
 
     @property
     def Scalar(self) -> LocalParallelScalarAlgorithms:
         return LocalParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class BoundedLinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def GradientFree(self) -> BoundedGradientFreeLinearConstrainedAlgorithms:
-        return BoundedGradientFreeLinearConstrainedAlgorithms()
-
-    @property
-    def Local(self) -> BoundedLinearConstrainedLocalAlgorithms:
-        return BoundedLinearConstrainedLocalAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> BoundedLinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> BoundedLinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -4611,12 +3047,6 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> BoundedGradientFreeNonlinearConstrainedAlgorithms:
         return BoundedGradientFreeNonlinearConstrainedAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> BoundedLinearConstrainedNonlinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedAlgorithms()
 
     @property
     def Local(self) -> BoundedLocalNonlinearConstrainedAlgorithms:
@@ -4697,10 +3127,6 @@ class BoundedScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeScalarAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedLinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedScalarAlgorithms()
-
-    @property
     def Local(self) -> BoundedLocalScalarAlgorithms:
         return BoundedLocalScalarAlgorithms()
 
@@ -4765,10 +3191,6 @@ class BoundedParallelAlgorithms(AlgoSelection):
         return BoundedLeastSquaresParallelAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedLinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedParallelAlgorithms()
-
-    @property
     def Local(self) -> BoundedLocalParallelAlgorithms:
         return BoundedLocalParallelAlgorithms()
 
@@ -4779,87 +3201,6 @@ class BoundedParallelAlgorithms(AlgoSelection):
     @property
     def Scalar(self) -> BoundedParallelScalarAlgorithms:
         return BoundedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedNonlinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def GradientFree(
-        self,
-    ) -> GradientFreeLinearConstrainedNonlinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def Local(self) -> LinearConstrainedLocalNonlinearConstrainedAlgorithms:
-        return LinearConstrainedLocalNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> LinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return LinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> LinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return LinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedScalarAlgorithms:
-        return BoundedLinearConstrainedScalarAlgorithms()
-
-    @property
-    def GradientFree(self) -> GradientFreeLinearConstrainedScalarAlgorithms:
-        return GradientFreeLinearConstrainedScalarAlgorithms()
-
-    @property
-    def Local(self) -> LinearConstrainedLocalScalarAlgorithms:
-        return LinearConstrainedLocalScalarAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> LinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return LinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-    @property
-    def Parallel(self) -> LinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedParallelScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedParallelAlgorithms:
-        return BoundedLinearConstrainedParallelAlgorithms()
-
-    @property
-    def GradientFree(self) -> GradientFreeLinearConstrainedParallelAlgorithms:
-        return GradientFreeLinearConstrainedParallelAlgorithms()
-
-    @property
-    def Local(self) -> LinearConstrainedLocalParallelAlgorithms:
-        return LinearConstrainedLocalParallelAlgorithms()
-
-    @property
-    def NonlinearConstrained(
-        self,
-    ) -> LinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return LinearConstrainedNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> LinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedParallelScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -4895,12 +3236,6 @@ class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return GradientFreeNonlinearConstrainedScalarAlgorithms()
 
     @property
-    def LinearConstrained(
-        self,
-    ) -> LinearConstrainedNonlinearConstrainedScalarAlgorithms:
-        return LinearConstrainedNonlinearConstrainedScalarAlgorithms()
-
-    @property
     def Local(self) -> LocalNonlinearConstrainedScalarAlgorithms:
         return LocalNonlinearConstrainedScalarAlgorithms()
 
@@ -4927,12 +3262,6 @@ class NonlinearConstrainedParallelAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeNonlinearConstrainedParallelAlgorithms:
         return GradientFreeNonlinearConstrainedParallelAlgorithms()
-
-    @property
-    def LinearConstrained(
-        self,
-    ) -> LinearConstrainedNonlinearConstrainedParallelAlgorithms:
-        return LinearConstrainedNonlinearConstrainedParallelAlgorithms()
 
     @property
     def Local(self) -> LocalNonlinearConstrainedParallelAlgorithms:
@@ -4966,10 +3295,6 @@ class ParallelScalarAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeParallelScalarAlgorithms:
         return GradientFreeParallelScalarAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> LinearConstrainedParallelScalarAlgorithms:
-        return LinearConstrainedParallelScalarAlgorithms()
 
     @property
     def Local(self) -> LocalParallelScalarAlgorithms:
@@ -5110,10 +3435,6 @@ class GradientFreeAlgorithms(AlgoSelection):
         return GradientFreeLeastSquaresAlgorithms()
 
     @property
-    def LinearConstrained(self) -> GradientFreeLinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedAlgorithms()
-
-    @property
     def Local(self) -> GradientFreeLocalAlgorithms:
         return GradientFreeLocalAlgorithms()
 
@@ -5246,10 +3567,6 @@ class LocalAlgorithms(AlgoSelection):
         return LikelihoodLocalAlgorithms()
 
     @property
-    def LinearConstrained(self) -> LinearConstrainedLocalAlgorithms:
-        return LinearConstrainedLocalAlgorithms()
-
-    @property
     def NonlinearConstrained(self) -> LocalNonlinearConstrainedAlgorithms:
         return LocalNonlinearConstrainedAlgorithms()
 
@@ -5338,10 +3655,6 @@ class BoundedAlgorithms(AlgoSelection):
         return BoundedLeastSquaresAlgorithms()
 
     @property
-    def LinearConstrained(self) -> BoundedLinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedAlgorithms()
-
-    @property
     def Local(self) -> BoundedLocalAlgorithms:
         return BoundedLocalAlgorithms()
 
@@ -5356,35 +3669,6 @@ class BoundedAlgorithms(AlgoSelection):
     @property
     def Scalar(self) -> BoundedScalarAlgorithms:
         return BoundedScalarAlgorithms()
-
-
-@dataclass(frozen=True)
-class LinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-
-    @property
-    def Bounded(self) -> BoundedLinearConstrainedAlgorithms:
-        return BoundedLinearConstrainedAlgorithms()
-
-    @property
-    def GradientFree(self) -> GradientFreeLinearConstrainedAlgorithms:
-        return GradientFreeLinearConstrainedAlgorithms()
-
-    @property
-    def Local(self) -> LinearConstrainedLocalAlgorithms:
-        return LinearConstrainedLocalAlgorithms()
-
-    @property
-    def NonlinearConstrained(self) -> LinearConstrainedNonlinearConstrainedAlgorithms:
-        return LinearConstrainedNonlinearConstrainedAlgorithms()
-
-    @property
-    def Parallel(self) -> LinearConstrainedParallelAlgorithms:
-        return LinearConstrainedParallelAlgorithms()
-
-    @property
-    def Scalar(self) -> LinearConstrainedScalarAlgorithms:
-        return LinearConstrainedScalarAlgorithms()
 
 
 @dataclass(frozen=True)
@@ -5418,10 +3702,6 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
     @property
     def GradientFree(self) -> GradientFreeNonlinearConstrainedAlgorithms:
         return GradientFreeNonlinearConstrainedAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> LinearConstrainedNonlinearConstrainedAlgorithms:
-        return LinearConstrainedNonlinearConstrainedAlgorithms()
 
     @property
     def Local(self) -> LocalNonlinearConstrainedAlgorithms:
@@ -5512,10 +3792,6 @@ class ScalarAlgorithms(AlgoSelection):
         return GradientFreeScalarAlgorithms()
 
     @property
-    def LinearConstrained(self) -> LinearConstrainedScalarAlgorithms:
-        return LinearConstrainedScalarAlgorithms()
-
-    @property
     def Local(self) -> LocalScalarAlgorithms:
         return LocalScalarAlgorithms()
 
@@ -5601,10 +3877,6 @@ class ParallelAlgorithms(AlgoSelection):
     @property
     def LeastSquares(self) -> LeastSquaresParallelAlgorithms:
         return LeastSquaresParallelAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> LinearConstrainedParallelAlgorithms:
-        return LinearConstrainedParallelAlgorithms()
 
     @property
     def Local(self) -> LocalParallelAlgorithms:
@@ -5709,10 +3981,6 @@ class Algorithms(AlgoSelection):
     @property
     def Likelihood(self) -> LikelihoodAlgorithms:
         return LikelihoodAlgorithms()
-
-    @property
-    def LinearConstrained(self) -> LinearConstrainedAlgorithms:
-        return LinearConstrainedAlgorithms()
 
     @property
     def Local(self) -> LocalAlgorithms:
