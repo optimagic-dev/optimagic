@@ -30,6 +30,7 @@ dependencies:
   - sphinx-design  # docs
   - sphinx-panels  # docs
   - sphinxcontrib-bibtex  # docs
+  - intersphinx-registry  # docs
   - seaborn  # dev, tests
   - mypy=1.14.1  # dev, tests
   - pyyaml  # dev, tests
