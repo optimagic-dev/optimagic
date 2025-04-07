@@ -19,6 +19,8 @@ import datetime as dt
 import os
 from importlib.metadata import version
 
+from intersphinx_registry import get_intersphinx_mapping
+
 year = dt.datetime.now().year
 
 author = "Janos Gabler"
@@ -88,11 +90,9 @@ extlinks = {
     "gh": ("https://github.com/optimagic-dev/optimagic/pulls/%s", "#"),
 }
 
-intersphinx_mapping = {
-    "numpy": ("https://docs.scipy.org/doc/numpy", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    "python": ("https://docs.python.org/3.12", None),
-}
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"numpy", "scipy", "pandas", "python"}
+)
 
 linkcheck_ignore = [
     r"https://tinyurl\.com/*.",
