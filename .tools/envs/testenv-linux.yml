@@ -8,6 +8,7 @@ dependencies:
   - jax
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests, docs
+  - nevergrad  # dev, tests
   - nlopt  # dev, tests, docs
   - pip  # dev, tests, docs
   - pytest  # dev, tests

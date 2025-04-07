@@ -3984,6 +3984,61 @@ iminuit).
       - Values greater than 1 specify the maximum number of restart attempts.  
 ```
 
+(nevergrad-algorithms)=
+
+## Nevergrad Optimizers
+
+optimagic supports some algorithms from the
+[Nevergrad](https://facebookresearch.github.io/nevergrad/index.html) library. To use
+these optimizers, you need to have
+[the nevergrad package](https://github.com/facebookresearch/nevergrad) installed.
+(`pip install nevergrad`).
+
+```{eval-rst}
+.. dropdown:: nevergrad_pso
+
+    .. code-block::
+
+        "nevergrad_pso"
+
+    Minimize a scalar function using the Particle Swarm Optimization (PSO) algorithm.
+
+    The Particle Swarm Optimization algorithm was originally proposed by
+    :cite:`Kennedy1995`. The implementation in Nevergrad is based on
+    :cite:`Zambrano2013`.
+
+    Particle Swarm Optimization (PSO) solves a problem by having a population of
+    candidate solutions, here dubbed particles, and moving these particles around in the
+    search-space according to simple mathematical formulae over the particle's position
+    and velocity. Each particle's movement is influenced by its local best known
+    position (termed "cognitive" component), but is also guided toward the best known
+    positions (termed "social" component) in the search-space, which are updated as
+    better positions are found by other particles. This is expected to move the swarm
+    toward the best solutions.
+
+    - **transform** (str): The transform to use to map from PSO optimization space to
+      R-space.
+    - **population_size** (int): Population size of the particle swarm.
+    - **n_cores** (int): Number of cores to use.
+    - **stopping.maxfun** (int): Maximum number of function evaluations.
+    - **inertia** (float): Inertia weight. Denoted by :math:`\omega`.
+      Default is 0.7213475204444817. To prevent divergence, the value must be smaller
+      than 1. It controls the influence of the particle's previous velocity on its
+      movement.
+    - **cognitive** (float): Cognitive coefficient. Denoted by :math:`\phi_p`.
+      Default is 1.1931471805599454. Typical values range from 1.0 to 3.0. It controls
+      the influence of its own best known position on the particle's movement.
+    - **social** (float): Social coefficient. Denoted by :math:`\phi_g`.
+      Default is 1.1931471805599454. Typical values range from 1.0 to 3.0. It controls
+      the influence of the swarm's best known position on the particle's movement.
+    - **quasi_opp_init** (bool): Whether to use quasi-opposition initialization.
+      Default is False.
+    - **speed_quasi_opp_init** (bool): Whether to use quasi-opposition initialization
+      for speed. Default is False.
+    - **special_speed_quasi_opp_init** (bool): Whether to use special quasi-opposition
+      initialization for speed. Default is False.
+```
+
 ## References
 
 ```{eval-rst}
