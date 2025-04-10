@@ -11,7 +11,11 @@ from typing_extensions import Self
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
-from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
+from optimagic.exceptions import (
+    InvalidFunctionError,
+    UserFunctionRuntimeError,
+    get_traceback,
+)
 from optimagic.logging.logger import LogStore
 from optimagic.logging.types import IterationState
 from optimagic.optimization.fun_value import (
@@ -448,6 +452,8 @@ class InternalOptimizationProblem:
         params = self._converter.params_from_internal(x)
         try:
             jac_value = self._jac(params)
+            # Check for infinite values in the user-provided gradient
+            self._check_infinite_gradients(params, jac_value)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -508,6 +514,7 @@ class InternalOptimizationProblem:
             p = self._converter.params_from_internal(x)
             return self._fun(p)
 
+        params = self._converter.params_from_internal(x)
         try:
             numdiff_res = first_derivative(
                 func,
@@ -519,6 +526,8 @@ class InternalOptimizationProblem:
             )
             fun_value = numdiff_res.func_value
             jac_value = numdiff_res.derivative
+            # Check for infinite values in the numerical gradient
+            self._check_infinite_gradients(params, jac_value)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -648,6 +657,8 @@ class InternalOptimizationProblem:
 
         try:
             fun_value, jac_value = self._fun_and_jac(params)
+            # Check for infinite values in the user-provided gradient
+            self._check_infinite_gradients(params, jac_value)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -703,6 +714,32 @@ class InternalOptimizationProblem:
         )
 
         return (algo_fun_value, out_jac), hist_entry, log_entry
+
+    def _check_infinite_gradients(self, params: PyTree, grad: PyTree) -> None:
+        """Check for infinite values in gradients and raise an error if found.
+
+        Args:
+            params: The parameters at which the gradient was evaluated.
+            grad: The gradient to check, which can be a numpy array or a dictionary
+                of numpy arrays.
+
+        Raises:
+            InvalidFunctionError: If any infinite values are found in the gradient.
+
+        """
+        if isinstance(grad, dict):
+            # Convert dictionary to flattened numpy array for checking
+            flat_grad = np.concatenate([np.ravel(np.array(v)) for v in grad.values()])
+        else:
+            flat_grad = np.ravel(np.array(grad))
+
+        if np.any(np.isinf(flat_grad)):
+            msg = (
+                "Infinite values found in gradient.\n"
+                f"Parameters: {params},\n"
+                f"Gradient: {grad}"
+            )
+            raise InvalidFunctionError(msg)
 
 
 def _process_fun_value(
