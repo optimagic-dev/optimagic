@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -37,6 +38,52 @@ from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 )
 @dataclass(frozen=True)
 class NevergradOnePlusOne(Algorithm):
+    noise_handling: Literal["random", "optimistic"] | None = None
+    noise_handling_value: NonNegativeFloat = 0.005
+    mutation: (
+        Literal[
+            "gaussian",
+            "cauchy",
+            "discrete",
+            "fastga",
+            "rls",
+            "doublefastga",
+            "adaptive",
+            "coordinatewise_adaptive",
+            "portfolio",
+            "discreteBSO",
+            "lengler",
+            "lengler2",
+            "lengler3",
+            "lenglerhalf",
+            "lenglerfourth",
+            "doerr",
+            "lognormal",
+            "xlognormal",
+            "xsmalllognormal",
+            "tinylognormal",
+            "lognormal",
+            "smalllognormal",
+            "biglognormal",
+            "hugelognormal",
+        ]
+        | None
+    ) = "gaussian"
+    annealing: Literal[
+        "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
+    ] = "none"
+    sparse: bool | int = False
+    super_radii: bool = False
+    smoother: bool = False
+    roulette_size: int = 2
+    antismooth: int = 55
+    crossover: bool = False
+    crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] = (
+        "none"
+    )
+    tabu_length: int = 0
+    rotation: bool = False
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     n_cores: PositiveInt = 1
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
@@ -55,8 +102,20 @@ class NevergradOnePlusOne(Algorithm):
                 problem.bounds.lower, problem.bounds.upper
             )
         )
-
-        optimizer = ng.optimizers.OnePlusOne(
+        optimizer = ng.optimizers.ParametrizedOnePlusOne(
+            noise_handling=(self.noise_handling, self.noise_handling_value),
+            tabu_length=self.tabu_length,
+            mutation=self.mutation,
+            crossover=self.crossover,
+            rotation=self.rotation,
+            annealing=self.annealing,
+            sparse=self.sparse,
+            smoother=self.smoother,
+            super_radii=self.super_radii,
+            roulette_size=self.roulette_size,
+            antismooth=self.antismooth,
+            crossover_type=self.crossover_type,
+        )(
             parametrization=instrum,
             budget=self.stopping_maxiter,
             num_workers=self.n_cores,
