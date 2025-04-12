@@ -40,35 +40,32 @@ from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 class NevergradOnePlusOne(Algorithm):
     noise_handling: Literal["random", "optimistic"] | None = None
     noise_handling_value: NonNegativeFloat = 0.005
-    mutation: (
-        Literal[
-            "gaussian",
-            "cauchy",
-            "discrete",
-            "fastga",
-            "rls",
-            "doublefastga",
-            "adaptive",
-            "coordinatewise_adaptive",
-            "portfolio",
-            "discreteBSO",
-            "lengler",
-            "lengler2",
-            "lengler3",
-            "lenglerhalf",
-            "lenglerfourth",
-            "doerr",
-            "lognormal",
-            "xlognormal",
-            "xsmalllognormal",
-            "tinylognormal",
-            "lognormal",
-            "smalllognormal",
-            "biglognormal",
-            "hugelognormal",
-        ]
-        | None
-    ) = "gaussian"
+    mutation: Literal[
+        "gaussian",
+        "cauchy",
+        "discrete",
+        "fastga",
+        "rls",
+        "doublefastga",
+        "adaptive",
+        "coordinatewise_adaptive",
+        "portfolio",
+        "discreteBSO",
+        "lengler",
+        "lengler2",
+        "lengler3",
+        "lenglerhalf",
+        "lenglerfourth",
+        "doerr",
+        "lognormal",
+        "xlognormal",
+        "xsmalllognormal",
+        "tinylognormal",
+        "lognormal",
+        "smalllognormal",
+        "biglognormal",
+        "hugelognormal",
+    ] = "gaussian"
     annealing: Literal[
         "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
     ] = "none"
