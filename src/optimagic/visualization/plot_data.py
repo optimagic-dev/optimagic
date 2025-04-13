@@ -1,3 +1,5 @@
+# type: ignore
+
 import warnings
 from functools import partial
 
@@ -13,19 +15,18 @@ from optimagic.optimization.fun_value import (
     enforce_return_type,
 )
 from optimagic.parameters.bounds import pre_process_bounds
-from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 
 
-def evaluate_func(params, func, func_kwargs):  # type: ignore
+def evaluate_func(params, func, func_kwargs):
     """Evaluate a user-defined function, handling deprecated dictionary output.
 
     Args:
         params: Input parameters for the function.
         func: The user-defined objective function.
-        func_kwargs: Optional dictionary of keyword arguments to pass to the function.
+        func_kwargs: Optional dictionary of keyword arguments to pass to the function
 
     Returns:
         A tuple of (possibly wrapped) function and its evaluated output.
@@ -55,7 +56,7 @@ def evaluate_func(params, func, func_kwargs):  # type: ignore
     return func, func_eval
 
 
-def process_bounds(bounds, lower_bounds, upper_bounds):  # type: ignore
+def process_bounds(bounds, lower_bounds, upper_bounds):
     """Process parameter bounds, replacing deprecated formats if necessary.
 
     Args:
@@ -73,7 +74,7 @@ def process_bounds(bounds, lower_bounds, upper_bounds):  # type: ignore
     return pre_process_bounds(bounds)
 
 
-def select_parameter_indices(converter, selector, n_params):  # type: ignore
+def select_parameter_indices(converter, selector, n_params):
     """Select parameter indices using a selector function, or select all by default.
 
     Args:
@@ -93,7 +94,7 @@ def select_parameter_indices(converter, selector, n_params):  # type: ignore
     return np.array(tree_just_flatten(selector(helper), registry=registry), dtype=int)
 
 
-def generate_grid_data(internal_params, selected, n_gridpoints):  # type: ignore
+def generate_grid_data(internal_params, selected, n_gridpoints):
     """Generate a grid of parameter values based on selection.
 
     Args:
@@ -120,28 +121,7 @@ def generate_grid_data(internal_params, selected, n_gridpoints):  # type: ignore
     return pd.DataFrame(metadata)
 
 
-def generate_internal_params(params, bounds, func_eval):  # type: ignore
-    """Construct internal parameter conversion from given inputs.
-
-    Args:
-        params: Original parameter values.
-        bounds: Bound constraints.
-        func_eval: Evaluated function value for structure.
-
-    Returns:
-        A converter object for internal parameters.
-
-    """
-    return get_converter(
-        params=params,
-        constraints=None,
-        bounds=bounds,
-        func_eval=func_eval,
-        solver_type="value",
-    )
-
-
-def evaluate_function_values(func, evaluation_points, batch_evaluator, n_cores):  # type: ignore
+def evaluate_function_values(func, evaluation_points, batch_evaluator, n_cores):
     """Evaluate function at multiple points using a batch evaluation strategy.
 
     Args:
@@ -169,7 +149,7 @@ def evaluate_function_values(func, evaluation_points, batch_evaluator, n_cores):
     ]
 
 
-def generate_eval_points(grid, params, param_names, fixed_vars, converter, projection):  # type: ignore
+def generate_eval_points(grid, params, param_names, fixed_vars, converter, projection):
     """Generate evaluation points based on a grid of selected parameters and fixed
     variables.
 
@@ -199,18 +179,18 @@ def generate_eval_points(grid, params, param_names, fixed_vars, converter, proje
     if projection != "slice":
         x_vals = grid[param_names[0]].to_numpy()
         y_vals = grid[param_names[1]].to_numpy()
-        X, Y = np.meshgrid(x_vals, y_vals)
+        x, y = np.meshgrid(x_vals, y_vals)
 
-        for a, b in zip(X.ravel(), Y.ravel(), strict=False):
+        for a, b in zip(x.ravel(), y.ravel(), strict=False):
             point_dict = {param_names[0]: a, param_names[1]: b, **fixed_vars}
             internal_values = np.array(list(point_dict.values()))
             evaluation_points.append(converter.params_from_internal(internal_values))
 
-        return X, Y, evaluation_points
+        return x, y, evaluation_points
 
     else:
-        X = grid[param_names].to_numpy()
-        for param_value in X:
+        x = grid[param_names].to_numpy()
+        for param_value in x:
             point_dict = (
                 {**fixed_vars, param_names: param_value}
                 if isinstance(param_names, str)
@@ -227,4 +207,4 @@ def generate_eval_points(grid, params, param_names, fixed_vars, converter, proje
                 ]
             )
             evaluation_points.append(converter.params_from_internal(internal_values))
-        return X, evaluation_points
+        return x, evaluation_points
