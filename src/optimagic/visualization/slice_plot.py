@@ -131,7 +131,6 @@ def _plot_pairwise(
     line_smoothing = projection_kwargs.get("line_smoothing", 0.85)
     diagonal_show = projection_kwargs.get("diagonal_show", False)
 
-    # --- Two selected parameters: Single plot ---
     len_selected = len(selected)
     if len_selected == 2:
         name_x, name_y = selected_param_names
@@ -192,7 +191,7 @@ def _plot_pairwise(
         fig.update_layout(**layout_kwargs)
         return fig
     else:
-        # Pairwise plot
+        # Pairwise plot for multiple plots ("3d" or "Contour" projections)
         specs = [
             [
                 {"type": "scene"} if projection == "3d" else {"type": "xy"}
@@ -254,18 +253,22 @@ def _plot_pairwise(
 
                 fig.add_trace(trace, row=i + 1, col=j + 1)
 
-        # update layout kwargs
-        eye_layouts = {}
-        for i in range(1, (len_selected * len_selected) + 1):
-            scene_id = "scene" if i == 1 else f"scene{i}"
-            eye_layouts[f"{scene_id}_camera"] = dict(eye=scene_camera_eye)
         layout_kwargs = dict(
             title=title or f"{projection} plot",
             template=template,
             width=width,
             height=height,
-            **eye_layouts,
         )
+
+        # update layout kwargs
+        if projection == "3d":
+            eye_layouts = {}
+            for i in range(1, (len_selected * len_selected) + 1):
+                scene_id = "scene" if i == 1 else f"scene{i}"
+                eye_layouts[f"{scene_id}_camera"] = dict(eye=scene_camera_eye)
+
+            layout_kwargs = dict(**layout_kwargs, **eye_layouts)
+
         fig.update_layout(**layout_kwargs)
         return fig
 
@@ -291,6 +294,7 @@ def slice_plot(
     batch_evaluator="joblib",
     projection="slice",
     projection_kwargs=None,
+    # deprecated
     lower_bounds=None,
     upper_bounds=None,
 ):
@@ -384,7 +388,7 @@ def slice_plot(
     func, func_eval = evaluate_func(params, func, func_kwargs)
     bounds = process_bounds(bounds, lower_bounds, upper_bounds)
 
-    # Generate internal parameter representation
+    # Generate internal parameters and converter for basic structure
     converter, internal_params = get_converter(
         params=params,
         constraints=None,
@@ -394,14 +398,21 @@ def slice_plot(
     )
     n_params = len(internal_params.values)
 
-    # Select parameters for plotting
+    # Subset of parameters which is selected
     selected = select_parameter_indices(converter, selector, n_params)
     if not np.isfinite(internal_params.lower_bounds[selected]).all():
         raise ValueError("All selected parameters must have finite lower bounds.")
     if not np.isfinite(internal_params.upper_bounds[selected]).all():
         raise ValueError("All selected parameters must have finite upper bounds.")
 
-    # Create grid data
+    # Validate sufficient number of parameters for "3d" and "contour" projections
+    if projection in {"3d", "contour"} and len(selected) < 2:
+        raise ValueError(
+            f"{projection!r} projection requires at least two parameters. "
+            f"Got {len(selected)}. Please revise the `selector`."
+        )
+
+    # Create data grid
     grid_data = generate_grid_data(internal_params, selected, n_gridpoints)
 
     if projection == "slice":
