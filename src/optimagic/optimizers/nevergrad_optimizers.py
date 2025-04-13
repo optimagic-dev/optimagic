@@ -32,7 +32,7 @@ if IS_NEVERGRAD_INSTALLED:
     supports_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
-    disable_history=True,
+    disable_history=False,
 )
 @dataclass(frozen=True)
 class NevergradPSO(Algorithm):
@@ -79,7 +79,20 @@ class NevergradPSO(Algorithm):
             num_workers=self.n_cores,
         )
 
-        recommendation = optimizer.minimize(problem.fun)
+        while optimizer.num_ask < optimizer.budget:
+            x_list = [
+                optimizer.ask()
+                for _ in range(
+                    min(optimizer.num_workers, optimizer.budget - optimizer.num_ask)
+                )
+            ]
+            losses = problem.batch_fun(
+                [x.value[0][0] for x in x_list], n_cores=self.n_cores
+            )
+            for x, loss in zip(x_list, losses, strict=True):
+                optimizer.tell(x, loss)
+
+        recommendation = optimizer.provide_recommendation()
 
         result = InternalOptimizeResult(
             x=recommendation.value[0][0],
