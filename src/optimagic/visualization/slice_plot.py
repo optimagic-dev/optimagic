@@ -1,135 +1,20 @@
-import warnings
-from functools import partial
-
 import numpy as np
-import pandas as pd
 import plotly.express as px
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
-from pybaum import tree_just_flatten
 
-from optimagic import deprecations
-from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
-from optimagic.optimization.fun_value import (
-    convert_fun_output_to_function_value,
-    enforce_return_type,
-)
-from optimagic.parameters.bounds import pre_process_bounds
-from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
+from optimagic.visualization.plot_data import (
+    evaluate_func,
+    evaluate_function_values,
+    generate_eval_points,
+    generate_grid_data,
+    generate_internal_params,
+    process_bounds,
+    select_parameter_indices,
+)
 from optimagic.visualization.plotting_utilities import combine_plots, get_layout_kwargs
-
-
-def evaluate_func(params, func, func_kwargs):
-    if func_kwargs:
-        func = partial(func, **func_kwargs)
-    func_eval = func(params)
-
-    if deprecations.is_dict_output(func_eval):
-        warnings.warn(
-            "Functions that return dictionaries are deprecated and will"
-            " raise an error in future versions.",
-            FutureWarning,
-        )
-        func_eval = deprecations.convert_dict_to_function_value(func_eval)
-        func = deprecations.replace_dict_output(func)
-
-    problem_type = (
-        deprecations.infer_problem_type_from_dict_output(func_eval)
-        if deprecations.is_dict_output(func_eval)
-        else infer_aggregation_level(func)
-    )
-    func_eval = convert_fun_output_to_function_value(func_eval, problem_type)
-    func = enforce_return_type(problem_type)(func)
-    return func, func_eval
-
-
-def process_bounds(bounds, lower_bounds, upper_bounds):
-    bounds = replace_and_warn_about_deprecated_bounds(
-        bounds=bounds, lower_bounds=lower_bounds, upper_bounds=upper_bounds
-    )
-    return pre_process_bounds(bounds)
-
-
-def generate_internal_params(params, bounds, func_eval):
-    return get_converter(
-        params=params,
-        constraints=None,
-        bounds=bounds,
-        func_eval=func_eval,
-        solver_type="value",
-    )
-
-
-def select_parameter_indices(converter, selector, n_params):
-    if selector is None:
-        return np.arange(n_params, dtype=int)
-    helper = converter.params_from_internal(np.arange(n_params))
-    registry = get_registry(extended=True)
-    return np.array(tree_just_flatten(selector(helper), registry=registry), dtype=int)
-
-
-def generate_grid_data(internal_params, selected, n_gridpoints):
-    metadata = {
-        name: (
-            np.linspace(
-                internal_params.lower_bounds[pos],
-                internal_params.upper_bounds[pos],
-                n_gridpoints,
-            )
-            if pos in selected
-            else internal_params.values[pos]
-        )
-        for pos, name in enumerate(internal_params.names)
-    }
-    return pd.DataFrame(metadata)
-
-
-def generate_evaluation_points(
-    grid_data, internal_params, selected_names, fixed_vars, converter, projection
-):
-    evaluation_points = []
-    if projection != "slice":
-        X, Y = np.meshgrid(
-            grid_data[selected_names[0]].values, grid_data[selected_names[1]].values
-        )
-        for a, b in zip(X.ravel(), Y.ravel(), strict=False):
-            point_dict = {selected_names[0]: a, selected_names[1]: b, **fixed_vars}
-            internal_values = np.array(list(point_dict.values()))
-            evaluation_points.append(converter.params_from_internal(internal_values))
-        return X, Y, evaluation_points
-    else:
-        X = grid_data[selected_names].values
-        for param_value in X:
-            point_dict = {**fixed_vars, selected_names: param_value}
-            internal_values = np.array(
-                [
-                    point_dict.get(
-                        name, internal_params.values[internal_params.names.index(name)]
-                    )
-                    for name in internal_params.names
-                ]
-            )
-            evaluation_points.append(converter.params_from_internal(internal_values))
-        return X, evaluation_points
-
-
-def evaluate_function_values(func, evaluation_points, batch_evaluator, n_cores):
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
-    results = batch_evaluator(
-        func=func,
-        arguments=evaluation_points,
-        error_handling="continue",
-        n_cores=n_cores,
-    )
-    return [
-        np.nan if isinstance(val, str) else val.internal_value(AggregationLevel.SCALAR)
-        for val in results
-    ]
 
 
 def _plot_slice(
@@ -163,7 +48,7 @@ def _plot_slice(
             for name in internal_params.names
             if name != param_name
         }
-        X, evaluation_points = generate_evaluation_points(
+        X, evaluation_points = generate_eval_points(
             grid_data, internal_params, param_name, fixed_vars, converter, "slice"
         )
         func_values = evaluate_function_values(
@@ -230,63 +115,136 @@ def _plot_pairwise(
     n_gridpoints,
 ):
     selected_param_names = [internal_params.names[i] for i in selected]
-    specs = [
-        [
-            {"type": "scene"} if projection == "3d" else {"type": "xy"}
+
+    if len(selected) == 2:
+        # Only two parameters selected: make a single plot
+        name_x, name_y = selected_param_names
+        selected_names = [name_x, name_y]
+
+        fixed_vars = {
+            name: grid_data.iloc[0][name]
+            for name in internal_params.names
+            if name not in selected_names
+        }
+
+        X, Y, evaluation_points = generate_eval_points(
+            grid_data,
+            internal_params,
+            selected_names,
+            fixed_vars,
+            converter,
+            projection,
+        )
+        func_values = evaluate_function_values(
+            func, evaluation_points, batch_evaluator, n_cores
+        )
+        Z = np.reshape(func_values, (n_gridpoints, n_gridpoints))
+
+        trace = (
+            go.Surface(
+                z=Z,
+                x=X,
+                y=Y,
+                showscale=True,
+            )
+            if projection == "3d"
+            else go.Contour(
+                z=Z,
+                x=X[0],
+                y=Y[:, 0],
+                contours_coloring="heatmap",
+                line_smoothing=0.85,
+            )
+        )
+
+        fig = go.Figure(data=[trace])
+        fig.update_layout(
+            title=title or f"{projection} plot: {name_x} vs {name_y}",
+            template=template,
+            scene=dict(
+                xaxis_title=name_x,
+                yaxis_title=name_y,
+                zaxis_title="Function Value",
+                camera=dict(eye=dict(x=1, y=2, z=0.5)),
+            )
+            if projection == "3d"
+            else None,
+            width=700,
+            height=600,
+        )
+        return fig
+
+    else:
+        # General pairwise plot logic (len(selected) > 2)
+        specs = [
+            [
+                {"type": "scene"} if projection == "3d" else {"type": "xy"}
+                for _ in range(len(selected))
+            ]
             for _ in range(len(selected))
         ]
-        for _ in range(len(selected))
-    ]
-    subplot_titles = [
-        f"{selected_param_names[j]} vs {selected_param_names[i]}" if i != j else ""
-        for i in range(len(selected))
-        for j in range(len(selected))
-    ]
-    fig = make_subplots(
-        rows=len(selected),
-        cols=len(selected),
-        specs=specs,
-        subplot_titles=subplot_titles,
-    )
 
-    for i, name_i in enumerate(selected_param_names):
-        for j, name_j in enumerate(selected_param_names):
-            selected_names = [name_j, name_i]
-            fixed_vars = {
-                name: grid_data.iloc[0][name]
-                for name in internal_params.names
-                if name not in selected_names
-            }
-            X, Y, evaluation_points = generate_evaluation_points(
-                grid_data,
-                internal_params,
-                selected_names,
-                fixed_vars,
-                converter,
-                projection,
-            )
-            func_values = evaluate_function_values(
-                func, evaluation_points, batch_evaluator, n_cores
-            )
-            Z = np.reshape(func_values, (n_gridpoints, n_gridpoints))
-            trace = (
-                go.Surface(z=Z, x=X, y=Y, showscale=False, colorscale="Viridis")
-                if projection == "3d"
-                else go.Contour(
-                    z=Z,
-                    x=X[0],
-                    y=Y[:, 0],
-                    colorscale="Viridis",
-                    contours_coloring="heatmap",
-                    line_smoothing=0.85,
+        subplot_titles = [
+            f"{selected_param_names[j]} vs {selected_param_names[i]}" if i != j else ""
+            for i in range(len(selected))
+            for j in range(len(selected))
+        ]
+
+        fig = make_subplots(
+            rows=len(selected),
+            cols=len(selected),
+            specs=specs,
+            subplot_titles=subplot_titles,
+        )
+
+        for i, name_i in enumerate(selected_param_names):
+            for j, name_j in enumerate(selected_param_names):
+                if i == j:
+                    continue
+
+                selected_names = [name_j, name_i]
+                fixed_vars = {
+                    name: grid_data.iloc[0][name]
+                    for name in internal_params.names
+                    if name not in selected_names
+                }
+
+                X, Y, evaluation_points = generate_eval_points(
+                    grid_data,
+                    internal_params,
+                    selected_names,
+                    fixed_vars,
+                    converter,
+                    projection,
                 )
-            )
-            fig.add_trace(trace, row=i + 1, col=j + 1)
+                func_values = evaluate_function_values(
+                    func, evaluation_points, batch_evaluator, n_cores
+                )
+                Z = np.reshape(func_values, (n_gridpoints, n_gridpoints))
 
-    fig.update_layout(
-        title=title or f"Function plot - ({projection})", template=template
-    )
-    return fig
+                trace = (
+                    go.Surface(z=Z, x=X, y=Y, showscale=False)
+                    if projection == "3d"
+                    else go.Contour(
+                        z=Z,
+                        x=X[0],
+                        y=Y[:, 0],
+                        contours_coloring="heatmap",
+                        line_smoothing=0.85,
+                    )
+                )
+
+                fig.add_trace(trace, row=i + 1, col=j + 1)
+
+        fig.update_layout(
+            title=title or f"({projection}) Pairwise Plot",
+            template=template,
+            width=800,
+            height=800,
+            scene_camera_eye=dict(x=2, y=2, z=0.1),
+            margin=dict(t=30, r=0, l=20, b=10),
+        )
+        return fig
 
 
 def slice_plot(
