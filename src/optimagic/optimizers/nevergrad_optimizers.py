@@ -122,17 +122,31 @@ class NevergradOnePlusOne(Algorithm):
         )
         optimizer.register_callback("ask", early_stopping)
 
-        early_stopping = ng.callbacks.EarlyStopping.timer(max_duration=self.max_time)
-        optimizer.register_callback("ask", early_stopping)
-
-        recommendation = optimizer.minimize(problem.fun)
-        best_x = (recommendation.value)[0][0]
-        best_fun = recommendation.loss
-        n_fun_evals = optimizer.num_ask
-        out = InternalOptimizeResult(
-            x=best_x,
-            fun=best_fun,
-            success=True,
-            n_fun_evals=n_fun_evals,
+        early_stopping_time = ng.callbacks.EarlyStopping.timer(
+            max_duration=self.max_time
         )
-        return out
+        optimizer.register_callback("ask", early_stopping_time)
+
+        while optimizer.num_ask < optimizer.budget:
+            x_list = [
+                optimizer.ask()
+                for _ in range(
+                    min(optimizer.num_workers, optimizer.budget - optimizer.num_ask)
+                )
+            ]
+            losses = problem.batch_fun(
+                [x.value[0][0] for x in x_list], n_cores=self.n_cores
+            )
+            for x, loss in zip(x_list, losses, strict=True):
+                optimizer.tell(x, loss)
+
+        recommendation = optimizer.provide_recommendation()
+
+        result = InternalOptimizeResult(
+            x=recommendation.value[0][0],
+            fun=recommendation.loss,
+            success=True,
+            n_fun_evals=optimizer.num_ask,
+        )
+
+        return result
