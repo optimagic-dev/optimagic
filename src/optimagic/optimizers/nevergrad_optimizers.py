@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,14 +13,13 @@ from optimagic import mark
 from optimagic.config import IS_NEVERGRAD_INSTALLED
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_FTOL_ABS,
-    STOPPING_MAXITER,
+    STOPPING_MAXFUN_GLOBAL,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
+from optimagic.typing import AggregationLevel, PositiveInt
 
 
 @mark.minimizer(
@@ -33,13 +32,12 @@ from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=True,  # TBA
     disable_history=False,
 )
 @dataclass(frozen=True)
 class NevergradOnePlusOne(Algorithm):
-    noise_handling: Literal["random", "optimistic"] | None = None
-    noise_handling_value: NonNegativeFloat = 0.005
+    noise_handling: str | Tuple[str, float] | None = None
     mutation: Literal[
         "gaussian",
         "cauchy",
@@ -81,11 +79,8 @@ class NevergradOnePlusOne(Algorithm):
     tabu_length: int = 0
     rotation: bool = False
 
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     n_cores: PositiveInt = 1
-    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
-    # time limit in seconds
-    max_time: NonNegativeFloat = np.inf
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -94,13 +89,13 @@ class NevergradOnePlusOne(Algorithm):
             raise NotInstalledError(
                 "Nevergrad is not installed. Please install it to use this algorithm."
             )
-        instrum = ng.p.Instrumentation(
-            ng.p.Array(shape=x0.shape).set_bounds(
-                problem.bounds.lower, problem.bounds.upper
-            )
-        )
+        param = ng.p.Array(
+            init=np.clip(x0, problem.bounds.lower, problem.bounds.upper)
+        ).set_bounds(problem.bounds.lower, upper=problem.bounds.upper)
+        instrum = ng.p.Instrumentation(param)
+
         optimizer = ng.optimizers.ParametrizedOnePlusOne(
-            noise_handling=(self.noise_handling, self.noise_handling_value),
+            noise_handling=self.noise_handling,
             tabu_length=self.tabu_length,
             mutation=self.mutation,
             crossover=self.crossover,
@@ -114,18 +109,9 @@ class NevergradOnePlusOne(Algorithm):
             crossover_type=self.crossover_type,
         )(
             parametrization=instrum,
-            budget=self.stopping_maxiter,
+            budget=self.stopping_maxfun,
             num_workers=self.n_cores,
         )
-        early_stopping = ng.callbacks.EarlyStopping.no_improvement_stopper(
-            tolerance_window=self.convergence_ftol_abs
-        )
-        optimizer.register_callback("ask", early_stopping)
-
-        early_stopping_time = ng.callbacks.EarlyStopping.timer(
-            max_duration=self.max_time
-        )
-        optimizer.register_callback("ask", early_stopping_time)
 
         while optimizer.num_ask < optimizer.budget:
             x_list = [
@@ -135,10 +121,11 @@ class NevergradOnePlusOne(Algorithm):
                 )
             ]
             losses = problem.batch_fun(
-                [x.value[0][0] for x in x_list], n_cores=self.n_cores
+                [x.value[0][0] for x in x_list],
+                n_cores=self.n_cores,
             )
             for x, loss in zip(x_list, losses, strict=True):
-                optimizer.tell(x, loss)
+                optimizer.tell(x, loss, problem.nonlinear_constraints)
 
         recommendation = optimizer.provide_recommendation()
 
