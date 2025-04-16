@@ -452,8 +452,6 @@ class InternalOptimizationProblem:
         params = self._converter.params_from_internal(x)
         try:
             jac_value = self._jac(params)
-            # Check for infinite values in the user-provided gradient
-            self._check_infinite_gradients(params, jac_value)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -477,6 +475,8 @@ class InternalOptimizationProblem:
         out_jac = _process_jac_value(
             value=jac_value, direction=self._direction, converter=self._converter, x=x
         )
+        # Check for infinite values in the user-provided gradient
+        self._check_infinite_gradients(params, out_jac, jac_value)
 
         stop_time = time.perf_counter()
 
@@ -526,8 +526,6 @@ class InternalOptimizationProblem:
             )
             fun_value = numdiff_res.func_value
             jac_value = numdiff_res.derivative
-            # Check for infinite values in the numerical gradient
-            self._check_infinite_gradients(params, jac_value)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -551,6 +549,9 @@ class InternalOptimizationProblem:
                 )
                 warnings.warn(msg)
                 fun_value, jac_value = self._error_penalty_func(x)
+
+        # Check for infinite values in the numerical gradient
+        self._check_infinite_gradients(params, jac_value, jac_value)
 
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value,  # type: ignore
@@ -657,8 +658,6 @@ class InternalOptimizationProblem:
 
         try:
             fun_value, jac_value = self._fun_and_jac(params)
-            # Check for infinite values in the user-provided gradient
-            self._check_infinite_gradients(params, jac_value)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -693,6 +692,9 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             out_jac = -out_jac
 
+        # Check for infinite values in the user-provided gradient
+        self._check_infinite_gradients(params, out_jac, jac_value)
+
         stop_time = time.perf_counter()
 
         hist_entry = HistoryEntry(
@@ -715,29 +717,30 @@ class InternalOptimizationProblem:
 
         return (algo_fun_value, out_jac), hist_entry, log_entry
 
-    def _check_infinite_gradients(self, params: PyTree, grad: PyTree) -> None:
+    def _check_infinite_gradients(
+        self,
+        params: PyTree,
+        out_jac: NDArray[np.float64],
+        jac_value: PyTree,
+    ) -> None:
         """Check for infinite values in gradients and raise an error if found.
 
         Args:
-            params: The parameters at which the gradient was evaluated.
-            grad: The gradient to check, which can be a numpy array or a dictionary
-                of numpy arrays.
+            x: internal parameter vector at which the gradient was evaluated.
+            params: user-facing parameter representation at evaluation point.
+            out_jac: internal processed gradient to check for infinities.
+            jac_value: original gradient value as returned by the user function,
+                    included in error messages for debugging.
 
         Raises:
             InvalidFunctionError: If any infinite values are found in the gradient.
 
         """
-        if isinstance(grad, dict):
-            # Convert dictionary to flattened numpy array for checking
-            flat_grad = np.concatenate([np.ravel(np.array(v)) for v in grad.values()])
-        else:
-            flat_grad = np.ravel(np.array(grad))
-
-        if np.any(np.isinf(flat_grad)):
+        if np.any(np.isinf(out_jac)) or np.any(np.isnan(out_jac)):
             msg = (
-                "Infinite values found in gradient.\n"
+                "Infinite or NaN values found in gradient.\n"
                 f"Parameters: {params},\n"
-                f"Gradient: {grad}"
+                f"Gradient: {jac_value}"
             )
             raise InvalidFunctionError(msg)
 
