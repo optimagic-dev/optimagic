@@ -145,7 +145,6 @@ def get_space_converter(
         soft_lower_bounds=_soft_lower,
         soft_upper_bounds=_soft_upper,
     )
-
     return converter, params
 
 

@@ -11,7 +11,11 @@ from typing_extensions import Self
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
-from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
+from optimagic.exceptions import (
+    InvalidFunctionError,
+    UserFunctionRuntimeError,
+    get_traceback,
+)
 from optimagic.logging.logger import LogStore
 from optimagic.logging.types import IterationState
 from optimagic.optimization.fun_value import (
@@ -471,6 +475,7 @@ class InternalOptimizationProblem:
         out_jac = _process_jac_value(
             value=jac_value, direction=self._direction, converter=self._converter, x=x
         )
+        self._assert_finite_jac(out_jac, jac_value, params)
 
         stop_time = time.perf_counter()
 
@@ -508,6 +513,7 @@ class InternalOptimizationProblem:
             p = self._converter.params_from_internal(x)
             return self._fun(p)
 
+        params = self._converter.params_from_internal(x)
         try:
             numdiff_res = first_derivative(
                 func,
@@ -542,6 +548,8 @@ class InternalOptimizationProblem:
                 )
                 warnings.warn(msg)
                 fun_value, jac_value = self._error_penalty_func(x)
+
+        self._assert_finite_jac(jac_value, jac_value, params)
 
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value,  # type: ignore
@@ -682,6 +690,8 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             out_jac = -out_jac
 
+        self._assert_finite_jac(out_jac, jac_value, params)
+
         stop_time = time.perf_counter()
 
         hist_entry = HistoryEntry(
@@ -703,6 +713,30 @@ class InternalOptimizationProblem:
         )
 
         return (algo_fun_value, out_jac), hist_entry, log_entry
+
+    def _assert_finite_jac(
+        self, out_jac: NDArray[np.float64], jac_value: PyTree, params: PyTree
+    ) -> None:
+        """Check for infinite and NaN values in the jacobian and raise an error if
+        found.
+
+        Args:
+            out_jac: internal processed gradient to check for infinities.
+            jac_value: original gradient value as returned by the user function,
+                    included in error messages for debugging.
+            params: user-facing parameter representation at evaluation point.
+
+        Raises:
+            InvalidFunctionError: If any infinite values are found in the gradient.
+
+        """
+        if not np.all(np.isfinite(out_jac)):
+            msg = (
+                "Infinite or NaN values found in gradient.\n"
+                f"Parameters: {params},\n"
+                f"Gradient: {jac_value}"
+            )
+            raise InvalidFunctionError(msg)
 
 
 def _process_fun_value(
