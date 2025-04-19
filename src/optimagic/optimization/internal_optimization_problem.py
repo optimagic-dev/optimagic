@@ -721,10 +721,10 @@ class InternalOptimizationProblem:
         found.
 
         Args:
-            params: user-facing parameter representation at evaluation point.
             out_jac: internal processed gradient to check for infinities.
             jac_value: original gradient value as returned by the user function,
                     included in error messages for debugging.
+            params: user-facing parameter representation at evaluation point.
 
         Raises:
             InvalidFunctionError: If any infinite values are found in the gradient.
