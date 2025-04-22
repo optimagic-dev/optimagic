@@ -311,6 +311,8 @@ class ScipyConjugateGradient(Algorithm):
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     norm: NonNegativeFloat = np.inf
+    armijo_condition: NonNegativeFloat = 1e-4
+    curvature_condition: NonNegativeFloat = 0.4
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -319,6 +321,8 @@ class ScipyConjugateGradient(Algorithm):
             "gtol": self.convergence_gtol_abs,
             "maxiter": self.stopping_maxiter,
             "norm": self.norm,
+            "c1": self.armijo_condition,
+            "c2": self.curvature_condition,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac, x0=x0, method="CG", jac=True, options=options
