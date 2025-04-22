@@ -153,7 +153,7 @@ class ScipySLSQP(Algorithm):
         options = {
             "maxiter": self.stopping_maxiter,
             "ftol": self.convergence_ftol_abs,
-            "disp": self.display
+            "disp": self.display,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
