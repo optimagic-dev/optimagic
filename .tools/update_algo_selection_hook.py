@@ -2,6 +2,7 @@
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -11,11 +12,11 @@ PYTHON = [sys.executable]
 PYTHON_MINUS_M = [*PYTHON, "-m"]
 
 
-def run(cmd, **kwargs):
+def run(cmd: list[str], **kwargs: Any) -> None:
     subprocess.check_call(cmd, cwd=ROOT, **kwargs)
 
 
-def ensure_optimagic_is_locally_installed():
+def ensure_optimagic_is_locally_installed() -> None:
     try:
         run(PYTHON_MINUS_M + ["pip", "show", "optimagic"], stdout=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
