@@ -191,7 +191,7 @@ install optimagic.
       is compared to the gradient tolerance to determine convergence. Default is infinite which means that
       the largest entry of the gradient vector is compared to the gradient tolerance.
     - **display** (bool): 
-	    Set to True to print convergence messages. Default is True.
+	    Set to True to print convergence messages. Default is False.
       - scipy name: **disp**
     - **convergence_xtol_rel** (float):
       Relative tolerance for `x`. Terminate successfully if step size is less than `xk * xrtol` where `xk` is the current parameter vector. Default is 1e-5.
