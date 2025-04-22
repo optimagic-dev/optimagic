@@ -79,11 +79,11 @@ class NevergradPSO(Algorithm):
             num_workers=self.n_cores,
         )
 
-        while optimizer.num_ask < optimizer.budget:
+        while optimizer.num_ask < self.stopping_maxfun:
             x_list = [
                 optimizer.ask()
                 for _ in range(
-                    min(optimizer.num_workers, optimizer.budget - optimizer.num_ask)
+                    min(self.n_cores, self.stopping_maxfun - optimizer.num_ask)
                 )
             ]
             losses = problem.batch_fun(
@@ -99,6 +99,8 @@ class NevergradPSO(Algorithm):
             fun=recommendation.loss,
             success=True,
             n_fun_evals=optimizer.num_ask,
+            n_jac_evals=0,
+            n_hess_evals=0,
         )
 
         return result

@@ -7,7 +7,6 @@ dependencies:
   - python=3.10  # dev
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests, docs
-  - nevergrad  # dev, tests
   - jupyterlab  # dev, docs
   - nlopt  # dev, tests, docs
   - pip  # dev, tests, docs
@@ -40,6 +39,7 @@ dependencies:
   - annotated-types  # dev, tests
   - iminuit  # dev, tests
   - pip:  # dev, tests, docs
+      - nevergrad  # dev, tests
       - DFO-LS>=1.5.3  # dev, tests
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
