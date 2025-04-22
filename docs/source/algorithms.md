@@ -86,6 +86,9 @@ install optimagic.
       f in the stopping criterion.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): 
+	    Set to True to print convergence messages. Default is False.
+      - scipy name: **disp**
 
 ```
 
