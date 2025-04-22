@@ -267,6 +267,10 @@ class ScipyBFGS(Algorithm):
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     norm: NonNegativeFloat = np.inf
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    display: bool = False
+    armijo_condition: NonNegativeFloat = 1e-4
+    curvature_condition: NonNegativeFloat = 0.9
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -275,6 +279,10 @@ class ScipyBFGS(Algorithm):
             "gtol": self.convergence_gtol_abs,
             "maxiter": self.stopping_maxiter,
             "norm": self.norm,
+            "xrtol": self.convergence_xtol_rel,
+            "disp": self.display,
+            "c1": self.armijo_condition,
+            "c2": self.curvature_condition,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac, x0=x0, method="BFGS", jac=True, options=options
