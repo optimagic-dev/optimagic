@@ -86,9 +86,7 @@ install optimagic.
       f in the stopping criterion.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
-    - **display** (bool): 
-	    Set to True to print convergence messages. Default is False.
-      - scipy name: **disp**
+    - **display** (bool): Set to True to print convergence messages. Default is False. Scipy name: **disp**.
 
 ```
 
@@ -125,6 +123,7 @@ install optimagic.
     - **convergence.ftol_abs** (float): Absolute difference in the criterion value between
       iterations that is tolerated to declare convergence. As no relative tolerances can be passed to Nelder-Mead,
       optimagic sets a non zero default for this.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
     - **adaptive** (bool): Adapt algorithm parameters to dimensionality of problem.
       Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277). scipy's default is False.
 
@@ -168,6 +167,7 @@ install optimagic.
       the optimization stops but we do not count thisas convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached, the optimization stops,
       but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -243,6 +243,7 @@ install optimagic.
       "score" that is compared to the gradient tolerance to determine convergence.
       Default is infinite which means that the largest entry of the gradient vector
       is compared to the gradient tolerance.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -289,6 +290,7 @@ install optimagic.
       relative change in the parameters for determining the convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 
@@ -327,6 +329,7 @@ install optimagic.
     RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
     the `trustregion.initial_radius`. In this way COBYLA's iterations behave
     like a trust region algorithm.
+  - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -394,6 +397,7 @@ install optimagic.
       criterion rescaling. If 0, rescale at each iteration. If a large value,
       never rescale. If < 0, rescale is set to 1.3. optimagic defaults to scipy's
       default.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 ```
@@ -454,6 +458,7 @@ install optimagic.
       valid only close to the current point it should be a small one.
       The trust radius is automatically updated throughout the optimization
       process, with ``trustregion_initial_radius`` being its initial value.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
