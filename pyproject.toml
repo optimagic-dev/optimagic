@@ -16,6 +16,7 @@ dependencies = [
     "sqlalchemy>=1.3",
     "annotated-types",
     "typing-extensions",
+    "nevergrad",
 ]
 dynamic = ["version"]
 keywords = [
@@ -349,6 +350,7 @@ module = [
     "cyipopt",
     "nlopt",
     "bokeh",
+    "nevergrad",
     "bokeh.layouts",
     "bokeh.models",
     "bokeh.plotting",

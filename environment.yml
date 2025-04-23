@@ -25,6 +25,7 @@ dependencies:
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
   - myst-nb  # docs
+  - nevergrad  # run, tests
   - sphinx  # docs
   - sphinx-copybutton  # docs
   - sphinx-design  # docs

@@ -20,6 +20,7 @@ dependencies:
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
+  - nevergrad  # run, tests
   - seaborn  # dev, tests
   - mypy=1.14.1  # dev, tests
   - pyyaml  # dev, tests
