@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from optimagic import constraints, mark, timing, utilities
+from optimagic import constraints, mark, sandbox, timing, utilities
 from optimagic.algorithms import algos
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
@@ -103,4 +103,5 @@ __all__ = [
     "__version__",
     "algos",
     "timing",
+    "sandbox",
 ]
