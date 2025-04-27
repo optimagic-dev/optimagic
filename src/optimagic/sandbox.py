@@ -1,1 +1,0 @@
-from optimagic.visualization import slice_plot_3d
