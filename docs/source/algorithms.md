@@ -86,9 +86,7 @@ install optimagic.
       f in the stopping criterion.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
-    - **display** (bool): 
-	    Set to True to print convergence messages. Default is False.
-      - scipy name: **disp**
+    - **display** (bool): Set to True to print convergence messages. Default is False. Scipy name: **disp**.
 
 ```
 
@@ -125,6 +123,7 @@ install optimagic.
     - **convergence.ftol_abs** (float): Absolute difference in the criterion value between
       iterations that is tolerated to declare convergence. As no relative tolerances can be passed to Nelder-Mead,
       optimagic sets a non zero default for this.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
     - **adaptive** (bool): Adapt algorithm parameters to dimensionality of problem.
       Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277). scipy's default is False.
 
@@ -168,6 +167,7 @@ install optimagic.
       the optimization stops but we do not count thisas convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached, the optimization stops,
       but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -193,21 +193,22 @@ install optimagic.
     - **norm** (float): Order of the vector norm that is used to calculate the gradient's "score" that
       is compared to the gradient tolerance to determine convergence. Default is infinite which means that
       the largest entry of the gradient vector is compared to the gradient tolerance.
-    - **display** (bool): 
-	    Set to True to print convergence messages. Default is False.
-      - scipy name: **disp**
-    - **convergence_xtol_rel** (float):
-      Relative tolerance for `x`. Terminate successfully if step size is less than `xk * xrtol` where `xk` is the current parameter vector. Default is 1e-5.
-      - scipy name: **xrtol**
-    - **armijo_condition** (float):
-      Parameter for Armijo condition rule. Default is 1e-4.
-      Ensures $f(x_k+\alpha p_k) \le f(x_k) \;+$ **armijo_condition**$\,\cdot\,\alpha\,\nabla f(x_k)^\top p_k$, so each step yields at least a fraction **armijo_condition** of the predicted decrease.
-      smaller ⇒ more aggressive steps, larger ⇒ more conservative ones 
-      - scipy name: **c1**
-    - **curvature_condition** (float):
-      Parameter for curvature condition rule. Default is 0.9. Ensures $\nabla f(x_k+\alpha p_k)^\top p_k \ge\;$ **curvature_condition**$\,\cdot\,\nabla f(x_k)^\top p_k$, so the new slope along $p_k$ isn’t too negative.
-      - smaller ⇒ stricter curvature reduction (smaller steps), larger ⇒ looser (bigger steps)
-      - scipy name: **c2**
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
+    - **convergence_xtol_rel** (float): Relative tolerance for `x`. Terminate successfully if step size is less than `xk * xrtol` where `xk` is the current parameter vector. Default is 1e-5. SciPy name: **xrtol**.
+    - **armijo_condition** (float): Parameter for Armijo condition rule. Default is 1e-4. Ensures 
+
+        .. math::
+
+            f(x_k+\alpha p_k) \le f(x_k) \;+\mathrm{armijo\_condition}\,\cdot\,\alpha\,\nabla f(x_k)^\top p_k, 
+        
+      so each step yields at least a fraction **armijo_condition** of the predicted decrease. Smaller ⇒ more aggressive steps, larger ⇒ more conservative ones. SciPy name: **c1**.
+    - **curvature_condition** (float): Parameter for curvature condition rule. Default is 0.9. Ensures 
+      
+        .. math::
+
+            \nabla f(x_k+\alpha p_k)^\top p_k \ge \mathrm{curvature\_condition}\,\cdot\,\nabla f(x_k)^\top p_k, 
+        
+      so the new slope isn’t too negative. Smaller ⇒ stricter curvature reduction (smaller steps), larger ⇒ looser (bigger steps). SciPy name: **c2**.
 ```
 
 ```{eval-rst}
@@ -242,6 +243,7 @@ install optimagic.
       "score" that is compared to the gradient tolerance to determine convergence.
       Default is infinite which means that the largest entry of the gradient vector
       is compared to the gradient tolerance.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -288,6 +290,7 @@ install optimagic.
       relative change in the parameters for determining the convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 
@@ -326,6 +329,7 @@ install optimagic.
     RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
     the `trustregion.initial_radius`. In this way COBYLA's iterations behave
     like a trust region algorithm.
+  - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -393,6 +397,7 @@ install optimagic.
       criterion rescaling. If 0, rescale at each iteration. If a large value,
       never rescale. If < 0, rescale is set to 1.3. optimagic defaults to scipy's
       default.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 ```
@@ -453,6 +458,7 @@ install optimagic.
       valid only close to the current point it should be a small one.
       The trust radius is automatically updated throughout the optimization
       process, with ``trustregion_initial_radius`` being its initial value.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
