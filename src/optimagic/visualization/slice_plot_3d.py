@@ -51,8 +51,7 @@ def slice_plot_3d(
         template = PLOTLY_TEMPLATE
 
     plot_kwargs = plot_kwargs if plot_kwargs is not None else {}
-    make_subplot_kwargs = make_subplot_kwargs if make_subplot_kwargs is not None \
-                                                else {}
+    make_subplot_kwargs = make_subplot_kwargs if make_subplot_kwargs is not None else {}
     layout_kwargs = layout_kwargs if layout_kwargs is not None else {}
 
     # Preprocess objective function and bounds
@@ -99,11 +98,21 @@ def slice_plot_3d(
         for index, pos in enumerate(selected):
             param_name = internal_params.names[pos]
             param_value = internal_params.values[pos]
-            fig = plot_slice_util(param_data, param_name, param_value,
-                                  param_names, internal_params, func,
-                                  func_eval, converter,
-                                  batch_evaluator, n_cores, expand_yrange,
-                                  plot_kwargs, make_subplot_kwargs)
+            fig = plot_slice_util(
+                param_data,
+                param_name,
+                param_value,
+                param_names,
+                internal_params,
+                func,
+                func_eval,
+                converter,
+                batch_evaluator,
+                n_cores,
+                expand_yrange,
+                plot_kwargs,
+                make_subplot_kwargs,
+            )
 
             row = index // cols
             col = index % cols
@@ -115,12 +124,21 @@ def slice_plot_3d(
                 if pos_x == pos_y and not single_plot_flag:
                     param_name = internal_params.names[pos_x]
                     param_value = internal_params.values[pos_x]
-                    fig = plot_slice_util(param_data, param_name, param_value,
-                                          param_names, internal_params, func,
-                                          func_eval,
-                                          converter, batch_evaluator, n_cores,
-                                          expand_yrange,
-                                          plot_kwargs, make_subplot_kwargs)
+                    fig = plot_slice_util(
+                        param_data,
+                        param_name,
+                        param_value,
+                        param_names,
+                        internal_params,
+                        func,
+                        func_eval,
+                        converter,
+                        batch_evaluator,
+                        n_cores,
+                        expand_yrange,
+                        plot_kwargs,
+                        make_subplot_kwargs,
+                    )
                 else:
                     x_param_name = internal_params.names[pos_x]
                     y_param_name = internal_params.names[pos_y]
@@ -152,13 +170,19 @@ def slice_plot_3d(
 
                     if projection == Projection.SURFACE:
                         fig = plot_surface(
-                            x, y, z, display_names=display_names,
-                            plot_kwargs=plot_kwargs
+                            x,
+                            y,
+                            z,
+                            display_names=display_names,
+                            plot_kwargs=plot_kwargs,
                         )
                     else:
                         fig = plot_contour(
-                            x, y, z, display_names=display_names,
-                            plot_kwargs=plot_kwargs
+                            x,
+                            y,
+                            z,
+                            display_names=display_names,
+                            plot_kwargs=plot_kwargs,
                         )
 
                 if single_plot_flag:
@@ -197,8 +221,7 @@ def plot_slice(
     fig.update_yaxes(
         title={"text": "Function Value"},
         range=y_range
-        if "shared_yaxes" in make_subplot_kwargs
-           and make_subplot_kwargs["shared_yaxes"]
+        if "shared_yaxes" in make_subplot_kwargs and make_subplot_kwargs["shared_yaxes"]
         else None,
     )
     return fig
@@ -232,11 +255,21 @@ def plot_contour(x, y, z, display_names=None, plot_kwargs=None):
     return fig
 
 
-def plot_slice_util(param_data, param_name, param_value,
-                    param_names, internal_params, func, func_eval,
-                    converter,
-                    batch_evaluator, n_cores, expand_yrange,
-                    plot_kwargs, make_subplot_kwargs):
+def plot_slice_util(
+    param_data,
+    param_name,
+    param_value,
+    param_names,
+    internal_params,
+    func,
+    func_eval,
+    converter,
+    batch_evaluator,
+    n_cores,
+    expand_yrange,
+    plot_kwargs,
+    make_subplot_kwargs,
+):
     display_name = (
         param_names.get(param_name, param_name) if param_names else param_name
     )
@@ -257,7 +290,7 @@ def plot_slice_util(param_data, param_name, param_value,
     yaxis_range = [
         y_min - y_range * expand_yrange,
         y_max + y_range * expand_yrange,
-        ]
+    ]
 
     fig = plot_slice(
         x,
@@ -315,12 +348,12 @@ def update_nested_dict(default, updates):
 
 
 def get_layout_kwargs(
-        layout_kwargs,
-        rows,
-        cols,
-        return_dict=False,
-        template=PLOTLY_TEMPLATE,
-        single_plot=False,
+    layout_kwargs,
+    rows,
+    cols,
+    return_dict=False,
+    template=PLOTLY_TEMPLATE,
+    single_plot=False,
 ):
     if return_dict or single_plot:
         width = 500
@@ -344,8 +377,9 @@ def get_layout_kwargs(
     return layout_defaults
 
 
-def get_make_subplot_kwargs(make_subplot_kwargs, rows, cols, projection=None,
-                            single_plot=False):
+def get_make_subplot_kwargs(
+    make_subplot_kwargs, rows, cols, projection=None, single_plot=False
+):
     make_subplot_defaults = {
         "rows": rows,
         "cols": cols,
@@ -359,9 +393,11 @@ def get_make_subplot_kwargs(make_subplot_kwargs, rows, cols, projection=None,
     if projection and projection.is_multiple():
         make_subplot_defaults["specs"] = [
             [
-                {"type": "xy"} if row == col and not single_plot else
-                {"type": "scene"} if projection == Projection.SURFACE else
                 {"type": "xy"}
+                if row == col and not single_plot
+                else {"type": "scene"}
+                if projection == Projection.SURFACE
+                else {"type": "xy"}
                 for col in range(cols)
             ]
             for row in range(rows)
@@ -437,13 +473,13 @@ def get_plot_kwargs(projection, plot_kwargs):
 
 
 def evaluate_kwargs(
-        projection,
-        size,
-        make_subplot_kwargs,
-        layout_kwargs,
-        plot_kwargs,
-        return_dict=False,
-        template=None,
+    projection,
+    size,
+    make_subplot_kwargs,
+    layout_kwargs,
+    plot_kwargs,
+    return_dict=False,
+    template=None,
 ):
     plot_kwargs = get_plot_kwargs(projection, plot_kwargs)
 
@@ -457,8 +493,7 @@ def evaluate_kwargs(
         layout_kwargs = get_layout_kwargs(
             layout_kwargs, rows, cols, return_dict=return_dict
         )
-        make_subplot_kwargs = get_make_subplot_kwargs(make_subplot_kwargs,
-                                                      rows, cols)
+        make_subplot_kwargs = get_make_subplot_kwargs(make_subplot_kwargs, rows, cols)
         make_subplot_kwargs["shared_xaxes"] = shared_xaxes
         make_subplot_kwargs["shared_yaxes"] = shared_yaxes
     else:
@@ -480,11 +515,14 @@ def evaluate_kwargs(
             cols,
             return_dict=return_dict,
             template=template,
-            single_plot=size==2
+            single_plot=size == 2,
         )
         make_subplot_kwargs = get_make_subplot_kwargs(
-            make_subplot_kwargs, rows, cols, projection=projection,
-            single_plot=size==2
+            make_subplot_kwargs,
+            rows,
+            cols,
+            projection=projection,
+            single_plot=size == 2,
         )
 
     return make_subplot_kwargs, layout_kwargs, plot_kwargs
@@ -528,8 +566,8 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
             )
         if hasattr(subfig.layout, "yaxis") and hasattr(subfig.layout.yaxis, "title"):
             if (
-                    "shared_yaxes" in make_subplot_kwargs
-                    and make_subplot_kwargs["shared_yaxes"]
+                "shared_yaxes" in make_subplot_kwargs
+                and make_subplot_kwargs["shared_yaxes"]
             ):
                 if col_idx == 0:
                     fig.update_yaxes(
@@ -575,7 +613,6 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
     fig = _clean_legend_duplicates(fig)
 
     return fig
-
 
 
 # Plot Data
@@ -664,8 +701,7 @@ def generate_param_data(internal_params, selected, n_gridpoints):
 
 
 def evaluate_function_values(
-        data, internal, params, func, converter,
-        batch_evaluator, n_cores, projection=None
+    data, internal, params, func, converter, batch_evaluator, n_cores, projection=None
 ):
     if not projection:
         projection = Projection.SLICE
