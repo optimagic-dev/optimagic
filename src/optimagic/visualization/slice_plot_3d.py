@@ -43,22 +43,19 @@ def slice_plot_3d(
     lower_bounds=None,
     upper_bounds=None,
 ):
-    # Projection evaluation
     projection = Projection.from_value(projection)
-    if projection.is_multiple():
-        template = "plotly"
-    else:
-        template = PLOTLY_TEMPLATE
+    template = "plotly" if projection.is_multiple() else PLOTLY_TEMPLATE
 
-    plot_kwargs = plot_kwargs if plot_kwargs is not None else {}
-    make_subplot_kwargs = make_subplot_kwargs if make_subplot_kwargs is not None else {}
-    layout_kwargs = layout_kwargs if layout_kwargs is not None else {}
+    # Initialize plot, subplot and layout kwargs
+    plot_kwargs = plot_kwargs or {}
+    make_subplot_kwargs = make_subplot_kwargs or {}
+    layout_kwargs = layout_kwargs or {}
 
-    # Preprocess objective function and bounds
+    # Preprocess function and bounds
     func, func_eval = evaluate_func(params, func, func_kwargs)
     bounds = process_bounds(bounds, lower_bounds, upper_bounds)
 
-    # Generate internal parameters and converter
+    # Setup converter and parameters
     converter, internal_params = get_converter(
         params=params,
         constraints=[],
@@ -67,41 +64,35 @@ def slice_plot_3d(
         solver_type="value",
     )
 
-    # Subset of parameters which is selected
     selected = select_parameter_indices(converter, internal_params, selector)
     selected_size = len(selected)
 
-    # Validate enough parameters for "3d" and "contour" projections
     if projection.is_multiple() and selected_size < 2:
         raise ValueError(
-            f"{projection!r} projection requires at least two parameters."
-            f"Got {selected_size}. Please revise the `selector`."
+            f"{projection!r} requires at least two parameters. Got {selected_size}."
         )
 
-    # Create param data
+    # Generate data for plotting
     param_data = generate_param_data(internal_params, selected, n_gridpoints)
 
-    # Evaluate kwargs
+    # Update plotting-related kwargs
     make_subplot_kwargs, layout_kwargs, plot_kwargs = evaluate_kwargs(
         projection,
         selected_size,
         make_subplot_kwargs,
         layout_kwargs,
         plot_kwargs,
-        return_dict=return_dict,
-        template=template,
+        return_dict,
+        template,
     )
 
     plots = {}
     if projection.is_single():
-        cols = make_subplot_kwargs.get("cols")
-        for index, pos in enumerate(selected):
-            param_name = internal_params.names[pos]
-            param_value = internal_params.values[pos]
-            fig = plot_slice_util(
+        cols = make_subplot_kwargs.get("cols", 1)
+        for idx, pos in enumerate(selected):
+            fig = plot_single_param(
+                pos,
                 param_data,
-                param_name,
-                param_value,
                 param_names,
                 internal_params,
                 func,
@@ -112,22 +103,22 @@ def slice_plot_3d(
                 expand_yrange,
                 plot_kwargs,
                 make_subplot_kwargs,
+                layout_kwargs,
             )
-
-            row = index // cols
-            col = index % cols
+            row, col = divmod(idx, cols)
             plots[(row, col)] = fig
     else:
-        single_plot_flag = selected_size == 2
-        for index_x, pos_x in enumerate(selected):
-            for index_y, pos_y in enumerate(selected):
-                if pos_x == pos_y and not single_plot_flag:
-                    param_name = internal_params.names[pos_x]
-                    param_value = internal_params.values[pos_x]
-                    fig = plot_slice_util(
+        single_plot = selected_size == 2
+        for i, pos_x in enumerate(selected):
+            for j, pos_y in enumerate(selected):
+                if single_plot:
+                    pos_y += 1
+
+                # Diagonal plot are slice plots
+                if pos_x == pos_y and not single_plot:
+                    fig = plot_single_param(
+                        pos_x,
                         param_data,
-                        param_name,
-                        param_value,
                         param_names,
                         internal_params,
                         func,
@@ -138,64 +129,142 @@ def slice_plot_3d(
                         expand_yrange,
                         plot_kwargs,
                         make_subplot_kwargs,
+                        layout_kwargs,
                     )
                 else:
-                    x_param_name = internal_params.names[pos_x]
-                    y_param_name = internal_params.names[pos_y]
-
-                    display_names = {
-                        "x": param_names.get(x_param_name, x_param_name)
-                        if param_names
-                        else x_param_name,
-                        "y": param_names.get(y_param_name, y_param_name)
-                        if param_names
-                        else y_param_name,
-                    }
-
-                    x = param_data[x_param_name]
-                    y = param_data[y_param_name]
-                    z = evaluate_function_values(
+                    fig = plot_multiple_params(
+                        pos_x,
+                        pos_y,
                         param_data,
                         internal_params,
-                        [x_param_name, y_param_name],
+                        param_names,
                         func,
+                        func_eval,
                         converter,
                         batch_evaluator,
                         n_cores,
-                        projection=projection,
+                        projection,
+                        n_gridpoints,
+                        plot_kwargs,
+                        layout_kwargs,
                     )
-
-                    x, y = np.meshgrid(x, y)
-                    z = np.reshape(z, (n_gridpoints, n_gridpoints))
-
-                    if projection == Projection.SURFACE:
-                        fig = plot_surface(
-                            x,
-                            y,
-                            z,
-                            display_names=display_names,
-                            plot_kwargs=plot_kwargs,
-                        )
-                    else:
-                        fig = plot_contour(
-                            x,
-                            y,
-                            z,
-                            display_names=display_names,
-                            plot_kwargs=plot_kwargs,
-                        )
-
-                if single_plot_flag:
-                    plots[(0, 0)] = fig
+                plots[(i, j)] = fig
+                if single_plot:
                     break
-                plots[(index_x, index_y)] = fig
-            if single_plot_flag:
+            if single_plot:
                 break
 
-    return (
-        plots
-        if return_dict
-        else combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange)
+    if return_dict:
+        return plots
+    return combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange)
+
+
+def plot_single_param(
+    pos,
+    param_data,
+    param_names,
+    internal_params,
+    func,
+    func_eval,
+    converter,
+    batch_evaluator,
+    n_cores,
+    expand_yrange,
+    plot_kwargs,
+    make_subplot_kwargs,
+    layout_kwargs,
+):
+    param_name = internal_params.names[pos]
+    display_name = (
+        param_names.get(param_name, param_name) if param_names else param_name
+    )
+    x = param_data[param_name].tolist()
+    y = evaluate_function_values(
+        param_data,
+        internal_params,
+        param_name,
+        func,
+        converter,
+        batch_evaluator,
+        n_cores,
+    )
+    y_range = compute_yaxis_range(y, expand_yrange)
+    fig = plot_slice(
+        x=x,
+        y=y,
+        point={
+            "x": [internal_params.values[pos]],
+            "y": [func_eval.internal_value(AggregationLevel.SCALAR)],
+        },
+        display_name=display_name,
+        y_range=y_range,
+        plot_kwargs=plot_kwargs,
+        make_subplot_kwargs=make_subplot_kwargs,
+        layout_kwargs=layout_kwargs,
+    )
+    return fig
+
+
+def plot_multiple_params(
+    pos_x,
+    pos_y,
+    param_data,
+    internal_params,
+    param_names,
+    func,
+    func_eval,
+    converter,
+    batch_evaluator,
+    n_cores,
+    projection,
+    n_gridpoints,
+    plot_kwargs,
+    layout_kwargs,
+):
+    x_name = internal_params.names[pos_x]
+    y_name = internal_params.names[pos_y]
+
+    x = param_data[x_name]
+    y = param_data[y_name]
+
+    z = evaluate_function_values(
+        param_data,
+        internal_params,
+        [x_name, y_name],
+        func,
+        converter,
+        batch_evaluator,
+        n_cores,
+        projection,
+    )
+    x, y = np.meshgrid(x, y)
+    z = np.reshape(z, (n_gridpoints, n_gridpoints))
+    display = {
+        "x": param_names.get(x_name, x_name) if param_names else x_name,
+        "y": param_names.get(y_name, y_name) if param_names else y_name,
+    }
+    if projection == Projection.SURFACE:
+        return plot_surface(
+            x,
+            y,
+            z,
+            plot_kwargs=plot_kwargs,
+            layout_kwargs=layout_kwargs,
+            # Uncomment if the point is a necessary
+            # point={"x": [internal_params.values[pos_x]],
+            #        "y": [internal_params.values[pos_y]],
+            #        "z": [func_eval.internal_value(
+            #            AggregationLevel.SCALAR)]},
+        )
+    return plot_contour(
+        x,
+        y,
+        z,
+        plot_kwargs=plot_kwargs,
+        layout_kwargs=layout_kwargs,
+        # Uncomment if the point is a necessary
+        # point={"x": [internal_params.values[pos_x]],
+        #        "y": [internal_params.values[pos_y]]}
     )
 
 
@@ -207,16 +276,17 @@ def plot_slice(
     display_name=None,
     plot_kwargs=None,
     make_subplot_kwargs=None,
+    layout_kwargs=None,
 ):
     fig = px.line(x=x, y=y, **plot_kwargs["line_plot"])
 
-    fig.add_trace(go.Scatter(x=point["x"], y=point["y"], **plot_kwargs["scatter_plot"]))
+    if point:
+        fig.add_trace(
+            go.Scatter(x=point["x"], y=point["y"], **plot_kwargs["scatter_plot"])
+        )
 
-    layout_kwargs = dict(
-        title=f"test: {display_name}",
-        template=PLOTLY_TEMPLATE,
-    )
-    fig.update_layout(**layout_kwargs)
+    if layout_kwargs:
+        fig.update_layout(**layout_kwargs)
     fig.update_xaxes(title={"text": display_name})
     fig.update_yaxes(
         title={"text": "Function Value"},
@@ -227,83 +297,28 @@ def plot_slice(
     return fig
 
 
-def plot_surface(x, y, z, display_names=None, plot_kwargs=None):
+def plot_surface(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
     trace = go.Surface(z=z, x=x, y=y, **plot_kwargs["surface_plot"])
-    layout_kwargs = dict(
-        title=f"{display_names['x']} vs {display_names['y']}",
-        template=PLOTLY_TEMPLATE,
-        autosize=False,
-        scene_camera_eye=dict(x=0, y=0, z=-0.64),
-    )
 
     fig = go.Figure(data=[trace], layout=layout_kwargs)
 
-    # fig.update_layout(**layout_kwargs)
-    # fig.update_xaxes(mirror=True)
+    if point:
+        fig.add_trace(
+            go.Scatter3d(
+                x=point["x"], y=point["y"], z=point["z"], **plot_kwargs["scatter_plot"]
+            )
+        )
     return fig
 
 
-def plot_contour(x, y, z, display_names=None, plot_kwargs=None):
+def plot_contour(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
     trace = go.Contour(z=z, x=x[0], y=y[:, 0], **plot_kwargs["contour_plot"])
-    fig = go.Figure(data=[trace])
 
-    layout_kwargs = dict(
-        title=f"{display_names['x']} vs {display_names['y']}",
-        template=PLOTLY_TEMPLATE,
-    )
-    fig.update_layout(**layout_kwargs)
-    return fig
-
-
-def plot_slice_util(
-    param_data,
-    param_name,
-    param_value,
-    param_names,
-    internal_params,
-    func,
-    func_eval,
-    converter,
-    batch_evaluator,
-    n_cores,
-    expand_yrange,
-    plot_kwargs,
-    make_subplot_kwargs,
-):
-    display_name = (
-        param_names.get(param_name, param_name) if param_names else param_name
-    )
-
-    x = param_data[param_name].tolist()
-    y = evaluate_function_values(
-        param_data,
-        internal_params,
-        param_name,
-        func,
-        converter,
-        batch_evaluator,
-        n_cores,
-    )
-
-    y_min, y_max = np.min(y), np.max(y)
-    y_range = y_max - y_min
-    yaxis_range = [
-        y_min - y_range * expand_yrange,
-        y_max + y_range * expand_yrange,
-    ]
-
-    fig = plot_slice(
-        x,
-        y,
-        point={
-            "x": [param_value],
-            "y": [func_eval.internal_value(AggregationLevel.SCALAR)],
-        },
-        y_range=yaxis_range,
-        display_name=display_name,
-        plot_kwargs=plot_kwargs,
-        make_subplot_kwargs=make_subplot_kwargs,
-    )
+    fig = go.Figure(data=[trace], layout=layout_kwargs)
+    if point:
+        fig.add_trace(
+            go.Scatter3d(x=point["x"], y=point["y"], **plot_kwargs["scatter_plot"])
+        )
 
     return fig
 
@@ -336,6 +351,12 @@ class Projection(Enum):
         return f"Projection({self.name})"
 
 
+def compute_yaxis_range(y, expand_yrange):
+    y_min, y_max = np.min(y), np.max(y)
+    y_range = y_max - y_min
+    return [y_min - expand_yrange * y_range, y_max + expand_yrange * y_range]
+
+
 def update_nested_dict(default, updates):
     for k, v in updates.items():
         if isinstance(v, dict) and k in default and isinstance(default[k], dict):
@@ -356,18 +377,18 @@ def get_layout_kwargs(
     single_plot=False,
 ):
     if return_dict or single_plot:
-        width = 500
-        height = 500
+        width = 450
+        height = 450
     else:
-        width = 350 * cols
-        height = 350 * rows
+        width = 300 * cols
+        height = 300 * rows
     layout_defaults = {
         "width": width,
         "height": height,
         "template": template,
         "xaxis_showgrid": False,
         "yaxis_showgrid": False,
-        "title": {},
+        "title": {"text": "Slice Plot"},
         "legend": {},
     }
 
@@ -402,17 +423,10 @@ def get_make_subplot_kwargs(
             ]
             for row in range(rows)
         ]
-        # make_subplot_defaults["subplot_titles"] = [
-        #     f"{selected_param_names[j]} vs {selected_param_names[i]}"
-        #     if i != j else ""
-        #     for i in range(cols)
-        #     for j in range(rows)
-        # ]
     return make_subplot_defaults
 
 
 def get_plot_kwargs(projection, plot_kwargs):
-    # if projection == Projection.SLICE:
     line_plot_default_kwargs = {
         "color_discrete_sequence": ["#497ea7"],
         "markers": False,
@@ -420,7 +434,7 @@ def get_plot_kwargs(projection, plot_kwargs):
     scatter_plot_default_kwargs = {
         "marker": {
             "color": "#497ea7",
-            "size": 10,
+            "size": 4,
         }
     }
 
@@ -442,10 +456,9 @@ def get_plot_kwargs(projection, plot_kwargs):
 
     if projection == Projection.SURFACE:
         surface_plot_default_kwargs = {
-            "colorscale": "Blues",
+            "colorscale": "Aggrnyl",
             "showscale": False,
             "opacity": 0.8,
-            # "scene": dict(eye={'x':1, 'y':2, 'z':0.5})
         }
 
         # Update surface plot kwargs if present
@@ -458,7 +471,7 @@ def get_plot_kwargs(projection, plot_kwargs):
 
     elif projection == Projection.CONTOUR:
         contour_plot_default_kwargs = {
-            "colorscale": "Blues",
+            "colorscale": "Aggrnyl",
             "showscale": False,
             "line_smoothing": 0.85,
         }
@@ -500,11 +513,10 @@ def evaluate_kwargs(
         if make_subplot_kwargs:
             for key in make_subplot_kwargs.keys():
                 if key in ["rows", "cols", "shared_yaxes", "shared_xaxes"]:
-                    warnings.warn(
+                    raise ValueError(
                         f"{key} param is not allowed in plot_kwargs when "
                         f"the projection is {projection.value}."
                     )
-                    del make_subplot_kwargs[key]
 
         cols = size if size > 2 else 1
         rows = size if size > 2 else 1
@@ -617,17 +629,6 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
 
 # Plot Data
 def evaluate_func(params, func, func_kwargs):
-    """Evaluate a user-defined function, handling deprecated dictionary output.
-
-    Args:
-        params: Input parameters for the function.
-        func: The user-defined objective function.
-        func_kwargs: Optional dictionary of keyword arguments to pass to the function
-
-    Returns:
-        A tuple of (possibly wrapped) function and its evaluated output.
-
-    """
     if func_kwargs:
         func = partial(func, **func_kwargs)
 
@@ -653,17 +654,6 @@ def evaluate_func(params, func, func_kwargs):
 
 
 def process_bounds(bounds, lower_bounds, upper_bounds):
-    """Process parameter bounds, replacing deprecated formats if necessary.
-
-    Args:
-        bounds: Bound object or structure.
-        lower_bounds: Deprecated lower bounds.
-        upper_bounds: Deprecated upper bounds.
-
-    Returns:
-        Processed and validated bounds.
-
-    """
     bounds = replace_and_warn_about_deprecated_bounds(
         bounds=bounds, lower_bounds=lower_bounds, upper_bounds=upper_bounds
     )
