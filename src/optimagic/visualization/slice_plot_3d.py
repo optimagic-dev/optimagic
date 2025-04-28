@@ -43,9 +43,8 @@ def slice_plot_3d(
     lower_bounds=None,
     upper_bounds=None,
 ):
-    """
-    Generate interactive slice, contour or surface plots of a function
-    over its parameters.
+    """Generate interactive slice, contour or surface plots of a function over its
+    parameters.
 
     Produces 2D slice plots (one parameter at a time), 2D contour plots
     (two parameters), or 3D surface plots (two parameters) of a user-supplied
@@ -123,6 +122,7 @@ def slice_plot_3d(
             If `return_dict=True`, a dict mapping subplot indices to
             Plotly Figure objects. Otherwise, a single combined Plotly Figure with
             shared axes and layout.
+
     """
     projection = Projection.from_value(projection)
     template = "plotly" if projection.is_multiple() else PLOTLY_TEMPLATE
@@ -255,8 +255,7 @@ def plot_single_param(
     make_subplot_kwargs,
     layout_kwargs,
 ):
-    """
-    Generate a 2D slice plot for a single parameter index.
+    """Generate a 2D slice plot for a single parameter index.
 
     1. Extracts the parameter name and display label.
     2. Builds arrays of parameter values across a predefined grid.
@@ -270,6 +269,7 @@ def plot_single_param(
     Returns:
         go.Figure: A Plotly figure with line and marker traces, ready for
         integration into subplots or standalone display.
+
     """
     param_name = internal_params.names[pos]
     display_name = (
@@ -318,8 +318,7 @@ def plot_multiple_params(
     plot_kwargs,
     layout_kwargs,
 ):
-    """
-    Generate a 2D contour or 3D surface plot for two parameters.
+    """Generate a 2D contour or 3D surface plot for two parameters.
 
     # TODO: avoid redundant function evaluations to computational efficacy
 
@@ -333,6 +332,7 @@ def plot_multiple_params(
     Returns:
         go.Figure: A contour or surface figure, optionally annotated with
         the function value at the initial parameters.
+
     """
     x_name = internal_params.names[pos_x]
     y_name = internal_params.names[pos_y]
@@ -391,8 +391,7 @@ def plot_slice(
     make_subplot_kwargs=None,
     layout_kwargs=None,
 ):
-    """
-    Create a 2D line plot with an initial parameter marker.
+    """Create a 2D line plot with an initial parameter marker.
 
     1. Uses Plotly Express to draw a line of y vs. x with settings from
       `plot_kwargs['line_plot']`.
@@ -404,6 +403,7 @@ def plot_slice(
 
     Returns:
         go.Figure: Configured 2D line and marker plot.
+
     """
     fig = px.line(x=x, y=y, **plot_kwargs["line_plot"])
 
@@ -425,8 +425,7 @@ def plot_slice(
 
 
 def plot_surface(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
-    """
-    Construct a 3D surface plot of z = f(x,y,z).
+    """Construct a 3D surface plot of z = f(x,y,z).
 
     1. Creates a `go.Surface` trace with x, y, z matrices and
       styling from `plot_kwargs['surface_plot']`.
@@ -437,6 +436,7 @@ def plot_surface(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
 
     Returns:
         go.Figure: A 3D surface visualization.
+
     """
     trace = go.Surface(z=z, x=x, y=y, **plot_kwargs["surface_plot"])
 
@@ -452,8 +452,7 @@ def plot_surface(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
 
 
 def plot_contour(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
-    """
-    Build a 2D contour plot of z = f(x,y,z).
+    """Build a 2D contour plot of z = f(x,y,z).
 
     1. Uses `go.Contour` with flattened x and y axes and z data,
       styled via `plot_kwargs['contour_plot']`.
@@ -463,6 +462,7 @@ def plot_contour(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
 
     Returns:
         go.Figure: A contour map with optional annotation.
+
     """
     trace = go.Contour(z=z, x=x[0], y=y[:, 0], **plot_kwargs["contour_plot"])
 
@@ -530,12 +530,12 @@ def get_layout_kwargs(
     template=PLOTLY_TEMPLATE,
     single_plot=False,
 ):
-    """
-    Generate a default set of Plotly layout kwargs for subplots.
-    Merges user-supplied `layout_kwargs` if provided, overriding defaults.
+    """Generate a default set of Plotly layout kwargs for subplots. Merges user-supplied
+    `layout_kwargs` if provided, overriding defaults.
 
     Returns:
         dict: kwargs for `Figure.update_layout()`
+
     """
     if return_dict or single_plot:
         width = 450
@@ -562,12 +562,12 @@ def get_layout_kwargs(
 def get_make_subplot_kwargs(
     make_subplot_kwargs, rows, cols, projection=None, single_plot=False
 ):
-    """
-    Assemble default kwargs for `plotly.subplots.make_subplots`.
-    User-supplied `make_subplot_kwargs` override these defaults.
+    """Assemble default kwargs for `plotly.subplots.make_subplots`. User-supplied
+    `make_subplot_kwargs` override these defaults.
 
     Returns:
         dict: Kwargs for `make_subplots()`
+
     """
     make_subplot_defaults = {
         "rows": rows,
@@ -595,12 +595,12 @@ def get_make_subplot_kwargs(
 
 
 def get_plot_kwargs(projection, plot_kwargs):
-    """
-    Generate a default set of Plotly plot kwargs for individual plots.
-    Merges user-supplied `plot_kwargs` if provided, overriding defaults.
+    """Generate a default set of Plotly plot kwargs for individual plots. Merges user-
+    supplied `plot_kwargs` if provided, overriding defaults.
 
     Returns:
         dict: kwargs for individual plots
+
     """
     line_plot_default_kwargs = {
         "color_discrete_sequence": ["#497ea7"],
@@ -669,10 +669,8 @@ def evaluate_kwargs(
     return_dict=False,
     template=None,
 ):
-    """
-    Prepare and merge subplot, layout, and plot kwargs based on projection
-    type and plot count.
-    """
+    """Prepare and merge subplot, layout, and plot kwargs based on projection type and
+    plot count."""
     plot_kwargs = get_plot_kwargs(projection, plot_kwargs)
 
     if projection.is_single():
@@ -735,10 +733,8 @@ def _clean_legend_duplicates(fig):
 
 
 def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
-    """
-    Combine individual subplot figures into one Plotly Figure,
-    sharing axes and layout.
-    """
+    """Combine individual subplot figures into one Plotly Figure, sharing axes and
+    layout."""
     plots = deepcopy(plots)
 
     # Create a subplot figure
@@ -813,10 +809,8 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
 
 # Plot Data
 def evaluate_func(params, func, func_kwargs):
-    """
-    Wrap user function to handle func_kwargs, deprecated dict outputs,
-    and enforce return types.
-    """
+    """Wrap user function to handle func_kwargs, deprecated dict outputs, and enforce
+    return types."""
     if func_kwargs:
         func = partial(func, **func_kwargs)
 
@@ -842,10 +836,8 @@ def evaluate_func(params, func, func_kwargs):
 
 
 def process_bounds(bounds, lower_bounds, upper_bounds):
-    """
-    Normalize bounds input, handling deprecated `lower_bounds`/`upper_bounds`
-    signatures.
-    """
+    """Normalize bounds input, handling deprecated `lower_bounds`/`upper_bounds`
+    signatures."""
     bounds = replace_and_warn_about_deprecated_bounds(
         bounds=bounds, lower_bounds=lower_bounds, upper_bounds=upper_bounds
     )
@@ -853,10 +845,8 @@ def process_bounds(bounds, lower_bounds, upper_bounds):
 
 
 def select_parameter_indices(converter, internal_params, selector):
-    """
-    Determine which parameter indices to plot, either all or those
-    returned by `selector`
-    """
+    """Determine which parameter indices to plot, either all or those returned by
+    `selector`"""
     n_params = len(internal_params.values)
     if selector is None:
         return np.arange(n_params, dtype=int)
@@ -876,11 +866,8 @@ def select_parameter_indices(converter, internal_params, selector):
 
 
 def generate_param_data(internal_params, selected, n_gridpoints):
-    """
-    Generate a dictionary of parameter values for each selected
-    index over `n_gridpoints`
-    """
-    #
+    """Generate a dictionary of parameter values for each selected index over
+    `n_gridpoints`"""
     metadata = {}
     for pos in selected:
         metadata[internal_params.names[pos]] = np.linspace(
@@ -894,10 +881,8 @@ def generate_param_data(internal_params, selected, n_gridpoints):
 def evaluate_function_values(
     data, internal, params, func, converter, batch_evaluator, n_cores, projection=None
 ):
-    """
-    Batch-evaluate the user function at grid points, returning a flat list
-    of scalar values
-    """
+    """Batch-evaluate the user function at grid points, returning a flat list of scalar
+    values."""
     if not projection:
         projection = Projection.SLICE
 
@@ -920,9 +905,7 @@ def evaluate_function_values(
 
 
 def generate_evaluation_points(data, internal, converter, p_names, projection):
-    """
-    Build the list of internal parameter vectors to pass to the batch evaluator
-    """
+    """Build the list of internal parameter vectors to pass to the batch evaluator."""
     evaluation_points = []
     point = dict(zip(internal.names, internal.values, strict=False))
 
