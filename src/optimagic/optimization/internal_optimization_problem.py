@@ -8,12 +8,18 @@ import numpy as np
 from numpy.typing import NDArray
 from typing_extensions import Self
 
+from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
 from optimagic.logging.logger import LogStore
 from optimagic.logging.types import IterationState
-from optimagic.optimization.fun_value import SpecificFunctionValue
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+    SpecificFunctionValue,
+)
 from optimagic.optimization.history import History, HistoryEntry
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import Converter
@@ -79,11 +85,32 @@ class InternalOptimizationProblem:
     # ==================================================================================
 
     def fun(self, x: NDArray[np.float64]) -> float | NDArray[np.float64]:
+        """Evaluate the objective function at x.
+
+        Args:
+            x: The parameter vector at which to evaluate the objective function.
+
+        Returns:
+            The function value at x. This is a scalar for scalar problems and an array
+                for least squares  or likelihood problems.
+
+        """
         fun_value, hist_entry = self._evaluate_fun(x)
         self._history.add_entry(hist_entry)
         return fun_value
 
     def jac(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Evaluate the first derivative at x.
+
+        Args:
+            x: The parameter vector at which to evaluate the first derivative.
+
+        Returns:
+            The first derivative at x. This is a 1d array for scalar problems (the
+                gradient) and a 2d array for least squares or likelihood problems (the
+                Jacobian).
+
+        """
         jac_value, hist_entry = self._evaluate_jac(x)
         self._history.add_entry(hist_entry)
         return jac_value
@@ -91,6 +118,11 @@ class InternalOptimizationProblem:
     def fun_and_jac(
         self, x: NDArray[np.float64]
     ) -> tuple[float | NDArray[np.float64], NDArray[np.float64]]:
+        """Simultaneously evaluate the objective function and its first derivative.
+
+        See .fun and .jac for details.
+
+        """
         fun_and_jac_value, hist_entry = self._evaluate_fun_and_jac(x)
         self._history.add_entry(hist_entry)
         return fun_and_jac_value
@@ -101,6 +133,20 @@ class InternalOptimizationProblem:
         n_cores: int,
         batch_size: int | None = None,
     ) -> list[float | NDArray[np.float64]]:
+        """Parallelized batch version of .fun.
+
+        Args:
+            x_list: A list of parameter vectors at which to evaluate the objective
+                function.
+            n_cores: The number of cores to use for the parallel evaluation.
+            batch_size: Batch size that can be used by some algorithms to simulate
+                the behavior under parallelization on more cores than are actually
+                available. Only used by `criterion_plots` and benchmark plots.
+
+        Returns:
+            A list of function values at the points in x_list. See .fun for details.
+
+        """
         batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun,
@@ -121,6 +167,20 @@ class InternalOptimizationProblem:
         n_cores: int,
         batch_size: int | None = None,
     ) -> list[NDArray[np.float64]]:
+        """Parallelized batch version of .jac.
+
+        Args:
+            x_list: A list of parameter vectors at which to evaluate the first
+                derivative.
+            n_cores: The number of cores to use for the parallel evaluation.
+            batch_size: Batch size that can be used by some algorithms to simulate
+                the behavior under parallelization on more cores than are actually
+                available. Only used by `criterion_plots` and benchmark plots.
+
+        Returns:
+            A list of first derivatives at the points in x_list. See .jac for details.
+
+        """
         batch_size = n_cores if batch_size is None else batch_size
 
         batch_result = self._batch_evaluator(
@@ -141,6 +201,21 @@ class InternalOptimizationProblem:
         n_cores: int,
         batch_size: int | None = None,
     ) -> list[tuple[float | NDArray[np.float64], NDArray[np.float64]]]:
+        """Parallelized batch version of .fun_and_jac.
+
+        Args:
+            x_list: A list of parameter vectors at which to evaluate the objective
+                function and its first derivative.
+            n_cores: The number of cores to use for the parallel evaluation.
+            batch_size: Batch size that can be used by some algorithms to simulate
+                the behavior under parallelization on more cores than are actually
+                available. Only used by `criterion_plots` and benchmark plots.
+
+        Returns:
+            A list of tuples containing the function value and the first derivative
+                at the points in x_list. See .fun_and_jac for details.
+
+        """
         batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun_and_jac,
@@ -195,27 +270,33 @@ class InternalOptimizationProblem:
     # ==================================================================================
 
     @property
+    def bounds(self) -> InternalBounds:
+        """Bounds of the optimization problem."""
+        return self._bounds
+
+    @property
     def linear_constraints(self) -> list[dict[str, Any]] | None:
+        # TODO: write a docstring as soon as we actually use this
         return self._linear_constraints
 
     @property
     def nonlinear_constraints(self) -> list[dict[str, Any]] | None:
+        """Internal dictionary representation of nonlinear constraints."""
         return self._nonlinear_constraints
 
     @property
     def direction(self) -> Direction:
+        """Direction of the optimization problem."""
         return self._direction
 
     @property
     def history(self) -> History:
+        """History container for the optimization problem."""
         return self._history
 
     @property
-    def bounds(self) -> InternalBounds:
-        return self._bounds
-
-    @property
     def logger(self) -> LogStore[Any, Any] | None:
+        """Logger for the optimization problem."""
         return self._logger
 
     # ==================================================================================
@@ -675,3 +756,85 @@ def _process_jac_value(
         out_value = -out_value
 
     return out_value
+
+
+class SphereExampleInternalOptimizationProblem(InternalOptimizationProblem):
+    """Super simple example of an internal optimization problem.
+
+    This can be used to test algorithm wrappers or to familiarize yourself with the
+    internal optimization problem interface.
+
+    Args:
+
+    """
+
+    def __init__(
+        self,
+        solver_type: AggregationLevel = AggregationLevel.SCALAR,
+        binding_bounds: bool = False,
+    ) -> None:
+        _fun_dict = {
+            AggregationLevel.SCALAR: lambda x: ScalarFunctionValue(x @ x),
+            AggregationLevel.LIKELIHOOD: lambda x: LikelihoodFunctionValue(x**2),
+            AggregationLevel.LEAST_SQUARES: lambda x: LeastSquaresFunctionValue(x),
+        }
+
+        _jac_dict = {
+            AggregationLevel.SCALAR: lambda x: 2 * x,
+            AggregationLevel.LIKELIHOOD: lambda x: 2 * x,
+            AggregationLevel.LEAST_SQUARES: lambda x: np.eye(len(x)),
+        }
+
+        fun = _fun_dict[solver_type]
+        jac = _jac_dict[solver_type]
+        fun_and_jac = lambda x: (fun(x), jac(x))
+
+        converter = Converter(
+            params_to_internal=lambda x: x,
+            params_from_internal=lambda x: x,
+            derivative_to_internal=lambda x, x0: x,
+            has_transforming_constraints=False,
+        )
+
+        direction = Direction.MINIMIZE
+
+        if binding_bounds:
+            lb = np.arange(10, dtype=np.float64) - 7.0
+            ub = np.arange(10, dtype=np.float64) - 3.0
+            self._x_opt = np.array([-3, -2, -1, 0, 0, 0, 0, 0, 1, 2.0])
+        else:
+            lb = np.full(10, -10, dtype=np.float64)
+            ub = np.full(10, 10, dtype=np.float64)
+            self._x_opt = np.zeros(10)
+
+        bounds = InternalBounds(lb, ub)
+
+        numdiff_options = NumdiffOptions()
+
+        error_handling = ErrorHandling.RAISE
+
+        error_penalty_func = fun_and_jac
+
+        batch_evaluator = process_batch_evaluator("joblib")
+
+        linear_constraints = None
+        nonlinear_constraints = None
+
+        logger = None
+
+        super().__init__(
+            fun=fun,
+            jac=jac,
+            fun_and_jac=fun_and_jac,
+            converter=converter,
+            solver_type=solver_type,
+            direction=direction,
+            bounds=bounds,
+            numdiff_options=numdiff_options,
+            error_handling=error_handling,
+            error_penalty_func=error_penalty_func,
+            batch_evaluator=batch_evaluator,
+            linear_constraints=linear_constraints,
+            nonlinear_constraints=nonlinear_constraints,
+            logger=logger,
+        )

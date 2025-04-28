@@ -86,6 +86,9 @@ install optimagic.
       f in the stopping criterion.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): 
+	    Set to True to print convergence messages. Default is False.
+      - scipy name: **disp**
 
 ```
 
@@ -190,7 +193,21 @@ install optimagic.
     - **norm** (float): Order of the vector norm that is used to calculate the gradient's "score" that
       is compared to the gradient tolerance to determine convergence. Default is infinite which means that
       the largest entry of the gradient vector is compared to the gradient tolerance.
-
+    - **display** (bool): 
+	    Set to True to print convergence messages. Default is False.
+      - scipy name: **disp**
+    - **convergence_xtol_rel** (float):
+      Relative tolerance for `x`. Terminate successfully if step size is less than `xk * xrtol` where `xk` is the current parameter vector. Default is 1e-5.
+      - scipy name: **xrtol**
+    - **armijo_condition** (float):
+      Parameter for Armijo condition rule. Default is 1e-4.
+      Ensures $f(x_k+\alpha p_k) \le f(x_k) \;+$ **armijo_condition**$\,\cdot\,\alpha\,\nabla f(x_k)^\top p_k$, so each step yields at least a fraction **armijo_condition** of the predicted decrease.
+      smaller ⇒ more aggressive steps, larger ⇒ more conservative ones 
+      - scipy name: **c1**
+    - **curvature_condition** (float):
+      Parameter for curvature condition rule. Default is 0.9. Ensures $\nabla f(x_k+\alpha p_k)^\top p_k \ge\;$ **curvature_condition**$\,\cdot\,\nabla f(x_k)^\top p_k$, so the new slope along $p_k$ isn’t too negative.
+      - smaller ⇒ stricter curvature reduction (smaller steps), larger ⇒ looser (bigger steps)
+      - scipy name: **c2**
 ```
 
 ```{eval-rst}

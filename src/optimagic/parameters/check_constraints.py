@@ -241,7 +241,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
     if is_invalid.any():
         info = pd.DataFrame(
             {
-                "names": parnames[is_invalid],
+                "names": np.array(parnames)[is_invalid],
                 "lower_bounds": constr_info["lower_bounds"][is_invalid],
                 "upper_bounds": constr_info["upper_bounds"][is_invalid],
             }

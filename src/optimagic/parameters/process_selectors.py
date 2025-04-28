@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from pybaum import tree_just_flatten
 
+from optimagic.constraints import Constraint
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.tree_registry import get_registry
 
@@ -70,14 +71,14 @@ def process_selectors(constraints, params, tree_converter, param_names):
         if selector_case == "one selector":
             if np.isscalar(selected):
                 selected = [selected]
-            _fail_if_duplicates(selected, constr, param_names)
             selected = np.array(selected).astype(int)
+            _fail_if_duplicates(selected, constr, param_names)
         else:
             selected = [[sel] if np.isscalar(sel) else sel for sel in selected]
             _fail_if_selections_are_incompatible(selected, constr)
+            selected = [np.array(sel).astype(int) for sel in selected]
             for sel in selected:
                 _fail_if_duplicates(sel, constr, param_names)
-            selected = [np.array(sel).astype(int) for sel in selected]
 
         new_constr = constr.copy()
         if selector_case == "one selector":
@@ -208,7 +209,9 @@ def _get_selector_case(constraint):
     return selector_case
 
 
-def _fail_if_duplicates(selected, constraint, param_names):
+def _fail_if_duplicates(
+    selected: list[int], constraint: Constraint, param_names: list[str]
+) -> None:
     duplicates = _find_duplicates(selected)
     if duplicates:
         names = [param_names[i] for i in duplicates]
