@@ -30,7 +30,7 @@ def test_with_infinite_jac_value_conditional_in_lists():
         return 2 * params
 
     def param_norm(params):
-        return np.norm(params)
+        return np.linalg.norm(params)
 
     def sphere_gradient(params):
         if param_norm(params) >= 1:
@@ -66,7 +66,7 @@ def test_with_infinite_fun_and_jac_value_conditional_in_lists():
         return 2 * params
 
     def param_norm(params):
-        return np.norm(params)
+        return np.linalg.norm(params)
 
     def sphere_gradient(params):
         if param_norm(params) >= 1:
@@ -198,7 +198,7 @@ def test_with_nan_jac_value_conditional_in_lists():
         return 2 * params
 
     def param_norm(params):
-        return np.norm(params)
+        return np.linalg.norm(params)
 
     def sphere_gradient(params):
         if param_norm(params) >= 1:
@@ -234,7 +234,7 @@ def test_with_nan_fun_and_jac_value_conditional_in_lists():
         return 2 * params
 
     def param_norm(params):
-        return np.norm(params)
+        return np.linalg.norm(params)
 
     def sphere_gradient(params):
         if param_norm(params) >= 1:
