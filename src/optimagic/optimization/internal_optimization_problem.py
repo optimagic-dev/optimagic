@@ -12,7 +12,6 @@ from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.exceptions import (
-    InvalidFunctionError,
     UserFunctionRuntimeError,
     get_traceback,
 )
@@ -721,22 +720,24 @@ class InternalOptimizationProblem:
         found.
 
         Args:
-            out_jac: internal processed gradient to check for infinities.
-            jac_value: original gradient value as returned by the user function,
+            out_jac: internal processed jacobian to check for infinities.
+            jac_value: original jacobian value as returned by the user function,
                     included in error messages for debugging.
             params: user-facing parameter representation at evaluation point.
 
         Raises:
-            InvalidFunctionError: If any infinite values are found in the gradient.
+            UserFunctionRuntimeError: If any infinite values are found in the jacobian.
 
         """
         if not np.all(np.isfinite(out_jac)):
             msg = (
-                "Infinite or NaN values found in gradient.\n"
-                f"Parameters: {params},\n"
-                f"Gradient: {jac_value}"
+                "The optimization received Jacobian containing infinite ",
+                "or NaN values.\nCheck your objective function or its "
+                "jacobian, or try a different optimizer.\n",
+                f"Parameters at evaluation point: {params}\n"
+                f"Jacobian values: {jac_value}",
             )
-            raise InvalidFunctionError(msg)
+            raise UserFunctionRuntimeError(msg)
 
 
 def _process_fun_value(
