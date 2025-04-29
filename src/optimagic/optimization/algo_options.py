@@ -122,6 +122,19 @@ considered 'feasible'.
 
 """
 
+N_RESTARTS = 1
+"""int: Number of times to restart the optimizer if convergence is not reached.
+    This parameter controls how many times the optimization process is restarted
+    in an attempt to achieve convergence.
+
+    - A value of 1 (the default) indicates that the optimizer will only run once,
+      disabling the restart feature.
+    - Values greater than 1 specify the maximum number of restart attempts.
+
+    Note: This is distinct from `STOPPING_MAXITER`, which limits the number of
+    iterations within a single optimizer run, not the number of restarts.
+"""
+
 
 def get_population_size(population_size, x, lower_bound=10):
     """Default population size for genetic algorithms."""
