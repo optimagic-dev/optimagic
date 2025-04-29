@@ -451,7 +451,6 @@ class InternalOptimizationProblem:
         params = self._converter.params_from_internal(x)
         try:
             jac_value = self._jac(params)
-            # print('jac ', jac_value[0], 'params ', params[0])
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
