@@ -99,6 +99,14 @@ else:
     IS_NUMBA_INSTALLED = True
 
 
+try:
+    import iminuit  # noqa: F401
+except ImportError:
+    IS_IMINUIT_INSTALLED = False
+else:
+    IS_IMINUIT_INSTALLED = True
+
+
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0
 # ======================================================================================

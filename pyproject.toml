@@ -16,7 +16,7 @@ dependencies = [
     "sqlalchemy>=1.3",
     "annotated-types",
     "typing-extensions",
-    "nevergrad",
+    "iminuit",
 ]
 dynamic = ["version"]
 keywords = [
@@ -380,5 +380,6 @@ module = [
     "optimagic._version",
     "annotated_types",
     "pdbp",
+    "iminuit",
   ]
 ignore_missing_imports = true
