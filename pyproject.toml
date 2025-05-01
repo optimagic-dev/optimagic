@@ -17,6 +17,7 @@ dependencies = [
     "annotated-types",
     "typing-extensions",
     "iminuit",
+    "nevergrad",
 ]
 dynamic = ["version"]
 keywords = [
