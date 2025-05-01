@@ -4017,9 +4017,13 @@ these optimizers, you need to have
     toward the best solutions.
 
     - **transform** (str): The transform to use to map from PSO optimization space to
-      R-space.
+      R-space. Available options are:
+      - "arctan" (default)
+      - "identity"
+      - "gaussian"
     - **population_size** (int): Population size of the particle swarm.
     - **n_cores** (int): Number of cores to use.
+    - **seed** (int): Seed used by the internal random number generator.
     - **stopping.maxfun** (int): Maximum number of function evaluations.
     - **inertia** (float): Inertia weight. Denoted by :math:`\omega`.
       Default is 0.7213475204444817. To prevent divergence, the value must be smaller

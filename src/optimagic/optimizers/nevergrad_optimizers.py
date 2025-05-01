@@ -39,6 +39,7 @@ class NevergradPSO(Algorithm):
     transform: Literal["arctan", "gaussian", "identity"] = "arctan"
     population_size: int | None = None
     n_cores: int = 1
+    seed: int | None = None
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     inertia: float = 0.5 / math.log(2.0)
     cognitive: float = 0.5 + math.log(2.0)
@@ -63,6 +64,9 @@ class NevergradPSO(Algorithm):
                 shape=x0.shape, lower=problem.bounds.lower, upper=problem.bounds.upper
             )
         )
+
+        if self.seed is not None:
+            instrum.random_state.seed(self.seed)
 
         optimizer = ng.optimizers.ConfPSO(
             transform=self.transform,
