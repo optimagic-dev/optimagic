@@ -15,8 +15,6 @@ from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.shared.process_user_function import infer_aggregation_level
-from optimagic.visualization.plot_data import *
-from optimagic.visualization.plot_utils import *
 
 
 def slice_plot_3d(
@@ -191,7 +189,7 @@ def slice_plot_3d(
             n_gridpoints,
         )
 
-    projection = Projection(projection)
+    projection = Projection.parse(projection)
     template = "plotly" if not projection.is_univariate() else PLOTLY_TEMPLATE
 
     # Initialize plot, subplot and layout kwargs
@@ -208,6 +206,8 @@ def slice_plot_3d(
         raise ValueError(
             f"{projection!r} requires at least two parameters. Got {selected_size}."
         )
+
+    plot_kwargs = evaluate_plot_kwargs()
 
     # Update plotting-related kwargs
     make_subplot_kwargs, layout_kwargs, plot_kwargs = evaluate_kwargs(
@@ -291,3 +291,600 @@ def slice_plot_3d(
     if return_dict:
         return plots
     return combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange)
+
+
+
+# Plot utils
+
+LINE_PLOT_DEFAULT_KWARGS = {
+    "color_discrete_sequence": ["#497ea7"],
+    "markers": False,
+}
+
+SCATTER_PLOT_DEFAULT_KWARGS = {
+    "marker": {
+        "color": "#497ea7",
+        "size": 4,
+    }
+}
+
+SURFACE_PLOT_DEFAULT_KWARGS = {
+    "colorscale": "Aggrnyl",
+    "showscale": False,
+    "opacity": 0.8,
+}
+
+CONTOUR_PLOT_DEFAULT_KWARGS = {
+    "colorscale": "Aggrnyl",
+    "showscale": True,
+    "line_smoothing": 0.85,
+}
+
+DEFAULT_SCENE_CAMERA_VIEW = dict(x=2, y=2, z=0.1)
+
+def plot_single_param(
+        pos,
+        param_data,
+        param_names,
+        internal_params,
+        func,
+        func_eval,
+        converter,
+        batch_evaluator,
+        n_cores,
+        expand_yrange,
+        plot_kwargs,
+        make_subplot_kwargs,
+        layout_kwargs,
+):
+    """Generate a 2D slice plot for a single parameter index.
+
+    1. Extracts the parameter name and display label.
+    2. Builds arrays of parameter values across a predefined grid.
+    3. Evaluates the target function at each grid point in batch mode,
+       leveraging parallelism as configured by `batch_evaluator` and `n_cores`.
+    4. Computes an expanded y-axis range based on `expand_yrange` to ensure
+       adequate plot padding.
+    5. Creates a Plotly line plot of the function values and overlays a
+       scatter marker at the initial parameters.
+
+    Returns:
+        go.Figure: A Plotly figure with line and marker traces, ready for
+        integration into subplots or standalone display.
+
+    """
+    param_name = internal_params.names[pos]
+    display_name = (
+        param_names.get(param_name, param_name) if param_names else param_name
+    )
+    x = param_data[param_name].tolist()
+    y = evaluate_function_values(
+        param_data,
+        internal_params,
+        param_name,
+        func,
+        converter,
+        batch_evaluator,
+        n_cores,
+    )
+    y_range = compute_yaxis_range(y, expand_yrange)
+    fig = plot_slice(
+        x=x,
+        y=y,
+        point={
+            "x": [internal_params.values[pos]],
+            "y": [func_eval.internal_value(AggregationLevel.SCALAR)],
+        },
+        display_name=display_name,
+        y_range=y_range,
+        plot_kwargs=plot_kwargs,
+        make_subplot_kwargs=make_subplot_kwargs,
+        layout_kwargs=layout_kwargs,
+    )
+    return fig
+
+
+def plot_multiple_params(
+        pos_x,
+        pos_y,
+        param_data,
+        internal_params,
+        param_names,
+        func,
+        func_eval,
+        converter,
+        batch_evaluator,
+        n_cores,
+        projection,
+        n_gridpoints,
+        plot_kwargs,
+        layout_kwargs,
+):
+    """Generate a 2D contour or 3D surface plot for two parameters.
+
+    # TODO: avoid redundant function evaluations to computational efficacy
+
+    1. Maps the selected parameter indices (`pos_x`, `pos_y`) to their names.
+    2. Constructs a meshgrid of x-y values over the bounds grid.
+    3. Batch-evaluates the user function at each (x,y) pair, reshaping
+       results into a matrix of size (n_gridpoints, n_gridpoints).
+    4. Depending on `projection`, dispatches to either `plot_contour` or
+      `plot_surface`, passing through customized `plot_kwargs`.
+
+    Returns:
+        go.Figure: A contour or surface figure, optionally annotated with
+        the function value at the initial parameters.
+
+    """
+    x_name = internal_params.names[pos_x]
+    y_name = internal_params.names[pos_y]
+
+    x = param_data[x_name]
+    y = param_data[y_name]
+
+    z = evaluate_function_values(
+        param_data,
+        internal_params,
+        [x_name, y_name],
+        func,
+        converter,
+        batch_evaluator,
+        n_cores,
+        projection,
+    )
+    x, y = np.meshgrid(x, y)
+    z = np.reshape(z, (n_gridpoints, n_gridpoints))
+    display = {
+        "x": param_names.get(x_name, x_name) if param_names else x_name,
+        "y": param_names.get(y_name, y_name) if param_names else y_name,
+    }
+    if projection == Projection.SURFACE:
+        return plot_surface(
+            x,
+            y,
+            z,
+            plot_kwargs=plot_kwargs,
+            layout_kwargs=layout_kwargs,
+            # Uncomment if the point is a necessary
+            # point={"x": [internal_params.values[pos_x]],
+            #        "y": [internal_params.values[pos_y]],
+            #        "z": [func_eval.internal_value(
+            #            AggregationLevel.SCALAR)]},
+        )
+    return plot_contour(
+        x,
+        y,
+        z,
+        plot_kwargs=plot_kwargs,
+        layout_kwargs=layout_kwargs,
+        # Uncomment if the point is a necessary
+        # point={"x": [internal_params.values[pos_x]],
+        #        "y": [internal_params.values[pos_y]]}
+    )
+
+
+def plot_slice(
+        x,
+        y,
+        y_range=None,
+        point=None,
+        display_name=None,
+        plot_kwargs=None,
+        make_subplot_kwargs=None,
+        layout_kwargs=None,
+):
+    """Create a 2D line plot with an initial parameter marker.
+
+    1. Uses Plotly Express to draw a line of y vs. x with settings from
+      `plot_kwargs['line_plot']`.
+    2. If `point` is provided, overlays a scatter trace at the specified
+      (x,y) coordinates using `plot_kwargs['scatter_plot']`.
+    3. Applies axis titles: `display_name` on x-axis, "Function Value" on y-axis.
+    4. Honors `shared_yaxes` from `make_subplot_kwargs` to set a common y-range.
+    5. Updates figure layout from `layout_kwargs`.
+
+    Returns:
+        go.Figure: Configured 2D line and marker plot.
+
+    """
+    fig = px.line(x=x, y=y, **plot_kwargs["line_plot"])
+
+    if point:
+        fig.add_trace(
+            go.Scatter(x=point["x"], y=point["y"], **plot_kwargs["scatter_plot"])
+        )
+
+    if layout_kwargs:
+        fig.update_layout(**layout_kwargs)
+    fig.update_xaxes(title={"text": display_name})
+    fig.update_yaxes(
+        title={"text": "Function Value"},
+        range=y_range
+        if "shared_yaxes" in make_subplot_kwargs and make_subplot_kwargs["shared_yaxes"]
+        else None,
+    )
+    return fig
+
+
+def plot_surface(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
+    """Construct a 3D surface plot of z = f(x,y,z).
+
+    1. Creates a `go.Surface` trace with x, y, z matrices and
+      styling from `plot_kwargs['surface_plot']`.
+    2. Builds a `go.Figure` with the surface as its primary data.
+    3. If `point` is specified, adds a 3D scatter marker at the
+      current (x,y,z) location.
+    4. Applies overall scene and layout configurations via `layout_kwargs`.
+
+    Returns:
+        go.Figure: A 3D surface visualization.
+
+    """
+    trace = go.Surface(z=z, x=x, y=y, **plot_kwargs["surface_plot"])
+
+    fig = go.Figure(data=[trace], layout=layout_kwargs)
+
+    if point:
+        fig.add_trace(
+            go.Scatter3d(
+                x=point["x"], y=point["y"], z=point["z"], **plot_kwargs["scatter_plot"]
+            )
+        )
+    return fig
+
+
+def plot_contour(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
+    """Build a 2D contour plot of z = f(x,y,z).
+
+    1. Uses `go.Contour` with flattened x and y axes and z data,
+      styled via `plot_kwargs['contour_plot']`.
+    2. Wraps the contour in a `go.Figure` and applies `layout_kwargs`.
+    3. Optionally overlays a 3D scatter marker for the current parameter
+      point (projected onto the x-y plane).
+
+    Returns:
+        go.Figure: A contour map with optional annotation.
+
+    """
+    trace = go.Contour(z=z, x=x[0], y=y[:, 0], **plot_kwargs["contour_plot"])
+
+    fig = go.Figure(data=[trace], layout=layout_kwargs)
+    if point:
+        fig.add_trace(
+            go.Scatter3d(x=point["x"], y=point["y"], **plot_kwargs["scatter_plot"])
+        )
+
+    return fig
+
+
+
+# Plot utils
+class Projection(str, Enum):
+    UNIVARIATE = "slice"
+    CONTOUR = "contour"
+    SURFACE = "surface"
+
+    @classmethod
+    def parse(cls, value):
+        def to_enum(val):
+            if val is None:
+                return cls.UNIVARIATE
+            if isinstance(val, str):
+                try:
+                    return cls(val.lower())
+                except ValueError:
+                    raise ValueError(f"Invalid projection: '{val}'")
+            raise TypeError(f"Expected str or dict or None, got {type(val)}")
+
+        if isinstance(value, (str, None)):
+            val = to_enum(value)
+            if val == cls.UNIVARIATE:
+                return cls.UNIVARIATE
+            else:
+                return {"lower": val, "upper": None}
+
+        if isinstance(value, dict):
+            return {
+                "lower": to_enum(value.get("lower")),
+                "upper": to_enum(value.get("upper")),
+            }
+
+        raise TypeError(f"Invalid type for projection: {type(value)}")
+
+    def is_univariate(self):
+        return self == Projection.UNIVARIATE
+
+
+def compute_yaxis_range(y, expand_yrange):
+    # Calculate expanded y-axis limits based on data range
+    y_min, y_max = np.min(y), np.max(y)
+    y_range = y_max - y_min
+    return [y_min - expand_yrange * y_range, y_max + expand_yrange * y_range]
+
+
+def _clean_legend_duplicates(fig):
+    """Remove duplicate legend entries from a combined Plotly figure."""
+    trace_names = set()
+
+    def disable_legend_if_duplicate(trace):
+        if trace.name in trace_names:
+            # in this case the legend is a duplicate
+            trace.update(showlegend=False)
+        else:
+            trace_names.add(trace.name)
+
+    fig.for_each_trace(disable_legend_if_duplicate)
+    return fig
+
+
+def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
+    """Combine individual subplot figures into one Plotly Figure, sharing axes and
+    layout."""
+    plots = deepcopy(plots)
+
+    # Create a subplot figure
+    fig = make_subplots(**make_subplot_kwargs)
+    fig.update_layout(**layout_kwargs)
+
+    # Add traces
+    for (row_idx, col_idx), subfig in plots.items():
+        for trace in subfig.data:
+            fig.add_trace(trace, row=row_idx + 1, col=col_idx + 1)
+
+        if hasattr(subfig.layout, "xaxis") and hasattr(subfig.layout.xaxis, "title"):
+            fig.update_xaxes(
+                title_text=subfig.layout.xaxis.title.text,
+                row=row_idx + 1,
+                col=col_idx + 1,
+            )
+        if hasattr(subfig.layout, "yaxis") and hasattr(subfig.layout.yaxis, "title"):
+            if (
+                    "shared_yaxes" in make_subplot_kwargs
+                    and make_subplot_kwargs["shared_yaxes"]
+            ):
+                if col_idx == 0:
+                    fig.update_yaxes(
+                        title_text=subfig.layout.yaxis.title.text,
+                        row=row_idx + 1,
+                        col=col_idx + 1,
+                    )
+            else:
+                fig.update_yaxes(
+                    title_text=subfig.layout.yaxis.title.text,
+                    row=row_idx + 1,
+                    col=col_idx + 1,
+                )
+
+    # Share y-axis ranges if needed
+    if "shared_yaxes" in make_subplot_kwargs and make_subplot_kwargs["shared_yaxes"]:
+        all_y = []
+        for subfig in plots.values():
+            for trace in subfig.data:
+                if "y" in trace:
+                    all_y.append(np.array(trace["y"]))
+        if all_y:
+            y_all = np.concatenate(all_y)
+            lb, ub = np.min(y_all), np.max(y_all)
+            y_range = ub - lb
+            y_lower = lb - expand_yrange * y_range
+            y_upper = ub + expand_yrange * y_range
+            fig.update_yaxes(range=[y_lower, y_upper])
+
+    # Share x-axis ranges if needed
+    if "shared_xaxes" in make_subplot_kwargs and make_subplot_kwargs["shared_xaxes"]:
+        all_x = []
+        for subfig in plots.values():
+            for trace in subfig.data:
+                if "x" in trace:
+                    all_x.append(np.array(trace["x"]))
+        if all_x:
+            x_all = np.concatenate(all_x)
+            lb, ub = np.min(x_all), np.max(x_all)
+            fig.update_xaxes(range=[lb, ub])
+
+    # Clean duplicate legends if needed
+    fig = _clean_legend_duplicates(fig)
+
+    return fig
+
+
+def evaluate_plot_kwargs(plot_kwargs, projection):
+    """
+    Generate a default set of Plotly plot kwargs for individual plots. Merges
+    user-supplied `plot_kwargs` if provided, overriding defaults.
+
+    Returns:
+        dict: kwargs for individual subplot(s)
+    """
+    def update_nested_dict(default, updates):
+        # Recursively merge `updates` into `default`
+        for k, v in updates.items():
+            if isinstance(v, dict) and k in default and isinstance(default[k], dict):
+                default[k] = update_nested_dict(default[k], v)
+            else:
+                default[k] = v
+        return default
+
+    if plot_kwargs is None:
+        plot_kwargs = {}
+
+    # Define default settings
+    defaults = {
+        "line_plot": LINE_PLOT_DEFAULT_KWARGS,
+        "scatter_plot": SCATTER_PLOT_DEFAULT_KWARGS,
+        "surface_plot": SURFACE_PLOT_DEFAULT_KWARGS,
+        "contour_plot": CONTOUR_PLOT_DEFAULT_KWARGS,
+    }
+
+    plot_defaults = {}
+    for key in defaults.keys():
+        user_kwargs = plot_kwargs.get(key, {})
+        plot_defaults[key] = update_nested_dict(
+            deepcopy(defaults[key]), user_kwargs
+        )
+
+    return plot_defaults
+
+
+def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection):
+    """
+    Assemble default kwargs for `plotly.subplots.make_subplots`. User-supplied
+    `make_subplot_kwargs` override these defaults.
+
+    Returns:
+        dict: Kwargs for `make_subplots()`
+    """
+    if make_subplot_kwargs is None:
+        make_subplot_kwargs = {}
+    make_subplot_defaults = {}
+
+    if make_subplot_kwargs and not projection.is_univariate():
+        for key in make_subplot_kwargs.keys():
+            if key in ["rows", "cols"]:
+                raise ValueError(
+                    f"{key} param is not allowed in plot_kwargs when "
+                    f"the projection is {projection.value}."
+                )
+
+    if projection.is_univariate():
+        cols = make_subplot_kwargs.get("cols", 1 if size == 1 else 2)
+        rows = (size + cols - 1) // cols
+
+        make_subplot_defaults["shared_xaxes"] = True
+        make_subplot_defaults["shared_yaxes"] = True
+    else:
+        cols = size if size > 2 else 1
+        rows = size if size > 2 else 1
+
+        specs = []
+        for i in range(rows):
+            row_specs = []
+            for j in range(cols):
+                if i == j:
+                    cell_type = "xy"
+                elif i > j:
+                    cell_type = projection.get("lower")
+                else:
+                    cell_type = projection.get("upper")
+                row_specs.append({"type": cell_type})
+            specs.append(row_specs)
+
+        make_subplot_defaults["specs"] = specs
+
+    make_subplot_defaults.update({
+        "rows": rows,
+        "cols": cols,
+        "horizontal_spacing": 1 / (cols * 5),
+        "vertical_spacing": (1 / max(rows - 1, 1)) / 5,
+    })
+
+    make_subplot_defaults.update(make_subplot_kwargs)
+
+    return make_subplot_defaults
+
+
+def evaluate_layout_kwargs(layout_kwargs, projection, subplots=None,
+                           template=PLOTLY_TEMPLATE):
+    """
+    Generate a default set of Plotly layout kwargs for subplots. Merges user-supplied
+    `layout_kwargs` if provided, overriding defaults.
+
+    Returns:
+        dict: kwargs for `Figure.update_layout()`
+    """
+    if layout_kwargs is None:
+        layout_kwargs = {}
+    layout_defaults = {}
+
+    if subplots is not None:
+        width = 300 * subplots.get("cols")
+        height = 300 * subplots.get("rows")
+    else:
+        width = 450
+        height = 450
+
+    if not projection.is_univariate():
+        eye_layouts = {}
+        scene_counter = 0
+
+        specs = subplots["specs"]
+        for i in range(subplots.get("rows")):
+            for j in range(subplots.get("cols")):
+                if specs[i, j] == projection.SURFACE:
+                    scene_counter += 1
+                    if scene_counter == 1:
+                        scene_id = "scene"
+                    else:
+                        scene_id = f"scene{scene_counter}"
+                    eye_layouts[f"{scene_id}_camera"] = DEFAULT_SCENE_CAMERA_VIEW
+
+        layout_defaults.update(eye_layouts)
+
+    layout_defaults.update({
+        "width": width,
+        "height": height,
+        "template": template,
+        "showlegend": False,
+    })
+
+    layout_defaults.update(layout_kwargs)
+    return layout_defaults
+
+
+
+# Plot data
+def evaluate_function_values(
+        data, internal, params, func, converter, batch_evaluator, n_cores, projection=None
+):
+    """Batch-evaluate the user function at grid points, returning a flat list of scalar
+    values."""
+    if not projection:
+        projection = Projection.UNIVARIATE
+
+    evaluation_points = generate_evaluation_points(
+        data, internal, converter, params, projection
+    )
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
+    results = batch_evaluator(
+        func=func,
+        arguments=evaluation_points,
+        error_handling="continue",
+        n_cores=n_cores,
+    )
+    return [
+        float("nan")
+        if isinstance(val, str)
+        else val.internal_value(AggregationLevel.SCALAR)
+        for val in results
+    ]
+
+
+def generate_evaluation_points(data, internal, converter, p_names, projection):
+    """Build the list of internal parameter vectors to pass to the batch evaluator."""
+    evaluation_points = []
+    point = dict(zip(internal.names, internal.values, strict=False))
+
+    if projection.is_univariate():
+        x = data[p_names]
+
+        for p_value in x:
+            # updating only the parameter of interest
+            point[p_names] = p_value
+
+            values = np.array(list(point.values()))
+            evaluation_points.append(converter.params_from_internal(values))
+    else:
+        x_name, y_name = p_names[0], p_names[1]
+        x_vals = data[x_name]
+        y_vals = data[y_name]
+
+        x, y = np.meshgrid(x_vals, y_vals)
+        x_ravel = x.ravel()
+        y_ravel = y.ravel()
+        for a, b in zip(x_ravel, y_ravel, strict=False):
+            point[x_name] = a
+            point[y_name] = b
+            values = np.array(list(point.values()))
+            evaluation_points.append(converter.params_from_internal(values))
+    return evaluation_points
+
