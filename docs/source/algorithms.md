@@ -3984,6 +3984,52 @@ iminuit).
       - Values greater than 1 specify the maximum number of restart attempts.  
 ```
 
+## Optimizers from Nevergrad
+
+optimagic supports the following optimizers from
+[Nevergrad](https://facebookresearch.github.io/nevergrad/index.html). To use optimizers
+from Nevergrad, you need to have
+[Nevergrad](https://facebookresearch.github.io/nevergrad/getting_started.html#installing)
+installed (pip install nevergrad). Note that nevergrad requires numpy \<> 2.0.
+
+```{eval-rst}
+.. dropdown::  nevegrad_cmaes
+
+    .. code-block::
+
+        "nevergrad_cmaes"
+
+    `The Covariance Matrix Adaptation Evolution Strategy (CMA-ES) is a stochastic derivative-free numerical optimization algorithm for difficult (non-convex, ill-conditioned, multi-modal, rugged, noisy) optimization problems in continuous search spaces.
+
+    The version available through nevergrad wraps an external implementation `pycma <https://github.com/CMA-ES/pycma>`_.
+
+
+    **Optimizer Parameters:**
+
+    - **scale** (float): Scale of the search.
+
+    - **elitist** (bool): Whether to switch to elitist mode, i.e., `+` mode instead of `,` mode, where the best point in the population is always retained.
+
+    - **popsize** (Optional[int]): Population size. Should be `n * self.num_workers` for integer `n >= 1`.  
+      - Default is `max(self.num_workers, 4 + int(3 * np.log(self.dimension)))`.
+
+    - **popsize_factor** (float): Factor used in the formula for computing the population size.  
+      - Default is `3.0`.
+
+    - **diagonal** (bool): Use the diagonal version of CMA, which is advised for high-dimensional problems.
+
+    - **high_speed** (bool): Use a metamodel for recommendation to speed up optimization.
+
+    - **fcmaes** (bool): Use the fast CMA-ES implementation.  
+      - Cannot be used with `diagonal=True`.  
+      - Produces equivalent results and is preferable for high dimensions or when objective function evaluations are fast.
+
+    - **random_init** (bool): Use a randomized initialization for the optimization.
+
+    - **inopts** (optional dict): Dictionary to override any `inopts` parameter of the wrapped CMA optimizer.  
+      - See [CMA-ES pycma GitHub](https://github.com/CMA-ES/pycma) for supported parameters.
+```
+
 ## References
 
 ```{eval-rst}
