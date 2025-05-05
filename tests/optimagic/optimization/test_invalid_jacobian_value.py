@@ -1,342 +1,105 @@
 import numpy as np
-import pandas as pd
 import pytest
 
 from optimagic.exceptions import UserFunctionRuntimeError
 from optimagic.optimization.optimize import minimize
 
 
-def test_with_infinite_jac_value_unconditional_in_lists():
-    def sphere(params):
-        return params @ params
+def sphere(params):
+    return (
+        params["a"] ** 2
+        + (params["b"] ** 2).sum()
+        + params["c"]["x"] ** 2
+        + params["c"]["y"] ** 2
+    )
 
-    def sphere_gradient(params):
-        return np.full_like(params, np.inf)
 
-    with pytest.raises(UserFunctionRuntimeError):
+def sphere_gradient(params):
+    return {
+        "a": 2 * params["a"],
+        "b": 2 * params["b"],
+        "c": {"x": 2 * params["c"]["x"], "y": 2 * params["c"]["y"]},
+    }
+
+
+def sphere_and_gradient(params):
+    return sphere(params), sphere_gradient(params)
+
+
+def params_norm(params):
+    squared_norm = (
+        params["a"] ** 2
+        + np.linalg.norm(params["b"]) ** 2
+        + params["c"]["x"] ** 2
+        + params["c"]["y"] ** 2
+    )
+    return np.sqrt(squared_norm)
+
+
+def get_invalid_jac(invalid_jac_value):
+    """Get function that returns invalid jac if the parameter norm < 1."""
+
+    def jac(params):
+        if params_norm(params) < 1:
+            return invalid_jac_value
+        else:
+            return sphere_gradient(params)
+
+    return jac
+
+
+def get_invalid_fun_and_jac(invalid_jac_value):
+    """Get function that returns invalid fun and jac if the parameter norm < 1."""
+
+    def fun_and_jac(params):
+        if params_norm(params) < 1:
+            return sphere(params), invalid_jac_value
+        else:
+            return sphere_and_gradient(params)
+
+    return fun_and_jac
+
+
+INVALID_JACOBIAN_VALUES = [
+    {"a": np.inf, "b": 2 * np.array([1, 2]), "c": {"x": 1, "y": 2}},
+    {"a": 1, "b": 2 * np.array([np.inf, 2]), "c": {"x": 1, "y": 2}},
+    {"a": np.nan, "b": 2 * np.array([1, 2]), "c": {"x": 1, "y": 2}},
+    {"a": 1, "b": 2 * np.array([np.nan, 2]), "c": {"x": 1, "y": 2}},
+    {"a": 1, "b": 2 * np.array([1, 2]), "c": {"x": np.inf, "y": 2}},
+    {"a": 1, "b": 2 * np.array([1, 2]), "c": {"x": 1, "y": np.nan}},
+]
+
+PARAMS = {"a": 1, "b": np.array([3, 4]), "c": {"x": 5, "y": 6}}
+
+
+@pytest.mark.parametrize("invalid_jac_value", INVALID_JACOBIAN_VALUES)
+def test_minimize_with_invalid_jac(invalid_jac_value):
+    with pytest.raises(
+        UserFunctionRuntimeError,
+        match=(
+            "The optimization failed because the derivative provided via jac "
+            "contains infinite or NaN values."
+        ),
+    ):
         minimize(
             fun=sphere,
-            params=np.arange(10) + 400,
+            params=PARAMS,
             algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
+            jac=get_invalid_jac(invalid_jac_value),
         )
 
 
-def test_with_infinite_jac_value_conditional_in_lists():
-    def sphere(params):
-        return params @ params
-
-    def true_gradient(params):
-        return 2 * params
-
-    def param_norm(params):
-        return np.linalg.norm(params)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return np.full_like(params, np.inf)
-
-    with pytest.raises(UserFunctionRuntimeError):
+@pytest.mark.parametrize("invalid_jac_value", INVALID_JACOBIAN_VALUES)
+def test_minimize_with_invalid_fun_and_jac(invalid_jac_value):
+    with pytest.raises(
+        UserFunctionRuntimeError,
+        match=(
+            "The optimization failed because the derivative provided via fun_and_jac "
+            "contains infinite or NaN values."
+        ),
+    ):
         minimize(
-            fun=sphere,
-            params=np.arange(10) + 400,
+            params=PARAMS,
             algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
-        )
-
-
-def test_with_infinite_fun_and_jac_value_unconditional_in_lists():
-    def sphere_and_gradient(params):
-        function_value = params @ params
-        grad = np.full_like(params, np.inf)
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params=np.arange(10) + 400,
-            algorithm="scipy_lbfgsb",
-        )
-
-
-def test_with_infinite_fun_and_jac_value_conditional_in_lists():
-    def true_gradient(params):
-        return 2 * params
-
-    def param_norm(params):
-        return np.linalg.norm(params)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return np.full_like(params, np.inf)
-
-    def sphere_and_gradient(params):
-        function_value = params @ params
-        grad = sphere_gradient(params)
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params=np.arange(10) + 400,
-            algorithm="scipy_lbfgsb",
-        )
-
-
-def test_with_infinite_jac_value_unconditional_in_dicts():
-    def sphere(params):
-        return params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-
-    def sphere_gradient(params):
-        return {"a": np.inf, "b": np.inf, "c": np.full_like(params["c"], np.inf)}
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun=sphere,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
-        )
-
-
-def test_with_infinite_jac_value_conditional_in_dicts():
-    def sphere(params):
-        return params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-
-    def true_gradient(params):
-        return {"a": 2 * params["a"], "b": 2 * params["b"], "c": 2 * params["c"]}
-
-    def param_norm(params):
-        squared_norm = (
-            params["a"] ** 2 + params["b"] ** 2 + np.linalg.norm(params["c"]) ** 2
-        )
-        return np.sqrt(squared_norm)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return {"a": np.inf, "b": np.inf, "c": np.full_like(params["c"], np.inf)}
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun=sphere,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
-        )
-
-
-def test_with_infinite_fun_and_jac_value_unconditional_in_dicts():
-    def sphere_and_gradient(params):
-        function_value = params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-        grad = {"a": np.inf, "b": np.inf, "c": np.full_like(params["c"], np.inf)}
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
-        )
-
-
-def test_with_infinite_fun_and_jac_value_conditional_in_dicts():
-    def true_gradient(params):
-        return {"a": 2 * params["a"], "b": 2 * params["b"], "c": 2 * params["c"]}
-
-    def param_norm(params):
-        squared_norm = (
-            params["a"] ** 2 + params["b"] ** 2 + np.linalg.norm(params["c"]) ** 2
-        )
-        return np.sqrt(squared_norm)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return {"a": np.inf, "b": np.inf, "c": np.full_like(params["c"], np.inf)}
-
-    def sphere_and_gradient(params):
-        function_value = params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-        grad = sphere_gradient(params)
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
-        )
-
-
-def test_with_nan_jac_value_unconditional_in_lists():
-    def sphere(params):
-        return params @ params
-
-    def sphere_gradient(params):
-        return np.full_like(params, np.nan)
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun=sphere,
-            params=np.arange(10) + 400,
-            algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
-        )
-
-
-def test_with_nan_jac_value_conditional_in_lists():
-    def sphere(params):
-        return params @ params
-
-    def true_gradient(params):
-        return 2 * params
-
-    def param_norm(params):
-        return np.linalg.norm(params)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return np.full_like(params, np.nan)
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun=sphere,
-            params=np.arange(10) + 400,
-            algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
-        )
-
-
-def test_with_nan_fun_and_jac_value_unconditional_in_lists():
-    def sphere_and_gradient(params):
-        function_value = params @ params
-        grad = np.full_like(params, np.nan)
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params=np.arange(10) + 400,
-            algorithm="scipy_lbfgsb",
-        )
-
-
-def test_with_nan_fun_and_jac_value_conditional_in_lists():
-    def true_gradient(params):
-        return 2 * params
-
-    def param_norm(params):
-        return np.linalg.norm(params)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return np.full_like(params, np.nan)
-
-    def sphere_and_gradient(params):
-        function_value = params @ params
-        grad = sphere_gradient(params)
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params=np.arange(10) + 400,
-            algorithm="scipy_lbfgsb",
-        )
-
-
-def test_with_nan_jac_value_unconditional_in_dicts():
-    def sphere(params):
-        return params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-
-    def sphere_gradient(params):
-        return {"a": np.nan, "b": np.nan, "c": np.full_like(params["c"], np.nan)}
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun=sphere,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
-        )
-
-
-def test_with_nan_jac_value_conditional_in_dicts():
-    def sphere(params):
-        return params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-
-    def true_gradient(params):
-        return {"a": 2 * params["a"], "b": 2 * params["b"], "c": 2 * params["c"]}
-
-    def param_norm(params):
-        squared_norm = (
-            params["a"] ** 2 + params["b"] ** 2 + np.linalg.norm(params["c"]) ** 2
-        )
-        return np.sqrt(squared_norm)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return {"a": np.nan, "b": np.nan, "c": np.full_like(params["c"], np.nan)}
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun=sphere,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
-            jac=sphere_gradient,
-        )
-
-
-def test_with_nan_fun_and_jac_value_unconditional_in_dicts():
-    def sphere_and_gradient(params):
-        function_value = params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-        grad = {"a": np.nan, "b": np.nan, "c": np.full_like(params["c"], np.nan)}
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
-        )
-
-
-def test_with_nan_fun_and_jac_value_conditional_in_dicts():
-    def true_gradient(params):
-        return {"a": 2 * params["a"], "b": 2 * params["b"], "c": 2 * params["c"]}
-
-    def param_norm(params):
-        squared_norm = (
-            params["a"] ** 2 + params["b"] ** 2 + np.linalg.norm(params["c"]) ** 2
-        )
-        return np.sqrt(squared_norm)
-
-    def sphere_gradient(params):
-        if param_norm(params) >= 1:
-            return true_gradient(params)
-        else:
-            return {"a": np.nan, "b": np.nan, "c": np.full_like(params["c"], np.nan)}
-
-    def sphere_and_gradient(params):
-        function_value = params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
-        grad = sphere_gradient(params)
-        return function_value, grad
-
-    with pytest.raises(UserFunctionRuntimeError):
-        minimize(
-            fun_and_jac=sphere_and_gradient,
-            params={"a": 400, "b": 400, "c": pd.Series([200, 300, 400])},
-            algorithm="scipy_lbfgsb",
+            fun_and_jac=get_invalid_fun_and_jac(invalid_jac_value),
         )
