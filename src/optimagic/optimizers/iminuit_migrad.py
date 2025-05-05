@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 from numpy.typing import NDArray
 
 from optimagic import mark
 from optimagic.config import IS_IMINUIT_INSTALLED
+from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
     N_RESTARTS,
     STOPPING_MAXFUN,
@@ -16,8 +17,10 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import AggregationLevel
 
-if IS_IMINUIT_INSTALLED:
+if IS_IMINUIT_INSTALLED or TYPE_CHECKING:
     from iminuit import Minuit
+else:
+    Minuit = Any
 
 
 @mark.minimizer(
@@ -41,6 +44,14 @@ class IminuitMigrad(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, params: NDArray[np.float64]
     ) -> InternalOptimizeResult:
+        if not IS_IMINUIT_INSTALLED:
+            raise NotInstalledError(
+                "To use the 'iminuit_migrad` optimizer you need to install iminuit. "
+                "Use 'pip install iminuit' or 'conda install -c conda-forge iminuit'. "
+                "Check the iminuit documentation for more details: "
+                "https://scikit-hep.org/iminuit/install.html"
+            )
+
         def wrapped_objective(x: NDArray[np.float64]) -> float:
             return float(problem.fun(x))
 
