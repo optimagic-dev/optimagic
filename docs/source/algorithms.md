@@ -3984,6 +3984,75 @@ iminuit).
       - Values greater than 1 specify the maximum number of restart attempts.  
 ```
 
+## Optimizers from Nevergrad
+
+optimagic supports the following optimizers from
+[Nevergrad](https://facebookresearch.github.io/nevergrad/index.html). To use optimizers
+from Nevergrad, you need to have
+[Nevergrad](https://facebookresearch.github.io/nevergrad/getting_started.html#installing)
+installed (`pip install nevergrad`). Note that nevergrad requires numpy \<= 2.0.
+
+```{eval-rst}
+.. dropdown::  nevegrad_cmaes
+
+    .. code-block::
+
+        "nevergrad_cmaes"
+
+    The Covariance Matrix Adaptation Evolution Strategy (CMA-ES) is a stochastic derivative-free numerical optimization algorithm for difficult (non-convex, ill-conditioned, multi-modal, rugged, noisy) optimization problems in continuous search spaces.
+
+    The version available through nevergrad wraps an external implementation `pycma <https://github.com/CMA-ES/pycma>`_.
+
+    The original method can be found in
+    :cite:`Hansen2023`.
+
+    The fast implementation relies on fcmaes which can be installed with `pip install fcmaes`.
+
+    **Optimizer Parameters:**
+
+    - **scale** (float): Scale of the search.
+
+    - **elitist** (bool): Whether to switch to elitist mode, i.e., `+` mode instead of `,` mode, where the best point in the population is always retained.
+    - **population_size** (Optional[int]): Population size. Should be
+
+    .. math::
+
+        \text{population_size} = n \times \text{num_workers} \quad \text{for integer } n \geq 1
+
+    Default is
+
+    .. math::
+
+        \max\left( \text{num_workers},\ 4 + \left\lfloor 3 \cdot \log(\text{dimension}) \right\rfloor \right)
+
+    - **popsize_factor** (float): Factor used in the formula for computing the population size.  
+      - Default is `3.0`.
+
+    - **diagonal** (bool): Use the diagonal version of CMA, which is advised for high-dimensional problems.
+
+    - **high_speed** (bool): Use a metamodel for recommendation to speed up optimization.
+
+    - **use_fast_implementation** (bool): Use the fast CMA-ES implementation.  
+      - Cannot be used with `diagonal=True`.  
+      - Produces equivalent results and is preferable for high dimensions or when objective function evaluations are fast.
+
+    - **stopping.maxfun** (int): The maximum number of criterion
+      evaluations.
+
+    - **ftol** (float): stopping criteria on the x tolerance.
+
+    - **xtol** (float): stopping criteria on the f tolerance.
+
+    - **seed** (int): seed used by the internal random number generator.
+
+    - **learning_rate_rank_one_update** (float): Multiplier for the rank-one update learning rate of the covariance matrix.  
+      - Default is `1.0`.
+
+    - **learning_rate_rank_mu_update** (float): Multiplier for the rank-mu update learning rate of the covariance matrix.  
+      - Default is `1.0`.
+
+```
+
 ## References
 
 ```{eval-rst}
