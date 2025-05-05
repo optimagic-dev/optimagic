@@ -55,7 +55,6 @@ class NevergradCMAES(Algorithm):
     learning_rate_rank_mu_update: NonNegativeFloat = 1.0
     ftol: NonNegativeFloat = 1e-11
     xtol: NonNegativeFloat = 1e-11
-    random_init: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -74,7 +73,6 @@ class NevergradCMAES(Algorithm):
             diagonal=self.diagonal,
             high_speed=self.high_speed,
             fcmaes=self.use_fast_implementation,
-            random_init=self.random_init,
             inopts=cma_options,
         )
 
@@ -109,7 +107,7 @@ def _nevergrad_internal(
     ).set_bounds(problem.bounds.lower, upper=problem.bounds.upper)
 
     instrum = ng.p.Instrumentation(param)
-    instrum.random_state.seed(12)
+    instrum.random_state.seed(seed)
     optimizer = raw_optimizer(
         parametrization=instrum, budget=stopping_maxfun, num_workers=n_cores
     )
