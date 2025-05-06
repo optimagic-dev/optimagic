@@ -22,10 +22,9 @@ repos:
     hooks:
       - id: update-algo-selection-code
         name: update algo selection code
-        entry: bash .tools/create_and_format_algo_selection_code.sh
+        entry: python .tools/update_algo_selection_hook.py
         language: python
-        files: (src/optimagic/optimizers/.|src/optimagic/algorithms.py|.tools/.)
-        always_run: false
+        files: ^(src/optimagic/optimizers/|src/optimagic/algorithms\.py|\.tools/)
         require_serial: true
         additional_dependencies:
           - hatchling
