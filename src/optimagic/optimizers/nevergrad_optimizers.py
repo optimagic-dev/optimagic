@@ -182,9 +182,11 @@ class NevergradOnePlusOne(Algorithm):
                 " for more detailed installation instructions."
             )
 
-        instrum = ng.p.Instrumentation(
-            ng.p.Array(init=x0, lower=problem.bounds.lower, upper=problem.bounds.upper)
+        instrum = ng.p.Array(init=x0).set_bounds(
+            lower=problem.bounds.lower, upper=problem.bounds.upper
         )
+        instrum = ng.p.Instrumentation(instrum)
+
         if self.seed is not None:
             instrum.random_state.seed(self.seed)
 
