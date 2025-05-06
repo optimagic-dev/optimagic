@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -77,6 +77,130 @@ class NevergradPSO(Algorithm):
             qo=self.quasi_opp_init,
             sqo=self.speed_quasi_opp_init,
             so=self.special_speed_quasi_opp_init,
+        )(
+            parametrization=instrum,
+            budget=self.stopping_maxfun,
+            num_workers=self.n_cores,
+        )
+
+        while optimizer.num_ask < self.stopping_maxfun:
+            x_list = [
+                optimizer.ask()
+                for _ in range(
+                    min(self.n_cores, self.stopping_maxfun - optimizer.num_ask)
+                )
+            ]
+            losses = problem.batch_fun(
+                [x.value[0][0] for x in x_list], n_cores=self.n_cores
+            )
+            for x, loss in zip(x_list, losses, strict=True):
+                optimizer.tell(x, loss)
+
+        recommendation = optimizer.provide_recommendation()
+
+        result = InternalOptimizeResult(
+            x=recommendation.value[0][0],
+            fun=recommendation.loss,
+            success=True,
+            n_fun_evals=optimizer.num_ask,
+            n_jac_evals=0,
+            n_hess_evals=0,
+        )
+
+        return result
+
+
+@mark.minimizer(
+    name="nevergrad_oneplusone",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradOnePlusOne(Algorithm):
+    noise_handling: str | Tuple[str, float] | None = None
+    mutation: Literal[
+        "gaussian",
+        "cauchy",
+        "discrete",
+        "fastga",
+        "rls",
+        "doublefastga",
+        "adaptive",
+        "coordinatewise_adaptive",
+        "portfolio",
+        "discreteBSO",
+        "lengler",
+        "lengler2",
+        "lengler3",
+        "lenglerhalf",
+        "lenglerfourth",
+        "doerr",
+        "lognormal",
+        "xlognormal",
+        "xsmalllognormal",
+        "tinylognormal",
+        "lognormal",
+        "smalllognormal",
+        "biglognormal",
+        "hugelognormal",
+    ] = "gaussian"
+    annealing: Literal[
+        "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
+    ] = "none"
+    sparse: bool | int = False
+    super_radii: bool = False
+    smoother: bool = False
+    roulette_size: int = 2
+    antismooth: int = 55
+    crossover: bool = False
+    crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] = (
+        "none"
+    )
+    tabu_length: int = 0
+    rotation: bool = False
+    seed: int | None = None
+
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(
+                "The nevergrad_pso optimizer requires the 'nevergrad' package to be "
+                "installed. You can install it with `pip install nevergrad`. "
+                "Visit https://facebookresearch.github.io/nevergrad/getting_started.html"
+                " for more detailed installation instructions."
+            )
+
+        instrum = ng.p.Instrumentation(
+            ng.p.Array(init=x0, lower=problem.bounds.lower, upper=problem.bounds.upper)
+        )
+        if self.seed is not None:
+            instrum.random_state.seed(self.seed)
+
+        optimizer = ng.optimizers.ParametrizedOnePlusOne(
+            noise_handling=self.noise_handling,
+            tabu_length=self.tabu_length,
+            mutation=self.mutation,
+            crossover=self.crossover,
+            rotation=self.rotation,
+            annealing=self.annealing,
+            sparse=self.sparse,
+            smoother=self.smoother,
+            super_radii=self.super_radii,
+            roulette_size=self.roulette_size,
+            antismooth=self.antismooth,
+            crossover_type=self.crossover_type,
         )(
             parametrization=instrum,
             budget=self.stopping_maxfun,
