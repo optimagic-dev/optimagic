@@ -1,27 +1,28 @@
 import warnings
+from copy import deepcopy
 from enum import Enum
 from functools import partial
-from copy import deepcopy
-import plotly.express as px
-import plotly.graph_objects as go
 
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from pybaum import tree_just_flatten
 
 from optimagic import deprecations
+from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
 from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.optimization.fun_value import (
     convert_fun_output_to_function_value,
     enforce_return_type,
 )
-from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
+
 
 def slice_plot_3d(
     func,
@@ -188,7 +189,7 @@ def slice_plot_3d(
         raise ValueError("All selected parameters must have finite upper bounds.")
 
     param_data = {}
-    titles=[]
+    titles = []
     for pos in selected:
         p_name = internal_params.names[pos]
         param_data[p_name] = np.linspace(
@@ -213,13 +214,15 @@ def slice_plot_3d(
         )
 
     plot_kwargs = evaluate_plot_kwargs(plot_kwargs)
-    make_subplot_kwargs = evaluate_make_subplot_kwargs(make_subplot_kwargs,
-                                                       selected_size,
-                                                       projection,
-                                                       titles)
-    layout_kwargs = evaluate_layout_kwargs(layout_kwargs, projection,
-                                           subplots=make_subplot_kwargs,
-                                           template=template,)
+    make_subplot_kwargs = evaluate_make_subplot_kwargs(
+        make_subplot_kwargs, selected_size, projection, titles
+    )
+    layout_kwargs = evaluate_layout_kwargs(
+        layout_kwargs,
+        projection,
+        subplots=make_subplot_kwargs,
+        template=template,
+    )
     plots = {}
     if is_univariate(projection):
         cols = make_subplot_kwargs.get("cols", 1)
@@ -312,17 +315,16 @@ def slice_plot_3d(
 
     if return_dict:
         return plots
-    return combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange,
-                         titles)
-
+    return combine_plots(
+        plots, make_subplot_kwargs, layout_kwargs, expand_yrange, titles
+    )
 
 
 # Plot Data
 
+
 # Helper functions
-def evaluate_function_values(
-        points, func, batch_evaluator, n_cores
-):
+def evaluate_function_values(points, func, batch_evaluator, n_cores):
     """Batch-evaluate the user function at grid points, returning a flat list of scalar
     values."""
     batch_evaluator = process_batch_evaluator(batch_evaluator)
@@ -370,7 +372,6 @@ def generate_evaluation_points(data, internal, converter, p_names, projection):
     return evaluation_points
 
 
-
 # Plot utils
 
 LINE_PLOT_DEFAULT_KWARGS = {
@@ -399,21 +400,22 @@ CONTOUR_PLOT_DEFAULT_KWARGS = {
 
 DEFAULT_SCENE_CAMERA_VIEW = dict(x=2, y=2, z=0.5)
 
+
 def plot_univariate(
-        pos,
-        param_data,
-        param_names,
-        internal_params,
-        func,
-        func_eval,
-        converter,
-        batch_evaluator,
-        n_cores,
-        expand_yrange,
-        plot_kwargs,
-        make_subplot_kwargs,
-        layout_kwargs,
-        projection
+    pos,
+    param_data,
+    param_names,
+    internal_params,
+    func,
+    func_eval,
+    converter,
+    batch_evaluator,
+    n_cores,
+    expand_yrange,
+    plot_kwargs,
+    make_subplot_kwargs,
+    layout_kwargs,
+    projection,
 ):
     """Generate a 2D slice plot for a single parameter index.
 
@@ -440,9 +442,7 @@ def plot_univariate(
     )
 
     x = param_data[param_name].tolist()
-    y = evaluate_function_values(
-        evaluation_points, func, batch_evaluator, n_cores
-    )
+    y = evaluate_function_values(evaluation_points, func, batch_evaluator, n_cores)
 
     y_range = compute_yaxis_range(y, expand_yrange)
     fig = plot_slice(
@@ -462,20 +462,20 @@ def plot_univariate(
 
 
 def plot_multivariate(
-        pos_x,
-        pos_y,
-        param_data,
-        internal_params,
-        param_names,
-        func,
-        func_eval,
-        converter,
-        batch_evaluator,
-        n_cores,
-        projection,
-        n_gridpoints,
-        plot_kwargs,
-        layout_kwargs,
+    pos_x,
+    pos_y,
+    param_data,
+    internal_params,
+    param_names,
+    func,
+    func_eval,
+    converter,
+    batch_evaluator,
+    n_cores,
+    projection,
+    n_gridpoints,
+    plot_kwargs,
+    layout_kwargs,
 ):
     """Generate a 2D contour or 3D surface plot for two parameters.
 
@@ -502,9 +502,7 @@ def plot_multivariate(
 
     x = param_data[x_name]
     y = param_data[y_name]
-    z = evaluate_function_values(
-        evaluation_points, func, batch_evaluator, n_cores
-    )
+    z = evaluate_function_values(evaluation_points, func, batch_evaluator, n_cores)
 
     x, y = np.meshgrid(x, y)
     z = np.reshape(z, (n_gridpoints, n_gridpoints))
@@ -520,10 +518,11 @@ def plot_multivariate(
             plot_kwargs=plot_kwargs,
             layout_kwargs=layout_kwargs,
             # Uncomment if the point is a necessary
-            point={"x": [internal_params.values[pos_x]],
-                   "y": [internal_params.values[pos_y]],
-                   "z": [func_eval.internal_value(
-                       AggregationLevel.SCALAR)]},
+            point={
+                "x": [internal_params.values[pos_x]],
+                "y": [internal_params.values[pos_y]],
+                "z": [func_eval.internal_value(AggregationLevel.SCALAR)],
+            },
         )
     return plot_contour(
         x,
@@ -532,20 +531,22 @@ def plot_multivariate(
         plot_kwargs=plot_kwargs,
         layout_kwargs=layout_kwargs,
         # Uncomment if the point is a necessary
-        point={"x": [internal_params.values[pos_x]],
-               "y": [internal_params.values[pos_y]]}
+        point={
+            "x": [internal_params.values[pos_x]],
+            "y": [internal_params.values[pos_y]],
+        },
     )
 
 
 def plot_slice(
-        x,
-        y,
-        y_range=None,
-        point=None,
-        display_name=None,
-        plot_kwargs=None,
-        make_subplot_kwargs=None,
-        layout_kwargs=None,
+    x,
+    y,
+    y_range=None,
+    point=None,
+    display_name=None,
+    plot_kwargs=None,
+    make_subplot_kwargs=None,
+    layout_kwargs=None,
 ):
     """Create a 2D line plot with an initial parameter marker.
 
@@ -631,7 +632,6 @@ def plot_contour(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
     return fig
 
 
-
 # Plot utils
 class Projection(str, Enum):
     UNIVARIATE = "slice"
@@ -664,9 +664,11 @@ class Projection(str, Enum):
             upper = validate_projection(value.get("upper"))
             return {"lower": lower, "upper": upper}
 
-        raise TypeError(f"Invalid type for projection: {type(value)}, "
-                        f"only str ('slice', 'surface', 'contour') "
-                        f"or dict allowed with 'lower' and 'upper' keys.")
+        raise TypeError(
+            f"Invalid type for projection: {type(value)}, "
+            f"only str ('slice', 'surface', 'contour') "
+            f"or dict allowed with 'lower' and 'upper' keys."
+        )
 
 
 def compute_yaxis_range(y, expand_yrange):
@@ -687,6 +689,7 @@ def is_surface(value):
 def is_contour(value):
     return value == Projection.CONTOUR
 
+
 def _clean_legend_duplicates(fig):
     """Remove duplicate legend entries from a combined Plotly figure."""
     trace_names = set()
@@ -702,8 +705,9 @@ def _clean_legend_duplicates(fig):
     return fig
 
 
-def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange,
-                  titles=None):
+def combine_plots(
+    plots, make_subplot_kwargs, layout_kwargs, expand_yrange, titles=None
+):
     """Combine individual subplot figures into one Plotly Figure, sharing axes and
     layout."""
     plots = deepcopy(plots)
@@ -716,8 +720,10 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange,
     #     print(f"{a.text}: x={a.x}, y={a.y}")
 
     fig.for_each_annotation(
-        lambda a: a.update(y=-0.07) if abs(a['y'] - 1) < 1e-3
-        else a.update(x=-0.07, textangle=270) if abs(a['x'] - 0.98) < 1e-3
+        lambda a: a.update(y=-0.07)
+        if abs(a["y"] - 1) < 1e-3
+        else a.update(x=-0.07, textangle=270)
+        if abs(a["x"] - 0.98) < 1e-3
         else None
     )
 
@@ -734,8 +740,8 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange,
             )
         if hasattr(subfig.layout, "yaxis") and hasattr(subfig.layout.yaxis, "title"):
             if (
-                    "shared_yaxes" in make_subplot_kwargs
-                    and make_subplot_kwargs["shared_yaxes"]
+                "shared_yaxes" in make_subplot_kwargs
+                and make_subplot_kwargs["shared_yaxes"]
             ):
                 if col_idx == 0:
                     fig.update_yaxes(
@@ -784,13 +790,14 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange,
 
 
 def evaluate_plot_kwargs(plot_kwargs):
-    """
-    Generate a default set of Plotly plot kwargs for individual plots. Merges
-    user-supplied `plot_kwargs` if provided, overriding defaults.
+    """Generate a default set of Plotly plot kwargs for individual plots. Merges user-
+    supplied `plot_kwargs` if provided, overriding defaults.
 
     Returns:
         dict: kwargs for individual subpl   ot(s)
+
     """
+
     def update_nested_dict(default, updates):
         # Recursively merge `updates` into `default`
         for k, v in updates.items():
@@ -814,20 +821,18 @@ def evaluate_plot_kwargs(plot_kwargs):
     plot_defaults = {}
     for key in defaults.keys():
         user_kwargs = plot_kwargs.get(key, {})
-        plot_defaults[key] = update_nested_dict(
-            deepcopy(defaults[key]), user_kwargs
-        )
+        plot_defaults[key] = update_nested_dict(deepcopy(defaults[key]), user_kwargs)
 
     return plot_defaults
 
 
 def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection, titles):
-    """
-    Assemble default kwargs for `plotly.subplots.make_subplots`. User-supplied
+    """Assemble default kwargs for `plotly.subplots.make_subplots`. User-supplied
     `make_subplot_kwargs` override these defaults.
 
     Returns:
         dict: Kwargs for `make_subplots()`
+
     """
     if make_subplot_kwargs is None:
         make_subplot_kwargs = {}
@@ -883,26 +888,29 @@ def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection, titles):
         make_subplot_defaults["row_titles"] = titles
         make_subplot_defaults["column_titles"] = titles
 
-    make_subplot_defaults.update({
-        "rows": rows,
-        "cols": cols,
-        "horizontal_spacing": 1 / (cols * 5),
-        "vertical_spacing": (1 / max(rows - 1, 1)) / 5,
-    })
+    make_subplot_defaults.update(
+        {
+            "rows": rows,
+            "cols": cols,
+            "horizontal_spacing": 1 / (cols * 5),
+            "vertical_spacing": (1 / max(rows - 1, 1)) / 5,
+        }
+    )
 
     make_subplot_defaults.update(make_subplot_kwargs)
 
     return make_subplot_defaults
 
 
-def evaluate_layout_kwargs(layout_kwargs, projection, subplots=None,
-                           template=PLOTLY_TEMPLATE):
-    """
-    Generate a default set of Plotly layout kwargs for subplots. Merges user-supplied
+def evaluate_layout_kwargs(
+    layout_kwargs, projection, subplots=None, template=PLOTLY_TEMPLATE
+):
+    """Generate a default set of Plotly layout kwargs for subplots. Merges user-supplied
     `layout_kwargs` if provided, overriding defaults.
 
     Returns:
         dict: kwargs for `Figure.update_layout()`
+
     """
     if layout_kwargs is None:
         layout_kwargs = {}
@@ -930,22 +938,22 @@ def evaluate_layout_kwargs(layout_kwargs, projection, subplots=None,
                         scene_counter += 1
                         scene_id = f"scene{scene_counter}"
                         eye_layouts[f"{scene_id}"] = {
-                            "camera": {
-                                "eye": DEFAULT_SCENE_CAMERA_VIEW
-                            },
-                            "xaxis":dict(nticks=4),
-                            "yaxis":dict(nticks=4),
-                            "zaxis":dict(nticks=4),
+                            "camera": {"eye": DEFAULT_SCENE_CAMERA_VIEW},
+                            "xaxis": dict(nticks=4),
+                            "yaxis": dict(nticks=4),
+                            "zaxis": dict(nticks=4),
                         }
 
             layout_defaults.update(eye_layouts)
 
-    layout_defaults.update({
-        "width": width,
-        "height": height,
-        "template": template,
-        "showlegend": False,
-    })
+    layout_defaults.update(
+        {
+            "width": width,
+            "height": height,
+            "template": template,
+            "showlegend": False,
+        }
+    )
 
     layout_defaults.update(layout_kwargs)
     return layout_defaults
