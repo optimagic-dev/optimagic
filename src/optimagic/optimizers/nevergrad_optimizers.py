@@ -40,7 +40,7 @@ class NevergradPSO(Algorithm):
     population_size: int | None = None
     n_cores: int = 1
     seed: int | None = None
-    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL * 2  # imprecise algorithm
     inertia: float = 0.5 / math.log(2.0)
     cognitive: float = 0.5 + math.log(2.0)
     social: float = 0.5 + math.log(2.0)
