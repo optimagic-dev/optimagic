@@ -151,20 +151,20 @@ class NevergradOnePlusOne(Algorithm):
         "smalllognormal",
         "biglognormal",
         "hugelognormal",
-    ] = "gaussian"
+    ] = "cauchy"
     annealing: Literal[
         "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
     ] = "none"
     sparse: bool | int = False
     super_radii: bool = False
     smoother: bool = False
-    roulette_size: int = 2
-    antismooth: int = 55
+    roulette_size: int = 64
+    antismooth: int = 10
     crossover: bool = False
     crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] = (
         "none"
     )
-    tabu_length: int = 0
+    tabu_length: int = 10000
     rotation: bool = False
     seed: int | None = None
 
@@ -182,9 +182,10 @@ class NevergradOnePlusOne(Algorithm):
                 " for more detailed installation instructions."
             )
 
-        instrum = ng.p.Array(init=x0).set_bounds(
-            lower=problem.bounds.lower, upper=problem.bounds.upper
-        )
+        instrum = ng.p.Array(
+            init=x0, lower=problem.bounds.lower, upper=problem.bounds.upper
+        ).set_mutation(sigma=1.0 + 1e-7)
+        instrum.specify_tabu_length(tabu_length=self.tabu_length)
         instrum = ng.p.Instrumentation(instrum)
 
         if self.seed is not None:
@@ -192,7 +193,6 @@ class NevergradOnePlusOne(Algorithm):
 
         optimizer = ng.optimizers.ParametrizedOnePlusOne(
             noise_handling=self.noise_handling,
-            tabu_length=self.tabu_length,
             mutation=self.mutation,
             crossover=self.crossover,
             rotation=self.rotation,
