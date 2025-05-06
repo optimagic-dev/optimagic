@@ -1,7 +1,12 @@
 import warnings
+from enum import Enum
 from functools import partial
+from copy import deepcopy
+import plotly.express as px
+import plotly.graph_objects as go
 
 import numpy as np
+from plotly.subplots import make_subplots
 from pybaum import tree_just_flatten
 
 from optimagic import deprecations
@@ -11,11 +16,12 @@ from optimagic.optimization.fun_value import (
     convert_fun_output_to_function_value,
     enforce_return_type,
 )
+from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.shared.process_user_function import infer_aggregation_level
-
+from optimagic.typing import AggregationLevel
 
 def slice_plot_3d(
     func,
@@ -182,49 +188,43 @@ def slice_plot_3d(
         raise ValueError("All selected parameters must have finite upper bounds.")
 
     param_data = {}
+    titles=[]
     for pos in selected:
-        param_data[internal_params.names[pos]] = np.linspace(
+        p_name = internal_params.names[pos]
+        param_data[p_name] = np.linspace(
             internal_params.lower_bounds[pos],
             internal_params.upper_bounds[pos],
             n_gridpoints,
         )
 
-    projection = Projection.parse(projection)
-    template = "plotly" if not projection.is_univariate() else PLOTLY_TEMPLATE
+        if param_names:
+            titles.append(param_names.get(p_name, p_name))
+        else:
+            titles.append(p_name)
 
-    # Initialize plot, subplot and layout kwargs
-    if plot_kwargs is None:
-        plot_kwargs = {}
-    if make_subplot_kwargs is None:
-        make_subplot_kwargs = {}
-    if layout_kwargs is None:
-        layout_kwargs = {}
+    projection = Projection.parse(projection)
+    template = "plotly" if not is_univariate(projection) else PLOTLY_TEMPLATE
 
     selected_size = len(selected)
 
-    if not projection.is_univariate() and selected_size < 2:
+    if not is_univariate(projection) and selected_size < 2:
         raise ValueError(
             f"{projection!r} requires at least two parameters. Got {selected_size}."
         )
 
-    plot_kwargs = evaluate_plot_kwargs()
-
-    # Update plotting-related kwargs
-    make_subplot_kwargs, layout_kwargs, plot_kwargs = evaluate_kwargs(
-        projection,
-        selected_size,
-        make_subplot_kwargs,
-        layout_kwargs,
-        plot_kwargs,
-        return_dict,
-        template,
-    )
-
+    plot_kwargs = evaluate_plot_kwargs(plot_kwargs)
+    make_subplot_kwargs = evaluate_make_subplot_kwargs(make_subplot_kwargs,
+                                                       selected_size,
+                                                       projection,
+                                                       titles)
+    layout_kwargs = evaluate_layout_kwargs(layout_kwargs, projection,
+                                           subplots=make_subplot_kwargs,
+                                           template=template,)
     plots = {}
-    if projection.is_univariate():
+    if is_univariate(projection):
         cols = make_subplot_kwargs.get("cols", 1)
         for idx, pos in enumerate(selected):
-            fig = plot_single_param(
+            fig = plot_univariate(
                 pos,
                 param_data,
                 param_names,
@@ -238,19 +238,25 @@ def slice_plot_3d(
                 plot_kwargs,
                 make_subplot_kwargs,
                 layout_kwargs,
+                projection,
             )
             row, col = divmod(idx, cols)
             plots[(row, col)] = fig
     else:
-        single_plot = selected_size == 2
+        single_plot = True if selected_size == 2 else False
+        lower_projection = projection.get("lower")
+        upper_projection = projection.get("upper")
+
+        print("Projection: ", projection)
+
         for i, pos_x in enumerate(selected):
             for j, pos_y in enumerate(selected):
-                if single_plot:
+                if pos_x == pos_y:
                     pos_y += 1
 
                 # Diagonal plot are slice plots
-                if pos_x == pos_y and not single_plot:
-                    fig = plot_single_param(
+                if i == j and not single_plot:
+                    fig = plot_univariate(
                         pos_x,
                         param_data,
                         param_names,
@@ -264,33 +270,104 @@ def slice_plot_3d(
                         plot_kwargs,
                         make_subplot_kwargs,
                         layout_kwargs,
+                        Projection.UNIVARIATE,
                     )
+                    print("Test: ", i, j, Projection.UNIVARIATE)
                 else:
-                    fig = plot_multiple_params(
-                        pos_x,
-                        pos_y,
-                        param_data,
-                        internal_params,
-                        param_names,
-                        func,
-                        func_eval,
-                        converter,
-                        batch_evaluator,
-                        n_cores,
-                        projection,
-                        n_gridpoints,
-                        plot_kwargs,
-                        layout_kwargs,
-                    )
+                    subplot_projection = None
+                    if i < j and upper_projection is not None:
+                        subplot_projection = upper_projection
+                    elif i > j and lower_projection is not None:
+                        subplot_projection = lower_projection
+                    elif i == j and single_plot:
+                        subplot_projection = lower_projection
+                    if subplot_projection is not None:
+                        fig = plot_multivariate(
+                            pos_x,
+                            pos_y,
+                            param_data,
+                            internal_params,
+                            param_names,
+                            func,
+                            func_eval,
+                            converter,
+                            batch_evaluator,
+                            n_cores,
+                            subplot_projection,
+                            n_gridpoints,
+                            plot_kwargs,
+                            layout_kwargs,
+                        )
+                        print("Test: ", i, j, subplot_projection)
+                    else:
+                        fig = go.Figure()
+                        print("Test: ", i, j, subplot_projection)
                 plots[(i, j)] = fig
                 if single_plot:
                     break
             if single_plot:
                 break
 
+    print("Titles: ", titles)
+
     if return_dict:
         return plots
-    return combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange)
+    return combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange,
+                         titles)
+
+
+
+# Plot Data
+
+# Helper functions
+def evaluate_function_values(
+        points, func, batch_evaluator, n_cores
+):
+    """Batch-evaluate the user function at grid points, returning a flat list of scalar
+    values."""
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
+    results = batch_evaluator(
+        func=func,
+        arguments=points,
+        error_handling="continue",
+        n_cores=n_cores,
+    )
+    return [
+        float("nan")
+        if isinstance(val, str)
+        else val.internal_value(AggregationLevel.SCALAR)
+        for val in results
+    ]
+
+
+def generate_evaluation_points(data, internal, converter, p_names, projection):
+    """Build the list of internal parameter vectors to pass to the batch evaluator."""
+    evaluation_points = []
+    point = dict(zip(internal.names, internal.values, strict=False))
+
+    if is_univariate(projection):
+        x = data[p_names]
+
+        for p_value in x:
+            # updating only the parameter of interest
+            point[p_names] = p_value
+
+            values = np.array(list(point.values()))
+            evaluation_points.append(converter.params_from_internal(values))
+    else:
+        x_name, y_name = p_names[0], p_names[1]
+        x_vals = data[x_name]
+        y_vals = data[y_name]
+
+        x, y = np.meshgrid(x_vals, y_vals)
+        x_ravel = x.ravel()
+        y_ravel = y.ravel()
+        for a, b in zip(x_ravel, y_ravel, strict=False):
+            point[x_name] = a
+            point[y_name] = b
+            values = np.array(list(point.values()))
+            evaluation_points.append(converter.params_from_internal(values))
+    return evaluation_points
 
 
 
@@ -320,9 +397,9 @@ CONTOUR_PLOT_DEFAULT_KWARGS = {
     "line_smoothing": 0.85,
 }
 
-DEFAULT_SCENE_CAMERA_VIEW = dict(x=2, y=2, z=0.1)
+DEFAULT_SCENE_CAMERA_VIEW = dict(x=2, y=2, z=0.5)
 
-def plot_single_param(
+def plot_univariate(
         pos,
         param_data,
         param_names,
@@ -336,6 +413,7 @@ def plot_single_param(
         plot_kwargs,
         make_subplot_kwargs,
         layout_kwargs,
+        projection
 ):
     """Generate a 2D slice plot for a single parameter index.
 
@@ -357,16 +435,15 @@ def plot_single_param(
     display_name = (
         param_names.get(param_name, param_name) if param_names else param_name
     )
+    evaluation_points = generate_evaluation_points(
+        param_data, internal_params, converter, param_name, projection
+    )
+
     x = param_data[param_name].tolist()
     y = evaluate_function_values(
-        param_data,
-        internal_params,
-        param_name,
-        func,
-        converter,
-        batch_evaluator,
-        n_cores,
+        evaluation_points, func, batch_evaluator, n_cores
     )
+
     y_range = compute_yaxis_range(y, expand_yrange)
     fig = plot_slice(
         x=x,
@@ -384,7 +461,7 @@ def plot_single_param(
     return fig
 
 
-def plot_multiple_params(
+def plot_multivariate(
         pos_x,
         pos_y,
         param_data,
@@ -419,26 +496,23 @@ def plot_multiple_params(
     x_name = internal_params.names[pos_x]
     y_name = internal_params.names[pos_y]
 
+    evaluation_points = generate_evaluation_points(
+        param_data, internal_params, converter, [x_name, y_name], projection
+    )
+
     x = param_data[x_name]
     y = param_data[y_name]
-
     z = evaluate_function_values(
-        param_data,
-        internal_params,
-        [x_name, y_name],
-        func,
-        converter,
-        batch_evaluator,
-        n_cores,
-        projection,
+        evaluation_points, func, batch_evaluator, n_cores
     )
+
     x, y = np.meshgrid(x, y)
     z = np.reshape(z, (n_gridpoints, n_gridpoints))
     display = {
         "x": param_names.get(x_name, x_name) if param_names else x_name,
         "y": param_names.get(y_name, y_name) if param_names else y_name,
     }
-    if projection == Projection.SURFACE:
+    if is_surface(projection):
         return plot_surface(
             x,
             y,
@@ -446,10 +520,10 @@ def plot_multiple_params(
             plot_kwargs=plot_kwargs,
             layout_kwargs=layout_kwargs,
             # Uncomment if the point is a necessary
-            # point={"x": [internal_params.values[pos_x]],
-            #        "y": [internal_params.values[pos_y]],
-            #        "z": [func_eval.internal_value(
-            #            AggregationLevel.SCALAR)]},
+            point={"x": [internal_params.values[pos_x]],
+                   "y": [internal_params.values[pos_y]],
+                   "z": [func_eval.internal_value(
+                       AggregationLevel.SCALAR)]},
         )
     return plot_contour(
         x,
@@ -458,8 +532,8 @@ def plot_multiple_params(
         plot_kwargs=plot_kwargs,
         layout_kwargs=layout_kwargs,
         # Uncomment if the point is a necessary
-        # point={"x": [internal_params.values[pos_x]],
-        #        "y": [internal_params.values[pos_y]]}
+        point={"x": [internal_params.values[pos_x]],
+               "y": [internal_params.values[pos_y]]}
     )
 
 
@@ -566,33 +640,33 @@ class Projection(str, Enum):
 
     @classmethod
     def parse(cls, value):
-        def to_enum(val):
+        def validate_projection(val):
             if val is None:
-                return cls.UNIVARIATE
+                return None
             if isinstance(val, str):
-                try:
-                    return cls(val.lower())
-                except ValueError:
-                    raise ValueError(f"Invalid projection: '{val}'")
-            raise TypeError(f"Expected str or dict or None, got {type(val)}")
+                val = val.lower()
+                if val in (cls.SURFACE, cls.CONTOUR):
+                    return val
+                raise ValueError(f"Invalid projection: '{val}'")
+            raise TypeError(f"Expected str or None in dict values, got {type(val)}")
 
-        if isinstance(value, (str, None)):
-            val = to_enum(value)
+        if isinstance(value, str):
+            val = value.lower()
             if val == cls.UNIVARIATE:
                 return cls.UNIVARIATE
-            else:
+            elif val in (cls.SURFACE, cls.CONTOUR):
                 return {"lower": val, "upper": None}
+            else:
+                raise ValueError(f"Invalid projection: '{val}'")
 
         if isinstance(value, dict):
-            return {
-                "lower": to_enum(value.get("lower")),
-                "upper": to_enum(value.get("upper")),
-            }
+            lower = validate_projection(value.get("lower"))
+            upper = validate_projection(value.get("upper"))
+            return {"lower": lower, "upper": upper}
 
-        raise TypeError(f"Invalid type for projection: {type(value)}")
-
-    def is_univariate(self):
-        return self == Projection.UNIVARIATE
+        raise TypeError(f"Invalid type for projection: {type(value)}, "
+                        f"only str ('slice', 'surface', 'contour') "
+                        f"or dict allowed with 'lower' and 'upper' keys.")
 
 
 def compute_yaxis_range(y, expand_yrange):
@@ -601,6 +675,17 @@ def compute_yaxis_range(y, expand_yrange):
     y_range = y_max - y_min
     return [y_min - expand_yrange * y_range, y_max + expand_yrange * y_range]
 
+
+def is_univariate(value):
+    return value == Projection.UNIVARIATE
+
+
+def is_surface(value):
+    return value == Projection.SURFACE
+
+
+def is_contour(value):
+    return value == Projection.CONTOUR
 
 def _clean_legend_duplicates(fig):
     """Remove duplicate legend entries from a combined Plotly figure."""
@@ -617,7 +702,8 @@ def _clean_legend_duplicates(fig):
     return fig
 
 
-def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
+def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange,
+                  titles=None):
     """Combine individual subplot figures into one Plotly Figure, sharing axes and
     layout."""
     plots = deepcopy(plots)
@@ -625,6 +711,15 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
     # Create a subplot figure
     fig = make_subplots(**make_subplot_kwargs)
     fig.update_layout(**layout_kwargs)
+
+    # for a in fig.layout.annotations:
+    #     print(f"{a.text}: x={a.x}, y={a.y}")
+
+    fig.for_each_annotation(
+        lambda a: a.update(y=-0.07) if abs(a['y'] - 1) < 1e-3
+        else a.update(x=-0.07, textangle=270) if abs(a['x'] - 0.98) < 1e-3
+        else None
+    )
 
     # Add traces
     for (row_idx, col_idx), subfig in plots.items():
@@ -688,13 +783,13 @@ def combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange):
     return fig
 
 
-def evaluate_plot_kwargs(plot_kwargs, projection):
+def evaluate_plot_kwargs(plot_kwargs):
     """
     Generate a default set of Plotly plot kwargs for individual plots. Merges
     user-supplied `plot_kwargs` if provided, overriding defaults.
 
     Returns:
-        dict: kwargs for individual subplot(s)
+        dict: kwargs for individual subpl   ot(s)
     """
     def update_nested_dict(default, updates):
         # Recursively merge `updates` into `default`
@@ -726,7 +821,7 @@ def evaluate_plot_kwargs(plot_kwargs, projection):
     return plot_defaults
 
 
-def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection):
+def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection, titles):
     """
     Assemble default kwargs for `plotly.subplots.make_subplots`. User-supplied
     `make_subplot_kwargs` override these defaults.
@@ -738,15 +833,15 @@ def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection):
         make_subplot_kwargs = {}
     make_subplot_defaults = {}
 
-    if make_subplot_kwargs and not projection.is_univariate():
+    if make_subplot_kwargs and not is_univariate(projection):
         for key in make_subplot_kwargs.keys():
             if key in ["rows", "cols"]:
                 raise ValueError(
                     f"{key} param is not allowed in plot_kwargs when "
-                    f"the projection is {projection.value}."
+                    f"the projection is {projection}."
                 )
 
-    if projection.is_univariate():
+    if is_univariate(projection):
         cols = make_subplot_kwargs.get("cols", 1 if size == 1 else 2)
         rows = (size + cols - 1) // cols
 
@@ -756,20 +851,37 @@ def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection):
         cols = size if size > 2 else 1
         rows = size if size > 2 else 1
 
-        specs = []
-        for i in range(rows):
-            row_specs = []
-            for j in range(cols):
-                if i == j:
-                    cell_type = "xy"
-                elif i > j:
-                    cell_type = projection.get("lower")
-                else:
-                    cell_type = projection.get("upper")
-                row_specs.append({"type": cell_type})
-            specs.append(row_specs)
+        if size > 2:
+            specs = []
+            for i in range(rows):
+                row_specs = []
+                for j in range(cols):
+                    if i == j:
+                        cell_type = "xy"
+                    elif i > j:
+                        cell_type = projection.get("lower")
+                    else:
+                        cell_type = projection.get("upper")
+
+                    if cell_type is not None:
+                        if cell_type == "xy":
+                            row_specs.append({"type": "xy"})
+                        elif is_surface(cell_type):
+                            row_specs.append({"type": "scene"})
+                        elif is_contour(cell_type):
+                            row_specs.append({"type": "contour"})
+                    else:
+                        row_specs.append({})
+                specs.append(row_specs)
+        else:
+            if is_surface(projection.get("lower")):
+                specs = [[{"type": "scene"}]]
+            else:
+                specs = [[{"type": "contour"}]]
 
         make_subplot_defaults["specs"] = specs
+        make_subplot_defaults["row_titles"] = titles
+        make_subplot_defaults["column_titles"] = titles
 
     make_subplot_defaults.update({
         "rows": rows,
@@ -796,29 +908,37 @@ def evaluate_layout_kwargs(layout_kwargs, projection, subplots=None,
         layout_kwargs = {}
     layout_defaults = {}
 
-    if subplots is not None:
+    if subplots is not None and (subplots.get("rows") > 1 or subplots.get("cols") > 1):
         width = 300 * subplots.get("cols")
         height = 300 * subplots.get("rows")
     else:
         width = 450
         height = 450
 
-    if not projection.is_univariate():
+    if not is_univariate(projection):
         eye_layouts = {}
         scene_counter = 0
 
-        specs = subplots["specs"]
-        for i in range(subplots.get("rows")):
-            for j in range(subplots.get("cols")):
-                if specs[i, j] == projection.SURFACE:
-                    scene_counter += 1
-                    if scene_counter == 1:
-                        scene_id = "scene"
-                    else:
-                        scene_id = f"scene{scene_counter}"
-                    eye_layouts[f"{scene_id}_camera"] = DEFAULT_SCENE_CAMERA_VIEW
+        rows = subplots.get("rows")
+        cols = subplots.get("cols")
 
-        layout_defaults.update(eye_layouts)
+        if "specs" in subplots:
+            specs = subplots["specs"]
+            for i in range(rows):
+                for j in range(cols):
+                    if "type" in specs[i][j] and specs[i][j]["type"] == "scene":
+                        scene_counter += 1
+                        scene_id = f"scene{scene_counter}"
+                        eye_layouts[f"{scene_id}"] = {
+                            "camera": {
+                                "eye": DEFAULT_SCENE_CAMERA_VIEW
+                            },
+                            "xaxis":dict(nticks=4),
+                            "yaxis":dict(nticks=4),
+                            "zaxis":dict(nticks=4),
+                        }
+
+            layout_defaults.update(eye_layouts)
 
     layout_defaults.update({
         "width": width,
@@ -829,62 +949,3 @@ def evaluate_layout_kwargs(layout_kwargs, projection, subplots=None,
 
     layout_defaults.update(layout_kwargs)
     return layout_defaults
-
-
-
-# Plot data
-def evaluate_function_values(
-        data, internal, params, func, converter, batch_evaluator, n_cores, projection=None
-):
-    """Batch-evaluate the user function at grid points, returning a flat list of scalar
-    values."""
-    if not projection:
-        projection = Projection.UNIVARIATE
-
-    evaluation_points = generate_evaluation_points(
-        data, internal, converter, params, projection
-    )
-    batch_evaluator = process_batch_evaluator(batch_evaluator)
-    results = batch_evaluator(
-        func=func,
-        arguments=evaluation_points,
-        error_handling="continue",
-        n_cores=n_cores,
-    )
-    return [
-        float("nan")
-        if isinstance(val, str)
-        else val.internal_value(AggregationLevel.SCALAR)
-        for val in results
-    ]
-
-
-def generate_evaluation_points(data, internal, converter, p_names, projection):
-    """Build the list of internal parameter vectors to pass to the batch evaluator."""
-    evaluation_points = []
-    point = dict(zip(internal.names, internal.values, strict=False))
-
-    if projection.is_univariate():
-        x = data[p_names]
-
-        for p_value in x:
-            # updating only the parameter of interest
-            point[p_names] = p_value
-
-            values = np.array(list(point.values()))
-            evaluation_points.append(converter.params_from_internal(values))
-    else:
-        x_name, y_name = p_names[0], p_names[1]
-        x_vals = data[x_name]
-        y_vals = data[y_name]
-
-        x, y = np.meshgrid(x_vals, y_vals)
-        x_ravel = x.ravel()
-        y_ravel = y.ravel()
-        for a, b in zip(x_ravel, y_ravel, strict=False):
-            point[x_name] = a
-            point[y_name] = b
-            values = np.array(list(point.values()))
-            evaluation_points.append(converter.params_from_internal(values))
-    return evaluation_points
-
