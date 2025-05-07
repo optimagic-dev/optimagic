@@ -471,7 +471,9 @@ class InternalOptimizationProblem:
         out_jac = _process_jac_value(
             value=jac_value, direction=self._direction, converter=self._converter, x=x
         )
-        _assert_finite_jac(out_jac, jac_value, params, "jac")
+        _assert_finite_jac(
+            out_jac=out_jac, jac_value=jac_value, params=params, origin="jac"
+        )
 
         stop_time = time.perf_counter()
 
@@ -509,7 +511,6 @@ class InternalOptimizationProblem:
             p = self._converter.params_from_internal(x)
             return self._fun(p)
 
-        params = self._converter.params_from_internal(x)
         try:
             numdiff_res = first_derivative(
                 func,
@@ -545,7 +546,12 @@ class InternalOptimizationProblem:
                 warnings.warn(msg)
                 fun_value, jac_value = self._error_penalty_func(x)
 
-        _assert_finite_jac(jac_value, jac_value, params, "numerical")
+        _assert_finite_jac(
+            out_jac=jac_value,
+            jac_value=jac_value,
+            params=self._converter.params_from_internal(x),
+            origin="numerical",
+        )
 
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value,  # type: ignore
@@ -686,7 +692,9 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             out_jac = -out_jac
 
-        _assert_finite_jac(out_jac, jac_value, params, "fun_and_jac")
+        _assert_finite_jac(
+            out_jac=out_jac, jac_value=jac_value, params=params, origin="fun_and_jac"
+        )
 
         stop_time = time.perf_counter()
 
@@ -723,6 +731,7 @@ def _assert_finite_jac(
         out_jac: internal processed Jacobian to check for finiteness.
         jac_value: original Jacobian value as returned by the user function,
         params: user-facing parameter representation at evaluation point.
+        origin: Source of Jacobian calculation, for the error message.
 
     Raises:
         UserFunctionRuntimeError:
