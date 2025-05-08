@@ -101,7 +101,7 @@ def _nevergrad_internal(
 ) -> InternalOptimizeResult:
     if not IS_NEVERGRAD_INSTALLED:
         raise NotInstalledError(
-            "The nevergrad_pso optimizer requires the 'nevergrad' package to be "
+            "The nevergrad_cmaes optimizer requires the 'nevergrad' package to be "
             "installed. You can install it with `pip install nevergrad`. "
             "Visit https://facebookresearch.github.io/nevergrad/getting_started.html"
             " for more detailed installation instructions."
