@@ -100,14 +100,22 @@ def _nevergrad_internal(
     seed: int | None,
 ) -> InternalOptimizeResult:
     if not IS_NEVERGRAD_INSTALLED:
-        raise NotInstalledError("Nevergrad is not installed.")
+        raise NotInstalledError(
+            "The nevergrad_pso optimizer requires the 'nevergrad' package to be "
+            "installed. You can install it with `pip install nevergrad`. "
+            "Visit https://facebookresearch.github.io/nevergrad/getting_started.html"
+            " for more detailed installation instructions."
+        )
 
     param = ng.p.Array(
         init=np.clip(x0, problem.bounds.lower, problem.bounds.upper)
     ).set_bounds(problem.bounds.lower, upper=problem.bounds.upper)
 
     instrum = ng.p.Instrumentation(param)
-    instrum.random_state.seed(seed)
+
+    if seed is not None:
+        instrum.random_state.seed(seed)
+
     optimizer = raw_optimizer(
         parametrization=instrum, budget=stopping_maxfun, num_workers=n_cores
     )
