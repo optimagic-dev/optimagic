@@ -10,9 +10,13 @@ from optimagic.optimization.optimize import minimize
 # We test that minimize raises an error if the user function returns a jacobian
 # containing invalid values (np.inf, np.nan). To test that this works not only at
 # the start parameters, we create jac functions that return invalid values if the
-# parameter norm becomes smaller than 1. For this test, we assume the following
-# parameter structure: {"a": 1, "b": np.array([3, 4])}
+# parameter norm becomes smaller than one.
 # ======================================================================================
+
+
+@pytest.fixture
+def params():
+    return {"a": 1, "b": np.array([3, 4])}
 
 
 def sphere(params):
@@ -65,11 +69,6 @@ INVALID_JACOBIAN_VALUES = [
     {"a": np.nan, "b": 2 * np.array([1, 2])},
     {"a": 1, "b": 2 * np.array([np.nan, 2])},
 ]
-
-
-@pytest.fixture
-def params():
-    return {"a": 1, "b": np.array([3, 4])}
 
 
 # ======================================================================================

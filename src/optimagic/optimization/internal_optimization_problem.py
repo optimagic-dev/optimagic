@@ -739,16 +739,10 @@ def _assert_finite_jac(
 
     """
     if not np.all(np.isfinite(out_jac)):
-        if origin == "jac":
+        if origin == "jac" or "fun_and_jac":
             msg = (
                 "The optimization failed because the derivative provided via "
-                "jac contains infinite or NaN values."
-                "\nPlease validate the derivative function."
-            )
-        elif origin == "fun_and_jac":
-            msg = (
-                "The optimization failed because the derivative provided via "
-                "fun_and_jac contains infinite or NaN values."
+                f"{origin} contains infinite or NaN values."
                 "\nPlease validate the derivative function."
             )
         elif origin == "numerical":
