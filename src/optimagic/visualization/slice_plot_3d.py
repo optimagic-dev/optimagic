@@ -241,7 +241,7 @@ def slice_plot_3d(
                 plot_kwargs,
                 make_subplot_kwargs,
                 layout_kwargs,
-                projection,
+                None,
             )
             row, col = divmod(idx, cols)
             plots[(row, col)] = fig
@@ -250,12 +250,12 @@ def slice_plot_3d(
         lower_projection = projection.get("lower")
         upper_projection = projection.get("upper")
 
-        print("Projection: ", projection)
-
         for i, pos_x in enumerate(selected):
             for j, pos_y in enumerate(selected):
-                if pos_x == pos_y:
-                    pos_y += 1
+                if pos_x == pos_y and single_plot:
+                    print(pos_x, pos_y)
+                    pos_x, pos_y = selected
+                    print(pos_x, pos_y)
 
                 # Diagonal plot are slice plots
                 if i == j and not single_plot:
@@ -275,7 +275,6 @@ def slice_plot_3d(
                         layout_kwargs,
                         Projection.UNIVARIATE,
                     )
-                    print("Test: ", i, j, Projection.UNIVARIATE)
                 else:
                     subplot_projection = None
                     if i < j and upper_projection is not None:
@@ -285,6 +284,7 @@ def slice_plot_3d(
                     elif i == j and single_plot:
                         subplot_projection = lower_projection
                     if subplot_projection is not None:
+                        print(subplot_projection)
                         fig = plot_multivariate(
                             pos_x,
                             pos_y,
@@ -301,17 +301,13 @@ def slice_plot_3d(
                             plot_kwargs,
                             layout_kwargs,
                         )
-                        print("Test: ", i, j, subplot_projection)
                     else:
                         fig = go.Figure()
-                        print("Test: ", i, j, subplot_projection)
                 plots[(i, j)] = fig
                 if single_plot:
                     break
             if single_plot:
                 break
-
-    print("Titles: ", titles)
 
     if return_dict:
         return plots
@@ -445,7 +441,7 @@ def plot_univariate(
     y = evaluate_function_values(evaluation_points, func, batch_evaluator, n_cores)
 
     y_range = compute_yaxis_range(y, expand_yrange)
-    fig = plot_slice(
+    fig = plot_line(
         x=x,
         y=y,
         point={
@@ -457,6 +453,7 @@ def plot_univariate(
         plot_kwargs=plot_kwargs,
         make_subplot_kwargs=make_subplot_kwargs,
         layout_kwargs=layout_kwargs,
+        projection=projection,
     )
     return fig
 
@@ -536,7 +533,7 @@ def plot_multivariate(
     )
 
 
-def plot_slice(
+def plot_line(
     x,
     y,
     y_range=None,
@@ -571,7 +568,7 @@ def plot_slice(
     if layout_kwargs:
         fig.update_layout(**layout_kwargs)
 
-    if is_univariate(projection):
+    if not is_univariate(projection):
         fig.update_xaxes(title={"text": display_name})
         fig.update_yaxes(
             title={"text": "Function Value"},
@@ -580,6 +577,9 @@ def plot_slice(
             and make_subplot_kwargs["shared_yaxes"]
             else None,
         )
+    else:
+        fig.update_xaxes(title=None)
+        fig.update_yaxes(title=None)
     return fig
 
 
@@ -597,7 +597,9 @@ def plot_surface(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
         go.Figure: A 3D surface visualization.
 
     """
-    trace = go.Surface(z=z, x=x, y=y, **plot_kwargs["surface_plot"])
+    trace = go.Surface(
+        z=z, x=x, y=y, **plot_kwargs["surface_plot"], coloraxis="coloraxis"
+    )
 
     fig = go.Figure(data=[trace], layout=layout_kwargs)
 
@@ -623,12 +625,14 @@ def plot_contour(x, y, z, layout_kwargs=None, plot_kwargs=None, point=None):
         go.Figure: A contour map with optional annotation.
 
     """
-    trace = go.Contour(z=z, x=x[0], y=y[:, 0], **plot_kwargs["contour_plot"])
+    trace = go.Contour(
+        z=z, x=x[0], y=y[:, 0], **plot_kwargs["contour_plot"], coloraxis="coloraxis"
+    )
 
     fig = go.Figure(data=[trace], layout=layout_kwargs)
     if point:
         fig.add_trace(
-            go.Scatter3d(x=point["x"], y=point["y"], **plot_kwargs["scatter_plot"])
+            go.Scatter(x=point["x"], y=point["y"], **plot_kwargs["scatter_plot"]),
         )
 
     return fig
@@ -668,7 +672,7 @@ class Projection(str, Enum):
 
         raise TypeError(
             f"Invalid type for projection: {type(value)}, "
-            f"only str ('slice', 'surface', 'contour') "
+            f"only str ('univariate', 'surface', 'contour') "
             f"or dict allowed with 'lower' and 'upper' keys."
         )
 
@@ -695,8 +699,16 @@ def is_contour(value):
 def _clean_legend_duplicates(fig):
     """Remove duplicate legend entries from a combined Plotly figure."""
     trace_names = set()
+    dup_names = set()
 
     def disable_legend_if_duplicate(trace):
+        print(trace.type)
+
+        if trace.type == "contour" and trace.name in dup_names:
+            trace.update(showscale=False)
+        else:
+            dup_names.add(trace.name)
+
         if trace.name in trace_names:
             # in this case the legend is a duplicate
             trace.update(showlegend=False)
@@ -713,6 +725,12 @@ def combine_plots(
     """Combine individual subplot figures into one Plotly Figure, sharing axes and
     layout."""
     plots = deepcopy(plots)
+    titles = make_subplot_kwargs["row_titles"]
+    if make_subplot_kwargs["rows"] == 1 and make_subplot_kwargs["cols"] == 1:
+        make_subplot_kwargs["row_titles"] = [titles[0]]
+        make_subplot_kwargs["column_titles"] = [titles[1]]
+
+    print(make_subplot_kwargs)
 
     # Create a subplot figure
     fig = make_subplots(**make_subplot_kwargs)
@@ -730,7 +748,7 @@ def combine_plots(
     for (row_idx, col_idx), subfig in plots.items():
         for trace in subfig.data:
             fig.add_trace(trace, row=row_idx + 1, col=col_idx + 1)
-
+            print("Trace: ", trace)
         if hasattr(subfig.layout, "xaxis") and hasattr(subfig.layout.xaxis, "title"):
             fig.update_xaxes(
                 title_text=subfig.layout.xaxis.title.text,
@@ -887,6 +905,7 @@ def evaluate_make_subplot_kwargs(make_subplot_kwargs, size, projection, titles):
         make_subplot_defaults["row_titles"] = titles
         make_subplot_defaults["column_titles"] = titles
 
+    print("titles: ", make_subplot_defaults["row_titles"])
     make_subplot_defaults.update(
         {
             "rows": rows,
@@ -929,6 +948,8 @@ def evaluate_layout_kwargs(
         rows = subplots.get("rows")
         cols = subplots.get("cols")
 
+        eye_layouts["coloraxis"] = {"colorscale": "aggrnyl"}
+
         if "specs" in subplots:
             specs = subplots["specs"]
             for i in range(rows):
@@ -938,9 +959,9 @@ def evaluate_layout_kwargs(
                         scene_id = f"scene{scene_counter}"
                         eye_layouts[f"{scene_id}"] = {
                             "camera": {"eye": DEFAULT_SCENE_CAMERA_VIEW},
-                            "xaxis": dict(text=None, nticks=4),
-                            "yaxis": dict(text=None, nticks=4),
-                            "zaxis": dict(text=None, nticks=4),
+                            "xaxis": dict(title="", nticks=4),
+                            "yaxis": dict(title="", nticks=4),
+                            "zaxis": dict(title="", nticks=4),
                         }
 
             layout_defaults.update(eye_layouts)
