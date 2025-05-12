@@ -2,7 +2,7 @@ import time
 import warnings
 from copy import copy
 from dataclasses import asdict, dataclass, replace
-from typing import Any, Callable, cast
+from typing import Any, Callable, Literal, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -471,6 +471,9 @@ class InternalOptimizationProblem:
         out_jac = _process_jac_value(
             value=jac_value, direction=self._direction, converter=self._converter, x=x
         )
+        _assert_finite_jac(
+            out_jac=out_jac, jac_value=jac_value, params=params, origin="jac"
+        )
 
         stop_time = time.perf_counter()
 
@@ -542,6 +545,13 @@ class InternalOptimizationProblem:
                 )
                 warnings.warn(msg)
                 fun_value, jac_value = self._error_penalty_func(x)
+
+        _assert_finite_jac(
+            out_jac=jac_value,
+            jac_value=jac_value,
+            params=self._converter.params_from_internal(x),
+            origin="numerical",
+        )
 
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value,  # type: ignore
@@ -682,6 +692,10 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             out_jac = -out_jac
 
+        _assert_finite_jac(
+            out_jac=out_jac, jac_value=jac_value, params=params, origin="fun_and_jac"
+        )
+
         stop_time = time.perf_counter()
 
         hist_entry = HistoryEntry(
@@ -703,6 +717,44 @@ class InternalOptimizationProblem:
         )
 
         return (algo_fun_value, out_jac), hist_entry, log_entry
+
+
+def _assert_finite_jac(
+    out_jac: NDArray[np.float64],
+    jac_value: PyTree,
+    params: PyTree,
+    origin: Literal["numerical", "jac", "fun_and_jac"],
+) -> None:
+    """Check for infinite and NaN values in the Jacobian and raise an error if found.
+
+    Args:
+        out_jac: internal processed Jacobian to check for finiteness.
+        jac_value: original Jacobian value as returned by the user function,
+        params: user-facing parameter representation at evaluation point.
+        origin: Source of Jacobian calculation, for the error message.
+
+    Raises:
+        UserFunctionRuntimeError:
+            If any infinite or NaN values are found in the Jacobian.
+
+    """
+    if not np.all(np.isfinite(out_jac)):
+        if origin == "jac" or "fun_and_jac":
+            msg = (
+                "The optimization failed because the derivative provided via "
+                f"{origin} contains infinite or NaN values."
+                "\nPlease validate the derivative function."
+            )
+        elif origin == "numerical":
+            msg = (
+                "The optimization failed because the numerical derivative "
+                "(computed using fun) contains infinite or NaN values."
+                "\nPlease validate the criterion function or try a different optimizer."
+            )
+        msg += (
+            f"\nParameters at evaluation point: {params}\nJacobian values: {jac_value}"
+        )
+        raise UserFunctionRuntimeError(msg)
 
 
 def _process_fun_value(
