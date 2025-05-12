@@ -39,6 +39,13 @@ kwargs_slice_plot_3d = [
     {},
     {"projection": "contour"},
     {"projection": "surface"},
+    {"projection": "surface", "n_gridpoints": 100},
+    {"projection": {"lower": "contour", "upper": "contour"}},
+    {"projection": {"lower": "surface", "upper": "contour"}},
+    {
+        "projection": {"lower": "contour", "upper": "surface"},
+        "selector": lambda x: [x["alpha"], x["beta"], x["delta"]],
+    },
     {"selector": lambda x: [x["alpha"], x["beta"]]},
     {"param_names": {"alpha": "Alpha", "beta": "Beta"}},
     {"layout_kwargs": {"width": 800, "height": 600, "title": "Custom Layout"}},
@@ -64,7 +71,7 @@ kwargs_slice_plot_3d = [
     },
     {
         "param_names": {"alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ"},
-        "n_gridpoints": 10,  # Reduced for faster testing if needed
+        "n_gridpoints": 10,
         "expand_yrange": 2,
     },
     {
