@@ -20,7 +20,7 @@ from optimagic.typing import AggregationLevel
 if IS_IMINUIT_INSTALLED or TYPE_CHECKING:
     from iminuit import Minuit
 else:
-    Minuit = Any
+    Minuit = Any  # pragma: no cover
 
 
 @mark.minimizer(
@@ -45,7 +45,7 @@ class IminuitMigrad(Algorithm):
         self, problem: InternalOptimizationProblem, params: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         if not IS_IMINUIT_INSTALLED:
-            raise NotInstalledError(
+            raise NotInstalledError(  # pragma: no cover
                 "To use the 'iminuit_migrad` optimizer you need to install iminuit. "
                 "Use 'pip install iminuit' or 'conda install -c conda-forge iminuit'. "
                 "Check the iminuit documentation for more details: "
