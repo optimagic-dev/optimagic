@@ -281,7 +281,26 @@ class InternalOptimizationProblem:
 
     @property
     def nonlinear_constraints(self) -> list[dict[str, Any]] | None:
-        """Internal dictionary representation of nonlinear constraints."""
+        """Internal representation of nonlinear constraints.
+
+        Compared to the user provided constraints, we have done the following
+        transformations:
+
+        1. The constraint a <= g(x) <= b is transformed to h(x) >= 0, where h(x) is
+        - h(x) = g(x), if a == 0 and b == inf
+        - h(x) = g(x) - a, if a != 0 and b == inf
+        - h(x) = (g(x) - a, -g(x) + b) >= 0, if a != 0 and b != inf.
+
+        2. The equality constraint g(x) = v is transformed to h(x) >= 0, where
+        h(x) = (g(x) - v, -g(x) + v).
+
+        3. Vector constraints are transformed to a list of scalar constraints.
+        g(x) = (g1(x), g2(x), ...) >= 0 is transformed to (g1(x) >= 0, g2(x) >= 0, ...).
+
+        4. The constraint function (defined on a selection of user-facing parameters) is
+        transformed to be evaluated on the internal parameters.
+
+        """
         return self._nonlinear_constraints
 
     @property
