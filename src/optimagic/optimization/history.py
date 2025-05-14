@@ -409,7 +409,7 @@ def _get_flat_param_names(param: PyTree) -> list[str]:
     if fast_path:
         # Mypy raises an error here because .tolist() returns a str for zero-dimensional
         # arrays, but the fast path is only taken for 1d arrays, so it can be ignored.
-        return np.arange(param.size).astype(str).tolist()  # type: ignore[return-value]
+        return np.arange(param.size).astype(str).tolist()
 
     registry = get_registry(extended=True)
     return leaf_names(param, registry=registry)
@@ -530,7 +530,7 @@ def _get_batch_starts_and_stops(batch_ids: list[int]) -> tuple[list[int], list[i
     """
     ids_arr = np.array(batch_ids, dtype=np.int64)
     indices = np.where(ids_arr[:-1] != ids_arr[1:])[0] + 1
-    list_indices: list[int] = indices.tolist()  # type: ignore[assignment]
+    list_indices: list[int] = indices.tolist()
     starts = [0, *list_indices]
     stops = [*starts[1:], len(batch_ids)]
     return starts, stops

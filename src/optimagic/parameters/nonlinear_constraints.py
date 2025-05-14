@@ -23,6 +23,28 @@ def process_nonlinear_constraints(
 ):
     """Process and prepare nonlinear constraints for internal use.
 
+    A user-provided nonlinear constraint consists of a function that is evaluated on a
+    selection of parameters returning a scalar or vector that must either be equal to
+    a fixed value (equality constraint) or smaller and larger than or equal to a lower
+    and upper bound (inequality constraint).
+
+    This function processes the nonlinear constraints in the following way:
+
+    1. The constraint a <= g(x) <= b is transformed to h(x) >= 0, where h(x) is
+       - h(x) = g(x), if a == 0 and b == inf
+       - h(x) = g(x) - a, if a != 0 and b == inf
+       - h(x) = (g(x) - a, -g(x) + b) >= 0, if a != 0 and b != inf.
+
+    2. The equality constraint g(x) = v is transformed to h(x) >= 0, where
+       h(x) = (g(x) - v, -g(x) + v).
+
+    3. Vector constraints are transformed to a list of scalar constraints.
+       g(x) = (g1(x), g2(x), ...) >= 0 is transformed to (g1(x) >= 0, g2(x) >= 0, ...).
+
+    4. The constraint function (defined on a selection of user-facing parameters) is
+       transformed to be evaluated on the internal parameters.
+
+
     Args:
         nonlinear_constraints (list[dict]): List of dictionaries, each representing a
             nonlinear constraint.
