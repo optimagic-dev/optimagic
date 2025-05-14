@@ -334,7 +334,7 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-    "pyensmallen",
+    "pyensmallen_experimental",
     "pybaum",
     "scipy",
     "scipy.linalg",
