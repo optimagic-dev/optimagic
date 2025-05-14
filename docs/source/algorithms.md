@@ -3984,6 +3984,7 @@ iminuit).
       - Values greater than 1 specify the maximum number of restart attempts.  
 ```
 
+
 ## Nevergrad Optimizers
 
 optimagic supports some algorithms from the

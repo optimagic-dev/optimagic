@@ -382,5 +382,6 @@ module = [
     "annotated_types",
     "pdbp",
     "iminuit",
+    "nevergrad",
   ]
 ignore_missing_imports = true
