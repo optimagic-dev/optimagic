@@ -1,6 +1,7 @@
 """Implement ensmallen optimizers."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -90,11 +91,17 @@ class EnsmallenLBFGS(Algorithm):
             grad[:] = jac
             return np.float64(fun)
 
-        raw = optimizer.optimize(objective_function, x0)
+        # Passing a Report class to the optimizer allows us to retrieve additional info
+        ens_res: dict[str, Any] = dict()
+        report = pye.Report(resultIn=ens_res, disableOutput=True)
+        best_x = optimizer.optimize(objective_function, x0, report)
 
         res = InternalOptimizeResult(
-            x=raw,  # only best x is available
-            fun=problem.fun(raw),  # best f(x) value is not available
+            x=best_x,
+            fun=ens_res["objective_value"],
+            n_iterations=ens_res["iterations"],
+            n_fun_evals=ens_res["evaluate_calls"],
+            n_jac_evals=ens_res["gradient_calls"],
         )
 
         return res
