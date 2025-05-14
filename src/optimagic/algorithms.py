@@ -38,6 +38,7 @@ from optimagic.optimizers.nlopt_optimizers import (
     NloptVAR,
 )
 from optimagic.optimizers.pounders import Pounders
+from optimagic.optimizers.pyensmallen_optimizers import EnsmallenLBFGS
 from optimagic.optimizers.pygmo_optimizers import (
     PygmoBeeColony,
     PygmoCmaes,
@@ -907,6 +908,7 @@ class GradientBasedLocalScalarAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
@@ -1974,6 +1976,7 @@ class GradientBasedLocalAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
     scipy_lbfgsb: Type[ScipyLBFGSB] = ScipyLBFGSB
@@ -2087,6 +2090,7 @@ class GradientBasedScalarAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
@@ -2709,6 +2713,7 @@ class LocalScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
@@ -3110,6 +3115,7 @@ class GradientBasedAlgorithms(AlgoSelection):
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
@@ -3306,6 +3312,7 @@ class LocalAlgorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_conjugate_gradient: Type[ScipyConjugateGradient] = ScipyConjugateGradient
@@ -3517,6 +3524,7 @@ class ScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3696,6 +3704,7 @@ class Algorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
+    ensmallen_lbfgs: Type[EnsmallenLBFGS] = EnsmallenLBFGS
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch

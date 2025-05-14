@@ -91,6 +91,12 @@ except ImportError:
 else:
     IS_NUMBA_INSTALLED = True
 
+try:
+    import pyensmallen  # noqa: F401
+except ImportError:
+    IS_PYENSMALLEN_INSTALLED = False
+else:
+    IS_PYENSMALLEN_INSTALLED = True
 
 try:
     import iminuit  # noqa: F401
