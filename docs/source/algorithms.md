@@ -3936,14 +3936,15 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
       10 * (number of parameters + 1).
 ```
 
-
 ## Optimizers from the Ensmallen C++ library
 
-optimagic supports some optimizers from the Ensmallen C++ library. Optimizers from this library are made available in Python through the pyensmallen python wrapper. To
-use optimizers from Ensmallen, you need to have
+optimagic supports some optimizers from the Ensmallen C++ library. Optimizers from this
+library are made available in Python through the pyensmallen python wrapper. To use
+optimizers from Ensmallen, you need to have
 [pyensmallen](https://pypi.org/project/pyensmallen-experimental/) installed (pip install
 pyensmallen_experimental).
-```{eval-rst}
+
+````{eval-rst}
 .. dropdown:: ensmallen_lbfgs
 
     .. code-block::
@@ -4014,7 +4015,7 @@ iminuit).
 
       - A value of 1 (the default) indicates that the optimizer will only run once, disabling the restart feature.  
       - Values greater than 1 specify the maximum number of restart attempts.  
-```
+````
 
 (nevergrad-algorithms)=
 
