@@ -3,11 +3,13 @@ import itertools
 from pathlib import Path
 from typing import Any
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
-from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from optimagic.config import PLOT_DEFAULTS, PLOTLY_TEMPLATE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
@@ -19,9 +21,10 @@ from optimagic.typing import Direction
 def criterion_plot(
     results,
     names=None,
+    backend="plotly",
     max_evaluations=None,
-    template=PLOTLY_TEMPLATE,
-    palette=PLOTLY_PALETTE,
+    template=None,
+    palette=None,
     stack_multistart=False,
     monotone=False,
     show_exploration=False,
@@ -33,6 +36,7 @@ def criterion_plot(
             dict of) optimization results with collected history. If dict, then the
             key is used as the name in a legend.
         names (Union[List[str], str]): Names corresponding to res or entries in res.
+        backend (str): The backend to use for plotting. Default is "plotly".
         max_evaluations (int): Clip the criterion history after that many entries.
         template (str): The template for the figure. Default is "plotly_white".
         palette (Union[List[str], str]): The coloring palette for traces. Default is
@@ -46,7 +50,7 @@ def criterion_plot(
             optimization are visualized. Default is False.
 
     Returns:
-        plotly.graph_objs._figure.Figure: The figure.
+        Figure object returned by the chosen backend.
 
     """
     # ==================================================================================
@@ -55,6 +59,13 @@ def criterion_plot(
 
     results = _harmonize_inputs_to_dict(results, names)
 
+    if template is None:
+        template = PLOT_DEFAULTS[backend]["template"]
+    if palette is None:
+        palette = PLOT_DEFAULTS[backend]["palette"]
+
+    if isinstance(palette, mpl.colors.Colormap):
+        palette = [palette(i) for i in range(palette.N)]
     if not isinstance(palette, list):
         palette = [palette]
     palette = itertools.cycle(palette)
@@ -87,7 +98,7 @@ def criterion_plot(
     # Create figure
     # ==================================================================================
 
-    fig = go.Figure()
+    fig, plot_func, label_func = _get_plot_backend(backend)
 
     plot_multistart = (
         len(data) == 1 and data[0]["is_multistart"] and not stack_multistart
@@ -102,21 +113,20 @@ def criterion_plot(
             "showlegend": False,
         }
 
-        for i, local_history in enumerate(data[0]["local_histories"]):
+        for local_history in data[0]["local_histories"]:
             history = getattr(local_history, fun_or_monotone_fun)
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
 
-            trace = go.Scatter(
+            plot_func(
+                fig,
                 x=np.arange(len(history)),
                 y=history,
-                mode="lines",
-                name=str(i),
-                line_color="#bab0ac",
-                **scatter_kws,
+                name=None,
+                color="#bab0ac",
+                plotly_scatter_kws=scatter_kws,
             )
-            fig.add_trace(trace)
 
     # ==================================================================================
     # Plot main optimization objects
@@ -138,31 +148,25 @@ def criterion_plot(
         }
 
         _color = next(palette)
-        if not isinstance(_color, str):
-            msg = "highlight_palette needs to be a string or list of strings, but its "
-            f"entry is of type {type(_color)}."
-            raise TypeError(msg)
 
-        line_kws = {
-            "color": _color,
-        }
-
-        trace = go.Scatter(
+        plot_func(
+            fig,
             x=np.arange(len(history)),
             y=history,
-            mode="lines",
             name="best result" if plot_multistart else _data["name"],
-            line=line_kws,
-            **scatter_kws,
+            color=_color,
+            plotly_scatter_kws=scatter_kws,
         )
-        fig.add_trace(trace)
 
-    fig.update_layout(
+    label_func(
+        fig,
         template=template,
-        xaxis_title_text="No. of criterion evaluations",
-        yaxis_title_text="Criterion value",
-        legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+        xlabel="No. of criterion evaluations",
+        ylabel="Criterion value",
+        plotly_legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+        matplotlib_legend={"loc": "upper right"},
     )
+
     return fig
 
 
@@ -457,3 +461,54 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
         task=len(stacked["criterion"]) * [None],
         batches=list(range(len(stacked["criterion"]))),
     )
+
+
+def _get_plot_backend(backend):
+    backends = {
+        "plotly": (
+            go.Figure(),
+            _plot_plotly,
+            _label_plotly,
+        ),
+        "matplotlib": (
+            plt.subplots()[1],
+            _plot_matplotlib,
+            _label_matplotlib,
+        ),
+    }
+
+    if backend not in backends:
+        msg = (
+            f"Backend '{backend}' is not supported. "
+            f"Supported backends are: {', '.join(backends.keys())}."
+        )
+        raise ValueError(msg)
+
+    return backends[backend]
+
+
+def _plot_plotly(fig, *, x, y, name, color, plotly_scatter_kws, **kwargs):
+    trace = go.Scatter(
+        x=x, y=y, mode="lines", name=name, line_color=color, **plotly_scatter_kws
+    )
+    fig.add_trace(trace)
+    return fig
+
+
+def _label_plotly(fig, *, template, xlabel, ylabel, plotly_legend, **kwargs):
+    fig.update_layout(
+        template=template,
+        xaxis_title_text=xlabel,
+        yaxis_title_text=ylabel,
+        legend=plotly_legend,
+    )
+
+
+def _plot_matplotlib(ax, *, x, y, name, color, **kwargs):
+    ax.plot(x, y, label=name, color=color)
+    return ax
+
+
+def _label_matplotlib(ax, *, xlabel, ylabel, matplotlib_legend, **kwargs):
+    ax.set(xlabel=xlabel, ylabel=ylabel)
+    ax.legend(**matplotlib_legend)
