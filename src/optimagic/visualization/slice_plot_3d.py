@@ -222,6 +222,7 @@ def slice_plot_3d(
     )
 
     plots = {}
+    plot_map = {}  # type: ignore
     if projection.is_univariate:
         cols = make_subplot_kwargs.get("cols")
         for idx, param_pos in enumerate(selected):
@@ -293,7 +294,7 @@ def slice_plot_3d(
                     elif i == j and single_plot:
                         subplot_projection = lower_projection
                     if subplot_projection is not None:
-                        fig = plot_multivariate(
+                        fig, plot_map = plot_multivariate(
                             x_pos,
                             y_pos,
                             params_data,
@@ -308,6 +309,7 @@ def slice_plot_3d(
                             plot_kwargs,
                             layout_kwargs,
                             subplot_projection,
+                            plot_map,
                         )
                     else:
                         fig = go.Figure()
@@ -455,7 +457,8 @@ def plot_multivariate(
     plot_kwargs: Any,
     layout_kwargs: Any,
     projection: Any,
-) -> go.Figure:
+    plot_map: Any,
+) -> Any:
     """Plot a 3D surface or 2D contour showing function value over two parameters.
 
     Evaluates the function on a meshgrid over two parameters and visualizes the
@@ -466,19 +469,32 @@ def plot_multivariate(
     x_name = internal_params.names[x_pos]
     y_name = internal_params.names[y_pos]
     param_names = [x_name, y_name]
-    evaluation_points = generate_evaluation_points(
-        params_data,
-        internal_params,
-        converter,
-        param_names,
-        grid_univariate,
-        projection,
-    )
 
-    # Line plot points
-    x, y = np.meshgrid(params_data[x_name], params_data[y_name])
-    z = evaluate_function_values(evaluation_points, func, batch_evaluator, n_cores)
-    z = np.reshape(z, (n_gridpoints, n_gridpoints))  # type: ignore[assignment]
+    # Keys are sorted to avoid duplicates
+    key = tuple(sorted(param_names))
+    if key not in plot_map.keys():
+        evaluation_points = generate_evaluation_points(
+            params_data,
+            internal_params,
+            converter,
+            param_names,
+            grid_univariate,
+            projection,
+        )
+
+        # Line plot points
+        x, y = np.meshgrid(params_data[x_name], params_data[y_name])
+        z = evaluate_function_values(evaluation_points, func, batch_evaluator, n_cores)
+        z = np.reshape(z, (n_gridpoints, n_gridpoints))  # type: ignore[assignment]
+
+        plot_map[key] = {"x": x.copy(), "y": y.copy(), "z": z.copy()}
+    else:
+        # Reuse plot data by accessing the symmetric counterpart from the cache (dict).
+        # When visualizing the lower triangle of the grid (i.e., swapped axis order),
+        # transpose the values (x, y, z) and swap X and Y to maintain correct alignment.
+        x = plot_map[key]["y"].T
+        y = plot_map[key]["x"].T
+        z = plot_map[key]["z"].T
 
     # Scatter plot point
     scatter_point = {
@@ -488,9 +504,15 @@ def plot_multivariate(
     }
 
     if projection.is_surface:
-        return plot_surface(x, y, z, scatter_point, plot_kwargs, layout_kwargs)
+        return (
+            plot_surface(x, y, z, scatter_point, plot_kwargs, layout_kwargs),
+            plot_map,
+        )
     else:
-        return plot_contour(x, y, z, scatter_point, plot_kwargs, layout_kwargs)
+        return (
+            plot_contour(x, y, z, scatter_point, plot_kwargs, layout_kwargs),
+            plot_map,
+        )
 
 
 def plot_line(
@@ -773,7 +795,7 @@ def _get_subplot_spec(
 
 
 def evaluate_plot_kwargs(plot_kwargs: dict[str, Any] | None) -> dict[str, Any]:
-    # Set default styling for plots if not provided by user.
+    # Set default styling for plots if not provided by the user.
     if plot_kwargs is None:
         plot_kwargs = {}
 
