@@ -222,7 +222,7 @@ def slice_plot_3d(
     )
 
     plots = {}
-    plot_map = {}  # type: ignore
+    plot_data_cache = {}  # type: ignore
     if projection.is_univariate:
         cols = make_subplot_kwargs.get("cols")
         for idx, param_pos in enumerate(selected):
@@ -294,7 +294,7 @@ def slice_plot_3d(
                     elif i == j and single_plot:
                         subplot_projection = lower_projection
                     if subplot_projection is not None:
-                        fig, plot_map = plot_multivariate(
+                        fig, plot_data_cache = plot_multivariate(
                             x_pos,
                             y_pos,
                             params_data,
@@ -309,7 +309,7 @@ def slice_plot_3d(
                             plot_kwargs,
                             layout_kwargs,
                             subplot_projection,
-                            plot_map,
+                            plot_data_cache,
                         )
                     else:
                         fig = go.Figure()
@@ -457,7 +457,7 @@ def plot_multivariate(
     plot_kwargs: Any,
     layout_kwargs: Any,
     projection: Any,
-    plot_map: Any,
+    plot_data_cache: Any,
 ) -> Any:
     """Plot a 3D surface or 2D contour showing function value over two parameters.
 
@@ -472,7 +472,7 @@ def plot_multivariate(
 
     # Keys are sorted to avoid duplicates
     key = tuple(sorted(param_names))
-    if key not in plot_map.keys():
+    if key not in plot_data_cache.keys():
         evaluation_points = generate_evaluation_points(
             params_data,
             internal_params,
@@ -487,14 +487,14 @@ def plot_multivariate(
         z = evaluate_function_values(evaluation_points, func, batch_evaluator, n_cores)
         z = np.reshape(z, (n_gridpoints, n_gridpoints))  # type: ignore[assignment]
 
-        plot_map[key] = {"x": x.copy(), "y": y.copy(), "z": z.copy()}
+        plot_data_cache[key] = {"x": x.copy(), "y": y.copy(), "z": z.copy()}
     else:
         # Reuse plot data by accessing the symmetric counterpart from the cache (dict).
         # When visualizing the lower triangle of the grid (i.e., swapped axis order),
         # transpose the values (x, y, z) and swap X and Y to maintain correct alignment.
-        x = plot_map[key]["y"].T
-        y = plot_map[key]["x"].T
-        z = plot_map[key]["z"].T
+        x = plot_data_cache[key]["y"].T
+        y = plot_data_cache[key]["x"].T
+        z = plot_data_cache[key]["z"].T
 
     # Scatter plot point
     scatter_point = {
@@ -506,12 +506,12 @@ def plot_multivariate(
     if projection.is_surface:
         return (
             plot_surface(x, y, z, scatter_point, plot_kwargs, layout_kwargs),
-            plot_map,
+            plot_data_cache,
         )
     else:
         return (
             plot_contour(x, y, z, scatter_point, plot_kwargs, layout_kwargs),
-            plot_map,
+            plot_data_cache,
         )
 
 
