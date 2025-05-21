@@ -1,5 +1,6 @@
 import inspect
 import itertools
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -59,16 +60,7 @@ def criterion_plot(
 
     results = _harmonize_inputs_to_dict(results, names)
 
-    if template is None:
-        template = PLOT_DEFAULTS[backend]["template"]
-    if palette is None:
-        palette = PLOT_DEFAULTS[backend]["palette"]
-
-    if isinstance(palette, mpl.colors.Colormap):
-        palette = [palette(i) for i in range(palette.N)]
-    if not isinstance(palette, list):
-        palette = [palette]
-    palette = itertools.cycle(palette)
+    template, palette = _get_template_and_palette(backend, template, palette)
 
     fun_or_monotone_fun = "monotone_fun" if monotone else "fun"
 
@@ -98,7 +90,16 @@ def criterion_plot(
     # Create figure
     # ==================================================================================
 
-    fig, plot_func, label_func = _get_plot_backend(backend)
+    plot_config = PlotConfig(
+        template=template,
+        xlabel="No. of criterion evaluations",
+        ylabel="Criterion value",
+        plotly_legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+        matplotlib_legend={"loc": "upper right"},
+    )
+
+    _backend_wrapper = _get_plot_backend(backend)
+    backend = _backend_wrapper(plot_config)
 
     plot_multistart = (
         len(data) == 1 and data[0]["is_multistart"] and not stack_multistart
@@ -119,8 +120,7 @@ def criterion_plot(
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
 
-            plot_func(
-                fig,
+            backend.plot(
                 x=np.arange(len(history)),
                 y=history,
                 name=None,
@@ -149,8 +149,7 @@ def criterion_plot(
 
         _color = next(palette)
 
-        plot_func(
-            fig,
+        backend.plot(
             x=np.arange(len(history)),
             y=history,
             name="best result" if plot_multistart else _data["name"],
@@ -158,16 +157,9 @@ def criterion_plot(
             plotly_scatter_kws=scatter_kws,
         )
 
-    label_func(
-        fig,
-        template=template,
-        xlabel="No. of criterion evaluations",
-        ylabel="Criterion value",
-        plotly_legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
-        matplotlib_legend={"loc": "upper right"},
-    )
+    backend.post_plot()
 
-    return fig
+    return backend.return_fig()
 
 
 def _harmonize_inputs_to_dict(results, names):
@@ -463,19 +455,35 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
     )
 
 
+def _get_template(backend, template):
+    if template is None:
+        template = PLOT_DEFAULTS[backend]["template"]
+
+    return template
+
+
+def _get_palette(backend, palette):
+    if palette is None:
+        palette = PLOT_DEFAULTS[backend]["palette"]
+
+    if isinstance(palette, mpl.colors.Colormap):
+        palette = [palette(i) for i in range(palette.N)]
+    if not isinstance(palette, list):
+        palette = [palette]
+    palette = itertools.cycle(palette)
+
+    return palette
+
+
+def _get_template_and_palette(backend, template, palette):
+    template = _get_template(backend, template)
+    palette = _get_palette(backend, palette)
+
+    return template, palette
+
+
 def _get_plot_backend(backend):
-    backends = {
-        "plotly": (
-            go.Figure(),
-            _plot_plotly,
-            _label_plotly,
-        ),
-        "matplotlib": (
-            plt.subplots()[1],
-            _plot_matplotlib,
-            _label_matplotlib,
-        ),
-    }
+    backends = {"plotly": PlotlyBackend, "matplotlib": MatplotlibBackend}
 
     if backend not in backends:
         msg = (
@@ -487,28 +495,72 @@ def _get_plot_backend(backend):
     return backends[backend]
 
 
-def _plot_plotly(fig, *, x, y, name, color, plotly_scatter_kws, **kwargs):
-    trace = go.Scatter(
-        x=x, y=y, mode="lines", name=name, line_color=color, **plotly_scatter_kws
-    )
-    fig.add_trace(trace)
-    return fig
+@dataclass(frozen=True)
+class PlotConfig:
+    template: str
+    xlabel: str
+    ylabel: str
+    plotly_legend: dict[str, Any]
+    matplotlib_legend: dict[str, Any]
 
 
-def _label_plotly(fig, *, template, xlabel, ylabel, plotly_legend, **kwargs):
-    fig.update_layout(
-        template=template,
-        xaxis_title_text=xlabel,
-        yaxis_title_text=ylabel,
-        legend=plotly_legend,
-    )
+class BackendWrapper:
+    def __init__(self, plot_config: PlotConfig):
+        self.plot_config = plot_config
+
+    def create_figure(self):
+        raise NotImplementedError
+
+    def plot(self, **kwargs):
+        raise NotImplementedError
+
+    def post_plot(self):
+        raise NotImplementedError
 
 
-def _plot_matplotlib(ax, *, x, y, name, color, **kwargs):
-    ax.plot(x, y, label=name, color=color)
-    return ax
+class PlotlyBackend(BackendWrapper):
+    def __init__(self, plot_config: PlotConfig):
+        super().__init__(plot_config)
+        self.fig = self.create_figure()
+
+    def create_figure(self):
+        fig = go.Figure()
+        return fig
+
+    def plot(self, *, x, y, name, color, plotly_scatter_kws, **kwargs):
+        trace = go.Scatter(
+            x=x, y=y, mode="lines", name=name, line_color=color, **plotly_scatter_kws
+        )
+        self.fig.add_trace(trace)
+
+    def post_plot(self):
+        self.fig.update_layout(
+            template=self.plot_config.template,
+            xaxis_title_text=self.plot_config.xlabel,
+            yaxis_title_text=self.plot_config.ylabel,
+            legend=self.plot_config.plotly_legend,
+        )
+
+    def return_fig(self):
+        return self.fig
 
 
-def _label_matplotlib(ax, *, xlabel, ylabel, matplotlib_legend, **kwargs):
-    ax.set(xlabel=xlabel, ylabel=ylabel)
-    ax.legend(**matplotlib_legend)
+class MatplotlibBackend(BackendWrapper):
+    def __init__(self, plot_config: PlotConfig):
+        super().__init__(plot_config)
+        self.fig, self.ax = self.create_figure()
+
+    def create_figure(self):
+        plt.style.use(self.plot_config.template)
+        fig, ax = plt.subplots()
+        return fig, ax
+
+    def plot(self, *, x, y, name, color, **kwargs):
+        self.ax.plot(x, y, label=name, color=color)
+
+    def post_plot(self):
+        self.ax.set(xlabel=self.plot_config.xlabel, ylabel=self.plot_config.ylabel)
+        self.ax.legend(**self.plot_config.matplotlib_legend)
+
+    def return_fig(self):
+        return self.ax
