@@ -21,8 +21,9 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 
+# use pyensmallen_experimental for testing purpose
 if IS_PYENSMALLEN_INSTALLED:
-    import pyensmallen as pye
+    import pyensmallen_experimental as pye
 
 MIN_LINE_SEARCH_STEPS = 1e-20
 """The minimum step of the line search."""

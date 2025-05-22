@@ -92,7 +92,7 @@ else:
     IS_NUMBA_INSTALLED = True
 
 try:
-    import pyensmallen  # noqa: F401
+    import pyensmallen_experimental  # noqa: F401
 except ImportError:
     IS_PYENSMALLEN_INSTALLED = False
 else:
