@@ -2,7 +2,6 @@ import warnings
 from copy import deepcopy
 from enum import Enum
 from functools import partial
-from typing import Any, Union
 
 import numpy as np
 import plotly.express as px
@@ -26,24 +25,24 @@ from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 
 
-def slice_plot_3d(
-    func: Any,
-    params: Any,
-    bounds: Any = None,
-    func_kwargs: None | dict[Any, Any] = None,
-    selector: Any = None,
+def slice_plot_3d(  # type: ignore[no-untyped-def]
+    func,
+    params,
+    bounds=None,
+    func_kwargs=None,
+    selector=None,
     n_gridpoints: int = 20,
-    projection: Any = "univariate",
-    make_subplot_kwargs: Any = None,
-    layout_kwargs: Any = None,
-    plot_kwargs: Any = None,
+    projection="univariate",
+    make_subplot_kwargs=None,
+    layout_kwargs=None,
+    plot_kwargs=None,
     param_names: dict[str, str] | None = None,
     expand_yrange: float = 0.02,
     batch_evaluator: str = "joblib",
     n_cores: int = DEFAULT_N_CORES,
     return_dict: bool = False,
-    lower_bounds: Any = None,
-    upper_bounds: Any = None,
+    lower_bounds=None,
+    upper_bounds=None,
 ) -> go.Figure | dict[tuple[int, int], go.Figure]:
     """Generate interactive slice, contour or surface plots of a function over its
     parameters.
@@ -325,8 +324,8 @@ def slice_plot_3d(
 
 
 # Helper functions
-def evaluate_function_values(
-    points: Any, func: Any, batch_evaluator: Any, n_cores: int
+def evaluate_function_values(  # type: ignore[no-untyped-def]
+    points, func, batch_evaluator, n_cores: int
 ) -> list[float]:
     """Evaluate a function on a list of parameter points using a batch evaluator.
 
@@ -335,7 +334,7 @@ def evaluate_function_values(
 
     """
     batch_evaluator = process_batch_evaluator(batch_evaluator)
-    results: Any = batch_evaluator(
+    results = batch_evaluator(
         func=func,
         arguments=points,
         error_handling="continue",
@@ -350,14 +349,14 @@ def evaluate_function_values(
     return results
 
 
-def generate_evaluation_points(
+def generate_evaluation_points(  # type: ignore[no-untyped-def]
     params_data: dict[str, NDArray[np.float64]],
-    internal: Any,
-    converter: Any,
-    params: Any,
+    internal,
+    converter,
+    params,
     grid_univariate: bool,
-    projection: Any,
-) -> Any:
+    projection,
+):
     """Generate parameter sets for evaluation based on the projection type.
 
     Creates a list of parameter vectors by sweeping over one or two parameters, used to
@@ -391,21 +390,21 @@ def generate_evaluation_points(
 
 
 # Plot Utils
-def plot_univariate(
+def plot_univariate(  # type: ignore[no-untyped-def]
     param_pos: int,
     display_name: str,
     params_data: dict[str, NDArray[np.float64]],
     grid_univariate: bool,
-    internal_params: Any,
-    converter: Any,
-    func: Any,
-    func_eval: Any,
-    batch_evaluator: Union[str, Any],
+    internal_params,
+    converter,
+    func,
+    func_eval,
+    batch_evaluator,
     n_cores: int,
-    plot_kwargs: Any,
-    layout_kwargs: Any,
-    expand_yrange: float,
-    projection: Any,
+    plot_kwargs,
+    layout_kwargs,
+    expand_yrange,
+    projection,
 ) -> go.Figure:
     """Create a line plot for a single parameter's slice of the function.
 
@@ -442,23 +441,23 @@ def plot_univariate(
     return fig
 
 
-def plot_multivariate(
+def plot_multivariate(  # type: ignore[no-untyped-def]
     x_pos: int,
     y_pos: int,
     params_data: dict[str, NDArray[np.float64]],
     grid_univariate: bool,
-    internal_params: Any,
-    converter: Any,
+    internal_params,
+    converter,
     n_gridpoints: int,
-    func: Any,
-    func_eval: Any,
-    batch_evaluator: Any,
+    func,
+    func_eval,
+    batch_evaluator,
     n_cores: int,
-    plot_kwargs: Any,
-    layout_kwargs: Any,
-    projection: Any,
-    plot_data_cache: Any,
-) -> Any:
+    plot_kwargs,
+    layout_kwargs,
+    projection,
+    plot_data_cache,
+):
     """Plot a 3D surface or 2D contour showing function value over two parameters.
 
     Evaluates the function on a meshgrid over two parameters and visualizes the
@@ -515,14 +514,14 @@ def plot_multivariate(
         )
 
 
-def plot_line(
+def plot_line(  # type: ignore[no-untyped-def]
     x: list[float],
     y: list[float],
     display_name: str,
     y_range: list[float],
-    scatter_point: Any,
-    plot_kwargs: Any,
-    layout_kwargs: Any,
+    scatter_point,
+    plot_kwargs,
+    layout_kwargs,
     grid_univariate: bool,
 ) -> go.Figure:
     """Generate a 2D line plot with an overlayed scatter point.
@@ -553,14 +552,14 @@ def plot_line(
     return fig
 
 
-def plot_surface(
+def plot_surface(  # type: ignore[no-untyped-def]
     x: NDArray[np.float64],
     y: NDArray[np.float64],
     z: list[float],
-    scatter_point: Any,
-    plot_kwargs: Any,
-    layout_kwargs: Any,
-) -> go.Figure:
+    scatter_point,
+    plot_kwargs,
+    layout_kwargs,
+):
     """Create a 3D surface plot of the function over two parameters.
 
     Plots a 3D surface using Plotly and adds a scatter point for the initial parameter.
@@ -581,14 +580,14 @@ def plot_surface(
     return fig
 
 
-def plot_contour(
+def plot_contour(  # type: ignore[no-untyped-def]
     x: NDArray[np.float64],
     y: NDArray[np.float64],
     z: list[float],
-    scatter_point: Any,
-    plot_kwargs: Any,
-    layout_kwargs: Any,
-) -> go.Figure:
+    scatter_point,
+    plot_kwargs,
+    layout_kwargs,
+):
     """Create a 2D contour plot for function values over a parameter grid.
 
     Uses Plotly to draw a filled contour plot and plots the initial evaluation point.
@@ -616,7 +615,7 @@ class ProjectionConfig(str, Enum):
     SURFACE = "surface"
 
     @classmethod
-    def validate(cls, value: Any) -> Any:
+    def validate(cls, value):  # type: ignore[no-untyped-def]
         if value is None:
             return None
         if isinstance(value, str):
@@ -640,7 +639,7 @@ class ProjectionConfig(str, Enum):
 
 
 class Projection:
-    def __init__(self, value: Any):
+    def __init__(self, value):  # type: ignore[no-untyped-def]
         self._raw = value
         self._univariate = False
         self.lower = None
@@ -648,7 +647,7 @@ class Projection:
 
         self._parse(value)
 
-    def _parse(self, value: Any) -> Any:
+    def _parse(self, value):  # type: ignore[no-untyped-def]
         if isinstance(value, str):
             value = value.lower()
             if value == ProjectionConfig.UNIVARIATE:
@@ -675,7 +674,7 @@ class Projection:
     def is_dict(self) -> bool:
         return not self._univariate
 
-    def get_config(self) -> Any:
+    def get_config(self):  # type: ignore[no-untyped-def]
         if self._univariate:
             return ProjectionConfig.UNIVARIATE
         return {"lower": self.lower, "upper": self.upper}
@@ -688,10 +687,10 @@ def compute_yaxis_range(y: list[float], expand_yrange: float) -> list[float]:
     return [y_min - expand_yrange * y_range, y_max + expand_yrange * y_range]
 
 
-def combine_plots(
+def combine_plots(  # type: ignore[no-untyped-def]
     plots: dict[tuple[int, int], go.Figure],
-    make_subplot_kwargs: dict[str, Any],
-    layout_kwargs: dict[str, Any] | None,
+    make_subplot_kwargs,
+    layout_kwargs,
     expand_yrange: float,
 ) -> go.Figure:
     """Combine individual Plotly figures into a single subplot layout.
@@ -770,8 +769,8 @@ def combine_plots(
     return fig
 
 
-def _get_subplot_spec(
-    i: int, j: int, projection: Any, n_selected: int
+def _get_subplot_spec(  # type: ignore[no-untyped-def]
+    i: int, j: int, projection, n_selected: int
 ) -> dict[str | None, str | None]:
     # Determine subplot spec type (xy, scene, contour) for a given subplot position.
     if i == j and n_selected != 2:
@@ -794,7 +793,7 @@ def _get_subplot_spec(
     return {}
 
 
-def evaluate_plot_kwargs(plot_kwargs: dict[str, Any] | None) -> dict[str, Any]:
+def evaluate_plot_kwargs(plot_kwargs):  # type: ignore[no-untyped-def]
     # Set default styling for plots if not provided by the user.
     if plot_kwargs is None:
         plot_kwargs = {}
@@ -824,12 +823,12 @@ def evaluate_plot_kwargs(plot_kwargs: dict[str, Any] | None) -> dict[str, Any]:
     return plot_kwargs_defaults
 
 
-def evaluate_make_subplot_kwargs(
-    make_subplot_kwargs: dict[str, Any] | None,
+def evaluate_make_subplot_kwargs(  # type: ignore[no-untyped-def]
+    make_subplot_kwargs,
     n_selected: int,
-    projection: Any,
+    projection,
     titles: dict[str, str],
-) -> dict[str, Any]:
+):
     # Set default parameters for make_subplots() if not provided by user.
     if make_subplot_kwargs is None:
         make_subplot_kwargs = {}
@@ -878,11 +877,11 @@ def evaluate_make_subplot_kwargs(
 
 
 # mypy: disable-error-code="dict-item"
-def evaluate_layout_kwargs(
-    layout_kwargs: dict[str, Any] | None,
-    projection: Any,
-    subplot_config: dict[str, Any],
-) -> dict[str, Any]:
+def evaluate_layout_kwargs(  # type: ignore[no-untyped-def]
+    layout_kwargs,
+    projection,
+    subplot_config,
+):
     # Set default parameters for update_layout() if not provided by user.
 
     # Default camera view
