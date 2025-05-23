@@ -62,7 +62,7 @@ repos:
         exclude: docs/
       - id: check-ast
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.35.1
+    rev: v1.37.1
     hooks:
       - id: yamllint
         exclude: tests/optimagic/optimizers/_pounders/fixtures
@@ -79,7 +79,7 @@ repos:
           - --blank
         exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.2
+    rev: v0.11.8
     hooks:
       # Run the linter.
       - id: ruff
@@ -96,7 +96,7 @@ repos:
           - pyi
           - jupyter
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.21
+    rev: 0.7.22
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -108,7 +108,7 @@ repos:
           - '88'
         files: (README\.md)
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.21
+    rev: 0.7.22
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -131,7 +131,7 @@ repos:
         args:
           - --drop-empty-cells
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
+    rev: v1.15.0
     hooks:
       - id: mypy
         files: src|tests
