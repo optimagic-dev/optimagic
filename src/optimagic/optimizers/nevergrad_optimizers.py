@@ -114,7 +114,7 @@ class NevergradPSO(Algorithm):
     name="nevergrad_oneplusone",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_NEVERGRAD_INSTALLED,
-    is_global=False,
+    is_global=True,
     needs_jac=False,
     needs_hess=False,
     supports_parallelism=True,
@@ -151,7 +151,7 @@ class NevergradOnePlusOne(Algorithm):
         "smalllognormal",
         "biglognormal",
         "hugelognormal",
-    ] = "cauchy"
+    ] = "gaussian"
     annealing: Literal[
         "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
     ] = "none"
@@ -184,7 +184,7 @@ class NevergradOnePlusOne(Algorithm):
 
         instrum = ng.p.Array(
             init=x0, lower=problem.bounds.lower, upper=problem.bounds.upper
-        ).set_mutation(sigma=1.0 + 1e-7)
+        )
         instrum.specify_tabu_length(tabu_length=self.tabu_length)
         instrum = ng.p.Instrumentation(instrum)
 
