@@ -291,6 +291,7 @@ module = [
     "optimagic.shared.process_user_function",
 
     "optimagic.visualization",
+    "optimagic.visualization.backends",
     "optimagic.visualization.convergence_plot",
     "optimagic.visualization.deviation_plot",
     "optimagic.visualization.history_plots",

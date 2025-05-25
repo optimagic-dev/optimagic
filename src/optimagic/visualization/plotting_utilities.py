@@ -1,11 +1,12 @@
 import itertools
 from copy import deepcopy
 
+import matplotlib as mpl
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from optimagic.config import PLOTLY_TEMPLATE
+from optimagic.config import PLOT_DEFAULTS, PLOTLY_TEMPLATE
 
 
 def combine_plots(
@@ -328,3 +329,23 @@ def get_layout_kwargs(layout_kwargs, legend_kwargs, title_kwargs, template, show
     if layout_kwargs:
         default_kwargs.update(layout_kwargs)
     return default_kwargs
+
+
+def get_template(backend, template):
+    if template is None:
+        template = PLOT_DEFAULTS[backend]["template"]
+
+    return template
+
+
+def get_palette(backend, palette):
+    if palette is None:
+        palette = PLOT_DEFAULTS[backend]["palette"]
+
+    if isinstance(palette, mpl.colors.Colormap):
+        palette = [palette(i) for i in range(palette.N)]
+    if not isinstance(palette, list):
+        palette = [palette]
+    palette = itertools.cycle(palette)
+
+    return palette
