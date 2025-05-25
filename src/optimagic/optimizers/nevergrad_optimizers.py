@@ -159,12 +159,12 @@ class NevergradOnePlusOne(Algorithm):
     super_radii: bool = False
     smoother: bool = False
     roulette_size: int = 64
-    antismooth: int = 10
+    antismooth: int = 4
     crossover: bool = False
     crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] = (
         "none"
     )
-    tabu_length: int = 10000
+    tabu_length: int = 1000
     rotation: bool = False
     seed: int | None = None
 
@@ -176,8 +176,8 @@ class NevergradOnePlusOne(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(
-                "The nevergrad_pso optimizer requires the 'nevergrad' package to be "
-                "installed. You can install it with `pip install nevergrad`. "
+                "The nevergrad_oneplusone optimizer requires the 'nevergrad' package "
+                "to be installed. You can install it with `pip install nevergrad`. "
                 "Visit https://facebookresearch.github.io/nevergrad/getting_started.html"
                 " for more detailed installation instructions."
             )

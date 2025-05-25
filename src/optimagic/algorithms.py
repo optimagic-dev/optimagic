@@ -172,6 +172,7 @@ class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelect
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -207,7 +208,6 @@ class BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     tranquilo: Type[Tranquilo] = Tranquilo
 
 
@@ -367,6 +367,7 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -407,6 +408,7 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -463,6 +465,7 @@ class GlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -494,7 +497,6 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
@@ -529,7 +531,6 @@ class BoundedGradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -556,7 +557,6 @@ class GradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeLocalParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     tranquilo: Type[Tranquilo] = Tranquilo
 
     @property
@@ -710,6 +710,7 @@ class BoundedGlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -770,7 +771,6 @@ class BoundedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedLocalParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     tranquilo: Type[Tranquilo] = Tranquilo
 
     @property
@@ -1038,6 +1038,7 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -1102,6 +1103,7 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -1146,6 +1148,7 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -1173,7 +1176,6 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
 class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
@@ -1223,7 +1225,6 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 class GradientFreeLocalScalarAlgorithms(AlgoSelection):
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
@@ -1269,7 +1270,6 @@ class GradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeLocalParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -1541,6 +1541,7 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -1590,6 +1591,7 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalParallelAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -1659,6 +1661,7 @@ class GlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -1710,7 +1713,6 @@ class BoundedLocalScalarAlgorithms(AlgoSelection):
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1771,7 +1773,6 @@ class BoundedLeastSquaresLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedLocalParallelAlgorithms(AlgoSelection):
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -1815,7 +1816,6 @@ class LocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LocalParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     tranquilo: Type[Tranquilo] = Tranquilo
 
     @property
@@ -2157,6 +2157,7 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -2206,7 +2207,6 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
@@ -2467,6 +2467,7 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -2549,6 +2550,7 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -2602,6 +2604,7 @@ class GlobalScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalParallelAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -2634,7 +2637,6 @@ class BoundedLocalAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -2718,7 +2720,6 @@ class LocalScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -2803,7 +2804,6 @@ class LikelihoodLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LocalParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -3256,6 +3256,7 @@ class GradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -3320,7 +3321,6 @@ class LocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
