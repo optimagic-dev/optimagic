@@ -1,5 +1,4 @@
 import inspect
-import itertools
 from pathlib import Path
 from typing import Any
 
@@ -7,21 +6,24 @@ import numpy as np
 import plotly.graph_objects as go
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
-from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from optimagic.config import PLOTLY_TEMPLATE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import Direction
+from optimagic.visualization.backends import BackendRegistry, PlotConfig
+from optimagic.visualization.plotting_utilities import get_palette, get_template
 
 
 def criterion_plot(
     results,
     names=None,
     max_evaluations=None,
-    template=PLOTLY_TEMPLATE,
-    palette=PLOTLY_PALETTE,
+    backend="plotly",
+    template=None,
+    palette=None,
     stack_multistart=False,
     monotone=False,
     show_exploration=False,
@@ -34,6 +36,7 @@ def criterion_plot(
             key is used as the name in a legend.
         names (Union[List[str], str]): Names corresponding to res or entries in res.
         max_evaluations (int): Clip the criterion history after that many entries.
+        backend (str): The backend to use for plotting. Default is "plotly".
         template (str): The template for the figure. Default is "plotly_white".
         palette (Union[List[str], str]): The coloring palette for traces. Default is
             "qualitative.Plotly".
@@ -46,7 +49,7 @@ def criterion_plot(
             optimization are visualized. Default is False.
 
     Returns:
-        plotly.graph_objs._figure.Figure: The figure.
+        Native figure object returned by the chosen backend.
 
     """
     # ==================================================================================
@@ -55,9 +58,8 @@ def criterion_plot(
 
     results = _harmonize_inputs_to_dict(results, names)
 
-    if not isinstance(palette, list):
-        palette = [palette]
-    palette = itertools.cycle(palette)
+    template = get_template(backend, template)
+    palette = get_palette(backend, palette)
 
     fun_or_monotone_fun = "monotone_fun" if monotone else "fun"
 
@@ -87,14 +89,21 @@ def criterion_plot(
     # Create figure
     # ==================================================================================
 
-    fig = go.Figure()
+    plot_config = PlotConfig(
+        template=template,
+        plotly_legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+        matplotlib_legend={"loc": "upper right"},
+    )
+
+    _backend_wrapper = BackendRegistry.get_backend_wrapper(backend)
+    fig = _backend_wrapper(plot_config)
+
+    # ==================================================================================
+    # Plot multistart paths
 
     plot_multistart = (
         len(data) == 1 and data[0]["is_multistart"] and not stack_multistart
     )
-
-    # ==================================================================================
-    # Plot multistart paths
 
     if plot_multistart:
         scatter_kws = {
@@ -102,21 +111,19 @@ def criterion_plot(
             "showlegend": False,
         }
 
-        for i, local_history in enumerate(data[0]["local_histories"]):
+        for local_history in data[0]["local_histories"]:
             history = getattr(local_history, fun_or_monotone_fun)
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
 
-            trace = go.Scatter(
+            fig.lineplot(
                 x=np.arange(len(history)),
                 y=history,
-                mode="lines",
-                name=str(i),
-                line_color="#bab0ac",
-                **scatter_kws,
+                name=None,
+                color="#bab0ac",
+                plotly_scatter_kws=scatter_kws,
             )
-            fig.add_trace(trace)
 
     # ==================================================================================
     # Plot main optimization objects
@@ -134,36 +141,23 @@ def criterion_plot(
 
         scatter_kws = {
             "connectgaps": True,
-            "showlegend": not plot_multistart,
+            "showlegend": True,
         }
 
-        _color = next(palette)
-        if not isinstance(_color, str):
-            msg = "highlight_palette needs to be a string or list of strings, but its "
-            f"entry is of type {type(_color)}."
-            raise TypeError(msg)
-
-        line_kws = {
-            "color": _color,
-        }
-
-        trace = go.Scatter(
+        fig.lineplot(
             x=np.arange(len(history)),
             y=history,
-            mode="lines",
             name="best result" if plot_multistart else _data["name"],
-            line=line_kws,
-            **scatter_kws,
+            color=next(palette),
+            plotly_scatter_kws=scatter_kws,
         )
-        fig.add_trace(trace)
 
-    fig.update_layout(
-        template=template,
-        xaxis_title_text="No. of criterion evaluations",
-        yaxis_title_text="Criterion value",
-        legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+    fig.post_plot(
+        xlabel="No. of criterion evaluations",
+        ylabel="Criterion value",
     )
-    return fig
+
+    return fig.return_obj()
 
 
 def _harmonize_inputs_to_dict(results, names):

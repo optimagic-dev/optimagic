@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import matplotlib as mpl
 import pandas as pd
 import plotly.express as px
 from packaging import version
@@ -9,6 +10,14 @@ OPTIMAGIC_ROOT = Path(__file__).parent
 
 PLOTLY_TEMPLATE = "simple_white"
 PLOTLY_PALETTE = px.colors.qualitative.Set2
+
+PLOT_DEFAULTS = {
+    "plotly": {"template": "simple_white", "palette": px.colors.qualitative.Set2},
+    "matplotlib": {
+        "template": "default",
+        "palette": mpl.colormaps["Set2"],
+    },
+}
 
 DEFAULT_N_CORES = 1
 
