@@ -15,7 +15,7 @@ from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.typing import AggregationLevel, PositiveInt
+from optimagic.typing import AggregationLevel, NonNegativeInt, PositiveInt
 
 if IS_NEVERGRAD_INSTALLED:
     import nevergrad as ng
@@ -155,16 +155,16 @@ class NevergradOnePlusOne(Algorithm):
     annealing: Literal[
         "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
     ] = "none"
-    sparse: bool | int = False
+    sparse: bool = False
     super_radii: bool = False
     smoother: bool = False
-    roulette_size: int = 64
-    antismooth: int = 4
+    roulette_size: PositiveInt = 64
+    antismooth: NonNegativeInt = 4
     crossover: bool = False
     crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] = (
         "none"
     )
-    tabu_length: int = 1000
+    tabu_length: NonNegativeInt = 1000
     rotation: bool = False
     seed: int | None = None
 

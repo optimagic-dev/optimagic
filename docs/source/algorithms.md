@@ -4057,7 +4057,7 @@ these optimizers, you need to have
     the one-fifth adaptation rule, going back to :cite:`Schumer1968`, discovered independently by :cite:`devroye1972` and :cite:`Rechenberg1973`.
 
     An One Plus One evolutionary algorithm iterates to find a set of parameters that
-    produce the best possible registration result. It does this by 
+    minimizes the loss function. It does this by 
     perturbing, or mutating, the parameters from the last iteration (the
     parent). If the new (child) parameters yield a better result, then 
     the child becomes the new parent whose parameters are perturbed, 
@@ -4067,6 +4067,7 @@ these optimizers, you need to have
     - **noise\_handling** (str or Tuple\[str, float] or None): Method for handling the noise. The name can be (Default: `None`).
       - `"random"`: A random point is reevaluated regularly using the one-fifth adaptation rule.
       - `"optimistic"`: The best optimistic point is reevaluated regularly, embracing optimism in the face of uncertainty.
+      - `"none"`: In this case, the algorithm assumes the function is deterministic.
       - A float coefficient can be provided to tune the regularity of these reevaluations (default is 0.05). Eg: with 0.05, each  evaluation has a 5% chance (i.e., 1 in 20) of being repeated (i.e., the same candidate solution is reevaluated to better estimate its performance).
       
     - **n_cores** (int): Number of cores to use.
