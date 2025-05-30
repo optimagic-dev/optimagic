@@ -85,17 +85,15 @@ def criterion_plot(
         data.append(_data)
 
     # ==================================================================================
-    # Generate multistart paths
+    # Collect multistart paths
 
-    multistart_lines = None
+    multistart_lines: list[LineData] = []
 
     plot_multistart = (
         len(data) == 1 and data[0]["is_multistart"] and not stack_multistart
     )
 
     if plot_multistart:
-        multistart_lines = []
-
         for i, local_history in enumerate(data[0]["local_histories"]):
             history = getattr(local_history, fun_or_monotone_fun)
 
@@ -107,14 +105,14 @@ def criterion_plot(
                 y=history,
                 color="#bab0ac",
                 name=str(i),
-                show_legend=False,
+                show_in_legend=False,
             )
             multistart_lines.append(line_data)
 
     # ==================================================================================
-    # Generate main optimization paths
+    # Collect main optimization paths
 
-    lines = []
+    lines: list[LineData] = []
 
     for _data in data:
         if stack_multistart and _data["stacked_local_histories"] is not None:
@@ -138,7 +136,7 @@ def criterion_plot(
             y=history,
             color=_color,
             name="best result" if plot_multistart else _data["name"],
-            show_legend=not plot_multistart,
+            show_in_legend=not plot_multistart,
         )
         lines.append(line_data)
 
@@ -152,45 +150,13 @@ def criterion_plot(
 
     plot_config = PlotConfig(
         template=template,
-        plotly_legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+        legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
     )
 
     # ==================================================================================
     # Generate the plotly figure
 
-    fig = go.Figure()
-
-    if plot_data.multistart_lines is not None:
-        for line_data in plot_data.multistart_lines:
-            trace = go.Scatter(
-                x=line_data.x,
-                y=line_data.y,
-                name=line_data.name,
-                mode="lines",
-                line_color=line_data.color,
-                showlegend=line_data.show_legend,
-                connectgaps=True,
-            )
-            fig.add_trace(trace)
-
-    for line_data in plot_data.lines:
-        trace = go.Scatter(
-            x=line_data.x,
-            y=line_data.y,
-            name=line_data.name,
-            mode="lines",
-            line_color=line_data.color,
-            showlegend=line_data.show_legend,
-            connectgaps=True,
-        )
-        fig.add_trace(trace)
-
-    fig.update_layout(
-        template=plot_config.template,
-        xaxis_title_text="No. of criterion evaluations",
-        yaxis_title_text="Criterion value",
-        legend=plot_config.plotly_legend,
-    )
+    fig = _plotly_criterion_plot(plot_data, plot_config)
     return fig
 
 
@@ -496,7 +462,7 @@ class LineData:
         y: The y-coordinates of the points.
         color: The color of the line. Default is None.
         name: The name of the line. Default is None.
-        show_legend: Whether to show the line in the legend. Default is True.
+        show_in_legend: Whether to show the line in the legend. Default is True.
 
     """
 
@@ -504,7 +470,7 @@ class LineData:
     y: np.ndarray
     color: str | None = None
     name: str | None = None
-    show_legend: bool = True
+    show_in_legend: bool = True
 
 
 @dataclass(frozen=True)
@@ -518,7 +484,7 @@ class CriterionPlotData:
     """
 
     lines: list[LineData]
-    multistart_lines: list[LineData] | None = None
+    multistart_lines: list[LineData]
 
 
 @dataclass(frozen=True)
@@ -527,9 +493,38 @@ class PlotConfig:
 
     Attributes:
         template: The template for the figure.
-        plotly_legend: The configuration for the plotly legend.
+        legend: Configuration for the legend.
 
     """
 
     template: str
-    plotly_legend: dict[str, Any]
+    legend: dict[str, Any]
+
+
+def _plotly_criterion_plot(
+    plot_data: CriterionPlotData, plot_config: PlotConfig
+) -> go.Figure:
+    """Create a plotly figure from the plot data and configuration."""
+
+    fig = go.Figure()
+
+    for line in plot_data.multistart_lines + plot_data.lines:
+        trace = go.Scatter(
+            x=line.x,
+            y=line.y,
+            name=line.name,
+            mode="lines",
+            line_color=line.color,
+            showlegend=line.show_in_legend,
+            connectgaps=True,
+        )
+        fig.add_trace(trace)
+
+    fig.update_layout(
+        template=plot_config.template,
+        xaxis_title_text="No. of criterion evaluations",
+        yaxis_title_text="Criterion value",
+        legend=plot_config.legend,
+    )
+
+    return fig
