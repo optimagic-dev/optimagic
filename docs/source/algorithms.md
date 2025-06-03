@@ -4049,6 +4049,8 @@ these optimizers, you need to have
 
         "nevergrad_cmaes"
 
+    Minimize a scalar function using the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) algorithm.
+    
     The Covariance Matrix Adaptation Evolution Strategy (CMA-ES) is a stochastic derivative-free numerical optimization algorithm for difficult (non-convex, ill-conditioned, multi-modal, rugged, noisy) optimization problems in continuous search spaces.
 
     The version available through nevergrad wraps an external implementation `pycma <https://github.com/CMA-ES/pycma>`_.
@@ -4057,8 +4059,6 @@ these optimizers, you need to have
     :cite:`Hansen2023`.
 
     The fast implementation relies on fcmaes which can be installed with `pip install fcmaes`.
-
-    **Optimizer Parameters:**
 
     - **scale** (float): Scale of the search.  
       - Default: `1.0`
