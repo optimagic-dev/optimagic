@@ -4060,46 +4060,116 @@ these optimizers, you need to have
 
     **Optimizer Parameters:**
 
-    - **scale** (float): Scale of the search.
+    - **scale** (float): Scale of the search.  
+      - Default: `1.0`
 
-    - **elitist** (bool): Whether to switch to elitist mode, i.e., `+` mode instead of `,` mode, where the best point in the population is always retained.
-    - **population_size** (Optional[int]): Population size. Should be
+    - **elitist** (bool): Whether to switch to elitist mode (μ,λ)-CMA-ES, where the best point in the population is always retained.  
+      - Default: `False`
 
-    .. math::
+    - **population_size** (Optional[int]): Population size. If None, it will be set to:
 
-        \text{population_size} = n \times \text{num_workers} \quad \text{for integer } n \geq 1
+      .. math::
+          \max\left(\text{num_workers}, 4 + \left\lfloor 3 \cdot \log(\text{dimension}) \right\rfloor\right)
 
-    Default is
+    - **diagonal** (bool): Use the diagonal version of CMA, which is more efficient for high-dimensional problems.  
+      - Default: `False`
 
-    .. math::
+    - **high_speed** (bool): Use a metamodel for recommendation to speed up optimization.  
+      - Default: `False`
 
-        \max\left( \text{num_workers},\ 4 + \left\lfloor 3 \cdot \log(\text{dimension}) \right\rfloor \right)
-
-    - **popsize_factor** (float): Factor used in the formula for computing the population size.  
-      - Default is `3.0`.
-
-    - **diagonal** (bool): Use the diagonal version of CMA, which is advised for high-dimensional problems.
-
-    - **high_speed** (bool): Use a metamodel for recommendation to speed up optimization.
-
-    - **use_fast_implementation** (bool): Use the fast CMA-ES implementation.  
+    - **fast_cmaes** (bool): Use the fast CMA-ES implementation.  
       - Cannot be used with `diagonal=True`.  
-      - Produces equivalent results and is preferable for high dimensions or when objective function evaluations are fast.
+      - Default: `False`
 
-    - **stopping.maxfun** (int): The maximum number of criterion
-      evaluations.
-    - **stopping.maxiter** (int): The maximum number of iterations.
-    - **convergence_ftol_abs** (float): stopping criteria on the f tolerance.
-    - **convergence_ftol_rel** (float): relative stopping criteria on the f tolerance.
-    - **convergence_xtol_abs** (float): stopping criteria on the x tolerance.
+    - **random_init** (bool): If True, initialize the optimizer with random parameters.  
+      - Default: `False`
 
-    - **seed** (int): seed used by the internal random number generator.
+    - **n_cores** (int): Number of cores to use for parallel function evaluation.  
+      - Default: `1`
+
+    - **step_size_adaptive** (bool | str): Whether to adapt the step size. Can be a boolean or a string specifying the adaptation strategy.  
+      - Default: `True`
+
+    - **step_size_damping_factor** (float): Damping factor for step size adaptation.  
+      - Default: `1.0`
+
+    - **step_size_damping_rate** (float): Damping rate for step size adaptation.  
+      - Default: `0.1`
+
+    - **step_size_update_squared** (bool): Whether to use squared step sizes in updates.  
+      - Default: `False`
+
+    - **learning_rate_cov_mat_update** (float): Learning rate for the covariance matrix update.  
+      - Default: `1.0`
 
     - **learning_rate_rank_one_update** (float): Multiplier for the rank-one update learning rate of the covariance matrix.  
-      - Default is `1.0`.
+      - Default: `1.0`
 
     - **learning_rate_rank_mu_update** (float): Multiplier for the rank-mu update learning rate of the covariance matrix.  
-      - Default is `1.0`.
+      - Default: `1.0`
+
+    - **learning_rate_mean_update** (float): Learning rate for the mean update.  
+      - Default: `1.0`
+
+    - **learning_rate_diagonal_update** (float): Learning rate for the diagonal update.  
+      - Default: `0.0`
+
+    - **num_parents** (Optional[int]): Number of parents (μ) for recombination.  
+      - Default: `None` (automatically determined)
+
+    - **negative_update** (bool): Whether to use negative updates for the covariance matrix.  
+      - Default: `True`
+
+    - **mirror_sampling_strategy** (int): Strategy for mirror sampling.  
+      - `0`: Unconditional mirroring  
+      - `1`: Selective mirroring  
+      - `2`: Selective mirroring with delay (default)
+
+    - **normalize_cov_trace** (bool | str): How to normalize the trace of the covariance matrix.  
+      - `False`: No normalization  
+      - `True`: Normalize to 1  
+      - `"arithm"`: Arithmetic mean normalization  
+      - `"geom"`: Geometric mean normalization  
+      - `"aeig"`: Arithmetic mean of eigenvalues  
+      - `"geig"`: Geometric mean of eigenvalues  
+      - Default: `False`
+
+    - **diag_covariance_iters** (int | bool): Number of iterations to use diagonal covariance matrix before switching to full matrix.  
+      - If `False`, always use full matrix.  
+      - Default: `False`
+
+    - **stopping_maxfun** (int): Maximum number of function evaluations before termination.  
+      - Default: `STOPPING_MAXFUN_GLOBAL`
+
+    - **stopping_maxiter** (int): Maximum number of iterations before termination.  
+      - Default: `STOPPING_MAXITER`
+
+    - **stopping_timeout** (float): Maximum time in seconds before termination.  
+      - Default: `float("inf")`
+
+    - **stopping_cov_mat_cond** (float): Maximum condition number of the covariance matrix before termination.  
+      - Default: `1e14`
+
+    - **convergence_ftol_abs** (float): Absolute tolerance on function value changes for convergence.  
+      - Default: `1e-11`
+
+    - **convergence_ftol_rel** (float): Relative tolerance on function value changes for convergence.  
+      - Default: `0.0`
+
+    - **convergence_xtol_abs** (float): Absolute tolerance on parameter changes for convergence.  
+      - Default: `1e-11`
+
+    - **convergence_iter_noimprove** (Optional[int]): Number of iterations without improvement before termination.  
+      - Default: `None`
+
+    - **invariant_path** (bool): Whether evolution path (pc) should be invariant to transformations.  
+      - Default: `False`
+
+    - **eval_final_mean** (bool): Whether to evaluate the final mean solution.  
+      - Default: `True`
+
+    - **seed** (Optional[int]): Seed used by the internal random number generator for reproducibility.  
+      - Default: `None`
 
 ```
 
