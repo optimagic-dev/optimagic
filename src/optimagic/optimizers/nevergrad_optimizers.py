@@ -316,7 +316,16 @@ def _nevergrad_internal(
 
     """
 
-    param = ng.p.Array(init=x0).set_bounds(
+    if not (
+        problem.bounds.lower is not None
+        and problem.bounds.upper is not None
+        and np.all(np.isfinite(problem.bounds.lower))
+        and np.all(np.isfinite(problem.bounds.upper))
+    ):
+        raise ValueError("Bounds cannot be None or infinite.")
+
+    param = ng.p.Array(
+        init=x0,
         lower=problem.bounds.lower,
         upper=problem.bounds.upper,
     )
@@ -344,7 +353,7 @@ def _nevergrad_internal(
     best_x = recommendation.value[0][0]
     loss = recommendation.loss
 
-    # in some cases, loss is not provided by the optimizer, so we need to
+    # in some cases, loss is not provided by the optimizer, in that case,
     # evaluate it manually using problem.fun
     if loss is None:
         loss = problem.fun(best_x)
