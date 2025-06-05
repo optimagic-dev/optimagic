@@ -4043,7 +4043,7 @@ these optimizers, you need to have
 ```
 
 ```{eval-rst}
-.. dropdown::  nevegrad_cmaes
+ .. dropdown::  nevergrad_cmaes
 
     .. code-block::
 

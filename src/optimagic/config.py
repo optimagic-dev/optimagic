@@ -55,13 +55,6 @@ else:
     IS_PYGMO_INSTALLED = True
 
 try:
-    import nevergrad as ng  # noqa: F401
-except ImportError:
-    IS_NEVERGRAD_INSTALLED = False
-else:
-    IS_NEVERGRAD_INSTALLED = True
-
-try:
     import cyipopt  # noqa: F401
 except ImportError:
     IS_CYIPOPT_INSTALLED = False
