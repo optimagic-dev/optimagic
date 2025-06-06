@@ -28,8 +28,8 @@ dependencies:
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
   - iminuit  # dev, tests
-  - bayesian-optimization  # dev, tests
   - pip:  # dev, tests, docs
+      - bayesian-optimization  # dev, tests
       - nevergrad  # dev, tests
       - DFO-LS>=1.5.3  # dev, tests
       - Py-BOBYQA  # dev, tests
