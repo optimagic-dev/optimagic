@@ -108,6 +108,14 @@ else:
     IS_NEVERGRAD_INSTALLED = True
 
 
+try:
+    from bayes_opt import BayesianOptimization  # noqa: F401
+except ImportError:
+    IS_BAYESOPT_INSTALLED = False
+else:
+    IS_BAYESOPT_INSTALLED = True
+
+
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0
 # ======================================================================================
