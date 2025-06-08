@@ -189,12 +189,6 @@ class BayesOpt(Algorithm):
             an AcquisitionFunction instance
 
         """
-        # Common parameters for built-in acquisition functions
-        common_kwargs = {
-            "exploration_decay": self.exploration_decay,
-            "exploration_decay_delay": self.exploration_decay_delay,
-            "random_state": self.random_state,
-        }
 
         if self.acquisition_function is None:
             return None
@@ -207,12 +201,25 @@ class BayesOpt(Algorithm):
             acq_name = self.acquisition_function.lower()
             if acq_name in ["ucb", "upper_confidence_bound"]:
                 return acquisition.UpperConfidenceBound(
-                    kappa=self.kappa, **common_kwargs
+                    kappa=self.kappa,
+                    exploration_decay=self.exploration_decay,
+                    exploration_decay_delay=self.exploration_decay_delay,
+                    random_state=self.random_state,
                 )
             elif acq_name in ["ei", "expected_improvement"]:
-                return acquisition.ExpectedImprovement(xi=self.xi, **common_kwargs)
+                return acquisition.ExpectedImprovement(
+                    xi=self.xi,
+                    exploration_decay=self.exploration_decay,
+                    exploration_decay_delay=self.exploration_decay_delay,
+                    random_state=self.random_state,
+                )
             elif acq_name in ["poi", "probability_of_improvement"]:
-                return acquisition.ProbabilityOfImprovement(xi=self.xi, **common_kwargs)
+                return acquisition.ProbabilityOfImprovement(
+                    xi=self.xi,
+                    exploration_decay=self.exploration_decay,
+                    exploration_decay_delay=self.exploration_decay_delay,
+                    random_state=self.random_state,
+                )
             else:
                 raise ValueError(
                     f"Invalid acquisition_function: {self.acquisition_function}. "
