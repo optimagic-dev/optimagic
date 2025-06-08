@@ -29,7 +29,7 @@ dependencies:
   - annotated-types  # dev, tests
   - iminuit  # dev, tests
   - pip:  # dev, tests, docs
-      - bayesian-optimization  # dev, tests
+      - bayesian-optimization>=2.0.4  # dev, tests
       - nevergrad  # dev, tests
       - DFO-LS>=1.5.3  # dev, tests
       - Py-BOBYQA  # dev, tests
