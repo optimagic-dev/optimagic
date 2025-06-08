@@ -1,5 +1,6 @@
 import inspect
 import itertools
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -51,9 +52,6 @@ def criterion_plot(
     """
     # ==================================================================================
     # Process inputs
-    # ==================================================================================
-
-    results = _harmonize_inputs_to_dict(results, names)
 
     if not isinstance(palette, list):
         palette = [palette]
@@ -61,108 +59,33 @@ def criterion_plot(
 
     fun_or_monotone_fun = "monotone_fun" if monotone else "fun"
 
-    # ==================================================================================
-    # Extract plotting data from results objects / data base
-    # ==================================================================================
+    results = _harmonize_inputs_to_dict(results, names)
 
-    data = []
-    for name, res in results.items():
-        if isinstance(res, OptimizeResult):
-            _data = _extract_plotting_data_from_results_object(
-                res, stack_multistart, show_exploration, plot_name="criterion_plot"
-            )
-        elif isinstance(res, (str, Path)):
-            _data = _extract_plotting_data_from_database(
-                res, stack_multistart, show_exploration
-            )
-        else:
-            msg = "results must be (or contain) an OptimizeResult or a path to a log"
-            f"file, but is type {type(res)}."
-            raise TypeError(msg)
+    data = _extract_criterion_plot_data_from_results(
+        results, stack_multistart, show_exploration
+    )
 
-        _data["name"] = name
-        data.append(_data)
-
-    # ==================================================================================
-    # Create figure
-    # ==================================================================================
-
-    fig = go.Figure()
-
-    plot_multistart = (
-        len(data) == 1 and data[0]["is_multistart"] and not stack_multistart
+    lines, multistart_lines = _collect_criterion_plot_lines_from_data(
+        data, max_evaluations, palette, stack_multistart, fun_or_monotone_fun
     )
 
     # ==================================================================================
-    # Plot multistart paths
+    # Store backend agnostic plotting data and configuration
 
-    if plot_multistart:
-        scatter_kws = {
-            "connectgaps": True,
-            "showlegend": False,
-        }
+    plot_data = CriterionPlotData(
+        lines=lines,
+        multistart_lines=multistart_lines,
+    )
 
-        for i, local_history in enumerate(data[0]["local_histories"]):
-            history = getattr(local_history, fun_or_monotone_fun)
-
-            if max_evaluations is not None and len(history) > max_evaluations:
-                history = history[:max_evaluations]
-
-            trace = go.Scatter(
-                x=np.arange(len(history)),
-                y=history,
-                mode="lines",
-                name=str(i),
-                line_color="#bab0ac",
-                **scatter_kws,
-            )
-            fig.add_trace(trace)
-
-    # ==================================================================================
-    # Plot main optimization objects
-
-    for _data in data:
-        if stack_multistart and _data["stacked_local_histories"] is not None:
-            _history = _data["stacked_local_histories"]
-        else:
-            _history = _data["history"]
-
-        history = getattr(_history, fun_or_monotone_fun)
-
-        if max_evaluations is not None and len(history) > max_evaluations:
-            history = history[:max_evaluations]
-
-        scatter_kws = {
-            "connectgaps": True,
-            "showlegend": not plot_multistart,
-        }
-
-        _color = next(palette)
-        if not isinstance(_color, str):
-            msg = "highlight_palette needs to be a string or list of strings, but its "
-            f"entry is of type {type(_color)}."
-            raise TypeError(msg)
-
-        line_kws = {
-            "color": _color,
-        }
-
-        trace = go.Scatter(
-            x=np.arange(len(history)),
-            y=history,
-            mode="lines",
-            name="best result" if plot_multistart else _data["name"],
-            line=line_kws,
-            **scatter_kws,
-        )
-        fig.add_trace(trace)
-
-    fig.update_layout(
+    plot_config = PlotConfig(
         template=template,
-        xaxis_title_text="No. of criterion evaluations",
-        yaxis_title_text="Criterion value",
         legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
     )
+
+    # ==================================================================================
+    # Generate the plotly figure
+
+    fig = _plotly_criterion_plot(plot_data, plot_config)
     return fig
 
 
@@ -296,6 +219,53 @@ def params_plot(
     )
 
     return fig
+
+
+def _extract_criterion_plot_data_from_results(
+    results, stack_multistart, show_exploration
+):
+    """Extract data for criterion plot from results (OptimizeResult or database).
+
+    Args:
+        results (dict[str, OptimizeResult | str | pathlib.Path]): A dict of optimization
+            results with collected history. If dict, then the key is used as the name in
+            a legend.
+        stack_multistart (bool): Whether to combine multistart histories into a single
+            history. Default is False.
+        show_exploration (bool): If True, exploration samples of a multistart
+            optimization are visualized. Default is False.
+
+    Returns:
+        list[dict]: A list of dictionaries with the following keys:
+            - "history": The results history
+            - "direction": maximize or minimize
+            - "is_multistart": Whether the optimization used multistart
+            - "local_histories": All other multistart histories except for 'history'.
+              If not available is None. If show_exploration is True, the exploration
+              phase is added as the first entry.
+            - "stacked_local_histories": If stack_multistart is True the local
+              histories are stacked into a single one.
+
+    """
+    data = []
+    for name, res in results.items():
+        if isinstance(res, OptimizeResult):
+            _data = _extract_plotting_data_from_results_object(
+                res, stack_multistart, show_exploration, plot_name="criterion_plot"
+            )
+        elif isinstance(res, (str, Path)):
+            _data = _extract_plotting_data_from_database(
+                res, stack_multistart, show_exploration
+            )
+        else:
+            msg = "results must be (or contain) an OptimizeResult or a path to a log"
+            f"file, but is type {type(res)}."
+            raise TypeError(msg)
+
+        _data["name"] = name
+        data.append(_data)
+
+    return data
 
 
 def _extract_plotting_data_from_results_object(
@@ -457,3 +427,157 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
         task=len(stacked["criterion"]) * [None],
         batches=list(range(len(stacked["criterion"]))),
     )
+
+
+def _collect_criterion_plot_lines_from_data(
+    data, max_evaluations, palette, stack_multistart, fun_or_monotone_fun
+):
+    """Collect lines for criterion plot from data.
+
+    Args:
+        data (list[dict]): Data extracted from results or database.
+        max_evaluations (int): Clip the criterion history after that many entries.
+        palette (itertools.cycle): Cycle of colors for plotting.
+        stack_multistart (bool): Whether to combine multistart histories into a single
+            history. Default is False.
+        fun_or_monotone_fun (str): Name of the attribute to use from the history object
+            - "fun" if monotone is False
+            - "monotone_fun" if monotone is True.
+
+
+    Returns:
+        tuple[list[LineData], list[LineData]]:
+        - lines: Main optimization paths.
+        - multistart_lines: Multistart optimization paths, if applicable.
+
+    """
+    # Collect multistart optimization paths
+    multistart_lines: list[LineData] = []
+
+    plot_multistart = (
+        len(data) == 1 and data[0]["is_multistart"] and not stack_multistart
+    )
+
+    if plot_multistart:
+        for i, local_history in enumerate(data[0]["local_histories"]):
+            history = getattr(local_history, fun_or_monotone_fun)
+
+            if max_evaluations is not None and len(history) > max_evaluations:
+                history = history[:max_evaluations]
+
+            line_data = LineData(
+                x=np.arange(len(history)),
+                y=history,
+                color="#bab0ac",
+                name=str(i),
+                show_in_legend=False,
+            )
+            multistart_lines.append(line_data)
+
+    # Collect main optimization paths
+    lines: list[LineData] = []
+
+    for _data in data:
+        if stack_multistart and _data["stacked_local_histories"] is not None:
+            _history = _data["stacked_local_histories"]
+        else:
+            _history = _data["history"]
+
+        history = getattr(_history, fun_or_monotone_fun)
+
+        if max_evaluations is not None and len(history) > max_evaluations:
+            history = history[:max_evaluations]
+
+        _color = next(palette)
+        if not isinstance(_color, str):
+            msg = "highlight_palette needs to be a string or list of strings, but its "
+            f"entry is of type {type(_color)}."
+            raise TypeError(msg)
+
+        line_data = LineData(
+            x=np.arange(len(history)),
+            y=history,
+            color=_color,
+            name="best result" if plot_multistart else _data["name"],
+            show_in_legend=not plot_multistart,
+        )
+        lines.append(line_data)
+
+    return lines, multistart_lines
+
+
+@dataclass(frozen=True)
+class LineData:
+    """Data of a single line.
+
+    Attributes:
+        x: The x-coordinates of the points.
+        y: The y-coordinates of the points.
+        color: The color of the line. Default is None.
+        name: The name of the line. Default is None.
+        show_in_legend: Whether to show the line in the legend. Default is True.
+
+    """
+
+    x: np.ndarray
+    y: np.ndarray
+    color: str | None = None
+    name: str | None = None
+    show_in_legend: bool = True
+
+
+@dataclass(frozen=True)
+class CriterionPlotData:
+    """Backend agnostic data for criterion plot.
+
+    Attributes:
+        lines: Main optimization paths.
+        multistart_lines: Multistart optimization paths, if applicable.
+
+    """
+
+    lines: list[LineData]
+    multistart_lines: list[LineData]
+
+
+@dataclass(frozen=True)
+class PlotConfig:
+    """Configuration settings for figure.
+
+    Attributes:
+        template: The template for the figure.
+        legend: Configuration for the legend.
+
+    """
+
+    template: str
+    legend: dict[str, Any]
+
+
+def _plotly_criterion_plot(
+    plot_data: CriterionPlotData, plot_config: PlotConfig
+) -> go.Figure:
+    """Create a plotly figure from the plot data and configuration."""
+
+    fig = go.Figure()
+
+    for line in plot_data.multistart_lines + plot_data.lines:
+        trace = go.Scatter(
+            x=line.x,
+            y=line.y,
+            name=line.name,
+            mode="lines",
+            line_color=line.color,
+            showlegend=line.show_in_legend,
+            connectgaps=True,
+        )
+        fig.add_trace(trace)
+
+    fig.update_layout(
+        template=plot_config.template,
+        xaxis_title_text="No. of criterion evaluations",
+        yaxis_title_text="Criterion value",
+        legend=plot_config.legend,
+    )
+
+    return fig
