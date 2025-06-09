@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Union
 
 import numpy as np
-from bayes_opt import BayesianOptimization, acquisition
-from bayes_opt.acquisition import AcquisitionFunction
 from numpy.typing import NDArray
 from scipy.optimize import NonlinearConstraint
 
@@ -21,6 +19,10 @@ from optimagic.typing import (
     AggregationLevel,
     PositiveInt,
 )
+
+if IS_BAYESOPT_INSTALLED:
+    from bayes_opt import BayesianOptimization, acquisition
+    from bayes_opt.acquisition import AcquisitionFunction
 
 
 @mark.minimizer(
