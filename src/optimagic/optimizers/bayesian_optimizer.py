@@ -166,6 +166,20 @@ class BayesOpt(Algorithm):
             n_iter=self.n_iter,
         )
 
+        if optimizer.max is None:
+            return InternalOptimizeResult(
+                x=x0,
+                fun=float(problem.fun(x0)),
+                success=False,
+                message=(
+                    "Optimization did not succeed"
+                    "returning the initial point as the best available result."
+                ),
+                n_iterations=self.init_points + self.n_iter,
+                n_fun_evals=1 + self.init_points + self.n_iter,
+                n_jac_evals=0,
+            )
+
         best_params = optimizer.max["params"]
         best_x = np.array([best_params[f"param{i}"] for i in range(len(x0))])
         best_y = -optimizer.max["target"]  # Un-negate the result
