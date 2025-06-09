@@ -172,7 +172,7 @@ class BayesOpt(Algorithm):
                 fun=float(problem.fun(x0)),
                 success=False,
                 message=(
-                    "Optimization did not succeed"
+                    "Optimization did not succeed "
                     "returning the initial point as the best available result."
                 ),
                 n_iterations=self.init_points + self.n_iter,
@@ -206,6 +206,15 @@ class BayesOpt(Algorithm):
 
         """
 
+        acquisition_function_aliases = {
+            "ucb": "ucb",
+            "upper_confidence_bound": "ucb",
+            "ei": "ei",
+            "expected_improvement": "ei",
+            "poi": "poi",
+            "probability_of_improvement": "poi",
+        }
+
         if self.acquisition_function is None:
             return None
 
@@ -215,21 +224,30 @@ class BayesOpt(Algorithm):
 
         elif isinstance(self.acquisition_function, str):
             acq_name = self.acquisition_function.lower()
-            if acq_name in ["ucb", "upper_confidence_bound"]:
+
+            if acq_name not in acquisition_function_aliases:
+                raise ValueError(
+                    f"Invalid acquisition_function: {self.acquisition_function}. "
+                    f"Must be one of: {', '.join(acquisition_function_aliases.keys())}"
+                )
+
+            canonical_name = acquisition_function_aliases[acq_name]
+
+            if canonical_name == "ucb":
                 return acquisition.UpperConfidenceBound(
                     kappa=self.kappa,
                     exploration_decay=self.exploration_decay,
                     exploration_decay_delay=self.exploration_decay_delay,
                     random_state=self.random_state,
                 )
-            elif acq_name in ["ei", "expected_improvement"]:
+            elif canonical_name == "ei":
                 return acquisition.ExpectedImprovement(
                     xi=self.xi,
                     exploration_decay=self.exploration_decay,
                     exploration_decay_delay=self.exploration_decay_delay,
                     random_state=self.random_state,
                 )
-            elif acq_name in ["poi", "probability_of_improvement"]:
+            elif canonical_name == "poi":
                 return acquisition.ProbabilityOfImprovement(
                     xi=self.xi,
                     exploration_decay=self.exploration_decay,
@@ -237,10 +255,7 @@ class BayesOpt(Algorithm):
                     random_state=self.random_state,
                 )
             else:
-                raise ValueError(
-                    f"Invalid acquisition_function: {self.acquisition_function}. "
-                    "Must be one of: 'ucb', 'poi', 'ei'"
-                )
+                raise ValueError(f"Unhandled canonical name: {canonical_name}")
 
         else:
             raise TypeError(
