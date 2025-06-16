@@ -45,8 +45,8 @@ class MultistartOptions:
             for convergence. Determines the maximum relative distance two parameter
             vecctors can have to be considered equal. Defaults to 0.01.
         n_cores: The number of cores to use for parallelization. Defaults to 1.
-        batch_evaluator: The evaluator to use for batch evaluation. Allowed are "joblib"
-            and "pathos", or a custom callable.
+        batch_evaluator: The evaluator to use for batch evaluation. Allowed are
+            "joblib", "pathos", and "threading", or a custom callable.
         batch_size: The batch size for batch evaluation. Must be larger than n_cores
             or None.
         seed: The seed for the random number generator.
