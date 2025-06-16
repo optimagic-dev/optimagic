@@ -11,9 +11,10 @@ from optimagic.parameters.bounds import Bounds
 from optimagic.typing import Direction
 from optimagic.visualization.history_plots import (
     LineData,
-    _collect_criterion_plot_lines_from_data,
-    _extract_criterion_plot_data_from_results,
+    _extract_criterion_plot_data,
     _harmonize_inputs_to_dict,
+    _OptimizeData,
+    _retrieve_optimization_data,
     criterion_plot,
     params_plot,
 )
@@ -194,37 +195,23 @@ def test_harmonize_inputs_to_dict_path_input():
 
 
 def test_extract_data_from_results():
-    res1 = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
-    res2 = minimize(
-        fun=lambda x: x @ x,
-        params=np.arange(5),
-        algorithm="scipy_lbfgsb",
-        logging=SQLiteLogOptions("test.db", fast_logging=True),
-    )
-    results = {"bla": res1, "blub": "test.db"}
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    results = {"bla": res}
 
-    data = _extract_criterion_plot_data_from_results(results, False, False)
+    data = _retrieve_optimization_data(results, False, False)
 
     expected = [
-        {
-            "history": res1.history,
-            "direction": Direction(res1.direction),
-            "is_multistart": False,
-            "local_histories": None,
-            "stacked_local_histories": None,
-            "name": "bla",
-        },
-        {
-            "history": res2.history,
-            "direction": Direction(res2.direction),
-            "is_multistart": False,
-            "local_histories": None,
-            "stacked_local_histories": None,
-            "name": "blub",
-        },
+        _OptimizeData(
+            history=res.history,
+            direction=Direction(res.direction),
+            is_multistart=False,
+            local_histories=None,
+            stacked_local_histories=None,
+            name="bla",
+        ),
     ]
 
-    assert data[0] == expected[0]
+    assert data == expected
 
 
 def test_extract_data_from_multistart_result(minimize_result):
@@ -232,32 +219,31 @@ def test_extract_data_from_multistart_result(minimize_result):
     results = {"multistart": res}
 
     for stack_multistart in [True, False]:
-        data = _extract_criterion_plot_data_from_results(
-            results, stack_multistart, False
-        )
+        data = _retrieve_optimization_data(results, stack_multistart, False)
 
         assert isinstance(data, list)
         assert len(data) == 1
 
-        assert data[0]["is_multistart"]
-        assert len(data[0]["local_histories"]) == 5
+        assert data[0].is_multistart
+        assert len(data[0].local_histories) == 5
 
         if stack_multistart:
-            assert data[0]["stacked_local_histories"] is not None
+            assert data[0].stacked_local_histories is not None
         else:
-            assert data[0]["stacked_local_histories"] is None
+            assert data[0].stacked_local_histories is None
 
 
 def test_collect_lines_from_data(minimize_result):
     res = minimize_result[True][0]
     results = {"multistart": res}
-    data = _extract_criterion_plot_data_from_results(results, False, False)
+    data = _retrieve_optimization_data(results, False, False)
 
     palette = itertools.cycle(["red", "green", "blue"])
 
-    lines, multistart_lines = _collect_criterion_plot_lines_from_data(
-        data, None, palette, False, "fun"
-    )
+    plot_data = _extract_criterion_plot_data(data, None, palette, False, False)
+
+    lines = plot_data.lines
+    multistart_lines = plot_data.multistart_lines
 
     assert isinstance(lines, list) and all(isinstance(line, LineData) for line in lines)
     assert len(lines) == 1

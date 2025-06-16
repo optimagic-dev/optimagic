@@ -2,7 +2,7 @@ import inspect
 import itertools
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import numpy as np
 import plotly.graph_objects as go
@@ -14,37 +14,34 @@ from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import Direction
+from optimagic.typing import Direction, IterationHistory
 
 
 def criterion_plot(
-    results,
-    names=None,
-    max_evaluations=None,
-    template=PLOTLY_TEMPLATE,
-    palette=PLOTLY_PALETTE,
-    stack_multistart=False,
-    monotone=False,
-    show_exploration=False,
-):
+    results: list[OptimizeResult | str | Path] | dict[str, OptimizeResult | str | Path],
+    names: list[str] | str | None = None,
+    max_evaluations: int | None = None,
+    template: str = PLOTLY_TEMPLATE,
+    palette: list[str] | str = PLOTLY_PALETTE,
+    stack_multistart: bool = False,
+    monotone: bool = False,
+    show_exploration: bool = False,
+) -> go.Figure:
     """Plot the criterion history of an optimization.
 
     Args:
-        results (Union[List, Dict][Union[OptimizeResult, pathlib.Path, str]): A (list or
-            dict of) optimization results with collected history. If dict, then the
-            key is used as the name in a legend.
-        names (Union[List[str], str]): Names corresponding to res or entries in res.
-        max_evaluations (int): Clip the criterion history after that many entries.
-        template (str): The template for the figure. Default is "plotly_white".
-        palette (Union[List[str], str]): The coloring palette for traces. Default is
-            "qualitative.Plotly".
-        stack_multistart (bool): Whether to combine multistart histories into a single
-            history. Default is False.
-        monotone (bool): If True, the criterion plot becomes monotone in the sense
-            that only that at each iteration the current best criterion value is
-            displayed. Default is False.
-        show_exploration (bool): If True, exploration samples of a multistart
-            optimization are visualized. Default is False.
+        results: A (list or dict of) optimization results with collected history.
+            If dict, then the key is used as the name in a legend.
+        names: Names corresponding to res or entries in res.
+        max_evaluations: Clip the criterion history after that many entries.
+        template: The template for the figure. Default is "plotly_white".
+        palette: The coloring palette for traces. Default is "qualitative.Set2".
+        stack_multistart: Whether to combine multistart histories into a single history.
+            Default is False.
+        monotone: If True, the criterion plot becomes monotone in the sense that at each
+            iteration the current best criterion value is displayed. Default is False.
+        show_exploration: If True, exploration samples of a multistart optimization are
+            visualized. Default is False.
 
     Returns:
         plotly.graph_objs._figure.Figure: The figure.
@@ -55,41 +52,43 @@ def criterion_plot(
 
     if not isinstance(palette, list):
         palette = [palette]
-    palette = itertools.cycle(palette)
+    palette_cycle = itertools.cycle(palette)
 
-    fun_or_monotone_fun = "monotone_fun" if monotone else "fun"
+    dict_of_optimize_results_or_paths = _harmonize_inputs_to_dict(results, names)
 
-    results = _harmonize_inputs_to_dict(results, names)
+    # ==================================================================================
+    # Extract backend-agnostic plotting data from results
 
-    data = _extract_criterion_plot_data_from_results(
-        results, stack_multistart, show_exploration
+    list_of_optimize_data = _retrieve_optimization_data(
+        results=dict_of_optimize_results_or_paths,
+        stack_multistart=stack_multistart,
+        show_exploration=show_exploration,
     )
 
-    lines, multistart_lines = _collect_criterion_plot_lines_from_data(
-        data, max_evaluations, palette, stack_multistart, fun_or_monotone_fun
+    plot_data = _extract_criterion_plot_data(
+        data=list_of_optimize_data,
+        max_evaluations=max_evaluations,
+        palette_cycle=palette_cycle,
+        stack_multistart=stack_multistart,
+        monotone=monotone,
     )
 
     # ==================================================================================
-    # Store backend agnostic plotting data and configuration
-
-    plot_data = CriterionPlotData(
-        lines=lines,
-        multistart_lines=multistart_lines,
-    )
+    # Generate the plotly figure
 
     plot_config = PlotConfig(
         template=template,
         legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
     )
 
-    # ==================================================================================
-    # Generate the plotly figure
-
     fig = _plotly_criterion_plot(plot_data, plot_config)
     return fig
 
 
-def _harmonize_inputs_to_dict(results, names):
+def _harmonize_inputs_to_dict(
+    results: list[OptimizeResult | str | Path] | dict[str, OptimizeResult | str | Path],
+    names: list[str] | str | None,
+) -> dict[str, OptimizeResult | str | Path]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
     # convert scalar case to list case
     if not isinstance(names, list) and names is not None:
@@ -110,7 +109,8 @@ def _harmonize_inputs_to_dict(results, names):
 
     # unlabeled iterable of results
     else:
-        names = range(len(results)) if names is None else names
+        if names is None:
+            names = list(str(i) for i in range(len(results)))
         results_dict = dict(zip(names, results, strict=False))
 
     # convert keys to strings
@@ -157,7 +157,7 @@ def params_plot(
     # ==================================================================================
 
     if isinstance(result, OptimizeResult):
-        data = _extract_plotting_data_from_results_object(
+        data = _retrieve_optimization_data_from_results_object(
             result,
             stack_multistart=True,
             show_exploration=show_exploration,
@@ -165,19 +165,19 @@ def params_plot(
         )
         start_params = result.start_params
     elif isinstance(result, (str, Path)):
-        data = _extract_plotting_data_from_database(
+        data = _retrieve_optimization_data_from_database(
             result,
             stack_multistart=True,
             show_exploration=show_exploration,
         )
-        start_params = data["start_params"]
+        start_params = data.start_params
     else:
         raise TypeError("result must be an OptimizeResult or a path to a log file.")
 
-    if data["stacked_local_histories"] is not None:
-        history = data["stacked_local_histories"].params
+    if data.stacked_local_histories is not None:
+        history = data.stacked_local_histories.params
     else:
-        history = data["history"].params
+        history = data.history.params
 
     # ==================================================================================
     # Create figure
@@ -221,77 +221,72 @@ def params_plot(
     return fig
 
 
-def _extract_criterion_plot_data_from_results(
-    results, stack_multistart, show_exploration
-):
-    """Extract data for criterion plot from results (OptimizeResult or database).
+def _retrieve_optimization_data(
+    results: dict[str, OptimizeResult | str | Path],
+    stack_multistart: bool,
+    show_exploration: bool,
+) -> list["_OptimizeData"]:
+    """Retrieve data for criterion plot from results (OptimizeResult or database).
 
     Args:
-        results (dict[str, OptimizeResult | str | pathlib.Path]): A dict of optimization
-            results with collected history. If dict, then the key is used as the name in
-            a legend.
-        stack_multistart (bool): Whether to combine multistart histories into a single
-            history. Default is False.
-        show_exploration (bool): If True, exploration samples of a multistart
-            optimization are visualized. Default is False.
+        results: A dict of optimization results with collected history.
+            The key is used as the name in a legend.
+        stack_multistart: Whether to combine multistart histories into a single history.
+            Default is False.
+        show_exploration: If True, exploration samples of a multistart optimization are
+            visualized. Default is False.
 
     Returns:
-        list[dict]: A list of dictionaries with the following keys:
-            - "history": The results history
-            - "direction": maximize or minimize
-            - "is_multistart": Whether the optimization used multistart
-            - "local_histories": All other multistart histories except for 'history'.
-              If not available is None. If show_exploration is True, the exploration
-              phase is added as the first entry.
-            - "stacked_local_histories": If stack_multistart is True the local
-              histories are stacked into a single one.
+        list[_OptimizeData]: A list of _OptimizeData objects containing the history,
+            direction, multistart information, and local histories.
 
     """
     data = []
     for name, res in results.items():
         if isinstance(res, OptimizeResult):
-            _data = _extract_plotting_data_from_results_object(
-                res, stack_multistart, show_exploration, plot_name="criterion_plot"
+            _data = _retrieve_optimization_data_from_results_object(
+                res=res,
+                stack_multistart=stack_multistart,
+                show_exploration=show_exploration,
+                plot_name="criterion_plot",
             )
         elif isinstance(res, (str, Path)):
-            _data = _extract_plotting_data_from_database(
-                res, stack_multistart, show_exploration
+            _data = _retrieve_optimization_data_from_database(
+                res=res,
+                stack_multistart=stack_multistart,
+                show_exploration=show_exploration,
             )
         else:
             msg = "results must be (or contain) an OptimizeResult or a path to a log"
             f"file, but is type {type(res)}."
             raise TypeError(msg)
 
-        _data["name"] = name
+        _data.name = name
         data.append(_data)
 
     return data
 
 
-def _extract_plotting_data_from_results_object(
-    res, stack_multistart, show_exploration, plot_name
-):
-    """Extract data for plotting from results object.
+def _retrieve_optimization_data_from_results_object(
+    res: OptimizeResult,
+    stack_multistart: bool,
+    show_exploration: bool,
+    plot_name: str,
+) -> "_OptimizeData":
+    """Retrieve optimization data from results object.
 
     Args:
-        res (OptmizeResult): An optimization results object.
-        stack_multistart (bool): Whether to combine multistart histories into a single
-            history. Default is False.
-        show_exploration (bool): If True, exploration samples of a multistart
-            optimization are visualized. Default is False.
-        plot_name (str): Name of the plotting function that calls this function. Used
-            for rasing errors.
+        res: An optimization results object.
+        stack_multistart: Whether to combine multistart histories into a single history.
+            Default is False.
+        show_exploration: If True, exploration samples of a multistart optimization are
+            visualized. Default is False.
+        plot_name: Name of the plotting function that calls this function. Used for
+            raising errors.
 
     Returns:
-        dict:
-        - "history": The results history
-        - "direction": maximize or minimize
-        - "is_multistart": Whether the optimization used multistart
-        - "local_histories": All other multistart histories except for 'history'. If not
-        available is None. If show_exploration is True, the exploration phase is
-        added as the first entry.
-        - "stacked_local_histories": If stack_multistart is True the local histories
-        are stacked into a single one.
+        _OptimizeData: A data object containing the history, direction, multistart
+            information, and local histories.
 
     """
     if res.history is None:
@@ -301,12 +296,16 @@ def _extract_plotting_data_from_results_object(
 
     is_multistart = res.multistart_info is not None
 
-    if is_multistart:
-        local_histories = [opt.history for opt in res.multistart_info.local_optima]
+    if res.multistart_info:
+        local_histories = [
+            opt.history
+            for opt in res.multistart_info.local_optima
+            if opt.history is not None
+        ]
     else:
         local_histories = None
 
-    if stack_multistart and local_histories is not None:
+    if stack_multistart and local_histories is not None and res.multistart_info:
         stacked = _get_stacked_local_histories(local_histories, res.direction)
         if show_exploration:
             fun = res.multistart_info.exploration_results.tolist()[::-1] + stacked.fun
@@ -317,58 +316,58 @@ def _extract_plotting_data_from_results_object(
                 fun=fun,
                 params=params,
                 # TODO: This needs to be fixed
-                start_time=len(fun) * [None],
-                stop_time=len(fun) * [None],
-                batches=len(fun) * [None],
-                task=len(fun) * [None],
+                start_time=len(fun) * [None],  # type: ignore
+                stop_time=len(fun) * [None],  # type: ignore
+                batches=len(fun) * [None],  # type: ignore
+                task=len(fun) * [None],  # type: ignore
             )
     else:
         stacked = None
 
-    data = {
-        "history": res.history,
-        "direction": Direction(res.direction),
-        "is_multistart": is_multistart,
-        "local_histories": local_histories,
-        "stacked_local_histories": stacked,
-    }
+    data = _OptimizeData(
+        history=res.history,
+        direction=Direction(res.direction),
+        is_multistart=is_multistart,
+        local_histories=local_histories,
+        stacked_local_histories=stacked,
+    )
     return data
 
 
-def _extract_plotting_data_from_database(res, stack_multistart, show_exploration):
-    """Extract data for plotting from database.
+def _retrieve_optimization_data_from_database(
+    res: str | Path,
+    stack_multistart: bool,
+    show_exploration: bool,
+) -> "_OptimizeData":
+    """Retrieve optimization data from a database.
 
     Args:
-        res (str or pathlib.Path): A path to an optimization database.
-        stack_multistart (bool): Whether to combine multistart histories into a single
-            history. Default is False.
-        show_exploration (bool): If True, exploration samples of a multistart
-            optimization are visualized. Default is False.
+        res: A path to an optimization database.
+        stack_multistart: Whether to combine multistart histories into a single history.
+            Default is False.
+        show_exploration: If True, exploration samples of a multistart optimization are
+            visualized. Default is False.
 
     Returns:
-        dict:
-        - "history": The results history
-        - "direction": maximize or minimize
-        - "is_multistart": Whether the optimization used multistart
-        - "local_histories": All other multistart histories except for 'history'. If not
-        available is None. If show_exploration is True, the exploration phase is
-        added as the first entry.
-        - "stacked_local_histories": If stack_multistart is True the local histories
-        are stacked into a single one.
+        _OptimizeData: A data object containing the history, direction, multistart
+            information, and local histories.
 
     """
-    reader = LogReader.from_options(SQLiteLogOptions(res))
+    reader: LogReader = LogReader.from_options(SQLiteLogOptions(res))
     _problem_table = reader.problem_df
 
     direction = _problem_table["direction"].tolist()[-1]
 
-    _history, local_histories, exploration = reader.read_multistart_history(direction)
+    multistart_history = reader.read_multistart_history(direction)
+    _history = multistart_history.history
+    local_histories = multistart_history.local_histories
+    exploration = multistart_history.exploration
 
     if stack_multistart and local_histories is not None:
         stacked = _get_stacked_local_histories(local_histories, direction, _history)
         if show_exploration:
-            stacked["params"] = exploration["params"][::-1] + stacked["params"]
-            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]
+            stacked["params"] = exploration["params"][::-1] + stacked["params"]  # type: ignore
+            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]  # type: ignore
     else:
         stacked = None
 
@@ -379,23 +378,27 @@ def _extract_plotting_data_from_database(res, stack_multistart, show_exploration
         start_time=_history["time"],
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(_history["fun"]) * [None],
-        task=len(_history["fun"]) * [None],
+        stop_time=len(_history["fun"]) * [None],  # type: ignore
+        task=len(_history["fun"]) * [None],  # type: ignore
         batches=list(range(len(_history["fun"]))),
     )
 
-    data = {
-        "history": history,
-        "direction": direction,
-        "is_multistart": local_histories is not None,
-        "local_histories": local_histories,
-        "stacked_local_histories": stacked,
-        "start_params": reader.read_start_params(),
-    }
+    data = _OptimizeData(
+        history=history,
+        direction=direction,
+        is_multistart=local_histories is not None,
+        local_histories=local_histories,
+        stacked_local_histories=stacked,
+        start_params=reader.read_start_params(),
+    )
     return data
 
 
-def _get_stacked_local_histories(local_histories, direction, history=None):
+def _get_stacked_local_histories(
+    local_histories: list[History] | list[IterationHistory],
+    direction: Any,
+    history: History | IterationHistory | None = None,
+) -> History:
     """Stack local histories.
 
     Local histories is a list of dictionaries, each of the same structure. We transform
@@ -403,7 +406,7 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
     append the best history at the end.
 
     """
-    stacked = {"criterion": [], "params": [], "runtime": []}
+    stacked: dict[str, list[Any]] = {"criterion": [], "params": [], "runtime": []}
     for hist in local_histories:
         stacked["criterion"].extend(hist.fun)
         stacked["params"].extend(hist.params)
@@ -423,43 +426,43 @@ def _get_stacked_local_histories(local_histories, direction, history=None):
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available for the
         # IterationHistory.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(stacked["criterion"]) * [None],
-        task=len(stacked["criterion"]) * [None],
+        stop_time=len(stacked["criterion"]) * [None],  # type: ignore
+        task=len(stacked["criterion"]) * [None],  # type: ignore
         batches=list(range(len(stacked["criterion"]))),
     )
 
 
-def _collect_criterion_plot_lines_from_data(
-    data, max_evaluations, palette, stack_multistart, fun_or_monotone_fun
-):
-    """Collect lines for criterion plot from data.
+def _extract_criterion_plot_data(
+    data: list["_OptimizeData"],
+    max_evaluations: int | None,
+    palette_cycle: Iterator[str],
+    stack_multistart: bool,
+    monotone: bool,
+) -> "CriterionPlotData":
+    """Extract lines for criterion plot from data.
 
     Args:
-        data (list[dict]): Data extracted from results or database.
-        max_evaluations (int): Clip the criterion history after that many entries.
-        palette (itertools.cycle): Cycle of colors for plotting.
-        stack_multistart (bool): Whether to combine multistart histories into a single
+        data: Data retrieved from results or database.
+        max_evaluations: Clip the criterion history after that many entries.
+        palette_cycle: Cycle of colors for plotting.
+        stack_multistart: Whether to combine multistart histories into a single
             history. Default is False.
-        fun_or_monotone_fun (str): Name of the attribute to use from the history object
-            - "fun" if monotone is False
-            - "monotone_fun" if monotone is True.
-
+        monotone: If True, the criterion plot becomes monotone in the sense that at each
+            iteration the current best criterion value is displayed.
 
     Returns:
-        tuple[list[LineData], list[LineData]]:
-        - lines: Main optimization paths.
-        - multistart_lines: Multistart optimization paths, if applicable.
+        CriterionPlotData: A data object containing the lines for the plot.
 
     """
+    fun_or_monotone_fun = "monotone_fun" if monotone else "fun"
+
     # Collect multistart optimization paths
     multistart_lines: list[LineData] = []
 
-    plot_multistart = (
-        len(data) == 1 and data[0]["is_multistart"] and not stack_multistart
-    )
+    plot_multistart = len(data) == 1 and data[0].is_multistart and not stack_multistart
 
-    if plot_multistart:
-        for i, local_history in enumerate(data[0]["local_histories"]):
+    if plot_multistart and data[0].local_histories:
+        for i, local_history in enumerate(data[0].local_histories):
             history = getattr(local_history, fun_or_monotone_fun)
 
             if max_evaluations is not None and len(history) > max_evaluations:
@@ -478,17 +481,17 @@ def _collect_criterion_plot_lines_from_data(
     lines: list[LineData] = []
 
     for _data in data:
-        if stack_multistart and _data["stacked_local_histories"] is not None:
-            _history = _data["stacked_local_histories"]
+        if stack_multistart and _data.stacked_local_histories is not None:
+            _history = _data.stacked_local_histories
         else:
-            _history = _data["history"]
+            _history = _data.history
 
         history = getattr(_history, fun_or_monotone_fun)
 
         if max_evaluations is not None and len(history) > max_evaluations:
             history = history[:max_evaluations]
 
-        _color = next(palette)
+        _color = next(palette_cycle)
         if not isinstance(_color, str):
             msg = "highlight_palette needs to be a string or list of strings, but its "
             f"entry is of type {type(_color)}."
@@ -498,12 +501,27 @@ def _collect_criterion_plot_lines_from_data(
             x=np.arange(len(history)),
             y=history,
             color=_color,
-            name="best result" if plot_multistart else _data["name"],
+            name="best result" if plot_multistart else _data.name,
             show_in_legend=not plot_multistart,
         )
         lines.append(line_data)
 
-    return lines, multistart_lines
+    plot_data = CriterionPlotData(
+        lines=lines,
+        multistart_lines=multistart_lines,
+    )
+    return plot_data
+
+
+@dataclass()
+class _OptimizeData:
+    history: History
+    direction: Direction
+    is_multistart: bool
+    local_histories: list[History] | list[IterationHistory] | None
+    stacked_local_histories: History | None
+    start_params: list[Any] | None = None
+    name: str | None = None
 
 
 @dataclass(frozen=True)
