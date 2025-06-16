@@ -6,6 +6,7 @@ from typing_extensions import NotRequired
 
 from optimagic.config import DEFAULT_N_CORES
 from optimagic.exceptions import InvalidNumdiffOptionsError
+from optimagic.typing import BatchEvaluatorLiteral
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,7 @@ class NumdiffOptions:
     scaling_factor: float = 1
     min_steps: float | None = None
     n_cores: int = DEFAULT_N_CORES
-    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"  # type: ignore
+    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib"  # type: ignore
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
@@ -51,7 +52,7 @@ class NumdiffOptionsDict(TypedDict):
     scaling_factor: NotRequired[float]
     min_steps: NotRequired[float | None]
     n_cores: NotRequired[int]
-    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
+    batch_evaluator: NotRequired[BatchEvaluatorLiteral | Callable]  # type: ignore
 
 
 def pre_process_numdiff_options(
