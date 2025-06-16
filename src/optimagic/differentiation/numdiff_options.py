@@ -4,6 +4,7 @@ from typing import Callable, Literal, TypedDict
 
 from typing_extensions import NotRequired
 
+from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES
 from optimagic.exceptions import InvalidNumdiffOptionsError
 from optimagic.typing import BatchEvaluatorLiteral
@@ -22,8 +23,8 @@ class NumdiffOptions:
         min_steps: The minimum step size to use for numerical differentiation. If None,
             the default minimum step size will be used.
         n_cores: The number of cores to use for numerical differentiation.
-        batch_evaluator: The batch evaluator to use for numerical differentiation. Can
-            be "joblib" or "pathos", or a custom function.
+        batch_evaluator: The evaluator to use for batch evaluation. Allowed are
+            "joblib", "pathos", and "threading", or a custom callable.
 
     Raises:
         InvalidNumdiffError: If the numdiff options cannot be processed, e.g. because
@@ -140,14 +141,12 @@ def _validate_attribute_types_and_values(options: NumdiffOptions) -> None:
             "must be an integer greater than 0."
         )
 
-    if not callable(options.batch_evaluator) and options.batch_evaluator not in {
-        "joblib",
-        "pathos",
-    }:
+    try:
+        process_batch_evaluator(options.batch_evaluator)
+    except Exception as e:
         raise InvalidNumdiffOptionsError(
-            f"Invalid numdiff `batch_evaluator`: {options.batch_evaluator}. Batch "
-            "evaluator must be a callable or one of 'joblib', 'pathos'."
-        )
+            f"Invalid batch evaluator: {options.batch_evaluator}."
+        ) from e
 
 
 class NumdiffPurpose(str, Enum):
