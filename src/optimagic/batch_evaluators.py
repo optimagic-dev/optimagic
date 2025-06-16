@@ -19,7 +19,7 @@ from typing import Any, Callable, Literal, TypeVar, cast
 
 from optimagic.config import DEFAULT_N_CORES as N_CORES
 from optimagic.decorators import catch, unpack
-from optimagic.typing import BatchEvaluator, ErrorHandling
+from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral, ErrorHandling
 
 T = TypeVar("T")
 
@@ -260,8 +260,7 @@ def _check_inputs(
 
 
 def process_batch_evaluator(
-    batch_evaluator: Literal["joblib", "pathos", "threading"]
-    | BatchEvaluator = "joblib",
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib",
 ) -> BatchEvaluator:
     batch_evaluator = "joblib" if batch_evaluator is None else batch_evaluator
     if callable(batch_evaluator):
@@ -275,8 +274,8 @@ def process_batch_evaluator(
             out = cast(BatchEvaluator, threading_batch_evaluator)
         else:
             raise ValueError(
-                "Invalid batch evaluator requested. Currently only 'pathos' and "
-                "'joblib' are supported."
+                "Invalid batch evaluator requested. Currently only 'pathos', 'joblib', "
+                "and 'threading' are supported."
             )
     else:
         raise TypeError("batch_evaluator must be a callable or string.")
