@@ -17,6 +17,7 @@ except ImportError:
 import threading
 from typing import Any, Callable, Literal, TypeVar, cast
 
+from optimagic import deprecations
 from optimagic.config import DEFAULT_N_CORES as N_CORES
 from optimagic.decorators import catch, unpack
 from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral, ErrorHandling
@@ -262,7 +263,10 @@ def _check_inputs(
 def process_batch_evaluator(
     batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib",
 ) -> BatchEvaluator:
-    batch_evaluator = "joblib" if batch_evaluator is None else batch_evaluator
+    if batch_evaluator is None:
+        deprecations.throw_none_valued_batch_evaluator_warning()
+        batch_evaluator = "joblib"
+
     if callable(batch_evaluator):
         out = batch_evaluator
     elif isinstance(batch_evaluator, str):
