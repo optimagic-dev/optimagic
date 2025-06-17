@@ -310,3 +310,15 @@ def test_with_ackley_using_dict_options():
             "convergence_max_discoveries": 10,
         },
     )
+
+
+@pytest.mark.slow
+def test_with_batch_evaluator(params):
+    options = om.MultistartOptions(batch_evaluator="threading")
+
+    minimize(
+        fun=sos_scalar,
+        params=params,
+        algorithm="scipy_lbfgsb",
+        multistart=options,
+    )
