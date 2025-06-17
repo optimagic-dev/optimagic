@@ -7,7 +7,9 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 
 ## 0.5.2
 
-This minor release includes several bug fixes and small improvements. Many contributions in this release were made by Google Summer of Code (GSoC) 2025 applicants, with @gauravmanmode and @spline2hg being the accepted contributors.
+This minor release includes several bug fixes and small improvements. Many contributions
+in this release were made by Google Summer of Code (GSoC) 2025 applicants, with
+@gauravmanmode and @spline2hg being the accepted contributors.
 
 - {gh}`605` Enhances batch evaluator checking and processing, introduces the internal
   `BatchEvaluatorLiteral` literal, and updates CHANGES.md ({ghuser}`janosg`,
