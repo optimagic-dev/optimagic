@@ -8,8 +8,13 @@ import optimagic as om
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import Direction
 from optimagic.visualization.history_plots import (
+    LineData,
+    _extract_criterion_plot_data,
     _harmonize_inputs_to_dict,
+    _OptimizeData,
+    _retrieve_optimization_data,
     criterion_plot,
     params_plot,
 )
@@ -187,3 +192,63 @@ def test_harmonize_inputs_to_dict_str_input():
 def test_harmonize_inputs_to_dict_path_input():
     path = Path("test.db")
     assert _harmonize_inputs_to_dict(results=path, names=None) == {"0": path}
+
+
+def test_extract_data_from_results():
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    results = {"bla": res}
+
+    data = _retrieve_optimization_data(results, False, False)
+
+    expected = [
+        _OptimizeData(
+            history=res.history,
+            direction=Direction(res.direction),
+            is_multistart=False,
+            local_histories=None,
+            stacked_local_histories=None,
+            name="bla",
+        ),
+    ]
+
+    assert data == expected
+
+
+def test_extract_data_from_multistart_result(minimize_result):
+    res = minimize_result[True][0]
+    results = {"multistart": res}
+
+    for stack_multistart in [True, False]:
+        data = _retrieve_optimization_data(results, stack_multistart, False)
+
+        assert isinstance(data, list)
+        assert len(data) == 1
+
+        assert data[0].is_multistart
+        assert len(data[0].local_histories) == 5
+
+        if stack_multistart:
+            assert data[0].stacked_local_histories is not None
+        else:
+            assert data[0].stacked_local_histories is None
+
+
+def test_collect_lines_from_data(minimize_result):
+    res = minimize_result[True][0]
+    results = {"multistart": res}
+    data = _retrieve_optimization_data(results, False, False)
+
+    palette = itertools.cycle(["red", "green", "blue"])
+
+    plot_data = _extract_criterion_plot_data(data, None, palette, False, False)
+
+    lines = plot_data.lines
+    multistart_lines = plot_data.multistart_lines
+
+    assert isinstance(lines, list) and all(isinstance(line, LineData) for line in lines)
+    assert len(lines) == 1
+
+    assert isinstance(multistart_lines, list) and all(
+        isinstance(line, LineData) for line in multistart_lines
+    )
+    assert len(multistart_lines) == 5
