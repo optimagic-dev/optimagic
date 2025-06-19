@@ -209,22 +209,22 @@ class NevergradCMAES(Algorithm):
     random_init: bool = False
     n_cores: PositiveInt = 1
     step_size_adaptive: bool | str = True
-    step_size_damping_factor: float = 1.0
-    step_size_damping_rate: float = 0.1
-    step_size_update_squared: bool = False
-    learning_rate_cov_mat_update: float = 1.0
-    learning_rate_rank_one_update: float = 1.0
-    learning_rate_rank_mu_update: float = 1.0
-    learning_rate_mean_update: float = 1.0
-    learning_rate_diagonal_update: float = 0.0
+    CSA_dampfac: float = 1.0
+    CMA_dampsvec_fade: float = 0.1
+    CSA_squared: bool = False
+    CMA_on: float = 1.0
+    CMA_rankone: float = 1.0
+    CMA_rankmu: float = 1.0
+    CMA_cmean: float = 1.0
+    CMA_diagonal_decoding: float = 0.0
     num_parents: int | None = None
-    negative_update: bool = True
-    mirror_sampling_strategy: Literal[0, 1, 2] = 2
-    normalize_cov_trace: bool | Literal["arithm", "geom", "aeig", "geig"] = False
-    diag_covariance_iters: int | bool = False
+    CMA_active: bool = True
+    CMA_mirrormethod: Literal[0, 1, 2] = 2
+    CMA_const_trace: bool | Literal["arithm", "geom", "aeig", "geig"] = False
+    CMA_diagonal: int | bool = False
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    stopping_timeout: float = float("inf")
+    stopping_maxtime: float = float("inf")
     stopping_cov_mat_cond: float = 1e14
     convergence_ftol_abs: float = 1e-11
     convergence_ftol_rel: float = 0.0
@@ -242,23 +242,23 @@ class NevergradCMAES(Algorithm):
 
         cma_options = {
             "AdaptSigma": self.step_size_adaptive,
-            "CSA_dampfac": self.step_size_damping_factor,
-            "CMA_dampsvec_fade": self.step_size_damping_rate,
-            "CSA_squared": self.step_size_update_squared,
+            "CSA_dampfac": self.CSA_dampfac,
+            "CMA_dampsvec_fade": self.CMA_dampsvec_fade,
+            "CSA_squared": self.CSA_squared,
             "CSA_invariant_path": self.invariant_path,
-            "CMA_on": self.learning_rate_cov_mat_update,
-            "CMA_rankone": self.learning_rate_rank_one_update,
-            "CMA_rankmu": self.learning_rate_rank_mu_update,
-            "CMA_cmean": self.learning_rate_mean_update,
-            "CMA_diagonal_decoding": self.learning_rate_diagonal_update,
+            "CMA_on": self.CMA_on,
+            "CMA_rankone": self.CMA_rankone,
+            "CMA_rankmu": self.CMA_rankmu,
+            "CMA_cmean": self.CMA_cmean,
+            "CMA_diagonal_decoding": self.CMA_diagonal_decoding,
             "CMA_mu": self.num_parents,
-            "CMA_active": self.negative_update,
-            "CMA_mirrormethod": self.mirror_sampling_strategy,
-            "CMA_const_trace": self.normalize_cov_trace,
-            "CMA_diagonal": self.diag_covariance_iters,
+            "CMA_active": self.CMA_active,
+            "CMA_mirrormethod": self.CMA_mirrormethod,
+            "CMA_const_trace": self.CMA_const_trace,
+            "CMA_diagonal": self.CMA_diagonal,
             "maxfevals": self.stopping_maxfun,
             "maxiter": self.stopping_maxiter,
-            "timeout": self.stopping_timeout,
+            "timeout": self.stopping_maxtime,
             "tolconditioncov": self.stopping_cov_mat_cond,
             "tolfun": self.convergence_ftol_abs,
             "tolfunrel": self.convergence_ftol_rel,
@@ -368,3 +368,71 @@ def _nevergrad_internal(
     )
 
     return result
+
+
+@mark.minimizer(
+    name="nevergrad_de",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradDifferentialEvolution(Algorithm):
+    initialization: Literal["parametrization", "LHS", "QR", "QO", "SO"] = (
+        "parametrization"
+    )
+    scale: float | str = 1.0
+    recommendation: Literal["pessimistic", "optimistic", "mean", "noisy"] = (
+        "pessimistic"
+    )
+    crossover: (
+        float
+        | Literal[
+            "dimension",
+            "random",
+            "onepoint",
+            "twopoints",
+            "rotated_twopoints",
+            "parametrization",
+        ]
+    ) = 0.5
+    F1: float = 0.8
+    F2: float = 0.8
+    population_size: int | Literal["standard", "dimension", "large"] = "standard"
+    high_speed: bool = False
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        configured_optimizer = ng.optimizers.DifferentialEvolution(
+            scale=self.scale,
+            recommendation=self.recommendation,
+            crossover=self.crossover,
+            F1=self.F1,
+            F2=self.F2,
+            popsize=self.population_size,
+            high_speed=self.high_speed,
+        )
+
+        res = _nevergrad_internal(
+            problem=problem,
+            x0=x0,
+            configured_optimizer=configured_optimizer,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+        )
+        return res
