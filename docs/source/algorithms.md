@@ -4066,31 +4066,39 @@ package. To use it, you need to have
 
     The algorithm requires finite bounds for all parameters.
 
+    The bayes_opt wrapper preserves the default parameter values from the underlying 
+    BayesianOptimization package where appropriate.
+
     bayes_opt supports the following options:
 
-    - **init_points** (int): Number of random exploration points to evaluate before 
+    - **init_points** (PositiveInt): Number of random exploration points to evaluate before 
       starting optimization. Default is 5.
 
-    - **n_iter** (int): Number of Bayesian optimization iterations to perform after 
+    - **n_iter** (PositiveInt): Number of Bayesian optimization iterations to perform after 
       the initial random exploration. Default is 25.
 
-    - **verbose** (int): Verbosity level from 0 (silent) to 3 (most verbose). Default is 2.
+    - **verbose** (Literal[0, 1, 2]): Verbosity level from 0 (silent) to 2 (most verbose). Default is 0.
 
-    - **kappa** (float): Parameter to balance exploration vs exploitation in UCB. Higher values 
-      mean more exploration. Default is 2.576.
+    - **kappa** (NonNegativeFloat): Parameter to balance exploration versus exploitation trade-off 
+      for the Upper Confidence Bound acquisition function. Higher values mean more exploration. 
+      This parameter is only used if the acquisition function is set to "ucb" or "upper_confidence_bound" 
+      and when a configured instance of an AcquisitionFunction object is not passed. Default is 2.576.
 
-    - **xi** (float): Parameter to balance exploration vs exploitation in EI and POI. Higher 
-      values mean more exploration. Default is 0.01.
+    - **xi** (PositiveFloat): Parameter to balance exploration versus exploitation trade-off 
+      for the Expected Improvement or Probability of Improvement acquisition functions. 
+      Higher values mean more exploration. This parameter is only used if the acquisition function 
+      is set to "ei", "expected_improvement", "poi", or "probability_of_improvement" 
+      and when a configured instance of an AcquisitionFunction object is not passed. Default is 0.01.
 
-    - **exploration_decay** (float or None): Rate at which exploration decays over time.
+    - **exploration_decay** (float | None): Rate at which exploration decays over time.
       Default is None (no decay).
 
-    - **exploration_decay_delay** (int or None): Delay for decay. If None, 
+    - **exploration_decay_delay** (NonNegativeInt | None): Delay for decay. If None, 
       decay is applied from the start. Default is None.
 
-    - **random_state** (int or None): Random seed for reproducible results. Default is None.
+    - **random_state** (int | None): Random seed for reproducible results. Default is None.
 
-    - **acquisition_function** (str or AcquisitionFunction): Strategy for selecting 
+    - **acquisition_function** (str | AcquisitionFunction | Type[AcquisitionFunction] | None): Strategy for selecting 
       the next evaluation point. Options include:
       - "ucb" or "upper_confidence_bound": Upper Confidence Bound 
       - "ei" or "expected_improvement": Expected Improvement 
@@ -4109,7 +4117,7 @@ package. To use it, you need to have
 
     - **sdr_eta** (float): Zooming parameter for SDR. Default is 0.9.
 
-    - **sdr_minimum_window** (float): Minimum window size for SDR. Default is 0.0.
+    - **sdr_minimum_window** (NonNegativeFloat): Minimum window size for SDR. Default is 0.0.
 
     - **alpha** (float): Noise parameter for the Gaussian Process. Default is 1e-6.
 

@@ -1,7 +1,7 @@
 """Implement Bayesian optimization using bayes_opt."""
 
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Literal, Type
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,10 +13,14 @@ from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import N_RESTARTS
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
+    InternalBounds,
     InternalOptimizationProblem,
 )
 from optimagic.typing import (
     AggregationLevel,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PositiveFloat,
     PositiveInt,
 )
 
@@ -40,53 +44,23 @@ if IS_BAYESOPT_INSTALLED:
 )
 @dataclass(frozen=True)
 class BayesOpt(Algorithm):
-    """Bayesian Optimization wrapper using bayes_opt package.
-
-    Args:
-        init_points: Number of initial random exploration points
-        n_iter: Number of optimization iterations
-        verbose: Verbosity level (0-3)
-        kappa: Exploration-exploitation trade-off parameter for UCB acquisition
-        xi: Exploration-exploitation trade-off parameter for EI and PI acquisitions
-        exploration_decay: Rate at which exploration decays over time
-            (None for no decay)
-        exploration_decay_delay: Delay for decay.
-        random_state: Random seed for reproducibility
-        acquisition_function: Acquisition function used to guide the Bayesian
-            optimization process. Can be one of the following strings:
-                - "ucb" or "upper_confidence_bound" for Upper Confidence Bound
-                - "ei" or "expected_improvement" for Expected Improvement
-                - "poi" or "probability_of_improvement" for Probability of Improvement
-            Alternatively, a custom instance of
-            `bayes_opt.acquisition.AcquisitionFunction` can be passed.
-            If set to None, the default acquisition function defined by the
-            `bayes_opt` package is used.
-        allow_duplicate_points: Whether to allow duplicate evaluation points
-        enable_sdr: Enable Sequential Domain Reduction
-        sdr_gamma_osc: Oscillation parameter for SDR
-        sdr_gamma_pan: Panning parameter for SDR
-        sdr_eta: Zooming parameter for SDR
-        sdr_minimum_window: Minimum window size for SDR
-        alpha: Noise parameter for Gaussian Process
-        n_restarts: Number of times to restart the optimizer
-
-    """
-
     init_points: PositiveInt = 5
     n_iter: PositiveInt = 25
-    verbose: int = 2
-    kappa: float = 2.576
-    xi: float = 0.01
+    verbose: Literal[0, 1, 2] = 0
+    kappa: NonNegativeFloat = 2.576
+    xi: PositiveFloat = 0.01
     exploration_decay: float | None = None
-    exploration_decay_delay: int | None = None
+    exploration_decay_delay: NonNegativeInt | None = None
     random_state: int | None = None
-    acquisition_function: Union[str, AcquisitionFunction, None] = None
+    acquisition_function: (
+        str | AcquisitionFunction | Type[AcquisitionFunction] | None
+    ) = None
     allow_duplicate_points: bool = False
     enable_sdr: bool = False
     sdr_gamma_osc: float = 0.7
     sdr_gamma_pan: float = 1.0
     sdr_eta: float = 0.9
-    sdr_minimum_window: float = 0.0
+    sdr_minimum_window: NonNegativeFloat = 0.0
     alpha: float = 1e-6
     n_restarts: int = N_RESTARTS
 
@@ -101,31 +75,22 @@ class BayesOpt(Algorithm):
                 "https://bayesian-optimization.github.io/BayesianOptimization/index.html"
             )
 
-        if not (
-            problem.bounds.lower is not None
-            and problem.bounds.upper is not None
-            and np.all(np.isfinite(problem.bounds.lower))
-            and np.all(np.isfinite(problem.bounds.upper))
-        ):
-            raise ValueError(
-                "Bayesian optimization requires finite bounds for all parameters. "
-                "Bounds cannot be None or infinite."
-            )
+        pbounds = _process_bounds(problem.bounds)
 
-        pbounds = {
-            f"param{i}": (lower, upper)
-            for i, (lower, upper) in enumerate(
-                zip(problem.bounds.lower, problem.bounds.upper, strict=True)
-            )
-        }
-
-        acq = self._get_acquisition_function()
+        acq = _process_acquisition_function(
+            acquisition_function=self.acquisition_function,
+            kappa=self.kappa,
+            xi=self.xi,
+            exploration_decay=self.exploration_decay,
+            exploration_decay_delay=self.exploration_decay_delay,
+            random_state=self.random_state,
+        )
 
         constraint = None
         constraint = self._process_constraints(problem.nonlinear_constraints)
 
         def objective(**kwargs: dict[str, float]) -> float:
-            x = np.array([kwargs[f"param{i}"] for i in range(len(x0))])
+            x = _extract_params_from_kwargs(kwargs, len(x0))
             return -float(
                 problem.fun(x)
             )  # Negate to convert minimization to maximization
@@ -166,107 +131,12 @@ class BayesOpt(Algorithm):
             n_iter=self.n_iter,
         )
 
-        if optimizer.max is None:
-            return InternalOptimizeResult(
-                x=x0,
-                fun=float(problem.fun(x0)),
-                success=False,
-                message=(
-                    "Optimization did not succeed "
-                    "returning the initial point as the best available result."
-                ),
-                n_iterations=self.init_points + self.n_iter,
-                n_fun_evals=1 + self.init_points + self.n_iter,
-                n_jac_evals=0,
-            )
-
-        best_params = optimizer.max["params"]
-        best_x = np.array([best_params[f"param{i}"] for i in range(len(x0))])
-        best_y = -optimizer.max["target"]  # Un-negate the result
-
-        return InternalOptimizeResult(
-            x=best_x,
-            fun=best_y,
-            success=True,
-            n_iterations=self.init_points + self.n_iter,
-            n_fun_evals=1 + self.init_points + self.n_iter,
-            n_jac_evals=0,
-        )
-
-    def _get_acquisition_function(self) -> AcquisitionFunction | None:
-        """Create and return the appropriate acquisition function.
-
-        Returns:
-            The configured acquisition function or None for default
-
-        Raises:
-            ValueError: If acquisition_function is invalid
-            TypeError: If acquisition_function is not a string or
-            an AcquisitionFunction instance
-
-        """
-
-        acquisition_function_aliases = {
-            "ucb": "ucb",
-            "upper_confidence_bound": "ucb",
-            "ei": "ei",
-            "expected_improvement": "ei",
-            "poi": "poi",
-            "probability_of_improvement": "poi",
-        }
-
-        if self.acquisition_function is None:
-            return None
-
-        # If acquisition_function is  an instance of AcquisitionFunction class
-        elif isinstance(self.acquisition_function, AcquisitionFunction):
-            return self.acquisition_function
-
-        elif isinstance(self.acquisition_function, str):
-            acq_name = self.acquisition_function.lower()
-
-            if acq_name not in acquisition_function_aliases:
-                raise ValueError(
-                    f"Invalid acquisition_function: {self.acquisition_function}. "
-                    f"Must be one of: {', '.join(acquisition_function_aliases.keys())}"
-                )
-
-            canonical_name = acquisition_function_aliases[acq_name]
-
-            if canonical_name == "ucb":
-                return acquisition.UpperConfidenceBound(
-                    kappa=self.kappa,
-                    exploration_decay=self.exploration_decay,
-                    exploration_decay_delay=self.exploration_decay_delay,
-                    random_state=self.random_state,
-                )
-            elif canonical_name == "ei":
-                return acquisition.ExpectedImprovement(
-                    xi=self.xi,
-                    exploration_decay=self.exploration_decay,
-                    exploration_decay_delay=self.exploration_decay_delay,
-                    random_state=self.random_state,
-                )
-            elif canonical_name == "poi":
-                return acquisition.ProbabilityOfImprovement(
-                    xi=self.xi,
-                    exploration_decay=self.exploration_decay,
-                    exploration_decay_delay=self.exploration_decay_delay,
-                    random_state=self.random_state,
-                )
-            else:
-                raise ValueError(f"Unhandled canonical name: {canonical_name}")
-
-        else:
-            raise TypeError(
-                "acquisition_function must be a string, an AcquisitionFunction "
-                "instance, or None. "
-                f"Got {type(self.acquisition_function)}"
-            )
+        res = _process_bayes_opt_result(optimizer=optimizer, x0=x0, problem=problem)
+        return res
 
     def _process_constraints(
-        self, constraints: Optional[list[dict[str, Any]]]
-    ) -> Optional[NonlinearConstraint]:
+        self, constraints: list[dict[str, Any]] | None
+    ) -> NonlinearConstraint | None:
         """Temporarily skip processing of nonlinear constraints.
 
         Args:
@@ -278,3 +148,200 @@ class BayesOpt(Algorithm):
         """
         # TODO: Implement proper handling of nonlinear constraints in future.
         return None
+
+
+def _process_bounds(bounds: InternalBounds) -> dict[str, tuple[float, float]]:
+    """Process bounds for bayesian optimization.
+
+    Args:
+        bounds: Internal bounds object.
+
+    Returns:
+        Dictionary mapping parameter names to (lower, upper) bound tuples.
+
+    Raises:
+        ValueError: If bounds are None or infinite.
+
+    """
+    if not (
+        bounds.lower is not None
+        and bounds.upper is not None
+        and np.all(np.isfinite(bounds.lower))
+        and np.all(np.isfinite(bounds.upper))
+    ):
+        raise ValueError(
+            "Bayesian optimization requires finite bounds for all parameters. "
+            "Bounds cannot be None or infinite."
+        )
+
+    return {
+        f"param{i}": (lower, upper)
+        for i, (lower, upper) in enumerate(zip(bounds.lower, bounds.upper, strict=True))
+    }
+
+
+def _extract_params_from_kwargs(
+    kwargs: dict[str, Any], n_params: int
+) -> NDArray[np.float64]:
+    """Extract parameters from kwargs dictionary.
+
+    Args:
+        kwargs: Dictionary with parameter values.
+        n_params: Number of parameters to extract.
+
+    Returns:
+        Array of parameter values.
+
+    """
+    return np.array([kwargs[f"param{i}"] for i in range(n_params)])
+
+
+def _process_acquisition_function(
+    acquisition_function: (
+        str | AcquisitionFunction | Type[AcquisitionFunction] | None
+    ),
+    kappa: NonNegativeFloat,
+    xi: PositiveFloat,
+    exploration_decay: float | None,
+    exploration_decay_delay: NonNegativeInt | None,
+    random_state: int | None,
+) -> AcquisitionFunction | None:
+    """Create and return the appropriate acquisition function.
+
+    Args:
+        acquisition_function: The acquisition function specification.
+            Can be one of the following:
+            - A string: "upper_confidence_bound" (or "ucb"), "expected_improvement"
+              (or "ei"), "probability_of_improvement" (or "poi")
+            - An instance of `AcquisitionFunction`
+            - A class inheriting from `AcquisitionFunction`
+            - None (uses the default acquisition function from the bayes_opt package)
+        kappa: Exploration-exploitation trade-off parameter for Upper Confidence Bound
+            acquisition function. Higher values favor exploration over exploitation.
+        xi: Exploration-exploitation trade-off parameter for Expected Improvement and
+            Probability of Improvement acquisition functions. Higher values favor
+            exploration over exploitation.
+        exploration_decay: Rate at which exploration parameters (kappa or xi) decay
+            over time. None means no decay is applied.
+        exploration_decay_delay: Number of iterations before starting the decay.
+            None means decay is applied from the start.
+        random_state: Random seed for reproducibility.
+
+    Returns:
+        The configured acquisition function instance or None for default.
+
+    Raises:
+        ValueError: If acquisition_function is an invalid string.
+        TypeError: If acquisition_function is not a string, an AcquisitionFunction
+            instance, a class inheriting from AcquisitionFunction, or None.
+
+    """
+
+    acquisition_function_aliases = {
+        "ucb": "ucb",
+        "upper_confidence_bound": "ucb",
+        "ei": "ei",
+        "expected_improvement": "ei",
+        "poi": "poi",
+        "probability_of_improvement": "poi",
+    }
+
+    if acquisition_function is None:
+        return None
+
+    elif isinstance(acquisition_function, str):
+        acq_name = acquisition_function.lower()
+
+        if acq_name not in acquisition_function_aliases:
+            raise ValueError(
+                f"Invalid acquisition_function string: '{acquisition_function}'. "
+                f"Must be one of: {', '.join(acquisition_function_aliases.keys())}"
+            )
+
+        canonical_name = acquisition_function_aliases[acq_name]
+
+        if canonical_name == "ucb":
+            return acquisition.UpperConfidenceBound(
+                kappa=kappa,
+                exploration_decay=exploration_decay,
+                exploration_decay_delay=exploration_decay_delay,
+                random_state=random_state,
+            )
+        elif canonical_name == "ei":
+            return acquisition.ExpectedImprovement(
+                xi=xi,
+                exploration_decay=exploration_decay,
+                exploration_decay_delay=exploration_decay_delay,
+                random_state=random_state,
+            )
+        elif canonical_name == "poi":
+            return acquisition.ProbabilityOfImprovement(
+                xi=xi,
+                exploration_decay=exploration_decay,
+                exploration_decay_delay=exploration_decay_delay,
+                random_state=random_state,
+            )
+        else:
+            raise ValueError(f"Unhandled canonical name: {canonical_name}")
+
+    # If acquisition_function is an instance of AcquisitionFunction class
+    elif isinstance(acquisition_function, AcquisitionFunction):
+        return acquisition_function
+
+    # If acquisition_function is a class inheriting from AcquisitionFunction
+    elif isinstance(acquisition_function, type) and issubclass(
+        acquisition_function, acquisition.AcquisitionFunction
+    ):
+        return acquisition_function()
+
+    else:
+        raise TypeError(
+            "acquisition_function must be None, a string, "
+            "an AcquisitionFunction instance, or a class inheriting from "
+            "AcquisitionFunction. "
+            f"Got type: {type(acquisition_function).__name__}"
+        )
+
+
+def _process_bayes_opt_result(
+    optimizer: "BayesianOptimization",
+    x0: NDArray[np.float64],
+    problem: InternalOptimizationProblem,
+) -> InternalOptimizeResult:
+    """Convert BayesianOptimization result to InternalOptimizeResult format.
+
+    Args:
+        optimizer: The BayesianOptimization instance after optimization
+        x0: Initial parameter values
+        problem: The internal optimization problem
+
+    Returns:
+        InternalOptimizeResult with processed results
+
+    """
+    n_evals = len(optimizer.space)
+
+    if optimizer.max is not None:
+        best_params = optimizer.max["params"]
+        best_x = _extract_params_from_kwargs(best_params, len(x0))
+        best_y = -optimizer.max["target"]  # Un-negate the result
+        success = True
+        message = "Optimization succeeded"
+    else:
+        best_x = x0
+        best_y = float(problem.fun(x0))
+        success = False
+        message = (
+            "Optimization did not succeed "
+            "returning the initial point as the best available result."
+        )
+
+    return InternalOptimizeResult(
+        x=best_x,
+        fun=best_y,
+        success=success,
+        message=message,
+        n_iterations=n_evals,
+        n_fun_evals=n_evals,
+        n_jac_evals=0,
+    )
