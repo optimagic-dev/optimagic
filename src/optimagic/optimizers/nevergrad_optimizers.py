@@ -125,11 +125,10 @@ class NevergradPSO(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradOnePlusOne(Algorithm):
-    """
-    One Plus One Evolutionary algorithm from Nevergrad.
+    """One Plus One Evolutionary algorithm from Nevergrad.
 
     Args:
-        noise_handling: Method for handling the noise, can be 
+        noise_handling: Method for handling the noise, can be
             - "random": A random point is reevaluated regularly using the one-fifth
               adaptation rule.
             - "optimistic": The best optimistic point is reevaluated regularly,
@@ -139,7 +138,7 @@ class NevergradOnePlusOne(Algorithm):
               chance (i.e., 1 in 20) of being repeated (i.e., the same candidate
               solution is reevaluated to better estimate its performance).
               (Default: `None`).
-              
+
         n_cores: Number of cores to use.
 
         stopping.maxfun: Maximum number of function evaluations.
@@ -212,7 +211,9 @@ class NevergradOnePlusOne(Algorithm):
         rotation: Whether to apply rotational transformations to the search
             space, promoting invariance to axis-aligned structures and enhancing
             search performance in rotated coordinate systems. (Default: `False`)
+
     """
+
     noise_handling: (
         Literal["random", "optimistic"]
         | tuple[Literal["random", "optimistic"], float]
