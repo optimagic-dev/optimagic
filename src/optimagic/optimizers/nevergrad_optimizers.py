@@ -558,7 +558,7 @@ class NevergradSamplingSearch(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
-        configured_optimizer = ng.optimizers.EMNA(
+        configured_optimizer = ng.optimizers.SamplingSearch(
             sampler=self.sampler,
             scrambled=self.scrambled,
             middle_point=self.middle_point,
@@ -814,8 +814,8 @@ def _nevergrad_internal(
         parametrization=instrum, budget=stopping_maxfun, num_workers=n_cores
     )
 
-    if nonlinear_constraints is not None:
-        constraints = _process_nonlinear_constraits(nonlinear_constraints)
+    if nonlinear_constraints:
+        constraints = _process_nonlinear_constraints(nonlinear_constraints)
 
     # optimization loop using the ask-and-tell interface
     while optimizer.num_ask < stopping_maxfun:
@@ -826,7 +826,7 @@ def _nevergrad_internal(
 
         losses = problem.batch_fun([x.value[0][0] for x in x_list], n_cores=n_cores)
 
-        if nonlinear_constraints is not None:
+        if not nonlinear_constraints:
             for x, loss in zip(x_list, losses, strict=True):
                 optimizer.tell(x, loss)
         else:
@@ -857,7 +857,7 @@ def _nevergrad_internal(
     return result
 
 
-def _process_nonlinear_constraits(
+def _process_nonlinear_constraints(
     constraints: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Process stacked inequality constraints as single constraints.
