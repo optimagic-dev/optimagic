@@ -26,8 +26,10 @@ class AlgoInfo:
     is_global: bool
     needs_jac: bool
     needs_hess: bool
+    needs_bounds: bool
     supports_parallelism: bool
     supports_bounds: bool
+    supports_infinite_bounds: bool
     supports_linear_constraints: bool
     supports_nonlinear_constraints: bool
     disable_history: bool = False
