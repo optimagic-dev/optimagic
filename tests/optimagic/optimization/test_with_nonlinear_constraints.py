@@ -193,14 +193,9 @@ def general_example():
         ),
         om.NonlinearConstraint(
             selector=selector_nonlinear_constraint,
+            lower_bound=-0.8,
             upper_bound=0.8,
             func=constraint,
-            tol=0.01,
-        ),
-        om.NonlinearConstraint(
-            selector=selector_nonlinear_constraint,
-            func=constraint,
-            upper_bound=0.8,
             tol=0.01,
         ),
     ]

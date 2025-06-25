@@ -31,9 +31,10 @@ def process_nonlinear_constraints(
     This function processes the nonlinear constraints in the following way:
 
     1. The constraint a <= g(x) <= b is transformed to h(x) >= 0, where h(x) is
-       - h(x) = g(x), if a == 0 and b == inf
+       - h(x) = g(x), if a == -inf and b == inf
        - h(x) = g(x) - a, if a != 0 and b == inf
-       - h(x) = (g(x) - a, -g(x) + b) >= 0, if a != 0 and b != inf.
+       - h(x) = -g(x) + b, if a == -inf and b != inf
+       - h(x) = (g(x) - a, -g(x) + b) >= 0, if a != -inf and b != inf.
 
     2. The equality constraint g(x) = v is transformed to h(x) >= 0, where
        h(x) = (g(x) - v, -g(x) + v).
@@ -65,6 +66,7 @@ def process_nonlinear_constraints(
 
     Returns:
         list[dict]: List of processed constraints.
+        dict of
 
     """
     # do checks first to fail fast
@@ -207,7 +209,7 @@ def _process_nonlinear_constraint(
             select = external_selector(params)
             return np.atleast_1d(constraint_func(select))
 
-        lower_bounds = c.get("lower_bounds", 0)
+        lower_bounds = c.get("lower_bounds", -np.inf)
         upper_bounds = c.get("upper_bounds", np.inf)
 
         transformation = _get_transformation(lower_bounds, upper_bounds)
@@ -396,7 +398,13 @@ def _get_transformation(lower_bounds, upper_bounds):
             "func": lambda v: v - lower_bounds,
             "derivative": _identity,
         }
+    elif transformation_type == "add_ub":
+        transformer = {
+            "func": lambda v: upper_bounds - v,
+            "derivative": _identity,
+        }
     elif transformation_type == "stack":
+        print(lower_bounds)
         transformer = {
             "func": lambda v: np.concatenate(
                 (v - lower_bounds, upper_bounds - v), axis=0
@@ -410,6 +418,7 @@ def _get_transformation(lower_bounds, upper_bounds):
 def _get_transformation_type(lower_bounds, upper_bounds):
     lb_is_zero = not np.count_nonzero(lower_bounds)
     ub_is_inf = np.all(np.isposinf(upper_bounds))
+    lb_is_neginf = np.all(np.isneginf(lower_bounds))
 
     if lb_is_zero and ub_is_inf:
         # the external constraint is already in the correct format
@@ -417,6 +426,9 @@ def _get_transformation_type(lower_bounds, upper_bounds):
     elif ub_is_inf:
         # the external constraint can be transformed by subtraction
         _transformation_type = "subtract_lb"
+    elif lb_is_neginf:
+        # the external constraint can be transformed by addition
+        _transformation_type = "add_ub"
     else:
         # the external constraint can only be transformed by duplication (stacking)
         _transformation_type = "stack"
