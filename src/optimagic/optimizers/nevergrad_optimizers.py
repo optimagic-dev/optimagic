@@ -541,6 +541,8 @@ class NevergradDifferentialEvolution(Algorithm):
         stopping_maxfun: Maximum number of function evaluations before termination.
         n_cores: Number of cores to use for parallel function evaluation.
         seed: Seed for the random number generator for reproducibility.
+        sigma: Standard deviation for sampling initial population from N(0, σ²) in
+            case bounds are not provided.
 
     """
 
@@ -620,7 +622,7 @@ class NevergradBayesOptim(Algorithm):
     init_budget: int | None = None
     pca: bool = False
     n_components: NonNegativeFloat = 0.95
-    prop_doe_factor: NonNegativeFloat | None = None
+    prop_doe_factor: NonNegativeFloat | None = 1
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     n_cores: PositiveInt = 1
     seed: int | None = None
@@ -704,54 +706,274 @@ class NevergradEMNA(Algorithm):
         return res
 
 
-# @mark.minimizer(
-#     name="nevergrad_randomsearch",
-#     solver_type=AggregationLevel.SCALAR,
-#     is_available=IS_NEVERGRAD_INSTALLED,
-#     is_global=True,
-#     needs_jac=False,
-#     needs_hess=False,
-#     supports_parallelism=True,
-#     supports_bounds=True,
-#     supports_linear_constraints=False,
-#     supports_nonlinear_constraints=True,
-#     disable_history=False,
-# )
-# @dataclass(frozen=True)
-# class NevergradRandomSearch(Algorithm):
-#     """
-#     RandomSearch
-#     """
+@mark.minimizer(
+    name="nevergrad_axp",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradAXPlatform(Algorithm):
+    """Estimation of distribution algorithm."""
 
-#     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
-#     n_cores: PositiveInt = 1
-#     seed: int | None = None
-#     sigma: int | None = None
+    isotropic: bool = True
+    naive: bool = True
+    population_size_adaptation: bool = False
+    initial_popsize: int | None = None
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    sigma: int | None = None
 
-#     def _solve_internal_problem(
-#         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
-#     ) -> InternalOptimizeResult:
-#         if not IS_NEVERGRAD_INSTALLED:
-#             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
-#         configured_optimizer = ng.optimizers.RandomSearchMaker(
-#             isotropic=self.isotropic,
-#             naive=self.naive,
-#             population_size_adaptation=self.population_size_adaptation,
-#             initial_popsize=self.initial_popsize,
+        configured_optimizer = ng.optimizers.EMNA(
+            isotropic=self.isotropic,
+            naive=self.naive,
+            population_size_adaptation=self.population_size_adaptation,
+            initial_popsize=self.initial_popsize,
+        )
 
-#         )
+        res = _nevergrad_internal(
+            problem=problem,
+            x0=x0,
+            configured_optimizer=configured_optimizer,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            sigma=self.sigma,
+            nonlinear_constraints=problem.nonlinear_constraints,
+        )
+        return res
 
-#         res = _nevergrad_internal(
-#             problem=problem,
-#             x0=x0,
-#             configured_optimizer=configured_optimizer,
-#             stopping_maxfun=self.stopping_maxfun,
-#             n_cores=self.n_cores,
-#             seed=self.seed,
-#             nonlinear_constraints=problem.nonlinear_constraints,
-#         )
-#         return res
+
+@mark.minimizer(
+    name="nevergrad_eda",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradEDA(Algorithm):
+    """Estimation of distribution algorithm."""
+
+    isotropic: bool = True
+    naive: bool = True
+    population_size_adaptation: bool = False
+    initial_popsize: int | None = None
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    sigma: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        configured_optimizer = ng.optimizers.EMNA(
+            isotropic=self.isotropic,
+            naive=self.naive,
+            population_size_adaptation=self.population_size_adaptation,
+            initial_popsize=self.initial_popsize,
+        )
+
+        res = _nevergrad_internal(
+            problem=problem,
+            x0=x0,
+            configured_optimizer=configured_optimizer,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            sigma=self.sigma,
+            nonlinear_constraints=problem.nonlinear_constraints,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="nevergrad_tbpsa",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradTBPSA(Algorithm):
+    """Estimation of distribution algorithm."""
+
+    isotropic: bool = True
+    naive: bool = True
+    population_size_adaptation: bool = False
+    initial_popsize: int | None = None
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    sigma: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        configured_optimizer = ng.optimizers.EMNA(
+            isotropic=self.isotropic,
+            naive=self.naive,
+            population_size_adaptation=self.population_size_adaptation,
+            initial_popsize=self.initial_popsize,
+        )
+
+        res = _nevergrad_internal(
+            problem=problem,
+            x0=x0,
+            configured_optimizer=configured_optimizer,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            sigma=self.sigma,
+            nonlinear_constraints=problem.nonlinear_constraints,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="nevergrad_spsa",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradSPSA(Algorithm):
+    """Estimation of distribution algorithm."""
+
+    isotropic: bool = True
+    naive: bool = True
+    population_size_adaptation: bool = False
+    initial_popsize: int | None = None
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    sigma: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        configured_optimizer = ng.optimizers.EMNA(
+            isotropic=self.isotropic,
+            naive=self.naive,
+            population_size_adaptation=self.population_size_adaptation,
+            initial_popsize=self.initial_popsize,
+        )
+
+        res = _nevergrad_internal(
+            problem=problem,
+            x0=x0,
+            configured_optimizer=configured_optimizer,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            sigma=self.sigma,
+            nonlinear_constraints=problem.nonlinear_constraints,
+        )
+        return res
+
+
+@mark.minimizer(
+    name="nevergrad_randomsearch",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradRandomSearch(Algorithm):
+    """Minimize a scalar function using the Random Search algorithm."""
+
+    stupid: bool = False
+    middle_point: bool = False
+    opposition_mode: Literal["opposite", "quasi", None] = None
+    sampler: Literal["parametrization", "gaussian", "cauchy"] = "parametrization"
+    scale: float | Literal["random", "auto", "autotune"] = "auto"
+    recommendation_rule: Literal[
+        "average_of_best", "pessimistic", "average_of_exp_best"
+    ] = "pessimistic"
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    sigma: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        configured_optimizer = ng.optimizers.RandomSearchMaker(
+            stupid=self.stupid,
+            middle_point=self.middle_point,
+            opposition_mode=self.opposition_mode,
+            sampler=self.sampler,
+            scale=self.scale,
+            recommendation_rule=self.recommendation_rule,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            sigma=self.sigma,
+        )
+
+        res = _nevergrad_internal(
+            problem=problem,
+            x0=x0,
+            configured_optimizer=configured_optimizer,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            sigma=self.sigma,
+            nonlinear_constraints=problem.nonlinear_constraints,
+        )
+        return res
 
 
 @mark.minimizer(
@@ -827,7 +1049,70 @@ class NevergradSamplingSearch(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradNGOpt(Algorithm):
-    """Meta Optimizers from Nevergrad."""
+    """
+    Minimize a scalar function using a Meta Optimizer from Nevergrad.
+    Each meta optimizer combines multiples optimizers to solve a problem.
+    Args:
+        optimizer: One of
+            - NGOpt
+            - NGOpt4
+            - NGOpt8
+            - NGOpt10
+            - NGOpt12
+            - NGOpt13
+            - NGOpt14
+            - NGOpt15
+            - NGOpt16
+            - NGOpt21
+            - NGOpt36
+            - NGOpt38
+            - NGOpt39
+            - NGOptRW
+            - NGOptF
+            - NGOptF2
+            - NGOptF3
+            - NGOptF5
+            - NgIoh2
+            - NgIoh3
+            - NgIoh4
+            - NgIoh5
+            - NgIoh6
+            - NgIoh7
+            - NgIoh8
+            - NgIoh9
+            - NgIoh10
+            - NgIoh11
+            - NgIoh12
+            - NgIoh13
+            - NgIoh14
+            - NgIoh15
+            - NgIoh16
+            - NgIoh17
+            - NgIoh18
+            - NgIoh19
+            - NgIoh20
+            - NgIoh21
+            - NgIoh12b
+            - NgIoh13b
+            - NgIoh14b
+            - NgIoh15b
+            - NgIohRW2
+            - NgIohTuned
+            - NgDS
+            - NgDS2
+            - NGDSRW
+            - NGO
+            - CSEC
+            - CSEC10
+            - CSEC11
+            - Wiz
+        stopping_maxfun: Maximum number of function evaluations before termination.
+        n_cores: Number of cores to use for parallel function evaluation.
+        seed: Seed for the random number generator for reproducibility.
+        sigma: Standard deviation for sampling initial population from N(0, σ²) in
+            case bounds are not provided.
+
+    """
 
     optimizer: Literal[
         "NGOpt",
@@ -844,6 +1129,10 @@ class NevergradNGOpt(Algorithm):
         "NGOpt38",
         "NGOpt39",
         "NGOptRW",
+        "NGOptF",
+        "NGOptF2",
+        "NGOptF3",
+        "NGOptF5",
         "NgIoh2",
         "NgIoh3",
         "NgIoh4",
@@ -921,7 +1210,56 @@ class NevergradNGOpt(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradMeta(Algorithm):
-    """Named Meta Optimizers from Nevergrad."""
+    """Minimize a scalar function using a Meta Optimizer from Nevergrad.
+    Utilizes a combination of local and global optimizers to find the best solution.
+    Local optimizers like BFGS are wrappers over scipy implementations.
+    Each meta optimizer combines multiples optimizers to solve a problem.
+    Args:
+        optimizer: One of
+            - MultiBFGSPlus
+            - LogMultiBFGSPlus
+            - SqrtMultiBFGSPlus
+            - MultiCobylaPlus
+            - MultiSQPPlus
+            - BFGSCMAPlus
+            - LogBFGSCMAPlus
+            - SqrtBFGSCMAPlus
+            - SQPCMAPlus
+            - LogSQPCMAPlus
+            - SqrtSQPCMAPlus
+            - MultiBFGS
+            - LogMultiBFGS
+            - SqrtMultiBFGS
+            - MultiCobyla
+            - ForceMultiCobyla
+            - MultiSQP
+            - BFGSCMA
+            - LogBFGSCMA
+            - SqrtBFGSCMA
+            - SQPCMA
+            - LogSQPCMA
+            - SqrtSQPCMA
+            - FSQPCMA
+            - F2SQPCMA
+            - F3SQPCMA
+            - MultiDiscrete
+            - CMandAS2
+            - CMandAS3
+            - MetaCMA
+            - CMA
+            - PCEDA
+            - MPCEDA
+            - MEDA
+            - NoisyBandit
+            - SPSA
+            - Shiwa
+            - Carola3
+        stopping_maxfun: Maximum number of function evaluations before termination.
+        n_cores: Number of cores to use for parallel function evaluation.
+        seed: Seed for the random number generator for reproducibility.
+        sigma: Standard deviation for sampling initial population from N(0, σ²) in
+            case bounds are not provided.
+    """
 
     optimizer: Literal[
         "MultiBFGSPlus",
@@ -955,15 +1293,12 @@ class NevergradMeta(Algorithm):
         "CMandAS3",
         "MetaCMA",
         "CMA",
-        "EDA",
-        "AXP",
         "PCEDA",
         "MPCEDA",
         "MEDA",
         "NoisyBandit",
         "SPSA",
         "Shiwa",
-        "MetaBO",
         "Carola3",
     ] = "Shiwa"
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
@@ -1005,8 +1340,7 @@ def _nevergrad_internal(
 ) -> InternalOptimizeResult:
     """Internal helper function for nevergrad.
 
-    Handles the optimization loop for Nevergrad optimizers, including parameter bounds,
-    parallel function evaluation, and result.
+    Handle the optimization loop.
 
     Args:
         problem (InternalOptimizationProblem): Internal optimization problem to solve.
@@ -1052,11 +1386,11 @@ def _nevergrad_internal(
     # optimization loop using the ask-and-tell interface
     while optimizer.num_ask < stopping_maxfun:
         x_list = [
-            optimizer.ask()
+            optimizer.ask().value[0][0]
             for _ in range(min(n_cores, stopping_maxfun - optimizer.num_ask))
         ]
 
-        losses = problem.batch_fun([x.value[0][0] for x in x_list], n_cores=n_cores)
+        losses = problem.batch_fun([x for x in x_list], n_cores=n_cores)
 
         if not nonlinear_constraints:
             for x, loss in zip(x_list, losses, strict=True):
@@ -1125,7 +1459,5 @@ def _batch_constraint_evaluations(
     """Batch version of _get_constraint_evaluations."""
     batch = process_batch_evaluator("joblib")
     func = partial(_get_constraint_evaluations, constraints)
-    results = batch(
-        func=func, arguments=[x.value[0][0] for x in x_list], n_cores=n_cores
-    )
+    results = batch(func=func, arguments=[x for x in x_list], n_cores=n_cores)
     return results

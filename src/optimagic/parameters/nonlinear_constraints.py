@@ -404,7 +404,6 @@ def _get_transformation(lower_bounds, upper_bounds):
             "derivative": _identity,
         }
     elif transformation_type == "stack":
-        print(lower_bounds)
         transformer = {
             "func": lambda v: np.concatenate(
                 (v - lower_bounds, upper_bounds - v), axis=0
