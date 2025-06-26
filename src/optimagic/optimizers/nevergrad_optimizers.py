@@ -122,7 +122,7 @@ class NevergradCMAES(Algorithm):
     n_cores: PositiveInt = 1
     step_size_adaptive: bool | str = True
     CSA_dampfac: PositiveFloat = 1.0
-    CMA_dampsvec_fade: float = 0.1
+    CMA_dampsvec_fade: PositiveFloat = 0.1
     CSA_squared: bool = False
     CMA_on: float = 1.0
     CMA_rankone: float = 1.0
@@ -668,7 +668,6 @@ class NevergradRandomSearch(Algorithm):
     ] = "pessimistic"
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     n_cores: PositiveInt = 1
-    seed: int | None = None
     sigma: float | None = None
 
     def _solve_internal_problem(
@@ -692,7 +691,7 @@ class NevergradRandomSearch(Algorithm):
             configured_optimizer=configured_optimizer,
             stopping_maxfun=self.stopping_maxfun,
             n_cores=self.n_cores,
-            seed=self.seed,
+            seed=None,
             sigma=self.sigma,
             nonlinear_constraints=problem.nonlinear_constraints,
         )
@@ -748,7 +747,7 @@ class NevergradSamplingSearch(Algorithm):
             configured_optimizer=configured_optimizer,
             stopping_maxfun=self.stopping_maxfun,
             n_cores=self.n_cores,
-            seed=self.seed,
+            seed=None,
             sigma=self.sigma,
             nonlinear_constraints=problem.nonlinear_constraints,
         )

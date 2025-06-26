@@ -4001,7 +4001,7 @@ these optimizers, you need to have
 
     Minimize a scalar function using the Particle Swarm Optimization algorithm.
     
-    The Particle Swarm Optimization algorithm was originally proposed by :cite:`Kennedy1995`. The
+    The Particle Swarm Optimization algorithm was originally proposed by :cite:`Kennedy1995`.The
     implementation in Nevergrad is based on :cite:`Zambrano2013`.
     
     PSO solves an optimization problem by evolving a swarm of particles (candidate solutions) across the
@@ -4031,7 +4031,7 @@ these optimizers, you need to have
       Whether to apply quasi-opposition initialization to speed. Default is False.
     - **special\_speed\_quasi\_opp\_init** (bool):
       Whether to use special quasi-opposition initialization for speed. Default is False.
-    - **sigma** (float):
+    - **sigma**:
       Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
 ```
 
@@ -4114,7 +4114,15 @@ these optimizers, you need to have
 
         "nevergrad_oneplusone"
 
-    One Plus One Evolutionary algorithm from Nevergrad.
+    Minimize a scalar function using the One Plus One Evolutionary algorithm from Nevergrad.
+    
+    THe One Plus One evolutionary algorithm iterates to find a set of parameters that minimizes the loss
+    function. It does this by perturbing, or mutating, the parameters from the last iteration (the
+    parent). If the new (child) parameters yield a better result, then the child becomes the new parent
+    whose parameters are perturbed, perhaps more aggressively. If the parent yields a better result, it
+    remains the parent and the next perturbation is less aggressive. Originally proposed by
+    :cite:`Rechenberg1973`. The implementation in Nevergrad is based on the one-fifth adaptation rule,
+    going back to :cite:`Schumer1968.
 
     - **noise\_handling**: Method for handling the noise, can be
           - "random": A random point is reevaluated regularly using the one-fifth adaptation rule.
@@ -4252,10 +4260,14 @@ these optimizers, you need to have
 
         "nevergrad_emna"
 
-    Minimize a scalar function using the Estimation of Multivariate Normal Algorithm. Estimation of
-    Multivariate Normal Algorithm (EMNA), a distribution-based evolutionary algorithm that models the
-    search space using a multivariate Gaussian. Efficient in parallel settings with large population
-    sizes.
+    Minimize a scalar function using the Estimation of Multivariate Normal Algorithm.
+    
+    Estimation of Multivariate Normal Algorithm (EMNA), a distribution-based evolutionary algorithm that
+    models the search space using a multivariate Gaussian. EMNA learns the full covariance matrix of the
+    Gaussian sampling distribution, resulting in a cubic time complexity w.r.t. each sampling. It is
+    highly recommended to first attempt other more advanced optimization methods for LBO. See
+    :cite:`emnaimpl`. This algorithm is quite efficient in a parallel setting, i.e. when the population
+    size is large.
 
     - **isotropic**:
       If True, uses an isotropic (identity covariance) Gaussian. If False, uses a separable (diagonal
@@ -4281,11 +4293,13 @@ these optimizers, you need to have
 
         "nevergrad_cga"
 
-    Minimize a scalar function using the Compact Genetic Algorithm The Compact Genetic Algorithm (cGA)
-    is a memory-efficient genetic algorithm that represents the population as a probability vector over
-    gene values. It simulates the order-one behavior of a simple GA with uniform crossover, updating
-    probabilities instead of maintaining an explicit population. cGA processes each gene independently
-    and is well-suited for large or constrained environments. For details see :cite:`cgaimpl`.
+    Minimize a scalar function using the Compact Genetic Algorithm.
+    
+    The Compact Genetic Algorithm (cGA) is a memory-efficient genetic algorithm that represents the
+    population as a probability vector over gene values. It simulates the order-one behavior of a simple
+    GA with uniform crossover, updating probabilities instead of maintaining an explicit population. cGA
+    processes each gene independently and is well-suited for large or constrained environments. For
+    details see :cite:`cgaimpl`.
 
     - **stopping\_maxfun**: Maximum number of function evaluations before termination.
     - **n\_cores**: Number of cores to use for parallel function evaluation.
@@ -4306,8 +4320,8 @@ these optimizers, you need to have
     Adaptive experimentation platform from Facebook. Adaptive experimentation is the machine-learning
     guided process of iteratively exploring a (possibly infinite) parameter space in order to identify
     optimal configurations in a resource-efficient manner. It supports Bayesian optimization and bandit
-    strategies as exploration strategies. For full documentation visit
-    `AX <https://github.com/facebook/Ax>`_.
+    strategies as exploration strategies. For full documentation visit `AX
+    <https://github.com/facebook/Ax>`_.
 
     - **stopping\_maxfun**: Maximum number of function evaluations before termination.
     - **n\_cores**: Number of cores to use for parallel function evaluation.
@@ -4330,7 +4344,7 @@ these optimizers, you need to have
     EDAs update a distribution based on selected individuals and sample new candidates from it. This
     allows efficient exploration of complex or noisy search spaces. In short, EDAs typically do not
     directly evolve populations of search points but build probabilistic models of promising solutions
-    by repeatedly sampling and selecting points from the underlying search space.
+    by repeatedly sampling and selecting points from the underlying search space. Refer :cite:`edaimpl`.
 
     - **stopping\_maxfun**: Maximum number of function evaluations before termination.
     - **n\_cores**: Number of cores to use for parallel function evaluation.
@@ -4346,35 +4360,17 @@ these optimizers, you need to have
 
         "nevergrad_tbpsa"
 
-    Minimize a scalar function using the Test-based population size adaptation algorithm. TBPSA adapts
-    population size based on fitness trend detection using linear regression. If no significant
-    improvement is found (via hypothesis testing), the population size is increased to improve
-    robustness in noisy settings. For more details, refer :cite:`tbpsaimpl`
+    Minimize a scalar function using the Test-based population size adaptation algorithm.
+    
+    TBPSA adapts population size based on fitness trend detection using linear regression. If no
+    significant improvement is found (via hypothesis testing), the population size is increased to
+    improve robustness in noisy settings. This method performs the best in many noisy optimization
+    problems, even in large dimensions. For more details, refer :cite:`tbpsaimpl`
 
     - **naive**:
       If True, returns the best individual seen so far. If False (recommended for noisy problems), returns
       the average of the final population to reduce the effect of noise.
     - **initial\_popsize**: Initial population size. If not specified, defaults to 4 x dimension.
-    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
-    - **n\_cores**: Number of cores to use for parallel function evaluation.
-    - **seed**: Seed for the random number generator for reproducibility.
-    - **sigma**:
-      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
-```
-
-```{eval-rst}
-.. dropdown:: nevergrad_spsa
-
-    .. code-block::
-
-        "nevergrad_spsa"
-
-    Minimize a scalar function using the Simultaneous perturbation stochastic approximation algorithm.
-    SPSA is a gradient-free optimization method that estimates the gradient using only two evaluations
-    of the objective function per iteration. It is especially useful in high-dimensional or noisy
-    problems where exact gradients are unavailable or expensive to compute. This implementation follows
-    the standard first-order SPSA implemented in :cite:`spsaimpl`.
-
     - **stopping\_maxfun**: Maximum number of function evaluations before termination.
     - **n\_cores**: Number of cores to use for parallel function evaluation.
     - **seed**: Seed for the random number generator for reproducibility.
@@ -4390,10 +4386,14 @@ these optimizers, you need to have
         "nevergrad_randomsearch"
 
     Minimize a scalar function using the Random Search algorithm.
+    
+    This is a one-shot optimization method, provides random suggestions.
 
     - **baseline**:
       Provides a random recommendation instead of the best point so far (for baseline testing)
-    - **init\_zero**: Enforces that the first suggested point (ask) is the zero vector.
+    - **init\_zero**:
+      Enforces that the first suggested point (ask) is the zero vector. i.e we add (0,0,...,0) as a first
+      point.
     - **mirror\_sampling**: Symmetrizes exploration with respect to the center.
               - "opposite": enables full symmetry by always evaluating mirrored points.
               - "quasi": applies randomized symmetry (less strict, more exploratory).
@@ -4425,6 +4425,8 @@ these optimizers, you need to have
         "nevergrad_samplingsearch"
 
     Minimize a scalar function using SamplingSearch.
+    
+    This is a one-shot optimization method, but better than random search by ensuring more uniformity.
 
     - **sampling\_method**: Choice of the low-discrepancy sampler used for initial points.
               - "Halton": deterministic, well-spaced sequences
@@ -4452,7 +4454,10 @@ these optimizers, you need to have
     - **n\_cores**: Number of cores to use for parallel function evaluation.
     - **seed**: Seed for the random number generator for reproducibility.
     - **sigma**:
-      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided. Notes
+      -----
+      - Halton is a low quality sampling method when the dimension is high; it is usually better to use Halton with scrambling.
+      - When the budget is known in advance, it is also better to replace Halton by Hammersley.
 ```
 
 ```{eval-rst}
