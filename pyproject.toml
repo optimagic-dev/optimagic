@@ -349,7 +349,6 @@ module = [
     "cyipopt",
     "nlopt",
     "bokeh",
-    "nevergrad",
     "bokeh.layouts",
     "bokeh.models",
     "bokeh.plotting",

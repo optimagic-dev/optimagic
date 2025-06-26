@@ -373,6 +373,56 @@ class NevergradDifferentialEvolution(Algorithm):
 
 
 @mark.minimizer(
+    name="nevergrad_bo",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradBayesOptim(Algorithm):
+    init_budget: int | None = None
+    pca: bool = False
+    n_components: NonNegativeFloat = 0.95
+    prop_doe_factor: NonNegativeFloat | None = 1
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+    seed: int | None = None
+    sigma: int | None = None
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        configured_optimizer = ng.optimizers.BayesOptim(
+            init_budget=self.init_budget,
+            pca=self.pca,
+            n_components=self.n_components,
+            prop_doe_factor=self.prop_doe_factor,
+        )
+
+        res = _nevergrad_internal(
+            problem=problem,
+            x0=x0,
+            configured_optimizer=configured_optimizer,
+            stopping_maxfun=self.stopping_maxfun,
+            n_cores=self.n_cores,
+            seed=self.seed,
+            sigma=self.sigma,
+            nonlinear_constraints=problem.nonlinear_constraints,
+        )
+        return res
+
+
+@mark.minimizer(
     name="nevergrad_emna",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_NEVERGRAD_INSTALLED,
