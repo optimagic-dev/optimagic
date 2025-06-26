@@ -71,10 +71,6 @@ def test_batch_constraint_evaluations():
     assert got == expected
 
 
-# def test_nevergrad_internal():
-#     pass
-
-
 # test all optimizers listed in Literal type hint are valid attributes
 @pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
 def test_meta_optimizers_are_valid():

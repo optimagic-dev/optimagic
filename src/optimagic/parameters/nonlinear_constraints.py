@@ -66,7 +66,6 @@ def process_nonlinear_constraints(
 
     Returns:
         list[dict]: List of processed constraints.
-        dict of
 
     """
     # do checks first to fail fast
