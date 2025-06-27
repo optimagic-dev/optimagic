@@ -4,8 +4,10 @@ from typing import Callable, Literal, TypedDict
 
 from typing_extensions import NotRequired
 
+from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES
 from optimagic.exceptions import InvalidNumdiffOptionsError
+from optimagic.typing import BatchEvaluatorLiteral
 
 
 @dataclass(frozen=True)
@@ -21,8 +23,8 @@ class NumdiffOptions:
         min_steps: The minimum step size to use for numerical differentiation. If None,
             the default minimum step size will be used.
         n_cores: The number of cores to use for numerical differentiation.
-        batch_evaluator: The batch evaluator to use for numerical differentiation. Can
-            be "joblib" or "pathos", or a custom function.
+        batch_evaluator: The evaluator to use for batch evaluation. Allowed are
+            "joblib", "pathos", and "threading", or a custom callable.
 
     Raises:
         InvalidNumdiffError: If the numdiff options cannot be processed, e.g. because
@@ -37,7 +39,7 @@ class NumdiffOptions:
     scaling_factor: float = 1
     min_steps: float | None = None
     n_cores: int = DEFAULT_N_CORES
-    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib"  # type: ignore
+    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib"  # type: ignore
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
@@ -51,7 +53,7 @@ class NumdiffOptionsDict(TypedDict):
     scaling_factor: NotRequired[float]
     min_steps: NotRequired[float | None]
     n_cores: NotRequired[int]
-    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | Callable]  # type: ignore
+    batch_evaluator: NotRequired[BatchEvaluatorLiteral | Callable]  # type: ignore
 
 
 def pre_process_numdiff_options(
@@ -139,14 +141,12 @@ def _validate_attribute_types_and_values(options: NumdiffOptions) -> None:
             "must be an integer greater than 0."
         )
 
-    if not callable(options.batch_evaluator) and options.batch_evaluator not in {
-        "joblib",
-        "pathos",
-    }:
+    try:
+        process_batch_evaluator(options.batch_evaluator)
+    except Exception as e:
         raise InvalidNumdiffOptionsError(
-            f"Invalid numdiff `batch_evaluator`: {options.batch_evaluator}. Batch "
-            "evaluator must be a callable or one of 'joblib', 'pathos'."
-        )
+            f"Invalid batch evaluator: {options.batch_evaluator}."
+        ) from e
 
 
 class NumdiffPurpose(str, Enum):
