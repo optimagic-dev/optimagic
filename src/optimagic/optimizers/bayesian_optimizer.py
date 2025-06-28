@@ -90,7 +90,7 @@ class BayesOpt(Algorithm):
         constraint = self._process_constraints(problem.nonlinear_constraints)
 
         def objective(**kwargs: dict[str, float]) -> float:
-            x = _extract_params_from_kwargs(kwargs, len(x0))
+            x = _extract_params_from_kwargs(kwargs)
             return -float(
                 problem.fun(x)
             )  # Negate to convert minimization to maximization
@@ -180,20 +180,17 @@ def _process_bounds(bounds: InternalBounds) -> dict[str, tuple[float, float]]:
     }
 
 
-def _extract_params_from_kwargs(
-    kwargs: dict[str, Any], n_params: int
-) -> NDArray[np.float64]:
+def _extract_params_from_kwargs(params_dict: dict[str, Any]) -> NDArray[np.float64]:
     """Extract parameters from kwargs dictionary.
 
     Args:
-        kwargs: Dictionary with parameter values.
-        n_params: Number of parameters to extract.
+        params_dict: Dictionary with parameter values.
 
     Returns:
         Array of parameter values.
 
     """
-    return np.array([kwargs[f"param{i}"] for i in range(n_params)])
+    return np.array(list(params_dict.values()))
 
 
 def _process_acquisition_function(
@@ -323,7 +320,7 @@ def _process_bayes_opt_result(
 
     if optimizer.max is not None:
         best_params = optimizer.max["params"]
-        best_x = _extract_params_from_kwargs(best_params, len(x0))
+        best_x = _extract_params_from_kwargs(best_params)
         best_y = -optimizer.max["target"]  # Un-negate the result
         success = True
         message = "Optimization succeeded"

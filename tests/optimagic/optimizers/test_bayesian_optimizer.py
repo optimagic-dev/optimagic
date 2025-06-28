@@ -17,36 +17,36 @@ if IS_BAYESOPT_INSTALLED:
 
 
 def test_extract_params_from_kwargs():
-    """Test extracting parameters from kwargs dictionary."""
-    kwargs = {"param0": 1.0, "param1": 2.0, "param2": 3.0}
-
-    result = _extract_params_from_kwargs(kwargs, 3)
+    """Test basic parameter extraction from kwargs dictionary."""
+    params_dict = {"param0": 1.0, "param1": 2.0, "param2": 3.0}
+    result = _extract_params_from_kwargs(params_dict)
     np.testing.assert_array_equal(result, np.array([1.0, 2.0, 3.0]))
 
-    result = _extract_params_from_kwargs(kwargs, 2)
-    np.testing.assert_array_equal(result, np.array([1.0, 2.0]))
 
-
-def test_process_bounds():
-    """Test processing bounds for Bayesian optimization."""
+def test_process_bounds_valid():
+    """Test processing valid bounds for Bayesian optimization."""
     bounds = InternalBounds(lower=np.array([-1.0, 0.0]), upper=np.array([1.0, 2.0]))
     result = _process_bounds(bounds)
     expected = {"param0": (-1.0, 1.0), "param1": (0.0, 2.0)}
     assert result == expected
 
-    bounds_none = InternalBounds(lower=None, upper=np.array([1.0, 2.0]))
-    with pytest.raises(
-        ValueError, match="Bayesian optimization requires finite bounds"
-    ):
-        _process_bounds(bounds_none)
 
-    bounds_inf = InternalBounds(
-        lower=np.array([-1.0, 0.0]), upper=np.array([1.0, np.inf])
-    )
+def test_process_bounds_none():
+    """Test processing bounds with None values."""
+    bounds = InternalBounds(lower=None, upper=np.array([1.0, 2.0]))
     with pytest.raises(
         ValueError, match="Bayesian optimization requires finite bounds"
     ):
-        _process_bounds(bounds_inf)
+        _process_bounds(bounds)
+
+
+def test_process_bounds_infinite():
+    """Test processing bounds with infinite values."""
+    bounds = InternalBounds(lower=np.array([-1.0, 0.0]), upper=np.array([1.0, np.inf]))
+    with pytest.raises(
+        ValueError, match="Bayesian optimization requires finite bounds"
+    ):
+        _process_bounds(bounds)
 
 
 @pytest.mark.skipif(not IS_BAYESOPT_INSTALLED, reason="bayes_opt not installed")
