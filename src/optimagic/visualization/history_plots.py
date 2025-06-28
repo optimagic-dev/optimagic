@@ -221,11 +221,24 @@ def params_plot(
     return fig
 
 
+@dataclass(frozen=True)
+class _CriterionHistory:
+    """Data retrieved from optimization result."""
+
+    history: History
+    direction: Direction
+    name: str | None
+    start_params: list[Any]
+    is_multistart: bool
+    local_histories: list[History] | list[IterationHistory] | None
+    stacked_local_histories: History | None
+
+
 def _retrieve_optimization_data(
     results: dict[str, OptimizeResult | str | Path],
     stack_multistart: bool,
     show_exploration: bool,
-) -> list["_OptimizeData"]:
+) -> list[_CriterionHistory]:
     """Retrieve data for criterion plot from results (OptimizeResult or database).
 
     Args:
@@ -237,8 +250,9 @@ def _retrieve_optimization_data(
             visualized. Default is False.
 
     Returns:
-        list[_OptimizeData]: A list of _OptimizeData objects containing the history,
-            direction, multistart information, and local histories.
+        list[_CriterionHistory]: A list of _CriterionHistory objects containing the
+            history, direction, name, start parameters, and multistart information
+            of each optimization result.
 
     """
     data = []
@@ -249,19 +263,20 @@ def _retrieve_optimization_data(
                 stack_multistart=stack_multistart,
                 show_exploration=show_exploration,
                 plot_name="criterion_plot",
+                res_name=name,
             )
         elif isinstance(res, (str, Path)):
             _data = _retrieve_optimization_data_from_database(
                 res=res,
                 stack_multistart=stack_multistart,
                 show_exploration=show_exploration,
+                res_name=name,
             )
         else:
             msg = "results must be (or contain) an OptimizeResult or a path to a log"
             f"file, but is type {type(res)}."
             raise TypeError(msg)
 
-        _data.name = name
         data.append(_data)
 
     return data
@@ -272,7 +287,8 @@ def _retrieve_optimization_data_from_results_object(
     stack_multistart: bool,
     show_exploration: bool,
     plot_name: str,
-) -> "_OptimizeData":
+    res_name: str | None = None,
+) -> _CriterionHistory:
     """Retrieve optimization data from results object.
 
     Args:
@@ -283,10 +299,11 @@ def _retrieve_optimization_data_from_results_object(
             visualized. Default is False.
         plot_name: Name of the plotting function that calls this function. Used for
             raising errors.
+        res_name: Name of the result.
 
     Returns:
-        _OptimizeData: A data object containing the history, direction, multistart
-            information, and local histories.
+        _CriterionHistory: A data object containing the history, direction, name,
+            start parameters, and multistart information of a optimization result.
 
     """
     if res.history is None:
@@ -324,9 +341,11 @@ def _retrieve_optimization_data_from_results_object(
     else:
         stacked = None
 
-    data = _OptimizeData(
+    data = _CriterionHistory(
         history=res.history,
         direction=Direction(res.direction),
+        name=res_name,
+        start_params=res.start_params,
         is_multistart=is_multistart,
         local_histories=local_histories,
         stacked_local_histories=stacked,
@@ -338,7 +357,8 @@ def _retrieve_optimization_data_from_database(
     res: str | Path,
     stack_multistart: bool,
     show_exploration: bool,
-) -> "_OptimizeData":
+    res_name: str | None = None,
+) -> _CriterionHistory:
     """Retrieve optimization data from a database.
 
     Args:
@@ -347,10 +367,11 @@ def _retrieve_optimization_data_from_database(
             Default is False.
         show_exploration: If True, exploration samples of a multistart optimization are
             visualized. Default is False.
+        res_name: Name of the result.
 
     Returns:
-        _OptimizeData: A data object containing the history, direction, multistart
-            information, and local histories.
+        _CriterionHistory: A data object containing the history, direction, name,
+            start parameters, and multistart information of a optimization result.
 
     """
     reader: LogReader = LogReader.from_options(SQLiteLogOptions(res))
@@ -383,13 +404,14 @@ def _retrieve_optimization_data_from_database(
         batches=list(range(len(_history["fun"]))),
     )
 
-    data = _OptimizeData(
+    data = _CriterionHistory(
         history=history,
         direction=direction,
+        name=res_name,
+        start_params=reader.read_start_params(),
         is_multistart=local_histories is not None,
         local_histories=local_histories,
         stacked_local_histories=stacked,
-        start_params=reader.read_start_params(),
     )
     return data
 
@@ -432,13 +454,47 @@ def _get_stacked_local_histories(
     )
 
 
+@dataclass(frozen=True)
+class LineData:
+    """Data of a single line.
+
+    Attributes:
+        x: The x-coordinates of the points.
+        y: The y-coordinates of the points.
+        color: The color of the line. Default is None.
+        name: The name of the line. Default is None.
+        show_in_legend: Whether to show the line in the legend. Default is True.
+
+    """
+
+    x: np.ndarray
+    y: np.ndarray
+    color: str | None = None
+    name: str | None = None
+    show_in_legend: bool = True
+
+
+@dataclass(frozen=True)
+class CriterionPlotData:
+    """Backend agnostic data for criterion plot.
+
+    Attributes:
+        lines: Main optimization paths.
+        multistart_lines: Multistart optimization paths, if applicable.
+
+    """
+
+    lines: list[LineData]
+    multistart_lines: list[LineData]
+
+
 def _extract_criterion_plot_data(
-    data: list["_OptimizeData"],
+    data: list[_CriterionHistory],
     max_evaluations: int | None,
     palette_cycle: Iterator[str],
     stack_multistart: bool,
     monotone: bool,
-) -> "CriterionPlotData":
+) -> CriterionPlotData:
     """Extract lines for criterion plot from data.
 
     Args:
@@ -511,51 +567,6 @@ def _extract_criterion_plot_data(
         multistart_lines=multistart_lines,
     )
     return plot_data
-
-
-@dataclass()
-class _OptimizeData:
-    history: History
-    direction: Direction
-    is_multistart: bool
-    local_histories: list[History] | list[IterationHistory] | None
-    stacked_local_histories: History | None
-    start_params: list[Any] | None = None
-    name: str | None = None
-
-
-@dataclass(frozen=True)
-class LineData:
-    """Data of a single line.
-
-    Attributes:
-        x: The x-coordinates of the points.
-        y: The y-coordinates of the points.
-        color: The color of the line. Default is None.
-        name: The name of the line. Default is None.
-        show_in_legend: Whether to show the line in the legend. Default is True.
-
-    """
-
-    x: np.ndarray
-    y: np.ndarray
-    color: str | None = None
-    name: str | None = None
-    show_in_legend: bool = True
-
-
-@dataclass(frozen=True)
-class CriterionPlotData:
-    """Backend agnostic data for criterion plot.
-
-    Attributes:
-        lines: Main optimization paths.
-        multistart_lines: Multistart optimization paths, if applicable.
-
-    """
-
-    lines: list[LineData]
-    multistart_lines: list[LineData]
 
 
 @dataclass(frozen=True)
