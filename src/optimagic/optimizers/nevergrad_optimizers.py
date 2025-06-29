@@ -12,7 +12,13 @@ from optimagic import mark
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import IS_NEVERGRAD_INSTALLED
 from optimagic.exceptions import NotInstalledError
-from optimagic.optimization.algo_options import STOPPING_MAXFUN_GLOBAL, STOPPING_MAXITER
+from optimagic.optimization.algo_options import (
+    CONVERGENCE_FTOL_ABS,
+    CONVERGENCE_FTOL_REL,
+    CONVERGENCE_XTOL_ABS,
+    STOPPING_MAXFUN_GLOBAL,
+    STOPPING_MAXITER,
+)
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
@@ -138,9 +144,9 @@ class NevergradCMAES(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     stopping_maxtime: PositiveFloat = float("inf")
     stopping_cov_mat_cond: NonNegativeFloat = 1e14
-    convergence_ftol_abs: NonNegativeFloat = 1e-11
-    convergence_ftol_rel: NonNegativeFloat = 0.0
-    convergence_xtol_abs: NonNegativeFloat = 1e-11
+    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
     convergence_iter_noimprove: PositiveInt | None = None
     invariant_path: bool = False
     eval_final_mean: bool = True
@@ -438,7 +444,7 @@ class NevergradBayesOptim(Algorithm):
 @dataclass(frozen=True)
 class NevergradEMNA(Algorithm):
     isotropic: bool = True
-    naive: bool = True
+    noise_handling: bool = True
     population_size_adaptation: bool = False
     initial_popsize: int | None = None
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
@@ -454,7 +460,7 @@ class NevergradEMNA(Algorithm):
 
         configured_optimizer = ng.optimizers.EMNA(
             isotropic=self.isotropic,
-            naive=self.naive,
+            naive=self.noise_handling,
             population_size_adaptation=self.population_size_adaptation,
             initial_popsize=self.initial_popsize,
         )
@@ -528,7 +534,9 @@ class NevergradCGA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradAXPlatform(Algorithm):
-    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    stopping_maxfun: PositiveInt = (
+        100  # slow algorithm do not set to STOPPING_MAXFUN_GLOBAL
+    )
     n_cores: PositiveInt = 1
     seed: int | None = None
     sigma: float | None = None
@@ -610,7 +618,7 @@ class NevergradEDA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradTBPSA(Algorithm):
-    naive: bool = True
+    noise_handling: bool = True
     initial_popsize: int | None = None
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     n_cores: PositiveInt = 1
@@ -624,7 +632,7 @@ class NevergradTBPSA(Algorithm):
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
         configured_optimizer = ng.optimizers.ParametrizedTBPSA(
-            naive=self.naive,
+            naive=self.noise_handling,
             initial_popsize=self.initial_popsize,
         )
 
@@ -656,12 +664,9 @@ class NevergradTBPSA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradRandomSearch(Algorithm):
-    baseline: bool = False
-    init_zero: bool = False
-    mirror_sampling: Literal["opposite", "quasi"] | None = None
-    sampling_method: Literal["parametrization", "gaussian", "cauchy"] = (
-        "parametrization"
-    )
+    middle_point: bool = False
+    opposition_mode: Literal["opposite", "quasi"] | None = None
+    sampler: Literal["parametrization", "gaussian", "cauchy"] = "parametrization"
     scale: PositiveFloat | Literal["random", "auto", "autotune"] = "auto"
     recommendation_rule: Literal[
         "average_of_best", "pessimistic", "average_of_exp_best"
@@ -677,10 +682,10 @@ class NevergradRandomSearch(Algorithm):
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
         configured_optimizer = ng.optimizers.RandomSearchMaker(
-            stupid=self.baseline,
-            middle_point=self.init_zero,
-            opposition_mode=self.mirror_sampling,
-            sampler=self.sampling_method,
+            stupid=False,
+            middle_point=self.middle_point,
+            opposition_mode=self.opposition_mode,
+            sampler=self.sampler,
             scale=self.scale,
             recommendation_rule=self.recommendation_rule,
         )
@@ -713,9 +718,9 @@ class NevergradRandomSearch(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradSamplingSearch(Algorithm):
-    sampling_method: Literal["Halton", "LHS", "Hammersley"] = "Halton"
+    sampler: Literal["Halton", "LHS", "Hammersley"] = "Halton"
     scrambled: bool = False
-    init_zero: bool = False
+    middle_point: bool = False
     cauchy: bool = False
     scale: bool | NonNegativeFloat = 1.0
     rescaled: bool = False
@@ -732,9 +737,9 @@ class NevergradSamplingSearch(Algorithm):
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
         configured_optimizer = ng.optimizers.SamplingSearch(
-            sampler=self.sampling_method,
+            sampler=self.sampler,
             scrambled=self.scrambled,
-            middle_point=self.init_zero,
+            middle_point=self.middle_point,
             cauchy=self.cauchy,
             scale=self.scale,
             rescaled=self.rescaled,

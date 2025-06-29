@@ -4272,7 +4272,7 @@ these optimizers, you need to have
     - **isotropic**:
       If True, uses an isotropic (identity covariance) Gaussian. If False, uses a separable (diagonal
       covariance) Gaussian for greater flexibility in anisotropic landscapes.
-    - **naive**:
+    - **noise\_handling**:
       If True, returns the best individual found. If False (recommended for noisy problems), returns the
       average of the final population to reduce noise.
     - **population\_size\_adaptation**:
@@ -4367,7 +4367,7 @@ these optimizers, you need to have
     improve robustness in noisy settings. This method performs the best in many noisy optimization
     problems, even in large dimensions. For more details, refer :cite:`tbpsaimpl`
 
-    - **naive**:
+    - **noise\_handling**:
       If True, returns the best individual seen so far. If False (recommended for noisy problems), returns
       the average of the final population to reduce the effect of noise.
     - **initial\_popsize**: Initial population size. If not specified, defaults to 4 x dimension.
@@ -4389,16 +4389,14 @@ these optimizers, you need to have
     
     This is a one-shot optimization method, provides random suggestions.
 
-    - **baseline**:
-      Provides a random recommendation instead of the best point so far (for baseline testing)
-    - **init\_zero**:
+    - **middle\_point**:
       Enforces that the first suggested point (ask) is the zero vector. i.e we add (0,0,...,0) as a first
       point.
-    - **mirror\_sampling**: Symmetrizes exploration with respect to the center.
+    - **opposition\_mode**: Symmetrizes exploration with respect to the center.
               - "opposite": enables full symmetry by always evaluating mirrored points.
               - "quasi": applies randomized symmetry (less strict, more exploratory).
               - None: disables any symmetric mirroring in the sampling process.
-    - **sampling\_method**:
+    - **sampler**:
               - "parametrization": uses the default sample() method of the parametrization, which samples uniformly within bounds or from a Gaussian.
               - "gaussian": samples from a standard Gaussian distribution.
               - "cauchy": uses a Cauchy distribution instead of Gaussian.
@@ -4428,14 +4426,14 @@ these optimizers, you need to have
     
     This is a one-shot optimization method, but better than random search by ensuring more uniformity.
 
-    - **sampling\_method**: Choice of the low-discrepancy sampler used for initial points.
+    - **sampler**: Choice of the low-discrepancy sampler used for initial points.
               - "Halton": deterministic, well-spaced sequences
               - "Hammersley": similar to Halton but more uniform in low dimension
               - "LHS": Latin Hypercube Sampling; ensures coverage along each axis
     - **scrambled**:
       If True,  Adds scrambling to the search; much better in high dimension and rarely worse than the
       original search.
-    - **init\_zero**:
+    - **middle\_point**:
       If True, the first suggested point is the zero vector. Useful for initializing at the center of the
       search space.
     - **cauchy**:

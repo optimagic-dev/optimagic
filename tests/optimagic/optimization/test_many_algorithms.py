@@ -162,8 +162,6 @@ def test_deterministic_global_algorithm_on_sum_of_squares(algorithm):
 @pytest.mark.skipif(sys.platform == "win32", reason=skip_msg)
 @pytest.mark.parametrize("algorithm", GLOBAL_STOCHASTIC_ALGORITHMS)
 def test_stochastic_global_algorithm_on_sum_of_squares(algorithm):
-    if algorithm in ("nevergrad_axp"):
-        pytest.skip(reason="Slow.")
     res = minimize(
         fun=sos,
         params=np.array([0.35, 0.35]),

@@ -47,6 +47,7 @@ dependencies:
       - kaleido  # dev, tests
       - pre-commit>=4  # dev
       - bayes_optim  # dev, tests
+      - ax-platform  # dev, tests
       - -e .  # dev
       # type stubs
       - pandas-stubs  # dev, tests
