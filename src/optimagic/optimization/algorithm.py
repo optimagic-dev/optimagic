@@ -48,10 +48,14 @@ class AlgoInfo:
             report.append("needs_jac must be a bool")
         if not isinstance(self.needs_hess, bool):
             report.append("needs_hess must be a bool")
+        if not isinstance(self.needs_bounds, bool):
+            report.append("needs_bounds must be a bool")
         if not isinstance(self.supports_parallelism, bool):
             report.append("supports_parallelism must be a bool")
         if not isinstance(self.supports_bounds, bool):
             report.append("supports_bounds must be a bool")
+        if not isinstance(self.supports_infinite_bounds, bool):
+            report.append("supports_infinite_bounds must be a bool")
         if not isinstance(self.supports_linear_constraints, bool):
             report.append("supports_linear_constraints must be a bool")
         if not isinstance(self.supports_nonlinear_constraints, bool):
