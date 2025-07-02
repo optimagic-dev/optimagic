@@ -283,10 +283,6 @@ class NevergradOnePlusOne(Algorithm):
         instrum.specify_tabu_length(tabu_length=self.tabu_length)
         instrum = ng.p.Instrumentation(instrum)
 
-        if self.annealing is None:
-            self.annealing = "none"
-        if self.crossover_type is None:
-            self.crossover_type = "none"
         if self.seed is not None:
             instrum.random_state.seed(self.seed)
 
@@ -295,13 +291,13 @@ class NevergradOnePlusOne(Algorithm):
             mutation=self.mutation,
             crossover=self.crossover,
             rotation=self.rotation,
-            annealing=self.annealing,
+            annealing=self.annealing or "none",
             sparse=self.sparse,
             smoother=self.smoother,
             super_radii=self.super_radii,
             roulette_size=self.roulette_size,
             antismooth=self.antismooth,
-            crossover_type=self.crossover_type,
+            crossover_type=self.crossover_type or "none",
         )(
             parametrization=instrum,
             budget=self.stopping_maxfun,
