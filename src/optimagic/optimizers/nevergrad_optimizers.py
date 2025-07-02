@@ -246,16 +246,14 @@ class NevergradOnePlusOne(Algorithm):
     ] = "gaussian"
     annealing: Literal[
         "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
-    ] = "none"
+    ] | None = None
     sparse: bool = False
     super_radii: bool = False
     smoother: bool = False
     roulette_size: PositiveInt = 64
     antismooth: NonNegativeInt = 4
     crossover: bool = False
-    crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] = (
-        "none"
-    )
+    crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] | None = None
     tabu_length: NonNegativeInt = 1000
     rotation: bool = False
     seed: int | None = None
@@ -280,6 +278,10 @@ class NevergradOnePlusOne(Algorithm):
         instrum.specify_tabu_length(tabu_length=self.tabu_length)
         instrum = ng.p.Instrumentation(instrum)
 
+        if self.annealing is None:
+            self.annealing = "none"
+        if self.crossover_type is None:
+            self.crossover_type = "none"
         if self.seed is not None:
             instrum.random_state.seed(self.seed)
 
