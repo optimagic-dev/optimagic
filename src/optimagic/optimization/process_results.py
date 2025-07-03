@@ -156,10 +156,11 @@ def _process_multistart_info(
 
     sample = [converter.params_from_internal(x) for x in info["exploration_sample"]]
 
+    # info["exploration_results"] is a numpy array
     if extra_fields.direction == Direction.MINIMIZE:
         exploration_res = info["exploration_results"]
     else:
-        exploration_res = [-res for res in info["exploration_results"]]
+        exploration_res = -info["exploration_results"]
 
     return MultistartInfo(
         start_parameters=starts,
