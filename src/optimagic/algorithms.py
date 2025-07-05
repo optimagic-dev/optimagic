@@ -19,7 +19,6 @@ from optimagic.optimizers.ipopt import Ipopt
 from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
 from optimagic.optimizers.neldermead import NelderMeadParallel
 from optimagic.optimizers.nevergrad_optimizers import (
-    NevergradAXPlatform,
     NevergradBayesOptim,
     NevergradCGA,
     NevergradCMAES,
@@ -477,7 +476,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1312,7 +1310,6 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1401,7 +1398,6 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1648,7 +1644,6 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1944,7 +1939,6 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2665,7 +2659,6 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2766,7 +2759,6 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 class BoundedGradientFreeAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2888,7 +2880,6 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 class GradientFreeScalarAlgorithms(AlgoSelection):
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3034,7 +3025,6 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3141,7 +3131,6 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3496,7 +3485,6 @@ class BoundedScalarAlgorithms(AlgoSelection):
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3868,7 +3856,6 @@ class GradientFreeAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3952,7 +3939,6 @@ class GradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -4099,7 +4085,6 @@ class BoundedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -4261,7 +4246,6 @@ class ScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -4464,7 +4448,6 @@ class Algorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
-    nevergrad_axp: Type[NevergradAXPlatform] = NevergradAXPlatform
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES

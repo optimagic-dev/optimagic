@@ -254,18 +254,21 @@ class NevergradOnePlusOne(Algorithm):
         "biglognormal",
         "hugelognormal",
     ] = "gaussian"
-    annealing: Literal[
-        "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
-    ] = "none"
+    annealing: (
+        Literal[
+            "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
+        ]
+        | None
+    ) = None
     sparse: bool = False
     super_radii: bool = False
     smoother: bool = False
     roulette_size: PositiveInt = 64
     antismooth: NonNegativeInt = 4
     crossover: bool = False
-    crossover_type: Literal["none", "rand", "max", "min", "onepoint", "twopoint"] = (
-        "none"
-    )
+    crossover_type: (
+        Literal["none", "rand", "max", "min", "onepoint", "twopoint"] | None
+    ) = None
     tabu_length: NonNegativeInt = 1000
     rotation: bool = False
     seed: int | None = None
@@ -284,13 +287,13 @@ class NevergradOnePlusOne(Algorithm):
             mutation=self.mutation,
             crossover=self.crossover,
             rotation=self.rotation,
-            annealing=self.annealing,
+            annealing=self.annealing or "none",
             sparse=self.sparse,
             smoother=self.smoother,
             super_radii=self.super_radii,
             roulette_size=self.roulette_size,
             antismooth=self.antismooth,
-            crossover_type=self.crossover_type,
+            crossover_type=self.crossover_type or "none",
         )
 
         res = _nevergrad_internal(
@@ -505,49 +508,6 @@ class NevergradCGA(Algorithm):
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
         configured_optimizer = ng.optimizers.cGA
-
-        res = _nevergrad_internal(
-            problem=problem,
-            x0=x0,
-            configured_optimizer=configured_optimizer,
-            stopping_maxfun=self.stopping_maxfun,
-            n_cores=self.n_cores,
-            seed=self.seed,
-            sigma=self.sigma,
-            nonlinear_constraints=problem.nonlinear_constraints,
-        )
-        return res
-
-
-@mark.minimizer(
-    name="nevergrad_axp",
-    solver_type=AggregationLevel.SCALAR,
-    is_available=IS_NEVERGRAD_INSTALLED,
-    is_global=True,
-    needs_jac=False,
-    needs_hess=False,
-    supports_parallelism=False,
-    supports_bounds=True,
-    supports_linear_constraints=False,
-    supports_nonlinear_constraints=False,
-    disable_history=False,
-)
-@dataclass(frozen=True)
-class NevergradAXPlatform(Algorithm):
-    stopping_maxfun: PositiveInt = (
-        100  # slow algorithm do not set to STOPPING_MAXFUN_GLOBAL
-    )
-    n_cores: PositiveInt = 1
-    seed: int | None = None
-    sigma: float | None = None
-
-    def _solve_internal_problem(
-        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
-    ) -> InternalOptimizeResult:
-        if not IS_NEVERGRAD_INSTALLED:
-            raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
-
-        configured_optimizer = ng.optimizers.AXP
 
         res = _nevergrad_internal(
             problem=problem,
