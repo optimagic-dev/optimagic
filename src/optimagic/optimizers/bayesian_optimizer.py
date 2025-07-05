@@ -22,6 +22,7 @@ from optimagic.typing import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
+    UnitIntervalFloat,
 )
 
 if IS_BAYESOPT_INSTALLED or TYPE_CHECKING:
@@ -52,7 +53,7 @@ class BayesOpt(Algorithm):
     verbose: Literal[0, 1, 2] = 0
     kappa: NonNegativeFloat = 2.576
     xi: PositiveFloat = 0.01
-    exploration_decay: float | None = None
+    exploration_decay: UnitIntervalFloat | None = None
     exploration_decay_delay: NonNegativeInt | None = None
     random_state: int | None = None
     acquisition_function: (

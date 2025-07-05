@@ -14,7 +14,7 @@ from typing import (
 )
 
 import numpy as np
-from annotated_types import Ge, Gt, Lt
+from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
 
 PyTree = Any
@@ -120,6 +120,7 @@ PositiveFloat = Annotated[float, Gt(0)]
 NonNegativeFloat = Annotated[float, Ge(0)]
 NegativeFloat = Annotated[float, Lt(0)]
 GtOneFloat = Annotated[float, Gt(1)]
+UnitIntervalFloat = Annotated[float, Gt(0), Le(1)]
 YesNoBool = Literal["yes", "no"] | bool
 DirectionLiteral = Literal["minimize", "maximize"]
 BatchEvaluatorLiteral = Literal["joblib", "pathos"]
