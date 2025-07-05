@@ -1,7 +1,7 @@
 """Implement Bayesian optimization using bayes_opt."""
 
 from dataclasses import dataclass
-from typing import Any, Literal, Type
+from typing import TYPE_CHECKING, Any, Literal, Type
 
 import numpy as np
 from numpy.typing import NDArray
@@ -24,9 +24,12 @@ from optimagic.typing import (
     PositiveInt,
 )
 
-if IS_BAYESOPT_INSTALLED:
+if IS_BAYESOPT_INSTALLED or TYPE_CHECKING:
     from bayes_opt import BayesianOptimization, acquisition
     from bayes_opt.acquisition import AcquisitionFunction
+else:
+    BayesianOptimization = Any  # type: ignore  # pragma: no cover
+    AcquisitionFunction = Any  # type: ignore # pragma: no cover
 
 
 @mark.minimizer(
