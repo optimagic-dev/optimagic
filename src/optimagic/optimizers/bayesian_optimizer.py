@@ -304,7 +304,7 @@ def _process_acquisition_function(
 
 
 def _process_bayes_opt_result(
-    optimizer: "BayesianOptimization",
+    optimizer: BayesianOptimization,
     x0: NDArray[np.float64],
     problem: InternalOptimizationProblem,
 ) -> InternalOptimizeResult:
