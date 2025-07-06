@@ -29,8 +29,8 @@ if IS_BAYESOPT_INSTALLED or TYPE_CHECKING:
     from bayes_opt import BayesianOptimization, acquisition
     from bayes_opt.acquisition import AcquisitionFunction
 else:
-    BayesianOptimization = Any  # type: ignore  # pragma: no cover
-    AcquisitionFunction = Any  # type: ignore # pragma: no cover
+    BayesianOptimization = Any  # pragma: no cover
+    AcquisitionFunction = Any  # pragma: no cover
 
 
 @mark.minimizer(
