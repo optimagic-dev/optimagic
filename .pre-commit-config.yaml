@@ -143,8 +143,6 @@ repos:
           - types-cffi
           - types-openpyxl
           - types-jinja2
-        args:
-          - --config=pyproject.toml
 ci:
   autoupdate_schedule: monthly
   skip:
