@@ -9,12 +9,11 @@ import optimagic as om
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
-from optimagic.typing import Direction
 from optimagic.visualization.history_plots import (
     LineData,
-    _CriterionHistory,
-    _extract_criterion_plot_data,
+    _extract_criterion_plot_lines,
     _harmonize_inputs_to_dict,
+    _PlottingMultistartHistory,
     _retrieve_optimization_data,
     criterion_plot,
     params_plot,
@@ -197,12 +196,10 @@ def test_harmonize_inputs_to_dict_path_input():
     assert _harmonize_inputs_to_dict(results=path, names=None) == {"0": path}
 
 
-def _compare_criterion_history_with_result(data, res, res_name):
-    assert isinstance(data, _CriterionHistory)
-    assert isinstance(res, om.OptimizeResult)
-
+def _compare_plotting_multistart_history_with_result(
+    data: _PlottingMultistartHistory, res: om.OptimizeResult, res_name: str
+):
     assert_array_equal(data.history.fun, res.history.fun)
-    assert data.direction == Direction(res.direction)
     assert data.name == res_name
     assert_array_equal(data.start_params, res.start_params)
     assert data.is_multistart == (res.multistart_info is not None)
@@ -217,7 +214,10 @@ def test_retrieve_data_from_result(minimize_result):
     )
 
     assert isinstance(data, list) and len(data) == 1
-    _compare_criterion_history_with_result(data=data[0], res=res, res_name="bla")
+    assert isinstance(data[0], _PlottingMultistartHistory)
+    _compare_plotting_multistart_history_with_result(
+        data=data[0], res=res, res_name="bla"
+    )
 
 
 def test_retrieve_data_from_logged_result(tmp_path):
@@ -234,7 +234,10 @@ def test_retrieve_data_from_logged_result(tmp_path):
     )
 
     assert isinstance(data, list) and len(data) == 1
-    _compare_criterion_history_with_result(data=data[0], res=res, res_name="logged")
+    assert isinstance(data[0], _PlottingMultistartHistory)
+    _compare_plotting_multistart_history_with_result(
+        data=data[0], res=res, res_name="logged"
+    )
 
 
 @pytest.mark.parametrize("stack_multistart", [True, False])
@@ -260,7 +263,7 @@ def test_retrieve_data_from_multistart_result(minimize_result, stack_multistart)
         assert data[0].stacked_local_histories is None
 
 
-def test_extract_criterion_plot_data(minimize_result):
+def test_extract_criterion_plot_lines(minimize_result):
     res = minimize_result[True][0]
     results = {"multistart": res}
     data = _retrieve_optimization_data(
@@ -269,7 +272,7 @@ def test_extract_criterion_plot_data(minimize_result):
 
     palette_cycle = itertools.cycle(["red", "green", "blue"])
 
-    plot_data = _extract_criterion_plot_data(
+    lines, multistart_lines = _extract_criterion_plot_lines(
         data=data,
         max_evaluations=None,
         palette_cycle=palette_cycle,
@@ -277,8 +280,6 @@ def test_extract_criterion_plot_data(minimize_result):
         monotone=False,
     )
 
-    lines = plot_data.lines
-    multistart_lines = plot_data.multistart_lines
     history = res.history.fun
 
     assert isinstance(lines, list) and len(lines) == 1
