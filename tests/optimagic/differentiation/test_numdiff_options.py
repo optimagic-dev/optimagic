@@ -80,6 +80,6 @@ def test_numdiff_options_invalid_n_cores():
 
 def test_numdiff_options_invalid_batch_evaluator():
     with pytest.raises(
-        InvalidNumdiffOptionsError, match="Invalid numdiff `batch_evaluator`:"
+        InvalidNumdiffOptionsError, match="Invalid batch evaluator: invalid"
     ):
         NumdiffOptions(batch_evaluator="invalid")
