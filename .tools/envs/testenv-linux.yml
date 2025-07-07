@@ -23,7 +23,7 @@ dependencies:
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
   - seaborn  # dev, tests
-  - mypy=1.15.0  # dev, tests
+  - mypy=1.14.1  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
