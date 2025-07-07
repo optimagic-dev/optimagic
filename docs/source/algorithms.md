@@ -86,6 +86,7 @@ install optimagic.
       f in the stopping criterion.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. Scipy name: **disp**.
 
 ```
 
@@ -122,6 +123,7 @@ install optimagic.
     - **convergence.ftol_abs** (float): Absolute difference in the criterion value between
       iterations that is tolerated to declare convergence. As no relative tolerances can be passed to Nelder-Mead,
       optimagic sets a non zero default for this.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
     - **adaptive** (bool): Adapt algorithm parameters to dimensionality of problem.
       Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277). scipy's default is False.
 
@@ -165,6 +167,7 @@ install optimagic.
       the optimization stops but we do not count thisas convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached, the optimization stops,
       but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -190,7 +193,22 @@ install optimagic.
     - **norm** (float): Order of the vector norm that is used to calculate the gradient's "score" that
       is compared to the gradient tolerance to determine convergence. Default is infinite which means that
       the largest entry of the gradient vector is compared to the gradient tolerance.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
+    - **convergence_xtol_rel** (float): Relative tolerance for `x`. Terminate successfully if step size is less than `xk * xrtol` where `xk` is the current parameter vector. Default is 1e-5. SciPy name: **xrtol**.
+    - **armijo_condition** (float): Parameter for Armijo condition rule. Default is 1e-4. Ensures 
 
+        .. math::
+
+            f(x_k+\alpha p_k) \le f(x_k) \;+\mathrm{armijo\_condition}\,\cdot\,\alpha\,\nabla f(x_k)^\top p_k, 
+        
+      so each step yields at least a fraction **armijo_condition** of the predicted decrease. Smaller ⇒ more aggressive steps, larger ⇒ more conservative ones. SciPy name: **c1**.
+    - **curvature_condition** (float): Parameter for curvature condition rule. Default is 0.9. Ensures 
+      
+        .. math::
+
+            \nabla f(x_k+\alpha p_k)^\top p_k \ge \mathrm{curvature\_condition}\,\cdot\,\nabla f(x_k)^\top p_k, 
+        
+      so the new slope isn’t too negative. Smaller ⇒ stricter curvature reduction (smaller steps), larger ⇒ looser (bigger steps). SciPy name: **c2**.
 ```
 
 ```{eval-rst}
@@ -225,6 +243,7 @@ install optimagic.
       "score" that is compared to the gradient tolerance to determine convergence.
       Default is infinite which means that the largest entry of the gradient vector
       is compared to the gradient tolerance.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -271,6 +290,7 @@ install optimagic.
       relative change in the parameters for determining the convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 
@@ -309,6 +329,7 @@ install optimagic.
     RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
     the `trustregion.initial_radius`. In this way COBYLA's iterations behave
     like a trust region algorithm.
+  - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -376,6 +397,7 @@ install optimagic.
       criterion rescaling. If 0, rescale at each iteration. If a large value,
       never rescale. If < 0, rescale is set to 1.3. optimagic defaults to scipy's
       default.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 ```
@@ -392,7 +414,7 @@ install optimagic.
     .. warning::
         In our benchmark using a quadratic objective function, the trust_constr
         algorithm did not find the optimum very precisely (less than 4 decimal places).
-        If you require high precision, you should refine an optimum found with Powell
+        If you require high precision, you should refine an optimum found with trust_constr
         with another local optimizer.
 
     .. note::
@@ -436,6 +458,7 @@ install optimagic.
       valid only close to the current point it should be a small one.
       The trust radius is automatically updated throughout the optimization
       process, with ``trustregion_initial_radius`` being its initial value.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -907,12 +930,6 @@ We implement a few algorithms from scratch. They are currently considered experi
     and therefore may require fewer iterations to arrive at a local optimum than
     Nelder-Mead.
 
-    The criterion function :func:`func` should return a dictionary with the following
-    fields:
-
-    1. ``"value"``: The sum of squared (potentially weighted) errors.
-    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
-
     Scaling the problem is necessary such that bounds correspond to the unit hypercube
     :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
     changes in parameters result in similar order-of-magnitude changes in the criterion
@@ -1014,12 +1031,6 @@ need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
     POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
     and therefore may require fewer iterations to arrive at a local optimum than
     Nelder-Mead.
-
-    The criterion function :func:`func` should return a dictionary with the following
-    fields:
-
-    1. ``"value"``: The sum of squared (potentially weighted) errors.
-    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
 
     Scaling the problem is necessary such that bounds correspond to the unit hypercube
     :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
@@ -3923,6 +3934,113 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
       convergence.
     - **population_size** (int): Size of the population. If None, it's set to be
       10 * (number of parameters + 1).
+```
+
+## Optimizers from iminuit
+
+optimagic supports the [IMINUIT MIGRAD Optimizer](https://iminuit.readthedocs.io/). To
+use MIGRAD, you need to have
+[the iminuit package](https://github.com/scikit-hep/iminuit) installed (pip install
+iminuit).
+
+```{eval-rst}
+.. dropdown::  iminuit_migrad
+
+    .. code-block::
+
+        "iminuit_migrad"
+
+    `MIGRAD <https://iminuit.readthedocs.io/en/stable/reference.html#iminuit.Minuit.migrad>`_ is 
+    the workhorse algorithm of the MINUIT optimization suite, which has been widely used in the 
+    high-energy physics community since 1975. The IMINUIT package is a Python interface to the 
+    Minuit2 C++ library developed by CERN.
+
+    Migrad uses a quasi-Newton method, updating the Hessian matrix iteratively
+    to guide the optimization. The algorithm adapts dynamically to challenging landscapes
+    using several key techniques:
+
+    - **Quasi-Newton updates**: The Hessian is updated iteratively rather than recalculated at 
+      each step, improving efficiency.
+    - **Steepest descent fallback**: When the Hessian update fails, Migrad falls back to steepest
+      descent with line search.
+    - **Box constraints handling**: Parameters with bounds are transformed internally to ensure 
+      they remain within allowed limits.
+    - **Heuristics for numerical stability**: Special cases such as flat gradients or singular 
+      Hessians are managed using pre-defined heuristics.
+    - **Stopping criteria based on Estimated Distance to Minimum (EDM)**: The optimization halts 
+      when the predicted improvement becomes sufficiently small.
+              
+    For details see :cite:`JAMES1975343`.
+
+    **Optimizer Parameters:**  
+
+    - **stopping.maxfun** (int): Maximum number of function evaluations. If reached, the optimization stops 
+      but this is not counted as successful convergence. Function evaluations used for numerical gradient 
+      calculations do not count toward this limit. Default is 1,000,000.
+
+    - **n_restarts** (int): Number of times to restart the optimizer if convergence is not reached.
+
+      - A value of 1 (the default) indicates that the optimizer will only run once, disabling the restart feature.  
+      - Values greater than 1 specify the maximum number of restart attempts.  
+```
+
+(nevergrad-algorithms)=
+
+## Nevergrad Optimizers
+
+optimagic supports some algorithms from the
+[Nevergrad](https://facebookresearch.github.io/nevergrad/index.html) library. To use
+these optimizers, you need to have
+[the nevergrad package](https://github.com/facebookresearch/nevergrad) installed.
+(`pip install nevergrad`).
+
+```{eval-rst}
+.. dropdown:: nevergrad_pso
+
+    .. code-block::
+
+        "nevergrad_pso"
+
+    Minimize a scalar function using the Particle Swarm Optimization (PSO) algorithm.
+
+    The Particle Swarm Optimization algorithm was originally proposed by
+    :cite:`Kennedy1995`. The implementation in Nevergrad is based on
+    :cite:`Zambrano2013`.
+
+    Particle Swarm Optimization (PSO) solves a problem by having a population of
+    candidate solutions, here dubbed particles, and moving these particles around in the
+    search-space according to simple mathematical formulae over the particle's position
+    and velocity. Each particle's movement is influenced by its local best known
+    position (termed "cognitive" component), but is also guided toward the best known
+    positions (termed "social" component) in the search-space, which are updated as
+    better positions are found by other particles. This is expected to move the swarm
+    toward the best solutions.
+
+    - **transform** (str): The transform to use to map from PSO optimization space to
+      R-space. Available options are:
+      - "arctan" (default)
+      - "identity"
+      - "gaussian"
+    - **population_size** (int): Population size of the particle swarm.
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): Seed used by the internal random number generator.
+    - **stopping.maxfun** (int): Maximum number of function evaluations.
+    - **inertia** (float): Inertia weight. Denoted by :math:`\omega`.
+      Default is 0.7213475204444817. To prevent divergence, the value must be smaller
+      than 1. It controls the influence of the particle's previous velocity on its
+      movement.
+    - **cognitive** (float): Cognitive coefficient. Denoted by :math:`\phi_p`.
+      Default is 1.1931471805599454. Typical values range from 1.0 to 3.0. It controls
+      the influence of its own best known position on the particle's movement.
+    - **social** (float): Social coefficient. Denoted by :math:`\phi_g`.
+      Default is 1.1931471805599454. Typical values range from 1.0 to 3.0. It controls
+      the influence of the swarm's best known position on the particle's movement.
+    - **quasi_opp_init** (bool): Whether to use quasi-opposition initialization.
+      Default is False.
+    - **speed_quasi_opp_init** (bool): Whether to use quasi-opposition initialization
+      for speed. Default is False.
+    - **special_speed_quasi_opp_init** (bool): Whether to use special quasi-opposition
+      initialization for speed. Default is False.
 ```
 
 ## References

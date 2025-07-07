@@ -313,9 +313,11 @@ def run_explorations(
 
     """
     internal_problem = internal_problem.with_step_id(step_id)
-    x_list = list(sample)
+    x_list: list[NDArray[np.float64]] = list(sample)
 
-    raw_values = np.array(internal_problem.exploration_fun(x_list, n_cores=n_cores))
+    raw_values = np.asarray(
+        internal_problem.exploration_fun(x_list, n_cores=n_cores), dtype=np.float64
+    )
 
     is_valid = np.isfinite(raw_values)
 

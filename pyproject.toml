@@ -10,12 +10,13 @@ dependencies = [
     "joblib",
     "numpy",
     "pandas",
-    "plotly",
+    "plotly<6.0.0",
     "pybaum>=0.1.2",
     "scipy>=1.2.1",
     "sqlalchemy>=1.3",
     "annotated-types",
     "typing-extensions",
+    "iminuit",
 ]
 dynamic = ["version"]
 keywords = [
@@ -43,6 +44,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
 ]
 authors = [
@@ -151,6 +153,7 @@ extend-ignore = [
 "docs/source/conf.py" = ["E501", "ERA001", "DTZ005"]
 "src/optimagic/parameters/kernel_transformations.py" = ["ARG001", "N806"]
 "docs/source/*" = ["B018"]
+"src/optimagic/algorithms.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -182,7 +185,7 @@ filterwarnings = [
     "ignore:The following exception was caught when calculating",
     "ignore:Usage of the parameter log_options",
 ]
-addopts = ["--doctest-modules"]
+addopts = ["--doctest-modules", "--pdbcls=pdbp:Pdb"]
 markers = [
     "wip: Tests that are work-in-progress.",
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
@@ -194,9 +197,6 @@ norecursedirs = ["docs", ".tools"]
 # ======================================================================================
 # Misc configuration
 # ======================================================================================
-[tool.pytask]
-infer_latex_dependencies = true
-
 [tool.yamlfix]
 line_length = 88
 sequence_style = "block_style"
@@ -207,7 +207,7 @@ none_representation = "null"
 # Mypy configuration
 # ======================================================================================
 [tool.mypy]
-files = ["src", "tests"]
+files = ["src", "tests", ".tools"]
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_untyped_defs = true
@@ -321,6 +321,7 @@ module = [
     "estimagic.msm_sensitivity",
     "estimagic.estimation_table",
     "estimagic.lollipop_plot",
+
 ]
 check_untyped_defs = false
 disallow_any_generics = false
@@ -377,5 +378,8 @@ module = [
     "pathos.pools",
     "optimagic._version",
     "annotated_types",
+    "pdbp",
+    "iminuit",
+    "nevergrad",
   ]
 ignore_missing_imports = true

@@ -19,7 +19,6 @@ Notes for converting to the new algorithm interface:
 
 from __future__ import annotations
 
-import contextlib
 import warnings
 from dataclasses import dataclass
 from typing import Any, List, Literal
@@ -48,8 +47,10 @@ from optimagic.typing import (
 
 STOPPING_MAX_ITERATIONS_GENETIC = 250
 
-with contextlib.suppress(ImportError):
+try:
     import pygmo as pg
+except ImportError:
+    pass
 
 
 @mark.minimizer(

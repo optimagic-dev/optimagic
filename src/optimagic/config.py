@@ -5,6 +5,7 @@ import plotly.express as px
 from packaging import version
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
+OPTIMAGIC_ROOT = Path(__file__).parent
 
 PLOTLY_TEMPLATE = "simple_white"
 PLOTLY_PALETTE = px.colors.qualitative.Set2
@@ -89,6 +90,22 @@ except ImportError:
     IS_NUMBA_INSTALLED = False
 else:
     IS_NUMBA_INSTALLED = True
+
+
+try:
+    import iminuit  # noqa: F401
+except ImportError:
+    IS_IMINUIT_INSTALLED = False
+else:
+    IS_IMINUIT_INSTALLED = True
+
+
+try:
+    import nevergrad  # noqa: F401
+except ImportError:
+    IS_NEVERGRAD_INSTALLED = False
+else:
+    IS_NEVERGRAD_INSTALLED = True
 
 
 # ======================================================================================

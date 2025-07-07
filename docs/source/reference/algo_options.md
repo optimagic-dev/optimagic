@@ -1,4 +1,4 @@
-(algo_options)=
+(algo_options_docs)=
 
 # The default algorithm options
 

@@ -2,18 +2,24 @@ import time
 import warnings
 from copy import copy
 from dataclasses import asdict, dataclass, replace
-from typing import Any, Callable, cast
+from typing import Any, Callable, Literal, cast
 
 import numpy as np
 from numpy.typing import NDArray
 from typing_extensions import Self
 
+from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.exceptions import UserFunctionRuntimeError, get_traceback
 from optimagic.logging.logger import LogStore
 from optimagic.logging.types import IterationState
-from optimagic.optimization.fun_value import SpecificFunctionValue
+from optimagic.optimization.fun_value import (
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    ScalarFunctionValue,
+    SpecificFunctionValue,
+)
 from optimagic.optimization.history import History, HistoryEntry
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import Converter
@@ -68,7 +74,7 @@ class InternalOptimizationProblem:
         self._error_handling = error_handling
         self._error_penalty_func = error_penalty_func
         self._batch_evaluator = batch_evaluator
-        self._history = History()
+        self._history = History(direction)
         self._linear_constraints = linear_constraints
         self._nonlinear_constraints = nonlinear_constraints
         self._logger = logger
@@ -79,11 +85,32 @@ class InternalOptimizationProblem:
     # ==================================================================================
 
     def fun(self, x: NDArray[np.float64]) -> float | NDArray[np.float64]:
+        """Evaluate the objective function at x.
+
+        Args:
+            x: The parameter vector at which to evaluate the objective function.
+
+        Returns:
+            The function value at x. This is a scalar for scalar problems and an array
+                for least squares  or likelihood problems.
+
+        """
         fun_value, hist_entry = self._evaluate_fun(x)
         self._history.add_entry(hist_entry)
         return fun_value
 
     def jac(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Evaluate the first derivative at x.
+
+        Args:
+            x: The parameter vector at which to evaluate the first derivative.
+
+        Returns:
+            The first derivative at x. This is a 1d array for scalar problems (the
+                gradient) and a 2d array for least squares or likelihood problems (the
+                Jacobian).
+
+        """
         jac_value, hist_entry = self._evaluate_jac(x)
         self._history.add_entry(hist_entry)
         return jac_value
@@ -91,6 +118,11 @@ class InternalOptimizationProblem:
     def fun_and_jac(
         self, x: NDArray[np.float64]
     ) -> tuple[float | NDArray[np.float64], NDArray[np.float64]]:
+        """Simultaneously evaluate the objective function and its first derivative.
+
+        See .fun and .jac for details.
+
+        """
         fun_and_jac_value, hist_entry = self._evaluate_fun_and_jac(x)
         self._history.add_entry(hist_entry)
         return fun_and_jac_value
@@ -101,6 +133,20 @@ class InternalOptimizationProblem:
         n_cores: int,
         batch_size: int | None = None,
     ) -> list[float | NDArray[np.float64]]:
+        """Parallelized batch version of .fun.
+
+        Args:
+            x_list: A list of parameter vectors at which to evaluate the objective
+                function.
+            n_cores: The number of cores to use for the parallel evaluation.
+            batch_size: Batch size that can be used by some algorithms to simulate
+                the behavior under parallelization on more cores than are actually
+                available. Only used by `criterion_plots` and benchmark plots.
+
+        Returns:
+            A list of function values at the points in x_list. See .fun for details.
+
+        """
         batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun,
@@ -121,6 +167,20 @@ class InternalOptimizationProblem:
         n_cores: int,
         batch_size: int | None = None,
     ) -> list[NDArray[np.float64]]:
+        """Parallelized batch version of .jac.
+
+        Args:
+            x_list: A list of parameter vectors at which to evaluate the first
+                derivative.
+            n_cores: The number of cores to use for the parallel evaluation.
+            batch_size: Batch size that can be used by some algorithms to simulate
+                the behavior under parallelization on more cores than are actually
+                available. Only used by `criterion_plots` and benchmark plots.
+
+        Returns:
+            A list of first derivatives at the points in x_list. See .jac for details.
+
+        """
         batch_size = n_cores if batch_size is None else batch_size
 
         batch_result = self._batch_evaluator(
@@ -141,6 +201,21 @@ class InternalOptimizationProblem:
         n_cores: int,
         batch_size: int | None = None,
     ) -> list[tuple[float | NDArray[np.float64], NDArray[np.float64]]]:
+        """Parallelized batch version of .fun_and_jac.
+
+        Args:
+            x_list: A list of parameter vectors at which to evaluate the objective
+                function and its first derivative.
+            n_cores: The number of cores to use for the parallel evaluation.
+            batch_size: Batch size that can be used by some algorithms to simulate
+                the behavior under parallelization on more cores than are actually
+                available. Only used by `criterion_plots` and benchmark plots.
+
+        Returns:
+            A list of tuples containing the function value and the first derivative
+                at the points in x_list. See .fun_and_jac for details.
+
+        """
         batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
             func=self._evaluate_fun_and_jac,
@@ -177,7 +252,7 @@ class InternalOptimizationProblem:
 
     def with_new_history(self) -> Self:
         new = copy(self)
-        new._history = History()
+        new._history = History(self.direction)
         return new
 
     def with_error_handling(self, error_handling: ErrorHandling) -> Self:
@@ -195,27 +270,52 @@ class InternalOptimizationProblem:
     # ==================================================================================
 
     @property
+    def bounds(self) -> InternalBounds:
+        """Bounds of the optimization problem."""
+        return self._bounds
+
+    @property
     def linear_constraints(self) -> list[dict[str, Any]] | None:
+        # TODO: write a docstring as soon as we actually use this
         return self._linear_constraints
 
     @property
     def nonlinear_constraints(self) -> list[dict[str, Any]] | None:
+        """Internal representation of nonlinear constraints.
+
+        Compared to the user provided constraints, we have done the following
+        transformations:
+
+        1. The constraint a <= g(x) <= b is transformed to h(x) >= 0, where h(x) is
+        - h(x) = g(x), if a == 0 and b == inf
+        - h(x) = g(x) - a, if a != 0 and b == inf
+        - h(x) = (g(x) - a, -g(x) + b) >= 0, if a != 0 and b != inf.
+
+        2. The equality constraint g(x) = v is transformed to h(x) >= 0, where
+        h(x) = (g(x) - v, -g(x) + v).
+
+        3. Vector constraints are transformed to a list of scalar constraints.
+        g(x) = (g1(x), g2(x), ...) >= 0 is transformed to (g1(x) >= 0, g2(x) >= 0, ...).
+
+        4. The constraint function (defined on a selection of user-facing parameters) is
+        transformed to be evaluated on the internal parameters.
+
+        """
         return self._nonlinear_constraints
 
     @property
     def direction(self) -> Direction:
+        """Direction of the optimization problem."""
         return self._direction
 
     @property
     def history(self) -> History:
+        """History container for the optimization problem."""
         return self._history
 
     @property
-    def bounds(self) -> InternalBounds:
-        return self._bounds
-
-    @property
     def logger(self) -> LogStore[Any, Any] | None:
+        """Logger for the optimization problem."""
         return self._logger
 
     # ==================================================================================
@@ -306,7 +406,7 @@ class InternalOptimizationProblem:
         issued.
 
         """
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         params = self._converter.params_from_internal(x)
         traceback: None | str = None
         try:
@@ -333,17 +433,19 @@ class InternalOptimizationProblem:
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value, solver_type=self._solver_type, direction=self._direction
         )
+        stop_time = time.perf_counter()
 
         hist_entry = HistoryEntry(
             params=params,
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.FUN,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,
@@ -359,7 +461,7 @@ class InternalOptimizationProblem:
         if self._jac is None:
             raise ValueError("The jac function is not defined.")
 
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         traceback: None | str = None
 
         params = self._converter.params_from_internal(x)
@@ -388,17 +490,23 @@ class InternalOptimizationProblem:
         out_jac = _process_jac_value(
             value=jac_value, direction=self._direction, converter=self._converter, x=x
         )
+        _assert_finite_jac(
+            out_jac=out_jac, jac_value=jac_value, params=params, origin="jac"
+        )
+
+        stop_time = time.perf_counter()
 
         hist_entry = HistoryEntry(
             params=params,
             fun=None,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.JAC,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=None,
             valid=not bool(traceback),
             raw_fun=None,
@@ -415,7 +523,7 @@ class InternalOptimizationProblem:
         HistoryEntry,
         IterationState,
     ]:
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         traceback: None | str = None
 
         def func(x: NDArray[np.float64]) -> SpecificFunctionValue:
@@ -457,6 +565,13 @@ class InternalOptimizationProblem:
                 warnings.warn(msg)
                 fun_value, jac_value = self._error_penalty_func(x)
 
+        _assert_finite_jac(
+            out_jac=jac_value,
+            jac_value=jac_value,
+            params=self._converter.params_from_internal(x),
+            origin="numerical",
+        )
+
         algo_fun_value, hist_fun_value = _process_fun_value(
             value=fun_value,  # type: ignore
             solver_type=self._solver_type,
@@ -466,16 +581,19 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             jac_value = -jac_value
 
+        stop_time = time.perf_counter()
+
         hist_entry = HistoryEntry(
             params=self._converter.params_from_internal(x),
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.FUN_AND_JAC,
         )
 
         log_entry = IterationState(
             params=self._converter.params_from_internal(x),
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,
@@ -488,7 +606,7 @@ class InternalOptimizationProblem:
     def _pure_exploration_fun(
         self, x: NDArray[np.float64]
     ) -> tuple[float, HistoryEntry, IterationState]:
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         params = self._converter.params_from_internal(x)
         traceback: None | str = None
 
@@ -521,16 +639,19 @@ class InternalOptimizationProblem:
             if self._direction == Direction.MAXIMIZE:
                 hist_fun_value = np.inf
 
+        stop_time = time.perf_counter()
+
         hist_entry = HistoryEntry(
             params=params,
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.EXPLORATION,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,
@@ -550,7 +671,7 @@ class InternalOptimizationProblem:
         if self._fun_and_jac is None:
             raise ValueError("The fun_and_jac function is not defined.")
 
-        now = time.perf_counter()
+        start_time = time.perf_counter()
         traceback: None | str = None
         params = self._converter.params_from_internal(x)
 
@@ -590,16 +711,23 @@ class InternalOptimizationProblem:
         if self._direction == Direction.MAXIMIZE:
             out_jac = -out_jac
 
+        _assert_finite_jac(
+            out_jac=out_jac, jac_value=jac_value, params=params, origin="fun_and_jac"
+        )
+
+        stop_time = time.perf_counter()
+
         hist_entry = HistoryEntry(
             params=params,
             fun=hist_fun_value,
-            time=now,
+            start_time=start_time,
+            stop_time=stop_time,
             task=EvalTask.FUN_AND_JAC,
         )
 
         log_entry = IterationState(
             params=params,
-            timestamp=now,
+            timestamp=start_time,
             scalar_fun=hist_fun_value,
             valid=not bool(traceback),
             raw_fun=fun_value,
@@ -608,6 +736,44 @@ class InternalOptimizationProblem:
         )
 
         return (algo_fun_value, out_jac), hist_entry, log_entry
+
+
+def _assert_finite_jac(
+    out_jac: NDArray[np.float64],
+    jac_value: PyTree,
+    params: PyTree,
+    origin: Literal["numerical", "jac", "fun_and_jac"],
+) -> None:
+    """Check for infinite and NaN values in the Jacobian and raise an error if found.
+
+    Args:
+        out_jac: internal processed Jacobian to check for finiteness.
+        jac_value: original Jacobian value as returned by the user function,
+        params: user-facing parameter representation at evaluation point.
+        origin: Source of Jacobian calculation, for the error message.
+
+    Raises:
+        UserFunctionRuntimeError:
+            If any infinite or NaN values are found in the Jacobian.
+
+    """
+    if not np.all(np.isfinite(out_jac)):
+        if origin == "jac" or "fun_and_jac":
+            msg = (
+                "The optimization failed because the derivative provided via "
+                f"{origin} contains infinite or NaN values."
+                "\nPlease validate the derivative function."
+            )
+        elif origin == "numerical":
+            msg = (
+                "The optimization failed because the numerical derivative "
+                "(computed using fun) contains infinite or NaN values."
+                "\nPlease validate the criterion function or try a different optimizer."
+            )
+        msg += (
+            f"\nParameters at evaluation point: {params}\nJacobian values: {jac_value}"
+        )
+        raise UserFunctionRuntimeError(msg)
 
 
 def _process_fun_value(
@@ -661,3 +827,85 @@ def _process_jac_value(
         out_value = -out_value
 
     return out_value
+
+
+class SphereExampleInternalOptimizationProblem(InternalOptimizationProblem):
+    """Super simple example of an internal optimization problem.
+
+    This can be used to test algorithm wrappers or to familiarize yourself with the
+    internal optimization problem interface.
+
+    Args:
+
+    """
+
+    def __init__(
+        self,
+        solver_type: AggregationLevel = AggregationLevel.SCALAR,
+        binding_bounds: bool = False,
+    ) -> None:
+        _fun_dict = {
+            AggregationLevel.SCALAR: lambda x: ScalarFunctionValue(x @ x),
+            AggregationLevel.LIKELIHOOD: lambda x: LikelihoodFunctionValue(x**2),
+            AggregationLevel.LEAST_SQUARES: lambda x: LeastSquaresFunctionValue(x),
+        }
+
+        _jac_dict = {
+            AggregationLevel.SCALAR: lambda x: 2 * x,
+            AggregationLevel.LIKELIHOOD: lambda x: 2 * x,
+            AggregationLevel.LEAST_SQUARES: lambda x: np.eye(len(x)),
+        }
+
+        fun = _fun_dict[solver_type]
+        jac = _jac_dict[solver_type]
+        fun_and_jac = lambda x: (fun(x), jac(x))
+
+        converter = Converter(
+            params_to_internal=lambda x: x,
+            params_from_internal=lambda x: x,
+            derivative_to_internal=lambda x, x0: x,
+            has_transforming_constraints=False,
+        )
+
+        direction = Direction.MINIMIZE
+
+        if binding_bounds:
+            lb = np.arange(10, dtype=np.float64) - 7.0
+            ub = np.arange(10, dtype=np.float64) - 3.0
+            self._x_opt = np.array([-3, -2, -1, 0, 0, 0, 0, 0, 1, 2.0])
+        else:
+            lb = np.full(10, -10, dtype=np.float64)
+            ub = np.full(10, 10, dtype=np.float64)
+            self._x_opt = np.zeros(10)
+
+        bounds = InternalBounds(lb, ub)
+
+        numdiff_options = NumdiffOptions()
+
+        error_handling = ErrorHandling.RAISE
+
+        error_penalty_func = fun_and_jac
+
+        batch_evaluator = process_batch_evaluator("joblib")
+
+        linear_constraints = None
+        nonlinear_constraints = None
+
+        logger = None
+
+        super().__init__(
+            fun=fun,
+            jac=jac,
+            fun_and_jac=fun_and_jac,
+            converter=converter,
+            solver_type=solver_type,
+            direction=direction,
+            bounds=bounds,
+            numdiff_options=numdiff_options,
+            error_handling=error_handling,
+            error_penalty_func=error_penalty_func,
+            batch_evaluator=batch_evaluator,
+            linear_constraints=linear_constraints,
+            nonlinear_constraints=nonlinear_constraints,
+            logger=logger,
+        )

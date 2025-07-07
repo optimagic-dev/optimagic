@@ -14,7 +14,7 @@ def _keep_line(line: str, flag: str) -> bool:
     return flag in line or "#" not in line
 
 
-def main():
+def main() -> None:
     lines = Path("environment.yml").read_text().splitlines()
 
     # create standard testing environments

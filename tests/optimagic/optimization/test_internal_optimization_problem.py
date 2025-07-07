@@ -16,6 +16,7 @@ from optimagic.optimization.fun_value import (
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
     InternalOptimizationProblem,
+    SphereExampleInternalOptimizationProblem,
 )
 from optimagic.parameters.conversion import Converter
 from optimagic.typing import AggregationLevel, Direction, ErrorHandling, EvalTask
@@ -706,3 +707,17 @@ def test_error_in_exploration_fun_maximize(error_max_problem):
     )
     expected = [-np.inf, -np.inf]
     assert np.allclose(got, expected)
+
+
+# ======================================================================================
+# test SphereExampleInternalOptimizationProblem
+# ======================================================================================
+
+
+def test_sphere_example_internal_optimization_problem():
+    problem = SphereExampleInternalOptimizationProblem()
+    assert problem.fun(np.array([1, 2, 3])) == 14
+    aaae(problem.jac(np.array([1, 2, 3])), np.array([2, 4, 6]))
+    f, j = problem.fun_and_jac(np.array([1, 2, 3]))
+    assert f == 14
+    aaae(j, np.array([2, 4, 6]))

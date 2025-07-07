@@ -90,7 +90,7 @@ these considerations are typically tighter than for parameters that have a small
 on the objective function.
 
 Thus, a natural approach to improve the scaling of the optimization problem is to re-map
-all parameters such that the bounds are \[0, 1\] for all parameters. This has the
+all parameters such that the bounds are [0, 1] for all parameters. This has the
 additional advantage that absolute and relative convergence criteria on parameter
 changes become the same.
 
@@ -164,7 +164,7 @@ to a strictly non-zero number for the `"start_values"` and `"gradient"` approach
 `"bounds"` approach avoids division by exact zeros by construction. The
 `"clipping_value"` can still be used to avoid extreme upscaling of parameters with very
 tight bounds. However, this means that the bounds of the re-scaled problem are not
-exactly \[0, 1\] for all parameters.
+exactly [0, 1] for all parameters.
 
 (scaling-default-values)=
 
