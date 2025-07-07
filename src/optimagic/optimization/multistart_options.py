@@ -9,7 +9,7 @@ from typing_extensions import NotRequired
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.deprecations import replace_and_warn_about_deprecated_multistart_options
 from optimagic.exceptions import InvalidMultistartError
-from optimagic.typing import BatchEvaluator, PyTree
+from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral, PyTree
 
 # ======================================================================================
 # Public Options
@@ -45,8 +45,8 @@ class MultistartOptions:
             for convergence. Determines the maximum relative distance two parameter
             vecctors can have to be considered equal. Defaults to 0.01.
         n_cores: The number of cores to use for parallelization. Defaults to 1.
-        batch_evaluator: The evaluator to use for batch evaluation. Allowed are "joblib"
-            and "pathos", or a custom callable.
+        batch_evaluator: The evaluator to use for batch evaluation. Allowed are
+            "joblib", "pathos", and "threading", or a custom callable.
         batch_size: The batch size for batch evaluation. Must be larger than n_cores
             or None.
         seed: The seed for the random number generator.
@@ -71,7 +71,7 @@ class MultistartOptions:
     convergence_xtol_rel: float | None = None
     convergence_max_discoveries: int = 2
     n_cores: int = 1
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
     batch_size: int | None = None
     seed: int | np.random.Generator | None = None
     error_handling: Literal["raise", "continue"] | None = None
@@ -100,7 +100,7 @@ class MultistartOptionsDict(TypedDict):
     convergence_xtol_rel: NotRequired[float | None]
     convergence_max_discoveries: NotRequired[int]
     n_cores: NotRequired[int]
-    batch_evaluator: NotRequired[Literal["joblib", "pathos"] | BatchEvaluator]
+    batch_evaluator: NotRequired[BatchEvaluatorLiteral | BatchEvaluator]
     batch_size: NotRequired[int | None]
     seed: NotRequired[int | np.random.Generator | None]
     error_handling: NotRequired[Literal["raise", "continue"] | None]
@@ -247,14 +247,12 @@ def _validate_attribute_types_and_values(options: MultistartOptions) -> None:
             "must be a positive integer."
         )
 
-    if not callable(options.batch_evaluator) and options.batch_evaluator not in (
-        "joblib",
-        "pathos",
-    ):
+    try:
+        process_batch_evaluator(options.batch_evaluator)
+    except Exception as e:
         raise InvalidMultistartError(
-            f"Invalid batch evaluator: {options.batch_evaluator}. Batch evaluator "
-            "must be a Callable or one of 'joblib' or 'pathos'."
-        )
+            f"Invalid batch evaluator: {options.batch_evaluator}."
+        ) from e
 
     if options.batch_size is not None and (
         not isinstance(options.batch_size, int) or options.batch_size < options.n_cores
