@@ -371,11 +371,11 @@ def throw_dict_constraints_future_warning_if_required(
     if not isinstance(constraints, list):
         constraints = [constraints]
 
-    types = [
+    types_or_none = [
         constraint.get("type", None) if isinstance(constraint, dict) else None
         for constraint in constraints
     ]
-    types = list(set(types) - {None})
+    types = [t for t in types_or_none if t is not None]
 
     if types:
         msg = (
