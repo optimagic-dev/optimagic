@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.12  # dev
+  - python=3.10  # dev
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests, docs
   - jupyterlab  # dev, docs
