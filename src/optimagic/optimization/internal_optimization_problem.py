@@ -275,6 +275,50 @@ class InternalOptimizationProblem:
         return self._bounds
 
     @property
+    def converter(self) -> Converter:
+        """Converter between external and internal parameter representation.
+
+        The converter transforms parameters between their user-provided
+        representation (the external representation) and the flat numpy array used
+        by the optimizer (the internal representation).
+
+        This transformation includes:
+        - Flattening and unflattening of pytree structures.
+        - Applying parameter constraints via reparametrizations.
+        - Scaling and unscaling of parameter values.
+
+        The Converter object provides the following main attributes:
+
+        - ``params_to_internal``: Callable that converts a pytree of external
+          parameters to a flat numpy array of internal parameters.
+        - ``params_from_internal``: Callable that converts a flat numpy array of
+          internal parameters to a pytree of external parameters.
+        - ``derivative_to_internal``: Callable that converts the derivative
+          from the external parameter space to the internal space.
+        - ``has_transforming_constraints``: Boolean that is True if the conversion
+          involves constraints that are handled by reparametrization.
+
+        Examples:
+            The converter is particularly useful for algorithms that require initial
+            values in the internal (flat) parameter space, while allowing the user
+            to specify these values in the more convenient external (pytree) format.
+
+            Here's how an optimization algorithm might use the converter internally
+            to prepare parameters for the optimizer:
+
+                >>> # User provides parameters in external format (e.g., nested dict)
+                >>> user_params = {"a": 1.0, "b": {"c": 2.0, "d": 3.0}}
+                >>>
+                >>> # Algorithm needs these in a flat internal array format
+                >>> # Assume 'problem' is an object with this converter property
+                >>> internal_params = problem.converter.params_to_internal(user_params)
+                >>> internal_params
+                array([1., 2., 3.])
+
+        """
+        return self._converter
+
+    @property
     def linear_constraints(self) -> list[dict[str, Any]] | None:
         # TODO: write a docstring as soon as we actually use this
         return self._linear_constraints
