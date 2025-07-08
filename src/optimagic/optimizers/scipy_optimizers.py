@@ -677,10 +677,10 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         fun=scipy_res.fun,
         success=bool(scipy_res.success),
         message=str(scipy_res.message),
-        n_fun_evals=scipy_res.get("nfev"),
-        n_jac_evals=scipy_res.get("njev"),
-        n_hess_evals=scipy_res.get("nhev"),
-        n_iterations=scipy_res.get("nit"),
+        n_fun_evals=_int_if_not_none(scipy_res.get("nfev")),
+        n_jac_evals=_int_if_not_none(scipy_res.get("njev")),
+        n_hess_evals=_int_if_not_none(scipy_res.get("nhev")),
+        n_iterations=_int_if_not_none(scipy_res.get("nit")),
         # TODO: Pass on more things once we can convert them to external
         status=None,
         jac=None,
@@ -691,6 +691,12 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         history=None,
     )
     return res
+
+
+def _int_if_not_none(value):
+    if value is None:
+        return None
+    return int(value)
 
 
 def _get_scipy_constraints(constraints):
