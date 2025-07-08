@@ -30,7 +30,7 @@ else:
     is_global=False,
     needs_jac=True,
     needs_hess=False,
-    needs_bounds=True,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
     supports_infinite_bounds=True,
