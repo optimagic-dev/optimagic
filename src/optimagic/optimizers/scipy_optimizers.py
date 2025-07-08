@@ -74,6 +74,7 @@ from optimagic.parameters.nonlinear_constraints import (
 from optimagic.typing import (
     AggregationLevel,
     BatchEvaluator,
+    BatchEvaluatorLiteral,
     NegativeFloat,
     NonNegativeFloat,
     NonNegativeInt,
@@ -840,7 +841,7 @@ class ScipyBrute(Algorithm):
     n_grid_points: PositiveInt = 20
     polishing_function: Callable | None = None
     n_cores: PositiveInt = 1
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -922,7 +923,7 @@ class ScipyDifferentialEvolution(Algorithm):
     ) = "latinhypercube"
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
     n_cores: PositiveInt = 1
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
