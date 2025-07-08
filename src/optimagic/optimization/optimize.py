@@ -536,6 +536,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Strict checking if bounds are required and infinite values in bounds
     # ==================================================================================
     if problem.algorithm.algo_info.supports_bounds:
+        # Raise an error if bounds are needed but not provided
         if problem.algorithm.algo_info.needs_bounds:
             if (
                 problem.bounds is None
@@ -548,7 +549,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
                     f"Please provide finite bounds for all parameters"
                     f"for the optimizer to run properly."
                 )
-
+        # If algo does not support infinite bounds
         if not problem.algorithm.algo_info.supports_infinite_bounds:
             # Need this logic here until processing of internal bounds converts None
             # bounds to np.inf and -np.inf values.

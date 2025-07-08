@@ -52,7 +52,7 @@ class IncompleteBoundsError(OptimagicError):
 
 
 class InfiniteBoundsError(OptimagicError):
-    """Exception when user provided bounds are incomplete."""
+    """Exception when user provided bounds contain infinite values."""
 
 
 class InvalidScalingError(OptimagicError):
