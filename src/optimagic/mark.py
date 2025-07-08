@@ -73,8 +73,10 @@ def minimizer(
     is_global: bool,
     needs_jac: bool,
     needs_hess: bool,
+    needs_bounds: bool,
     supports_parallelism: bool,
     supports_bounds: bool,
+    supports_infinite_bounds: bool,
     supports_linear_constraints: bool,
     supports_nonlinear_constraints: bool,
     disable_history: bool = False,
@@ -95,12 +97,17 @@ def minimizer(
         needs_hess: Whether the algorithm needs some kind of second derivative. This
             is not yet implemented and will be False for all currently wrapped
             algorithms.
+        needs_bounds: Whether the algorithm needs bounds to run. This is different from
+            supports_bounds in that algorithms that support bounds can run without
+            requiring them.
         supports_parallelism: Whether the algorithm supports parallelism. This needs to
             be True if the algorithm previously took `n_cores` and/or `batch_evaluator`
             as arguments.
         supports_bounds: Whether the algorithm supports bounds. This needs to be True
             if the algorithm previously took `lower_bounds` and/or `upper_bounds` as
             arguments.
+        supports_infinite_bounds: Whether the algorithm supports infinite values in
+            bounds.
         supports_linear_constraints: Whether the algorithm supports linear constraints.
             This is not yet implemented and will be False for all currently wrapped
             algorithms.
@@ -119,10 +126,10 @@ def minimizer(
             is_global=is_global,
             needs_jac=needs_jac,
             needs_hess=needs_hess,
-            needs_bounds=False,
+            needs_bounds=needs_bounds,
             supports_parallelism=supports_parallelism,
             supports_bounds=supports_bounds,
-            supports_infinite_bounds=False,
+            supports_infinite_bounds=supports_infinite_bounds,
             supports_linear_constraints=supports_linear_constraints,
             supports_nonlinear_constraints=supports_nonlinear_constraints,
             disable_history=disable_history,
