@@ -1,5 +1,8 @@
+import base64
+import collections.abc
 import itertools
 from copy import deepcopy
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
@@ -102,8 +105,9 @@ def combine_plots(
         ub = []
         for f in plots:
             for d in f.data:
-                lb.append(np.min(d["y"]))
-                ub.append(np.max(d["y"]))
+                y = _ensure_array_from_plotly_data(d["y"])
+                lb.append(np.min(y))
+                ub.append(np.max(y))
         ub = np.max(ub)
         lb = np.min(lb)
         y_range = ub - lb
@@ -115,8 +119,9 @@ def combine_plots(
         ub = []
         for f in plots:
             for d in f.data:
-                lb.append(np.min(d["x"]))
-                ub.append(np.max(d["x"]))
+                x = _ensure_array_from_plotly_data(d["x"])
+                lb.append(np.min(x))
+                ub.append(np.max(x))
         x_upper = np.max(ub)
         x_lower = np.min(lb)
         fig.update_xaxes(range=[x_lower, x_upper])
@@ -328,3 +333,34 @@ def get_layout_kwargs(layout_kwargs, legend_kwargs, title_kwargs, template, show
     if layout_kwargs:
         default_kwargs.update(layout_kwargs)
     return default_kwargs
+
+
+def _ensure_array_from_plotly_data(data: Any) -> np.ndarray:
+    """Ensure that data is a numpy array, including decoding Plotly v6+ base64 format.
+
+    Args:
+        data: Can be a numpy array, (nested) sequence (e.g., list of lists), or a
+              dict with 'bdata' and 'dtype' keys (Plotly v6+ format).
+
+    Returns:
+        Data as a numpy array.
+
+    Raises:
+        ValueError: If input cannot be interpreted as an array.
+
+    """
+    if isinstance(data, np.ndarray):
+        return data
+    elif isinstance(data, dict) and "bdata" in data and "dtype" in data:
+        return _decode_base64_data(data["bdata"], dtype=data["dtype"])
+    elif isinstance(data, collections.abc.Sequence):
+        try:
+            return np.array(data)
+        except Exception:
+            pass
+    raise ValueError("Failed to convert input to numpy array.")
+
+
+def _decode_base64_data(b64data: str, dtype: str) -> np.ndarray:
+    decoded = base64.b64decode(b64data)
+    return np.frombuffer(decoded, dtype=np.dtype(dtype))
