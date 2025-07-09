@@ -355,7 +355,7 @@ def _ensure_array_from_plotly_data(data: Any) -> np.ndarray:
         return _decode_base64_data(data["bdata"], dtype=data["dtype"])
     elif isinstance(data, collections.abc.Sequence):
         try:
-            return np.array(data)
+            return np.array(data, dtype=np.float64)
         except Exception:
             pass
     raise ValueError("Failed to convert input to numpy array.")
