@@ -35,7 +35,7 @@ The following arguments are not supported as part of ``algo_options``:
 
 import functools
 from dataclasses import dataclass
-from typing import Any, Callable, List, Literal, Tuple
+from typing import Any, Callable, List, Literal, SupportsInt, Tuple
 
 import numpy as np
 import scipy
@@ -693,7 +693,7 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
     return res
 
 
-def _int_if_not_none(value):
+def _int_if_not_none(value: SupportsInt | None) -> int | None:
     if value is None:
         return None
     return int(value)
