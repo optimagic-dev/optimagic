@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
 
 from optimagic import deprecations
 from optimagic.logging.logger import LogReader
@@ -219,7 +218,7 @@ class MultistartInfo:
     start_parameters: list[PyTree]
     local_optima: list[OptimizeResult]
     exploration_sample: list[PyTree]
-    exploration_results: NDArray[np.float64]
+    exploration_results: list[float]
 
     def __getitem__(self, key):
         deprecations.throw_dict_access_future_warning(key, obj_name=type(self).__name__)
