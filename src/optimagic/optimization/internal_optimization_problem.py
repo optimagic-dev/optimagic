@@ -306,11 +306,18 @@ class InternalOptimizationProblem:
             Here's how an optimization algorithm might use the converter internally
             to prepare parameters for the optimizer:
 
-                >>> # User provides parameters in external format (e.g., nested dict)
-                >>> user_params = {"a": 1.0, "b": {"c": 2.0, "d": 3.0}}
+                >>> from optimagic.optimization.internal_optimization_problem import (
+                ...     SphereExampleInternalOptimizationProblem
+                ... )
+                >>> import numpy as np
                 >>>
-                >>> # Algorithm needs these in a flat internal array format
-                >>> # Assume 'problem' is an object with this converter property
+                >>> # Optimization problem instance.
+                >>> problem = SphereExampleInternalOptimizationProblem()
+                >>>
+                >>> # User provided parameters in external format.
+                >>> user_params = np.array([1.0, 2.0, 3.0])
+                >>>
+                >>> # Convert to internal format for optimization algorithms.
                 >>> internal_params = problem.converter.params_to_internal(user_params)
                 >>> internal_params
                 array([1., 2., 3.])
