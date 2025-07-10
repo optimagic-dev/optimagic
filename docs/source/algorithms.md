@@ -13,14 +13,30 @@ optimagic supports most `scipy` algorithms and scipy is automatically installed 
 install optimagic.
 
 ```{eval-rst}
-.. dropdown::  scipy_lbfgsb
+.. dropdown::  ``scipy_lbfgsb``
+
+    **How to use this algorithm:**
 
     .. code-block::
 
-        "scipy_lbfgsb"
+        minimize(
+          ...,
+          algorithm=optimagic.algos.scipy_lbfgsb(stopping_maxiter=1_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        minimize(
+          ...,
+          algorithm="scipy_lbfgsb",
+          algo_options={"stopping_maxiter": 1_000, ...}
+        )
+
+    **Available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLBFGSB
-      :members:
 
 ```
 
@@ -49,20 +65,19 @@ Minimize a scalar function of one or more variables using the L-BFGS-B algorithm
     The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
     to scale the parameters.
 
-    - **convergence.ftol_rel** (float): Stop when the relative improvement
+    - **convergence_ftol_rel** (float): Stop when the relative improvement
       between two iterations is smaller than this. More formally, this is expressed as
 
     .. math::
 
         \frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \leq
-        \text{relative_criterion_tolerance}
+        \textsf{convergence_ftol_rel}
 
-
-    - **convergence.gtol_abs** (float): Stop if all elements of the projected
+    - **convergence_gtol_abs** (float): Stop if all elements of the projected
       gradient are smaller than this.
-    - **stopping.maxfun** (int): If the maximum number of function
+    - **stopping_maxfun** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this as convergence.
-    - **stopping.maxiter** (int): If the maximum number of iterations is reached,
+    - **stopping_maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
     - **limited_memory_storage_length** (int): Maximum number of saved gradients used to approximate the hessian matrix.
 

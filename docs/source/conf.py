@@ -46,10 +46,10 @@ extensions = [
     "sphinx_copybutton",
     "myst_nb",
     "sphinxcontrib.bibtex",
-    "sphinx_panels",
     "sphinx_design",
     "sphinxcontrib.mermaid",
 ]
+
 
 myst_enable_extensions = [
     "colon_fence",
@@ -65,7 +65,19 @@ copybutton_only_copy_prompt_lines = False
 bibtex_bibfiles = ["refs.bib"]
 
 autodoc_member_order = "bysource"
-
+autodoc_class_signature = "separated"
+autodoc_default_options = {
+    "exclude-members": "__init__",
+    "members": True,
+    "undoc-members": True,
+    "member-order": "bysource",
+    "class-doc-from": "class",
+}
+autodoc_preserve_defaults = True
+autodoc_type_aliases = {
+    "NonNegativeFloat": "optimagic.typing.NonNegativeFloat",
+    "PositiveInt": "optimagic.typing.PositiveInt",
+}
 
 autodoc_mock_imports = [
     "bokeh",
@@ -85,8 +97,8 @@ autodoc_mock_imports = [
 ]
 
 extlinks = {
-    "ghuser": ("https://github.com/%s", "@"),
-    "gh": ("https://github.com/optimagic-dev/optimagic/pulls/%s", "#"),
+    "ghuser": ("https://github.com/%s", "%s"),
+    "gh": ("https://github.com/optimagic-dev/optimagic/pull/%s", "%s"),
 }
 
 intersphinx_mapping = {
@@ -127,7 +139,7 @@ version = ".".join(release.split(".")[:2])
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -146,7 +158,7 @@ else:
     todo_emit_warnings = True
 
 # -- Options for myst-nb  ----------------------------------------
-nb_execution_mode = "force"
+nb_execution_mode = "off"  # "off", "force", "cache", "auto"
 nb_execution_allow_errors = False
 nb_merge_streams = True
 

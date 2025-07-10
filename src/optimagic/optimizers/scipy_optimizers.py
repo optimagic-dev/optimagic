@@ -32,6 +32,7 @@ The following arguments are not supported as part of ``algo_options``:
     terminate if it returned True.
 
 """
+from __future__ import annotations
 
 import functools
 from dataclasses import dataclass
@@ -98,27 +99,20 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 )
 @dataclass(frozen=True)
 class ScipyLBFGSB(Algorithm):
-    """Minimize a scalar differentiable function using the lbfgsb algorithm.
-
-    Attributes:
-        convergence_ftol_rel: Converge if the relative change in the objective function
-            is less than this value.
-        convergence_gtol_abs: Converge if the absolute values in the gradient of the
-            objective function are less than this value.
-        stopping_maxfun: Maximum number of function evaluations.
-        stopping_maxiter: Maximum number of iterations.
-        limited_memory_storage_length: The maximum number of variable metric corrections
-            used to define the limited memory matrix.
-        max_line_search_steps: The maximum number of line search steps.
-
-    """
+    """Minimize a scalar differentiable function using the lbfgsb algorithm."""
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Converge if the relative change in the objective function is less than this value."""
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    """Converge if the absolute values in the gradient of the objective function are less than this value."""
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of function evaluations."""
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations."""
     limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
+    """The maximum number of variable metric corrections used to define the limited memory matrix."""
     max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
+    """The maximum number of line search steps."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
