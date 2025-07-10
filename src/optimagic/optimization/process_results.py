@@ -137,6 +137,9 @@ def _process_multistart_info(
     solver_type: AggregationLevel,
     extra_fields: ExtraResultFields,
 ) -> MultistartInfo:
+    # The `info` dictionary is obtained from the `multistart_info` field of the
+    # InternalOptimizeResult returned by `run_multistart_optimization` function.
+
     starts = [converter.params_from_internal(x) for x in info["start_parameters"]]
 
     optima = []
@@ -156,11 +159,10 @@ def _process_multistart_info(
 
     sample = [converter.params_from_internal(x) for x in info["exploration_sample"]]
 
-    # info["exploration_results"] is a numpy array
     if extra_fields.direction == Direction.MINIMIZE:
         exploration_res = info["exploration_results"]
     else:
-        exploration_res = -info["exploration_results"]
+        exploration_res = [-res for res in info["exploration_results"]]
 
     return MultistartInfo(
         start_parameters=starts,
