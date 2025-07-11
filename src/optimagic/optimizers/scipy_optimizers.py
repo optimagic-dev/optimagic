@@ -140,16 +140,21 @@ class ScipyLBFGSB(Algorithm):
         \textsf{convergence_ftol_rel}.
 
     """
+
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
     """Converge if the absolute values in the gradient of the objective function are
     less than this value."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     """Maximum number of function evaluations."""
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
+
     limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
     """The maximum number of variable metric corrections used to define the limited
     memory matrix."""
+
     max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
     """The maximum number of line search steps."""
 
