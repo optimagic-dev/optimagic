@@ -98,7 +98,9 @@ To make switching between different algorithm as simple as possible, we align th
 of commonly used convergence and stopping criteria. We also align the default values for
 stopping and convergence criteria as much as possible.
 
-You can find the harmonized names and value [here](algo_options_docs).
+```{eval-rst}
+You can find the harmonized names and value here: :ref:`algo_options`.
+```
 
 To align the names of other tuning parameters as much as possible with what is already
 there, simple have a look at the optimizers we already wrapped. For example, if you are

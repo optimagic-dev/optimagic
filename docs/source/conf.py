@@ -158,7 +158,7 @@ else:
     todo_emit_warnings = True
 
 # -- Options for myst-nb  ----------------------------------------
-nb_execution_mode = "off"  # "off", "force", "cache", "auto"
+nb_execution_mode = "force"  # "off", "force", "cache", "auto"
 nb_execution_allow_errors = False
 nb_merge_streams = True
 

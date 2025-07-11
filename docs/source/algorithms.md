@@ -5,7 +5,7 @@
 Check out {ref}`how-to-select-algorithms` to see how to select an algorithm and specify
 `algo_options` when using `maximize` or `minimize`.
 
-## Optimizers from scipy
+## Optimizers from SciPy
 
 (scipy-algorithms)=
 
@@ -13,7 +13,7 @@ optimagic supports most [SciPy](https://scipy.org/) algorithms and SciPy is
 automatically installed when you install optimagic.
 
 ```{eval-rst}
-.. dropdown::  ``scipy_lbfgsb``
+.. dropdown::  scipy_lbfgsb
 
     **How to use this algorithm:**
 
