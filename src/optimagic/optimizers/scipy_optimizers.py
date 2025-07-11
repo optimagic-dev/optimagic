@@ -32,6 +32,7 @@ The following arguments are not supported as part of ``algo_options``:
     terminate if it returned True.
 
 """
+
 from __future__ import annotations
 
 import functools
@@ -99,8 +100,8 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 )
 @dataclass(frozen=True)
 class ScipyLBFGSB(Algorithm):
-    """**Description:**
-    Minimize a scalar differentiable function using the L-BFGS-B algorithm.
+    """**Description:** Minimize a scalar differentiable function using the L-BFGS-B
+    algorithm.
 
     The optimizer is taken from scipy, which calls the Fortran code written by the
     original authors of the algorithm. The Fortran code includes the corrections
@@ -125,29 +126,29 @@ class ScipyLBFGSB(Algorithm):
     to scale the parameters.
 
     **Available options:**
+
     """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    r"""Converge if the relative change in the objective function is less than this 
-    value. More formally, this is expressed as
+    r"""Converge if the relative change in the objective function is less than this
+    value. More formally, this is expressed as.
 
     .. math::
 
         \frac{f^k - f^{k+1}}{\max\{{|f^k|, |f^{k+1}|, 1}\}} \leq
         \textsf{convergence_ftol_rel}.
+
     """
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
-    """Converge if the absolute values in the gradient of the objective function are 
-    less than this value.
-    """
+    """Converge if the absolute values in the gradient of the objective function are
+    less than this value."""
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     """Maximum number of function evaluations."""
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
     limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
     """The maximum number of variable metric corrections used to define the limited
-    memory matrix.
-    """
+    memory matrix."""
     max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
     """The maximum number of line search steps."""
 
