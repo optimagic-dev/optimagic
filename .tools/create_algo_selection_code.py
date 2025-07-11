@@ -109,7 +109,7 @@ def _get_algorithms_in_module(module: ModuleType) -> dict[str, Type[Algorithm]]:
     }
     algos = {}
     for candidate in candidate_dict.values():
-        name = candidate.__algo_info__.name
+        name = candidate.algo_info.name
         if issubclass(candidate, Algorithm) and candidate is not Algorithm:
             algos[name] = candidate
     return algos
@@ -119,7 +119,7 @@ def _get_algorithms_in_module(module: ModuleType) -> dict[str, Type[Algorithm]]:
 # Functions to filter algorithms by selectors
 # ======================================================================================
 def _is_gradient_based(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.needs_jac  # type: ignore
+    return algo.algo_info.needs_jac  # type: ignore
 
 
 def _is_gradient_free(algo: Type[Algorithm]) -> bool:
@@ -127,7 +127,7 @@ def _is_gradient_free(algo: Type[Algorithm]) -> bool:
 
 
 def _is_global(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.is_global  # type: ignore
+    return algo.algo_info.is_global  # type: ignore
 
 
 def _is_local(algo: Type[Algorithm]) -> bool:
@@ -135,31 +135,31 @@ def _is_local(algo: Type[Algorithm]) -> bool:
 
 
 def _is_bounded(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_bounds  # type: ignore
+    return algo.algo_info.supports_bounds  # type: ignore
 
 
 def _is_linear_constrained(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_linear_constraints  # type: ignore
+    return algo.algo_info.supports_linear_constraints  # type: ignore
 
 
 def _is_nonlinear_constrained(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_nonlinear_constraints  # type: ignore
+    return algo.algo_info.supports_nonlinear_constraints  # type: ignore
 
 
 def _is_scalar(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.solver_type == AggregationLevel.SCALAR  # type: ignore
+    return algo.algo_info.solver_type == AggregationLevel.SCALAR  # type: ignore
 
 
 def _is_least_squares(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.solver_type == AggregationLevel.LEAST_SQUARES  # type: ignore
+    return algo.algo_info.solver_type == AggregationLevel.LEAST_SQUARES  # type: ignore
 
 
 def _is_likelihood(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.solver_type == AggregationLevel.LIKELIHOOD  # type: ignore
+    return algo.algo_info.solver_type == AggregationLevel.LIKELIHOOD  # type: ignore
 
 
 def _is_parallel(algo: Type[Algorithm]) -> bool:
-    return algo.__algo_info__.supports_parallelism  # type: ignore
+    return algo.algo_info.supports_parallelism  # type: ignore
 
 
 def _get_filters() -> dict[str, Callable[[Type[Algorithm]], bool]]:
@@ -385,27 +385,32 @@ def _get_base_class_code() -> str:
             def _available(self) -> list[Type[Algorithm]]:
                 _all = self._all()
                 return [
-                    a for a in _all if a.__algo_info__.is_available # type: ignore
+                    a for a in _all if a.algo_info.is_available # type: ignore
                 ]
 
             @property
-            def All(self) -> list[str]:
-                return [a.__algo_info__.name for a in self._all()]  # type: ignore
+            def All(self) -> list[Type[Algorithm]]:
+                return self._all()
 
             @property
-            def Available(self) -> list[str]:
-                return [a.__algo_info__.name for a in self._available()]  # type: ignore
+            def Available(self) -> list[Type[Algorithm]]:
+                return self._available()
+
+            @property
+            def AllNames(self) -> list[str]:
+                return [str(a.name) for a in self._all()]
+
+            @property
+            def AvailableNames(self) -> list[str]:
+                return [str(a.name) for a in self._available()]
 
             @property
             def _all_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
-                return {a.__algo_info__.name: a for a in self._all()} # type: ignore
+                return {str(a.name): a for a in self._all()}
 
             @property
             def _available_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
-                return {
-                    a.__algo_info__.name: a # type: ignore
-                    for a in self._available()
-                }
+                return {str(a.name): a for a in self._available()}
 
     """)
     return out

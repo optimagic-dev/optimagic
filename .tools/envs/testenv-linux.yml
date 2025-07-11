@@ -7,7 +7,7 @@ dependencies:
   - petsc4py
   - jax
   - cyipopt>=1.4.0  # dev, tests
-  - pygmo>=2.19.0  # dev, tests
+  - pygmo>=2.19.0  # dev, tests, docs
   - nlopt  # dev, tests, docs
   - pip  # dev, tests, docs
   - pytest  # dev, tests
@@ -18,16 +18,18 @@ dependencies:
   - joblib  # run, tests
   - numpy >= 2  # run, tests
   - pandas  # run, tests
-  - plotly  # run, tests
+  - plotly<6.0.0  # run, tests
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
   - seaborn  # dev, tests
-  - mypy=1.13  # dev, tests
+  - mypy=1.14.1  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
+  - iminuit  # dev, tests
   - pip:  # dev, tests, docs
+      - nevergrad  # dev, tests
       - DFO-LS>=1.5.3  # dev, tests
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests

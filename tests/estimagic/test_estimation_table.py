@@ -395,7 +395,7 @@ def test_get_model_names():
 def test_get_default_column_names_and_groups():
     model_names = ["a_name", "a_name", "(3)", "(4)", "third_name"]
     res_names, res_groups = _get_default_column_names_and_groups(model_names)
-    exp_names = [f"({i+1})" for i in range(len(model_names))]
+    exp_names = [f"({i + 1})" for i in range(len(model_names))]
     exp_groups = ["a_name", "a_name", "(3)", "(4)", "third_name"]
     assert res_names == exp_names
     assert res_groups == exp_groups

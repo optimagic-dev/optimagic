@@ -28,6 +28,7 @@ dependencies:
   - plotly
   - nlopt
   - annotated-types
+  - pygmo>=2.19.0
   - pip:
       - -e ../
       - kaleido
@@ -39,4 +40,5 @@ dependencies:
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
       - sphinxcontrib-mermaid  # dev, tests, docs
+      - intersphinx-registry  # docs
       - fides==0.7.4  # dev, tests

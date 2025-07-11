@@ -4,9 +4,68 @@ This is a record of all past optimagic releases and what went into them in rever
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
-Following the [scientific python guidelines](https://scientific-python.org/specs/spec-0000/)
-we drop the official support for Python 3.9.
 
+## 0.5.2
+
+This minor release includes several bug fixes and small improvements. Many contributions
+in this release were made by Google Summer of Code (GSoC) 2025 applicants, with
+@gauravmanmode and @spline2hg being the accepted contributors.
+
+- {gh}`605` Enhances batch evaluator checking and processing, introduces the internal
+  `BatchEvaluatorLiteral` literal, and updates CHANGES.md ({ghuser}`janosg`,
+  {ghuser}`timmens`).
+- {gh}`598` Fixes and adds links to GitHub in the documentation ({ghuser}`hamogu`).
+- {gh}`594` Refines newly added optimizer wrappers ({ghuser}`janosg`).
+- {gh}`589` Rewrites the algorithm selection pre-commit hook in pure Python to address
+  issues with bash scripts on Windows ({ghuser}`timmens`).
+- {gh}`586` and {gh}`592` Ensure the SciPy `disp` parameter is exposed for the following
+  SciPy algorithms: slsqp, neldermead, powell, conjugate_gradient, newton_cg, cobyla,
+  truncated_newton, trust_constr ({ghuser}`sefmef`, {ghuser}`TimBerti`).
+- {gh}`585` Exposes all parameters of [SciPy's
+  BFGS](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html)
+  optimizer in optimagic ({ghuser}`TimBerti`).
+- {gh}`582` Adds support for handling infinite gradients during optimization
+  ({ghuser}`Aziz-Shameem`).
+- {gh}`579` Implements a wrapper for the PSO optimizer from the
+  [nevergrad](https://github.com/facebookresearch/nevergrad) package ({ghuser}`r3kste`).
+- {gh}`578` Integrates the `intersphinx-registry` package into the documentation for
+  automatic linking to up-to-date external documentation
+  ({ghuser}`Schefflera-Arboricola`).
+- {gh}`572` and {gh}`573` Fix bugs in error handling for parameter selector processing
+  and constraints checking ({ghuser}`hmgaudecker`).
+- {gh}`570` Adds a how-to guide for adding algorithms to optimagic and improves internal
+  documentation ({ghuser}`janosg`).
+- {gh}`569` Implements a threading batch evaluator ({ghuser}`spline2hg`).
+- {gh}`568` Introduces an initial wrapper for the migrad optimizer from the
+  [iminuit](https://github.com/scikit-hep/iminuit) package ({ghuser}`spline2hg`).
+- {gh}`567` Makes the `fun` argument optional when `fun_and_jac` is provided
+  ({ghuser}`gauravmanmode`).
+- {gh}`563` Fixes a bug in input harmonization for history plotting
+  ({ghuser}`gauravmanmode`).
+- {gh}`552` Refactors and extends the `History` class, removing the internal
+  `HistoryArrays` class ({ghuser}`timmens`).
+
+
+## 0.5.1
+
+This is a minor release that introduces the new algorithm selection tool and several
+small improvements.
+
+To learn more about the algorithm selection feature check out the following resources:
+
+- [How to specify and configure algorithms](https://optimagic.readthedocs.io/en/latest/how_to/how_to_specify_algorithm_and_algo_options.html)
+- [How to select local optimizers](https://optimagic.readthedocs.io/en/latest/how_to/how_to_algorithm_selection.html)
+
+- {gh}`549` Add support for Python 3.13 ({ghuser}`timmens`)
+- {gh}`550` and {gh}`534` implement the new algorithm selection tool ({ghuser}`janosg`)
+- {gh}`548` and {gh}`531` improve the documentation ({ghuser}`ChristianZimpelmann`)
+- {gh}`544` Adjusts the results processing of the nag optimizers to be compatible
+  with the latest releases ({ghuser}`timmens`)
+- {gh}`543` Adds support for numpy 2.x ({ghuser}`timmens`)
+- {gh}`536` Adds a how-to guide for choosing local optimizers ({ghuser}`mpetrosian`)
+- {gh}`535` Allows algorithm classes and instances in estimation functions
+  ({ghuser}`timmens`)
+- {gh}`532` Makes several small improvements to the documentation.
 
 ## 0.5.0
 

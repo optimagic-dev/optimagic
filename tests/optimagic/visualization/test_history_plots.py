@@ -1,4 +1,5 @@
 import itertools
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -7,7 +8,11 @@ import optimagic as om
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
-from optimagic.visualization.history_plots import criterion_plot, params_plot
+from optimagic.visualization.history_plots import (
+    _harmonize_inputs_to_dict,
+    criterion_plot,
+    params_plot,
+)
 
 
 @pytest.fixture()
@@ -122,6 +127,7 @@ def test_criterion_plot_different_input_types():
     criterion_plot(results, stack_multistart=True)
     criterion_plot(results, monotone=True, stack_multistart=True)
     criterion_plot(results, show_exploration=True)
+    criterion_plot("test.db")
 
 
 def test_criterion_plot_wrong_inputs():
@@ -130,3 +136,54 @@ def test_criterion_plot_wrong_inputs():
 
     with pytest.raises(ValueError):
         criterion_plot(["bla", "bla"], names="blub")
+
+
+def test_harmonize_inputs_to_dict_single_result():
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    assert _harmonize_inputs_to_dict(results=res, names=None) == {"0": res}
+
+
+def test_harmonize_inputs_to_dict_single_result_with_name():
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    assert _harmonize_inputs_to_dict(results=res, names="bla") == {"bla": res}
+
+
+def test_harmonize_inputs_to_dict_list_results():
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    results = [res, res]
+    assert _harmonize_inputs_to_dict(results=results, names=None) == {
+        "0": res,
+        "1": res,
+    }
+
+
+def test_harmonize_inputs_to_dict_dict_input():
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    results = {"bla": res, om.algos.scipy_lbfgsb(): res, om.algos.scipy_neldermead: res}
+    got = _harmonize_inputs_to_dict(results=results, names=None)
+    expected = {"bla": res, "scipy_lbfgsb": res, "scipy_neldermead": res}
+    assert got == expected
+
+
+def test_harmonize_inputs_to_dict_dict_input_with_names():
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    results = {"bla": res, "blub": res}
+    got = _harmonize_inputs_to_dict(results=results, names=["a", "b"])
+    expected = {"a": res, "b": res}
+    assert got == expected
+
+
+def test_harmonize_inputs_to_dict_invalid_names():
+    results = [None]
+    names = ["a", "b"]
+    with pytest.raises(ValueError):
+        _harmonize_inputs_to_dict(results=results, names=names)
+
+
+def test_harmonize_inputs_to_dict_str_input():
+    assert _harmonize_inputs_to_dict(results="test.db", names=None) == {"0": "test.db"}
+
+
+def test_harmonize_inputs_to_dict_path_input():
+    path = Path("test.db")
+    assert _harmonize_inputs_to_dict(results=path, names=None) == {"0": path}

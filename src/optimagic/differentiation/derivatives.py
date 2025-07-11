@@ -23,7 +23,7 @@ from optimagic.differentiation.richardson_extrapolation import richardson_extrap
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import PyTree
+from optimagic.typing import BatchEvaluatorLiteral, PyTree
 
 
 @dataclass(frozen=True)
@@ -95,7 +95,7 @@ def first_derivative(
     f0: PyTree | None = None,
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
-    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
+    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib",
     unpacker: Callable[[Any], PyTree] | None = None,
     # deprecated
     lower_bounds: PyTree | None = None,
@@ -328,7 +328,7 @@ def first_derivative(
         f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
-    raw_evals = _convert_evals_to_numpy(
+    raw_evals_arr = _convert_evals_to_numpy(
         raw_evals=raw_evals,
         unpacker=unpacker,
         registry=registry,
@@ -337,9 +337,9 @@ def first_derivative(
     )
 
     # apply finite difference formulae
-    evals_data = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
-    evals_data = np.transpose(evals_data, axes=(0, 1, 3, 2))
-    evals = Evals(pos=evals_data[0], neg=evals_data[1])
+    evals_data = np.array(raw_evals_arr).reshape(2, n_steps, len(x), -1)
+    evals_data_transposed = np.transpose(evals_data, axes=(0, 1, 3, 2))
+    evals = Evals(pos=evals_data_transposed[0], neg=evals_data_transposed[1])
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:
@@ -400,7 +400,7 @@ def second_derivative(
     f0: PyTree | None = None,
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
-    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
+    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib",
     unpacker: Callable[[Any], PyTree] | None = None,
     # deprecated
     lower_bounds: PyTree | None = None,

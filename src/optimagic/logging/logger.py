@@ -187,6 +187,9 @@ class LogReader(Generic[_LogOptionsType], ABC):
 
         times = np.array(history["time"])
         times -= times[0]
+        # For numpy arrays with ndim = 0, tolist() returns a scalar, which violates the
+        # type hinting list[Any] from above. As history["time"] is always a list, this
+        # case is safe to ignore.
         history["time"] = times.tolist()
 
         df = pd.DataFrame(history)
@@ -239,7 +242,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
             best_idx, level="step"
         )
 
-        def _to_dict(pandas_obj: pd.DataFrame | pd.Series) -> dict[str, Any]:  # type:ignore
+        def _to_dict(pandas_obj: pd.DataFrame | pd.Series) -> dict[str, Any]:
             if isinstance(pandas_obj, pd.DataFrame):
                 result = pandas_obj.to_dict(orient="list")
             else:
