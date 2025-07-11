@@ -52,7 +52,6 @@ extensions = [
     "sphinxcontrib.mermaid",
 ]
 
-
 myst_enable_extensions = [
     "colon_fence",
     "dollarmath",
