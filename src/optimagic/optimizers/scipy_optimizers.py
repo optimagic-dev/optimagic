@@ -99,18 +99,55 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 )
 @dataclass(frozen=True)
 class ScipyLBFGSB(Algorithm):
-    """Minimize a scalar differentiable function using the lbfgsb algorithm."""
+    """**Description:**
+    Minimize a scalar differentiable function using the L-BFGS-B algorithm.
+
+    The optimizer is taken from scipy, which calls the Fortran code written by the
+    original authors of the algorithm. The Fortran code includes the corrections
+    and improvements that were introduced in a follow up paper.
+
+    lbfgsb is a limited memory version of the original bfgs algorithm, that deals with
+    lower and upper bounds via an active set approach.
+
+    The lbfgsb algorithm is well suited for differentiable scalar optimization problems
+    with up to several hundred parameters.
+
+    It is a quasi-newton line search algorithm. At each trial point it evaluates the
+    criterion function and its gradient to find a search direction. It then approximates
+    the hessian using the stored history of gradients and uses the hessian to calculate
+    a candidate step size. Then it uses a gradient based line search algorithm to
+    determine the actual step length. Since the algorithm always evaluates the gradient
+    and criterion function jointly, the user should provide a
+    ``criterion_and_derivative`` function that exploits the synergies in the
+    calculation of criterion and gradient.
+
+    The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
+    to scale the parameters.
+
+    **Available options:**
+    """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Converge if the relative change in the objective function is less than this value."""
+    r"""Converge if the relative change in the objective function is less than this 
+    value. More formally, this is expressed as
+
+    .. math::
+
+        \frac{f^k - f^{k+1}}{\max\{{|f^k|, |f^{k+1}|, 1}\}} \leq
+        \textsf{convergence_ftol_rel}.
+    """
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
-    """Converge if the absolute values in the gradient of the objective function are less than this value."""
+    """Converge if the absolute values in the gradient of the objective function are 
+    less than this value.
+    """
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     """Maximum number of function evaluations."""
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
     limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
-    """The maximum number of variable metric corrections used to define the limited memory matrix."""
+    """The maximum number of variable metric corrections used to define the limited
+    memory matrix.
+    """
     max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
     """The maximum number of line search steps."""
 

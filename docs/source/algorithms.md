@@ -9,8 +9,8 @@ Check out {ref}`how-to-select-algorithms` to see how to select an algorithm and 
 
 (scipy-algorithms)=
 
-optimagic supports most `scipy` algorithms and scipy is automatically installed when you
-install optimagic.
+optimagic supports most [SciPy](https://scipy.org/) algorithms and SciPy is
+automatically installed when you install optimagic.
 
 ```{eval-rst}
 .. dropdown::  ``scipy_lbfgsb``
@@ -19,67 +19,25 @@ install optimagic.
 
     .. code-block::
 
-        minimize(
+        import optimagic as om
+        om.minimize(
           ...,
-          algorithm=optimagic.algos.scipy_lbfgsb(stopping_maxiter=1_000, ...)
+          algorithm=om.algos.scipy_lbfgsb(stopping_maxiter=1_000, ...)
         )
         
     or
         
     .. code-block::
 
-        minimize(
+        om.minimize(
           ...,
           algorithm="scipy_lbfgsb",
           algo_options={"stopping_maxiter": 1_000, ...}
         )
 
-    **Available options:**
+    **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLBFGSB
-
-```
-
-```{eval-rst}
-Minimize a scalar function of one or more variables using the L-BFGS-B algorithm.
-
-    The optimizer is taken from scipy, which calls the Fortran code written by the
-    original authors of the algorithm. The Fortran code includes the corrections
-    and improvements that were introduced in a follow up paper.
-
-    lbfgsb is a limited memory version of the original bfgs algorithm, that deals with
-    lower and upper bounds via an active set approach.
-
-    The lbfgsb algorithm is well suited for differentiable scalar optimization problems
-    with up to several hundred parameters.
-
-    It is a quasi-newton line search algorithm. At each trial point it evaluates the
-    criterion function and its gradient to find a search direction. It then approximates
-    the hessian using the stored history of gradients and uses the hessian to calculate
-    a candidate step size. Then it uses a gradient based line search algorithm to
-    determine the actual step length. Since the algorithm always evaluates the gradient
-    and criterion function jointly, the user should provide a
-    ``criterion_and_derivative`` function that exploits the synergies in the
-    calculation of criterion and gradient.
-
-    The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
-    to scale the parameters.
-
-    - **convergence_ftol_rel** (float): Stop when the relative improvement
-      between two iterations is smaller than this. More formally, this is expressed as
-
-    .. math::
-
-        \frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \leq
-        \textsf{convergence_ftol_rel}
-
-    - **convergence_gtol_abs** (float): Stop if all elements of the projected
-      gradient are smaller than this.
-    - **stopping_maxfun** (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this as convergence.
-    - **stopping_maxiter** (int): If the maximum number of iterations is reached,
-      the optimization stops, but we do not count this as convergence.
-    - **limited_memory_storage_length** (int): Maximum number of saved gradients used to approximate the hessian matrix.
 
 ```
 
