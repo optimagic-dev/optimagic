@@ -12,16 +12,22 @@ def _get_mypy_version_from_precommit_config() -> str:
         for hook in config["repos"]
         if hook["repo"] == "https://github.com/pre-commit/mirrors-mypy"
     ][0]
-    return re.search(r"v([\d.]+)", mypy_config["rev"]).group(1)  # Remove "v" prefix
+    match = re.search(r"v([\d.]+)", mypy_config["rev"])  # Remove "v" prefix
+    if match:
+        return match.group(1)
+    raise ValueError("Mypy version not found in pre-commit config.")
 
 
 def _get_mypy_version_from_conda_environment() -> str:
     config = yaml.safe_load(Path("environment.yml").read_text())
     mypy_line = [dep for dep in config["dependencies"] if "mypy" in dep][0]
-    return re.search(r"mypy=([\d.]+)", mypy_line).group(1)
+    match = re.search(r"mypy=([\d.]+)", mypy_line)
+    if match:
+        return match.group(1)
+    raise ValueError("Mypy version not found in conda environment.")
 
 
-def main():
+def main() -> None:
     v_precommit = _get_mypy_version_from_precommit_config()
     v_conda = _get_mypy_version_from_conda_environment()
     if v_precommit != v_conda:
