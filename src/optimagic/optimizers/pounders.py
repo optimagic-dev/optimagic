@@ -244,9 +244,9 @@ def internal_solve_pounders(
         conjugate_gradient_method_sub (str): Method for computing the conjugate
             gradient step ("bntr").
             Available conjugate gradient methods are:
-                - "cg"
-                - "steihaug_toint"
-                - "trsbox" (default)
+            - "cg"
+            - "steihaug_toint"
+            - "trsbox" (default)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
         maxiter_gradient_descent_sub (int): Maximum number of gradient descent
             iterations to perform ("bntr").
