@@ -77,8 +77,16 @@ autodoc_default_options = {
 }
 autodoc_preserve_defaults = True
 autodoc_type_aliases = {
-    "NonNegativeFloat": "optimagic.typing.NonNegativeFloat",
     "PositiveInt": "optimagic.typing.PositiveInt",
+    "NonNegativeInt": "optimagic.typing.NonNegativeInt",
+    "PositiveFloat": "optimagic.typing.PositiveFloat",
+    "NonNegativeFloat": "optimagic.typing.NonNegativeFloat",
+    "NegativeFloat": "optimagic.typing.NegativeFloat",
+    "GtOneFloat": "optimagic.typing.GtOneFloat",
+    "YesNoBool": "optimagic.typing.YesNoBool",
+    "DirectionLiteral": "optimagic.typing.DirectionLiteral",
+    "BatchEvaluatorLiteral": "optimagic.typing.BatchEvaluatorLiteral",
+    "ErrorHandlingLiteral": "optimagic.typing.ErrorHandlingLiteral",
 }
 
 autodoc_mock_imports = [

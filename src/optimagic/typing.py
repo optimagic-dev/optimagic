@@ -115,15 +115,26 @@ class BatchEvaluator(Protocol):
 
 
 PositiveInt = Annotated[int, Gt(0)]
+"""Type alias for positive integers (greater than 0)."""
 NonNegativeInt = Annotated[int, Ge(0)]
+"""Type alias for non-negative integers (greater than or equal to 0)."""
 PositiveFloat = Annotated[float, Gt(0)]
+"""Type alias for positive floats (greater than 0)."""
 NonNegativeFloat = Annotated[float, Ge(0)]
+"""Type alias for non-negative floats (greater than or equal to 0)."""
 NegativeFloat = Annotated[float, Lt(0)]
+"""Type alias for negative floats (less than 0)."""
 GtOneFloat = Annotated[float, Gt(1)]
+"""Type alias for floats greater than 1."""
 YesNoBool = Literal["yes", "no"] | bool
+"""Type alias for boolean values represented as 'yes' or 'no' strings or as boolean
+values."""
 DirectionLiteral = Literal["minimize", "maximize"]
+"""Type alias for optimization direction, either 'minimize' or 'maximize'."""
 BatchEvaluatorLiteral = Literal["joblib", "pathos", "threading"]
+"""Type alias for batch evaluator types, can be 'joblib', 'pathos', or 'threading'."""
 ErrorHandlingLiteral = Literal["raise", "continue"]
+"""Type alias for error handling strategies, can be 'raise' or 'continue'."""
 
 
 @dataclass(frozen=True)

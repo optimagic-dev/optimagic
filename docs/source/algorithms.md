@@ -3,7 +3,8 @@
 # Optimizers
 
 Check out {ref}`how-to-select-algorithms` to see how to select an algorithm and specify
-`algo_options` when using `maximize` or `minimize`.
+`algo_options` when using `maximize` or `minimize`. The default algorithm options are
+discussed in {ref}`algo_options` and their type hints are documented in {ref}`typing`.
 
 ## Optimizers from SciPy
 
