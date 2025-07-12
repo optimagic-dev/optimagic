@@ -51,7 +51,7 @@ NEVERGRAD_NOT_INSTALLED_ERROR = (
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -110,7 +110,7 @@ class NevergradPSO(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -216,7 +216,7 @@ class NevergradCMAES(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -317,7 +317,7 @@ class NevergradOnePlusOne(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -438,7 +438,7 @@ class NevergradBayesOptim(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -488,7 +488,7 @@ class NevergradEMNA(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -529,7 +529,7 @@ class NevergradCGA(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -570,7 +570,7 @@ class NevergradEDA(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -616,7 +616,7 @@ class NevergradTBPSA(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -670,7 +670,7 @@ class NevergradRandomSearch(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -726,7 +726,7 @@ class NevergradSamplingSearch(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)

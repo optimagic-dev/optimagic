@@ -138,17 +138,6 @@ class AlgoSelection:
 class BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(
     AlgoSelection
 ):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -170,17 +159,6 @@ class BoundedGradientBasedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelectio
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -195,17 +173,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelectio
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -248,17 +215,6 @@ class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -288,17 +244,6 @@ class BoundedGradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -312,17 +257,6 @@ class BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelect
 
 @dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -440,17 +374,6 @@ class BoundedGradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -554,17 +477,6 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -583,17 +495,6 @@ class GlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -733,17 +634,6 @@ class GradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -767,17 +657,6 @@ class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -841,17 +720,6 @@ class BoundedGradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -869,17 +737,6 @@ class GradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -905,17 +762,6 @@ class BoundedGlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -966,17 +812,6 @@ class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -1035,17 +870,6 @@ class BoundedLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -1350,17 +1174,6 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1589,17 +1402,6 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1758,17 +1560,6 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -1795,17 +1586,6 @@ class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -1882,17 +1662,6 @@ class GradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2016,17 +1785,6 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2052,17 +1810,6 @@ class GlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -2276,17 +2023,6 @@ class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -2321,17 +2057,6 @@ class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -2407,17 +2132,6 @@ class BoundedLeastSquaresParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class NonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -2810,17 +2524,6 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -3063,17 +2766,6 @@ class BoundedGlobalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3403,17 +3095,6 @@ class LocalParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -3620,17 +3301,6 @@ class BoundedParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -3670,17 +3340,6 @@ class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class NonlinearConstrainedParallelAlgorithms(AlgoSelection):
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
     )
@@ -4155,17 +3814,6 @@ class BoundedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class NonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
-    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
-    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
-    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
-    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
-    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
-    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
-    nevergrad_pso: Type[NevergradPSO] = NevergradPSO
-    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
-    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
-    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_mma: Type[NloptMMA] = NloptMMA
