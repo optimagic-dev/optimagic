@@ -38,7 +38,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
         params=np.arange(5),
         algorithm=algorithm,
         bounds=Bounds(lower=lb, upper=ub),
-        algo_options={"n_cores": 2, "stopping_maxiter": 3},
+        algo_options={"n_cores": 2, "stopping_maxiter": 3, "stopping_maxfun": 6},
         logging=SQLiteLogOptions(path=path, if_database_exists="replace"),
     ).history
 
