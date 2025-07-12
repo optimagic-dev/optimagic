@@ -143,7 +143,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -176,7 +175,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelectio
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -202,7 +200,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelect
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -256,7 +253,6 @@ class GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelecti
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -297,7 +293,6 @@ class BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelect
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -322,7 +317,6 @@ class BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -451,7 +445,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -566,7 +559,6 @@ class GlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -596,7 +588,6 @@ class GlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -747,7 +738,6 @@ class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -782,7 +772,6 @@ class BoundedGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -857,7 +846,6 @@ class GradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -886,7 +874,6 @@ class BoundedGlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -923,7 +910,6 @@ class BoundedGlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -985,7 +971,6 @@ class GlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -1055,7 +1040,6 @@ class BoundedNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -1371,7 +1355,6 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -1611,7 +1594,6 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -1781,7 +1763,6 @@ class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -1819,7 +1800,6 @@ class GradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -1907,7 +1887,6 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2042,7 +2021,6 @@ class GlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2079,7 +2057,6 @@ class GlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2304,7 +2281,6 @@ class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2350,7 +2326,6 @@ class BoundedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2437,7 +2412,6 @@ class NonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2841,7 +2815,6 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -3095,7 +3068,6 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -3436,7 +3408,6 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -3654,7 +3625,6 @@ class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -3705,7 +3675,6 @@ class NonlinearConstrainedParallelAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -4191,7 +4160,6 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
     nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
     nevergrad_eda: Type[NevergradEDA] = NevergradEDA
     nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
-    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
     nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
     nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO

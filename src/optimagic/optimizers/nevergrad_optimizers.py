@@ -2,14 +2,12 @@
 
 import math
 from dataclasses import dataclass
-from functools import partial
 from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
 
 from optimagic import mark
-from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import IS_NEVERGRAD_INSTALLED
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
@@ -23,7 +21,6 @@ from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.parameters.nonlinear_constraints import _vector_to_list_of_scalar
 from optimagic.typing import (
     AggregationLevel,
     NonNegativeFloat,
@@ -825,7 +822,7 @@ class NevergradNGOpt(Algorithm):
     supports_parallelism=True,
     supports_bounds=True,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -949,8 +946,8 @@ def _nevergrad_internal(
         parametrization=instrum, budget=stopping_maxfun, num_workers=n_cores
     )
 
-    if nonlinear_constraints:
-        constraints = _process_nonlinear_constraints(nonlinear_constraints)
+    # if nonlinear_constraints:
+    #     constraints = _process_nonlinear_constraints(nonlinear_constraints)
 
     # optimization loop using the ask-and-tell interface
     while optimizer.num_ask < stopping_maxfun:
@@ -964,12 +961,12 @@ def _nevergrad_internal(
         if not nonlinear_constraints:
             for x, loss in zip(x_list, losses, strict=True):
                 optimizer.tell(x, loss)
-        else:
-            constraint_violations = _batch_constraint_evaluations(
-                constraints, [x.value[0][0] for x in x_list], n_cores
-            )
-            for x, loss, cv in zip(x_list, losses, constraint_violations, strict=True):
-                optimizer.tell(x, loss, cv)
+        # else:
+        # constraint_violations = _batch_constraint_evaluations(
+        #     constraints, [x.value[0][0] for x in x_list], n_cores
+        # )
+        # for x, loss, cv in zip(x_list, losses, constraint_violations, strict=True):
+        #     optimizer.tell(x, loss, cv)
 
     recommendation = optimizer.provide_recommendation()
     best_x = recommendation.value[0][0]
@@ -992,41 +989,42 @@ def _nevergrad_internal(
     return result
 
 
-def _process_nonlinear_constraints(
-    constraints: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Process stacked inequality constraints as single constraints.
+### Skip handling of non_linear constraints until improve constraint handling.
 
-    Returns a list of single constraints.
+# def _process_nonlinear_constraints(
+#     constraints: list[dict[str, Any]],
+# ) -> list[dict[str, Any]]:
+#     """Process stacked inequality constraints as single constraints.
 
-    """
-    processed_constraints = []
-    for c in constraints:
-        new = _vector_to_list_of_scalar(c)
-        processed_constraints.extend(new)
-    return processed_constraints
+#     Returns a list of single constraints.
 
-
-def _get_constraint_evaluations(
-    constraints: list[dict[str, Any]], x: NDArray[np.float64]
-) -> list[NDArray[np.float64]]:
-    """In optimagic, inequality constraints are internally defined as g(x) >= 0.
-
-    Nevergrad uses h(x) <= 0 hence a sign flip is required. Passed equality constraints
-    are treated as inequality constraints with lower bound equal to value. Return a list
-    of constraint evaluations at x.
-
-    """
-    results = [-c["fun"](x) for c in constraints]
-    results = [np.atleast_1d(i) for i in results]
-    return results
+#     """
+#     processed_constraints = []
+#     for c in constraints:
+#         new = _vector_to_list_of_scalar(c)
+#         processed_constraints.extend(new)
+#     return processed_constraints
 
 
-def _batch_constraint_evaluations(
-    constraints: list[dict[str, Any]], x_list: list[Any], n_cores: int
-) -> list[list[NDArray[np.float64]]]:
-    """Batch version of _get_constraint_evaluations."""
-    batch = process_batch_evaluator("joblib")
-    func = partial(_get_constraint_evaluations, constraints)
-    results = batch(func=func, arguments=[x for x in x_list], n_cores=n_cores)
-    return results
+# def _get_constraint_evaluations(
+#     constraints: list[dict[str, Any]], x: NDArray[np.float64]
+# ) -> list[NDArray[np.float64]]:
+#     """In optimagic, inequality constraints are internally defined as g(x) >= 0.
+#    Nevergrad uses h(x) <= 0 hence a sign flip is required. Passed equality
+#    constraints are treated as inequality constraints with lower bound equal to
+#    value. Return a list of constraint evaluations at x.
+
+#     """
+#     results = [-c["fun"](x) for c in constraints]
+#     results = [np.atleast_1d(i) for i in results]
+#     return results
+
+
+# def _batch_constraint_evaluations(
+#     constraints: list[dict[str, Any]], x_list: list[Any], n_cores: int
+# ) -> list[list[NDArray[np.float64]]]:
+#     """Batch version of _get_constraint_evaluations."""
+#     batch = process_batch_evaluator("joblib")
+#     func = partial(_get_constraint_evaluations, constraints)
+#     results = batch(func=func, arguments=[x for x in x_list], n_cores=n_cores)
+#     return results

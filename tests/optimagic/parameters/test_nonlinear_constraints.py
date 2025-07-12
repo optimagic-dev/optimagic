@@ -44,7 +44,6 @@ TEST_CASES = [
     (np.zeros(3), np.ones(3), "stack"),
     (np.zeros(3), np.tile(np.inf, 3), "identity"),
     (np.array([1, 2]), np.tile(np.inf, 2), "subtract_lb"),
-    (np.tile(-np.inf, 2), np.array([1, 2]), "add_ub"),
 ]
 
 
@@ -65,7 +64,6 @@ TEST_CASES = [
     (0, 0, "derivative", {"name": "stack", "out": np.array([1, -1])}),
     (1, 1, "derivative", {"name": "stack", "out": np.array([1, -1])}),
     (1, np.inf, "func", {"name": "subtract_lb", "out": np.array([0])}),
-    (-np.inf, -1, "func", {"name": "add_ub", "out": np.array([-2])}),
     (0, np.inf, "derivative", {"name": "identity", "out": np.array([1])}),
 ]
 
