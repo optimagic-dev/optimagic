@@ -25,7 +25,6 @@ from optimagic.constraints import Constraint
 from optimagic.differentiation.numdiff_options import NumdiffOptions, NumdiffOptionsDict
 from optimagic.exceptions import (
     IncompleteBoundsError,
-    InfiniteBoundsError,
     InvalidFunctionError,
 )
 from optimagic.logging.logger import LogReader, LogStore
@@ -533,53 +532,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         used_deriv = None
 
     # ==================================================================================
-    # Strict checking if bounds are required and infinite values in bounds
-    # ==================================================================================
-    if problem.algorithm.algo_info.supports_bounds:
-        # Raise an error if bounds are needed but not provided
-        if problem.algorithm.algo_info.needs_bounds:
-            if (
-                problem.bounds is None
-                or problem.bounds.lower is None
-                or problem.bounds.upper is None
-            ):
-                raise IncompleteBoundsError(
-                    f"Algorithm {problem.algorithm.name} needs finite bounds "
-                    f"for all parameters. "
-                    f"Please provide finite bounds for all parameters"
-                    f"for the optimizer to run properly."
-                )
-        # If algo does not support infinite bounds
-        if not problem.algorithm.algo_info.supports_infinite_bounds:
-            # Need this logic here until processing of internal bounds converts None
-            # bounds to np.inf and -np.inf values.
-            if (
-                problem.bounds is None
-                or problem.bounds.lower is None
-                or problem.bounds.upper is None
-            ):
-                raise IncompleteBoundsError(
-                    f"Algorithm {problem.algorithm.name} needs finite bounds "
-                    f"for all parameters. "
-                    f"Please provide finite bounds for all parameters"
-                    f"for the optimizer to run properly."
-                )
-            # If bounds are not None and not finite
-            else:
-                infinite_values_in_bounds = (
-                    np.isinf(problem.bounds.lower).any()
-                    or np.isinf(problem.bounds.upper).any()
-                )
-
-            if infinite_values_in_bounds:
-                raise InfiniteBoundsError(
-                    f"Algorithm {problem.algorithm.name} does not support infinite "
-                    f"values in bounds for parameters. "
-                    f"Found infinite values in: lower={problem.bounds.lower}, "
-                    f"upper={problem.bounds.upper}"
-                )
-
-    # ==================================================================================
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
@@ -604,6 +556,29 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         logger.problem_store.insert(problem_data)
     else:
         logger = None
+
+    # ==================================================================================
+    # Strict checking if bounds are required and infinite values in bounds
+    # ==================================================================================
+    if problem.algorithm.algo_info.supports_bounds:
+        if problem.algorithm.algo_info.needs_bounds:
+            if (
+                internal_params.lower_bounds is None
+                or internal_params.upper_bounds is None
+            ):
+                raise IncompleteBoundsError(
+                    f"Algorithm {problem.algorithm.name} needs finite bounds "
+                    f"for all parameters. "
+                )
+        if not problem.algorithm.algo_info.supports_infinite_bounds:
+            if (
+                np.isinf(internal_params.lower_bounds).any()
+                or np.isinf(internal_params.upper_bounds).any()
+            ):
+                raise IncompleteBoundsError(
+                    f"Algorithm {problem.algorithm.name} does not support infinite "
+                    f"values in bounds for parameters. "
+                )
 
     # ==================================================================================
     # Do some things that require internal parameters or bounds
@@ -639,6 +614,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         lower=internal_params.lower_bounds,
         upper=internal_params.upper_bounds,
     )
+
     # ==================================================================================
     # Create a batch evaluator
     # ==================================================================================

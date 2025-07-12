@@ -51,10 +51,6 @@ class IncompleteBoundsError(OptimagicError):
     """Exception when user provided bounds are incomplete."""
 
 
-class InfiniteBoundsError(OptimagicError):
-    """Exception when user provided bounds contain infinite values."""
-
-
 class InvalidScalingError(OptimagicError):
     """Exception for invalid user provided scaling."""
 
