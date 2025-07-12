@@ -32,8 +32,8 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - nevergrad  # dev, tests
-      - bayes_optim  # dev, tests
       - kaleido>=1.0  # dev, tests
+      - bayes_optim  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
