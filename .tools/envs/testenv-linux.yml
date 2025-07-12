@@ -18,7 +18,7 @@ dependencies:
   - joblib  # run, tests
   - numpy >= 2  # run, tests
   - pandas  # run, tests
-  - plotly<6.0.0  # run, tests
+  - plotly>=6.2  # run, tests
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
@@ -34,9 +34,8 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - nevergrad  # dev, tests
-      - kaleido  # dev, tests
       - bayes_optim  # dev, tests
-      - ax-platform  # dev, tests
+      - kaleido>=1.0  # dev, tests
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
