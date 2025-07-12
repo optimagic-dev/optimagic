@@ -863,7 +863,6 @@ class NevergradMeta(Algorithm):
         "MPCEDA",
         "MEDA",
         "NoisyBandit",
-        "SPSA",
         "Shiwa",
         "Carola3",
     ] = "Shiwa"
