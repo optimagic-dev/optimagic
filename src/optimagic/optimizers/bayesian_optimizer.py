@@ -1,5 +1,7 @@
 """Implement Bayesian optimization using bayes_opt."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Type
 
@@ -25,12 +27,9 @@ from optimagic.typing import (
     UnitIntervalFloat,
 )
 
-if IS_BAYESOPT_INSTALLED or TYPE_CHECKING:
-    from bayes_opt import BayesianOptimization, acquisition
+if TYPE_CHECKING:
+    from bayes_opt import BayesianOptimization
     from bayes_opt.acquisition import AcquisitionFunction
-else:
-    BayesianOptimization = Any  # pragma: no cover
-    AcquisitionFunction = Any  # pragma: no cover
 
 
 @mark.minimizer(
@@ -78,6 +77,8 @@ class BayesOpt(Algorithm):
                 "Check the documentation for more details: "
                 "https://bayesian-optimization.github.io/BayesianOptimization/index.html"
             )
+
+        from bayes_opt import BayesianOptimization
 
         pbounds = _process_bounds(problem.bounds)
 
@@ -238,6 +239,8 @@ def _process_acquisition_function(
 
     """
 
+    from bayes_opt import acquisition
+
     acquisition_function_aliases = {
         "ucb": "ucb",
         "upper_confidence_bound": "ucb",
@@ -286,7 +289,7 @@ def _process_acquisition_function(
             raise ValueError(f"Unhandled canonical name: {canonical_name}")
 
     # If acquisition_function is an instance of AcquisitionFunction class
-    elif isinstance(acquisition_function, AcquisitionFunction):
+    elif isinstance(acquisition_function, acquisition.AcquisitionFunction):
         return acquisition_function
 
     # If acquisition_function is a class inheriting from AcquisitionFunction
