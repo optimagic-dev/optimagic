@@ -105,8 +105,6 @@ class Pygad(Algorithm):
     allow_duplicate_genes: bool = True
 
     fitness_batch_size: PositiveInt | None = None
-    save_best_solutions: bool = False
-    save_solutions: bool = False
     stop_criteria: str | list[str] | None = None
 
     random_seed: int | None = None
@@ -197,8 +195,6 @@ class Pygad(Algorithm):
             random_mutation_min_val=self.random_mutation_min_val,
             random_mutation_max_val=self.random_mutation_max_val,
             allow_duplicate_genes=self.allow_duplicate_genes,
-            save_best_solutions=self.save_best_solutions,
-            save_solutions=self.save_solutions,
             suppress_warnings=self.suppress_warnings,
             stop_criteria=self.stop_criteria,
             parallel_processing=self.parallel_processing,
