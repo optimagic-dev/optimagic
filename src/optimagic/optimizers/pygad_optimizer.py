@@ -135,10 +135,26 @@ class Pygad(Algorithm):
         ):
             raise ValueError("pygad_pygad requires finite bounds for all parameters.")
 
-        def fitness_func(
-            ga_instance: Any, solution: NDArray[np.float64], solution_idx: int
-        ) -> float:
-            return -float(problem.fun(solution))
+        if self.fitness_batch_size is not None and self.fitness_batch_size > 1:
+
+            def fitness_function(
+                _ga_instance: Any,
+                batch_solutions: NDArray[np.float64],
+                _batch_indices: list[int] | NDArray[np.int_],
+            ) -> list[float]:
+                solution_list = [
+                    batch_solutions[i] for i in range(batch_solutions.shape[0])
+                ]
+
+                batch_results = problem.batch_fun(solution_list, n_cores=1)
+
+                return [-float(result) for result in batch_results]
+        else:
+
+            def fitness_function(
+                _ga_instance: Any, solution: NDArray[np.float64], _solution_idx: int
+            ) -> float:
+                return -float(problem.fun(solution))
 
         if self.initial_population is not None:
             initial_population = self.initial_population
