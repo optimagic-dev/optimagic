@@ -156,3 +156,24 @@ class MultiStartIterationHistory(TupleLikeAccess):
     history: IterationHistory
     local_histories: list[IterationHistory] | None = None
     exploration: IterationHistory | None = None
+
+
+class ParentSelectionFunction(Protocol):
+    def __call__(
+        self, fitness: NDArray[np.float64], num_parents: int, ga_instance: Any
+    ) -> tuple[NDArray[np.float64], NDArray[np.int_]]: ...
+
+
+class CrossoverFunction(Protocol):
+    def __call__(
+        self,
+        parents: NDArray[np.float64],
+        offspring_size: tuple[int, int],
+        ga_instance: Any,
+    ) -> NDArray[np.float64]: ...
+
+
+class MutationFunction(Protocol):
+    def __call__(
+        self, offspring: NDArray[np.float64], ga_instance: Any
+    ) -> NDArray[np.float64]: ...
