@@ -1,5 +1,6 @@
+import warnings
 from dataclasses import dataclass
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -39,8 +40,8 @@ if IS_PYGAD_INSTALLED:
 @dataclass(frozen=True)
 class Pygad(Algorithm):
     population_size: PositiveInt | None = None
-    num_parents_mating: PositiveInt = 10
-    num_generations: PositiveInt = 100
+    num_parents_mating: PositiveInt | None = None
+    num_generations: PositiveInt | None = None
 
     initial_population: NDArray[np.float64] | list[list[float]] | None = None
 
@@ -89,14 +90,8 @@ class Pygad(Algorithm):
     fitness_batch_size: PositiveInt | None = None
     stop_criteria: str | list[str] | None = None
 
+    n_cores: PositiveInt = 1
     random_seed: int | None = None
-    parallel_processing: (
-        int
-        | tuple[Literal["process", "thread"], int | None]
-        | list[Union[Literal["process", "thread"], int | None]]
-        | None
-    ) = None
-    suppress_warnings: bool = True
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -115,39 +110,49 @@ class Pygad(Algorithm):
         ):
             raise ValueError("pygad_pygad requires finite bounds for all parameters.")
 
-        if self.fitness_batch_size is not None and self.fitness_batch_size > 1:
+        # Determine effective fitness_batch_size for parallel processing
+        effective_fitness_batch_size = determine_effective_batch_size(
+            self.fitness_batch_size, self.n_cores
+        )
 
+        if (
+            effective_fitness_batch_size is not None
+            and effective_fitness_batch_size > 1
+            and self.n_cores > 1
+        ):
             def fitness_function(
                 _ga_instance: Any,
                 batch_solutions: NDArray[np.float64],
                 _batch_indices: list[int] | NDArray[np.int_],
             ) -> list[float]:
-                solution_list = [
-                    batch_solutions[i] for i in range(batch_solutions.shape[0])
-                ]
+                solution_list = [solution for solution in batch_solutions]
 
-                batch_results = problem.batch_fun(solution_list, n_cores=1)
+                batch_results = problem.batch_fun(solution_list, n_cores=self.n_cores)
 
                 return [-float(result) for result in batch_results]
         else:
-
             def fitness_function(
                 _ga_instance: Any, solution: NDArray[np.float64], _solution_idx: int
             ) -> float:
                 return -float(problem.fun(solution))
 
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
         if self.initial_population is not None:
-            initial_population = self.initial_population
+            initial_population = np.array(self.initial_population)
             population_size = len(initial_population)
+            num_genes = len(initial_population[0])
         else:
-            population_size = get_population_size(
-                population_size=self.population_size, x=x0
-            )
+            num_genes = len(x0)
+
             initial_population = np.random.uniform(
-                low=problem.bounds.lower,
-                high=problem.bounds.upper,
-                size=(population_size, len(x0)),
+                problem.bounds.lower,
+                problem.bounds.upper,
+                size=(population_size, num_genes),
             )
+
             initial_population[0] = x0
 
         gene_space = [
@@ -159,7 +164,7 @@ class Pygad(Algorithm):
             num_generations=self.num_generations,
             num_parents_mating=self.num_parents_mating,
             fitness_func=fitness_function,
-            sol_per_pop=population_size,
+            fitness_batch_size=effective_fitness_batch_size,
             initial_population=initial_population,
             gene_space=gene_space,
             parent_selection_type=self.parent_selection_type,
@@ -176,9 +181,8 @@ class Pygad(Algorithm):
             random_mutation_min_val=self.random_mutation_min_val,
             random_mutation_max_val=self.random_mutation_max_val,
             allow_duplicate_genes=self.allow_duplicate_genes,
-            suppress_warnings=self.suppress_warnings,
             stop_criteria=self.stop_criteria,
-            parallel_processing=self.parallel_processing,
+            parallel_processing=None,
             random_seed=self.random_seed,
         )
 
@@ -198,3 +202,20 @@ class Pygad(Algorithm):
         )
 
         return res
+
+
+def determine_effective_batch_size(
+    fitness_batch_size: int | None, n_cores: int
+) -> int | None:
+    if fitness_batch_size is not None:
+        if fitness_batch_size < n_cores:
+            warnings.warn(
+                f"fitness_batch_size ({fitness_batch_size}) is smaller than "
+                f"n_cores ({n_cores}). This may reduce parallel efficiency. "
+                f"Consider setting fitness_batch_size >= n_cores."
+            )
+        return fitness_batch_size
+    elif n_cores > 1:
+        return n_cores
+    else:
+        return None
