@@ -43,24 +43,6 @@ class Pygad(Algorithm):
     num_generations: PositiveInt = 100
 
     initial_population: NDArray[np.float64] | list[list[float]] | None = None
-    gene_type: (
-        type[int]
-        | type[float]
-        | type[np.int8]
-        | type[np.int16]
-        | type[np.int32]
-        | type[np.int64]
-        | type[np.uint]
-        | type[np.uint8]
-        | type[np.uint16]
-        | type[np.uint32]
-        | type[np.uint64]
-        | type[np.float16]
-        | type[np.float32]
-        | type[np.float64]
-        | list[type]
-        | list[list[type | None]]
-    ) = float
 
     parent_selection_type: Literal[
         "sss", "rws", "sus", "rank", "random", "tournament"
@@ -176,11 +158,10 @@ class Pygad(Algorithm):
         ga_instance = pygad.GA(
             num_generations=self.num_generations,
             num_parents_mating=self.num_parents_mating,
-            fitness_func=fitness_func,
+            fitness_func=fitness_function,
             sol_per_pop=population_size,
             initial_population=initial_population,
             gene_space=gene_space,
-            gene_type=self.gene_type,
             parent_selection_type=self.parent_selection_type,
             keep_parents=self.keep_parents,
             keep_elitism=self.keep_elitism,
