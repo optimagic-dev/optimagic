@@ -120,21 +120,27 @@ class Pygad(Algorithm):
             and effective_fitness_batch_size > 1
             and self.n_cores > 1
         ):
-            def fitness_function(
+
+            def _fitness_func_batch(
                 _ga_instance: Any,
                 batch_solutions: NDArray[np.float64],
                 _batch_indices: list[int] | NDArray[np.int_],
             ) -> list[float]:
-                solution_list = [solution for solution in batch_solutions]
-
-                batch_results = problem.batch_fun(solution_list, n_cores=self.n_cores)
+                batch_results = problem.batch_fun(
+                    batch_solutions.tolist(), n_cores=self.n_cores
+                )
 
                 return [-float(result) for result in batch_results]
+
+            fitness_function: Any = _fitness_func_batch
         else:
-            def fitness_function(
+
+            def _fitness_func_single(
                 _ga_instance: Any, solution: NDArray[np.float64], _solution_idx: int
             ) -> float:
                 return -float(problem.fun(solution))
+
+            fitness_function = _fitness_func_single
 
         population_size = get_population_size(
             population_size=self.population_size, x=x0, lower_bound=10
@@ -142,8 +148,6 @@ class Pygad(Algorithm):
 
         if self.initial_population is not None:
             initial_population = np.array(self.initial_population)
-            population_size = len(initial_population)
-            num_genes = len(initial_population[0])
         else:
             num_genes = len(x0)
 
