@@ -4061,7 +4061,12 @@ genetic algorithm optimizer. To use PyGAD, you need to have
 
     PyGAD is a Python library for building genetic algorithms and training machine learning algorithms.
     Genetic algorithms are metaheuristics inspired by the process of natural selection that belong to
-    the larger class of evolutionary algorithms.
+    the larger class of evolutionary algorithms. These algorithms apply biologically inspired
+    operators such as mutation, crossover, and selection to optimization problems.
+
+    The algorithm maintains a population of candidate solutions and iteratively improves them
+    through genetic operations, making it ideal for global optimization problems with complex
+    search spaces that may contain multiple local optima.
 
     The algorithm supports the following options:
 
