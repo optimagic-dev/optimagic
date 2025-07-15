@@ -208,18 +208,7 @@ class Pygad(Algorithm):
 
         ga_instance.run()
 
-        solution, solution_fitness, solution_idx = ga_instance.best_solution()
-
-        res = InternalOptimizeResult(
-            x=solution,
-            fun=-solution_fitness,
-            success=True,
-            message=(
-                f"Optimization terminated successfully after "
-                f"{ga_instance.generations_completed} generations."
-            ),
-            n_fun_evals=ga_instance.generations_completed * population_size,
-        )
+        res = _process_pygad_result(ga_instance)
 
         return res
 
@@ -257,3 +246,32 @@ def determine_effective_batch_size(
         return n_cores
     else:
         return None
+
+
+def _process_pygad_result(ga_instance: Any) -> InternalOptimizeResult:
+    """Process PyGAD result into InternalOptimizeResult.
+
+    Args:
+        ga_instance: The PyGAD instance after running the optimization
+
+    Returns:
+        InternalOptimizeResult: Processed optimization results
+
+    """
+    best_solution, best_fitness, _ = ga_instance.best_solution()
+
+    best_criterion = -best_fitness
+
+    success = ga_instance.run_completed
+    if success:
+        message = f"Optimization terminated successfully after {ga_instance.generations_completed} generations."
+    else:
+        message = f"Optimization failed to complete. Only {ga_instance.generations_completed} generations completed."
+
+    return InternalOptimizeResult(
+        x=best_solution,
+        fun=best_criterion,
+        success=success,
+        message=message,
+        n_fun_evals=ga_instance.generations_completed * ga_instance.pop_size[0],
+    )
