@@ -1,5 +1,9 @@
+"""Implement the MIGRAD algorithm from iminuit."""
+
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,10 +21,8 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import AggregationLevel
 
-if IS_IMINUIT_INSTALLED or TYPE_CHECKING:
+if TYPE_CHECKING:
     from iminuit import Minuit
-else:
-    Minuit = Any  # pragma: no cover
 
 
 @mark.minimizer(
@@ -51,6 +53,7 @@ class IminuitMigrad(Algorithm):
                 "Check the iminuit documentation for more details: "
                 "https://scikit-hep.org/iminuit/install.html"
             )
+        from iminuit import Minuit
 
         def wrapped_objective(x: NDArray[np.float64]) -> float:
             return float(problem.fun(x))
