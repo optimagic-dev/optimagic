@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, List, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -43,8 +43,8 @@ if IS_PYGAD_INSTALLED:
 @dataclass(frozen=True)
 class Pygad(Algorithm):
     population_size: PositiveInt | None = None
-    num_parents_mating: PositiveInt | None = None
-    num_generations: PositiveInt | None = None
+    num_parents_mating: PositiveInt | None = 10
+    num_generations: PositiveInt | None = 50
 
     initial_population: NDArray[np.float64] | list[list[float]] | None = None
 
@@ -134,9 +134,11 @@ class Pygad(Algorithm):
                 batch_solutions: NDArray[np.float64],
                 _batch_indices: list[int] | NDArray[np.int_],
             ) -> list[float]:
-                batch_results = problem.batch_fun(
-                    batch_solutions.tolist(), n_cores=self.n_cores
-                )
+                solutions_list: List[NDArray[np.float64]] = [
+                    np.asarray(batch_solutions[i])
+                    for i in range(batch_solutions.shape[0])
+                ]
+                batch_results = problem.batch_fun(solutions_list, n_cores=self.n_cores)
 
                 return [-float(result) for result in batch_results]
 
@@ -152,6 +154,12 @@ class Pygad(Algorithm):
 
         population_size = get_population_size(
             population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        num_parents_mating = (
+            self.num_parents_mating
+            if self.num_parents_mating is not None
+            else max(2, population_size // 2)
         )
 
         if self.initial_population is not None:
@@ -174,7 +182,7 @@ class Pygad(Algorithm):
 
         ga_instance = pygad.GA(
             num_generations=self.num_generations,
-            num_parents_mating=self.num_parents_mating,
+            num_parents_mating=num_parents_mating,
             fitness_func=fitness_function,
             fitness_batch_size=effective_fitness_batch_size,
             initial_population=initial_population,
