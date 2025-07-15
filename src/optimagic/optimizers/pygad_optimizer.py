@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any, List, Literal
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -106,7 +106,7 @@ class Pygad(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_PYGAD_INSTALLED:
             raise NotInstalledError(
-                "The 'pygad_pygad' algorithm requires the pygad package to be "
+                "The 'pygad' algorithm requires the pygad package to be "
                 "installed. You can install it with 'pip install pygad'."
             )
 
@@ -116,7 +116,7 @@ class Pygad(Algorithm):
             or not np.isfinite(problem.bounds.lower).all()
             or not np.isfinite(problem.bounds.upper).all()
         ):
-            raise ValueError("pygad_pygad requires finite bounds for all parameters.")
+            raise ValueError("pygad requires finite bounds for all parameters.")
 
         # Determine effective fitness_batch_size for parallel processing
         effective_fitness_batch_size = determine_effective_batch_size(
@@ -134,7 +134,7 @@ class Pygad(Algorithm):
                 batch_solutions: NDArray[np.float64],
                 _batch_indices: list[int] | NDArray[np.int_],
             ) -> list[float]:
-                solutions_list: List[NDArray[np.float64]] = [
+                solutions_list: list[NDArray[np.float64]] = [
                     np.asarray(batch_solutions[i])
                     for i in range(batch_solutions.shape[0])
                 ]
