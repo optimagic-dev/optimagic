@@ -262,11 +262,18 @@ def _process_pygad_result(ga_instance: Any) -> InternalOptimizeResult:
 
     best_criterion = -best_fitness
 
+    completed_generations = ga_instance.generations_completed
     success = ga_instance.run_completed
     if success:
-        message = f"Optimization terminated successfully after {ga_instance.generations_completed} generations."
+        message = (
+            "Optimization terminated successfully.\n"
+            f"Generations completed: {completed_generations}"
+        )
     else:
-        message = f"Optimization failed to complete. Only {ga_instance.generations_completed} generations completed."
+        message = (
+            "Optimization failed to complete.\n"
+            f"Generations completed: {completed_generations}"
+        )
 
     return InternalOptimizeResult(
         x=best_solution,
