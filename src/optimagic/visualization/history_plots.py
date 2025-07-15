@@ -334,9 +334,7 @@ def _retrieve_optimization_data_from_results_object(
         if stack_multistart:
             stacked = _get_stacked_local_histories(local_histories, res.direction)
             if show_exploration:
-                fun = (
-                    res.multistart_info.exploration_results.tolist()[::-1] + stacked.fun
-                )
+                fun = res.multistart_info.exploration_results[::-1] + stacked.fun
                 params = res.multistart_info.exploration_sample[::-1] + stacked.params
 
                 stacked = History(
