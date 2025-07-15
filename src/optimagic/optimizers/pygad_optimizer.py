@@ -219,6 +219,24 @@ class Pygad(Algorithm):
 def determine_effective_batch_size(
     fitness_batch_size: int | None, n_cores: int
 ) -> int | None:
+    """Determine the effective fitness_batch_size for parallel processing.
+
+    Behavior:
+    - If `fitness_batch_size` is explicitly provided:
+        - The value is returned unchanged.
+        - A warning is issued if it is less than `n_cores`, as this may
+        underutilize available cores.
+    - If `fitness_batch_size` is `None`:
+        - If `n_cores` > 1, defaults to `n_cores`.
+        - Otherwise, returns None (i.e., single-threaded evaluation).
+    Args:
+        fitness_batch_size: User-specified batch size or None
+        n_cores: Number of cores for parallel processing
+
+    Returns:
+        Effective batch size for PyGAD, or None for single-threaded processing
+
+    """
     if fitness_batch_size is not None:
         if fitness_batch_size < n_cores:
             warnings.warn(

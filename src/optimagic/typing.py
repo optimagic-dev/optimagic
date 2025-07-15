@@ -159,12 +159,39 @@ class MultiStartIterationHistory(TupleLikeAccess):
 
 
 class ParentSelectionFunction(Protocol):
+    """Protocol for user-defined parent selection functions.
+
+    Args:
+        fitness: Array of fitness values for all solutions in the population.
+        num_parents: Number of parents to select.
+        ga_instance: The PyGAD GA instance.
+
+    Returns:
+        Tuple of (selected_parents, parent_indices) where:
+        - selected_parents: 2D array of selected parent solutions
+        - parent_indices: 1D array of indices of selected parents
+
+    """
+
     def __call__(
         self, fitness: NDArray[np.float64], num_parents: int, ga_instance: Any
     ) -> tuple[NDArray[np.float64], NDArray[np.int_]]: ...
 
 
 class CrossoverFunction(Protocol):
+    """Protocol for user-defined crossover functions.
+
+    Args:
+        parents: 2D array of parent solutions selected for mating.
+        offspring_size: Tuple (num_offspring, num_genes) specifying
+            offspring size.
+        ga_instance: The PyGAD GA instance.
+
+    Returns:
+        2D array of offspring solutions.
+
+    """
+
     def __call__(
         self,
         parents: NDArray[np.float64],
@@ -174,6 +201,17 @@ class CrossoverFunction(Protocol):
 
 
 class MutationFunction(Protocol):
+    """Protocol for user-defined mutation functions.
+
+    Args:
+        offspring: 2D array of offspring solutions to be mutated.
+        ga_instance: The PyGAD GA instance.
+
+    Returns:
+        2D array of mutated offspring solutions.
+
+    """
+
     def __call__(
         self, offspring: NDArray[np.float64], ga_instance: Any
     ) -> NDArray[np.float64]: ...
