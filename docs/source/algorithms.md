@@ -4043,6 +4043,58 @@ these optimizers, you need to have
       initialization for speed. Default is False.
 ```
 
+## PyGAD Optimizer
+
+optimagic supports the [PyGAD](https://github.com/ahmedfgad/GeneticAlgorithmPython)
+genetic algorithm optimizer. To use PyGAD, you need to have
+[the pygad package](https://github.com/ahmedfgad/GeneticAlgorithmPython) installed
+(`pip install pygad`).
+
+```{eval-rst}
+.. dropdown:: pygad
+
+    .. code-block::
+
+        "pygad"
+
+    Minimize a scalar function using the PyGAD genetic algorithm.
+
+    PyGAD is a Python library for building genetic algorithms and training machine learning algorithms.
+    Genetic algorithms are metaheuristics inspired by the process of natural selection that belong to
+    the larger class of evolutionary algorithms.
+
+    The algorithm supports the following options:
+
+    - **population_size** (int): Number of solutions in each generation. Default is None.
+    - **num_parents_mating** (int): Number of parents selected for mating in each generation. Default is None.
+    - **num_generations** (int): Number of generations. Default is None.
+    - **initial_population** (array-like): initial population is a 2D array where
+      each row represents a solution and each column represents a parameter (gene) value.
+      The number of rows must equal population_size, and the number of columns must
+      match the length of the initial parameters (x0).
+      When None, the population is randomly generated within the parameter bounds using
+      the specified population_size and the dimensionality from x0.
+    - **parent_selection_type** (str or callable): Method for selecting parents. Can be a string ("sss", "rws", "sus", "rank", "random", "tournament") or a custom function with signature ``parent_selection_func(fitness, num_parents, ga_instance) -> tuple[NDArray, NDArray]``. Default is "sss".
+    - **keep_parents** (int): Number of best parents to keep in the next generation. Only has effect when keep_elitism is 0. Default is -1.
+    - **keep_elitism** (int): Number of best solutions to preserve across generations. If non-zero, keep_parents has no effect. Default is 1.
+    - **K_tournament** (int): Tournament size for tournament selection. Only used when parent_selection_type is "tournament". Default is 3.
+    - **crossover_type** (str, callable, or None): Crossover method. Can be a string ("single_point", "two_points", "uniform", "scattered"), a custom function with signature ``crossover_func(parents, offspring_size, ga_instance) -> NDArray``, or None to disable crossover. Default is "single_point".
+    - **crossover_probability** (float): Probability of applying crossover. Range [0, 1]. Default is None.
+    - **mutation_type** (str, callable, or None): Mutation method. Can be a string ("random", "swap", "inversion", "scramble", "adaptive"), a custom function with signature ``mutation_func(offspring, ga_instance) -> NDArray``, or None to disable mutation. Default is "random".
+    - **mutation_probability** (float/list/tuple/array): Probability of mutation. Range [0, 1]. If specified, mutation_percent_genes and mutation_num_genes are ignored. Default is None.
+    - **mutation_percent_genes** (float/str/list/tuple/array): Percentage of genes to mutate. Default is "default" (equivalent to 10%). Ignored if mutation_probability or mutation_num_genes are specified.
+    - **mutation_num_genes** (int/list/tuple/array): Exact number of genes to mutate. Ignored if mutation_probability is specified. Default is None.
+    - **mutation_by_replacement** (bool): Whether to replace gene values during mutation. Only works with mutation_type="random". Default is False.
+    - **random_mutation_min_val** (float/list/array): Minimum value for random mutation. Only used with mutation_type="random". Default is -1.0.
+    - **random_mutation_max_val** (float/list/array): Maximum value for random mutation. Only used with mutation_type="random". Default is 1.0.
+    - **allow_duplicate_genes** (bool): Whether to allow duplicate gene values within a solution. Default is True.
+    - **fitness_batch_size** (int): Number of solutions to evaluate in parallel batches. When None and n_cores > 1, automatically set to n_cores for optimal parallelization. Default is None.
+    - **stop_criteria** (str/list): Early stopping criteria. Format: "reach_value" or "saturate_N". Default is None.
+    - **n_cores** (int): Number of cores for parallel fitness evaluation. Default is 1.
+    - **random_seed** (int): Random seed for reproducibility. Default is None.
+
+```
+
 ## References
 
 ```{eval-rst}
