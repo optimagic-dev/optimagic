@@ -15,7 +15,10 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import (
     AggregationLevel,
+    CrossoverFunction,
+    MutationFunction,
     NonNegativeFloat,
+    ParentSelectionFunction,
     PositiveFloat,
     PositiveInt,
 )
@@ -45,20 +48,25 @@ class Pygad(Algorithm):
 
     initial_population: NDArray[np.float64] | list[list[float]] | None = None
 
-    parent_selection_type: Literal[
-        "sss", "rws", "sus", "rank", "random", "tournament"
-    ] = "sss"
+    parent_selection_type: (
+        Literal["sss", "rws", "sus", "rank", "random", "tournament"]
+        | ParentSelectionFunction
+    ) = "sss"
     keep_parents: int = -1
     keep_elitism: PositiveInt = 1
     K_tournament: PositiveInt = 3
 
     crossover_type: (
-        Literal["single_point", "two_points", "uniform", "scattered"] | None
+        Literal["single_point", "two_points", "uniform", "scattered"]
+        | CrossoverFunction
+        | None
     ) = "single_point"
     crossover_probability: NonNegativeFloat | None = None
 
     mutation_type: (
-        Literal["random", "swap", "inversion", "scramble", "adaptive"] | None
+        Literal["random", "swap", "inversion", "scramble", "adaptive"]
+        | MutationFunction
+        | None
     ) = "random"
     mutation_probability: (
         NonNegativeFloat
