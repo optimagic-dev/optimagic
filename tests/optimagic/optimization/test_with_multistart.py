@@ -80,6 +80,7 @@ def test_multistart_optimization_with_sum_of_squares_at_defaults(
     assert hasattr(res, "multistart_info")
     ms_info = res.multistart_info
     assert len(ms_info.exploration_sample) == 400
+    assert isinstance(ms_info.exploration_results, list)
     assert len(ms_info.exploration_results) == 400
     assert all(isinstance(entry, float) for entry in ms_info.exploration_results)
     assert all(isinstance(entry, OptimizeResult) for entry in ms_info.local_optima)
