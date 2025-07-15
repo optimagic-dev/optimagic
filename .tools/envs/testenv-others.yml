@@ -26,6 +26,7 @@ dependencies:
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
   - iminuit  # dev, tests
+  - pygad  # dev, tests
   - pip:  # dev, tests, docs
       - nevergrad  # dev, tests
       - DFO-LS>=1.5.3  # dev, tests
