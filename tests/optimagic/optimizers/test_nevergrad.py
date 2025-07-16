@@ -68,6 +68,7 @@ def sos(x):
 #     got = _batch_constraint_evaluations(constrs, x_list, 2)
 #     expected = [[np.array([-2.0]), np.array([-1.0])]] * 2
 #     assert got == expected
+###
 
 
 # test if all optimizers listed in Literal type hint are valid attributes

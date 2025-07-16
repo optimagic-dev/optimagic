@@ -51,7 +51,7 @@ NEVERGRAD_NOT_INSTALLED_ERROR = (
     needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
-    supports_infinite_bounds=False,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -109,8 +109,10 @@ class NevergradPSO(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -215,8 +217,10 @@ class NevergradCMAES(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -316,8 +320,10 @@ class NevergradOnePlusOne(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -387,8 +393,10 @@ class NevergradDifferentialEvolution(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -437,8 +445,10 @@ class NevergradBayesOptim(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -487,8 +497,10 @@ class NevergradEMNA(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -528,8 +540,10 @@ class NevergradCGA(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -569,8 +583,10 @@ class NevergradEDA(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -615,8 +631,10 @@ class NevergradTBPSA(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -669,8 +687,10 @@ class NevergradRandomSearch(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -725,8 +745,10 @@ class NevergradSamplingSearch(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -821,8 +843,10 @@ class NevergradNGOpt(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -947,8 +971,10 @@ def _nevergrad_internal(
         parametrization=instrum, budget=stopping_maxfun, num_workers=n_cores
     )
 
+    ### Skip handling of non_linear constraints until improve constraint handling.
     # if nonlinear_constraints:
     #     constraints = _process_nonlinear_constraints(nonlinear_constraints)
+    ###
 
     # optimization loop using the ask-and-tell interface
     while optimizer.num_ask < stopping_maxfun:
@@ -962,12 +988,15 @@ def _nevergrad_internal(
         if not nonlinear_constraints:
             for x, loss in zip(x_list, losses, strict=True):
                 optimizer.tell(x, loss)
-        # else:
-        # constraint_violations = _batch_constraint_evaluations(
-        #     constraints, [x.value[0][0] for x in x_list], n_cores
-        # )
-        # for x, loss, cv in zip(x_list, losses, constraint_violations, strict=True):
-        #     optimizer.tell(x, loss, cv)
+
+    ### Skip handling of non_linear constraints until improve constraint handling.
+    # else:
+    # constraint_violations = _batch_constraint_evaluations(
+    #     constraints, [x.value[0][0] for x in x_list], n_cores
+    # )
+    # for x, loss, cv in zip(x_list, losses, constraint_violations, strict=True):
+    #     optimizer.tell(x, loss, cv)
+    ###
 
     recommendation = optimizer.provide_recommendation()
     best_x = recommendation.value[0][0]
@@ -1029,3 +1058,4 @@ def _nevergrad_internal(
 #     func = partial(_get_constraint_evaluations, constraints)
 #     results = batch(func=func, arguments=[x for x in x_list], n_cores=n_cores)
 #     return results
+###
