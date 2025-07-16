@@ -84,8 +84,8 @@ def test_run_explorations():
     exp_values = np.array([-9, -1])
     exp_sample = np.array([[4, 5], [0, 1]])
 
-    aaae(calculated["sorted_sample"], exp_sample)
-    aaae(calculated["sorted_values"], exp_values)
+    aaae(calculated.sorted_sample, exp_sample)
+    aaae(calculated.sorted_values, exp_values)
 
 
 def test_get_batched_optimization_sample():
