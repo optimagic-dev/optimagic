@@ -36,8 +36,7 @@ def get_converter(
     Args:
         params (pytree): The user provided parameters.
         constraints (list): The user provided constraints.
-        lower_bounds (pytree): The user provided lower_bounds
-        upper_bounds (pytree): The user provided upper bounds
+        bounds (Bounds): The user provided bounds.
         func_eval (float or pytree): An evaluation of ``func`` at ``params``.
             Used to flatten the derivative output.
         solver_type: Used to determine how the derivative output has to be
@@ -46,8 +45,6 @@ def get_converter(
             performed.
         derivative_eval (dict, pytree or None): Evaluation of the derivative of
             func at params. Used for consistency checks.
-        soft_lower_bounds (pytree): As lower_bounds
-        soft_upper_bounds (pytree): As upper_bounds
         add_soft_bounds (bool): Whether soft bounds should be added to the
             internal_params
 
