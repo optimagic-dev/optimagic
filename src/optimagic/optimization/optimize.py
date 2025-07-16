@@ -565,6 +565,8 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             if (
                 internal_params.lower_bounds is None
                 or internal_params.upper_bounds is None
+                or np.isinf(internal_params.lower_bounds).all()
+                or np.isinf(internal_params.upper_bounds).all()
             ):
                 raise IncompleteBoundsError(
                     f"Algorithm {problem.algorithm.name} needs finite bounds "
