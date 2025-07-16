@@ -3986,11 +3986,15 @@ iminuit).
 
 ## Nevergrad Optimizers
 
-optimagic supports some algorithms from the
+optimagic supports following algorithms from the
 [Nevergrad](https://facebookresearch.github.io/nevergrad/index.html) library. To use
 these optimizers, you need to have
 [the nevergrad package](https://github.com/facebookresearch/nevergrad) installed.
-(`pip install nevergrad`).
+(`pip install nevergrad`).\
+Two algorithms from nevergrad are not available in optimagic.\
+`SPSA (Simultaneous Perturbation Stochastic Approximation)` - This is WIP in nevergrad
+and hence imprecise.\
+`AXP (AX-platfofm)` - Very slow and not recommended.
 
 ```{eval-rst}
 .. dropdown:: nevergrad_pso
@@ -4309,28 +4313,6 @@ these optimizers, you need to have
 ```
 
 ```{eval-rst}
-.. dropdown:: nevergrad_axp
-
-    .. code-block::
-
-        "nevergrad_axp"
-
-    Minimize a scalar function using the AXPlatform algorithm.
-    
-    Adaptive experimentation platform from Facebook. Adaptive experimentation is the machine-learning
-    guided process of iteratively exploring a (possibly infinite) parameter space in order to identify
-    optimal configurations in a resource-efficient manner. It supports Bayesian optimization and bandit
-    strategies as exploration strategies. For full documentation visit `AX
-    <https://github.com/facebook/Ax>`_.
-
-    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
-    - **n\_cores**: Number of cores to use for parallel function evaluation.
-    - **seed**: Seed for the random number generator for reproducibility.
-    - **sigma**:
-      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
-```
-
-```{eval-rst}
 .. dropdown:: nevergrad_eda
 
     .. code-block::
@@ -4575,7 +4557,6 @@ these optimizers, you need to have
               - MPCEDA
               - MEDA
               - NoisyBandit
-              - SPSA
               - Shiwa
               - Carola3
     - **stopping\_maxfun**: Maximum number of function evaluations before termination.
