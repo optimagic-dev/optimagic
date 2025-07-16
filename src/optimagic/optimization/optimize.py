@@ -17,12 +17,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, Sequence, Type, cast
 
+import numpy as np
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.constraints import Constraint
 from optimagic.differentiation.numdiff_options import NumdiffOptions, NumdiffOptionsDict
 from optimagic.exceptions import (
+    IncompleteBoundsError,
     InvalidFunctionError,
 )
 from optimagic.logging.logger import LogReader, LogStore
@@ -556,6 +558,31 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         logger = None
 
     # ==================================================================================
+    # Strict checking if bounds are required and infinite values in bounds
+    # ==================================================================================
+    if problem.algorithm.algo_info.supports_bounds:
+        if problem.algorithm.algo_info.needs_bounds:
+            if (
+                internal_params.lower_bounds is None
+                or internal_params.upper_bounds is None
+                or np.isinf(internal_params.lower_bounds).all()
+                or np.isinf(internal_params.upper_bounds).all()
+            ):
+                raise IncompleteBoundsError(
+                    f"Algorithm {problem.algorithm.name} needs finite bounds "
+                    f"for all parameters. "
+                )
+        if not problem.algorithm.algo_info.supports_infinite_bounds:
+            if (
+                np.isinf(internal_params.lower_bounds).any()
+                or np.isinf(internal_params.upper_bounds).any()
+            ):
+                raise IncompleteBoundsError(
+                    f"Algorithm {problem.algorithm.name} does not support infinite "
+                    f"values in bounds for parameters. "
+                )
+
+    # ==================================================================================
     # Do some things that require internal parameters or bounds
     # ==================================================================================
 
@@ -589,6 +616,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         lower=internal_params.lower_bounds,
         upper=internal_params.upper_bounds,
     )
+
     # ==================================================================================
     # Create a batch evaluator
     # ==================================================================================

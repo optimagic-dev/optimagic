@@ -382,5 +382,6 @@ module = [
     "pdbp",
     "iminuit",
     "nevergrad",
+    "yaml",
   ]
 ignore_missing_imports = true

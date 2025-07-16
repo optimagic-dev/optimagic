@@ -47,6 +47,10 @@ class InvalidBoundsError(OptimagicError):
     """Exception for invalid user provided bounds."""
 
 
+class IncompleteBoundsError(OptimagicError):
+    """Exception when user provided bounds are incomplete."""
+
+
 class InvalidScalingError(OptimagicError):
     """Exception for invalid user provided scaling."""
 
