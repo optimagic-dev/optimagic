@@ -60,8 +60,8 @@ def pre_process_bounds(
 
 
 def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
-    lower = np.full(len(bounds), -np.inf)
-    upper = np.full(len(bounds), np.inf)
+    lower = _fast_full_array(len(bounds), value=-np.inf)
+    upper = _fast_full_array(len(bounds), value=np.inf)
 
     for i, (lb, ub) in enumerate(bounds):
         if lb is not None:
@@ -76,7 +76,8 @@ def get_internal_bounds(
     bounds: Bounds | None = None,
     registry: PyTreeRegistry | None = None,
     add_soft_bounds: bool = False,
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    propagate_none: bool = False,
+) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
 
     If params is a DataFrame with value column, the user provided bounds are
@@ -95,6 +96,9 @@ def get_internal_bounds(
         add_soft_bounds: If True, the element-wise maximum (minimum) of the lower and
             soft_lower (upper and soft_upper) bounds are taken. If False, the lower
             (upper) bounds are returned.
+        propagate_none: If True, None values in bounds are propagated to the output.
+            If False, None values are replaced with -np.inf for the lower bound and
+            np.inf for the upper bound.
 
     Returns:
         Consolidated and flattened lower_bounds.
@@ -112,6 +116,7 @@ def get_internal_bounds(
         return _get_fast_path_bounds(
             params=params,
             bounds=bounds,
+            propagate_none=propagate_none,
         )
 
     registry = get_registry(extended=True) if registry is None else registry
@@ -213,7 +218,7 @@ def _is_fast_path(params: PyTree, bounds: Bounds, add_soft_bounds: bool) -> bool
     if not _is_1d_array(params):
         out = False
 
-    for bound in bounds.lower, bounds.upper:
+    for bound in (bounds.lower, bounds.upper):
         if not (_is_1d_array(bound) or bound is None):
             out = False
     return out
@@ -224,22 +229,37 @@ def _is_1d_array(candidate: Any) -> bool:
 
 
 def _get_fast_path_bounds(
-    params: PyTree, bounds: Bounds
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    params: NDArray[np.float64], bounds: Bounds, propagate_none: bool = False
+) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     if bounds.lower is None:
-        # faster than np.full
-        lower_bounds = np.array([-np.inf] * len(params))
+        if propagate_none:
+            lower_bounds = None
+        else:
+            lower_bounds = _fast_full_array(len(params), value=-np.inf)
     else:
         lower_bounds = bounds.lower.astype(float)
 
     if bounds.upper is None:
-        # faster than np.full
-        upper_bounds = np.array([np.inf] * len(params))
+        if propagate_none:
+            upper_bounds = None
+        else:
+            upper_bounds = _fast_full_array(len(params), value=np.inf)
     else:
         upper_bounds = bounds.upper.astype(float)
 
-    if (lower_bounds > upper_bounds).any():
+    if (
+        lower_bounds is not None
+        and upper_bounds is not None
+        and (lower_bounds > upper_bounds).any()
+    ):
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
         raise InvalidBoundsError(msg)
 
     return lower_bounds, upper_bounds
+
+
+def _fast_full_array(length: int, value: float) -> NDArray[np.float64]:
+    if length < 18:
+        return np.array([value] * length)
+    else:
+        return np.full(length, value)
