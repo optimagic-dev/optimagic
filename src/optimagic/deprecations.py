@@ -183,6 +183,15 @@ def throw_dict_access_future_warning(attribute, obj_name):
     warnings.warn(msg, FutureWarning)
 
 
+def throw_none_valued_batch_evaluator_warning():
+    msg = (
+        "Passing `None` as the `batch_evaluator` is deprecated and will be "
+        "removed in optimagic version 0.6.0. Please use the string 'joblib' instead to "
+        "use the joblib batch evaluator by default."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_algo_options(algo_options):
     if not isinstance(algo_options, dict):
         return algo_options
@@ -362,11 +371,11 @@ def throw_dict_constraints_future_warning_if_required(
     if not isinstance(constraints, list):
         constraints = [constraints]
 
-    types = [
+    types_or_none = [
         constraint.get("type", None) if isinstance(constraint, dict) else None
         for constraint in constraints
     ]
-    types = list(set(types) - {None})
+    types = [t for t in types_or_none if t is not None]
 
     if types:
         msg = (

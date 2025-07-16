@@ -12,7 +12,7 @@ First implemented in Python by Alisdair McKay (
 """
 
 import warnings
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Literal
 
 import numpy as np
@@ -85,8 +85,8 @@ def run_multistart_optimization(
 
     scheduled_steps = scheduled_steps[1:]
 
-    sorted_sample = exploration_res["sorted_sample"]
-    sorted_values = exploration_res["sorted_values"]
+    sorted_sample = exploration_res.sorted_sample
+    sorted_values = exploration_res.sorted_values
 
     stopping_maxopt = options.stopping_maxopt
     if stopping_maxopt > len(sorted_sample):
@@ -172,7 +172,7 @@ def run_multistart_optimization(
         "start_parameters": state["start_history"],
         "local_optima": state["result_history"],
         "exploration_sample": sorted_sample,
-        "exploration_results": exploration_res["sorted_values"],
+        "exploration_results": sorted_values,
     }
 
     raw_res = state["best_res"]
@@ -288,12 +288,27 @@ def _draw_exploration_sample(
     return sample_scaled
 
 
+@dataclass(frozen=True)
+class _InternalExplorationResult:
+    """Exploration result of the multistart optimization.
+
+    Attributes:
+        sorted_values: List of sorted function values.
+        sorted_sample: 2d numpy array where each row is the internal parameter
+            vector corresponding to the sorted function values.
+
+    """
+
+    sorted_values: list[float]
+    sorted_sample: NDArray[np.float64]
+
+
 def run_explorations(
     internal_problem: InternalOptimizationProblem,
     sample: NDArray[np.float64],
     n_cores: int,
     step_id: int,
-) -> dict[str, NDArray[np.float64]]:
+) -> _InternalExplorationResult:
     """Do the function evaluations for the exploration phase.
 
     Args:
@@ -305,11 +320,11 @@ def run_explorations(
         step_id: The identifier of the exploration step.
 
     Returns:
-        dict: A dictionary with the the following entries:
-            "sorted_values": 1d numpy array with sorted function values. Invalid
-                function values are excluded.
-            "sorted_sample": 2d numpy array with corresponding internal parameter
-                vectors.
+        A data object containing
+            - sorted_values: List of sorted function values. Invalid function values are
+                excluded.
+            - sorted_sample: 2d numpy array where each row is the internal parameter
+                vector corresponding to the sorted function values.
 
     """
     internal_problem = internal_problem.with_step_id(step_id)
@@ -334,10 +349,10 @@ def run_explorations(
     # of the sign switch.
     sorting_indices = np.argsort(valid_values)
 
-    out = {
-        "sorted_values": valid_values[sorting_indices],
-        "sorted_sample": valid_sample[sorting_indices],
-    }
+    out = _InternalExplorationResult(
+        sorted_values=valid_values[sorting_indices].tolist(),
+        sorted_sample=valid_sample[sorting_indices],
+    )
 
     return out
 

@@ -35,7 +35,7 @@ The following arguments are not supported as part of ``algo_options``:
 
 import functools
 from dataclasses import dataclass
-from typing import Any, Callable, List, Literal, Tuple
+from typing import Any, Callable, List, Literal, SupportsInt, Tuple
 
 import numpy as np
 import scipy
@@ -74,6 +74,7 @@ from optimagic.parameters.nonlinear_constraints import (
 from optimagic.typing import (
     AggregationLevel,
     BatchEvaluator,
+    BatchEvaluatorLiteral,
     NegativeFloat,
     NonNegativeFloat,
     NonNegativeInt,
@@ -676,10 +677,10 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         fun=scipy_res.fun,
         success=bool(scipy_res.success),
         message=str(scipy_res.message),
-        n_fun_evals=scipy_res.get("nfev"),
-        n_jac_evals=scipy_res.get("njev"),
-        n_hess_evals=scipy_res.get("nhev"),
-        n_iterations=scipy_res.get("nit"),
+        n_fun_evals=_int_if_not_none(scipy_res.get("nfev")),
+        n_jac_evals=_int_if_not_none(scipy_res.get("njev")),
+        n_hess_evals=_int_if_not_none(scipy_res.get("nhev")),
+        n_iterations=_int_if_not_none(scipy_res.get("nit")),
         # TODO: Pass on more things once we can convert them to external
         status=None,
         jac=None,
@@ -690,6 +691,12 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         history=None,
     )
     return res
+
+
+def _int_if_not_none(value: SupportsInt | None) -> int | None:
+    if value is None:
+        return None
+    return int(value)
 
 
 def _get_scipy_constraints(constraints):
@@ -810,7 +817,7 @@ class ScipyBrute(Algorithm):
     n_grid_points: PositiveInt = 20
     polishing_function: Callable | None = None
     n_cores: PositiveInt = 1
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -890,7 +897,7 @@ class ScipyDifferentialEvolution(Algorithm):
     ) = "latinhypercube"
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
     n_cores: PositiveInt = 1
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]

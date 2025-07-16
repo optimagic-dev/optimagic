@@ -23,7 +23,7 @@ from optimagic.differentiation.richardson_extrapolation import richardson_extrap
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import PyTree
+from optimagic.typing import BatchEvaluatorLiteral, PyTree
 
 
 @dataclass(frozen=True)
@@ -95,7 +95,7 @@ def first_derivative(
     f0: PyTree | None = None,
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
-    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
+    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib",
     unpacker: Callable[[Any], PyTree] | None = None,
     # deprecated
     lower_bounds: PyTree | None = None,
@@ -400,7 +400,7 @@ def second_derivative(
     f0: PyTree | None = None,
     n_cores: int = DEFAULT_N_CORES,
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
-    batch_evaluator: Literal["joblib", "pathos"] | Callable = "joblib",
+    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib",
     unpacker: Callable[[Any], PyTree] | None = None,
     # deprecated
     lower_bounds: PyTree | None = None,

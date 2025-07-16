@@ -242,7 +242,7 @@ class LogReader(Generic[_LogOptionsType], ABC):
             best_idx, level="step"
         )
 
-        def _to_dict(pandas_obj: pd.DataFrame | pd.Series) -> dict[str, Any]:  # type:ignore
+        def _to_dict(pandas_obj: pd.DataFrame | pd.Series) -> dict[str, Any]:
             if isinstance(pandas_obj, pd.DataFrame):
                 result = pandas_obj.to_dict(orient="list")
             else:
