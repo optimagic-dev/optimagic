@@ -1204,8 +1204,13 @@ def _get_workers(n_cores, batch_evaluator):
     return out
 
 
-def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds:
-    return ScipyBounds(lb=bounds.lower, ub=bounds.upper)
+def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds | None:
+    if bounds.lower is None and bounds.upper is None:
+        return None
+
+    lower = bounds.lower if bounds.lower is not None else -np.inf
+    upper = bounds.upper if bounds.upper is not None else np.inf
+    return ScipyBounds(lb=lower, ub=upper)
 
 
 def process_scipy_result_old(scipy_results_obj):
