@@ -120,9 +120,8 @@ class ScipyLBFGSB(Algorithm):
     the hessian using the stored history of gradients and uses the hessian to calculate
     a candidate step size. Then it uses a gradient based line search algorithm to
     determine the actual step length. Since the algorithm always evaluates the gradient
-    and criterion function jointly, the user should provide a
-    ``criterion_and_derivative`` function that exploits the synergies in the
-    calculation of criterion and gradient.
+    and criterion function jointly, the user should provide a ``fun_and_jac`` function
+    that exploits the synergies in the calculation of criterion and gradient.
 
     The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
     to scale the parameters.
@@ -152,10 +151,20 @@ class ScipyLBFGSB(Algorithm):
 
     limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
     """The maximum number of variable metric corrections used to define the limited
-    memory matrix."""
+    memory matrix. This is the 'maxcor' parameter in the SciPy documentation.
+
+    The default value is taken from SciPy's L-BFGS-B implementation. Larger values use
+    more memory but may converge faster for some problems.
+
+    """
 
     max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
-    """The maximum number of line search steps."""
+    """The maximum number of line search steps. This is the 'maxls' parameter in the
+    SciPy documentation.
+
+    The default value is taken from SciPy's L-BFGS-B implementation.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
