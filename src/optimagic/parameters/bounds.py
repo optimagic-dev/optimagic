@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any, Literal, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -60,8 +60,8 @@ def pre_process_bounds(
 
 
 def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
-    lower = _fast_full_array(len(bounds), value=-np.inf)
-    upper = _fast_full_array(len(bounds), value=np.inf)
+    lower = _fast_full_array(len(bounds), fill_value=-np.inf)
+    upper = _fast_full_array(len(bounds), fill_value=np.inf)
 
     for i, (lb, ub) in enumerate(bounds):
         if lb is not None:
@@ -83,7 +83,8 @@ def get_internal_bounds(
     If params is a DataFrame with value column, the user provided bounds are
     extended with bounds from the params DataFrame.
 
-    If no bounds are available the entry is set to minus np.inf for the lower bound and
+    If propagate_none is True, None-valued bounds are propagated to the output in
+    the fast path case, otherwise they are replaced with -np.inf for the lower bound and
     np.inf for the upper bound.
 
     The bounds provided in `bounds` override bounds provided in params if both are
@@ -96,9 +97,9 @@ def get_internal_bounds(
         add_soft_bounds: If True, the element-wise maximum (minimum) of the lower and
             soft_lower (upper and soft_upper) bounds are taken. If False, the lower
             (upper) bounds are returned.
-        propagate_none: If True, None values in bounds are propagated to the output.
-            If False, None values are replaced with -np.inf for the lower bound and
-            np.inf for the upper bound.
+        propagate_none: If True, None-valued lower and upper bounds are propagated to
+            the output. If False, None values are replaced with -np.inf for the lower
+            bound and np.inf for the upper bound.
 
     Returns:
         Consolidated and flattened lower_bounds.
@@ -118,6 +119,9 @@ def get_internal_bounds(
             bounds=bounds,
             propagate_none=propagate_none,
         )
+
+    # In the slow path, None bounds are currently not propagated, but replaced with
+    # an array of -np.inf for the lower bound and np.inf for the upper bound.
 
     registry = get_registry(extended=True) if registry is None else registry
     n_params = len(tree_leaves(params, registry=registry))
@@ -158,7 +162,9 @@ def get_internal_bounds(
 
 
 def _update_bounds_and_flatten(
-    nan_tree: PyTree, bounds: PyTree, kind: str
+    nan_tree: PyTree,
+    bounds: PyTree,
+    kind: Literal["lower_bound", "upper_bound", "soft_lower_bound", "soft_upper_bound"],
 ) -> NDArray[np.float64]:
     """Flatten bounds array and update it with bounds from params.
 
@@ -231,19 +237,17 @@ def _is_1d_array(candidate: Any) -> bool:
 def _get_fast_path_bounds(
     params: NDArray[np.float64], bounds: Bounds, propagate_none: bool = False
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
-    if bounds.lower is None:
-        if propagate_none:
-            lower_bounds = None
-        else:
-            lower_bounds = _fast_full_array(len(params), value=-np.inf)
+    if bounds.lower is None and propagate_none:
+        lower_bounds = None
+    elif bounds.lower is None:
+        lower_bounds = _fast_full_array(len(params), fill_value=-np.inf)
     else:
         lower_bounds = bounds.lower.astype(float)
 
-    if bounds.upper is None:
-        if propagate_none:
-            upper_bounds = None
-        else:
-            upper_bounds = _fast_full_array(len(params), value=np.inf)
+    if bounds.upper is None and propagate_none:
+        upper_bounds = None
+    elif bounds.upper is None:
+        upper_bounds = _fast_full_array(len(params), fill_value=np.inf)
     else:
         upper_bounds = bounds.upper.astype(float)
 
@@ -258,8 +262,13 @@ def _get_fast_path_bounds(
     return lower_bounds, upper_bounds
 
 
-def _fast_full_array(length: int, value: float) -> NDArray[np.float64]:
+def _fast_full_array(length: int, fill_value: float) -> NDArray[np.float64]:
+    """Create an array of a given length filled with a value.
+
+    Empirically, this is faster than using np.full for small arrays.
+
+    """
     if length < 18:
-        return np.array([value] * length)
+        return np.array([fill_value] * length, dtype=np.float64)
     else:
-        return np.full(length, value)
+        return np.full(length, fill_value=fill_value, dtype=np.float64)
