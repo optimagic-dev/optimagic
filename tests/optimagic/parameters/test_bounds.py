@@ -120,8 +120,15 @@ def test_get_bounds_with_upper_bounds(pytree_params):
     assert_array_equal(got_upper, expected_upper)
 
 
-def test_get_bounds_numpy(array_params):
-    got_lower, got_upper = get_internal_bounds(array_params)
+def test_get_bounds_numpy_propagate_none_true(array_params):
+    got_lower, got_upper = get_internal_bounds(array_params, propagate_none=True)
+
+    assert got_lower is None
+    assert got_upper is None
+
+
+def test_get_bounds_numpy_propagate_none_false(array_params):
+    got_lower, got_upper = get_internal_bounds(array_params, propagate_none=False)
 
     expected = np.array([np.inf, np.inf])
 
@@ -139,7 +146,7 @@ def test_get_bounds_numpy_error(array_params):
         )
 
 
-def test_get_fast_path_bounds_none_propagate_true():
+def test_get_fast_path_bounds_propagate_none_true():
     got_lower, got_upper = _get_fast_path_bounds(
         params=np.array([1, 2, 3]),
         bounds=Bounds(lower=None, upper=None),
@@ -149,7 +156,7 @@ def test_get_fast_path_bounds_none_propagate_true():
     assert got_upper is None
 
 
-def test_get_fast_path_bounds_none_propagate_false():
+def test_get_fast_path_bounds_propagate_none_false():
     got_lower, got_upper = _get_fast_path_bounds(
         params=np.array([1, 2, 3]),
         bounds=Bounds(lower=None, upper=None),
