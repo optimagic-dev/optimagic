@@ -39,8 +39,10 @@ if TYPE_CHECKING:
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,  # temp
     disable_history=False,
