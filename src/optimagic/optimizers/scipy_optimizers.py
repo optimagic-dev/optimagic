@@ -101,8 +101,7 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 )
 @dataclass(frozen=True)
 class ScipyLBFGSB(Algorithm):
-    """**Description:** Minimize a scalar differentiable function using the L-BFGS-B
-    algorithm.
+    """Minimize a scalar differentiable function using the L-BFGS-B algorithm.
 
     The optimizer is taken from scipy, which calls the Fortran code written by the
     original authors of the algorithm. The Fortran code includes the corrections
@@ -125,8 +124,6 @@ class ScipyLBFGSB(Algorithm):
 
     The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
     to scale the parameters.
-
-    **Available options:**
 
     """
 
