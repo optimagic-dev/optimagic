@@ -83,9 +83,9 @@ def get_internal_bounds(
     If params is a DataFrame with value column, the user provided bounds are
     extended with bounds from the params DataFrame.
 
-    If propagate_none is True, None-valued bounds are propagated to the output in
-    the fast path case, otherwise they are replaced with -np.inf for the lower bound and
-    np.inf for the upper bound.
+    If propagate_none_in_fast_path is True, None-valued bounds are propagated to the
+    output in the fast path case, otherwise they are replaced with -np.inf for the lower
+    bound and np.inf for the upper bound.
 
     The bounds provided in `bounds` override bounds provided in params if both are
     specified (in the case where params is a DataFrame with bounds as a column).
@@ -98,7 +98,7 @@ def get_internal_bounds(
             soft_lower (upper and soft_upper) bounds are taken. If False, the lower
             (upper) bounds are returned.
         propagate_none_in_fast_path: If True, None-valued lower and upper bounds are
-            propagated to the output in the fast path case. If False, None values are
+            propagated to the output in the fast path case. Otherwise, None values are
             replaced with -np.inf for the lower bound and np.inf for the upper bound.
 
     Returns:
