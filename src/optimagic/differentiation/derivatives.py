@@ -246,7 +246,11 @@ def first_derivative(
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
 
-    internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
+    # We cannot propagate None-valued bounds until the derivative code is updated to
+    # handle None bounds.
+    internal_lb, internal_ub = get_internal_bounds(
+        params, bounds=bounds, propagate_none=False
+    )
 
     # handle kwargs
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -560,7 +564,11 @@ def second_derivative(
 
     unpacker = _process_unpacker(unpacker)
 
-    internal_lb, internal_ub = get_internal_bounds(params, bounds=bounds)
+    # We cannot propagate None-valued bounds until the derivative code is updated to
+    # handle None bounds.
+    internal_lb, internal_ub = get_internal_bounds(
+        params, bounds=bounds, propagate_none=False
+    )
 
     # handle kwargs
     func_kwargs = {} if func_kwargs is None else func_kwargs

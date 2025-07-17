@@ -76,7 +76,7 @@ def get_internal_bounds(
     bounds: Bounds | None = None,
     registry: PyTreeRegistry | None = None,
     add_soft_bounds: bool = False,
-    propagate_none: bool = False,
+    propagate_none: bool = True,
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
 
