@@ -121,14 +121,18 @@ def test_get_bounds_with_upper_bounds(pytree_params):
 
 
 def test_get_bounds_numpy_propagate_none_true(array_params):
-    got_lower, got_upper = get_internal_bounds(array_params, propagate_none=True)
+    got_lower, got_upper = get_internal_bounds(
+        array_params, propagate_none_in_fast_path=True
+    )
 
     assert got_lower is None
     assert got_upper is None
 
 
 def test_get_bounds_numpy_propagate_none_false(array_params):
-    got_lower, got_upper = get_internal_bounds(array_params, propagate_none=False)
+    got_lower, got_upper = get_internal_bounds(
+        array_params, propagate_none_in_fast_path=False
+    )
 
     expected = np.array([np.inf, np.inf])
 

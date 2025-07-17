@@ -249,7 +249,7 @@ def first_derivative(
     # We cannot propagate None-valued bounds until the derivative code is updated to
     # handle None bounds.
     internal_lb, internal_ub = get_internal_bounds(
-        params, bounds=bounds, propagate_none=False
+        params, bounds=bounds, propagate_none_in_fast_path=False
     )
 
     # handle kwargs
@@ -567,7 +567,7 @@ def second_derivative(
     # We cannot propagate None-valued bounds until the derivative code is updated to
     # handle None bounds.
     internal_lb, internal_ub = get_internal_bounds(
-        params, bounds=bounds, propagate_none=False
+        params, bounds=bounds, propagate_none_in_fast_path=False
     )
 
     # handle kwargs

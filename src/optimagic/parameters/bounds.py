@@ -76,7 +76,7 @@ def get_internal_bounds(
     bounds: Bounds | None = None,
     registry: PyTreeRegistry | None = None,
     add_soft_bounds: bool = False,
-    propagate_none: bool = True,
+    propagate_none_in_fast_path: bool = True,
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
 
@@ -97,9 +97,9 @@ def get_internal_bounds(
         add_soft_bounds: If True, the element-wise maximum (minimum) of the lower and
             soft_lower (upper and soft_upper) bounds are taken. If False, the lower
             (upper) bounds are returned.
-        propagate_none: If True, None-valued lower and upper bounds are propagated to
-            the output. If False, None values are replaced with -np.inf for the lower
-            bound and np.inf for the upper bound.
+        propagate_none_in_fast_path: If True, None-valued lower and upper bounds are
+            propagated to the output in the fast path case. If False, None values are
+            replaced with -np.inf for the lower bound and np.inf for the upper bound.
 
     Returns:
         Consolidated and flattened lower_bounds.
@@ -117,7 +117,7 @@ def get_internal_bounds(
         return _get_fast_path_bounds(
             params=params,
             bounds=bounds,
-            propagate_none=propagate_none,
+            propagate_none=propagate_none_in_fast_path,
         )
 
     # In the slow path, None bounds are currently not propagated, but replaced with
