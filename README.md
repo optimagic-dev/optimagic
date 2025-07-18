@@ -10,7 +10,6 @@
 [![image](https://codecov.io/gh/optimagic-dev/optimagic/branch/main/graph/badge.svg)](https://codecov.io/gh/optimagic-dev/optimagic)
 [![image](https://results.pre-commit.ci/badge/github/optimagic-dev/optimagic/main.svg)](https://results.pre-commit.ci/latest/github/optimagic-dev/optimagic/main)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![image](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![image](https://pepy.tech/badge/optimagic/month)](https://pepy.tech/project/optimagic)
 [![image](https://img.shields.io/badge/NumFOCUS-affiliated%20project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects)
 [![image](https://img.shields.io/twitter/follow/aiidateam.svg?style=social&label=Follow)](https://x.com/optimagic)
