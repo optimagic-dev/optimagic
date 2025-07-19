@@ -54,13 +54,21 @@ def main() -> None:
     test_env_plotly.insert(_insert_idx, "  - plotly<6")
     test_env_plotly.insert(_insert_idx_pip, "      - kaleido<0.3")
 
+    test_env_nevergrad = deepcopy(test_env)
+    for pkg in ["bayesian_optimization"]:
+        test_env_nevergrad = [line for line in test_env_nevergrad if pkg not in line]
+        test_env_nevergrad.insert(_insert_idx_pip, "      -nevergrad")
+        test_env_nevergrad.insert(
+            _insert_idx_pip, "      -bayesian_optimization==1.4.0"
+        )
+
     # test environment for documentation
     docs_env = [line for line in lines if _keep_line(line, "docs")]
     docs_env.append("      - -e ../../")  # add local installation
 
     # write environments
     for name, env in zip(
-        ["linux", "others", "pandas", "numpy", "plotly"],
+        ["linux", "others", "pandas", "numpy", "plotly", "nevergrad"],
         [
             test_env_linux,
             test_env_others,
