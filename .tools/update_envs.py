@@ -55,11 +55,11 @@ def main() -> None:
     test_env_plotly.insert(_insert_idx_pip, "      - kaleido<0.3")
 
     test_env_nevergrad = deepcopy(test_env)
-    for pkg in ["bayesian_optimization"]:
+    for pkg in ["bayesian-optimization"]:
         test_env_nevergrad = [line for line in test_env_nevergrad if pkg not in line]
-        test_env_nevergrad.insert(_insert_idx_pip, "      -nevergrad")
+        test_env_nevergrad.insert(_insert_idx_pip, "      - nevergrad")
         test_env_nevergrad.insert(
-            _insert_idx_pip, "      -bayesian_optimization==1.4.0"
+            _insert_idx_pip, "      - bayesian_optimization==1.4.0"
         )
 
     # test environment for documentation
