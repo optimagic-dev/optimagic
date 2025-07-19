@@ -43,9 +43,9 @@ def consolidate_constraints(
     # None-valued bounds are handled by instantiating them as an -inf and inf array. In
     # the future, this should be handled more gracefully.
     if lower_bounds is None:
-        lower_bounds = fast_numpy_full(len(parvec), -np.inf)
+        lower_bounds = fast_numpy_full(len(parvec), fill_value=-np.inf)
     if upper_bounds is None:
-        upper_bounds = fast_numpy_full(len(parvec), np.inf)
+        upper_bounds = fast_numpy_full(len(parvec), fill_value=np.inf)
 
     raw_eq, other_constraints = _split_constraints(constraints, "equality")
     equality_constraints = _consolidate_equality_constraints(raw_eq)

@@ -97,9 +97,9 @@ def generate_steps(
     # None-valued bounds are handled by instantiating them as an -inf and inf array. In
     # the future, this should be handled more gracefully.
     if lower_bounds is None:
-        lower_bounds = fast_numpy_full(len(x), -np.inf)
+        lower_bounds = fast_numpy_full(len(x), fill_value=-np.inf)
     if upper_bounds is None:
-        upper_bounds = fast_numpy_full(len(x), np.inf)
+        upper_bounds = fast_numpy_full(len(x), fill_value=np.inf)
 
     assert (upper_bounds - lower_bounds >= 2 * min_steps).all(), (
         "min_steps is too large to fit into bounds."

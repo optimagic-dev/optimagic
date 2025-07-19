@@ -83,10 +83,6 @@ def get_internal_bounds(
     If params is a DataFrame with value column, the user provided bounds are
     extended with bounds from the params DataFrame.
 
-    If propagate_none_in_fast_path is True, None-valued bounds are propagated to the
-    output in the fast path case, otherwise they are replaced with -np.inf for the lower
-    bound and np.inf for the upper bound.
-
     If no bounds are provided, we return None. If some bounds are available the missing
     entries are set to -np.inf for the lower bound and np.inf for the upper bound.
 
