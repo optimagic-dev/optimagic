@@ -61,10 +61,12 @@ def get_space_converter(
         SpaceConverter: The space converter.
         InternalParams: Dataclass with entries:
             - value (np.ndarray): Internal parameter values.
-            - lower_bounds (np.ndarray): Lower bounds on the internal params.
-            - upper_bounds (np.ndarray): Upper bounds on the internal params.
-            - soft_lower_bounds (np.ndarray): Soft lower bounds on the internal params.
-            - soft_upper_bounds (np.ndarray): Soft upper bounds on the internal params.
+            - lower_bounds (np.ndarray | None): Lower bounds on the internal params.
+            - upper_bounds (np.ndarray | None): Upper bounds on the internal params.
+            - soft_lower_bounds (np.ndarray | None): Soft lower bounds on the internal
+              params.
+            - soft_upper_bounds (np.ndarray | None): Soft upper bounds on the internal
+              params.
             - name (list): List of names of the external parameters.
             - free_mask (np.ndarray): Boolean mask representing which external parameter
               is free.

@@ -54,7 +54,6 @@ def get_tree_converter(
         params=params,
         bounds=bounds,
         registry=_registry,
-        propagate_none_in_fast_path=False,
     )
 
     if add_soft_bounds:
@@ -63,7 +62,6 @@ def get_tree_converter(
             bounds=bounds,
             registry=_registry,
             add_soft_bounds=add_soft_bounds,
-            propagate_none_in_fast_path=False,
         )
     else:
         _soft_lower, _soft_upper = None, None
@@ -183,8 +181,8 @@ class TreeConverter(NamedTuple):
 
 class FlatParams(NamedTuple):
     values: np.ndarray
-    lower_bounds: np.ndarray
-    upper_bounds: np.ndarray
+    lower_bounds: np.ndarray | None
+    upper_bounds: np.ndarray | None
     soft_lower_bounds: np.ndarray | None = None
     soft_upper_bounds: np.ndarray | None = None
     names: list | None = None
