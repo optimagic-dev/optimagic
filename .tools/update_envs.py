@@ -75,6 +75,7 @@ def main() -> None:
             test_env_pandas,
             test_env_numpy,
             test_env_plotly,
+            test_env_nevergrad,
         ],
         strict=False,
     ):
