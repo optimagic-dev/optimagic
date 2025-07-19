@@ -103,6 +103,7 @@ NEVERGRAD_NGOPT = get_args(algorithms.NevergradNGOpt.__annotations__["optimizer"
 # test stochastic_global_algorithm_on_sum_of_squares
 @pytest.mark.slow
 @pytest.mark.parametrize("algorithm", NEVERGRAD_META)
+@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
 def test_meta_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algorithm):
     res = minimize(
         fun=sos,
@@ -119,6 +120,7 @@ def test_meta_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algo
 
 @pytest.mark.slow
 @pytest.mark.parametrize("algorithm", NEVERGRAD_NGOPT)
+@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
 def test_ngopt_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algorithm):
     res = minimize(
         fun=sos,
