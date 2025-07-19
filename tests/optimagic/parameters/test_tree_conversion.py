@@ -79,15 +79,15 @@ def test_tree_conversion_fast_path(solver_type):
 
     converter, flat_params = get_tree_converter(
         params=np.arange(3),
-        bounds=None,
+        bounds=Bounds(lower=None, upper=np.arange(3) + 1),
         func_eval=func_eval,
         derivative_eval=derivative_eval,
         solver_type=solver_type,
     )
 
     aae(flat_params.values, np.arange(3))
-    aae(flat_params.lower_bounds, np.full(3, -np.inf))
-    aae(flat_params.upper_bounds, np.full(3, np.inf))
+    assert flat_params.lower_bounds is None
+    aae(flat_params.upper_bounds, np.arange(3) + 1)
     assert flat_params.names == list(map(str, range(3)))
 
     aae(converter.params_flatten(np.arange(3)), np.arange(3))

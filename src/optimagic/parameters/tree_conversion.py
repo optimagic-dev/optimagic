@@ -48,6 +48,8 @@ def get_tree_converter(
     _registry = get_registry(extended=True)
     _params_vec, _params_treedef = tree_flatten(params, registry=_registry)
     _params_vec = np.array(_params_vec).astype(float)
+    # We cannot propagate None-valued bounds until the conversion and converter code is
+    # updated to handle None bounds.
     _lower, _upper = get_internal_bounds(
         params=params,
         bounds=bounds,
@@ -179,8 +181,8 @@ class TreeConverter(NamedTuple):
 
 class FlatParams(NamedTuple):
     values: np.ndarray
-    lower_bounds: np.ndarray
-    upper_bounds: np.ndarray
+    lower_bounds: np.ndarray | None
+    upper_bounds: np.ndarray | None
     soft_lower_bounds: np.ndarray | None = None
     soft_upper_bounds: np.ndarray | None = None
     names: list | None = None

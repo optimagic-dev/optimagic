@@ -5,10 +5,23 @@ from hashlib import sha1
 import cloudpickle
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from scipy.linalg import ldl, qr
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
+
+
+def fast_numpy_full(length: int, fill_value: float) -> NDArray[np.float64]:
+    """Return a new array of given length, filled with fill_value.
+
+    Empirically, this is faster than using np.full for small arrays.
+
+    """
+    if length < 18:
+        return np.array([fill_value] * length, dtype=np.float64)
+    else:
+        return np.full(length, fill_value=fill_value, dtype=np.float64)
 
 
 def chol_params_to_lower_triangular_matrix(params):

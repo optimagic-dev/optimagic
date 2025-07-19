@@ -183,6 +183,9 @@ def fides_internal(
 
     hessian_instance = _create_hessian_updater_from_user_input(hessian_update_strategy)
 
+    lower_bounds = np.full(len(x), -np.inf) if lower_bounds is None else lower_bounds
+    upper_bounds = np.full(len(x), np.inf) if upper_bounds is None else upper_bounds
+
     opt = Optimizer(
         fun=fun_and_jac,
         lb=lower_bounds,

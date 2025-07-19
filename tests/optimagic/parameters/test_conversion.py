@@ -23,8 +23,8 @@ def test_get_converter_fast_case():
     )
 
     aaae(internal.values, np.arange(3))
-    aaae(internal.lower_bounds, np.full(3, -np.inf))
-    aaae(internal.upper_bounds, np.full(3, np.inf))
+    assert internal.lower_bounds is None
+    assert internal.upper_bounds is None
 
     aaae(converter.params_to_internal(np.arange(3)), np.arange(3))
     aaae(converter.params_from_internal(np.arange(3)), np.arange(3))

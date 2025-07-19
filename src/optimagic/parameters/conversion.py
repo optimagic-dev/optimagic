@@ -179,12 +179,12 @@ def _get_fast_path_converter(params, bounds, solver_type):
     )
 
     if bounds is None or bounds.lower is None:
-        lower_bounds = np.full(len(params), -np.inf)
+        lower_bounds = None
     else:
         lower_bounds = bounds.lower.astype(float)
 
     if bounds is None or bounds.upper is None:
-        upper_bounds = np.full(len(params), np.inf)
+        upper_bounds = None
     else:
         upper_bounds = bounds.upper.astype(float)
 
