@@ -4043,6 +4043,87 @@ these optimizers, you need to have
       initialization for speed. Default is False.
 ```
 
+## Bayesian Optimization
+
+We wrap the
+[BayesianOptimization](https://github.com/bayesian-optimization/BayesianOptimization)
+package. To use it, you need to have
+[bayesian-optimization](https://pypi.org/project/bayesian-optimization/) installed.
+
+```{eval-rst}
+.. dropdown::  bayes_opt
+
+    .. code-block::
+
+        "bayes_opt"
+
+    Minimize a scalar function using Bayesian Optimization with Gaussian Processes.
+
+    This optimizer wraps the BayesianOptimization package (:cite:`Nogueira2014`), which 
+    implements Bayesian optimization using Gaussian processes to build probabilistic 
+    models of the objective function. Bayesian optimization is particularly effective 
+    for expensive black-box functions where gradient information is not available.
+
+    The algorithm requires finite bounds for all parameters.
+
+    The bayes_opt wrapper preserves the default parameter values from the underlying 
+    BayesianOptimization package where appropriate.
+
+    bayes_opt supports the following options:
+
+    - **init_points** (PositiveInt): Number of random exploration points to evaluate before 
+      starting optimization. Default is 5.
+
+    - **n_iter** (PositiveInt): Number of Bayesian optimization iterations to perform after 
+      the initial random exploration. Default is 25.
+
+    - **verbose** (Literal[0, 1, 2]): Verbosity level from 0 (silent) to 2 (most verbose). Default is 0.
+
+    - **kappa** (NonNegativeFloat): Parameter to balance exploration versus exploitation trade-off 
+      for the Upper Confidence Bound acquisition function. Higher values mean more exploration. 
+      This parameter is only used if the acquisition function is set to "ucb" or "upper_confidence_bound" 
+      and when a configured instance of an AcquisitionFunction object is not passed. Default is 2.576.
+
+    - **xi** (PositiveFloat): Parameter to balance exploration versus exploitation trade-off 
+      for the Expected Improvement or Probability of Improvement acquisition functions. 
+      Higher values mean more exploration. This parameter is only used if the acquisition function 
+      is set to "ei", "expected_improvement", "poi", or "probability_of_improvement" 
+      and when a configured instance of an AcquisitionFunction object is not passed. Default is 0.01.
+
+    - **exploration_decay** (float | None): Rate at which exploration decays over time.
+      Default is None (no decay).
+
+    - **exploration_decay_delay** (NonNegativeInt | None): Delay for decay. If None, 
+      decay is applied from the start. Default is None.
+
+    - **random_state** (int | None): Random seed for reproducible results. Default is None.
+
+    - **acquisition_function** (str | AcquisitionFunction | Type[AcquisitionFunction] | None): Strategy for selecting 
+      the next evaluation point. Options include:
+      - "ucb" or "upper_confidence_bound": Upper Confidence Bound 
+      - "ei" or "expected_improvement": Expected Improvement 
+      - "poi" or "probability_of_improvement": Probability of Improvement
+      Default is None (uses package default).
+
+    - **allow_duplicate_points** (bool): Whether to allow re-evaluation of the same point.
+      Default is False.
+
+    - **enable_sdr** (bool): Enable Sequential Domain Reduction, which progressively 
+      narrows the search space around promising regions. Default is False.
+
+    - **sdr_gamma_osc** (float): Oscillation parameter for SDR. Default is 0.7.
+
+    - **sdr_gamma_pan** (float): Panning parameter for SDR. Default is 1.0.
+
+    - **sdr_eta** (float): Zooming parameter for SDR. Default is 0.9.
+
+    - **sdr_minimum_window** (NonNegativeFloat): Minimum window size for SDR. Default is 0.0.
+
+    - **alpha** (float): Noise parameter for the Gaussian Process. Default is 1e-6.
+
+    - **n_restarts** (int): Number of times to restart the optimizer. Default is 1.
+```
+
 ## References
 
 ```{eval-rst}
