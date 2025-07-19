@@ -906,6 +906,17 @@ url = {https://www.sciencedirect.com/science/article/pii/0010465575900399},
 author = {F. James and M. Roos}
 }
 
+
+@misc{Hansen2023,
+title={The CMA Evolution Strategy: A Tutorial}, 
+author={Nikolaus Hansen},
+year={2023},
+eprint={1604.00772},
+archivePrefix={arXiv},
+primaryClass={cs.LG},
+url={https://arxiv.org/abs/1604.00772}, 
+}
+
 @InProceedings{Kennedy1995,
   author={Kennedy, J. and Eberhart, R.},
   booktitle={Proceedings of ICNN'95 - International Conference on Neural Networks}, 
@@ -925,6 +936,66 @@ author = {F. James and M. Roos}
   pages = {2337-2344},
   keywords = {Optimization;Standards;Benchmark testing;Topology;Algorithm design and analysis;Convergence;Equations;particle swarm optimization;SPSO-2011;CEC-2013;random topology;rotational invariance;benchmark testing;evolutionary computation;optimization},
   doi = {10.1109/CEC.2013.6557848},
+}
+
+@inbook{randomsearch2010,
+author = {Zabinsky, Zelda},
+year = {2010},
+month = {06},
+pages = {},
+title = {Random Search Algorithms},
+isbn = {9780470400531},
+doi = {10.1002/9780470400531.eorms0704}
+}
+
+@INPROCEEDINGS{spsaimpl,
+  author={Rastogi, Pushpendre and Zhu, Jingyi and Spall, James C.},
+  booktitle={2016 Annual Conference on Information Science and Systems (CISS)}, 
+  title={Efficient implementation of enhanced adaptive simultaneous perturbation algorithms}, 
+  year={2016},
+  volume={},
+  number={},
+  pages={298-303},
+  keywords={Estimation;Algorithm design and analysis;Adaptive Estimation;Simultaneous Perturbation Stochastic Approximation (SPSA);Woodbury Matrix Identity},
+  doi={10.1109/CISS.2016.7460518}}
+
+@inproceedings{tbpsaimpl,
+author = {Hellwig, Michael and Beyer, Hans-Georg},
+year = {2016},
+month = {09},
+pages = {},
+title = {Evolution under Strong Noise: A Self-Adaptive Evolution Strategy Can Reach the Lower Performance Bound - the pcCMSA-ES},
+volume = {9921},
+isbn = {9783319458229},
+doi = {10.1007/978-3-319-45823-6_3}
+}
+
+@ARTICLE{cgaimpl,
+  author={Harik, G.R. and Lobo, F.G. and Goldberg, D.E.},
+  journal={IEEE Transactions on Evolutionary Computation}, 
+  title={The compact genetic algorithm}, 
+  year={1999},
+  volume={3},
+  number={4},
+  pages={287-297},
+  keywords={Genetic algorithms;Algorithm design and analysis;Laboratories;Computer simulation;Genetic engineering;Probability distribution;Computational modeling;History;Convergence;Mathematical model},
+  doi={10.1109/4235.797971}}
+
+@inproceedings{bayesoptimimpl,
+author = {Raponi, Elena and Wang, Hao and Bujny, Mariusz and Boria, Simonetta and Doerr, Carola},
+title = {High Dimensional Bayesian Optimization Assisted by Principal Component Analysis},
+year = {2020},
+isbn = {978-3-030-58111-4},
+publisher = {Springer-Verlag},
+address = {Berlin, Heidelberg},
+url = {https://doi.org/10.1007/978-3-030-58112-1_12},
+doi = {10.1007/978-3-030-58112-1_12},
+abstract = {Bayesian Optimization (BO) is a surrogate-assisted global optimization technique that has been successfully applied in various fields, e.g., automated machine learning and design optimization. Built upon a so-called infill-criterion and Gaussian Process regression (GPR), the BO technique suffers from a substantial computational complexity and hampered convergence rate as the dimension of the search spaces increases. Scaling up BO for high-dimensional optimization problems remains a challenging task.In this paper, we propose to tackle the scalability of BO by hybridizing it with a Principal Component Analysis (PCA), resulting in a novel PCA-assisted BO (PCA-BO) algorithm. Specifically, the PCA procedure learns a linear transformation from all the evaluated points during the run and selects dimensions in the transformed space according to the variability of evaluated points. We then construct the GPR model, and the infill-criterion in the space spanned by the selected dimensions.We assess the performance of our PCA-BO in terms of the empirical convergence rate and CPU time on multi-modal problems from the COCO benchmark framework. The experimental results show that PCA-BO can effectively reduce the CPU time incurred on high-dimensional problems, and maintains the convergence rate on problems with an adequate global structure. PCA-BO therefore provides a satisfactory trade-off between the convergence rate and computational efficiency opening new ways to benefit from the strength of BO approaches in high dimensional numerical optimization.},
+booktitle = {Parallel Problem Solving from Nature – PPSN XVI: 16th International Conference, PPSN 2020, Leiden, The Netherlands, September 5-9, 2020, Proceedings, Part I},
+pages = {169–183},
+numpages = {15},
+keywords = {Dimensionality reduction, Principal Component Analysis, Black-box optimization, Bayesian optimization},
+location = {Leiden, The Netherlands}
 }
 
 @book{Rechenberg1973,
@@ -949,24 +1020,25 @@ author = {F. James and M. Roos}
   doi={10.1109/TAC.1968.1098903}
 }
 
-@misc{doerr2017,
-      title={Fast Genetic Algorithms}, 
-      author={Benjamin Doerr and Huu Phuoc Le and Régis Makhmara and Ta Duy Nguyen},
-      year={2017},
-      eprint={1703.03334},
+@misc{edaimpl,
+      title={Theory of Estimation-of-Distribution Algorithms}, 
+      author={Martin S. Krejca and Carsten Witt},
+      year={2018},
+      eprint={1806.05392},
       archivePrefix={arXiv},
       primaryClass={cs.NE},
-      url={https://arxiv.org/abs/1703.03334}, 
+      url={https://arxiv.org/abs/1806.05392}, 
 }
 
-@misc{dang2016,
-      title={Self-adaptation of Mutation Rates in Non-elitist Populations}, 
-      author={Duc-Cuong Dang and Per Kristian Lehre},
-      year={2016},
-      eprint={1606.05551},
-      archivePrefix={arXiv},
-      primaryClass={cs.NE},
-      url={https://arxiv.org/abs/1606.05551}, 
+@book{emnaimpl,
+author = {Larranaga, Pedro and Lozano, Jose},
+year = {2002},
+month = {01},
+pages = {},
+title = {Estimation of Distribution Algorithms: A New Tool for Evolutionary Computation},
+isbn = {9781461356042},
+journal = {Genetic algorithms and evolutionary computation ; 2},
+doi = {10.1007/978-1-4615-1539-5}
 }
 
 @Misc{Nogueira2014,
