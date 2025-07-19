@@ -4124,6 +4124,80 @@ package. To use it, you need to have
     - **n_restarts** (int): Number of times to restart the optimizer. Default is 1.
 ```
 
+```{eval-rst}
+.. dropdown:: nevergrad_oneplusone
+
+    .. code-block::
+
+        "nevergrad_oneplusone"
+
+    Minimize a scalar function using the One Plus One Evolutionary algorithm from Nevergrad.
+    
+    THe One Plus One evolutionary algorithm iterates to find a set of parameters that minimizes the loss
+    function. It does this by perturbing, or mutating, the parameters from the last iteration (the
+    parent). If the new (child) parameters yield a better result, then the child becomes the new parent
+    whose parameters are perturbed, perhaps more aggressively. If the parent yields a better result, it
+    remains the parent and the next perturbation is less aggressive. Originally proposed by
+    :cite:`Rechenberg1973`. The implementation in Nevergrad is based on the one-fifth adaptation rule,
+    going back to :cite:`Schumer1968.
+
+    - **noise\_handling**: Method for handling the noise, can be
+          - "random": A random point is reevaluated regularly using the one-fifth adaptation rule.
+          - "optimistic": The best optimistic point is reevaluated regularly, embracing optimism in the face of uncertainty.
+          - A float coefficient can be provided to tune the regularity of these reevaluations (default is 0.05). Eg: with 0.05, each evaluation has a 5% chance (i.e., 1 in 20) of being repeated (i.e., the same candidate solution is reevaluated to better estimate its performance). (Default: `None`).
+    - **n\_cores**: Number of cores to use.
+
+    - **stopping.maxfun**: Maximum number of function evaluations.
+    - **mutation**: Type of mutation to apply. Available options are (Default: `"gaussian"`).
+          - "gaussian": Standard mutation by adding a Gaussian random variable (with progressive widening) to the best pessimistic point.
+          - "cauchy": Same as Gaussian but using a Cauchy distribution.
+          - "discrete": Mutates a randomly drawn variable (mutation occurs with probability 1/d in d dimensions, hence ~1 variable per mutation).
+          - "discreteBSO": Follows brainstorm optimization by gradually decreasing mutation rate from 1 to 1/d.
+          - "fastga": Fast Genetic Algorithm mutations from the current best.
+          - "doublefastga": Double-FastGA mutations from the current best :cite:`doerr2017`.
+          - "rls": Randomized Local Search — mutates one and only one variable.
+          - "portfolio": Random number of mutated bits, known as uniform mixing :cite:`dang2016`.
+          - "lengler": Mutation rate is a function of dimension and iteration index.
+          - "lengler{2|3|half|fourth}": Variants of the Lengler mutation rate adaptation.
+    - **sparse**: Whether to apply random mutations that set variables to zero. Default is `False`.
+    - **smoother**: Whether to suggest smooth mutations. Default is `False`.
+    - **annealing**:
+      Annealing schedule to apply to mutation amplitude or temperature-based control. Options are:
+          - "none": No annealing is applied.
+          - "Exp0.9": Exponential decay with rate 0.9.
+          - "Exp0.99": Exponential decay with rate 0.99.
+          - "Exp0.9Auto": Exponential decay with rate 0.9, auto-scaled based on problem horizon.
+          - "Lin100.0": Linear decay from 1 to 0 over 100 iterations.
+          - "Lin1.0": Linear decay from 1 to 0 over 1 iteration.
+          - "LinAuto": Linearly decaying annealing automatically scaled to the problem horizon. Default is `"none"`.
+    - **super\_radii**:
+      Whether to apply extended radii beyond standard bounds for candidate generation, enabling broader
+      exploration. Default is `False`.
+    - **roulette\_size**:
+      Size of the roulette wheel used for selection in the evolutionary process. Affects the sampling
+      diversity from past candidates. (Default: `64`)
+    - **antismooth**:
+      Degree of anti-smoothing applied to prevent premature convergence in smooth landscapes. This alters
+      the landscape by penalizing overly smooth improvements. (Default: `4`)
+    - **crossover**: Whether to include a genetic crossover step every other iteration. Default is `False`.
+    - **crossover\_type**:
+      Method used for genetic crossover between individuals in the population. Available options (Default: `"none"`):
+          - "none": No crossover is applied.
+          - "rand": Randomized selection of crossover point.
+          - "max": Crossover at the point with maximum fitness gain.
+          - "min": Crossover at the point with minimum fitness gain.
+          - "onepoint": One-point crossover, splitting the genome at a single random point.
+          - "twopoint": Two-point crossover, splitting the genome at two points and exchanging the middle section.
+    - **tabu\_length**:
+      Length of the tabu list used to prevent revisiting recently evaluated candidates in local search
+      strategies. Helps in escaping local minima. (Default: `1000`)
+    - **rotation**:
+      Whether to apply rotational transformations to the search space, promoting invariance to axis-
+      aligned structures and enhancing search performance in rotated coordinate systems. (Default:
+      `False`)
+    - **seed**: Seed for the random number generator for reproducibility.
+```
+
 ## References
 
 ```{eval-rst}

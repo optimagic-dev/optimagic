@@ -15,7 +15,7 @@ from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.typing import AggregationLevel, PositiveInt
+from optimagic.typing import AggregationLevel, NonNegativeInt, PositiveInt
 
 if IS_NEVERGRAD_INSTALLED:
     import nevergrad as ng
@@ -79,6 +79,140 @@ class NevergradPSO(Algorithm):
             qo=self.quasi_opp_init,
             sqo=self.speed_quasi_opp_init,
             so=self.special_speed_quasi_opp_init,
+        )(
+            parametrization=instrum,
+            budget=self.stopping_maxfun,
+            num_workers=self.n_cores,
+        )
+
+        while optimizer.num_ask < self.stopping_maxfun:
+            x_list = [
+                optimizer.ask()
+                for _ in range(
+                    min(self.n_cores, self.stopping_maxfun - optimizer.num_ask)
+                )
+            ]
+            losses = problem.batch_fun(
+                [x.value[0][0] for x in x_list], n_cores=self.n_cores
+            )
+            for x, loss in zip(x_list, losses, strict=True):
+                optimizer.tell(x, loss)
+
+        recommendation = optimizer.provide_recommendation()
+
+        result = InternalOptimizeResult(
+            x=recommendation.value[0][0],
+            fun=recommendation.loss,
+            success=True,
+            n_fun_evals=optimizer.num_ask,
+            n_jac_evals=0,
+            n_hess_evals=0,
+        )
+
+        return result
+
+
+@mark.minimizer(
+    name="nevergrad_oneplusone",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_NEVERGRAD_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class NevergradOnePlusOne(Algorithm):
+    noise_handling: (
+        Literal["random", "optimistic"]
+        | tuple[Literal["random", "optimistic"], float]
+        | None
+    ) = None
+    mutation: Literal[
+        "gaussian",
+        "cauchy",
+        "discrete",
+        "fastga",
+        "rls",
+        "doublefastga",
+        "adaptive",
+        "coordinatewise_adaptive",
+        "portfolio",
+        "discreteBSO",
+        "lengler",
+        "lengler2",
+        "lengler3",
+        "lenglerhalf",
+        "lenglerfourth",
+        "doerr",
+        "lognormal",
+        "xlognormal",
+        "xsmalllognormal",
+        "tinylognormal",
+        "smalllognormal",
+        "biglognormal",
+        "hugelognormal",
+    ] = "gaussian"
+    annealing: (
+        Literal[
+            "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
+        ]
+        | None
+    ) = None
+    sparse: bool = False
+    super_radii: bool = False
+    smoother: bool = False
+    roulette_size: PositiveInt = 64
+    antismooth: NonNegativeInt = 4
+    crossover: bool = False
+    crossover_type: (
+        Literal["none", "rand", "max", "min", "onepoint", "twopoint"] | None
+    ) = None
+    tabu_length: NonNegativeInt = 1000
+    rotation: bool = False
+    seed: int | None = None
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    n_cores: PositiveInt = 1
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_NEVERGRAD_INSTALLED:
+            raise NotInstalledError(
+                "The nevergrad_oneplusone optimizer requires the 'nevergrad' package "
+                "to be installed. You can install it with `pip install nevergrad`. "
+                "Visit https://facebookresearch.github.io/nevergrad/getting_started.html"
+                " for more detailed installation instructions."
+            )
+
+        instrum = ng.p.Array(
+            init=x0, lower=problem.bounds.lower, upper=problem.bounds.upper
+        )
+
+        instrum.specify_tabu_length(tabu_length=self.tabu_length)
+        instrum = ng.p.Instrumentation(instrum)
+
+        if self.seed is not None:
+            instrum.random_state.seed(self.seed)
+
+        optimizer = ng.optimizers.ParametrizedOnePlusOne(
+            noise_handling=self.noise_handling,
+            mutation=self.mutation,
+            crossover=self.crossover,
+            rotation=self.rotation,
+            annealing=self.annealing or "none",
+            sparse=self.sparse,
+            smoother=self.smoother,
+            super_radii=self.super_radii,
+            roulette_size=self.roulette_size,
+            antismooth=self.antismooth,
+            crossover_type=self.crossover_type or "none",
         )(
             parametrization=instrum,
             budget=self.stopping_maxfun,

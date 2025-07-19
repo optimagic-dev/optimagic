@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from typing import Type, cast
 
 from optimagic.optimization.algorithm import Algorithm
-from optimagic.optimizers.bayesian_optimizer import BayesOpt
 from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
 from optimagic.optimizers.iminuit_migrad import IminuitMigrad
@@ -367,7 +366,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -1034,7 +1032,6 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -1099,7 +1096,6 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -1309,7 +1305,6 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1534,7 +1529,6 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -2147,7 +2141,6 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -2234,7 +2227,6 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2332,7 +2324,6 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
@@ -2456,7 +2447,6 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -2539,7 +2529,6 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -2854,7 +2843,6 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -3167,7 +3155,6 @@ class GradientBasedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3242,7 +3229,6 @@ class GradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
@@ -3372,7 +3358,6 @@ class LocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -3510,7 +3495,6 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class ScalarAlgorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -3687,7 +3671,6 @@ class ParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class Algorithms(AlgoSelection):
-    bayes_opt: Type[BayesOpt] = BayesOpt
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
