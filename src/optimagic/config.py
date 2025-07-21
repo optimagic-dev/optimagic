@@ -109,6 +109,14 @@ else:
 
 
 try:
+    from bayes_opt import BayesianOptimization  # noqa: F401
+except ImportError:
+    IS_BAYESOPT_INSTALLED = False
+else:
+    IS_BAYESOPT_INSTALLED = True
+
+
+try:
     import pygad  # noqa: F401
 except ImportError:
     IS_PYGAD_INSTALLED = False

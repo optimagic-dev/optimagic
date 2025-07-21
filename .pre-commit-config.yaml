@@ -20,6 +20,16 @@ repos:
         require_serial: true
   - repo: local
     hooks:
+      - id: check-mypy-versions
+        name: verify that pre-commits and dev env use the same mypy version
+        entry: python .tools/check_mypy_versions.py
+        language: python
+        always_run: true
+        require_serial: true
+        additional_dependencies:
+          - pyyaml
+  - repo: local
+    hooks:
       - id: update-algo-selection-code
         name: update algo selection code
         entry: python .tools/update_algo_selection_hook.py
