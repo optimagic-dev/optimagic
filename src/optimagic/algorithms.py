@@ -19,7 +19,21 @@ from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
 from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
 from optimagic.optimizers.neldermead import NelderMeadParallel
-from optimagic.optimizers.nevergrad_optimizers import NevergradPSO
+from optimagic.optimizers.nevergrad_optimizers import (
+    NevergradBayesOptim,
+    NevergradCGA,
+    NevergradCMAES,
+    NevergradDifferentialEvolution,
+    NevergradEDA,
+    NevergradEMNA,
+    NevergradMeta,
+    NevergradNGOpt,
+    NevergradOnePlusOne,
+    NevergradPSO,
+    NevergradRandomSearch,
+    NevergradSamplingSearch,
+    NevergradTBPSA,
+)
 from optimagic.optimizers.nlopt_optimizers import (
     NloptBOBYQA,
     NloptCCSAQ,
@@ -173,7 +187,19 @@ class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelect
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -368,7 +394,19 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -408,7 +446,19 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -464,7 +514,19 @@ class GlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -612,7 +674,19 @@ class BoundedGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -707,7 +781,19 @@ class BoundedGlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1035,7 +1121,19 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -1100,7 +1198,19 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -1144,7 +1254,19 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1311,7 +1433,19 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
@@ -1383,7 +1517,19 @@ class BoundedGradientFreeLeastSquaresAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -1465,7 +1611,19 @@ class GradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1535,7 +1693,19 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -1584,7 +1754,19 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGlobalParallelAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1653,7 +1835,19 @@ class GlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1888,7 +2082,19 @@ class BoundedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedParallelScalarAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2148,7 +2354,19 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -2237,7 +2455,19 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
@@ -2335,7 +2565,19 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
@@ -2416,7 +2658,19 @@ class GradientFreeLeastSquaresAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -2457,7 +2711,19 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -2540,7 +2806,19 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -2593,7 +2871,19 @@ class GlobalScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GlobalParallelAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2859,7 +3149,19 @@ class BoundedScalarAlgorithms(AlgoSelection):
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -2960,7 +3262,19 @@ class BoundedLeastSquaresAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedParallelAlgorithms(AlgoSelection):
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -3062,7 +3376,19 @@ class NonlinearConstrainedParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class ParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3171,7 +3497,19 @@ class GradientFreeAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
@@ -3243,7 +3581,19 @@ class GradientFreeAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_crs2_lm: Type[NloptCRS2LM] = NloptCRS2LM
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
@@ -3378,7 +3728,19 @@ class BoundedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -3516,7 +3878,19 @@ class ScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -3645,7 +4019,19 @@ class LikelihoodAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class ParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
@@ -3695,7 +4081,19 @@ class Algorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
+    nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
+    nevergrad_cga: Type[NevergradCGA] = NevergradCGA
+    nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
+    nevergrad_de: Type[NevergradDifferentialEvolution] = NevergradDifferentialEvolution
+    nevergrad_eda: Type[NevergradEDA] = NevergradEDA
+    nevergrad_emna: Type[NevergradEMNA] = NevergradEMNA
+    nevergrad_meta: Type[NevergradMeta] = NevergradMeta
+    nevergrad_NGOpt: Type[NevergradNGOpt] = NevergradNGOpt
+    nevergrad_oneplusone: Type[NevergradOnePlusOne] = NevergradOnePlusOne
     nevergrad_pso: Type[NevergradPSO] = NevergradPSO
+    nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
+    nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
+    nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_ccsaq: Type[NloptCCSAQ] = NloptCCSAQ
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
