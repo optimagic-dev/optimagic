@@ -239,11 +239,15 @@ def _get_fast_path_bounds(
         lower_bounds = None
     else:
         lower_bounds = bounds.lower.astype(float)
+        if np.isinf(lower_bounds).all():
+            lower_bounds = None
 
     if bounds.upper is None:
         upper_bounds = None
     else:
         upper_bounds = bounds.upper.astype(float)
+        if np.isinf(upper_bounds).all():
+            upper_bounds = None
 
     if (
         lower_bounds is not None

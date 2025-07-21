@@ -515,8 +515,8 @@ def post_replace_jacobian(post_replacements):
 @dataclass(frozen=True)
 class InternalParams:
     values: np.ndarray
-    lower_bounds: np.ndarray
-    upper_bounds: np.ndarray
+    lower_bounds: np.ndarray | None
+    upper_bounds: np.ndarray | None
     soft_lower_bounds: np.ndarray | None = None
     soft_upper_bounds: np.ndarray | None = None
     names: list | None = None
