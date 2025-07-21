@@ -561,26 +561,38 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Strict checking if bounds are required and infinite values in bounds
     # ==================================================================================
     if problem.algorithm.algo_info.supports_bounds:
+        # we need all_bounds_infinite and some_bounds_infinite to check
+        # for arrays of np.inf and np.-inf until bounds
+        # processing is improved
+        all_bounds_infinite = (
+            np.isinf(internal_params.lower_bounds).all()
+            and np.isinf(internal_params.upper_bounds).all()
+        )
+        some_bounds_infinite = (
+            np.isinf(internal_params.lower_bounds).all()
+            or np.isinf(internal_params.upper_bounds).all()
+        )
+        infinite_values_in_bounds = (
+            np.isinf(internal_params.lower_bounds).any()
+            or np.isinf(internal_params.upper_bounds).any()
+        )
+        bounds_missing = (
+            internal_params.lower_bounds is None or internal_params.upper_bounds is None
+        )
+
         if problem.algorithm.algo_info.needs_bounds:
-            if (
-                internal_params.lower_bounds is None
-                or internal_params.upper_bounds is None
-                or np.isinf(internal_params.lower_bounds).all()
-                or np.isinf(internal_params.upper_bounds).all()
-            ):
+            if bounds_missing or some_bounds_infinite:
                 raise IncompleteBoundsError(
                     f"Algorithm {problem.algorithm.name} needs finite bounds "
                     f"for all parameters. "
                 )
         if not problem.algorithm.algo_info.supports_infinite_bounds:
-            if (
-                np.isinf(internal_params.lower_bounds).any()
-                or np.isinf(internal_params.upper_bounds).any()
-            ):
-                raise IncompleteBoundsError(
-                    f"Algorithm {problem.algorithm.name} does not support infinite "
-                    f"values in bounds for parameters. "
-                )
+            if not all_bounds_infinite:
+                if infinite_values_in_bounds:
+                    raise IncompleteBoundsError(
+                        f"Algorithm {problem.algorithm.name} does not support "
+                        f"infinite values in bounds for parameters. "
+                    )
 
     # ==================================================================================
     # Do some things that require internal parameters or bounds
