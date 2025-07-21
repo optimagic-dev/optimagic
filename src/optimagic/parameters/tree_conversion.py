@@ -48,8 +48,6 @@ def get_tree_converter(
     _registry = get_registry(extended=True)
     _params_vec, _params_treedef = tree_flatten(params, registry=_registry)
     _params_vec = np.array(_params_vec).astype(float)
-    # We cannot propagate None-valued bounds until the conversion and converter code is
-    # updated to handle None bounds.
     _lower, _upper = get_internal_bounds(
         params=params,
         bounds=bounds,
