@@ -117,9 +117,14 @@ def calculate_scaling_factor_and_offset(
         raw_factor = np.clip(np.abs(x), options.clipping_value, np.inf)
         scaling_offset = None
     elif options.method == "bounds":
-        if lower_bounds is None or upper_bounds is None:
+        if (
+            lower_bounds is None
+            or np.isinf(lower_bounds).any()
+            or upper_bounds is None
+            or np.isinf(upper_bounds).any()
+        ):
             raise ValueError(
-                "Finite bounds must be provided for 'bounds' scaling method."
+                "To use the 'bounds' scaling method, all bounds must be finite."
             )
         raw_factor = upper_bounds - lower_bounds
         scaling_offset = lower_bounds

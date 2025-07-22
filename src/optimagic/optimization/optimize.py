@@ -561,9 +561,6 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Strict checking if bounds are required and infinite values in bounds
     # ==================================================================================
     if problem.algorithm.algo_info.supports_bounds:
-        # NOTE: All-infinite bounds arrays are normalized to None in bounds processing,
-        # so we only need to handle the cases: None bounds, or mixed finite/infinite
-        # bounds
         bounds_missing = (
             internal_params.lower_bounds is None or internal_params.upper_bounds is None
         )
