@@ -31,7 +31,6 @@ dependencies:
   - pygmo>=2.19.0
   - pip:
       - -e ../
-      - kaleido>=1.0
       - Py-BOBYQA
       - DFO-LS
       - pandas-stubs  # dev, tests

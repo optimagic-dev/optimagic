@@ -14,7 +14,7 @@ from typing import (
 )
 
 import numpy as np
-from annotated_types import Ge, Gt, Lt
+from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
 
 PyTree = Any
@@ -126,6 +126,8 @@ NegativeFloat = Annotated[float, Lt(0)]
 """Type alias for negative floats (less than 0)."""
 GtOneFloat = Annotated[float, Gt(1)]
 """Type alias for floats greater than 1."""
+UnitIntervalFloat = Annotated[float, Gt(0), Le(1)]
+"""Type alias for floats in (0, 1]."""
 YesNoBool = Literal["yes", "no"] | bool
 """Type alias for boolean values represented as 'yes' or 'no' strings or as boolean
 values."""

@@ -191,7 +191,11 @@ html_theme = "furo"
 # "default.css" will overwrite the built-in "default.css".
 html_css_files = ["css/termynal.css", "css/termynal_custom.css", "css/custom.css"]
 
-html_js_files = ["js/termynal.js", "js/custom.js"]
+html_js_files = [
+    "js/termynal.js",
+    "js/custom.js",
+    "js/require.js",
+]
 
 
 # Add any paths that contain custom static files (such as style sheets) here, relative
