@@ -82,6 +82,7 @@ autodoc_type_aliases = {
     "NonNegativeFloat": "optimagic.typing.NonNegativeFloat",
     "NegativeFloat": "optimagic.typing.NegativeFloat",
     "GtOneFloat": "optimagic.typing.GtOneFloat",
+    "UnitIntervalFloat": "optimagic.typing.UnitIntervalFloat",
     "YesNoBool": "optimagic.typing.YesNoBool",
     "DirectionLiteral": "optimagic.typing.DirectionLiteral",
     "BatchEvaluatorLiteral": "optimagic.typing.BatchEvaluatorLiteral",
