@@ -7,9 +7,18 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 
 ## 0.5.2
 
-This minor release includes several bug fixes and small improvements. Many contributions
-in this release were made by Google Summer of Code (GSoC) 2025 applicants, with
-@gauravmanmode and @spline2hg being the accepted contributors.
+This minor release adds support for two additional optimizer libraries:
+
+- [Nevergrad](https://github.com/facebookresearch/nevergrad): A library for
+  gradient-free optimization developed by Facebook Research.
+- [Bayesian
+  Optimization](https://github.com/bayesian-optimization/BayesianOptimization): A
+  library for constrained bayesian global optimization with Gaussian processes.
+
+In addition, this release includes several bug fixes and improvements to the
+documentation. Many contributions in this release were made by Google Summer of Code
+(GSoC) 2025 applicants, with @gauravmanmode and @spline2hg being the accepted
+contributors.
 
 - {gh}`620` Uses interactive plotly figures in documentation ({ghuser}`timmens`).
 - {gh}`618` Improves bounds processing when no bounds are specified ({ghuser}`timmens`).
