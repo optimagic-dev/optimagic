@@ -56,7 +56,7 @@ in this release were made by Google Summer of Code (GSoC) 2025 applicants, with
   ({ghuser}`gauravmanmode`).
 - {gh}`552` Refactors and extends the `History` class, removing the internal
   `HistoryArrays` class ({ghuser}`timmens`).
-- {gh}`485` Adds bootstrap weights functionality ({ghuser}`janosg`).
+- {gh}`485` Adds bootstrap weights functionality ({ghuser}`alanlujan91`).
 
 
 ## 0.5.1
