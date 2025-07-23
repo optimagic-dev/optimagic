@@ -26,13 +26,12 @@ dependencies:
   - scipy
   - patsy
   - joblib
-  - plotly
+  - plotly>=6.2
   - nlopt
   - annotated-types
   - pygmo>=2.19.0
   - pip:
       - ../
-      - kaleido
       - Py-BOBYQA
       - DFO-LS
       - pandas-stubs  # dev, tests

@@ -20,6 +20,16 @@ repos:
         require_serial: true
   - repo: local
     hooks:
+      - id: check-mypy-versions
+        name: verify that pre-commits and dev env use the same mypy version
+        entry: python .tools/check_mypy_versions.py
+        language: python
+        always_run: true
+        require_serial: true
+        additional_dependencies:
+          - pyyaml
+  - repo: local
+    hooks:
       - id: update-algo-selection-code
         name: update algo selection code
         entry: python .tools/update_algo_selection_hook.py
@@ -67,7 +77,7 @@ repos:
       - id: yamllint
         exclude: tests/optimagic/optimizers/_pounders/fixtures
   - repo: https://github.com/PyCQA/docformatter
-    rev: eb1df34
+    rev: v1.7.7
     hooks:
       - id: docformatter
         args:
@@ -79,7 +89,7 @@ repos:
           - --blank
         exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.8
+    rev: v0.12.2
     hooks:
       # Run the linter.
       - id: ruff
@@ -131,7 +141,7 @@ repos:
         args:
           - --drop-empty-cells
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+    rev: v1.14.1
     hooks:
       - id: mypy
         files: src|tests
@@ -143,8 +153,6 @@ repos:
           - types-cffi
           - types-openpyxl
           - types-jinja2
-        args:
-          - --config=pyproject.toml
 ci:
   autoupdate_schedule: monthly
   skip:

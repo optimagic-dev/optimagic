@@ -42,8 +42,8 @@ def process_constraints(
             have already been consolidated into an ``"index"`` field that selects
             the same parameters from the flattened_parameter vector.
         params_vec (np.ndarray): Flattened version of params.
-        lower_bounds (np.ndarray): Lower bounds for params_vec.
-        upper_bounds (np.ndarray): Upper bounds for params_vec.
+        lower_bounds (np.ndarray | None): Lower bounds for params_vec.
+        upper_bounds (np.ndarray | None): Upper bounds for params_vec.
         param_names (list): Names of the flattened parameters. Only used to produce
             good error messages.
 
