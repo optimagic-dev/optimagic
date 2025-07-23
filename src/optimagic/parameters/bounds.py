@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any, Literal, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,6 +12,7 @@ from scipy.optimize import Bounds as ScipyBounds
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import PyTree, PyTreeRegistry
+from optimagic.utilities import fast_numpy_full
 
 
 @dataclass(frozen=True)
@@ -60,8 +61,8 @@ def pre_process_bounds(
 
 
 def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
-    lower = np.full(len(bounds), -np.inf)
-    upper = np.full(len(bounds), np.inf)
+    lower = fast_numpy_full(len(bounds), fill_value=-np.inf)
+    upper = fast_numpy_full(len(bounds), fill_value=np.inf)
 
     for i, (lb, ub) in enumerate(bounds):
         if lb is not None:
@@ -76,14 +77,14 @@ def get_internal_bounds(
     bounds: Bounds | None = None,
     registry: PyTreeRegistry | None = None,
     add_soft_bounds: bool = False,
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
 
     If params is a DataFrame with value column, the user provided bounds are
     extended with bounds from the params DataFrame.
 
-    If no bounds are available the entry is set to minus np.inf for the lower bound and
-    np.inf for the upper bound.
+    If no bounds are provided, we return None. If some bounds are available the missing
+    entries are set to -np.inf for the lower bound and np.inf for the upper bound.
 
     The bounds provided in `bounds` override bounds provided in params if both are
     specified (in the case where params is a DataFrame with bounds as a column).
@@ -109,10 +110,11 @@ def get_internal_bounds(
         add_soft_bounds=add_soft_bounds,
     )
     if fast_path:
-        return _get_fast_path_bounds(
-            params=params,
-            bounds=bounds,
-        )
+        return _get_fast_path_bounds(bounds)
+
+    # Handling of None-valued bounds in the slow path needs to be improved. Currently,
+    # None-valued bounds are replaced with arrays of np.inf and -np.inf, and then
+    # translated back to None if all entries are non-finite.
 
     registry = get_registry(extended=True) if registry is None else registry
     n_params = len(tree_leaves(params, registry=registry))
@@ -149,11 +151,18 @@ def get_internal_bounds(
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
         raise InvalidBoundsError(msg)
 
+    if np.isinf(lower_flat).all():
+        lower_flat = None  # type: ignore[assignment]
+    if np.isinf(upper_flat).all():
+        upper_flat = None  # type: ignore[assignment]
+
     return lower_flat, upper_flat
 
 
 def _update_bounds_and_flatten(
-    nan_tree: PyTree, bounds: PyTree, kind: str
+    nan_tree: PyTree,
+    bounds: PyTree,
+    kind: Literal["lower_bound", "upper_bound", "soft_lower_bound", "soft_upper_bound"],
 ) -> NDArray[np.float64]:
     """Flatten bounds array and update it with bounds from params.
 
@@ -213,7 +222,7 @@ def _is_fast_path(params: PyTree, bounds: Bounds, add_soft_bounds: bool) -> bool
     if not _is_1d_array(params):
         out = False
 
-    for bound in bounds.lower, bounds.upper:
+    for bound in (bounds.lower, bounds.upper):
         if not (_is_1d_array(bound) or bound is None):
             out = False
     return out
@@ -224,21 +233,27 @@ def _is_1d_array(candidate: Any) -> bool:
 
 
 def _get_fast_path_bounds(
-    params: PyTree, bounds: Bounds
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    bounds: Bounds,
+) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     if bounds.lower is None:
-        # faster than np.full
-        lower_bounds = np.array([-np.inf] * len(params))
+        lower_bounds = None
     else:
         lower_bounds = bounds.lower.astype(float)
+        if np.isinf(lower_bounds).all():
+            lower_bounds = None
 
     if bounds.upper is None:
-        # faster than np.full
-        upper_bounds = np.array([np.inf] * len(params))
+        upper_bounds = None
     else:
         upper_bounds = bounds.upper.astype(float)
+        if np.isinf(upper_bounds).all():
+            upper_bounds = None
 
-    if (lower_bounds > upper_bounds).any():
+    if (
+        lower_bounds is not None
+        and upper_bounds is not None
+        and (lower_bounds > upper_bounds).any()
+    ):
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
         raise InvalidBoundsError(msg)
 

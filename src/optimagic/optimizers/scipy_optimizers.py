@@ -472,12 +472,15 @@ class ScipyLSTRF(Algorithm):
         else:
             tr_solver_options = self.tr_solver_options
 
+        lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
+        upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
             # This optimizer does not work with fun_and_jac
             jac=problem.jac,
-            bounds=(problem.bounds.lower, problem.bounds.upper),
+            bounds=(lower_bounds, upper_bounds),
             method="trf",
             max_nfev=self.stopping_maxfun,
             ftol=self.convergence_ftol_rel,
@@ -522,12 +525,15 @@ class ScipyLSDogbox(Algorithm):
         else:
             tr_solver_options = self.tr_solver_options
 
+        lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
+        upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
             # This optimizer does not work with fun_and_jac
             jac=problem.jac,
-            bounds=(problem.bounds.lower, problem.bounds.upper),
+            bounds=(lower_bounds, upper_bounds),
             method="dogbox",
             max_nfev=self.stopping_maxfun,
             ftol=self.convergence_ftol_rel,
@@ -1204,8 +1210,13 @@ def _get_workers(n_cores, batch_evaluator):
     return out
 
 
-def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds:
-    return ScipyBounds(lb=bounds.lower, ub=bounds.upper)
+def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds | None:
+    if bounds.lower is None and bounds.upper is None:
+        return None
+
+    lower = bounds.lower if bounds.lower is not None else -np.inf
+    upper = bounds.upper if bounds.upper is not None else np.inf
+    return ScipyBounds(lb=lower, ub=upper)
 
 
 def process_scipy_result_old(scipy_results_obj):
