@@ -3984,15 +3984,17 @@ iminuit).
       - Values greater than 1 specify the maximum number of restart attempts.  
 ```
 
-(nevergrad-algorithms)=
-
 ## Nevergrad Optimizers
 
-optimagic supports some algorithms from the
+optimagic supports following algorithms from the
 [Nevergrad](https://facebookresearch.github.io/nevergrad/index.html) library. To use
 these optimizers, you need to have
 [the nevergrad package](https://github.com/facebookresearch/nevergrad) installed.
-(`pip install nevergrad`).
+(`pip install nevergrad`).\
+Two algorithms from nevergrad are not available in optimagic.\
+`SPSA (Simultaneous Perturbation Stochastic Approximation)` - This is WIP in nevergrad
+and hence imprecise.\
+`AXP (AX-platfofm)` - Very slow and not recommended.
 
 ```{eval-rst}
 .. dropdown:: nevergrad_pso
@@ -4001,46 +4003,722 @@ these optimizers, you need to have
 
         "nevergrad_pso"
 
-    Minimize a scalar function using the Particle Swarm Optimization (PSO) algorithm.
+    Minimize a scalar function using the Particle Swarm Optimization algorithm.
+    
+    The Particle Swarm Optimization algorithm was originally proposed by :cite:`Kennedy1995`.The
+    implementation in Nevergrad is based on :cite:`Zambrano2013`.
+    
+    PSO solves an optimization problem by evolving a swarm of particles (candidate solutions) across the
+    search space. Each particle adjusts its position based on its own experience (cognitive component)
+    and the experiences of its neighbors or the swarm (social component), using velocity updates. The
+    algorithm iteratively guides the swarm toward promising regions of the search space.
 
-    The Particle Swarm Optimization algorithm was originally proposed by
-    :cite:`Kennedy1995`. The implementation in Nevergrad is based on
-    :cite:`Zambrano2013`.
+    - **transform** (str): The transform used to map from PSO optimization space to real space. Options:
+              - "arctan" (default)
+              - "identity"
+              - "gaussian"
+    - **population\_size** (int): The number of particles in the swarm.
+    - **n\_cores** (int): The number of CPU cores to use for parallel computation.
+    - **seed** (int, optional): Random seed for reproducibility.
+    - **stopping\_maxfun** (int, optional): Maximum number of function evaluations.
+    - **inertia** (float):
+      Inertia weight ω. Controls the influence of a particle's previous velocity. Must be less than 1 to
+      avoid divergence. Default is 0.7213475204444817.
+    - **cognitive** (float):
+      Cognitive coefficient :math:`\phi_p`. Controls the influence of a particle’s own best known
+      position. Typical values: 1.0 to 3.0. Default is 1.1931471805599454.
+    - **social** (float):
+      Social coefficient. Denoted by :math:`\phi_g`. Controls the influence of the swarm’s best known
+      position. Typical values: 1.0 to 3.0. Default is 1.1931471805599454.
+    - **quasi\_opp\_init** (bool): Whether to use quasi-opposition initialization. Default is False.
+    - **speed\_quasi\_opp\_init** (bool):
+      Whether to apply quasi-opposition initialization to speed. Default is False.
+    - **special\_speed\_quasi\_opp\_init** (bool):
+      Whether to use special quasi-opposition initialization for speed. Default is False.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
 
-    Particle Swarm Optimization (PSO) solves a problem by having a population of
-    candidate solutions, here dubbed particles, and moving these particles around in the
-    search-space according to simple mathematical formulae over the particle's position
-    and velocity. Each particle's movement is influenced by its local best known
-    position (termed "cognitive" component), but is also guided toward the best known
-    positions (termed "social" component) in the search-space, which are updated as
-    better positions are found by other particles. This is expected to move the swarm
-    toward the best solutions.
+```{eval-rst}
+.. dropdown:: nevergrad_cmaes
 
-    - **transform** (str): The transform to use to map from PSO optimization space to
-      R-space. Available options are:
-      - "arctan" (default)
-      - "identity"
-      - "gaussian"
-    - **population_size** (int): Population size of the particle swarm.
-    - **n_cores** (int): Number of cores to use.
-    - **seed** (int): Seed used by the internal random number generator.
-    - **stopping.maxfun** (int): Maximum number of function evaluations.
-    - **inertia** (float): Inertia weight. Denoted by :math:`\omega`.
-      Default is 0.7213475204444817. To prevent divergence, the value must be smaller
-      than 1. It controls the influence of the particle's previous velocity on its
-      movement.
-    - **cognitive** (float): Cognitive coefficient. Denoted by :math:`\phi_p`.
-      Default is 1.1931471805599454. Typical values range from 1.0 to 3.0. It controls
-      the influence of its own best known position on the particle's movement.
-    - **social** (float): Social coefficient. Denoted by :math:`\phi_g`.
-      Default is 1.1931471805599454. Typical values range from 1.0 to 3.0. It controls
-      the influence of the swarm's best known position on the particle's movement.
-    - **quasi_opp_init** (bool): Whether to use quasi-opposition initialization.
+    .. code-block::
+
+        "nevergrad_cmaes"
+
+    Minimize a scalar function using the Covariance Matrix Adaptation Evolution Strategy (CMA-ES)
+    algorithm.
+    
+    The CMA-ES (Covariance Matrix Adaptation Evolution Strategy) is a state-of-the-art evolutionary
+    algorithm designed for difficult non-linear, non-convex, black-box optimization problems in
+    continuous domains. It is typically applied to unconstrained or bounded optimization problems with
+    dimensionality between 3 and 100. CMA-ES adapts a multivariate normal distribution to approximate
+    the shape of the objective function. It estimates a positive-definite covariance matrix, akin to the
+    inverse Hessian in convex-quadratic problems, but without requiring derivatives or their
+    approximation. Original paper can be accessed at `cma <https://cma-es.github.io/>`_. This
+    implementation is a python wrapper over the original code `pycma <https://cma-es.github.io/>`_.
+
+    - **scale**: Scale of the search.
+    - **elitist**:
+      Whether to switch to elitist mode (also known as (μ,λ)-CMA-ES). In elitist mode, the best point in
+      the population is always retained.
+    - **population\_size**: Population size.
+    - **diagonal**: Use the diagonal version of CMA, which is more efficient for high-dimensional problems.
+    - **high\_speed**: Use a metamodel for recommendation to speed up optimization.
+    - **fast\_cmaes**:
+      Use the fast CMA-ES implementation. Cannot be used with diagonal=True. Produces equivalent results
+      and is preferable for high dimensions or when objective function evaluations are fast.
+    - **random\_init**: If True, initialize the optimizer with random parameters.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **step\_size\_adaptive**:
+      Whether to adapt the step size. Can be a boolean or a string specifying the adaptation strategy.
+    - **CSA\_dampfac**: Damping factor for step size adaptation.
+    - **CMA\_dampsvec\_fade**: Damping rate for step size adaptation.
+    - **CSA\_squared**: Whether to use squared step sizes in updates.
+    - **CMA\_on**: Learning rate for the covariance matrix update.
+    - **CMA\_rankone**: Multiplier for the rank-one update learning rate of the covariance matrix.
+    - **CMA\_rankmu**: Multiplier for the rank-mu update learning rate of the covariance matrix.
+    - **CMA\_cmean**: Learning rate for the mean update.
+    - **CMA\_diagonal\_decoding**: Learning rate for the diagonal update.
+    - **num\_parents**: Number of parents (μ) for recombination.
+    - **CMA\_active**: Whether to use negative updates for the covariance matrix.
+    - **CMA\_mirrormethod**: Strategy for mirror sampling. Possible values are:
+    - **0**: Unconditional mirroring
+    - **1**: Selective mirroring
+    - **2**: Selective mirroring with delay (default)
+    - **CMA\_const\_trace**: How to normalize the trace of the covariance matrix. Valid values are:
+              - False: No normalization
+              - True: Normalize to 1
+              - "arithm": Arithmetic mean normalization
+              - "geom": Geometric mean normalization
+              - "aeig": Arithmetic mean of eigenvalues
+              - "geig": Geometric mean of eigenvalues
+    - **CMA\_diagonal**:
+      Number of iterations to use diagonal covariance matrix before switching to full matrix. If False,
+      always use full matrix.
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **stopping\_maxiter**: Maximum number of iterations before termination.
+    - **stopping\_timeout**: Maximum time in seconds before termination.
+    - **stopping\_cov\_mat\_cond**: Maximum condition number of the covariance matrix before termination.
+    - **convergence\_ftol\_abs**: Absolute tolerance on function value changes for convergence.
+    - **convergence\_ftol\_rel**: Relative tolerance on function value changes for convergence.
+    - **convergence\_xtol\_abs**: Absolute tolerance on parameter changes for convergence.
+    - **convergence\_iter\_noimprove**: Number of iterations without improvement before termination.
+    - **invariant\_path**: Whether evolution path (pc) should be invariant to transformations.
+    - **eval\_final\_mean**: Whether to evaluate the final mean solution.
+    - **seed**: Seed used by the internal random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_oneplusone
+
+    .. code-block::
+
+        "nevergrad_oneplusone"
+
+    Minimize a scalar function using the One Plus One Evolutionary algorithm from Nevergrad.
+    
+    THe One Plus One evolutionary algorithm iterates to find a set of parameters that minimizes the loss
+    function. It does this by perturbing, or mutating, the parameters from the last iteration (the
+    parent). If the new (child) parameters yield a better result, then the child becomes the new parent
+    whose parameters are perturbed, perhaps more aggressively. If the parent yields a better result, it
+    remains the parent and the next perturbation is less aggressive. Originally proposed by
+    :cite:`Rechenberg1973`. The implementation in Nevergrad is based on the one-fifth adaptation rule,
+    going back to :cite:`Schumer1968.
+
+    - **noise\_handling**: Method for handling the noise, can be
+          - "random": A random point is reevaluated regularly using the one-fifth adaptation rule.
+          - "optimistic": The best optimistic point is reevaluated regularly, embracing optimism in the face of uncertainty.
+          - A float coefficient can be provided to tune the regularity of these reevaluations (default is 0.05). Eg: with 0.05, each evaluation has a 5% chance (i.e., 1 in 20) of being repeated (i.e., the same candidate solution is reevaluated to better estimate its performance). (Default: `None`).
+    - **n\_cores**: Number of cores to use.
+
+      stopping.maxfun: Maximum number of function evaluations.
+    - **mutation**: Type of mutation to apply. Available options are (Default: `"gaussian"`).
+          - "gaussian": Standard mutation by adding a Gaussian random variable (with progressive widening) to the best pessimistic point.
+          - "cauchy": Same as Gaussian but using a Cauchy distribution.
+          - "discrete": Mutates a randomly drawn variable (mutation occurs with probability 1/d in d dimensions, hence ~1 variable per mutation).
+          - "discreteBSO": Follows brainstorm optimization by gradually decreasing mutation rate from 1 to 1/d.
+          - "fastga": Fast Genetic Algorithm mutations from the current best.
+          - "doublefastga": Double-FastGA mutations from the current best :cite:`doerr2017`.
+          - "rls": Randomized Local Search — mutates one and only one variable.
+          - "portfolio": Random number of mutated bits, known as uniform mixing :cite:`dang2016`.
+          - "lengler": Mutation rate is a function of dimension and iteration index.
+          - "lengler{2|3|half|fourth}": Variants of the Lengler mutation rate adaptation.
+    - **sparse**: Whether to apply random mutations that set variables to zero. Default is `False`.
+    - **smoother**: Whether to suggest smooth mutations. Default is `False`.
+    - **annealing**:
+      Annealing schedule to apply to mutation amplitude or temperature-based control. Options are:
+          - "none": No annealing is applied.
+          - "Exp0.9": Exponential decay with rate 0.9.
+          - "Exp0.99": Exponential decay with rate 0.99.
+          - "Exp0.9Auto": Exponential decay with rate 0.9, auto-scaled based on problem horizon.
+          - "Lin100.0": Linear decay from 1 to 0 over 100 iterations.
+          - "Lin1.0": Linear decay from 1 to 0 over 1 iteration.
+          - "LinAuto": Linearly decaying annealing automatically scaled to the problem horizon. Default is `"none"`.
+    - **super\_radii**:
+      Whether to apply extended radii beyond standard bounds for candidate generation, enabling broader
+      exploration. Default is `False`.
+    - **roulette\_size**:
+      Size of the roulette wheel used for selection in the evolutionary process. Affects the sampling
+      diversity from past candidates. (Default: `64`)
+    - **antismooth**:
+      Degree of anti-smoothing applied to prevent premature convergence in smooth landscapes. This alters
+      the landscape by penalizing overly smooth improvements. (Default: `4`)
+    - **crossover**: Whether to include a genetic crossover step every other iteration. Default is `False`.
+    - **crossover\_type**:
+      Method used for genetic crossover between individuals in the population. Available options (Default: `"none"`):
+          - "none": No crossover is applied.
+          - "rand": Randomized selection of crossover point.
+          - "max": Crossover at the point with maximum fitness gain.
+          - "min": Crossover at the point with minimum fitness gain.
+          - "onepoint": One-point crossover, splitting the genome at a single random point.
+          - "twopoint": Two-point crossover, splitting the genome at two points and exchanging the middle section.
+    - **tabu\_length**:
+      Length of the tabu list used to prevent revisiting recently evaluated candidates in local search
+      strategies. Helps in escaping local minima. (Default: `1000`)
+    - **rotation**:
+      Whether to apply rotational transformations to the search space, promoting invariance to axis-
+      aligned structures and enhancing search performance in rotated coordinate systems. (Default:
+      `False`)
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_de
+
+    .. code-block::
+
+        "nevergrad_de"
+
+    Minimize a scalar function using the Differential Evolution optimizer from Nevergrad.
+    
+    Differential Evolution is typically used for continuous optimization. It uses differences between
+    points in the population for performing mutations in fruitful directions; it is therefore a kind of
+    covariance adaptation without any explicit covariance, making it very fast in high dimensions.
+
+    - **initialization**:
+      Algorithm/distribution used for initialization. Can be one of: "parametrization" (uses
+      parametrization's sample method), "LHS" (Latin Hypercube Sampling), "QR" (Quasi-Random), "QO"
+      (Quasi-Orthogonal), or "SO" (Sobol sequence).
+    - **scale**: Scale of random component of updates. Can be a float or a string.
+    - **recommendation**: Criterion for selecting the best point to recommend.
+    - **Options**: "pessimistic", "optimistic", "mean", or "noisy".
+    - **crossover**: Crossover rate or strategy. Can be:
+              - float: Fixed crossover rate
+              - "dimension": 1/dimension
+              - "random": Random uniform rate per iteration
+              - "onepoint": One-point crossover
+              - "twopoints": Two-points crossover
+              - "rotated_twopoints": Rotated two-points crossover
+              - "parametrization": Use parametrization's recombine method
+    - **F1**: Differential weight #1 (scaling factor).
+    - **F2**: Differential weight #2 (scaling factor).
+    - **popsize**: Population size. Can be an integer or one of:
+              - "standard": max(num_workers, 30)
+              - "dimension": max(num_workers, 30, dimension + 1)
+              - "large": max(num_workers, 30, 7 * dimension)
+    - **high\_speed**: If True, uses a metamodel for recommendations to speed up optimization.
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_bo
+
+    .. code-block::
+
+        "nevergrad_bo"
+
+    Minimize a scalar function using the Bayes Optim algorithm. BO and PCA-BO algorithms from the
+    `bayes_optim <https://github.com/wangronin/Bayesian-Optimization>`_ package PCA-BO (Principal
+    Component Analysis for Bayesian Optimization) is a dimensionality reduction technique for black-box
+    optimization. It applies PCA to the input space before performing Bayesian optimization, improving
+    efficiency in high dimensions by focusing on directions of greatest variance. This helps concentrate
+    search in informative subspaces and reduce sample complexity. :cite:`bayesoptimimpl`.
+
+    - **init\_budget**: Number of initialization algorithm steps.
+    - **pca**: Whether to use the PCA transformation, defining PCA-BO rather than standard BO.
+    - **n\_components**:
+      Number of principal axes in feature space representing directions of maximum variance in the data.
+      Represents the percentage of explained variance (e.g., 0.95 means 95% variance retained).
+    - **prop\_doe\_factor**:
+      Percentage of the initial budget used for DoE, potentially overriding `init_budget`. For
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_emna
+
+    .. code-block::
+
+        "nevergrad_emna"
+
+    Minimize a scalar function using the Estimation of Multivariate Normal Algorithm.
+    
+    Estimation of Multivariate Normal Algorithm (EMNA), a distribution-based evolutionary algorithm that
+    models the search space using a multivariate Gaussian. EMNA learns the full covariance matrix of the
+    Gaussian sampling distribution, resulting in a cubic time complexity w.r.t. each sampling. It is
+    highly recommended to first attempt other more advanced optimization methods for LBO. See
+    :cite:`emnaimpl`. This algorithm is quite efficient in a parallel setting, i.e. when the population
+    size is large.
+
+    - **isotropic**:
+      If True, uses an isotropic (identity covariance) Gaussian. If False, uses a separable (diagonal
+      covariance) Gaussian for greater flexibility in anisotropic landscapes.
+    - **noise\_handling**:
+      If True, returns the best individual found. If False (recommended for noisy problems), returns the
+      average of the final population to reduce noise.
+    - **population\_size\_adaptation**:
+      If True, the population size is adjusted automatically based on the optimization landscape and noise
+      level.
+    - **initial\_popsize**: Initial population size. Default: 4 x dimension..
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_cga
+
+    .. code-block::
+
+        "nevergrad_cga"
+
+    Minimize a scalar function using the Compact Genetic Algorithm.
+    
+    The Compact Genetic Algorithm (cGA) is a memory-efficient genetic algorithm that represents the
+    population as a probability vector over gene values. It simulates the order-one behavior of a simple
+    GA with uniform crossover, updating probabilities instead of maintaining an explicit population. cGA
+    processes each gene independently and is well-suited for large or constrained environments. For
+    details see :cite:`cgaimpl`.
+
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_eda
+
+    .. code-block::
+
+        "nevergrad_eda"
+
+    Minimize a scalar function using the Estimation of distribution algorithm.
+    
+    Estimation of Distribution Algorithms (EDAs) optimize by building and sampling a probabilistic model
+    of promising solutions. Instead of using traditional variation operators like crossover or mutation,
+    EDAs update a distribution based on selected individuals and sample new candidates from it. This
+    allows efficient exploration of complex or noisy search spaces. In short, EDAs typically do not
+    directly evolve populations of search points but build probabilistic models of promising solutions
+    by repeatedly sampling and selecting points from the underlying search space. Refer :cite:`edaimpl`.
+
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_tbpsa
+
+    .. code-block::
+
+        "nevergrad_tbpsa"
+
+    Minimize a scalar function using the Test-based population size adaptation algorithm.
+    
+    TBPSA adapts population size based on fitness trend detection using linear regression. If no
+    significant improvement is found (via hypothesis testing), the population size is increased to
+    improve robustness in noisy settings. This method performs the best in many noisy optimization
+    problems, even in large dimensions. For more details, refer :cite:`tbpsaimpl`
+
+    - **noise\_handling**:
+      If True, returns the best individual seen so far. If False (recommended for noisy problems), returns
+      the average of the final population to reduce the effect of noise.
+    - **initial\_popsize**: Initial population size. If not specified, defaults to 4 x dimension.
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_randomsearch
+
+    .. code-block::
+
+        "nevergrad_randomsearch"
+
+    Minimize a scalar function using the Random Search algorithm.
+    
+    This is a one-shot optimization method, provides random suggestions.
+
+    - **middle\_point**:
+      Enforces that the first suggested point (ask) is the zero vector. i.e we add (0,0,...,0) as a first
+      point.
+    - **opposition\_mode**: Symmetrizes exploration with respect to the center.
+              - "opposite": enables full symmetry by always evaluating mirrored points.
+              - "quasi": applies randomized symmetry (less strict, more exploratory).
+              - None: disables any symmetric mirroring in the sampling process.
+    - **sampler**:
+              - "parametrization": uses the default sample() method of the parametrization, which samples uniformly within bounds or from a Gaussian.
+              - "gaussian": samples from a standard Gaussian distribution.
+              - "cauchy": uses a Cauchy distribution instead of Gaussian.
+    - **scale**: Scalar used to multiply suggested point values, or a string mode:
+              - "random": uses a randomized pattern for the scale.
+              - "auto": sigma = (1 + log(budget)) / (4 * log(dimension)); adjusts scale based on problem size.
+              - "autotune": sigma = sqrt(log(budget) / dimension); alternative auto-scaling based on budget and dimensionality.
+    - **recommendation\_rule**: Specifies how the final recommendation is chosen.
+              - "average_of_best": returns the average of top-performing candidates.
+              - "pessimistic": selects the pessimistic best (default);
+              - "average_of_exp_best": uses an exponential moving average of the best points.
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_samplingsearch
+
+    .. code-block::
+
+        "nevergrad_samplingsearch"
+
+    Minimize a scalar function using SamplingSearch.
+    
+    This is a one-shot optimization method, but better than random search by ensuring more uniformity.
+
+    - **sampler**: Choice of the low-discrepancy sampler used for initial points.
+              - "Halton": deterministic, well-spaced sequences
+              - "Hammersley": similar to Halton but more uniform in low dimension
+              - "LHS": Latin Hypercube Sampling; ensures coverage along each axis
+    - **scrambled**:
+      If True,  Adds scrambling to the search; much better in high dimension and rarely worse than the
+      original search.
+    - **middle\_point**:
+      If True, the first suggested point is the zero vector. Useful for initializing at the center of the
+      search space.
+    - **cauchy**:
+      If True, uses the inverse Cauchy distribution instead of Gaussian when projecting samples to real-
+      valued space (especially when no box bounds exist).
+    - **scale**: A float multiplier or "random".
+              - float: directly scales all generated points
+              - "random": uses a randomized scaling pattern for increased diversity
+    - **rescaled**: If True or a specific mode, rescales the sampling pattern.
+              - Ensures coverage of boundaries and may apply adaptive scaling
+              - Useful when original scale is too narrow or biased
+    - **recommendation\_rule**: How the final recommendation is chosen.
+              - "average_of_best": mean of the best-performing points
+              - "pessimistic": selects the point with best worst-case value (default)
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided. Notes
+      -----
+      - Halton is a low quality sampling method when the dimension is high; it is usually better to use Halton with scrambling.
+      - When the budget is known in advance, it is also better to replace Halton by Hammersley.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_NGOpt
+
+    .. code-block::
+
+        "nevergrad_NGOpt"
+
+    Minimize a scalar function using a Meta Optimizer from Nevergrad. Each meta optimizer combines
+    multiples optimizers to solve a problem.
+
+    - **optimizer**: One of
+              - NGOpt
+              - NGOpt4
+              - NGOpt8
+              - NGOpt10
+              - NGOpt12
+              - NGOpt13
+              - NGOpt14
+              - NGOpt15
+              - NGOpt16
+              - NGOpt21
+              - NGOpt36
+              - NGOpt38
+              - NGOpt39
+              - NGOptRW
+              - NGOptF
+              - NGOptF2
+              - NGOptF3
+              - NGOptF5
+              - NgIoh2
+              - NgIoh3
+              - NgIoh4
+              - NgIoh5
+              - NgIoh6
+              - NgIoh7
+              - NgIoh8
+              - NgIoh9
+              - NgIoh10
+              - NgIoh11
+              - NgIoh12
+              - NgIoh13
+              - NgIoh14
+              - NgIoh15
+              - NgIoh16
+              - NgIoh17
+              - NgIoh18
+              - NgIoh19
+              - NgIoh20
+              - NgIoh21
+              - NgIoh12b
+              - NgIoh13b
+              - NgIoh14b
+              - NgIoh15b
+              - NgIohRW2
+              - NgIohTuned
+              - NgDS
+              - NgDS2
+              - NGDSRW
+              - NGO
+              - CSEC
+              - CSEC10
+              - CSEC11
+              - Wiz
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_meta
+
+    .. code-block::
+
+        "nevergrad_meta"
+
+    Minimize a scalar function using a Meta Optimizer from Nevergrad. Utilizes a combination of local
+    and global optimizers to find the best solution. Local optimizers like BFGS are wrappers over scipy
+    implementations. Each meta optimizer combines multiples optimizers to solve a problem.
+
+    - **optimizer**: One of
+              - MultiBFGSPlus
+              - LogMultiBFGSPlus
+              - SqrtMultiBFGSPlus
+              - MultiCobylaPlus
+              - MultiSQPPlus
+              - BFGSCMAPlus
+              - LogBFGSCMAPlus
+              - SqrtBFGSCMAPlus
+              - SQPCMAPlus
+              - LogSQPCMAPlus
+              - SqrtSQPCMAPlus
+              - MultiBFGS
+              - LogMultiBFGS
+              - SqrtMultiBFGS
+              - MultiCobyla
+              - ForceMultiCobyla
+              - MultiSQP
+              - BFGSCMA
+              - LogBFGSCMA
+              - SqrtBFGSCMA
+              - SQPCMA
+              - LogSQPCMA
+              - SqrtSQPCMA
+              - FSQPCMA
+              - F2SQPCMA
+              - F3SQPCMA
+              - MultiDiscrete
+              - CMandAS2
+              - CMandAS3
+              - MetaCMA
+              - CMA
+              - PCEDA
+              - MPCEDA
+              - MEDA
+              - NoisyBandit
+              - Shiwa
+              - Carola3
+    - **stopping\_maxfun**: Maximum number of function evaluations before termination.
+    - **n\_cores**: Number of cores to use for parallel function evaluation.
+    - **seed**: Seed for the random number generator for reproducibility.
+    - **sigma**:
+      Standard deviation for sampling initial population from N(0, σ²) in case bounds are not provided.
+```
+
+## Bayesian Optimization
+
+We wrap the
+[BayesianOptimization](https://github.com/bayesian-optimization/BayesianOptimization)
+package. To use it, you need to have
+[bayesian-optimization](https://pypi.org/project/bayesian-optimization/) installed.
+
+```{eval-rst}
+.. dropdown::  bayes_opt
+
+    .. code-block::
+
+        "bayes_opt"
+
+    Minimize a scalar function using Bayesian Optimization with Gaussian Processes.
+
+    This optimizer wraps the BayesianOptimization package (:cite:`Nogueira2014`), which 
+    implements Bayesian optimization using Gaussian processes to build probabilistic 
+    models of the objective function. Bayesian optimization is particularly effective 
+    for expensive black-box functions where gradient information is not available.
+
+    The algorithm requires finite bounds for all parameters.
+
+    The bayes_opt wrapper preserves the default parameter values from the underlying 
+    BayesianOptimization package where appropriate.
+
+    bayes_opt supports the following options:
+
+    - **init_points** (PositiveInt): Number of random exploration points to evaluate before 
+      starting optimization. Default is 5.
+
+    - **n_iter** (PositiveInt): Number of Bayesian optimization iterations to perform after 
+      the initial random exploration. Default is 25.
+
+    - **verbose** (Literal[0, 1, 2]): Verbosity level from 0 (silent) to 2 (most verbose). Default is 0.
+
+    - **kappa** (NonNegativeFloat): Parameter to balance exploration versus exploitation trade-off 
+      for the Upper Confidence Bound acquisition function. Higher values mean more exploration. 
+      This parameter is only used if the acquisition function is set to "ucb" or "upper_confidence_bound" 
+      and when a configured instance of an AcquisitionFunction object is not passed. Default is 2.576.
+
+    - **xi** (PositiveFloat): Parameter to balance exploration versus exploitation trade-off 
+      for the Expected Improvement or Probability of Improvement acquisition functions. 
+      Higher values mean more exploration. This parameter is only used if the acquisition function 
+      is set to "ei", "expected_improvement", "poi", or "probability_of_improvement" 
+      and when a configured instance of an AcquisitionFunction object is not passed. Default is 0.01.
+
+    - **exploration_decay** (float | None): Rate at which exploration decays over time.
+      Default is None (no decay).
+
+    - **exploration_decay_delay** (NonNegativeInt | None): Delay for decay. If None, 
+      decay is applied from the start. Default is None.
+
+    - **random_state** (int | None): Random seed for reproducible results. Default is None.
+
+    - **acquisition_function** (str | AcquisitionFunction | Type[AcquisitionFunction] | None): Strategy for selecting 
+      the next evaluation point. Options include:
+      - "ucb" or "upper_confidence_bound": Upper Confidence Bound 
+      - "ei" or "expected_improvement": Expected Improvement 
+      - "poi" or "probability_of_improvement": Probability of Improvement
+      Default is None (uses package default).
+
+    - **allow_duplicate_points** (bool): Whether to allow re-evaluation of the same point.
       Default is False.
-    - **speed_quasi_opp_init** (bool): Whether to use quasi-opposition initialization
-      for speed. Default is False.
-    - **special_speed_quasi_opp_init** (bool): Whether to use special quasi-opposition
-      initialization for speed. Default is False.
+
+    - **enable_sdr** (bool): Enable Sequential Domain Reduction, which progressively 
+      narrows the search space around promising regions. Default is False.
+
+    - **sdr_gamma_osc** (float): Oscillation parameter for SDR. Default is 0.7.
+
+    - **sdr_gamma_pan** (float): Panning parameter for SDR. Default is 1.0.
+
+    - **sdr_eta** (float): Zooming parameter for SDR. Default is 0.9.
+
+    - **sdr_minimum_window** (NonNegativeFloat): Minimum window size for SDR. Default is 0.0.
+
+    - **alpha** (float): Noise parameter for the Gaussian Process. Default is 1e-6.
+
+    - **n_restarts** (int): Number of times to restart the optimizer. Default is 1.
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_oneplusone
+
+    .. code-block::
+
+        "nevergrad_oneplusone"
+
+    Minimize a scalar function using the One Plus One Evolutionary algorithm from Nevergrad.
+    
+    THe One Plus One evolutionary algorithm iterates to find a set of parameters that minimizes the loss
+    function. It does this by perturbing, or mutating, the parameters from the last iteration (the
+    parent). If the new (child) parameters yield a better result, then the child becomes the new parent
+    whose parameters are perturbed, perhaps more aggressively. If the parent yields a better result, it
+    remains the parent and the next perturbation is less aggressive. Originally proposed by
+    :cite:`Rechenberg1973`. The implementation in Nevergrad is based on the one-fifth adaptation rule,
+    going back to :cite:`Schumer1968.
+
+    - **noise\_handling**: Method for handling the noise, can be
+          - "random": A random point is reevaluated regularly using the one-fifth adaptation rule.
+          - "optimistic": The best optimistic point is reevaluated regularly, embracing optimism in the face of uncertainty.
+          - A float coefficient can be provided to tune the regularity of these reevaluations (default is 0.05). Eg: with 0.05, each evaluation has a 5% chance (i.e., 1 in 20) of being repeated (i.e., the same candidate solution is reevaluated to better estimate its performance). (Default: `None`).
+    - **n\_cores**: Number of cores to use.
+
+    - **stopping.maxfun**: Maximum number of function evaluations.
+    - **mutation**: Type of mutation to apply. Available options are (Default: `"gaussian"`).
+          - "gaussian": Standard mutation by adding a Gaussian random variable (with progressive widening) to the best pessimistic point.
+          - "cauchy": Same as Gaussian but using a Cauchy distribution.
+          - "discrete": Mutates a randomly drawn variable (mutation occurs with probability 1/d in d dimensions, hence ~1 variable per mutation).
+          - "discreteBSO": Follows brainstorm optimization by gradually decreasing mutation rate from 1 to 1/d.
+          - "fastga": Fast Genetic Algorithm mutations from the current best.
+          - "doublefastga": Double-FastGA mutations from the current best :cite:`doerr2017`.
+          - "rls": Randomized Local Search — mutates one and only one variable.
+          - "portfolio": Random number of mutated bits, known as uniform mixing :cite:`dang2016`.
+          - "lengler": Mutation rate is a function of dimension and iteration index.
+          - "lengler{2|3|half|fourth}": Variants of the Lengler mutation rate adaptation.
+    - **sparse**: Whether to apply random mutations that set variables to zero. Default is `False`.
+    - **smoother**: Whether to suggest smooth mutations. Default is `False`.
+    - **annealing**:
+      Annealing schedule to apply to mutation amplitude or temperature-based control. Options are:
+          - "none": No annealing is applied.
+          - "Exp0.9": Exponential decay with rate 0.9.
+          - "Exp0.99": Exponential decay with rate 0.99.
+          - "Exp0.9Auto": Exponential decay with rate 0.9, auto-scaled based on problem horizon.
+          - "Lin100.0": Linear decay from 1 to 0 over 100 iterations.
+          - "Lin1.0": Linear decay from 1 to 0 over 1 iteration.
+          - "LinAuto": Linearly decaying annealing automatically scaled to the problem horizon. Default is `"none"`.
+    - **super\_radii**:
+      Whether to apply extended radii beyond standard bounds for candidate generation, enabling broader
+      exploration. Default is `False`.
+    - **roulette\_size**:
+      Size of the roulette wheel used for selection in the evolutionary process. Affects the sampling
+      diversity from past candidates. (Default: `64`)
+    - **antismooth**:
+      Degree of anti-smoothing applied to prevent premature convergence in smooth landscapes. This alters
+      the landscape by penalizing overly smooth improvements. (Default: `4`)
+    - **crossover**: Whether to include a genetic crossover step every other iteration. Default is `False`.
+    - **crossover\_type**:
+      Method used for genetic crossover between individuals in the population. Available options (Default: `"none"`):
+          - "none": No crossover is applied.
+          - "rand": Randomized selection of crossover point.
+          - "max": Crossover at the point with maximum fitness gain.
+          - "min": Crossover at the point with minimum fitness gain.
+          - "onepoint": One-point crossover, splitting the genome at a single random point.
+          - "twopoint": Two-point crossover, splitting the genome at two points and exchanging the middle section.
+    - **tabu\_length**:
+      Length of the tabu list used to prevent revisiting recently evaluated candidates in local search
+      strategies. Helps in escaping local minima. (Default: `1000`)
+    - **rotation**:
+      Whether to apply rotational transformations to the search space, promoting invariance to axis-
+      aligned structures and enhancing search performance in rotated coordinate systems. (Default:
+      `False`)
+    - **seed**: Seed for the random number generator for reproducibility.
 ```
 
 ## References

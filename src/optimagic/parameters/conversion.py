@@ -36,8 +36,7 @@ def get_converter(
     Args:
         params (pytree): The user provided parameters.
         constraints (list): The user provided constraints.
-        lower_bounds (pytree): The user provided lower_bounds
-        upper_bounds (pytree): The user provided upper bounds
+        bounds (Bounds): The user provided bounds.
         func_eval (float or pytree): An evaluation of ``func`` at ``params``.
             Used to flatten the derivative output.
         solver_type: Used to determine how the derivative output has to be
@@ -46,8 +45,6 @@ def get_converter(
             performed.
         derivative_eval (dict, pytree or None): Evaluation of the derivative of
             func at params. Used for consistency checks.
-        soft_lower_bounds (pytree): As lower_bounds
-        soft_upper_bounds (pytree): As upper_bounds
         add_soft_bounds (bool): Whether soft bounds should be added to the
             internal_params
 
@@ -182,12 +179,12 @@ def _get_fast_path_converter(params, bounds, solver_type):
     )
 
     if bounds is None or bounds.lower is None:
-        lower_bounds = np.full(len(params), -np.inf)
+        lower_bounds = None
     else:
         lower_bounds = bounds.lower.astype(float)
 
     if bounds is None or bounds.upper is None:
-        upper_bounds = np.full(len(params), np.inf)
+        upper_bounds = None
     else:
         upper_bounds = bounds.upper.astype(float)
 

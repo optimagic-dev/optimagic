@@ -35,7 +35,7 @@ The following arguments are not supported as part of ``algo_options``:
 
 import functools
 from dataclasses import dataclass
-from typing import Any, Callable, List, Literal, Tuple
+from typing import Any, Callable, List, Literal, SupportsInt, Tuple
 
 import numpy as np
 import scipy
@@ -91,8 +91,10 @@ from optimagic.utilities import calculate_trustregion_initial_radius
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -136,8 +138,10 @@ class ScipyLBFGSB(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -176,8 +180,10 @@ class ScipySLSQP(Algorithm):
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -221,8 +227,10 @@ class ScipyNelderMead(Algorithm):
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -263,8 +271,10 @@ class ScipyPowell(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -305,8 +315,10 @@ class ScipyBFGS(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -341,8 +353,10 @@ class ScipyConjugateGradient(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -379,8 +393,10 @@ class ScipyNewtonCG(Algorithm):
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -431,8 +447,10 @@ class ScipyCOBYLA(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -454,12 +472,15 @@ class ScipyLSTRF(Algorithm):
         else:
             tr_solver_options = self.tr_solver_options
 
+        lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
+        upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
             # This optimizer does not work with fun_and_jac
             jac=problem.jac,
-            bounds=(problem.bounds.lower, problem.bounds.upper),
+            bounds=(lower_bounds, upper_bounds),
             method="trf",
             max_nfev=self.stopping_maxfun,
             ftol=self.convergence_ftol_rel,
@@ -479,8 +500,10 @@ class ScipyLSTRF(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -502,12 +525,15 @@ class ScipyLSDogbox(Algorithm):
         else:
             tr_solver_options = self.tr_solver_options
 
+        lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
+        upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
             # This optimizer does not work with fun_and_jac
             jac=problem.jac,
-            bounds=(problem.bounds.lower, problem.bounds.upper),
+            bounds=(lower_bounds, upper_bounds),
             method="dogbox",
             max_nfev=self.stopping_maxfun,
             ftol=self.convergence_ftol_rel,
@@ -527,8 +553,10 @@ class ScipyLSDogbox(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -565,8 +593,10 @@ class ScipyLSLM(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -622,8 +652,10 @@ class ScipyTruncatedNewton(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -677,10 +709,10 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         fun=scipy_res.fun,
         success=bool(scipy_res.success),
         message=str(scipy_res.message),
-        n_fun_evals=scipy_res.get("nfev"),
-        n_jac_evals=scipy_res.get("njev"),
-        n_hess_evals=scipy_res.get("nhev"),
-        n_iterations=scipy_res.get("nit"),
+        n_fun_evals=_int_if_not_none(scipy_res.get("nfev")),
+        n_jac_evals=_int_if_not_none(scipy_res.get("njev")),
+        n_hess_evals=_int_if_not_none(scipy_res.get("nhev")),
+        n_iterations=_int_if_not_none(scipy_res.get("nit")),
         # TODO: Pass on more things once we can convert them to external
         status=None,
         jac=None,
@@ -691,6 +723,12 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         history=None,
     )
     return res
+
+
+def _int_if_not_none(value: SupportsInt | None) -> int | None:
+    if value is None:
+        return None
+    return int(value)
 
 
 def _get_scipy_constraints(constraints):
@@ -720,8 +758,10 @@ def _internal_to_scipy_constraint(c):
     is_global=True,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -800,8 +840,10 @@ class ScipyBasinhopping(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=True,
@@ -849,8 +891,10 @@ class ScipyBrute(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=True,
@@ -925,8 +969,10 @@ class ScipyDifferentialEvolution(Algorithm):
     is_global=True,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -1031,8 +1077,10 @@ class ScipySHGO(Algorithm):
     is_global=True,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1111,8 +1159,10 @@ class ScipyDualAnnealing(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1160,8 +1210,13 @@ def _get_workers(n_cores, batch_evaluator):
     return out
 
 
-def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds:
-    return ScipyBounds(lb=bounds.lower, ub=bounds.upper)
+def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds | None:
+    if bounds.lower is None and bounds.upper is None:
+        return None
+
+    lower = bounds.lower if bounds.lower is not None else -np.inf
+    upper = bounds.upper if bounds.upper is not None else np.inf
+    return ScipyBounds(lb=lower, ub=upper)
 
 
 def process_scipy_result_old(scipy_results_obj):

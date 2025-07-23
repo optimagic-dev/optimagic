@@ -127,6 +127,54 @@ jobs:
         run: |
           micromamba activate optimagic
           pytest -m "not slow and not jax"
+  run-tests-with-old-plotly:
+    name: Run tests for ubuntu-latest on 3.10 with plotly < 6 and kaleido < 0.3
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: create build environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: ./.tools/envs/testenv-plotly.yml
+          cache-environment: true
+          create-args: |
+            python=3.10
+      - name: run pytest
+        shell: bash -l {0}
+        run: |
+          micromamba activate optimagic
+          pytest -m "not slow and not jax"
+  run-tests-nevergrad:
+    # This job is for running test related to nevergrad with pinned version of
+    # bayesian_optimization == 1.4.0
+    name: Run tests for ubuntu-latest on ${{ matrix.python-version }} bayes_opt==1.4.0
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+    steps:
+      - uses: actions/checkout@v4
+      - name: create build environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: ./.tools/envs/testenv-nevergrad.yml
+          cache-environment: true
+          create-args: |
+            python=${{ matrix.python-version }}
+      - name: run pytest
+        shell: bash -l {0}
+        run: |
+          micromamba activate optimagic
+          pytest tests/optimagic/optimizers/test_nevergrad.py
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest

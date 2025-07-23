@@ -35,8 +35,10 @@ except ImportError:
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -150,10 +152,15 @@ def tao_pounders(
         raise ValueError("The initial trust region radius must be > 0.")
     tao.setInitialTrustRegionRadius(trustregion_initial_radius)
 
-    # Add bounds.
-    lower_bounds = _initialise_petsc_array(lower_bounds)
-    upper_bounds = _initialise_petsc_array(upper_bounds)
-    tao.setVariableBounds(lower_bounds, upper_bounds)
+    # Add bounds if provided.
+    if lower_bounds is not None or upper_bounds is not None:
+        if lower_bounds is None:
+            lower_bounds = np.full(len(x), -np.inf)
+        if upper_bounds is None:
+            upper_bounds = np.full(len(x), np.inf)
+        lower_bounds = _initialise_petsc_array(lower_bounds)
+        upper_bounds = _initialise_petsc_array(upper_bounds)
+        tao.setVariableBounds(lower_bounds, upper_bounds)
 
     # Put the starting values into the container and pass them to the optimizer.
     tao.setInitial(_x)
@@ -195,7 +202,8 @@ def tao_pounders(
     results = _process_pounders_results(residuals_out, tao)
 
     # Destroy petsc objects for memory reasons.
-    for obj in [tao, _x, residuals_out, lower_bounds, upper_bounds]:
+    petsc_bounds = [b for b in (lower_bounds, upper_bounds) if b is not None]
+    for obj in [tao, _x, residuals_out, *petsc_bounds]:
         obj.destroy()
 
     return results

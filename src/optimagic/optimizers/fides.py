@@ -40,8 +40,10 @@ if IS_FIDES_INSTALLED:
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -180,6 +182,9 @@ def fides_internal(
     }
 
     hessian_instance = _create_hessian_updater_from_user_input(hessian_update_strategy)
+
+    lower_bounds = np.full(len(x), -np.inf) if lower_bounds is None else lower_bounds
+    upper_bounds = np.full(len(x), np.inf) if upper_bounds is None else upper_bounds
 
     opt = Optimizer(
         fun=fun_and_jac,

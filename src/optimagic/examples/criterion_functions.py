@@ -105,16 +105,11 @@ def rosenbrock_scalar(params: PyTree) -> float:
 def rosenbrock_gradient(params: PyTree) -> PyTree:
     """Calculate gradient of rosenbrock function."""
     x = _get_x(params)
-    l1 = np.delete(x, [-1])
-    l1 = np.append(l1, 0)
-    l2 = np.insert(x, 0, 0)
-    l2 = np.delete(l2, [1])
-    l3 = np.insert(x, 0, 0)
-    l3 = np.delete(l3, [-1])
-    l4 = np.delete(x, [0])
-    l4 = np.append(l4, 0)
-    l5 = np.full((len(x) - 1), 2)
-    l5 = np.append(l5, 0)  # type: ignore[assignment]
+    l1 = np.append(np.delete(x, [-1]), 0)
+    l2 = np.delete(np.insert(x, 0, 0), [1])
+    l3 = np.delete(np.insert(x, 0, 0), [-1])
+    l4 = np.append(np.delete(x, [0]), 0)
+    l5 = np.append(np.full((len(x) - 1), 2), 0)
     flat = 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
     return _unflatten_gradient(flat, params)
 
