@@ -7,15 +7,35 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 
 ## 0.5.2
 
-This minor release includes several bug fixes and small improvements. Many contributions
-in this release were made by Google Summer of Code (GSoC) 2025 applicants, with
-@gauravmanmode and @spline2hg being the accepted contributors.
+This minor release adds support for two additional optimizer libraries:
 
+- [Nevergrad](https://github.com/facebookresearch/nevergrad): A library for
+  gradient-free optimization developed by Facebook Research.
+- [Bayesian
+  Optimization](https://github.com/bayesian-optimization/BayesianOptimization): A
+  library for constrained bayesian global optimization with Gaussian processes.
+
+In addition, this release includes several bug fixes and improvements to the
+documentation. Many contributions in this release were made by Google Summer of Code
+(GSoC) 2025 applicants, with @gauravmanmode and @spline2hg being the accepted
+contributors.
+
+- {gh}`620` Uses interactive plotly figures in documentation ({ghuser}`timmens`).
+- {gh}`618` Improves bounds processing when no bounds are specified ({ghuser}`timmens`).
+- {gh}`615` Adds pre-commit hook that checks mypy version consistency ({ghuser}`timmens`).
+- {gh}`613` Exposes converter functionality ({ghuser}`spline2hg`).
+- {gh}`612` Fixes results processing to work with new cobyla optimizer ({ghuser}`janosg`).
+- {gh}`610` Adds `needs_bounds` and `supports_infinite_bounds` fields to algorithm info ({ghuser}`gauravmanmode`).
+- {gh}`608` Adds support for plotly >= 6 ({ghuser}`hmgaudecker`, {ghuser}`timmens`).
+- {gh}`607` Returns `run_explorations` results in a dataclass ({ghuser}`r3kste`).
 - {gh}`605` Enhances batch evaluator checking and processing, introduces the internal
   `BatchEvaluatorLiteral` literal, and updates CHANGES.md ({ghuser}`janosg`,
   {ghuser}`timmens`).
+- {gh}`602` Adds optimizer wrapper for bayesian-optimization package ({ghuser}`spline2hg`).
+- {gh}`601` Updates pre-commit hooks and fixes mypy issues ({ghuser}`janosg`).
 - {gh}`598` Fixes and adds links to GitHub in the documentation ({ghuser}`hamogu`).
 - {gh}`594` Refines newly added optimizer wrappers ({ghuser}`janosg`).
+- {gh}`591` Adds multiple optimizers from the nevergrad package ({ghuser}`gauravmanmode`).
 - {gh}`589` Rewrites the algorithm selection pre-commit hook in pure Python to address
   issues with bash scripts on Windows ({ghuser}`timmens`).
 - {gh}`586` and {gh}`592` Ensure the SciPy `disp` parameter is exposed for the following
@@ -31,6 +51,7 @@ in this release were made by Google Summer of Code (GSoC) 2025 applicants, with
 - {gh}`578` Integrates the `intersphinx-registry` package into the documentation for
   automatic linking to up-to-date external documentation
   ({ghuser}`Schefflera-Arboricola`).
+- {gh}`576` Wraps oneplusone optimizer from nevergrad ({ghuser}`gauravmanmode`, {ghuser}`gulshan-123`).
 - {gh}`572` and {gh}`573` Fix bugs in error handling for parameter selector processing
   and constraints checking ({ghuser}`hmgaudecker`).
 - {gh}`570` Adds a how-to guide for adding algorithms to optimagic and improves internal
@@ -44,6 +65,7 @@ in this release were made by Google Summer of Code (GSoC) 2025 applicants, with
   ({ghuser}`gauravmanmode`).
 - {gh}`552` Refactors and extends the `History` class, removing the internal
   `HistoryArrays` class ({ghuser}`timmens`).
+- {gh}`485` Adds bootstrap weights functionality ({ghuser}`alanlujan91`).
 
 
 ## 0.5.1
