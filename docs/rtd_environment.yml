@@ -4,16 +4,15 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.11
+  - python=3.12
   - typing-extensions
   - pip
   - setuptools_scm
   - toml
-  - sphinx
+  - sphinx>=8.2.3
   - sphinxcontrib-bibtex
   - sphinx-copybutton
   - sphinx-design
-  - sphinx-panels
   - ipython
   - ipython_genutils
   - myst-nb
@@ -31,7 +30,7 @@ dependencies:
   - annotated-types
   - pygmo>=2.19.0
   - pip:
-      - ../
+      - -e ../
       - Py-BOBYQA
       - DFO-LS
       - pandas-stubs  # dev, tests
