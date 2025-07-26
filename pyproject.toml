@@ -380,6 +380,7 @@ module = [
     "pdbp",
     "iminuit",
     "nevergrad",
+    "pygad",
     "yaml",
   ]
 ignore_missing_imports = true
