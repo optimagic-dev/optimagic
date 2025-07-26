@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import TYPE_CHECKING, Callable, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -19,7 +21,7 @@ from optimagic.typing import (
     PositiveInt,
 )
 
-if IS_TRANQUILO_INSTALLED:
+if TYPE_CHECKING:
     from tranquilo.options import (
         AcceptanceOptions,
         FilterOptions,
@@ -31,17 +33,6 @@ if IS_TRANQUILO_INSTALLED:
         SubsolverOptions,
         VarianceEstimatorOptions,
     )
-    from tranquilo.tranquilo import _tranquilo
-else:
-    AcceptanceOptions = Any
-    FilterOptions = Any
-    FitterOptions = Any
-    NoiseAdaptationOptions = Any
-    RadiusOptions = Any
-    SamplerOptions = Any
-    StagnationOptions = Any
-    SubsolverOptions = Any
-    VarianceEstimatorOptions = Any
 
 
 @mark.minimizer(
@@ -179,6 +170,8 @@ class Tranquilo(Algorithm):
                 "to be installed. You can install it with "
                 "'conda install -c conda-forge tranquilo'."
             )
+        from tranquilo.tranquilo import _tranquilo
+
         raw_res = _tranquilo(
             functype="scalar",
             criterion=problem.fun,
@@ -369,6 +362,8 @@ class TranquiloLS(Algorithm):
                 "to be installed. You can install it with "
                 "'conda install -c conda-forge tranquilo'."
             )
+        from tranquilo.tranquilo import _tranquilo
+
         raw_res = _tranquilo(
             functype="least_squares",
             criterion=problem.fun,

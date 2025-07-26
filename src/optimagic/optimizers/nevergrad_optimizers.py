@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -29,7 +29,7 @@ from optimagic.typing import (
     PositiveInt,
 )
 
-if IS_NEVERGRAD_INSTALLED:
+if TYPE_CHECKING:
     import nevergrad as ng
 
 
@@ -76,6 +76,8 @@ class NevergradPSO(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        import nevergrad as ng
 
         configured_optimizer = ng.optimizers.ConfPSO(
             transform=self.transform,
@@ -159,6 +161,8 @@ class NevergradCMAES(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        import nevergrad as ng
 
         cma_options = {
             "AdaptSigma": self.step_size_adaptive,
@@ -285,6 +289,8 @@ class NevergradOnePlusOne(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
+        import nevergrad as ng
+
         configured_optimizer = ng.optimizers.ParametrizedOnePlusOne(
             noise_handling=self.noise_handling,
             mutation=self.mutation,
@@ -363,6 +369,8 @@ class NevergradDifferentialEvolution(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
+        import nevergrad as ng
+
         configured_optimizer = ng.optimizers.DifferentialEvolution(
             scale=self.scale,
             recommendation=self.recommendation,
@@ -418,6 +426,8 @@ class NevergradBayesOptim(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
+        import nevergrad as ng
+
         configured_optimizer = ng.optimizers.BayesOptim(
             init_budget=self.init_budget,
             pca=self.pca,
@@ -470,6 +480,8 @@ class NevergradEMNA(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
+        import nevergrad as ng
+
         configured_optimizer = ng.optimizers.EMNA(
             isotropic=self.isotropic,
             naive=self.noise_handling,
@@ -518,6 +530,8 @@ class NevergradCGA(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
+        import nevergrad as ng
+
         configured_optimizer = ng.optimizers.cGA
 
         res = _nevergrad_internal(
@@ -560,6 +574,8 @@ class NevergradEDA(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        import nevergrad as ng
 
         configured_optimizer = ng.optimizers.EDA
 
@@ -605,6 +621,8 @@ class NevergradTBPSA(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        import nevergrad as ng
 
         configured_optimizer = ng.optimizers.ParametrizedTBPSA(
             naive=self.noise_handling,
@@ -657,6 +675,8 @@ class NevergradRandomSearch(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        import nevergrad as ng
 
         configured_optimizer = ng.optimizers.RandomSearchMaker(
             stupid=False,
@@ -714,6 +734,8 @@ class NevergradSamplingSearch(Algorithm):
     ) -> InternalOptimizeResult:
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
+
+        import nevergrad as ng
 
         configured_optimizer = ng.optimizers.SamplingSearch(
             sampler=self.sampler,
@@ -820,6 +842,8 @@ class NevergradNGOpt(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
+        import nevergrad as ng
+
         configured_optimizer = getattr(ng.optimizers, self.optimizer)
 
         res = _nevergrad_internal(
@@ -903,6 +927,8 @@ class NevergradMeta(Algorithm):
         if not IS_NEVERGRAD_INSTALLED:
             raise NotInstalledError(NEVERGRAD_NOT_INSTALLED_ERROR)
 
+        import nevergrad as ng
+
         configured_optimizer = getattr(ng.optimizers, self.optimizer)
 
         res = _nevergrad_internal(
@@ -947,6 +973,8 @@ def _nevergrad_internal(
         InternalOptimizeResult: Internal optimization result
 
     """
+
+    import nevergrad as ng
 
     param = ng.p.Array(
         init=x0,
