@@ -4771,6 +4771,8 @@ genetic algorithm optimizer. To use PyGAD, you need to have
     - **random_mutation_min_val** (float/list/array): Minimum value for random mutation. Only used with mutation_type="random". Default is -1.0.
     - **random_mutation_max_val** (float/list/array): Maximum value for random mutation. Only used with mutation_type="random". Default is 1.0.
     - **allow_duplicate_genes** (bool): Whether to allow duplicate gene values within a solution. Default is True.
+    - **gene_constraint** (list of callables or None): List of constraint functions for gene values. Each function takes (solution, values) and returns filtered values meeting constraints. Functions should have signature ``constraint_func(solution, values) -> list[float] | NDArray``. Use None for genes without constraints. Default is None.
+    - **sample_size** (int): Number of values to sample when finding unique values or enforcing gene constraints. Used when allow_duplicate_genes=False or when gene_constraint is specified. Default is 100.
     - **fitness_batch_size** (int): Number of solutions to evaluate in parallel batches. When None and n_cores > 1, automatically set to n_cores for optimal parallelization. Default is None.
     - **stop_criteria** (str/list): Early stopping criteria. Format: "reach_value" or "saturate_N". Default is None.
     - **n_cores** (int): Number of cores for parallel fitness evaluation. Default is 1.

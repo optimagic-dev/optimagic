@@ -16,6 +16,7 @@ from optimagic.optimization.internal_optimization_problem import (
 from optimagic.typing import (
     AggregationLevel,
     CrossoverFunction,
+    GeneConstraintFunction,
     MutationFunction,
     NonNegativeFloat,
     ParentSelectionFunction,
@@ -96,6 +97,9 @@ class Pygad(Algorithm):
     random_mutation_max_val: float | list[float] | NDArray[np.float64] = 1.0
 
     allow_duplicate_genes: bool = True
+
+    gene_constraint: list[GeneConstraintFunction | None] | None = None
+    sample_size: PositiveInt = 100
 
     fitness_batch_size: PositiveInt | None = None
     stop_criteria: str | list[str] | None = None
@@ -203,6 +207,8 @@ class Pygad(Algorithm):
             random_mutation_min_val=self.random_mutation_min_val,
             random_mutation_max_val=self.random_mutation_max_val,
             allow_duplicate_genes=self.allow_duplicate_genes,
+            gene_constraint=self.gene_constraint,
+            sample_size=self.sample_size,
             stop_criteria=self.stop_criteria,
             parallel_processing=None,
             random_seed=self.random_seed,

@@ -216,3 +216,11 @@ class MutationFunction(Protocol):
     def __call__(
         self, offspring: NDArray[np.float64], ga_instance: Any
     ) -> NDArray[np.float64]: ...
+
+
+class GeneConstraintFunction(Protocol):
+    """Protocol for user-defined gene constraint functions."""
+
+    def __call__(
+        self, solution: NDArray[np.float64], values: list[float] | NDArray[np.float64]
+    ) -> list[float] | NDArray[np.float64]: ...
