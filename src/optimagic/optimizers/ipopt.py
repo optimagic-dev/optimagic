@@ -30,9 +30,6 @@ from optimagic.typing import (
     YesNoBool,
 )
 
-if IS_CYIPOPT_INSTALLED:
-    import cyipopt
-
 
 @mark.minimizer(
     name="ipopt",
@@ -349,11 +346,14 @@ class Ipopt(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if not self.algo_info.is_available:
+        if not IS_CYIPOPT_INSTALLED:
             raise NotInstalledError(
-                "The 'ipopt' algorithm requires the cyipopt package to be installed. "
-                "You can it with: `conda install -c conda-forge cyipopt`."
+                "The 'ipopt' algorithm requires the cyipopt package to be installed.\n"
+                "You can install it with: `conda install -c conda-forge cyipopt`."
             )
+
+        import cyipopt
+
         if self.acceptable_tol <= self.convergence_ftol_rel:
             raise ValueError(
                 "The acceptable tolerance must be larger than the desired tolerance."
