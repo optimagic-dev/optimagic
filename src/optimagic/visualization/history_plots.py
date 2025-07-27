@@ -16,13 +16,13 @@ from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import IterationHistory, PyTree
 
+OptimizeResultOrPath = OptimizeResult | str | Path
+
 
 def criterion_plot(
-    results: OptimizeResult
-    | str
-    | Path
-    | list[OptimizeResult | str | Path]
-    | dict[str, OptimizeResult | str | Path],
+    results: OptimizeResultOrPath
+    | list[OptimizeResultOrPath]
+    | dict[str, OptimizeResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
     template: str = PLOTLY_TEMPLATE,
@@ -90,11 +90,9 @@ def criterion_plot(
 
 
 def _harmonize_inputs_to_dict(
-    results: OptimizeResult
-    | str
-    | Path
-    | list[OptimizeResult | str | Path]
-    | dict[str, OptimizeResult | str | Path],
+    results: OptimizeResultOrPath
+    | list[OptimizeResultOrPath]
+    | dict[str, OptimizeResultOrPath],
     names: list[str] | str | None,
 ) -> dict[str, OptimizeResult | str | Path]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
@@ -118,7 +116,7 @@ def _harmonize_inputs_to_dict(
     # unlabeled iterable of results
     else:
         if names is None:
-            names = list(str(i) for i in range(len(results)))
+            names = [str(i) for i in range(len(results))]
         results_dict = dict(zip(names, results, strict=False))
 
     # convert keys to strings
