@@ -6,8 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from optimagic import mark
-
-# from optimagic.config import
+from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
     CONVERGENCE_FTOL_REL,
@@ -23,11 +22,6 @@ from optimagic.typing import (
     PositiveInt,
 )
 
-try:
-    import gradient_free_optimizers as gfo  # todo
-except ImportError:
-    pass
-
 if TYPE_CHECKING:
     from gradient_free_optimizers.optimizers.base_optimizer import BaseOptimizer
 
@@ -35,7 +29,7 @@ if TYPE_CHECKING:
 @mark.minimizer(
     name="gfo_hillclimbing",  # todo
     solver_type=AggregationLevel.SCALAR,
-    is_available=True,  # todo
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
     is_global=False,
     needs_jac=False,
     needs_hess=False,
@@ -48,26 +42,84 @@ if TYPE_CHECKING:
     disable_history=False,
 )
 @dataclass(frozen=True)
-class HillClimbing(Algorithm):
+class GFOHillClimbing(Algorithm):
+    """Minimize a scalar function using the HillClimbing algorithm.
+
+    This algorithm is a Python implementation of the HillClimbing algorithm throught the
+    gradient_free_optimizers package.
+
+    Hill climbing is a local search algorithm suited for exploring combinatorial search
+    spaces.
+
+    It starts at an initial point, which is often chosen randomly and continues to move
+    to positions within its neighbourhood with a better solution. It has no method
+    against getting stuck in local optima.
+
+    """
+
     step_size = 0.03  # todo
+    """The step-size of the hill climbing algorithm.If step_size is too large the newly
+    selected positions will be at the edge of the search space.
+
+    If its value is very low it might not find new positions.
+
+    """
+
     sampling: Literal["normal", "laplace", "logistic", "gumbel"] = "normal"
+    """Sampling method the algorithm samples from."""
+
     n_neighbours: PositiveInt = 3  # todo name
+    """The number of positions the algorithm explores from its current postion before
+    setting its current position to the best of those neighbour positions.
+
+    If the value of n_neighbours is large the hill-climbing-based algorithm will take a
+    lot of time to choose the next position to move to, but the choice will probably be
+    a good one. It might be a prudent approach to increase n_neighbours of the search-
+    space has a lot of dimensions, because there are more possible directions to move
+    to.
+
+    """
+
     n_grid_points: PositiveInt = 200  # todo
-    stopping_maxiter: PositiveInt = 100  # todo what to set
+    """Number of grid points in each dimension."""
+
+    stopping_maxiter: PositiveInt = 10000  # todo what to set
+    """Maximum number of iterations."""
+
     stopping_maxtime: NonNegativeFloat | None = None  # todo check type
-    stopping_funval: float | None = 0  # todo name
+    """Maximum time in seconds before termination."""
+
+    stopping_funval: float | None = 0  # todo name defn
+    """"Stop the optimization if the objective function is more than this value."""
+
     convergence_iter_noimprove: PositiveInt = 1000  # todo name
+    """Number of iterations without improvement before termination."""
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Converge if the absolute change in the objective function is less than this
+    value."""
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL  # todo
+    """Converge if the relative change in the objective function is less than this
+    value."""
+
     memory: bool = True  # todo name
+    """Whether to store evaluated param and function values in a dictionary for
+    lookup."""
+
     verbosity: Literal["progress_bar", "print_results", "print_times"] | bool = (
         False  # todo
     )
+    """Determines what part of the optimization information will be printed."""
+
     seed: int | None = None
+    """Random seed for reproducibility."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
         opt = gfo.HillClimbingOptimizer
         optimizer = partial(
             opt,
@@ -110,7 +162,12 @@ def _gfo_internal(
     verbosity: Literal["progress_bar", "print_results", "print_times"] | bool,  # todo
     seed: int | None,
 ) -> InternalOptimizeResult:
-    """Internal helper function."""
+    """Internal helper function.
+
+    Define the search space and inital params, define the objective function and run
+    optimization.
+
+    """
 
     # set early stopping criterion
     early_stopping = {
@@ -151,7 +208,15 @@ def _gfo_internal(
 def _get_search_space_gfo(
     bounds: InternalBounds, n_grid_points: PositiveInt
 ) -> dict[str, NDArray[np.float64]]:
-    """Create search space."""
+    """Create search space.
+
+    Args:
+        bounds: Internal Bounds
+        n_grid_points: number of grid points in each dimension
+    Returns:
+    dict: search_space dictionary
+
+    """
     search_space = {}
     for i, (lower, upper) in enumerate(zip(bounds.lower, bounds.upper, strict=False)):  # type:ignore
         step = (upper - lower) / n_grid_points
@@ -160,7 +225,15 @@ def _get_search_space_gfo(
 
 
 def _process_result_gfo(opt: "BaseOptimizer") -> InternalOptimizeResult:
-    """Process result."""
+    """Process result.
+
+    Args:
+        opt: Optimizer instance after optimization run is complete
+
+    Returns:
+        InternalOptimizeResult: Internal optimization result.
+
+    """
 
     res = InternalOptimizeResult(
         x=np.array(opt.best_value),
@@ -176,17 +249,32 @@ def _process_result_gfo(opt: "BaseOptimizer") -> InternalOptimizeResult:
 
 
 def _get_gfo_constraints() -> list[Any]:
+    """Process constraints."""
     return []
 
 
 def _get_initialize(x0: NDArray[np.float64]) -> dict[str, Any]:
-    """Set initial params x0 or population."""
+    """Set initial params x0 or population.
+    Args:
+    x0: initial param
+
+    Returns:
+    dict: initialize dictionary with initial parameters set
+    """
     init = _value2para(x0)
     initialize = {"warm_start": [init]}
     return initialize
 
 
 def _value2para(x: NDArray[np.float64]) -> dict[str, float]:
+    """
+    Convert values to dict
+    Args:
+        x: Array of parameter values
+
+    Returns:
+        dict: Dictionary of parameter values with key-value pair as { x{i} : x[i]}
+    """
     para = {}
     for i in range(len(x)):
         para[f"x{i}"] = x[i]

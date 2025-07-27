@@ -4699,6 +4699,7 @@ package. To use it, you need to have
       aligned structures and enhancing search performance in rotated coordinate systems. (Default:
       `False`)
     - **seed**: Seed for the random number generator for reproducibility.
+
 ```
 
 ## References

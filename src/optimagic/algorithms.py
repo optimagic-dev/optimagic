@@ -15,7 +15,7 @@ from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimizers.bayesian_optimizer import BayesOpt
 from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
-from optimagic.optimizers.gradient_free_optimizers import HillClimbing
+from optimagic.optimizers.gradient_free_optimizers import GFOHillClimbing
 from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
 from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
@@ -230,7 +230,7 @@ class GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelecti
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
 
 
@@ -549,7 +549,7 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
 
     @property
@@ -559,7 +559,7 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -610,7 +610,7 @@ class BoundedGradientFreeLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
 
@@ -641,7 +641,7 @@ class GradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -837,7 +837,7 @@ class GlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -1298,7 +1298,7 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1334,7 +1334,7 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
 
@@ -1349,7 +1349,7 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1416,7 +1416,7 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1443,7 +1443,7 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1577,7 +1577,7 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -1885,7 +1885,7 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -1909,7 +1909,7 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -1992,7 +1992,7 @@ class BoundedLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class LocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -2044,7 +2044,7 @@ class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -2429,7 +2429,7 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -2471,7 +2471,7 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2551,7 +2551,7 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -2583,7 +2583,7 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2932,7 +2932,7 @@ class GlobalParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -2988,7 +2988,7 @@ class BoundedLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -3017,7 +3017,7 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3129,7 +3129,7 @@ class LocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -3171,7 +3171,7 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
 class BoundedScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3338,7 +3338,7 @@ class BoundedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -3521,7 +3521,7 @@ class GradientBasedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3680,7 +3680,7 @@ class GlobalAlgorithms(AlgoSelection):
 class LocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3753,7 +3753,7 @@ class LocalAlgorithms(AlgoSelection):
 class BoundedAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3858,7 +3858,7 @@ class BoundedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class NonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -3905,7 +3905,7 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
 class ScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -4108,7 +4108,7 @@ class Algorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
-    gfo_hillclimbing: Type[HillClimbing] = HillClimbing
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
