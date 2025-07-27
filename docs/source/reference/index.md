@@ -218,4 +218,5 @@ maxdepth: 1
 utilities
 algo_options
 batch_evaluators
+typing
 ```
