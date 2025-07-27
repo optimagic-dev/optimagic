@@ -83,10 +83,20 @@ def get_scale_converter(
     else:
         _soft_upper = None
 
+    if internal_params.lower_bounds is not None:
+        _lower_bounds = converter.params_to_internal(internal_params.lower_bounds)
+    else:
+        _lower_bounds = None
+
+    if internal_params.upper_bounds is not None:
+        _upper_bounds = converter.params_to_internal(internal_params.upper_bounds)
+    else:
+        _upper_bounds = None
+
     params = InternalParams(
         values=converter.params_to_internal(internal_params.values),
-        lower_bounds=converter.params_to_internal(internal_params.lower_bounds),
-        upper_bounds=converter.params_to_internal(internal_params.upper_bounds),
+        lower_bounds=_lower_bounds,
+        upper_bounds=_upper_bounds,
         names=internal_params.names,
         soft_lower_bounds=_soft_lower,
         soft_upper_bounds=_soft_upper,
@@ -107,6 +117,15 @@ def calculate_scaling_factor_and_offset(
         raw_factor = np.clip(np.abs(x), options.clipping_value, np.inf)
         scaling_offset = None
     elif options.method == "bounds":
+        if (
+            lower_bounds is None
+            or np.isinf(lower_bounds).any()
+            or upper_bounds is None
+            or np.isinf(upper_bounds).any()
+        ):
+            raise ValueError(
+                "To use the 'bounds' scaling method, all bounds must be finite."
+            )
         raw_factor = upper_bounds - lower_bounds
         scaling_offset = lower_bounds
     else:
