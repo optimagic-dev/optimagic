@@ -67,9 +67,9 @@ def bntr(
         x_candidate (np.ndarray): Initial guess for the solution of the subproblem.
         conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient methods are:
-                - "cg"
-                - "steihaug_toint"
-                - "trsbox" (default)
+            - "cg"
+            - "steihaug_toint"
+            - "trsbox" (default)
         maxiter (int): Maximum number of iterations. If reached, terminate.
         maxiter_gradient_descent (int): Maximum number of steepest descent iterations
             to perform when the trust-region subsolver BNTR is used.
