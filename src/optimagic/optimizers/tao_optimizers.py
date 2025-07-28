@@ -22,11 +22,6 @@ from optimagic.optimization.internal_optimization_problem import (
 from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 from optimagic.utilities import calculate_trustregion_initial_radius
 
-try:
-    from petsc4py import PETSc
-except ImportError:
-    pass
-
 
 @mark.minimizer(
     name="tao_pounders",
@@ -110,9 +105,10 @@ def tao_pounders(
         raise NotInstalledError(
             "The 'tao_pounders' algorithm requires the petsc4py package to be "
             "installed. If you are using Linux or MacOS, install the package with "
-            "'conda install -c conda-forge petsc4py. The package is not available on "
+            "'conda install -c conda-forge petsc4py'. The package is not available on "
             "Windows. Windows users can use optimagics 'pounders' algorithm instead."
         )
+    from petsc4py import PETSc
 
     first_eval = criterion(x)
     n_errors = len(first_eval)
@@ -218,6 +214,8 @@ def _initialise_petsc_array(len_or_array):
             array of equal length and fill in the values.
 
     """
+    from petsc4py import PETSc
+
     length = len_or_array if isinstance(len_or_array, int) else len(len_or_array)
 
     array = PETSc.Vec().create(PETSc.COMM_WORLD)
