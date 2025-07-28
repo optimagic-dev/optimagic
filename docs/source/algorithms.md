@@ -4702,6 +4702,46 @@ package. To use it, you need to have
 
 ```
 
+## Gradient Free Optimizers
+
+Optimizers from the
+[gradient_free_optimizers](https://github.com/SimonBlanke/Gradient-Free-Optimizers?tab=readme-ov-file)
+package are available in optimagic. To use it, you need to have
+[gradient_free_optimizers](https://pypi.org/project/gradient_free_optimizers) installed.
+
+```{eval-rst}
+.. dropdown:: gfo_hillclimbing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_hillclimbing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_hillclimbing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFOHillClimbing
+
+```
+
 ## References
 
 ```{eval-rst}
