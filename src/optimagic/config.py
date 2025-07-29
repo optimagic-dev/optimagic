@@ -39,14 +39,7 @@ IS_NUMBA_INSTALLED = _is_installed("numba")
 IS_IMINUIT_INSTALLED = _is_installed("iminuit")
 IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
 IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
-
-
-try:
-    import pygad  # noqa: F401
-except ImportError:
-    IS_PYGAD_INSTALLED = False
-else:
-    IS_PYGAD_INSTALLED = True
+IS_PYGAD_INSTALLED = _is_installed("pygad")
 
 
 # ======================================================================================

@@ -122,6 +122,8 @@ PositiveFloat = Annotated[float, Gt(0)]
 """Type alias for positive floats (greater than 0)."""
 NonNegativeFloat = Annotated[float, Ge(0)]
 """Type alias for non-negative floats (greater than or equal to 0)."""
+ProbabilityFloat = Annotated[float, Ge(0), Le(1)]
+"""Type alias for probability floats (between 0 and 1, inclusive)."""
 NegativeFloat = Annotated[float, Lt(0)]
 """Type alias for negative floats (less than 0)."""
 GtOneFloat = Annotated[float, Gt(1)]
@@ -169,70 +171,3 @@ class MultiStartIterationHistory(TupleLikeAccess):
     history: IterationHistory
     local_histories: list[IterationHistory] | None = None
     exploration: IterationHistory | None = None
-
-
-class ParentSelectionFunction(Protocol):
-    """Protocol for user-defined parent selection functions.
-
-    Args:
-        fitness: Array of fitness values for all solutions in the population.
-        num_parents: Number of parents to select.
-        ga_instance: The PyGAD GA instance.
-
-    Returns:
-        Tuple of (selected_parents, parent_indices) where:
-        - selected_parents: 2D array of selected parent solutions
-        - parent_indices: 1D array of indices of selected parents
-
-    """
-
-    def __call__(
-        self, fitness: NDArray[np.float64], num_parents: int, ga_instance: Any
-    ) -> tuple[NDArray[np.float64], NDArray[np.int_]]: ...
-
-
-class CrossoverFunction(Protocol):
-    """Protocol for user-defined crossover functions.
-
-    Args:
-        parents: 2D array of parent solutions selected for mating.
-        offspring_size: Tuple (num_offspring, num_genes) specifying
-            offspring size.
-        ga_instance: The PyGAD GA instance.
-
-    Returns:
-        2D array of offspring solutions.
-
-    """
-
-    def __call__(
-        self,
-        parents: NDArray[np.float64],
-        offspring_size: tuple[int, int],
-        ga_instance: Any,
-    ) -> NDArray[np.float64]: ...
-
-
-class MutationFunction(Protocol):
-    """Protocol for user-defined mutation functions.
-
-    Args:
-        offspring: 2D array of offspring solutions to be mutated.
-        ga_instance: The PyGAD GA instance.
-
-    Returns:
-        2D array of mutated offspring solutions.
-
-    """
-
-    def __call__(
-        self, offspring: NDArray[np.float64], ga_instance: Any
-    ) -> NDArray[np.float64]: ...
-
-
-class GeneConstraintFunction(Protocol):
-    """Protocol for user-defined gene constraint functions."""
-
-    def __call__(
-        self, solution: NDArray[np.float64], values: list[float] | NDArray[np.float64]
-    ) -> list[float] | NDArray[np.float64]: ...

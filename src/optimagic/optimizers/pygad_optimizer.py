@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,17 +15,79 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import (
     AggregationLevel,
-    CrossoverFunction,
-    GeneConstraintFunction,
-    MutationFunction,
     NonNegativeFloat,
-    ParentSelectionFunction,
     PositiveFloat,
     PositiveInt,
+    ProbabilityFloat,
+    PyTree,
 )
 
-if IS_PYGAD_INSTALLED:
-    import pygad
+
+class ParentSelectionFunction(Protocol):
+    """Protocol for user-defined parent selection functions.
+
+    Args:
+        fitness: Array of fitness values for all solutions in the population.
+        num_parents: Number of parents to select.
+        ga_instance: The PyGAD GA instance.
+
+    Returns:
+        Tuple of (selected_parents, parent_indices) where:
+        - selected_parents: 2D array of selected parent solutions
+        - parent_indices: 1D array of indices of selected parents
+
+    """
+
+    def __call__(
+        self, fitness: NDArray[np.float64], num_parents: int, ga_instance: Any
+    ) -> tuple[NDArray[np.float64], NDArray[np.int_]]: ...
+
+
+class CrossoverFunction(Protocol):
+    """Protocol for user-defined crossover functions.
+
+    Args:
+        parents: 2D array of parent solutions selected for mating.
+        offspring_size: Tuple (num_offspring, num_genes) specifying
+            the shape of the offspring population to be generated.
+        ga_instance: The PyGAD GA instance.
+
+    Returns:
+        2D array of offspring solutions generated from the parents.
+
+    """
+
+    def __call__(
+        self,
+        parents: NDArray[np.float64],
+        offspring_size: tuple[int, int],
+        ga_instance: Any,
+    ) -> NDArray[np.float64]: ...
+
+
+class MutationFunction(Protocol):
+    """Protocol for user-defined mutation functions.
+
+    Args:
+        offspring: 2D array of offspring solutions to be mutated.
+        ga_instance: The PyGAD GA instance.
+
+    Returns:
+        2D array of mutated offspring solutions.
+
+    """
+
+    def __call__(
+        self, offspring: NDArray[np.float64], ga_instance: Any
+    ) -> NDArray[np.float64]: ...
+
+
+class GeneConstraintFunction(Protocol):
+    """Protocol for user-defined gene constraint functions."""
+
+    def __call__(
+        self, solution: NDArray[np.float64], values: list[float] | NDArray[np.float64]
+    ) -> list[float] | NDArray[np.float64]: ...
 
 
 @mark.minimizer(
@@ -49,7 +111,7 @@ class Pygad(Algorithm):
     num_parents_mating: PositiveInt | None = 10
     num_generations: PositiveInt | None = 50
 
-    initial_population: NDArray[np.float64] | list[list[float]] | None = None
+    initial_population: list[PyTree] | None = None
 
     parent_selection_type: (
         Literal["sss", "rws", "sus", "rank", "random", "tournament"]
@@ -72,12 +134,13 @@ class Pygad(Algorithm):
         | None
     ) = "random"
     mutation_probability: (
-        NonNegativeFloat
-        | list[NonNegativeFloat]
-        | tuple[NonNegativeFloat, NonNegativeFloat]
+        ProbabilityFloat
+        | list[ProbabilityFloat]
+        | tuple[ProbabilityFloat, ProbabilityFloat]
         | NDArray[np.float64]
         | None
     ) = None
+
     mutation_percent_genes: (
         PositiveFloat
         | str
@@ -85,6 +148,7 @@ class Pygad(Algorithm):
         | tuple[PositiveFloat, PositiveFloat]
         | NDArray[np.float64]
     ) = "default"
+
     mutation_num_genes: (
         PositiveInt
         | list[PositiveInt]
@@ -92,6 +156,7 @@ class Pygad(Algorithm):
         | NDArray[np.int_]
         | None
     ) = None
+
     mutation_by_replacement: bool = False
     random_mutation_min_val: float | list[float] | NDArray[np.float64] = -1.0
     random_mutation_max_val: float | list[float] | NDArray[np.float64] = 1.0
@@ -101,11 +166,11 @@ class Pygad(Algorithm):
     gene_constraint: list[GeneConstraintFunction | None] | None = None
     sample_size: PositiveInt = 100
 
-    fitness_batch_size: PositiveInt | None = None
+    batch_size: PositiveInt | None = None
     stop_criteria: str | list[str] | None = None
 
     n_cores: PositiveInt = 1
-    random_seed: int | None = None
+    seed: int | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -116,6 +181,8 @@ class Pygad(Algorithm):
                 "installed. You can install it with 'pip install pygad'."
             )
 
+        import pygad
+
         if (
             problem.bounds.lower is None
             or problem.bounds.upper is None
@@ -124,14 +191,14 @@ class Pygad(Algorithm):
         ):
             raise ValueError("pygad requires finite bounds for all parameters.")
 
-        # Determine effective fitness_batch_size for parallel processing
-        effective_fitness_batch_size = determine_effective_batch_size(
-            self.fitness_batch_size, self.n_cores
+        # Determine effective batch_size for parallel processing
+        effective_batch_size = determine_effective_batch_size(
+            self.batch_size, self.n_cores
         )
 
         if (
-            effective_fitness_batch_size is not None
-            and effective_fitness_batch_size > 1
+            effective_batch_size is not None
+            and effective_batch_size > 1
             and self.n_cores > 1
         ):
 
@@ -144,7 +211,11 @@ class Pygad(Algorithm):
                     np.asarray(batch_solutions[i])
                     for i in range(batch_solutions.shape[0])
                 ]
-                batch_results = problem.batch_fun(solutions_list, n_cores=self.n_cores)
+                batch_results = problem.batch_fun(
+                    solutions_list,
+                    n_cores=self.n_cores,
+                    batch_size=effective_batch_size,
+                )
 
                 return [-float(result) for result in batch_results]
 
@@ -169,7 +240,12 @@ class Pygad(Algorithm):
         )
 
         if self.initial_population is not None:
-            initial_population = np.array(self.initial_population)
+            initial_population = np.array(
+                [
+                    problem.converter.params_to_internal(params)
+                    for params in self.initial_population
+                ]
+            )
         else:
             num_genes = len(x0)
 
@@ -190,7 +266,7 @@ class Pygad(Algorithm):
             num_generations=self.num_generations,
             num_parents_mating=num_parents_mating,
             fitness_func=fitness_function,
-            fitness_batch_size=effective_fitness_batch_size,
+            fitness_batch_size=effective_batch_size,
             initial_population=initial_population,
             gene_space=gene_space,
             parent_selection_type=self.parent_selection_type,
@@ -211,49 +287,49 @@ class Pygad(Algorithm):
             sample_size=self.sample_size,
             stop_criteria=self.stop_criteria,
             parallel_processing=None,
-            random_seed=self.random_seed,
+            random_seed=self.seed,
         )
 
         ga_instance.run()
 
-        res = _process_pygad_result(ga_instance)
+        result = _process_pygad_result(ga_instance)
 
-        return res
+        return result
 
 
-def determine_effective_batch_size(
-    fitness_batch_size: int | None, n_cores: int
-) -> int | None:
-    """Determine the effective fitness_batch_size for parallel processing.
+def determine_effective_batch_size(batch_size: int | None, n_cores: int) -> int | None:
+    """Determine the effective batch_size for parallel processing.
 
     Behavior:
-    - If `fitness_batch_size` is explicitly provided:
+    - If `batch_size` is explicitly provided:
         - The value is returned unchanged.
         - A warning is issued if it is less than `n_cores`, as this may
         underutilize available cores.
-    - If `fitness_batch_size` is `None`:
+    - If `batch_size` is `None`:
         - If `n_cores` > 1, defaults to `n_cores`.
         - Otherwise, returns None (i.e., single-threaded evaluation).
     Args:
-        fitness_batch_size: User-specified batch size or None
+        batch_size: User-specified batch size or None
         n_cores: Number of cores for parallel processing
 
     Returns:
         Effective batch size for PyGAD, or None for single-threaded processing
 
     """
-    if fitness_batch_size is not None:
-        if fitness_batch_size < n_cores:
+    result = None
+
+    if batch_size is not None:
+        if batch_size < n_cores:
             warnings.warn(
-                f"fitness_batch_size ({fitness_batch_size}) is smaller than "
+                f"batch_size ({batch_size}) is smaller than "
                 f"n_cores ({n_cores}). This may reduce parallel efficiency. "
-                f"Consider setting fitness_batch_size >= n_cores."
+                f"Consider setting batch_size >= n_cores."
             )
-        return fitness_batch_size
+        result = batch_size
     elif n_cores > 1:
-        return n_cores
-    else:
-        return None
+        result = n_cores
+
+    return result
 
 
 def _process_pygad_result(ga_instance: Any) -> InternalOptimizeResult:
