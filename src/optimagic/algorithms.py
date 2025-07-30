@@ -53,6 +53,7 @@ from optimagic.optimizers.nlopt_optimizers import (
     NloptVAR,
 )
 from optimagic.optimizers.pounders import Pounders
+from optimagic.optimizers.pygad_optimizer import Pygad
 from optimagic.optimizers.pygmo_optimizers import (
     PygmoBeeColony,
     PygmoCmaes,
@@ -200,6 +201,7 @@ class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -411,6 +413,7 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -459,6 +462,7 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -527,6 +531,7 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -687,6 +692,7 @@ class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -794,6 +800,7 @@ class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1138,6 +1145,7 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1215,6 +1223,7 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1267,6 +1276,7 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1455,6 +1465,7 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1531,6 +1542,7 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1624,6 +1636,7 @@ class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1710,6 +1723,7 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1767,6 +1781,7 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1848,6 +1863,7 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2095,6 +2111,7 @@ class BoundedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2371,6 +2388,7 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2478,6 +2496,7 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2588,6 +2607,7 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2672,6 +2692,7 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2728,6 +2749,7 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2823,6 +2845,7 @@ class GlobalScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2884,6 +2907,7 @@ class GlobalParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3177,6 +3201,7 @@ class BoundedScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3276,6 +3301,7 @@ class BoundedParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3389,6 +3415,7 @@ class ParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3521,6 +3548,7 @@ class GradientFreeAlgorithms(AlgoSelection):
     nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3598,6 +3626,7 @@ class GlobalAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3757,6 +3786,7 @@ class BoundedAlgorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3907,6 +3937,7 @@ class ScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -4033,6 +4064,7 @@ class ParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -4111,6 +4143,7 @@ class Algorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
