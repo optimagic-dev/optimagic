@@ -8,7 +8,7 @@ from optimagic.optimizers.pygad_optimizer import determine_effective_batch_size
 
 
 @pytest.mark.parametrize(
-    "fitness_batch_size, n_cores, expected",
+    "batch_size, n_cores, expected",
     [
         (None, 1, None),
         (None, 4, 4),
@@ -21,15 +21,13 @@ from optimagic.optimizers.pygad_optimizer import determine_effective_batch_size
         (1, 1, 1),
     ],
 )
-def test_determine_effective_batch_size_return_values(
-    fitness_batch_size, n_cores, expected
-):
-    result = determine_effective_batch_size(fitness_batch_size, n_cores)
+def test_determine_effective_batch_size_return_values(batch_size, n_cores, expected):
+    result = determine_effective_batch_size(batch_size, n_cores)
     assert result == expected
 
 
 @pytest.mark.parametrize(
-    "fitness_batch_size, n_cores, should_warn",
+    "batch_size, n_cores, should_warn",
     [
         (2, 4, True),
         (1, 8, True),
@@ -41,18 +39,17 @@ def test_determine_effective_batch_size_return_values(
         (None, 1, False),
     ],
 )
-def test_determine_effective_batch_size_warnings(
-    fitness_batch_size, n_cores, should_warn
-):
+def test_determine_effective_batch_size_warnings(batch_size, n_cores, should_warn):
     if should_warn:
         warning_pattern = (
-            f"fitness_batch_size \\({fitness_batch_size}\\) is smaller than "
-            f"n_cores \\({n_cores}\\)"
+            f"batch_size \\({batch_size}\\) is smaller than "
+            f"n_cores \\({n_cores}\\)\\. This may reduce parallel efficiency\\. "
+            f"Consider setting batch_size >= n_cores\\."
         )
         with pytest.warns(UserWarning, match=warning_pattern):
-            result = determine_effective_batch_size(fitness_batch_size, n_cores)
-            assert result == fitness_batch_size
+            result = determine_effective_batch_size(batch_size, n_cores)
+            assert result == batch_size
     else:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            result = determine_effective_batch_size(fitness_batch_size, n_cores)
+            result = determine_effective_batch_size(batch_size, n_cores)

@@ -126,7 +126,7 @@ class Pygad(Algorithm):
         | CrossoverFunction
         | None
     ) = "single_point"
-    crossover_probability: NonNegativeFloat | None = None
+    crossover_probability: ProbabilityFloat | None = None
 
     mutation_type: (
         Literal["random", "swap", "inversion", "scramble", "adaptive"]
