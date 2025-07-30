@@ -15,7 +15,6 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import (
     AggregationLevel,
-    NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
     ProbabilityFloat,
