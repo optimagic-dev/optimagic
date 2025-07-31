@@ -2,6 +2,7 @@ import base64
 import collections.abc
 import itertools
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -9,6 +10,40 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from optimagic.config import PLOTLY_TEMPLATE
+
+
+@dataclass(frozen=True)
+class LineData:
+    """Data of a single line.
+
+    Attributes:
+        x: The x-coordinates of the points.
+        y: The y-coordinates of the points.
+        color: The color of the line. Default is None.
+        name: The name of the line. Default is None.
+        show_in_legend: Whether to show the line in the legend. Default is True.
+
+    """
+
+    x: np.ndarray
+    y: np.ndarray
+    color: str | None = None
+    name: str | None = None
+    show_in_legend: bool = True
+
+
+@dataclass(frozen=True)
+class PlotConfig:
+    """Configuration settings for figure.
+
+    Attributes:
+        template: The template for the figure.
+        legend: Configuration for the legend.
+
+    """
+
+    template: str
+    legend: dict[str, Any]
 
 
 def combine_plots(
@@ -364,3 +399,9 @@ def _ensure_array_from_plotly_data(data: Any) -> np.ndarray:
 def _decode_base64_data(b64data: str, dtype: str) -> np.ndarray:
     decoded = base64.b64decode(b64data)
     return np.frombuffer(decoded, dtype=np.dtype(dtype))
+
+
+def get_palette_cycle(palette: list[str] | str) -> "itertools.cycle[str]":
+    if not isinstance(palette, list):
+        palette = [palette]
+    return itertools.cycle(palette)

@@ -8,13 +8,32 @@ import numpy as np
 import plotly.graph_objects as go
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
-from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from optimagic.config import PLOTLY_TEMPLATE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import IterationHistory, PyTree
+from optimagic.visualization.backends import BackendRegistry
+from optimagic.visualization.plotting_utilities import (
+    LineData,
+    PlotConfig,
+    get_palette_cycle,
+)
+
+_criterion_plot_legend: dict[str, dict[str, Any]] = {
+    "plotly": {
+        "yanchor": "top",
+        "xanchor": "right",
+        "y": 0.95,
+        "x": 0.95,
+    },
+    "matplotlib": {
+        "loc": "upper right",
+    },
+}
+
 
 OptimizeResultOrPath = OptimizeResult | str | Path
 
@@ -25,12 +44,13 @@ def criterion_plot(
     | dict[str, OptimizeResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
-    template: str = PLOTLY_TEMPLATE,
-    palette: list[str] | str = PLOTLY_PALETTE,
+    backend: str = "plotly",
+    template: str | None = None,
+    palette: list[str] | str | None = None,
     stack_multistart: bool = False,
     monotone: bool = False,
     show_exploration: bool = False,
-) -> go.Figure:
+) -> Any:
     """Plot the criterion history of an optimization.
 
     Args:
@@ -38,6 +58,7 @@ def criterion_plot(
             If dict, then the key is used as the name in a legend.
         names: Names corresponding to res or entries in res.
         max_evaluations: Clip the criterion history after that many entries.
+        backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. Default is "plotly_white".
         palette: The coloring palette for traces. Default is "qualitative.Set2".
         stack_multistart: Whether to combine multistart histories into a single history.
@@ -52,11 +73,19 @@ def criterion_plot(
 
     """
     # ==================================================================================
+    # Get Backend Wrapper
+
+    backend_wrapper = BackendRegistry.get_backend_wrapper(backend_name=backend)
+
+    # ==================================================================================
     # Process inputs
 
-    if not isinstance(palette, list):
-        palette = [palette]
-    palette_cycle = itertools.cycle(palette)
+    if template is None:
+        template = backend_wrapper.default_template
+
+    if palette is None:
+        palette = backend_wrapper.default_palette
+    palette_cycle = get_palette_cycle(palette)
 
     dict_of_optimize_results_or_paths = _harmonize_inputs_to_dict(results, names)
 
@@ -78,15 +107,22 @@ def criterion_plot(
     )
 
     # ==================================================================================
-    # Generate the plotly figure
+    # Generate the figure
 
     plot_config = PlotConfig(
         template=template,
-        legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+        legend=_criterion_plot_legend[backend],
     )
 
-    fig = _plotly_line_plot(lines + multistart_lines, plot_config)
-    return fig
+    fig = backend_wrapper(plot_config=plot_config)
+
+    fig.line_plot(lines + multistart_lines)
+    fig.label(
+        xlabel="No. of criterion evaluations",
+        ylabel="Criterion value",
+    )
+
+    return fig.return_obj()
 
 
 def _harmonize_inputs_to_dict(
@@ -462,26 +498,6 @@ def _get_stacked_local_histories(
     )
 
 
-@dataclass(frozen=True)
-class LineData:
-    """Data of a single line.
-
-    Attributes:
-        x: The x-coordinates of the points.
-        y: The y-coordinates of the points.
-        color: The color of the line. Default is None.
-        name: The name of the line. Default is None.
-        show_in_legend: Whether to show the line in the legend. Default is True.
-
-    """
-
-    x: np.ndarray
-    y: np.ndarray
-    color: str | None = None
-    name: str | None = None
-    show_in_legend: bool = True
-
-
 def _extract_criterion_plot_lines(
     data: list[_PlottingMultistartHistory],
     max_evaluations: int | None,
@@ -543,69 +559,13 @@ def _extract_criterion_plot_lines(
         if max_evaluations is not None and len(history) > max_evaluations:
             history = history[:max_evaluations]
 
-        _color = next(palette_cycle)
-        if not isinstance(_color, str):
-            msg = "highlight_palette needs to be a string or list of strings, but its "
-            f"entry is of type {type(_color)}."
-            raise TypeError(msg)
-
         line_data = LineData(
             x=np.arange(len(history)),
             y=history,
-            color=_color,
+            color=next(palette_cycle),
             name="best result" if plot_multistart else _data.name,
             show_in_legend=not plot_multistart,
         )
         lines.append(line_data)
 
     return lines, multistart_lines
-
-
-@dataclass(frozen=True)
-class PlotConfig:
-    """Configuration settings for figure.
-
-    Attributes:
-        template: The template for the figure.
-        legend: Configuration for the legend.
-
-    """
-
-    template: str
-    legend: dict[str, Any]
-
-
-def _plotly_line_plot(lines: list[LineData], plot_config: PlotConfig) -> go.Figure:
-    """Create a plotly line plot from the given lines and plot configuration.
-
-    Args:
-        lines: Data for lines to be plotted.
-        plot_config: Configuration for the plot.
-
-    Returns:
-        The figure object containing the lines.
-
-    """
-
-    fig = go.Figure()
-
-    for line in lines:
-        trace = go.Scatter(
-            x=line.x,
-            y=line.y,
-            name=line.name,
-            mode="lines",
-            line_color=line.color,
-            showlegend=line.show_in_legend,
-            connectgaps=True,
-        )
-        fig.add_trace(trace)
-
-    fig.update_layout(
-        template=plot_config.template,
-        xaxis_title_text="No. of criterion evaluations",
-        yaxis_title_text="Criterion value",
-        legend=plot_config.legend,
-    )
-
-    return fig
