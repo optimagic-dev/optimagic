@@ -58,18 +58,84 @@ NEVERGRAD_NOT_INSTALLED_ERROR = (
 )
 @dataclass(frozen=True)
 class NevergradPSO(Algorithm):
+    """Minimize a scalar function using the Particle Swarm Optimization algorithm.
+
+    The Particle Swarm Optimization algorithm was originally proposed by
+    :cite:`Kennedy1995`.The implementation in Nevergrad is based on
+    :cite:`Zambrano2013`.
+
+    PSO solves an optimization problem by evolving a swarm of particles
+    (candidate solutions) across the search space. Each particle adjusts its position
+    based on its own experience (cognitive component) and the experiences
+    of its neighbors or the swarm (social component), using velocity updates. The
+    algorithm iteratively guides the swarm toward promising regions of the search
+    space.
+
+    """
+
     transform: Literal["arctan", "gaussian", "identity"] = "arctan"
+    """The transform used to map from PSO optimization space to real space."""
+
     population_size: int | None = None
+    """The number of particles in the swarm."""
+
     n_cores: int = 1
+    """The number of CPU cores to use for parallel computation."""
+
     seed: int | None = None
+    """Random seed for reproducibility."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations."""
+
     inertia: float = 0.5 / math.log(2.0)
+    r"""Inertia weight ω.
+
+    Controls the influence of a particle's previous velocity. Must be less than 1 to
+    avoid divergence.
+
+    """
+
     cognitive: float = 0.5 + math.log(2.0)
+    r"""Cognitive coefficient :math:`\phi_p`.
+
+    Controls the influence of a particle's own best known position. Typical values: 1.0
+    to 3.0.
+
+    """
+
     social: float = 0.5 + math.log(2.0)
+    r"""Social coefficient.
+
+    Denoted by :math:`\phi_g`. Controls the influence of the swarm's best known
+    position. Typical values: 1.0 to 3.0.
+
+    """
+
     quasi_opp_init: bool = False
+    """Whether to use quasi-opposition initialization.
+
+    Default is False.
+
+    """
+
     speed_quasi_opp_init: bool = False
+    """Whether to apply quasi-opposition initialization to speed.
+
+    Default is False.
+
+    """
+
     special_speed_quasi_opp_init: bool = False
+    """Whether to use special quasi-opposition initialization for speed.
+
+    Default is False.
+
+    """
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²) in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
