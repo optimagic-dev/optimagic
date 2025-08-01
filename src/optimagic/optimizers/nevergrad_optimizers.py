@@ -187,40 +187,154 @@ class NevergradPSO(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradCMAES(Algorithm):
+    """Minimize a scalar function using the Covariance Matrix Adaptation Evolution
+    Strategy (CMA-ES) algorithm.
+
+    The CMA-ES is a state-of-the-art evolutionary algorithm for difficult non-linear,
+    non-convex, black-box optimization problems in continuous domains. It is typically
+    applied to unconstrained or bounded problems with dimensionality between 3 and 100.
+    CMA-ES adapts a multivariate normal distribution to approximate the objective
+    function's shape by estimating a positive-definite covariance matrix, akin to the
+    inverse Hessian in convex-quadratic problems, but without requiring derivatives.
+
+    Original paper can be accessed at :cma:`
+    https://cma-es.github.io/`.
+     This    implementation is a python wrapper over the original code    :pycma:`
+    https://cma-es.github.io/`.
+
+    """
+
     scale: NonNegativeFloat = 1.0
+    """Scale of the search."""
+
     elitist: bool = False
+    """Whether to switch to elitist mode (also known as (μ,λ)-CMA-ES).
+
+    In elitist mode, the best point in the population is always retained.
+
+    """
+
     population_size: int | None = None
+    """Population size."""
+
     diagonal: bool = False
+    """Use the diagonal version of CMA, which is more efficient for high-dimensional
+    problems."""
+
     high_speed: bool = False
+    """Use a metamodel for recommendation to speed up optimization."""
+
     fast_cmaes: bool = False
+    """Use the fast CMA-ES implementation.
+
+    Cannot be used with diagonal=True. Produces equivalent results and is preferable for
+    high dimensions or when objective function evaluations are fast.
+
+    """
+
     random_init: bool = False
+    """If True, initialize the optimizer with random parameters."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     step_size_adaptive: bool | str = True
+    """Whether to adapt the step size.
+
+    Can be a boolean or a string specifying the adaptation strategy.
+
+    """
+
     CSA_dampfac: PositiveFloat = 1.0
+    """Damping factor for step size adaptation."""
+
     CMA_dampsvec_fade: PositiveFloat = 0.1
+    """Damping rate for step size adaptation."""
+
     CSA_squared: bool = False
+    """Whether to use squared step sizes in updates."""
+
     CMA_on: float = 1.0
+    """Learning rate for the covariance matrix update."""
+
     CMA_rankone: float = 1.0
+    """Multiplier for the rank-one update learning rate of the covariance matrix."""
+
     CMA_rankmu: float = 1.0
+    """Multiplier for the rank-mu update learning rate of the covariance matrix."""
+
     CMA_cmean: float = 1.0
+    """Learning rate for the mean update."""
+
     CMA_diagonal_decoding: float = 0.0
+    """Learning rate for the diagonal update."""
+
     num_parents: int | None = None
+    """Number of parents (μ) for recombination."""
+
     CMA_active: bool = True
+    """Whether to use negative updates for the covariance matrix."""
+
     CMA_mirrormethod: Literal[0, 1, 2] = 2
+    """Strategy for mirror sampling.
+
+    0: Unconditional, 1: Selective, 2: Selective
+    with delay.
+
+    """
+
     CMA_const_trace: bool | Literal["arithm", "geom", "aeig", "geig"] = False
+    """How to normalize the trace of the covariance matrix.
+
+    False: No normalization,
+    True: Normalize to 1. Other options: 'arithm', 'geom', 'aeig', 'geig'.
+
+    """
+
     CMA_diagonal: int | bool = False
+    """Number of iterations to use diagonal covariance matrix before switching to full
+    matrix.
+
+    If False, always use full matrix.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations before termination."""
+
     stopping_maxtime: PositiveFloat = float("inf")
+    """Maximum time in seconds before termination."""
+
     stopping_cov_mat_cond: NonNegativeFloat = 1e14
+    """Maximum condition number of the covariance matrix before termination."""
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Absolute tolerance on function value changes for convergence."""
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Relative tolerance on function value changes for convergence."""
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Absolute tolerance on parameter changes for convergence."""
+
     convergence_iter_noimprove: PositiveInt | None = None
+    """Number of iterations without improvement before termination."""
+
     invariant_path: bool = False
+    """Whether evolution path (pc) should be invariant to transformations."""
+
     eval_final_mean: bool = True
+    """Whether to evaluate the final mean solution."""
+
     seed: int | None = None
+    """Seed used by the internal random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
