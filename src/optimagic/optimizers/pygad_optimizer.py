@@ -82,7 +82,21 @@ class MutationFunction(Protocol):
 
 
 class GeneConstraintFunction(Protocol):
-    """Protocol for user-defined gene constraint functions."""
+    """Protocol for user-defined gene constraint functions.
+
+    Gene constraint functions are applied to individual genes to enforce specific
+    constraints on their values. Each function receives the current solution and
+    a list of candidate values, then returns the constrained values.
+
+    Args:
+        solution: Current solution array containing all gene values.
+        values: List or array of candidate values for the gene being constrained.
+
+    Returns:
+        Constrained values as a list or array, ensuring they satisfy the gene's
+        specific constraints.
+
+    """
 
     def __call__(
         self, solution: NDArray[np.float64], values: list[float] | NDArray[np.float64]
@@ -106,32 +120,137 @@ class GeneConstraintFunction(Protocol):
 )
 @dataclass(frozen=True)
 class Pygad(Algorithm):
+    """Minimize a scalar function using the PyGAD genetic algorithm.
+
+    This optimizer wraps the PyGAD genetic algorithm, a population-based evolutionary
+    method for global optimization. It maintains a population of candidate solutions and
+    evolves them over generations using biologically inspired operations: selection
+    (choosing parents based on fitness), crossover (combining genes from parents), and
+    mutation (introducing random variations).
+
+    The algorithm is well-suited for global optimization problems with multiple local
+    optima, black-box optimization where gradients are unavailable or difficult to
+    compute.
+
+    All variables must have finite bounds. Parallel fitness evaluation is supported via
+    batch processing.
+
+    For more details, see the
+    `PyGAD documentation <https://pygad.readthedocs.io/en/latest/>`_.
+
+    """
+
     population_size: PositiveInt | None = None
+    """Number of solutions in each generation.
+
+    Larger populations explore the search space more thoroughly but require more
+    fitness evaluations per generation. If None, defaults to
+    ``max(10, 10 * (problem_dimension + 1))``.
+
+    """
+
     num_parents_mating: PositiveInt | None = 10
+    """Number of parents selected for mating in each generation.
+
+    Higher values can speed up convergence but may risk premature convergence. If None,
+    defaults to half the population size.
+
+    """
+
     num_generations: PositiveInt | None = 50
+    """Number of generations to evolve the population."""
 
     initial_population: list[PyTree] | None = None
+    """Optional initial population as a list of parameter PyTrees.
+
+    If None, the population is initialized randomly within parameter bounds.
+
+    """
 
     parent_selection_type: (
         Literal["sss", "rws", "sus", "rank", "random", "tournament"]
         | ParentSelectionFunction
     ) = "sss"
+    """Parent selection strategy used to choose parents for crossover.
+
+    Available methods:
+    - "sss": Steady-State Selection (selects the best individuals to continue)
+    - "rws": Roulette Wheel Selection (probabilistic, fitness-proportional)
+    - "sus": Stochastic Universal Sampling (even sampling across the population)
+    - "rank": Rank Selection (selects based on rank order)
+    - "random": Random Selection
+    - "tournament": Tournament Selection (best from K randomly chosen individuals)
+
+    Alternatively, provide a custom function with signature
+    ``(fitness, num_parents, ga_instance) -> tuple[NDArray, NDArray]``.
+
+    """
+
     keep_parents: int = -1
+    """Number of best parents to keep in the next generation.
+
+    Only used if ``keep_elitism = 0``. Values:
+    - -1: Keep all parents in the next generation (default)
+    - 0: Keep no parents in the next generation
+    - Positive integer: Keep the specified number of best parents
+
+    """
+
     keep_elitism: PositiveInt = 1
+    """Number of elite (best) solutions preserved each generation.
+
+    Range: 0 to population_size.If nonzero, takes precedence over ``keep_parents``.
+
+    """
+
     K_tournament: PositiveInt = 3
+    """Tournament size for parent selection when
+    ``parent_selection_type="tournament"``."""
 
     crossover_type: (
         Literal["single_point", "two_points", "uniform", "scattered"]
         | CrossoverFunction
         | None
     ) = "single_point"
+    """Crossover operator for generating offspring.
+
+    Available methods:
+    - "single_point": Single-point crossover
+    - "two_points": Two-point crossover
+    - "uniform": Uniform crossover (randomly mixes genes)
+    - "scattered": Scattered crossover (random mask)
+
+    Or provide a custom function with signature
+    ``(parents, offspring_size, ga_instance) -> NDArray``. Set to None to disable
+    crossover.
+
+    """
+
     crossover_probability: ProbabilityFloat | None = None
+    """Probability of applying crossover to selected parents.
+
+    Range [0, 1]. If None, uses PyGAD's default.
+
+    """
 
     mutation_type: (
         Literal["random", "swap", "inversion", "scramble", "adaptive"]
         | MutationFunction
         | None
     ) = "random"
+    """Mutation operator for introducing genetic diversity.
+
+    Available methods:
+    - "random": Replace with random values
+    - "swap": Exchange two genes
+    - "inversion": Reverse a sequence of genes
+    - "scramble": Shuffle a subset of genes
+    - "adaptive": Adaptively adjusts mutation rate
+
+    Or provide a custom function with signature
+    ``(offspring, ga_instance) -> NDArray``. Set to None to disable mutation.
+
+    """
     mutation_probability: (
         ProbabilityFloat
         | list[ProbabilityFloat]
@@ -139,6 +258,16 @@ class Pygad(Algorithm):
         | NDArray[np.float64]
         | None
     ) = None
+    """Probability of mutating each gene.
+
+    - Scalar: Fixed probability for all genes (non-adaptive)
+    - List/tuple/array of 2 values: Adaptive mutation;
+      [prob_low_fitness, prob_high_fitness] (only with ``mutation_type="adaptive"``)
+
+    When specified, takes precedence over ``mutation_percent_genes`` and
+    ``mutation_num_genes``. Range [0, 1].
+
+    """
 
     mutation_percent_genes: (
         PositiveFloat
@@ -147,6 +276,17 @@ class Pygad(Algorithm):
         | tuple[PositiveFloat, PositiveFloat]
         | NDArray[np.float64]
     ) = "default"
+    """Percentage of genes to mutate in each solution.
+
+    - "default": Uses 10% of genes (PyGAD default)
+    - Scalar: Fixed percentage for all generations (0-100)
+    - List/tuple/array of 2 values: Adaptive mutation;
+      [percent_low_fitness, percent_high_fitness] (only with
+      ``mutation_type="adaptive"``)
+
+    Ignored if ``mutation_probability`` is specified.
+
+    """
 
     mutation_num_genes: (
         PositiveInt
@@ -155,21 +295,73 @@ class Pygad(Algorithm):
         | NDArray[np.int_]
         | None
     ) = None
+    """Number of genes to mutate per solution.
 
+    - Scalar: Fixed number for all generations
+    - List/tuple/array of 2 values: Adaptive;
+      [count_low_fitness, count_high_fitness] (only with ``mutation_type="adaptive"``)
+
+    Takes precedence over ``mutation_percent_genes`` but is ignored if
+    ``mutation_probability`` is specified.
+
+    """
     mutation_by_replacement: bool = False
+    """If True, mutated gene values are replaced with random values.
+
+    Only for ``mutation_type="random"``; if False, random values are added to the
+    original.
+
+    """
+
     random_mutation_min_val: float | list[float] | NDArray[np.float64] = -1.0
+
     random_mutation_max_val: float | list[float] | NDArray[np.float64] = 1.0
+    """Minimum and maximum values used for random mutation.
+
+    Can be scalars, arrays/lists (one per gene), or PyTrees matching the parameter
+    structure. Only used with ``mutation_type="random"``.
+
+    """
 
     allow_duplicate_genes: bool = True
+    """If True, duplicate gene values are allowed within a solution."""
 
     gene_constraint: list[GeneConstraintFunction | None] | None = None
+    """Optional list of per-gene constraint functions.
+
+    Each with signature ``(solution, values) -> list[float] | NDArray``.
+
+    """
+
     sample_size: PositiveInt = 100
+    """Number of values to sample when enforcing uniqueness or gene constraints."""
 
     batch_size: PositiveInt | None = None
+    """Number of solutions to evaluate in parallel batches.
+
+    If None and ``n_cores > 1``, automatically set to ``n_cores``.
+
+    """
     stop_criteria: str | list[str] | None = None
+    """Stopping criteria for the genetic algorithm.
+
+    Can be a string or list of strings.
+
+    Supported criteria:
+    - "reach_{value}": Stop when fitness reaches the specified value,
+      e.g. "reach_0.01"
+    - "saturate_{generations}": Stop if fitness doesn't improve for the given
+      number of generations, e.g. "saturate_10"
+
+    Can specify multiple criteria as a list.
+
+    """
 
     n_cores: PositiveInt = 1
+    """Number of CPU cores for parallel fitness evaluation."""
+
     seed: int | None = None
+    """Random seed for reproducibility."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
