@@ -15,14 +15,10 @@ from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import IterationHistory, PyTree
-from optimagic.visualization.backends import BackendRegistry
-from optimagic.visualization.plotting_utilities import (
-    LineData,
-    PlotConfig,
-    get_palette_cycle,
-)
+from optimagic.visualization.backends import get_plot_backend_class
+from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
-_criterion_plot_legend: dict[str, dict[str, Any]] = {
+BACKEND_TO_CRITERION_PLOT_LEGEND_PROPS: dict[str, dict[str, Any]] = {
     "plotly": {
         "yanchor": "top",
         "xanchor": "right",
@@ -35,13 +31,11 @@ _criterion_plot_legend: dict[str, dict[str, Any]] = {
 }
 
 
-OptimizeResultOrPath = OptimizeResult | str | Path
+ResultOrPath = OptimizeResult | str | Path
 
 
 def criterion_plot(
-    results: OptimizeResultOrPath
-    | list[OptimizeResultOrPath]
-    | dict[str, OptimizeResultOrPath],
+    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
     backend: str = "plotly",
@@ -73,18 +67,15 @@ def criterion_plot(
 
     """
     # ==================================================================================
-    # Get Backend Wrapper
+    # Get Plot Backend class
 
-    backend_wrapper = BackendRegistry.get_backend_wrapper(backend_name=backend)
+    plot_cls = get_plot_backend_class(backend)
 
     # ==================================================================================
     # Process inputs
 
-    if template is None:
-        template = backend_wrapper.default_template
-
     if palette is None:
-        palette = backend_wrapper.default_palette
+        palette = plot_cls.default_palette
     palette_cycle = get_palette_cycle(palette)
 
     dict_of_optimize_results_or_paths = _harmonize_inputs_to_dict(results, names)
@@ -109,26 +100,17 @@ def criterion_plot(
     # ==================================================================================
     # Generate the figure
 
-    plot_config = PlotConfig(
-        template=template,
-        legend=_criterion_plot_legend[backend],
-    )
+    plot = plot_cls(template)
 
-    fig = backend_wrapper(plot_config=plot_config)
+    plot.add_lines(lines + multistart_lines)
+    plot.set_labels(xlabel="No. of criterion evaluations", ylabel="Criterion value")
+    plot.set_legend_props(BACKEND_TO_CRITERION_PLOT_LEGEND_PROPS[backend])
 
-    fig.line_plot(lines + multistart_lines)
-    fig.label(
-        xlabel="No. of criterion evaluations",
-        ylabel="Criterion value",
-    )
-
-    return fig.return_obj()
+    return plot.figure
 
 
 def _harmonize_inputs_to_dict(
-    results: OptimizeResultOrPath
-    | list[OptimizeResultOrPath]
-    | dict[str, OptimizeResultOrPath],
+    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None,
 ) -> dict[str, OptimizeResult | str | Path]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""

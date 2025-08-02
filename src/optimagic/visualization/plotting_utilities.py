@@ -32,20 +32,6 @@ class LineData:
     show_in_legend: bool = True
 
 
-@dataclass(frozen=True)
-class PlotConfig:
-    """Configuration settings for figure.
-
-    Attributes:
-        template: The template for the figure.
-        legend: Configuration for the legend.
-
-    """
-
-    template: str
-    legend: dict[str, Any]
-
-
 def combine_plots(
     plots,
     plots_per_row=2,

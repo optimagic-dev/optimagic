@@ -1,65 +1,50 @@
 import abc
-from typing import Callable
+from typing import Any
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 
-from optimagic.visualization.plotting_utilities import LineData, PlotConfig
+from optimagic.visualization.plotting_utilities import LineData
 
 
-class BackendWrapper(abc.ABC):
+class PlotBackend(abc.ABC):
     default_template: str
     default_palette: list
 
-    def __init__(self, plot_config: PlotConfig):
-        self.plot_config = plot_config
+    @abc.abstractmethod
+    def __init__(self, template: str | None):
+        if template is None:
+            template = self.default_template
+
+        self.template = template
+        self.figure: Any = None
 
     @abc.abstractmethod
-    def line_plot(self, lines: list[LineData]) -> None:
+    def add_lines(self, lines: list[LineData]) -> None:
         pass
 
     @abc.abstractmethod
-    def label(self, **kwargs):
+    def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
         pass
 
     @abc.abstractmethod
-    def return_obj(self):
+    def set_legend_props(self, legend_props: dict[str, Any]) -> None:
         pass
 
 
-class BackendRegistry:
-    _registry: dict[str, type[BackendWrapper]] = {}
-
-    @classmethod
-    def register(cls, backend_name: str) -> Callable:
-        def decorator(backend_wrapper):
-            cls._registry[backend_name] = backend_wrapper
-            return backend_wrapper
-
-        return decorator
-
-    @classmethod
-    def get_backend_wrapper(cls, backend_name: str) -> type[BackendWrapper]:
-        if backend_name not in cls._registry:
-            raise ValueError(
-                f"Backend '{backend_name}' is not supported. "
-                f"Supported backends are: {', '.join(cls._registry.keys())}."
-            )
-        return cls._registry[backend_name]
-
-
-@BackendRegistry.register("plotly")
-class PlotlyBackend(BackendWrapper):
+class PlotlyBackend(PlotBackend):
     default_template: str = "simple_white"
     default_palette: list = px.colors.qualitative.Set2
 
-    def __init__(self, plot_config):
-        super().__init__(plot_config)
-        self.fig = go.Figure()
+    def __init__(self, template: str | None):
+        super().__init__(template)
+        self._fig = go.Figure()
+        self._fig.update_layout(template=self.template)
+        self.figure = self._fig
 
-    def line_plot(self, lines: list[LineData]) -> None:
+    def add_lines(self, lines: list[LineData]) -> None:
         for line in lines:
             trace = go.Scatter(
                 x=line.x,
@@ -70,42 +55,53 @@ class PlotlyBackend(BackendWrapper):
                 showlegend=line.show_in_legend,
                 connectgaps=True,
             )
-            self.fig.add_trace(trace)
+            self._fig.add_trace(trace)
 
-    def label(self, *, xlabel=None, ylabel=None, **kwargs):
-        self.fig.update_layout(
-            template=self.plot_config.template,
-            xaxis_title_text=xlabel,
-            yaxis_title_text=ylabel,
-            legend=self.plot_config.legend,
-        )
+    def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
+        self._fig.update_layout(xaxis_title_text=xlabel, yaxis_title_text=ylabel)
 
-    def return_obj(self):
-        return self.fig
+    def set_legend_props(self, legend_props: dict[str, Any]) -> None:
+        self._fig.update_layout(legend=legend_props)
 
 
-@BackendRegistry.register("matplotlib")
-class MatplotlibBackend(BackendWrapper):
+class MatplotlibBackend(PlotBackend):
     default_template: str = "default"
     default_palette: list = list(mpl.colormaps["Set2"].colors)
 
-    def __init__(self, plot_config: PlotConfig):
-        super().__init__(plot_config)
-        plt.style.use(self.plot_config.template)
-        self.fig, self.ax = plt.subplots()
+    def __init__(self, template: str | None):
+        super().__init__(template)
+        plt.style.use(self.template)
+        self._fig, self._ax = plt.subplots()
+        self.figure = self._fig
 
-    def line_plot(self, lines: list[LineData]) -> None:
+    def add_lines(self, lines: list[LineData]) -> None:
         for line in lines:
-            self.ax.plot(
+            self._ax.plot(
                 line.x,
                 line.y,
                 color=line.color,
                 label=line.name if line.show_in_legend else None,
             )
 
-    def label(self, *, xlabel=None, ylabel=None, **kwargs):
-        self.ax.set(xlabel=xlabel, ylabel=ylabel)
-        self.ax.legend(**self.plot_config.legend)
+    def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
+        self._ax.set(xlabel=xlabel, ylabel=ylabel)
 
-    def return_obj(self):
-        return self.fig
+    def set_legend_props(self, legend_props: dict[str, Any]) -> None:
+        self._ax.legend(**legend_props)
+
+
+PLOT_BACKEND_CLASSES = {
+    "plotly": PlotlyBackend,
+    "matplotlib": MatplotlibBackend,
+}
+
+
+def get_plot_backend_class(backend_name: str) -> type[PlotBackend]:
+    if backend_name not in PLOT_BACKEND_CLASSES:
+        msg = (
+            f"Invalid backend name '{backend_name}'. "
+            f"Supported backends are: {', '.join(PLOT_BACKEND_CLASSES.keys())}."
+        )
+        raise ValueError(msg)
+
+    return PLOT_BACKEND_CLASSES[backend_name]
