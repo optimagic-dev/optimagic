@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 class GFOCommonOptions:
     """Common options for all optimizers from GFO."""
 
-    n_grid_points: PositiveInt = 200
+    n_grid_points: PositiveInt | PyTree = 200
     """Number of grid points in each dimension."""
 
     stopping_maxiter: PositiveInt = STOPPING_MAXITER  # todo maybe maxfun global
@@ -214,7 +214,7 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
         opt = gfo.ParticleSwarmOptimizer
         optimizer = partial(
             opt,
-            population_size=population_size,
+            population=population_size,
             inertia=self.inertia,
             cognitive_weight=self.cognitive_weight,
             social_weight=self.social_weight,
@@ -246,7 +246,7 @@ def _gfo_internal(
     x0: NDArray[np.float64],
     optimizer: BaseOptimizer,
     warm_start: list[PyTree] | None,
-    n_grid_points: PositiveInt,
+    n_grid_points: PositiveInt | PyTree,
     stopping_maxiter: PositiveInt,
     stopping_maxtime: NonNegativeFloat | None,  # todo check type,
     stopping_funval: float | None,
@@ -273,7 +273,9 @@ def _gfo_internal(
 
     # define search space, initial params, population, constraints
     opt = optimizer(
-        search_space=_get_search_space_gfo(problem.bounds, n_grid_points),
+        search_space=_get_search_space_gfo(
+            problem.bounds, n_grid_points, problem.converter
+        ),
         initialize=_get_initialize(x0, warm_start, problem.converter),
         constraints=_get_gfo_constraints(),
         random_state=seed,
@@ -301,7 +303,7 @@ def _gfo_internal(
 
 
 def _get_search_space_gfo(
-    bounds: InternalBounds, n_grid_points: PositiveInt
+    bounds: InternalBounds, n_grid_points: PositiveInt | PyTree, converter: Converter
 ) -> dict[str, NDArray[np.float64]]:
     """Create search space.
 
@@ -313,10 +315,21 @@ def _get_search_space_gfo(
 
     """
     search_space = {}
-    for i, (lower, upper) in enumerate(zip(bounds.lower, bounds.upper, strict=False)):  # type:ignore
-        step = (upper - lower) / n_grid_points
-        search_space[f"x{i}"] = np.arange(lower, upper, step)
-    return search_space  # type:ignore
+    if bounds.lower is not None and bounds.upper is not None:
+        dim = len(bounds.lower)
+        upper = bounds.upper
+        lower = bounds.lower
+
+    if isinstance(n_grid_points, int):
+        n_grid_points = [n_grid_points] * dim
+    else:
+        n_grid_points = converter.params_to_internal(n_grid_points)
+
+    for i in range(dim):
+        step = (upper[i] - lower[i]) / n_grid_points[i]
+        search_space[f"x{i}"] = np.arange(lower[i], upper[i], step)
+
+    return search_space
 
 
 def _process_result_gfo(opt: "BaseOptimizer") -> InternalOptimizeResult:
