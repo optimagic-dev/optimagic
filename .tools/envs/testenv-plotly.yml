@@ -33,11 +33,12 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - bayes_optim  # dev, tests
+      - gradient_free_optimizers  # dev, tests
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
       - sphinxcontrib-mermaid  # dev, tests, docs
-      - -e ../../
       - kaleido<0.3
+      - -e ../../

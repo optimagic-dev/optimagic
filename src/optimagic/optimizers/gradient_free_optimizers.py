@@ -12,7 +12,7 @@ from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
     CONVERGENCE_FTOL_REL,
-    STOPPING_MAXITER,
+    STOPPING_MAXFUN_GLOBAL,
     get_population_size,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
@@ -40,7 +40,10 @@ class GFOCommonOptions:
     n_grid_points: PositiveInt | PyTree = 200
     """Number of grid points in each dimension."""
 
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER  # todo maybe maxfun global
+    n_init: PositiveInt = 10
+    """N positions will be randmoly initialized in the search plane."""
+
+    stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL  # todo maybe maxfun global
     """Maximum number of iterations."""
 
     stopping_maxtime: NonNegativeFloat | None = None  # todo check type
@@ -49,7 +52,9 @@ class GFOCommonOptions:
     stopping_funval: float | None = None  # todo name defn switch signs
     """"Stop the optimization if the objective function is more than this value."""
 
-    convergence_iter_noimprove: PositiveInt = 10  # default is 10
+    convergence_iter_noimprove: PositiveInt = (
+        50  # default is 10 , need to increase for pso
+    )
     """Number of iterations without improvement before termination."""
 
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
@@ -66,8 +71,6 @@ class GFOCommonOptions:
 
     warm_start: list[PyTree] | None = None  # todo
     """List of additional start points for the optimization run."""
-
-    """ `n` positions will be randmoly initialized in the search phase"""
 
     verbosity: Literal["progress_bar", "print_results", "print_times"] | bool = (
         False  # todo
@@ -90,7 +93,7 @@ class GFOCommonOptions:
     supports_bounds=True,
     supports_infinite_bounds=False,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -149,6 +152,7 @@ class GFOHillClimbing(Algorithm, GFOCommonOptions):
             x0=x0,
             optimizer=optimizer,
             warm_start=self.warm_start,
+            n_init=self.n_init,
             n_grid_points=self.n_grid_points,
             stopping_maxiter=self.stopping_maxiter,
             stopping_maxtime=self.stopping_maxtime,
@@ -176,7 +180,7 @@ class GFOHillClimbing(Algorithm, GFOCommonOptions):
     supports_bounds=True,
     supports_infinite_bounds=False,
     supports_linear_constraints=False,
-    supports_nonlinear_constraints=True,
+    supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
@@ -208,7 +212,7 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
         import gradient_free_optimizers as gfo
 
         population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=64
+            population_size=self.population_size, x=x0, lower_bound=20
         )
 
         opt = gfo.ParticleSwarmOptimizer
@@ -226,6 +230,7 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
             x0=x0,
             optimizer=optimizer,
             warm_start=self.initial_population,
+            n_init=self.n_init,
             n_grid_points=self.n_grid_points,
             stopping_maxiter=self.stopping_maxiter,
             stopping_maxtime=self.stopping_maxtime,
@@ -246,6 +251,7 @@ def _gfo_internal(
     x0: NDArray[np.float64],
     optimizer: BaseOptimizer,
     warm_start: list[PyTree] | None,
+    n_init: PositiveInt,
     n_grid_points: PositiveInt | PyTree,
     stopping_maxiter: PositiveInt,
     stopping_maxtime: NonNegativeFloat | None,  # todo check type,
@@ -276,7 +282,7 @@ def _gfo_internal(
         search_space=_get_search_space_gfo(
             problem.bounds, n_grid_points, problem.converter
         ),
-        initialize=_get_initialize(x0, warm_start, problem.converter),
+        initialize=_get_initialize(x0, n_init, warm_start, problem.converter),
         constraints=_get_gfo_constraints(),
         random_state=seed,
     )
@@ -363,6 +369,7 @@ def _get_gfo_constraints() -> list[Any]:
 
 def _get_initialize(
     x0: NDArray[np.float64],
+    n_init: PositiveInt,
     warm_start: PyTree | None,
     converter: Converter,
 ) -> dict[str, Any]:
@@ -375,11 +382,13 @@ def _get_initialize(
     dict: initialize dictionary with initial parameters set
     """
     init = _value2para(x0)
+    # dim = len(x0)
+    initialize = {"warm_start": [init], "vertices": n_init}
     if warm_start is not None:
         internal_values = [converter.params_to_internal(value) for value in warm_start]
         warm_start = [_value2para(value) for value in internal_values]
-        initialize = {"warm_start": [init] + warm_start}
-    initialize = {"warm_start": [init]}
+        initialize["warm_start"] += warm_start
+
     return initialize
 
 

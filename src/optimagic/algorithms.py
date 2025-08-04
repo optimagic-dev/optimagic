@@ -233,8 +233,6 @@ class GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelecti
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
 
 
@@ -553,8 +551,6 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
 
     @property
@@ -616,8 +612,6 @@ class BoundedGradientFreeLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
 
@@ -648,8 +642,6 @@ class GradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -845,8 +837,6 @@ class GlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -1344,8 +1334,6 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
 
@@ -1428,8 +1416,6 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1591,8 +1577,6 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -1900,8 +1884,6 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -2009,8 +1991,6 @@ class BoundedLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class LocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -2062,8 +2042,6 @@ class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -2572,8 +2550,6 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -3012,8 +2988,6 @@ class BoundedLocalAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -3155,8 +3129,6 @@ class LocalParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -3366,8 +3338,6 @@ class BoundedParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -3890,8 +3860,6 @@ class BoundedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class NonlinearConstrainedAlgorithms(AlgoSelection):
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
