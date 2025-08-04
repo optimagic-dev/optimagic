@@ -256,15 +256,16 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
 
 def _iloc(dictionary, positions):
-    """Substitute function for DataFrame.iloc. that works for a dictionary of arrays.
+    """Substitute function for DataFrame.iloc.
 
-    It creates a subset of the input dictionary based on the
-    index values in the info list, and returns this subset as
-    a dictionary with numpy arrays.
+    that works for a dictionary of arrays.
+        It creates a subset of the input dictionary based on the
+        index values in the info list, and returns this subset as
+        a dictionary with numpy arrays.
 
-    Args:
-        dictionary (dict): Dictionary of arrays.
-        position (list): List, slice or array of indices.
+        Args:
+            dictionary (dict): Dictionary of arrays.
+            position (list): List, slice or array of indices.
 
     """
     subset = {}

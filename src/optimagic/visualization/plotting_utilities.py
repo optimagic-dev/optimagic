@@ -27,8 +27,8 @@ def combine_plots(
     legend_kwargs=None,
     title_kwargs=None,
 ):
-    """Combine individual plots into figure with subplots. Uses list of plotly Figures
-    to build plotly Figure with subplots.
+    """Combine individual plots into figure with subplots. to build plotly Figure with
+    subplots. Uses list of plotly Figures.
 
     Args:
         plots (list): List with individual plots.

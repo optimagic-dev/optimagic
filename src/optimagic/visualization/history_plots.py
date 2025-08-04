@@ -229,8 +229,8 @@ def params_plot(
 
 @dataclass(frozen=True)
 class _PlottingMultistartHistory:
-    """Data container for an optimization history and metadata. Contains local histories
-    in case of multistart optimization.
+    """Data container for an optimization history and metadata. in case of multistart
+    optimization. Contains local histories.
 
     This dataclass is only used internally.
 
@@ -586,7 +586,6 @@ def _plotly_line_plot(lines: list[LineData], plot_config: PlotConfig) -> go.Figu
         The figure object containing the lines.
 
     """
-
     fig = go.Figure()
 
     for line in lines:

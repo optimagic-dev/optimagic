@@ -872,7 +872,6 @@ def _process_jac_value(
         The Jacobian value for the algorithm.
 
     """
-
     out_value = converter.derivative_to_internal(value, x)
     if direction == Direction.MAXIMIZE:
         out_value = -out_value

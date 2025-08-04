@@ -316,11 +316,14 @@ def _render_latex(
     """See docstring of render_latex for more information."""
     if not pd.__version__ >= "1.4.0":
         raise ValueError(
-            r"""render_latex or estimation_table with return_type="latex" requires
-            pandas 1.4.0 or higher. Update to a newer version of pandas or use
-            estimation_table with return_type="render_inputs" and manually render those
-            results using the DataFrame.to_latex method.
-        """
+            r"""render_latex or estimation_table with return_type="latex" requires pandas
+            1.4.0 or higher.
+
+            Update to a newer version of pandas or use estimation_table with
+            return_type="render_inputs" and manually render those results using the
+            DataFrame.to_latex method.
+
+            """
         )
     if siunitx_warning:
         warn(
@@ -458,11 +461,14 @@ def render_html(
     """
     if not pd.__version__ >= "1.4.0":
         raise ValueError(
-            r"""render_html or estimation_table with return_type="html" requires
-            pandas 1.4.0 or higher. Update to a newer version of pandas or use
-            estimation_table with return_type="render_inputs" and manually render those
-            results using the DataFrame.to_html method.
-        """
+            r"""render_html or estimation_table with return_type="html" requires pandas
+            1.4.0 or higher.
+
+            Update to a newer version of pandas or use estimation_table with
+            return_type="render_inputs" and manually render those results using the
+            DataFrame.to_html method.
+
+            """
         )
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
@@ -484,7 +490,8 @@ def render_html(
     html_str = body_styler.to_html(**default_options).split("</tbody>\n</table>")[0]
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
-            </td></tr>""".format(n_levels + n_columns)
+            </td></tr>"""\
+                         .format(n_levels + n_columns)
         stats_str += (
             footer.style.to_html(**default_options)
             .split("</thead>\n")[1]
@@ -805,7 +812,6 @@ def _get_cols_to_format(show_inference, confidence_intervals):
 
 def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_zeros):
     """Apply string formatter to specific columns of a list of DataFrames."""
-
     raw_formatted = [
         _apply_number_format(df[columns], number_format, format_integers=False)
         for df in dfs
@@ -936,9 +942,13 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
         if not default_col_groups:
             if not isinstance(custom_col_groups, list):
                 raise ValueError(
-                    """With unique model names, multiple models can't be grouped
-                under common group name. Provide list of unique group names instead,
-                if you wish to add column level."""
+                    """With unique model names, multiple models can't be grouped under
+                    common group name.
+
+                    Provide list of unique group names instead, if you wish to add
+                    column level.
+
+                    """
                 )
             col_groups = custom_col_groups
         else:
@@ -1279,8 +1289,9 @@ def _generate_notes_latex(
                         respectively."""
                     )
                 for n in custom_notes:
-                    notes_text += """
-                    {}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n""".format(
+                    notes_text +=\
+                                  """{}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n."""
+                                                                     .format(
                         amp_n, n_columns, n
                     )
             elif isinstance(custom_notes, str):
@@ -1315,11 +1326,13 @@ def _generate_notes_html(
     n_columns = len(df.columns)
     significance_levels = sorted(significance_levels)
     notes_text = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
-        </td></tr>""".format(n_columns + n_levels)
+        </td></tr>"""\
+                     .format(n_columns + n_levels)
     if append_notes:
-        notes_text += """
-        <tr><td style="text-align: left">{}</td><td colspan="{}"
-        style="text-align: right">""".format(notes_label, n_columns + n_levels - 1)
+        notes_text +=\
+                      """<tr><td style="text-align: left">{}</td><td colspan="{}"
+                      style="text-align: right">"""
+                                     .format(notes_label, n_columns + n_levels - 1)
         for i in range(len(significance_levels) - 1):
             stars = "*" * (len(significance_levels) - i)
             notes_text += f"<sup>{stars}</sup>p&lt;{significance_levels[i]}; "
@@ -1335,19 +1348,21 @@ def _generate_notes_html(
                         {not_str_notes} are of types {not_str_notes_types}
                         respectively."""
                     )
-                notes_text += """
-                    <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
-                    """.format(n_columns + n_levels - 1, custom_notes[0])
+                notes_text +=\
+                              """<tr><td></td><td colspan="{}"style="text-align:
+                              right">{}</td></tr>"""
+                       .format(n_columns + n_levels - 1, custom_notes[0])
                 if len(custom_notes) > 1:
                     for i in range(1, len(custom_notes)):
-                        notes_text += """
-                        <tr><td></td><td colspan="{}"style="text-align: right">
-                        {}</td></tr>
-                        """.format(n_columns + n_levels - 1, custom_notes[i])
+                        notes_text +=\
+                                      """<tr><td></td><td colspan="{}"style="text-align:
+                                      right"> {}</td></tr>"""
+                           .format(n_columns + n_levels - 1, custom_notes[i])
             elif isinstance(custom_notes, str):
-                notes_text += """
-                    <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
-                    """.format(n_columns + n_levels - 1, custom_notes)
+                notes_text +=\
+                              """<tr><td></td><td colspan="{}"style="text-align:
+                              right">{}</td></tr>"""
+                       .format(n_columns + n_levels - 1, custom_notes)
             else:
                 raise TypeError(
                     f"""Custom notes can be either a string or a list of strings,

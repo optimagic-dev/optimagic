@@ -86,7 +86,6 @@ def convergence_plot(
         plotly.Figure: The grid plot or dict of individual plots
 
     """
-
     df, _ = process_benchmark_results(
         problems=problems,
         results=results,

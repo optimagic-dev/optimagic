@@ -89,7 +89,6 @@ class TestIterationStore:
     )
     def test_parallel_insert(self, store, executor_factory):
         """Test multithreaded writing and reading in the IterationStore."""
-
         with executor_factory() as executor:
             # Insert data concurrently
             to_insert = list(map(self.create_test_point, range(10)))
@@ -207,7 +206,6 @@ class TestStepStore:
     )
     def test_parallel_insert(self, store, executor_factory):
         """Test multithreaded writing and reading in the IterationStore."""
-
         with executor_factory() as executor:
             # Insert data concurrently
             to_insert = list(map(self.create_test_point, range(10)))
@@ -233,7 +231,6 @@ class TestStepStore:
     )
     def test_parallel_update(self, store, executor_factory):
         """Test multithreaded writing and reading in the IterationStore."""
-
         with executor_factory() as executor:
             # Insert data concurrently
             to_insert = list(map(self.create_test_point, range(10)))

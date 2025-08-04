@@ -285,11 +285,13 @@ def create_dataclass_code(
     fields = "\n".join(field_strings)
 
     # get code for the properties to select children
-    child_template = textwrap.dedent("""
+    child_template = textwrap.dedent(
+        """
         @property
         def {new_category}(self) -> {class_name}:
             return {class_name}()
-    """)
+    """
+    )
     child_template = textwrap.indent(child_template, "    ")
     child_strings = []
     for new_category, categories in children.items():
@@ -373,7 +375,8 @@ def _get_imports(modules: list[ModuleType]) -> str:
 
 def _get_base_class_code() -> str:
     """Get the source code for the AlgoSelection class."""
-    out = textwrap.dedent("""
+    out = textwrap.dedent(
+        """
         @dataclass(frozen=True)
         class AlgoSelection:
 
@@ -412,7 +415,8 @@ def _get_base_class_code() -> str:
             def _available_algorithms_dict(self) -> dict[str, Type[Algorithm]]:
                 return {str(a.name): a for a in self._available()}
 
-    """)
+    """
+    )
     return out
 
 
@@ -432,14 +436,16 @@ def _get_docstring_code() -> str:
 
 def _get_instantiation_code() -> str:
     """Get the source code for instantiating some classes at the end of the module."""
-    out = textwrap.dedent("""
+    out = textwrap.dedent(
+        """
         algos = Algorithms()
         global_algos = GlobalAlgorithms()
 
         ALL_ALGORITHMS = algos._all_algorithms_dict
         AVAILABLE_ALGORITHMS = algos._available_algorithms_dict
         GLOBAL_ALGORITHMS = global_algos._available_algorithms_dict
-    """)
+    """
+    )
     return out
 
 

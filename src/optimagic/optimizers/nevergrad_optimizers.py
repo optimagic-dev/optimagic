@@ -973,7 +973,6 @@ def _nevergrad_internal(
         InternalOptimizeResult: Internal optimization result
 
     """
-
     import nevergrad as ng
 
     param = ng.p.Array(
