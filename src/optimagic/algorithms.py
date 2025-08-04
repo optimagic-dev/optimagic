@@ -16,8 +16,13 @@ from optimagic.optimizers.bayesian_optimizer import BayesOpt
 from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
 from optimagic.optimizers.gradient_free_optimizers import (
+    GFODownhillSimplex,
     GFOHillClimbing,
     GFOParticleSwarmOptimization,
+    GFORandomRestartHillClimbing,
+    GFORepulsingHillClimbing,
+    GFOSimulatedAnnealing,
+    GFOStochasticHillClimbing,
 )
 from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
@@ -398,6 +403,7 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -560,8 +566,16 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1127,6 +1141,7 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1204,6 +1219,7 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1297,8 +1313,16 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1348,8 +1372,16 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalScalarAlgorithms(AlgoSelection):
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1442,8 +1474,17 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1705,6 +1746,7 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1907,8 +1949,16 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -2368,6 +2418,7 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2426,8 +2477,16 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalAlgorithms(AlgoSelection):
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -2469,8 +2528,17 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2581,8 +2649,17 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2731,6 +2808,7 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2826,6 +2904,7 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2931,8 +3010,16 @@ class GlobalParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3016,8 +3103,16 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3170,8 +3265,17 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
 class BoundedScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3520,8 +3624,17 @@ class GradientBasedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3609,6 +3722,7 @@ class GradientFreeAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3680,8 +3794,16 @@ class GlobalAlgorithms(AlgoSelection):
 class LocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3754,8 +3876,17 @@ class LocalAlgorithms(AlgoSelection):
 class BoundedAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3906,8 +4037,17 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
 class ScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -4110,8 +4250,17 @@ class Algorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
+        GFORandomRestartHillClimbing
+    )
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
