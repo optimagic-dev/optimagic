@@ -430,7 +430,6 @@ def minimize(
         multistart_options: Deprecated. Use multistart instead.
 
     """
-
     problem = create_optimization_problem(
         direction=Direction.MINIMIZE,
         fun=fun,

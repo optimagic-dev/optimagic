@@ -159,8 +159,8 @@ class ScipyLBFGSB(Algorithm):
     """
 
     max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
-    """The maximum number of line search steps. This is the 'maxls' parameter in the
-    SciPy documentation.
+    """The maximum number of line search steps. SciPy documentation. This is the 'maxls'
+    parameter in the.
 
     The default value is taken from SciPy's L-BFGS-B implementation.
 
@@ -919,8 +919,8 @@ class ScipyBrute(Algorithm):
         workers = _get_workers(self.n_cores, self.batch_evaluator)
         if problem.bounds.lower is None or problem.bounds.upper is None:
             raise ValueError(
-                """Global algorithms like scipy_brute need finite bounds
-                 for all parameters"""
+                """Global algorithms like scipy_brute need finite bounds for all
+                parameters."""
             )
         raw_res = scipy.optimize.brute(
             func=problem.fun,

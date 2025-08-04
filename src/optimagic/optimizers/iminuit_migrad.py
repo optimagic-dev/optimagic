@@ -81,7 +81,6 @@ class IminuitMigrad(Algorithm):
 
 def _process_minuit_result(minuit_result: Minuit) -> InternalOptimizeResult:
     """Convert iminuit result to optimagic's internal result format."""
-
     res = InternalOptimizeResult(
         x=np.array(minuit_result.values),
         fun=minuit_result.fval,

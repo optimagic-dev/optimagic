@@ -151,7 +151,6 @@ def test_estimate_ml_with_logit_no_constraints(
 ):
     """Test that estimate_ml computes correct params and covariances under different
     scenarios."""
-
     # ==================================================================================
     # estimate
     # ==================================================================================
