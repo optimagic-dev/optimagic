@@ -772,7 +772,7 @@ def _gfo_internal(
         search_space=_get_search_space_gfo(
             problem.bounds, n_grid_points, problem.converter
         ),
-        initialize=_get_initialize(x0, n_init, warm_start, problem.converter),
+        initialize=_get_initialize_gfo(x0, n_init, warm_start, problem.converter),
         constraints=_get_gfo_constraints(),
         random_state=seed,
     )
@@ -859,10 +859,10 @@ def _get_gfo_constraints() -> list[Any]:
     return []
 
 
-def _get_initialize(
+def _get_initialize_gfo(
     x0: NDArray[np.float64],
     n_init: PositiveInt,
-    warm_start: PyTree | None,
+    warm_start: list[PyTree] | None,
     converter: Converter,
 ) -> dict[str, Any]:
     """Set initial params x0, additional start points for the optimization run or the
@@ -876,12 +876,12 @@ def _get_initialize(
 
     """
     init = _value2para(x0)
-    initialize = {"warm_start": [init], "vertices": n_init}
+    x_list = [init]
     if warm_start is not None:
-        internal_values = [converter.params_to_internal(value) for value in warm_start]
-        warm_start = [_value2para(value) for value in internal_values]
-        initialize["warm_start"] += warm_start
-
+        internal_values = [converter.params_to_internal(x) for x in warm_start]
+        warm_start = [_value2para(x) for x in internal_values]
+        x_list += warm_start
+    initialize = {"warm_start": x_list, "vertices": n_init}
     return initialize
 
 
