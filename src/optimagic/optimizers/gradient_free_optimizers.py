@@ -13,7 +13,6 @@ from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
     CONVERGENCE_FTOL_REL,
     STOPPING_MAXFUN_GLOBAL,
-    get_population_size,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -636,104 +635,6 @@ class GFODownhillSimplex(Algorithm, GFOCommonOptions):
             verbosity=self.verbosity,
             seed=self.seed,
         )
-        return res
-
-
-@mark.minimizer(
-    name="gfo_pso",
-    solver_type=AggregationLevel.SCALAR,
-    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
-    is_global=True,
-    needs_jac=False,
-    needs_hess=False,
-    needs_bounds=True,
-    supports_parallelism=False,
-    supports_bounds=True,
-    supports_infinite_bounds=False,
-    supports_linear_constraints=False,
-    supports_nonlinear_constraints=False,
-    disable_history=False,
-)
-@dataclass(frozen=True)
-class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Particle Swarm Optimization algorithm.
-
-    This algorithm is a Python implementation of the Particle Swarm Optimization
-    algorithm through the gradient_free_optimizers package.
-
-    Particle Swarm Optimization is a global population based algorithm.
-    The algorithm simulates a swarm of particles across the search space.
-    Each particle adjusts its position based on its own experience (cognitive weight)
-    and the experiences of its neighbors or the swarm (social weight), using
-    velocity updates.
-    The algorithm iteratively guides the swarm toward promising regions of the
-    search space. The velocity of a particle is calculated by the following
-    equation:
-
-    .. math::
-        v_{n+1} = \\omega \\cdot v_n + c_k \\cdot r_1 \\cdot (p_{best}-p_n)
-        + c_s \\cdot r_2 \\cdot (g_{best} - p_n)
-
-    """
-
-    population_size: PositiveInt = 10
-    """Size of the population."""
-
-    initial_population: list[PyTree] | None = None
-    """The user-provided inital population."""
-
-    inertia: NonNegativeFloat = 0.5
-    """The inertia of the movement of the individual particles in the population."""
-
-    cognitive_weight: NonNegativeFloat = 0.5
-    """A factor of the movement towards the personal best position of the individual
-    particles in the population."""
-
-    social_weight: NonNegativeFloat = 0.5
-    """A factor of the movement towards the global best position of the individual
-    particles in the population."""
-
-    rand_rest_p: NonNegativeFloat = 0
-    """Probability for the optimization algorithm to jump to a random position in an
-    iteration step."""
-
-    def _solve_internal_problem(
-        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
-    ) -> InternalOptimizeResult:
-        import gradient_free_optimizers as gfo
-
-        population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=20
-        )
-
-        opt = gfo.ParticleSwarmOptimizer
-        optimizer = partial(
-            opt,
-            population=population_size,
-            inertia=self.inertia,
-            cognitive_weight=self.cognitive_weight,
-            social_weight=self.social_weight,
-            rand_rest_p=self.rand_rest_p,
-        )
-
-        res = _gfo_internal(
-            problem=problem,
-            x0=x0,
-            optimizer=optimizer,
-            warm_start=self.initial_population,
-            n_init=self.n_init,
-            n_grid_points=self.n_grid_points,
-            stopping_maxiter=self.stopping_maxiter,
-            stopping_maxtime=self.stopping_maxtime,
-            stopping_funval=self.stopping_funval,
-            convergence_iter_noimprove=self.convergence_iter_noimprove,
-            convergence_ftol_abs=self.convergence_ftol_abs,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            caching=self.caching,
-            verbosity=self.verbosity,
-            seed=self.seed,
-        )
-
         return res
 
 
