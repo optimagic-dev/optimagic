@@ -21,7 +21,7 @@ dependencies:
   - numpy >= 2  # run, tests
   - pandas  # run, tests
   - plotly>=6.2  # run, tests
-  - matplotlib  # run, tests
+  - matplotlib  # tests
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests

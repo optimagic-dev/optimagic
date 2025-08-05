@@ -1,12 +1,16 @@
 import abc
 from typing import Any
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 
+from optimagic.config import IS_MATPLOTLIB_INSTALLED
+from optimagic.exceptions import NotInstalledError
 from optimagic.visualization.plotting_utilities import LineData
+
+if IS_MATPLOTLIB_INSTALLED:
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
 
 
 class PlotBackend(abc.ABC):
@@ -30,7 +34,7 @@ class PlotBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def set_legend_props(self, legend_props: dict[str, Any]) -> None:
+    def set_legend_properties(self, legend_properties: dict[str, Any]) -> None:
         pass
 
 
@@ -60,39 +64,45 @@ class PlotlyBackend(PlotBackend):
     def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
         self._fig.update_layout(xaxis_title_text=xlabel, yaxis_title_text=ylabel)
 
-    def set_legend_props(self, legend_props: dict[str, Any]) -> None:
-        self._fig.update_layout(legend=legend_props)
+    def set_legend_properties(self, legend_properties: dict[str, Any]) -> None:
+        self._fig.update_layout(legend=legend_properties)
 
 
-class MatplotlibBackend(PlotBackend):
-    default_template: str = "default"
-    default_palette: list = list(mpl.colormaps["Set2"].colors)
+if IS_MATPLOTLIB_INSTALLED:
 
-    def __init__(self, template: str | None):
-        super().__init__(template)
-        plt.style.use(self.template)
-        self._fig, self._ax = plt.subplots()
-        self.figure = self._fig
+    class MatplotlibBackend(PlotBackend):
+        default_template: str = "default"
+        default_palette: list = [
+            mpl.colormaps["Set2"](i) for i in range(mpl.colormaps["Set2"].N)
+        ]
 
-    def add_lines(self, lines: list[LineData]) -> None:
-        for line in lines:
-            self._ax.plot(
-                line.x,
-                line.y,
-                color=line.color,
-                label=line.name if line.show_in_legend else None,
-            )
+        def __init__(self, template: str | None):
+            super().__init__(template)
+            plt.style.use(self.template)
+            self._fig, self._ax = plt.subplots()
+            self.figure = self._fig
 
-    def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
-        self._ax.set(xlabel=xlabel, ylabel=ylabel)
+        def add_lines(self, lines: list[LineData]) -> None:
+            for line in lines:
+                self._ax.plot(
+                    line.x,
+                    line.y,
+                    color=line.color,
+                    label=line.name if line.show_in_legend else None,
+                )
 
-    def set_legend_props(self, legend_props: dict[str, Any]) -> None:
-        self._ax.legend(**legend_props)
+        def set_labels(
+            self, xlabel: str | None = None, ylabel: str | None = None
+        ) -> None:
+            self._ax.set(xlabel=xlabel, ylabel=ylabel)
+
+        def set_legend_properties(self, legend_properties: dict[str, Any]) -> None:
+            self._ax.legend(**legend_properties)
 
 
 PLOT_BACKEND_CLASSES = {
     "plotly": PlotlyBackend,
-    "matplotlib": MatplotlibBackend,
+    "matplotlib": MatplotlibBackend if IS_MATPLOTLIB_INSTALLED else None,
 }
 
 
@@ -104,4 +114,18 @@ def get_plot_backend_class(backend_name: str) -> type[PlotBackend]:
         )
         raise ValueError(msg)
 
-    return PLOT_BACKEND_CLASSES[backend_name]
+    return _get_backend_if_installed(backend_name)
+
+
+def _get_backend_if_installed(backend_name: str) -> type[PlotBackend]:
+    plot_cls = PLOT_BACKEND_CLASSES[backend_name]
+
+    if plot_cls is None:
+        msg = (
+            f"The '{backend_name}' backend is not installed. "
+            f"Install the package using either 'pip install {backend_name}' or "
+            f"'conda install -c conda-forge {backend_name}'"
+        )
+        raise NotInstalledError(msg)
+
+    return plot_cls

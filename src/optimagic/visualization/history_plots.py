@@ -18,7 +18,7 @@ from optimagic.typing import IterationHistory, PyTree
 from optimagic.visualization.backends import get_plot_backend_class
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
-BACKEND_TO_CRITERION_PLOT_LEGEND_PROPS: dict[str, dict[str, Any]] = {
+BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
     "plotly": {
         "yanchor": "top",
         "xanchor": "right",
@@ -48,9 +48,9 @@ def criterion_plot(
     """Plot the criterion history of an optimization.
 
     Args:
-        results: A (list or dict of) optimization results with collected history.
-            If dict, then the key is used as the name in a legend.
-        names: Names corresponding to res or entries in res.
+        results: An optimization result (or list of, or dict of results) with collected
+            history, or path(s) to it. If dict, then the key is used as the name in the
+            legend.
         max_evaluations: Clip the criterion history after that many entries.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. Default is "plotly_white".
@@ -104,7 +104,7 @@ def criterion_plot(
 
     plot.add_lines(lines + multistart_lines)
     plot.set_labels(xlabel="No. of criterion evaluations", ylabel="Criterion value")
-    plot.set_legend_props(BACKEND_TO_CRITERION_PLOT_LEGEND_PROPS[backend])
+    plot.set_legend_properties(BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES[backend])
 
     return plot.figure
 

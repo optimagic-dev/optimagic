@@ -23,7 +23,7 @@ def _is_installed(module_name: str) -> bool:
 
 
 # ======================================================================================
-# Check Available Packages
+# Check Available Optimization Packages
 # ======================================================================================
 
 IS_PETSC4PY_INSTALLED = _is_installed("petsc4py")
@@ -39,6 +39,12 @@ IS_NUMBA_INSTALLED = _is_installed("numba")
 IS_IMINUIT_INSTALLED = _is_installed("iminuit")
 IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
 IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
+
+# ======================================================================================
+# Check Available Visualization Packages
+# ======================================================================================
+
+IS_MATPLOTLIB_INSTALLED = _is_installed("matplotlib")
 
 
 # ======================================================================================
