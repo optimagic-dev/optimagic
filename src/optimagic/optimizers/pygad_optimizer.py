@@ -47,8 +47,8 @@ class CrossoverFunction(Protocol):
 
     Args:
         parents: 2D array of parent solutions selected for mating.
-        offspring_size: Tuple (num_offspring, num_genes) specifying
-            the shape of the offspring population to be generated.
+        offspring_size: Tuple (num_offspring, num_genes) specifying the shape
+            of the offspring population to be generated.
         ga_instance: The PyGAD GA instance.
 
     Returns:
@@ -84,23 +84,260 @@ class MutationFunction(Protocol):
 class GeneConstraintFunction(Protocol):
     """Protocol for user-defined gene constraint functions.
 
-    Gene constraint functions are applied to individual genes to enforce specific
-    constraints on their values. Each function receives the current solution and
-    a list of candidate values, then returns the constrained values.
+    Gene constraint functions are applied to individual genes to enforce
+    specific constraints on their values. Each function receives the current
+    solution and a list of candidate values, then returns the constrained
+    values.
 
     Args:
         solution: Current solution array containing all gene values.
-        values: List or array of candidate values for the gene being constrained.
+        values: List or array of candidate values for the gene being
+            constrained.
 
     Returns:
-        Constrained values as a list or array, ensuring they satisfy the gene's
-        specific constraints.
+        Constrained values as a list or array, ensuring they satisfy the
+        gene's specific constraints.
 
     """
 
     def __call__(
-        self, solution: NDArray[np.float64], values: list[float] | NDArray[np.float64]
+        self,
+        solution: NDArray[np.float64],
+        values: list[float] | NDArray[np.float64],
     ) -> list[float] | NDArray[np.float64]: ...
+
+
+@dataclass(frozen=True)
+class BaseMutation:
+    """Base class for all PyGAD mutation configurations.
+
+    Provides default implementation for converting mutation configurations to PyGAD
+    parameters. Simple mutations can use this directly, while complex mutations can
+    override it.
+
+    """
+
+    def to_pygad_params(self) -> dict[str, Any]:
+        """Convert mutation configuration to PyGAD parameters.
+
+        Default implementation that works for simple mutations. Complex
+        mutations (RandomMutation, AdaptiveMutation) should override this.
+
+        Returns:
+            Dictionary of PyGAD mutation parameters.
+
+        """
+        mutation_type = getattr(self, "mutation_type", "random")
+
+        return {
+            "mutation_type": mutation_type,
+            "mutation_probability": None,
+            "mutation_percent_genes": "default",
+            "mutation_num_genes": None,
+            "mutation_by_replacement": False,
+        }
+
+
+@dataclass(frozen=True)
+class RandomMutation(BaseMutation):
+    """Configuration for the random mutation operator in PyGAD.
+
+    The random mutation selects a subset of genes in each solution and either
+    replaces each selected gene with a new random value or adds a random value
+    to it.
+
+    The exact behavior depends on the `by_replacement` parameter: If
+    `by_replacement` is True, the selected genes are replaced with new values;
+    if False, random values are added to the existing gene values.
+
+    The mutation rate is determined by the mutation probability, the number of
+    genes, or the percentage of genes (with priority: probability > num_genes
+    > percent_genes).
+
+    """
+
+    probability: ProbabilityFloat | None = None
+    """Probability of mutating each gene.
+
+    If specified, takes precedence over num_genes and percent_genes. Range [0, 1].
+
+    """
+
+    num_genes: PositiveInt | None = None
+    """Number of genes to mutate per solution.
+
+    Takes precedence over percent_genes but is ignored if probability is specified.
+
+    """
+
+    percent_genes: PositiveFloat | str = "default"
+    """Percentage of genes to mutate in each solution.
+
+    - "default": Uses 10% of genes (PyGAD default)
+    - Numeric value: Percentage (0-100)
+
+    Ignored if probability or num_genes are specified.
+
+    """
+
+    by_replacement: bool = False
+    """If True, replace gene values with random values.
+
+    If False, add random values to existing gene values.
+
+    """
+
+    def to_pygad_params(self) -> dict[str, Any]:
+        """Convert RandomMutation configuration to PyGAD parameters."""
+        return {
+            "mutation_type": "random",
+            "mutation_probability": self.probability,
+            "mutation_percent_genes": self.percent_genes,
+            "mutation_num_genes": self.num_genes,
+            "mutation_by_replacement": self.by_replacement,
+        }
+
+
+@dataclass(frozen=True)
+class SwapMutation(BaseMutation):
+    """Configuration for the swap mutation in PyGAD.
+
+    The swap mutation selects two random genes and exchanges their values. This
+    operation maintains all gene values, altering only their positions within the
+    chromosome.
+
+    No additional parameters are required for this mutation type.
+
+    """
+
+    mutation_type: str = "swap"
+
+
+@dataclass(frozen=True)
+class InversionMutation(BaseMutation):
+    """Configuration for the inversion mutation in PyGAD.
+
+    The inversion mutation selects a contiguous segment of genes and reverses their
+    order. All gene values remain unchanged; only the ordering within the selected
+    segment is altered.
+
+    No additional parameters are required for this mutation type.
+
+    """
+
+    mutation_type: str = "inversion"
+
+
+@dataclass(frozen=True)
+class ScrambleMutation(BaseMutation):
+    """Configuration for the scramble mutation in PyGAD.
+
+    The scramble mutation randomly shuffles the genes within a contiguous segment. This
+    preserves gene values but changes their order within the chosen segment.
+
+    No additional parameters are required for this mutation type.
+
+    """
+
+    mutation_type: str = "scramble"
+
+
+@dataclass(frozen=True)
+class AdaptiveMutation(BaseMutation):
+    """Configuration for the adaptive mutation in PyGAD.
+
+    The adaptive mutation dynamically adjusts the mutation rate based on the
+    fitness of solutions. Typically, solutions with below-average fitness
+    (bad fitness solutions) receive a higher mutation rate to encourage
+    exploration, while above-average solutions (good fitness solutions)
+    receive a lower rate to preserve good solutions.
+
+    By default, adaptive mutation uses a 10% mutation rate for bad fitness
+    solutions and 5% for good fitness solutions.
+
+    The priority for selecting mutation parameters is:
+    probability > num_genes > percent_genes
+
+    """
+
+    probability_bad: ProbabilityFloat | None = 0.1
+    """Probability of mutating each gene for below-average fitness solutions.
+
+    If specified, takes precedence over num_genes_bad and percent_genes_bad. Range [0,
+    1]. Default: 0.1 (10% mutation rate for bad fitness solutions).
+
+    """
+
+    probability_good: ProbabilityFloat | None = 0.05
+    """Probability of mutating each gene for above-average fitness solutions.
+
+    If specified, takes precedence over num_genes_good and percent_genes_good. Range [0,
+    1]. Default: 0.05 (5% mutation rate for good fitness solutions).
+
+    """
+
+    num_genes_bad: PositiveInt | None = None
+    """Number of genes to mutate for below-average fitness solutions.
+
+    Takes precedence over percent_genes_bad but is ignored if probability_bad is
+    specified.
+
+    """
+
+    num_genes_good: PositiveInt | None = None
+    """Number of genes to mutate for above-average fitness solutions.
+
+    Takes precedence over percent_genes_good but is ignored if probability_good is
+    specified.
+
+    """
+
+    percent_genes_bad: PositiveFloat | None = None
+    """Percentage of genes to mutate for below-average fitness solutions.
+
+    Ignored if probability_bad or num_genes_bad are specified.
+
+    """
+
+    percent_genes_good: PositiveFloat | None = None
+    """Percentage of genes to mutate for above-average fitness solutions.
+
+    Ignored if probability_good or num_genes_good are specified.
+
+    """
+
+    by_replacement: bool = False
+    """If True, replace gene values with random values.
+
+    If False, add random values to existing gene values.
+
+    """
+
+    def to_pygad_params(self) -> dict[str, Any]:
+        """Convert AdaptiveMutation configuration to PyGAD parameters."""
+        mutation_probability: list[float] | None = None
+        mutation_num_genes: list[int] | None = None
+        mutation_percent_genes: list[float] | str | None = "default"
+
+        if self.probability_bad is not None and self.probability_good is not None:
+            mutation_probability = [self.probability_bad, self.probability_good]
+        elif self.num_genes_bad is not None and self.num_genes_good is not None:
+            mutation_num_genes = [self.num_genes_bad, self.num_genes_good]
+        elif self.percent_genes_bad is not None and self.percent_genes_good is not None:
+            mutation_percent_genes = [self.percent_genes_bad, self.percent_genes_good]
+        else:
+            mutation_probability = [
+                self.probability_bad or 0.1,
+                self.probability_good or 0.05,
+            ]
+
+        return {
+            "mutation_type": "adaptive",
+            "mutation_probability": mutation_probability,
+            "mutation_percent_genes": mutation_percent_genes,
+            "mutation_num_genes": mutation_num_genes,
+            "mutation_by_replacement": self.by_replacement,
+        }
 
 
 @mark.minimizer(
@@ -143,8 +380,8 @@ class Pygad(Algorithm):
     population_size: PositiveInt | None = None
     """Number of solutions in each generation.
 
-    Larger populations explore the search space more thoroughly but require more
-    fitness evaluations per generation. If None, defaults to
+    Larger populations explore the search space more thoroughly but require
+    more fitness evaluations per generation. If None, optimagic sets this to
     ``max(10, 10 * (problem_dimension + 1))``.
 
     """
@@ -152,8 +389,8 @@ class Pygad(Algorithm):
     num_parents_mating: PositiveInt | None = 10
     """Number of parents selected for mating in each generation.
 
-    Higher values can speed up convergence but may risk premature convergence. If None,
-    defaults to half the population size.
+    Higher values can speed up convergence but may risk premature convergence.
+    If None, defaults to ``max(2, population_size // 2)``.
 
     """
 
@@ -176,10 +413,11 @@ class Pygad(Algorithm):
     Available methods:
     - "sss": Steady-State Selection (selects the best individuals to continue)
     - "rws": Roulette Wheel Selection (probabilistic, fitness-proportional)
-    - "sus": Stochastic Universal Sampling (even sampling across the population)
+    - "sus": Stochastic Universal Sampling (even sampling across population)
     - "rank": Rank Selection (selects based on rank order)
     - "random": Random Selection
-    - "tournament": Tournament Selection (best from K randomly chosen individuals)
+    - "tournament": Tournament Selection (best from K randomly chosen
+      individuals)
 
     Alternatively, provide a custom function with signature
     ``(fitness, num_parents, ga_instance) -> tuple[NDArray, NDArray]``.
@@ -196,10 +434,12 @@ class Pygad(Algorithm):
 
     """
 
-    keep_elitism: PositiveInt = 1
+    keep_elitism: int = 1
     """Number of elite (best) solutions preserved each generation.
 
-    Range: 0 to population_size.If nonzero, takes precedence over ``keep_parents``.
+    Range: 0 to population_size. If greater than 0, takes precedence over
+    ``keep_parents``. When 0, elitism is disabled and ``keep_parents``
+    controls parent retention.
 
     """
 
@@ -221,8 +461,7 @@ class Pygad(Algorithm):
     - "scattered": Scattered crossover (random mask)
 
     Or provide a custom function with signature
-    ``(parents, offspring_size, ga_instance) -> NDArray``. Set to None to disable
-    crossover.
+    ``(parents, offspring_size, ga_instance) -> NDArray``.
 
     """
 
@@ -233,93 +472,35 @@ class Pygad(Algorithm):
 
     """
 
-    mutation_type: (
+    mutation: (
         Literal["random", "swap", "inversion", "scramble", "adaptive"]
+        | type[BaseMutation]
+        | BaseMutation
         | MutationFunction
         | None
     ) = "random"
     """Mutation operator for introducing genetic diversity.
 
-    Available methods:
-    - "random": Replace with random values
-    - "swap": Exchange two genes
-    - "inversion": Reverse a sequence of genes
-    - "scramble": Shuffle a subset of genes
-    - "adaptive": Adaptively adjusts mutation rate
+    Available options:
+    1. String values for default configurations:
+       * "random": Random mutation with default parameters
+       * "swap": Swap mutation with default parameters
+       * "inversion": Inversion mutation with default parameters
+       * "scramble": Scramble mutation with default parameters
+       * "adaptive": Adaptive random mutation with default parameters
 
-    Or provide a custom function with signature
-    ``(offspring, ga_instance) -> NDArray``. Set to None to disable mutation.
+    2. Mutation classes for default configurations:
+       * Any mutation class (e.g., ``RandomMutation``, ``SwapMutation``,
+         ``AdaptiveMutation``, etc.)
+       * All classes can be used without parameters for default behavior
 
-    """
-    mutation_probability: (
-        ProbabilityFloat
-        | list[ProbabilityFloat]
-        | tuple[ProbabilityFloat, ProbabilityFloat]
-        | NDArray[np.float64]
-        | None
-    ) = None
-    """Probability of mutating each gene.
+    3. Configured mutation instances:
+       * Any mutation instance (e.g., ``RandomMutation(...)``,
+         ``SwapMutation()``, etc.)
+       * All mutation classes inherit from ``BaseMutation``
 
-    - Scalar: Fixed probability for all genes (non-adaptive)
-    - List/tuple/array of 2 values: Adaptive mutation;
-      [prob_low_fitness, prob_high_fitness] (only with ``mutation_type="adaptive"``)
-
-    When specified, takes precedence over ``mutation_percent_genes`` and
-    ``mutation_num_genes``. Range [0, 1].
-
-    """
-
-    mutation_percent_genes: (
-        PositiveFloat
-        | str
-        | list[PositiveFloat]
-        | tuple[PositiveFloat, PositiveFloat]
-        | NDArray[np.float64]
-    ) = "default"
-    """Percentage of genes to mutate in each solution.
-
-    - "default": Uses 10% of genes (PyGAD default)
-    - Scalar: Fixed percentage for all generations (0-100)
-    - List/tuple/array of 2 values: Adaptive mutation;
-      [percent_low_fitness, percent_high_fitness] (only with
-      ``mutation_type="adaptive"``)
-
-    Ignored if ``mutation_probability`` is specified.
-
-    """
-
-    mutation_num_genes: (
-        PositiveInt
-        | list[PositiveInt]
-        | tuple[PositiveInt, PositiveInt]
-        | NDArray[np.int_]
-        | None
-    ) = None
-    """Number of genes to mutate per solution.
-
-    - Scalar: Fixed number for all generations
-    - List/tuple/array of 2 values: Adaptive;
-      [count_low_fitness, count_high_fitness] (only with ``mutation_type="adaptive"``)
-
-    Takes precedence over ``mutation_percent_genes`` but is ignored if
-    ``mutation_probability`` is specified.
-
-    """
-    mutation_by_replacement: bool = False
-    """If True, mutated gene values are replaced with random values.
-
-    Only for ``mutation_type="random"``; if False, random values are added to the
-    original.
-
-    """
-
-    random_mutation_min_val: float | list[float] | NDArray[np.float64] = -1.0
-
-    random_mutation_max_val: float | list[float] | NDArray[np.float64] = 1.0
-    """Minimum and maximum values used for random mutation.
-
-    Can be scalars, arrays/lists (one per gene), or PyTrees matching the parameter
-    structure. Only used with ``mutation_type="random"``.
+    4. Custom function with signature ``(offspring, ga_instance) -> NDArray``
+    5. None to disable mutation
 
     """
 
@@ -342,6 +523,7 @@ class Pygad(Algorithm):
     If None and ``n_cores > 1``, automatically set to ``n_cores``.
 
     """
+
     stop_criteria: str | list[str] | None = None
     """Stopping criteria for the genetic algorithm.
 
@@ -453,6 +635,9 @@ class Pygad(Algorithm):
             for i in range(len(x0))
         ]
 
+        # Convert mutation parameter to PyGAD parameters
+        mutation_params = self._convert_mutation_to_pygad_params()
+
         ga_instance = pygad.GA(
             num_generations=self.num_generations,
             num_parents_mating=num_parents_mating,
@@ -466,13 +651,11 @@ class Pygad(Algorithm):
             K_tournament=self.K_tournament,
             crossover_type=self.crossover_type,
             crossover_probability=self.crossover_probability,
-            mutation_type=self.mutation_type,
-            mutation_probability=self.mutation_probability,
-            mutation_by_replacement=self.mutation_by_replacement,
-            mutation_percent_genes=self.mutation_percent_genes,
-            mutation_num_genes=self.mutation_num_genes,
-            random_mutation_min_val=self.random_mutation_min_val,
-            random_mutation_max_val=self.random_mutation_max_val,
+            mutation_type=mutation_params["mutation_type"],
+            mutation_probability=mutation_params["mutation_probability"],
+            mutation_by_replacement=mutation_params["mutation_by_replacement"],
+            mutation_percent_genes=mutation_params["mutation_percent_genes"],
+            mutation_num_genes=mutation_params["mutation_num_genes"],
             allow_duplicate_genes=self.allow_duplicate_genes,
             gene_constraint=self.gene_constraint,
             sample_size=self.sample_size,
@@ -487,24 +670,70 @@ class Pygad(Algorithm):
 
         return result
 
+    def _convert_mutation_to_pygad_params(self) -> dict[str, Any]:
+        """Convert the mutation parameter to PyGAD mutation parameters.
+
+        Handles strings, classes, instances, and custom functions using the
+        new mutation dataclass system with built-in conversion methods.
+
+        Returns:
+            Dictionary of PyGAD mutation parameters.
+
+        """
+        if self.mutation is None:
+            return self._get_default_mutation_params(mutation_type=None)
+
+        elif isinstance(self.mutation, str):
+            mutation_instance = create_mutation_from_string(self.mutation)
+            return mutation_instance.to_pygad_params()
+
+        elif isinstance(self.mutation, type) and issubclass(
+            self.mutation, BaseMutation
+        ):
+            mutation_instance = self.mutation()
+            return mutation_instance.to_pygad_params()
+
+        elif isinstance(self.mutation, BaseMutation):
+            return self.mutation.to_pygad_params()
+
+        elif callable(self.mutation):
+            return self._get_default_mutation_params(mutation_type=self.mutation)
+
+        else:
+            raise ValueError(f"Unsupported mutation type: {type(self.mutation)}")
+
+    def _get_default_mutation_params(
+        self, mutation_type: Any = "random"
+    ) -> dict[str, Any]:
+        """Get default PyGAD mutation parameters."""
+        return {
+            "mutation_type": mutation_type,
+            "mutation_probability": None,
+            "mutation_percent_genes": "default",
+            "mutation_num_genes": None,
+            "mutation_by_replacement": False,
+        }
+
 
 def determine_effective_batch_size(batch_size: int | None, n_cores: int) -> int | None:
     """Determine the effective batch_size for parallel processing.
 
     Behavior:
     - If `batch_size` is explicitly provided:
-        - The value is returned unchanged.
-        - A warning is issued if it is less than `n_cores`, as this may
+      - The value is returned unchanged.
+      - A warning is issued if it is less than `n_cores`, as this may
         underutilize available cores.
     - If `batch_size` is `None`:
-        - If `n_cores` > 1, defaults to `n_cores`.
-        - Otherwise, returns None (i.e., single-threaded evaluation).
+      - If `n_cores` > 1, defaults to `n_cores`.
+      - Otherwise, returns None (i.e., single-threaded evaluation).
+
     Args:
         batch_size: User-specified batch size or None
         n_cores: Number of cores for parallel processing
 
     Returns:
-        Effective batch size for PyGAD, or None for single-threaded processing
+        Effective batch size for PyGAD, or None for single-threaded
+        processing
 
     """
     result = None
@@ -557,3 +786,30 @@ def _process_pygad_result(ga_instance: Any) -> InternalOptimizeResult:
         message=message,
         n_fun_evals=ga_instance.generations_completed * ga_instance.pop_size[0],
     )
+
+
+def create_mutation_from_string(mutation_type: str) -> BaseMutation:
+    """Create a mutation instance from a string type.
+
+    Args:
+        mutation_type: String mutation type (e.g., "random", "swap", etc.)
+
+    Returns:
+        Appropriate mutation instance.
+
+    Raises:
+        ValueError: If mutation_type is not supported.
+
+    """
+    mutation_map = {
+        "random": RandomMutation,
+        "swap": SwapMutation,
+        "inversion": InversionMutation,
+        "scramble": ScrambleMutation,
+        "adaptive": AdaptiveMutation,
+    }
+
+    if mutation_type not in mutation_map:
+        raise ValueError(f"Unsupported mutation type: {mutation_type}")
+
+    return mutation_map[mutation_type]()
