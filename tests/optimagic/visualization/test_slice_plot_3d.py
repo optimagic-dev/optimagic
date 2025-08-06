@@ -2,14 +2,12 @@ import numpy as np
 import pytest
 
 from optimagic import mark
-from optimagic.optimization.fun_value import enforce_return_type
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import get_converter
-from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.visualization.slice_plot_3d import (
     Projection,
-    evaluate_function_values,
     generate_evaluation_points,
+    plot_data_cache,
     slice_plot_3d,
 )
 
@@ -19,7 +17,7 @@ def fixed_inputs():
     params = {"alpha": 0, "beta": 0, "gamma": 0, "delta": 0}
     bounds = Bounds(
         lower={name: -5 for name in params},
-        upper={name: i + 2 for i, name in enumerate(params)},
+        upper={name: i for i, name in enumerate(params)},
     )
     return {"params": params, "bounds": bounds}
 
@@ -109,7 +107,11 @@ parametrized_slice_plot_3d = [
 
 @pytest.mark.parametrize("func, kwargs", parametrized_slice_plot_3d)
 def test_slice_plot_3d(fixed_inputs, func, kwargs):
-    slice_plot_3d(func=func, **fixed_inputs, **kwargs)
+    fig = slice_plot_3d(func=func, **fixed_inputs, **kwargs)
+    if isinstance(fig, dict):
+        print(fig)
+    else:
+        fig.show()
 
 
 kwargs_generate_evaluation_points = [
@@ -121,10 +123,10 @@ kwargs_generate_evaluation_points = [
         False,
         [
             [-5.0, 0.0, 0.0, 0.0],
-            [-3.25, 0.0, 0.0, 0.0],
-            [-1.5, 0.0, 0.0, 0.0],
-            [0.25, 0.0, 0.0, 0.0],
-            [2.0, 0.0, 0.0, 0.0],
+            [-3.75, 0.0, 0.0, 0.0],
+            [-2.5, 0.0, 0.0, 0.0],
+            [-1.25, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0],
         ],
     ),
     (
@@ -134,29 +136,99 @@ kwargs_generate_evaluation_points = [
         "contour",
         False,
         [
+            [-5.0, 0.0, 0.0, 0.0],
+            [-2.5, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, -5.0, 0.0],
+            [0.0, 0.0, -1.5, 0.0],
+            [0.0, 0.0, 2.0, 0.0],
             [-5.0, 0.0, -5.0, 0.0],
-            [-1.5, 0.0, -5.0, 0.0],
-            [2.0, 0.0, -5.0, 0.0],
-            [-5.0, 0.0, -0.5, 0.0],
-            [-1.5, 0.0, -0.5, 0.0],
-            [2.0, 0.0, -0.5, 0.0],
-            [-5.0, 0.0, 4.0, 0.0],
-            [-1.5, 0.0, 4.0, 0.0],
-            [2.0, 0.0, 4.0, 0.0],
+            [-2.5, 0.0, -5.0, 0.0],
+            [0.0, 0.0, -5.0, 0.0],
+            [-5.0, 0.0, -1.5, 0.0],
+            [-2.5, 0.0, -1.5, 0.0],
+            [0.0, 0.0, -1.5, 0.0],
+            [-5.0, 0.0, 2.0, 0.0],
+            [-2.5, 0.0, 2.0, 0.0],
+            [0.0, 0.0, 2.0, 0.0],
+            [-5.0, 0.0, -5.0, 0.0],
+            [-5.0, 0.0, -1.5, 0.0],
+            [-5.0, 0.0, 2.0, 0.0],
+            [-2.5, 0.0, -5.0, 0.0],
+            [-2.5, 0.0, -1.5, 0.0],
+            [-2.5, 0.0, 2.0, 0.0],
+            [0.0, 0.0, -5.0, 0.0],
+            [0.0, 0.0, -1.5, 0.0],
+            [0.0, 0.0, 2.0, 0.0],
         ],
     ),
     (
         sphere,
         5,
-        ["beta"],
+        ["beta", "delta"],
         "surface",
         True,
         [
             [0.0, -5.0, 0.0, 0.0],
-            [0.0, -3.0, 0.0, 0.0],
-            [0.0, -1.0, 0.0, 0.0],
+            [0.0, -3.5, 0.0, 0.0],
+            [0.0, -2.0, 0.0, 0.0],
+            [0.0, -0.5, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
-            [0.0, 3.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, -5.0],
+            [0.0, 0.0, 0.0, -3.0],
+            [0.0, 0.0, 0.0, -1.0],
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.0, 3.0],
+            [0.0, -5.0, 0.0, -5.0],
+            [0.0, -3.5, 0.0, -5.0],
+            [0.0, -2.0, 0.0, -5.0],
+            [0.0, -0.5, 0.0, -5.0],
+            [0.0, 1.0, 0.0, -5.0],
+            [0.0, -5.0, 0.0, -3.0],
+            [0.0, -3.5, 0.0, -3.0],
+            [0.0, -2.0, 0.0, -3.0],
+            [0.0, -0.5, 0.0, -3.0],
+            [0.0, 1.0, 0.0, -3.0],
+            [0.0, -5.0, 0.0, -1.0],
+            [0.0, -3.5, 0.0, -1.0],
+            [0.0, -2.0, 0.0, -1.0],
+            [0.0, -0.5, 0.0, -1.0],
+            [0.0, 1.0, 0.0, -1.0],
+            [0.0, -5.0, 0.0, 1.0],
+            [0.0, -3.5, 0.0, 1.0],
+            [0.0, -2.0, 0.0, 1.0],
+            [0.0, -0.5, 0.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0],
+            [0.0, -5.0, 0.0, 3.0],
+            [0.0, -3.5, 0.0, 3.0],
+            [0.0, -2.0, 0.0, 3.0],
+            [0.0, -0.5, 0.0, 3.0],
+            [0.0, 1.0, 0.0, 3.0],
+            [0.0, -5.0, 0.0, -5.0],
+            [0.0, -5.0, 0.0, -3.0],
+            [0.0, -5.0, 0.0, -1.0],
+            [0.0, -5.0, 0.0, 1.0],
+            [0.0, -5.0, 0.0, 3.0],
+            [0.0, -3.5, 0.0, -5.0],
+            [0.0, -3.5, 0.0, -3.0],
+            [0.0, -3.5, 0.0, -1.0],
+            [0.0, -3.5, 0.0, 1.0],
+            [0.0, -3.5, 0.0, 3.0],
+            [0.0, -2.0, 0.0, -5.0],
+            [0.0, -2.0, 0.0, -3.0],
+            [0.0, -2.0, 0.0, -1.0],
+            [0.0, -2.0, 0.0, 1.0],
+            [0.0, -2.0, 0.0, 3.0],
+            [0.0, -0.5, 0.0, -5.0],
+            [0.0, -0.5, 0.0, -3.0],
+            [0.0, -0.5, 0.0, -1.0],
+            [0.0, -0.5, 0.0, 1.0],
+            [0.0, -0.5, 0.0, 3.0],
+            [0.0, 1.0, 0.0, -5.0],
+            [0.0, 1.0, 0.0, -3.0],
+            [0.0, 1.0, 0.0, -1.0],
+            [0.0, 1.0, 0.0, 1.0],
+            [0.0, 1.0, 0.0, 3.0],
         ],
     ),
 ]
@@ -196,55 +268,95 @@ def test_generate_evaluation_points(
         for name in selected_params
     }
 
-    if len(selected_params) == 1:
-        selected_params = selected_params[0]
-
+    selected_indices = [list(params.keys()).index(param) for param in selected_params]
     points = generate_evaluation_points(
-        params_data,
-        internal_params,
-        converter,
-        selected_params,
-        grid_univariate,
         projection,
+        selected_indices,
+        internal_params,
+        params_data,
+        converter,
     )
 
     points = [[point[key] for key in internal_params.names] for point in points]
+    print([[float(va) for d in points for va in d]])
     np.testing.assert_allclose(points, expected_points, rtol=0.2)
 
 
+kwargs_plot_data_cache = [
+    (
+        sphere,
+        5,
+        [0],
+        "univariate",
+        [25, 14.0, 6.25, 1.5, 0],
+        {("alpha",): [25, 14.0, 6.25, 1.5, 0]},
+    ),
+    (
+        sphere,
+        3,
+        [0, 2],
+        "contour",
+        [
+            25,
+            6.25,
+            0,
+            25,
+            2.25,
+            4,
+            50,
+            31.25,
+            25,
+            27.25,
+            8.5,
+            2.25,
+            29,
+            10.25,
+            4,
+            50,
+            27.25,
+            29,
+            31.25,
+            8.5,
+            10.25,
+            25,
+            2.25,
+            4,
+        ],
+        {
+            ("alpha",): [25, 6.25, 0],
+            ("gamma",): [25, 2.25, 4],
+            ("alpha", "gamma"): [50, 27.25, 29, 31.25, 8.5, 10.25, 25, 2.25, 4],
+        },
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "func, points, param, expected_values",
-    [
-        (sphere, points, selected_params, expected_values)
-        for (_, _, selected_params, _, _, points), expected_values in zip(
-            kwargs_generate_evaluation_points,
-            [
-                [25.0, 10.5625, 2.25, 0.0625, 4.0],
-                [50.0, 27.25, 29.0, 25.25, 2.5, 4.25, 41.0, 18.25, 20.0],
-                [25.0, 9.0, 1.0, 1.0, 9.0],
-            ],
-            strict=False,
-        )
-    ],
+    "func, n_points, selected_indices, projection, func_values, expected_values",
+    kwargs_plot_data_cache,
 )
-def test_evaluate_function_values(fixed_inputs, func, points, param, expected_values):
+def test_evaluate_function_values(
+    fixed_inputs,
+    func,
+    n_points,
+    projection,
+    selected_indices,
+    func_values,
+    expected_values,
+):
+    projection = Projection(projection)
+
     params = fixed_inputs["params"]
     func_eval = func(params)
-    func = enforce_return_type(infer_aggregation_level(func))(func)
 
-    converter, _ = get_converter(
+    converter, internal_params = get_converter(
         params=params,
         constraints=None,
         bounds=fixed_inputs["bounds"],
         func_eval=func_eval,
         solver_type="value",
     )
-
-    converted = [converter.params_from_internal(np.array(p)) for p in points]
-    result = evaluate_function_values(
-        points=converted,
-        func=func,
-        batch_evaluator="joblib",
-        n_cores=1,
+    plot_data = plot_data_cache(
+        projection, selected_indices, internal_params, func_values, n_points
     )
-    np.testing.assert_allclose(result, expected_values, rtol=0.2)
+    assert plot_data == expected_values
