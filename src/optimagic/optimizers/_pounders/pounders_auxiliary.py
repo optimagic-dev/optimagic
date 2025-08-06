@@ -36,7 +36,7 @@ def create_initial_residual_model(history, accepted_index, delta):
 
     Returns:
         ResidualModel: Residual model containing the initial parameters for
-             ``linear_terms`` and ``square_terms``.
+            ``linear_terms`` and ``square_terms``.
 
     """
     center_info = {
@@ -221,9 +221,9 @@ def solve_subproblem(
             - "gqtpar" (does not support bound constraints)
         conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient methods are:
-                - "cg"
-                - "steihaug_toint"
-                - "trsbox" (default)
+            - "cg"
+            - "steihaug_toint"
+            - "trsbox" (default)
         maxiter (int): Maximum number of iterations to perform when solving the
             trust-region subproblem.
         maxiter_gradient_descent (int): Maximum number of gradient descent iterations
@@ -336,7 +336,7 @@ def find_affine_points(
             If *project_x_onto_null* is False, it is an array filled with zeros.
         project_x_onto_null (int): Indicator whether to calculate the QR
             decomposition of *model_improving_points* and multiply it
-             with vector *x_projected*.
+            with vector *x_projected*.
         delta (float): Delta, current trust-region radius.
         theta1 (float): Threshold for adding the current x candidate to the model.
         c (float): Threshold for acceptance of the norm of our current x candidate.
