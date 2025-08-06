@@ -498,7 +498,6 @@ def plot_line(  # type: ignore[no-untyped-def]
         go.Figure: A Plotly figure object containing the line plot.
 
     """
-    print("Plot: ", y_range)
     fig = px.line(x=x, y=y, **plot_kwargs["line_plot"])
     if plot_kwargs["scatter_plot"] is not None:
         fig.add_trace(
