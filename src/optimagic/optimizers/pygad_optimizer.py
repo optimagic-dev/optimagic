@@ -329,7 +329,7 @@ class AdaptiveMutation(BaseMutation):
         """Convert AdaptiveMutation configuration to PyGAD parameters."""
         mutation_probability: list[float] | None = None
         mutation_num_genes: list[int] | None = None
-        mutation_percent_genes: list[float] | str | None = "default"
+        mutation_percent_genes: list[float] | str | None = None
 
         if self.probability_bad is not None and self.probability_good is not None:
             mutation_probability = [self.probability_bad, self.probability_good]
