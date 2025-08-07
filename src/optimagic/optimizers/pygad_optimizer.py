@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Any, ClassVar, Literal, Protocol, runtime_checkable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -64,6 +64,7 @@ class CrossoverFunction(Protocol):
     ) -> NDArray[np.float64]: ...
 
 
+@runtime_checkable
 class MutationFunction(Protocol):
     """Protocol for user-defined mutation functions.
 
@@ -117,6 +118,8 @@ class BaseMutation:
 
     """
 
+    mutation_type: ClassVar[str] = "random"
+
     def to_pygad_params(self) -> dict[str, Any]:
         """Convert mutation configuration to PyGAD parameters.
 
@@ -127,10 +130,8 @@ class BaseMutation:
             Dictionary of PyGAD mutation parameters.
 
         """
-        mutation_type = getattr(self, "mutation_type", "random")
-
         return {
-            "mutation_type": mutation_type,
+            "mutation_type": self.mutation_type,
             "mutation_probability": None,
             "mutation_percent_genes": "default",
             "mutation_num_genes": None,
@@ -140,7 +141,7 @@ class BaseMutation:
 
 @dataclass(frozen=True)
 class RandomMutation(BaseMutation):
-    """Configuration for the random mutation operator in PyGAD.
+    """Configuration for the random mutation in PyGAD.
 
     The random mutation selects a subset of genes in each solution and either
     replaces each selected gene with a new random value or adds a random value
@@ -155,6 +156,8 @@ class RandomMutation(BaseMutation):
     > percent_genes).
 
     """
+
+    mutation_type: ClassVar[str] = "random"
 
     probability: ProbabilityFloat | None = None
     """Probability of mutating each gene.
@@ -190,7 +193,7 @@ class RandomMutation(BaseMutation):
     def to_pygad_params(self) -> dict[str, Any]:
         """Convert RandomMutation configuration to PyGAD parameters."""
         return {
-            "mutation_type": "random",
+            "mutation_type": self.mutation_type,
             "mutation_probability": self.probability,
             "mutation_percent_genes": self.percent_genes,
             "mutation_num_genes": self.num_genes,
@@ -210,7 +213,7 @@ class SwapMutation(BaseMutation):
 
     """
 
-    mutation_type: str = "swap"
+    mutation_type: ClassVar[str] = "swap"
 
 
 @dataclass(frozen=True)
@@ -225,7 +228,7 @@ class InversionMutation(BaseMutation):
 
     """
 
-    mutation_type: str = "inversion"
+    mutation_type: ClassVar[str] = "inversion"
 
 
 @dataclass(frozen=True)
@@ -239,7 +242,7 @@ class ScrambleMutation(BaseMutation):
 
     """
 
-    mutation_type: str = "scramble"
+    mutation_type: ClassVar[str] = "scramble"
 
 
 @dataclass(frozen=True)
@@ -252,27 +255,36 @@ class AdaptiveMutation(BaseMutation):
     exploration, while above-average solutions (good fitness solutions)
     receive a lower rate to preserve good solutions.
 
-    By default, adaptive mutation uses a 10% mutation rate for bad fitness
-    solutions and 5% for good fitness solutions.
+    If no mutation rate parameters are specified, this mutation defaults to using
+    probabilities, with a 10% rate for bad solutions (`probability_bad=0.1`)
+    and a 5% rate for good solutions (`probability_good=0.05`).
 
-    The priority for selecting mutation parameters is:
-    probability > num_genes > percent_genes
+    **Parameter Precedence:**
+    The mutation rate is determined by the first set of parameters found, in the
+    following order of priority:
+    1. `probability_bad` and `probability_good`
+    2. `num_genes_bad` and `num_genes_good`
+    3. `percent_genes_bad` and `percent_genes_good`
 
     """
 
-    probability_bad: ProbabilityFloat | None = 0.1
+    mutation_type: ClassVar[str] = "adaptive"
+
+    probability_bad: ProbabilityFloat | None = None
     """Probability of mutating each gene for below-average fitness solutions.
 
     If specified, takes precedence over num_genes_bad and percent_genes_bad. Range [0,
-    1]. Default: 0.1 (10% mutation rate for bad fitness solutions).
+    1]. If no mutation rate parameters are provided at all, this defaults to
+    0.1 (10% mutation rate for bad fitness solutions).
 
     """
 
-    probability_good: ProbabilityFloat | None = 0.05
+    probability_good: ProbabilityFloat | None = None
     """Probability of mutating each gene for above-average fitness solutions.
 
     If specified, takes precedence over num_genes_good and percent_genes_good. Range [0,
-    1]. Default: 0.05 (5% mutation rate for good fitness solutions).
+    1]. If no mutation rate parameters are provided at all, this defaults to
+    0.05 (5% mutation rate for good fitness solutions).
 
     """
 
@@ -332,7 +344,7 @@ class AdaptiveMutation(BaseMutation):
             ]
 
         return {
-            "mutation_type": "adaptive",
+            "mutation_type": self.mutation_type,
             "mutation_probability": mutation_probability,
             "mutation_percent_genes": mutation_percent_genes,
             "mutation_num_genes": mutation_num_genes,
@@ -565,7 +577,7 @@ class Pygad(Algorithm):
             raise ValueError("pygad requires finite bounds for all parameters.")
 
         # Determine effective batch_size for parallel processing
-        effective_batch_size = determine_effective_batch_size(
+        effective_batch_size = _determine_effective_batch_size(
             self.batch_size, self.n_cores
         )
 
@@ -636,7 +648,7 @@ class Pygad(Algorithm):
         ]
 
         # Convert mutation parameter to PyGAD parameters
-        mutation_params = self._convert_mutation_to_pygad_params()
+        mutation_params = _convert_mutation_to_pygad_params(self.mutation)
 
         ga_instance = pygad.GA(
             num_generations=self.num_generations,
@@ -670,52 +682,81 @@ class Pygad(Algorithm):
 
         return result
 
-    def _convert_mutation_to_pygad_params(self) -> dict[str, Any]:
-        """Convert the mutation parameter to PyGAD mutation parameters.
 
-        Handles strings, classes, instances, and custom functions using the
-        new mutation dataclass system with built-in conversion methods.
+def _convert_mutation_to_pygad_params(mutation: Any) -> dict[str, Any]:
+    """Convert the mutation parameter to PyGAD mutation parameters.
 
-        Returns:
-            Dictionary of PyGAD mutation parameters.
+    Handles strings, classes, instances, and custom functions using the
+    new mutation dataclass system with built-in conversion methods.
 
-        """
-        if self.mutation is None:
-            return self._get_default_mutation_params(mutation_type=None)
+    Returns:
+        Dictionary of PyGAD mutation parameters.
 
-        elif isinstance(self.mutation, str):
-            mutation_instance = create_mutation_from_string(self.mutation)
-            return mutation_instance.to_pygad_params()
+    """
+    params: dict[str, Any]
 
-        elif isinstance(self.mutation, type) and issubclass(
-            self.mutation, BaseMutation
-        ):
-            mutation_instance = self.mutation()
-            return mutation_instance.to_pygad_params()
+    if mutation is None:
+        params = _get_default_mutation_params(mutation_type=None)
 
-        elif isinstance(self.mutation, BaseMutation):
-            return self.mutation.to_pygad_params()
+    elif isinstance(mutation, str):
+        mutation_instance = _create_mutation_from_string(mutation)
+        params = mutation_instance.to_pygad_params()
 
-        elif callable(self.mutation):
-            return self._get_default_mutation_params(mutation_type=self.mutation)
+    elif isinstance(mutation, type) and issubclass(mutation, BaseMutation):
+        mutation_instance = mutation()
+        params = mutation_instance.to_pygad_params()
 
-        else:
-            raise ValueError(f"Unsupported mutation type: {type(self.mutation)}")
+    elif isinstance(mutation, BaseMutation):
+        params = mutation.to_pygad_params()
 
-    def _get_default_mutation_params(
-        self, mutation_type: Any = "random"
-    ) -> dict[str, Any]:
-        """Get default PyGAD mutation parameters."""
-        return {
-            "mutation_type": mutation_type,
-            "mutation_probability": None,
-            "mutation_percent_genes": "default",
-            "mutation_num_genes": None,
-            "mutation_by_replacement": False,
-        }
+    elif isinstance(mutation, MutationFunction):
+        params = _get_default_mutation_params(mutation_type=mutation)
+
+    else:
+        raise ValueError(f"Unsupported mutation type: {type(mutation)}")
+
+    return params
 
 
-def determine_effective_batch_size(batch_size: int | None, n_cores: int) -> int | None:
+def _get_default_mutation_params(mutation_type: Any = "random") -> dict[str, Any]:
+    """Get default PyGAD mutation parameters."""
+    return {
+        "mutation_type": mutation_type,
+        "mutation_probability": None,
+        "mutation_percent_genes": None if mutation_type is None else "default",
+        "mutation_num_genes": None,
+        "mutation_by_replacement": None if mutation_type is None else False,
+    }
+
+
+def _create_mutation_from_string(mutation_type: str) -> BaseMutation:
+    """Create a mutation instance from a string type.
+
+    Args:
+        mutation_type: String mutation type (e.g., "random", "swap", etc.)
+
+    Returns:
+        Appropriate mutation instance.
+
+    Raises:
+        ValueError: If mutation_type is not supported.
+
+    """
+    mutation_map = {
+        "random": RandomMutation,
+        "swap": SwapMutation,
+        "inversion": InversionMutation,
+        "scramble": ScrambleMutation,
+        "adaptive": AdaptiveMutation,
+    }
+
+    if mutation_type not in mutation_map:
+        raise ValueError(f"Unsupported mutation type: {mutation_type}")
+
+    return mutation_map[mutation_type]()
+
+
+def _determine_effective_batch_size(batch_size: int | None, n_cores: int) -> int | None:
     """Determine the effective batch_size for parallel processing.
 
     Behavior:
@@ -786,30 +827,3 @@ def _process_pygad_result(ga_instance: Any) -> InternalOptimizeResult:
         message=message,
         n_fun_evals=ga_instance.generations_completed * ga_instance.pop_size[0],
     )
-
-
-def create_mutation_from_string(mutation_type: str) -> BaseMutation:
-    """Create a mutation instance from a string type.
-
-    Args:
-        mutation_type: String mutation type (e.g., "random", "swap", etc.)
-
-    Returns:
-        Appropriate mutation instance.
-
-    Raises:
-        ValueError: If mutation_type is not supported.
-
-    """
-    mutation_map = {
-        "random": RandomMutation,
-        "swap": SwapMutation,
-        "inversion": InversionMutation,
-        "scramble": ScrambleMutation,
-        "adaptive": AdaptiveMutation,
-    }
-
-    if mutation_type not in mutation_map:
-        raise ValueError(f"Unsupported mutation type: {mutation_type}")
-
-    return mutation_map[mutation_type]()
