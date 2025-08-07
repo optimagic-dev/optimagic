@@ -241,7 +241,7 @@ def test_adaptive_mutation_default():
     result = mutation.to_pygad_params()
     assert result["mutation_type"] == "adaptive"
     assert result["mutation_probability"] == [0.1, 0.05]  # Default values
-    assert result["mutation_percent_genes"] == None
+    assert result["mutation_percent_genes"] is None
     assert result["mutation_num_genes"] is None
     assert result["mutation_by_replacement"] is False
 
@@ -251,7 +251,7 @@ def test_adaptive_mutation_with_probabilities():
     result = mutation.to_pygad_params()
     assert result["mutation_type"] == "adaptive"
     assert result["mutation_probability"] == [0.2, 0.08]
-    assert result["mutation_percent_genes"] == None
+    assert result["mutation_percent_genes"] is None
     assert result["mutation_num_genes"] is None
     assert result["mutation_by_replacement"] is False
 
@@ -262,7 +262,7 @@ def test_adaptive_mutation_with_num_genes():
     assert result["mutation_type"] == "adaptive"
     assert result["mutation_probability"] is None
     assert result["mutation_num_genes"] == [10, 5]
-    assert result["mutation_percent_genes"] == None
+    assert result["mutation_percent_genes"] is None
     assert result["mutation_by_replacement"] is False
 
 
