@@ -2,7 +2,7 @@ import inspect
 import itertools
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import plotly.graph_objects as go
@@ -38,7 +38,7 @@ def criterion_plot(
     results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
-    backend: str = "plotly",
+    backend: Literal["plotly", "matplotlib"] = "plotly",
     template: str | None = None,
     palette: list[str] | str | None = None,
     stack_multistart: bool = False,
@@ -75,7 +75,7 @@ def criterion_plot(
     # Process inputs
 
     if palette is None:
-        palette = plot_cls.default_palette
+        palette = plot_cls.get_default_palette()
     palette_cycle = get_palette_cycle(palette)
 
     dict_of_optimize_results_or_paths = _harmonize_inputs_to_dict(results, names)

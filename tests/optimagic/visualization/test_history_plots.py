@@ -6,6 +6,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 import optimagic as om
+from optimagic.exceptions import InvalidPlottingBackendError
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
@@ -143,6 +144,15 @@ def test_criterion_plot_wrong_inputs():
 
     with pytest.raises(ValueError):
         criterion_plot(["bla", "bla"], names="blub")
+
+    with pytest.raises(InvalidPlottingBackendError):
+        criterion_plot("bla", backend="blub")
+
+
+@pytest.mark.parametrize("backend", ["plotly", "matplotlib"])
+def test_criterion_plot_different_backends(minimize_result, backend):
+    res = minimize_result[False][0]
+    criterion_plot(res, backend=backend)
 
 
 def test_harmonize_inputs_to_dict_single_result():
