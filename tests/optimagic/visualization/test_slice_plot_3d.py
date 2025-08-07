@@ -107,11 +107,7 @@ parametrized_slice_plot_3d = [
 
 @pytest.mark.parametrize("func, kwargs", parametrized_slice_plot_3d)
 def test_slice_plot_3d(fixed_inputs, func, kwargs):
-    fig = slice_plot_3d(func=func, **fixed_inputs, **kwargs)
-    if isinstance(fig, dict):
-        print(fig)
-    else:
-        fig.show()
+    slice_plot_3d(func=func, **fixed_inputs, **kwargs)
 
 
 kwargs_generate_evaluation_points = [
@@ -278,7 +274,6 @@ def test_generate_evaluation_points(
     )
 
     points = [[point[key] for key in internal_params.names] for point in points]
-    print([[float(va) for d in points for va in d]])
     np.testing.assert_allclose(points, expected_points, rtol=0.2)
 
 
