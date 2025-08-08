@@ -4034,6 +4034,34 @@ and hence imprecise.\
 
 ```
 
+.. dropdown:: nevergrad_oneplusone
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_oneplusone(stopping_maxfun=1_000, ...)
+    )
+    
+or
+    
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_oneplusone",
+      algo_options={"stopping_maxfun": 1_000, ...}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradOnePlusOne
+```
+
 ```{eval-rst}
 .. dropdown::  nevergrad_bo
 

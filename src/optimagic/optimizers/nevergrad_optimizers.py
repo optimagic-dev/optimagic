@@ -411,11 +411,34 @@ class NevergradCMAES(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradOnePlusOne(Algorithm):
+    """Minimize a scalar function using the One-Plus-One Evolutionary algorithm.
+
+    The One-Plus-One evolutionary algorithm iterates to find a set of parameters
+    that minimizes the loss function. It does this by perturbing, or mutating,
+    the parameters from the last iteration (the parent). If the new (child)
+    parameters yield a better result, the child becomes the new parent whose
+    parameters are perturbed, perhaps more aggressively. If the parent yields a
+    better result, it remains the parent and the next perturbation is less
+    aggressive.
+
+    Originally proposed by :cite:`Rechenberg1973`. The implementation in
+    Nevergrad is based on the one-fifth adaptation rule from :cite:`Schumer1968`.
+
+    """
+
     noise_handling: (
         Literal["random", "optimistic"]
         | tuple[Literal["random", "optimistic"], float]
         | None
     ) = None
+    """Method for handling noise.
+
+    'random' reevaluates a random point, while 'optimistic' reevaluates the best
+    optimistic point. A float coefficient can be provided to tune the regularity of
+    these reevaluations.
+
+    """
+
     mutation: Literal[
         "gaussian",
         "cauchy",
@@ -441,27 +464,75 @@ class NevergradOnePlusOne(Algorithm):
         "biglognormal",
         "hugelognormal",
     ] = "gaussian"
+    """Type of mutation to apply.
+
+    'gaussian' is the default. Other options include 'cauchy', 'discrete', 'fastga',
+    'rls', and 'portfolio'.
+
+    """
+
     annealing: (
         Literal[
             "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
         ]
         | None
     ) = None
+    """Annealing schedule for mutation amplitude.
+
+    Can be 'none', exponential (e.g., 'Exp0.9'), or linear (e.g., 'Lin100.0').
+
+    """
+
     sparse: bool = False
+    """Whether to apply random mutations that set variables to zero."""
+
     super_radii: bool = False
+    """Whether to apply extended radii beyond standard bounds for candidate generation,
+    enabling broader exploration."""
+
     smoother: bool = False
+    """Whether to suggest smooth mutations."""
+
     roulette_size: PositiveInt = 64
+    """Size of the roulette wheel used for selection, affecting sampling diversity from
+    past candidates."""
+
     antismooth: NonNegativeInt = 4
+    """Degree of anti-smoothing to prevent premature convergence by penalizing overly
+    smooth improvements."""
+
     crossover: bool = False
+    """Whether to include a genetic crossover step every other iteration."""
+
     crossover_type: (
         Literal["none", "rand", "max", "min", "onepoint", "twopoint"] | None
     ) = None
+    """Method for genetic crossover.
+
+    Options include 'rand', 'onepoint', and 'twopoint'.
+
+    """
+
     tabu_length: NonNegativeInt = 1000
+    """Length of the tabu list to prevent revisiting recent candidates and help escape
+    local minima."""
+
     rotation: bool = False
+    """Whether to apply rotational transformations to the search space to enhance search
+    performance."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel computation."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ if
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
