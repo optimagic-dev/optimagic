@@ -38,8 +38,11 @@ IS_TRANQUILO_INSTALLED = _is_installed("tranquilo")
 IS_NUMBA_INSTALLED = _is_installed("numba")
 IS_IMINUIT_INSTALLED = _is_installed("iminuit")
 IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
-IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
-
+IS_BAYESOPTIM_INSTALLED = _is_installed("bayes-optim")
+IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2 = (
+    _is_installed("bayes_opt")
+    and importlib.metadata.version("bayesian_optimization") > "2.0.0"
+)
 
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0

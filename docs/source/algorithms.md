@@ -4034,12 +4034,48 @@ and hence imprecise.\
 
 ```
 
+```{eval-rst}
+.. dropdown::  nevergrad_bo
+
+  .. note::
+  
+    Using this optimizer requires the `bayes-optim` package to be installed as well. 
+    This can be done with `pip install bayes-optim`.
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_bo(stopping_maxfun=1_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_bo",
+          algo_options={"stopping_maxfun": 1_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradBayesOptim
+
+```
+
 ## Bayesian Optimization
 
 We wrap the
 [BayesianOptimization](https://github.com/bayesian-optimization/BayesianOptimization)
 package. To use it, you need to have
 [bayesian-optimization](https://pypi.org/project/bayesian-optimization/) installed.
+Note: This optimizer requires `bayesian_optimization > 2.0.0` to be installed which is
+incompatible with `nevergrad > 1.0.3`.
 
 ```{eval-rst}
 .. dropdown::  bayes_opt

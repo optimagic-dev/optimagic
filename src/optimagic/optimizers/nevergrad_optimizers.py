@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from optimagic import mark
-from optimagic.config import IS_NEVERGRAD_INSTALLED
+from optimagic.config import IS_BAYESOPTIM_INSTALLED, IS_NEVERGRAD_INSTALLED
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
@@ -577,7 +577,7 @@ class NevergradDifferentialEvolution(Algorithm):
 @mark.minimizer(
     name="nevergrad_bo",
     solver_type=AggregationLevel.SCALAR,
-    is_available=IS_NEVERGRAD_INSTALLED,
+    is_available=IS_NEVERGRAD_INSTALLED and IS_BAYESOPTIM_INSTALLED,
     is_global=True,
     needs_jac=False,
     needs_hess=False,
