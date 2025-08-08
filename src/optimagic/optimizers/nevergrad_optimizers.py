@@ -952,10 +952,28 @@ class NevergradCGA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradEDA(Algorithm):
+    """Minimize a scalar function using the Estimation of Distribution Algorithm.
+
+    Estimation of Distribution Algorithms (EDAs) optimize by building and sampling
+    a probabilistic model of promising solutions. Instead of using traditional
+    variation operators like crossover or mutation, EDAs update a distribution
+    based on selected individuals and sample new candidates from it.
+    Refer to :cite:`edaimpl`.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
