@@ -4703,8 +4703,8 @@ package. To use it, you need to have
 
 ## Pygad Optimizer
 
-We wrap the pygad optimizer. To use it you need to have [pygad](https://pygad.readthedocs.io/en/latest/) installed.
-
+We wrap the pygad optimizer. To use it you need to have
+[pygad](https://pygad.readthedocs.io/en/latest/) installed.
 
 ```{eval-rst}
 .. dropdown::  pygad
