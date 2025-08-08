@@ -794,14 +794,54 @@ class NevergradBayesOptim(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradEMNA(Algorithm):
+    """Minimize a scalar function using the Estimation of Multivariate Normal Algorithm.
+
+    EMNA is a distribution-based evolutionary algorithm that models the search
+    space using a multivariate Gaussian. It learns the full covariance matrix,
+    resulting in a cubic time complexity with respect to each sampling. It is
+    efficient in parallel settings but other methods should be considered first.
+    See :cite:`emnaimpl`.
+
+    """
+
     isotropic: bool = True
+    """If True, uses an isotropic (identity covariance) Gaussian.
+
+    If False, uses a separable (diagonal covariance) Gaussian.
+
+    """
+
     noise_handling: bool = True
+    """If True, returns the best individual found.
+
+    If False (recommended for noisy problems), returns the average of the final
+    population.
+
+    """
+
     population_size_adaptation: bool = False
+    """If True, the population size is adjusted automatically based on the optimization
+    landscape and noise level."""
+
     initial_popsize: int | None = None
+    """Initial population size.
+
+    Defaults to 4 times the problem dimension.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -811,6 +851,8 @@ class NevergradEMNA(Algorithm):
 
         import nevergrad as ng
 
+        # The nevergrad implementation has `naive` but we use `noise_handling`
+        # for clarity. naive=True -> returns best point; naive=False -> returns mean.
         configured_optimizer = ng.optimizers.EMNA(
             isotropic=self.isotropic,
             naive=self.noise_handling,

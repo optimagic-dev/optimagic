@@ -4124,6 +4124,34 @@ or
 
 ```
 
+.. dropdown:: nevergrad_emna
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_emna(noise_handling=False, ...)
+    )
+
+or
+
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_emna",
+      algo_options={"noise_handling": False, ...}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEMNA
+```
+
 ## Bayesian Optimization
 
 We wrap the
