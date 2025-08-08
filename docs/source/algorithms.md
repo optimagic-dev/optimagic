@@ -4152,6 +4152,34 @@ or
 .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEMNA
 ```
 
+.. dropdown:: nevergrad_cga
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_cga(stopping_maxfun=10_000)
+    )
+    
+or
+    
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_cga",
+      algo_options={"stopping_maxfun": 10_000}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradCGA
+```
+
 ## Bayesian Optimization
 
 We wrap the

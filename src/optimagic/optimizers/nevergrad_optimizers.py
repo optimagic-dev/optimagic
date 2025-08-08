@@ -890,10 +890,27 @@ class NevergradEMNA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradCGA(Algorithm):
+    """Minimize a scalar function using the Compact Genetic Algorithm.
+
+    The Compact Genetic Algorithm (cGA) is a memory-efficient genetic algorithm
+    that represents the population as a probability vector over gene values. It
+    simulates the behavior of a simple GA with uniform crossover by updating
+    probabilities instead of maintaining an explicit population. See :cite:`cgaimpl`.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
