@@ -587,13 +587,32 @@ class NevergradOnePlusOne(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradDifferentialEvolution(Algorithm):
+    """Minimize a scalar function using the Differential Evolution optimizer.
+
+    Differential Evolution is typically used for continuous optimization. It uses
+    differences between points in the population for performing mutations in fruitful
+    directions. It is a kind of covariance adaptation without any explicit covariance,
+    making it very fast in high dimensions.
+
+    """
+
     initialization: Literal["parametrization", "LHS", "QR", "QO", "SO"] = (
         "parametrization"
     )
+    """Algorithm for initialization.
+
+    'LHS' is Latin Hypercube Sampling, 'QR' is Quasi-Random.
+
+    """
+
     scale: float | str = 1.0
+    """Scale of random component of updates."""
+
     recommendation: Literal["pessimistic", "optimistic", "mean", "noisy"] = (
         "pessimistic"
     )
+    """Criterion for selecting the best point to recommend."""
+
     crossover: (
         float
         | Literal[
@@ -605,14 +624,41 @@ class NevergradDifferentialEvolution(Algorithm):
             "parametrization",
         ]
     ) = 0.5
+    """Crossover rate or strategy.
+
+    Can be a float, 'dimension' (1/dim), 'random', 'onepoint', or 'twopoints'.
+
+    """
+
     F1: PositiveFloat = 0.8
+    """Differential weight #1 (scaling factor)."""
+
     F2: PositiveFloat = 0.8
+    """Differential weight #2 (scaling factor)."""
+
     population_size: int | Literal["standard", "dimension", "large"] = "standard"
+    """Population size.
+
+    Can be an integer or a string like 'standard', 'dimension', or 'large' to set it
+    automatically.
+
+    """
+
     high_speed: bool = False
+    """If True, uses a metamodel for recommendations to speed up optimization."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ if
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -622,7 +668,10 @@ class NevergradDifferentialEvolution(Algorithm):
 
         import nevergrad as ng
 
+        # The nevergrad implementation has `popsize` but we use `population_size`
+        # for consistency.
         configured_optimizer = ng.optimizers.DifferentialEvolution(
+            initialization=self.initialization,
             scale=self.scale,
             recommendation=self.recommendation,
             crossover=self.crossover,

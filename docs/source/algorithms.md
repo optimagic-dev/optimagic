@@ -4062,6 +4062,34 @@ or
 .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradOnePlusOne
 ```
 
+.. dropdown:: nevergrad_de
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_de(population_size="large", ...)
+    )
+    
+or
+    
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_de",
+      algo_options={"population_size": "large", ...}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradDifferentialEvolution
+```
+
 ```{eval-rst}
 .. dropdown::  nevergrad_bo
 
