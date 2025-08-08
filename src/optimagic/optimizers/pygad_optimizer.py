@@ -423,13 +423,13 @@ class Pygad(Algorithm):
     """Parent selection strategy used to choose parents for crossover.
 
     Available methods:
-    - "sss": Steady-State Selection (selects the best individuals to continue)
-    - "rws": Roulette Wheel Selection (probabilistic, fitness-proportional)
-    - "sus": Stochastic Universal Sampling (even sampling across population)
-    - "rank": Rank Selection (selects based on rank order)
-    - "random": Random Selection
-    - "tournament": Tournament Selection (best from K randomly chosen
-      individuals)
+
+    * ``"sss"``: Steady-State Selection (selects the best individuals to continue)
+    * ``"rws"``: Roulette Wheel Selection (probabilistic, fitness-proportional)
+    * ``"sus"``: Stochastic Universal Sampling (even sampling across population)
+    * ``"rank"``: Rank Selection (selects based on rank order)
+    * ``"random"``: Random Selection
+    * ``"tournament"``: Tournament Selection (best from K randomly chosen individuals)
 
     Alternatively, provide a custom function with signature
     ``(fitness, num_parents, ga_instance) -> tuple[NDArray, NDArray]``.
@@ -440,9 +440,10 @@ class Pygad(Algorithm):
     """Number of best parents to keep in the next generation.
 
     Only used if ``keep_elitism = 0``. Values:
-    - -1: Keep all parents in the next generation (default)
-    - 0: Keep no parents in the next generation
-    - Positive integer: Keep the specified number of best parents
+
+    * ``-1``: Keep all parents in the next generation (default)
+    * ``0``: Keep no parents in the next generation
+    * Positive integer: Keep the specified number of best parents
 
     """
 
@@ -467,10 +468,11 @@ class Pygad(Algorithm):
     """Crossover operator for generating offspring.
 
     Available methods:
-    - "single_point": Single-point crossover
-    - "two_points": Two-point crossover
-    - "uniform": Uniform crossover (randomly mixes genes)
-    - "scattered": Scattered crossover (random mask)
+
+    * ``"single_point"``: Single-point crossover
+    * ``"two_points"``: Two-point crossover
+    * ``"uniform"``: Uniform crossover (randomly mixes genes)
+    * ``"scattered"``: Scattered crossover (random mask)
 
     Or provide a custom function with signature
     ``(parents, offspring_size, ga_instance) -> NDArray``.
@@ -494,25 +496,34 @@ class Pygad(Algorithm):
     """Mutation operator for introducing genetic diversity.
 
     Available options:
-    1. String values for default configurations:
-       * "random": Random mutation with default parameters
-       * "swap": Swap mutation with default parameters
-       * "inversion": Inversion mutation with default parameters
-       * "scramble": Scramble mutation with default parameters
-       * "adaptive": Adaptive random mutation with default parameters
 
-    2. Mutation classes for default configurations:
-       * Any mutation class (e.g., ``RandomMutation``, ``SwapMutation``,
-         ``AdaptiveMutation``, etc.)
-       * All classes can be used without parameters for default behavior
+    **String values for default configurations:**
 
-    3. Configured mutation instances:
-       * Any mutation instance (e.g., ``RandomMutation(...)``,
-         ``SwapMutation()``, etc.)
-       * All mutation classes inherit from ``BaseMutation``
+    * ``"random"``: Random mutation with default parameters
+    * ``"swap"``: Swap mutation with default parameters
+    * ``"inversion"``: Inversion mutation with default parameters
+    * ``"scramble"``: Scramble mutation with default parameters
+    * ``"adaptive"``: Adaptive random mutation with default parameters
 
-    4. Custom function with signature ``(offspring, ga_instance) -> NDArray``
-    5. None to disable mutation
+    **Mutation classes for default configurations:**
+
+    * Any mutation class (e.g., ``RandomMutation``, ``SwapMutation``,
+      ``AdaptiveMutation``, etc.)
+    * All classes can be used without parameters for default behavior
+
+    **Configured mutation instances:**
+
+    * Any mutation instance (e.g., ``RandomMutation(...)``,
+      ``SwapMutation()``, etc.)
+    * All mutation classes inherit from ``BaseMutation``
+
+    **Custom function:**
+
+    * Custom function with signature ``(offspring, ga_instance) -> NDArray``
+
+    **Disable mutation:**
+
+    * ``None`` to disable mutation
 
     """
 
@@ -542,12 +553,13 @@ class Pygad(Algorithm):
     Can be a string or list of strings.
 
     Supported criteria:
-    - "reach_{value}": Stop when fitness reaches the specified value,
-      e.g. "reach_0.01"
-    - "saturate_{generations}": Stop if fitness doesn't improve for the given
-      number of generations, e.g. "saturate_10"
 
-    Can specify multiple criteria as a list.
+    * ``"reach_{value}"``: Stop when fitness reaches the specified value, e.g.
+      ``"reach_0.01"``
+    * ``"saturate_{generations}"``: Stop if fitness doesn't improve for the given number
+      of generations, e.g. ``"saturate_10"``
+
+    Multiple criteria can be specified as a list.
 
     """
 
