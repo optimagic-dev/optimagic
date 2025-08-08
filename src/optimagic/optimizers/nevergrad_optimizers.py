@@ -711,14 +711,43 @@ class NevergradDifferentialEvolution(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradBayesOptim(Algorithm):
+    """Minimize a scalar function using the Bayesian Optimization (BO) algorithm.
+
+    This wrapper uses the BO and PCA-BO algorithms from the `bayes_optim` package
+    :cite:`bayesoptimimpl`. PCA-BO (Principal Component Analysis for Bayesian
+    Optimization) is a dimensionality reduction technique for black-box
+    optimization. It applies PCA to the input space before performing Bayesian
+    optimization, improving efficiency in high dimensions by focusing on
+    directions of greatest variance.
+
+    """
+
     init_budget: int | None = None
+    """Number of initialization algorithm steps."""
+
     pca: bool = False
+    """Whether to use the PCA transformation, defining PCA-BO rather than standard
+    BO."""
+
     n_components: NonNegativeFloat = 0.95
+    """Number of principal axes, representing the percentage of explained variance
+    (e.g., 0.95 means 95% variance retained)."""
+
     prop_doe_factor: NonNegativeFloat | None = 1
+    """Percentage of the initial budget used for Design of Experiments (DoE)."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: int | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
