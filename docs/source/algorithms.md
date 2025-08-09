@@ -3920,8 +3920,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
 
 optimagic supports the [IMINUIT MIGRAD Optimizer](https://iminuit.readthedocs.io/). To
 use MIGRAD, you need to have
-[the iminuit package](https://github.com/scikit-hep/iminuit) installed (`pip install
-iminuit`).
+[the iminuit package](https://github.com/scikit-hep/iminuit) installed
+(`pip install iminuit`).
 
 ```{eval-rst}
 .. dropdown::  iminuit_migrad
