@@ -1192,17 +1192,60 @@ class NevergradRandomSearch(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradSamplingSearch(Algorithm):
+    """Minimize a scalar function using SamplingSearch.
+
+    This is a one-shot optimization method that is better than random search because it
+    uses low-discrepancy sequences to ensure more uniform coverage of the search space.
+    It is recommended to use "Hammersley" as the sampler if the budget is known, and to
+    set `scrambled=True` in high dimensions.
+
+    """
+
     sampler: Literal["Halton", "LHS", "Hammersley"] = "Halton"
+    """Choice of the low-discrepancy sampler used for generating points.
+
+    'LHS' is Latin Hypercube Sampling.
+
+    """
+
     scrambled: bool = False
+    """If True, adds scrambling to the search sequence, which is highly recommended for
+    high-dimensional problems."""
+
     middle_point: bool = False
+    """If True, the first suggested point is the zero vector, useful for initializing at
+    the center of the search space."""
+
     cauchy: bool = False
+    """If True, uses the inverse Cauchy distribution instead of Gaussian when projecting
+    samples to a real-valued space."""
+
     scale: bool | NonNegativeFloat = 1.0
+    """A float multiplier to scale all generated points."""
+
     rescaled: bool = False
+    """If True, rescales the sampling pattern to ensure better coverage of the
+    boundaries."""
+
     recommendation_rule: Literal["average_of_best", "pessimistic"] = "pessimistic"
+    """How the final recommendation is chosen.
+
+    'pessimistic' is the default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1228,7 +1271,7 @@ class NevergradSamplingSearch(Algorithm):
             configured_optimizer=configured_optimizer,
             stopping_maxfun=self.stopping_maxfun,
             n_cores=self.n_cores,
-            seed=None,
+            seed=self.seed,
             sigma=self.sigma,
             nonlinear_constraints=problem.nonlinear_constraints,
         )

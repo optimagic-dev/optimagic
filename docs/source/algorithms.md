@@ -4264,6 +4264,34 @@ or
 .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradRandomSearch
 ```
 
+.. dropdown:: nevergrad_samplingsearch
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_samplingsearch(sampler="Hammersley", scrambled=True)
+    )
+
+or
+
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_samplingsearch",
+      algo_options={"sampler": "Hammersley", "scrambled": True}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradSamplingSearch
+```
+
 ## Bayesian Optimization
 
 We wrap the
