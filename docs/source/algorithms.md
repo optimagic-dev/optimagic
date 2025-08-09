@@ -4236,6 +4236,34 @@ or
 .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradTBPSA
 ```
 
+.. dropdown:: nevergrad_randomsearch
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_randomsearch(opposition_mode="quasi", ...)
+    )
+
+or
+
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_randomsearch",
+      algo_options={"opposition_mode": "quasi", ...}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradRandomSearch
+```
+
 ## Bayesian Optimization
 
 We wrap the

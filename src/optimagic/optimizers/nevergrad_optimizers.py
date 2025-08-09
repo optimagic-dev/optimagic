@@ -1098,16 +1098,52 @@ class NevergradTBPSA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradRandomSearch(Algorithm):
+    """Minimize a scalar function using the Random Search algorithm.
+
+    This is a one-shot optimization method that provides random suggestions and serves
+    as a simple baseline for other optimizers.
+
+    """
+
     middle_point: bool = False
+    """Enforces that the first suggested point is the zero vector."""
+
     opposition_mode: Literal["opposite", "quasi"] | None = None
+    """Symmetrizes exploration with respect to the center.
+
+    'opposite' enables full symmetry, while 'quasi' applies randomized symmetry.
+
+    """
+
     sampler: Literal["parametrization", "gaussian", "cauchy"] = "parametrization"
+    """The probability distribution for sampling points.
+
+    'gaussian' and 'cauchy' are available alternatives.
+
+    """
+
     scale: PositiveFloat | Literal["random", "auto", "autotune"] = "auto"
+    """Scalar used to multiply suggested point values.
+
+    Can be a float or a string for auto-scaling ('random', 'auto', 'autotune').
+
+    """
+
     recommendation_rule: Literal[
         "average_of_best", "pessimistic", "average_of_exp_best"
     ] = "pessimistic"
+    """Specifies how the final recommendation is chosen, e.g., 'pessimistic' (default)
+    or 'average_of_best'."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
