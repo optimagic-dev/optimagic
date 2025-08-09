@@ -3920,48 +3920,36 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
 
 optimagic supports the [IMINUIT MIGRAD Optimizer](https://iminuit.readthedocs.io/). To
 use MIGRAD, you need to have
-[the iminuit package](https://github.com/scikit-hep/iminuit) installed (pip install
-iminuit).
+[the iminuit package](https://github.com/scikit-hep/iminuit) installed (`pip install
+iminuit`).
 
 ```{eval-rst}
 .. dropdown::  iminuit_migrad
 
+    **How to use this algorithm:**
+
     .. code-block::
 
-        "iminuit_migrad"
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.iminuit_migrad(stopping_maxfun=10_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
 
-    `MIGRAD <https://iminuit.readthedocs.io/en/stable/reference.html#iminuit.Minuit.migrad>`_ is 
-    the workhorse algorithm of the MINUIT optimization suite, which has been widely used in the 
-    high-energy physics community since 1975. The IMINUIT package is a Python interface to the 
-    Minuit2 C++ library developed by CERN.
+        om.minimize(
+          ...,
+          algorithm="iminuit_migrad",
+          algo_options={"stopping_maxfun=10_000, ...}
+        )
 
-    Migrad uses a quasi-Newton method, updating the Hessian matrix iteratively
-    to guide the optimization. The algorithm adapts dynamically to challenging landscapes
-    using several key techniques:
+    **Description and available options:**
 
-    - **Quasi-Newton updates**: The Hessian is updated iteratively rather than recalculated at 
-      each step, improving efficiency.
-    - **Steepest descent fallback**: When the Hessian update fails, Migrad falls back to steepest
-      descent with line search.
-    - **Box constraints handling**: Parameters with bounds are transformed internally to ensure 
-      they remain within allowed limits.
-    - **Heuristics for numerical stability**: Special cases such as flat gradients or singular 
-      Hessians are managed using pre-defined heuristics.
-    - **Stopping criteria based on Estimated Distance to Minimum (EDM)**: The optimization halts 
-      when the predicted improvement becomes sufficiently small.
-              
-    For details see :cite:`JAMES1975343`.
+    .. autoclass:: optimagic.optimizers.iminuit_migrad.IminuitMigrad
 
-    **Optimizer Parameters:**  
-
-    - **stopping.maxfun** (int): Maximum number of function evaluations. If reached, the optimization stops 
-      but this is not counted as successful convergence. Function evaluations used for numerical gradient 
-      calculations do not count toward this limit. Default is 1,000,000.
-
-    - **n_restarts** (int): Number of times to restart the optimizer if convergence is not reached.
-
-      - A value of 1 (the default) indicates that the optimizer will only run once, disabling the restart feature.  
-      - Values greater than 1 specify the maximum number of restart attempts.  
 ```
 
 ## Nevergrad Optimizers
