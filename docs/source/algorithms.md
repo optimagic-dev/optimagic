@@ -4208,6 +4208,34 @@ or
 .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEDA
 ```
 
+.. dropdown:: nevergrad_tbpsa
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_tbpsa(noise_handling=False, ...)
+    )
+
+or
+
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_tbpsa",
+      algo_options={"noise_handling": False, ...}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradTBPSA
+```
+
 ## Bayesian Optimization
 
 We wrap the

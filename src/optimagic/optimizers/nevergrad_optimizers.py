@@ -1015,12 +1015,43 @@ class NevergradEDA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradTBPSA(Algorithm):
+    """Minimize a scalar function using the Test-based Population Size Adaptation
+    algorithm.
+
+    TBPSA adapts population size based on fitness trend detection using linear
+    regression. If no significant improvement is found (via hypothesis testing),
+    the population size is increased to improve robustness, making it effective
+    for noisy optimization problems. For more details, refer to :cite:`tbpsaimpl`.
+
+    """
+
     noise_handling: bool = True
+    """If True, returns the best individual.
+
+    If False (recommended for noisy problems), returns the average of the final
+    population to reduce noise.
+
+    """
+
     initial_popsize: int | None = None
+    """Initial population size.
+
+    If not specified, defaults to 4 times the problem dimension.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1030,6 +1061,8 @@ class NevergradTBPSA(Algorithm):
 
         import nevergrad as ng
 
+        # The nevergrad implementation has `naive` but we use `noise_handling`
+        # for clarity. naive=True -> returns best point; naive=False -> returns mean.
         configured_optimizer = ng.optimizers.ParametrizedTBPSA(
             naive=self.noise_handling,
             initial_popsize=self.initial_popsize,
