@@ -381,5 +381,6 @@ module = [
     "iminuit",
     "nevergrad",
     "yaml",
+    "gradient_free_optimizers",
   ]
 ignore_missing_imports = true
