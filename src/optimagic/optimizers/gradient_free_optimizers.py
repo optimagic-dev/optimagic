@@ -10,8 +10,6 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_FTOL_ABS,
-    CONVERGENCE_FTOL_REL,
     STOPPING_MAXFUN_GLOBAL,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
@@ -60,14 +58,14 @@ class GFOCommonOptions:
     stopping_funval: float | None = None
     """"Stop the optimization if the objective function is less than this value."""
 
-    convergence_iter_noimprove: PositiveInt = 50
+    convergence_iter_noimprove: PositiveInt = 1000  # need to set high
     """Number of iterations without improvement before termination."""
 
-    convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    convergence_ftol_abs: NonNegativeFloat | None = None
     """Converge if the absolute change in the objective function is less than this
     value."""
 
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_rel: NonNegativeFloat | None = None
     """Converge if the relative change in the objective function is less than this
     value."""
 
@@ -230,7 +228,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    p_accept: NonNegativeFloat = 0.1
+    p_accept: NonNegativeFloat = 0.123
     """The probability factor used in the equation to calculate if a worse position is
     accepted as the new position.
 
@@ -252,7 +250,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
     ) -> InternalOptimizeResult:
         import gradient_free_optimizers as gfo
 
-        opt = gfo.HillClimbingOptimizer
+        opt = gfo.StochasticHillClimbingOptimizer
         optimizer = partial(
             opt,
             epsilon=self.epsilon,
@@ -308,7 +306,7 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    epsilon: PositiveFloat = 0.03
+    epsilon: PositiveFloat = 0.003
     """The step-size of the hill climbing algorithm. If step_size is too large the newly
     selected positions will be at the edge of the search space.
 
@@ -327,7 +325,7 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
     """The number of positions the algorithm explores from its current position before
     setting its current position to the best of those neighbour positions."""
 
-    repulsion_factor: PositiveFloat = 5
+    repulsion_factor: PositiveFloat = 2
     """The algorithm increases the step size by multiplying it with the repulsion_factor
     for the next iteration. This way the algorithm escapes the region that does not
     offer better positions.
@@ -399,7 +397,7 @@ class GFORandomRestartHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    epsilon: PositiveFloat = 0.03
+    epsilon: PositiveFloat = 0.022
     """The step-size of the hill climbing algorithm.If step_size is too large the newly
     selected positions will be at the edge of the search space.
 
@@ -435,7 +433,7 @@ class GFORandomRestartHillClimbing(Algorithm, GFOCommonOptions):
     ) -> InternalOptimizeResult:
         import gradient_free_optimizers as gfo
 
-        opt = gfo.HillClimbingOptimizer
+        opt = gfo.RandomRestartHillClimbingOptimizer
         optimizer = partial(
             opt,
             epsilon=self.epsilon,
@@ -519,7 +517,7 @@ class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
 
     """
 
-    annealing_rate: PositiveFloat = 0.97
+    annealing_rate: PositiveFloat = 0.215
     """Rate at which the temperatur-value of the algorithm decreases. An annealing rate
     above 1 increases the temperature over time.
 
@@ -649,8 +647,8 @@ def _gfo_internal(
     stopping_maxtime: NonNegativeFloat | None,
     stopping_funval: float | None,
     convergence_iter_noimprove: PositiveInt | None,
-    convergence_ftol_abs: NonNegativeFloat,
-    convergence_ftol_rel: NonNegativeFloat,
+    convergence_ftol_abs: NonNegativeFloat | None,
+    convergence_ftol_rel: NonNegativeFloat | None,
     caching: bool,
     verbosity: Literal["progress_bar", "print_results", "print_times"] | bool,
     seed: int | None,
