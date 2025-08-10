@@ -1,5 +1,7 @@
 """Implement optimizers from the nevergrad package."""
 
+from __future__ import annotations
+
 import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
@@ -30,7 +32,7 @@ from optimagic.typing import (
 )
 
 if TYPE_CHECKING:
-    import nevergrad as ng
+    from nevergrad.optimization.base import ConfiguredOptimizer
 
 
 NEVERGRAD_NOT_INSTALLED_ERROR = (
@@ -1511,7 +1513,7 @@ def _nevergrad_internal(
     problem: InternalOptimizationProblem,
     x0: NDArray[np.float64],
     n_cores: int,
-    configured_optimizer: "ng.optimization.base.ConfiguredOptimizer",
+    configured_optimizer: ConfiguredOptimizer,
     stopping_maxfun: int,
     seed: int | None,
     sigma: float | None,

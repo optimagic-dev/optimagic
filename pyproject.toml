@@ -380,6 +380,7 @@ module = [
     "pdbp",
     "iminuit",
     "nevergrad",
+    "nevergrad.optimization.base.ConfiguredOptimizer",
     "yaml",
   ]
 ignore_missing_imports = true
