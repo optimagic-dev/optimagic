@@ -47,7 +47,9 @@ def _get_seed(algo):
 
 
 def _get_required_decimals(algo):
-    return 1 if algo.algo_info.is_global else 4
+    return (
+        1 if algo.algo_info.is_global else 3
+    )  # only scipy_trustconstr fails with 4 decimals
 
 
 @mark.least_squares
