@@ -1417,6 +1417,14 @@ class NevergradNGOpt(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradMeta(Algorithm):
+    """Minimize a scalar function using a Meta Optimizer from Nevergrad.
+
+    This algorithm utilizes a combination of local and global optimizers to find
+    the best solution. The specific portfolio of optimizers can be selected via
+    the `optimizer` parameter.
+
+    """
+
     optimizer: Literal[
         "MultiBFGSPlus",
         "LogMultiBFGSPlus",
@@ -1456,10 +1464,24 @@ class NevergradMeta(Algorithm):
         "Shiwa",
         "Carola3",
     ] = "Shiwa"
+    """The specific Nevergrad meta-optimizer to use.
+
+    Each option is a portfolio of different local and global algorithms.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
+    bounds are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]

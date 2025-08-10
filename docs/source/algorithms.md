@@ -4320,6 +4320,34 @@ or
 .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradNGOpt
 ```
 
+.. dropdown:: nevergrad_meta
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_meta(optimizer="BFGSCMAPlus", ...)
+    )
+
+or
+
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_meta",
+      algo_options={"optimizer": "BFGSCMAPlus", ...}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradMeta
+```
+
 ## Bayesian Optimization
 
 We wrap the
