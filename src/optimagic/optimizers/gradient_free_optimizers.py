@@ -201,7 +201,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    epsilon: PositiveFloat = 0.03
+    epsilon: PositiveFloat = 0.027
     """The step-size of the hill climbing algorithm.If step_size is too large the newly
     selected positions will be at the edge of the search space.
 
@@ -228,7 +228,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    p_accept: NonNegativeFloat = 0.123
+    p_accept: NonNegativeFloat = 0.5
     """The probability factor used in the equation to calculate if a worse position is
     accepted as the new position.
 
