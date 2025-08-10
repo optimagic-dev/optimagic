@@ -4034,69 +4034,69 @@ and hence imprecise.\
 
 ```
 
+```{eval-rst}
 .. dropdown:: nevergrad_oneplusone
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_oneplusone(stopping_maxfun=1_000, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_oneplusone",
+          algo_options={"stopping_maxfun": 1_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradOnePlusOne
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_oneplusone(stopping_maxfun=1_000, ...)
-    )
-    
-or
-    
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_oneplusone",
-      algo_options={"stopping_maxfun": 1_000, ...}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradOnePlusOne
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_de
 
-```
-**How to use this algorithm:**
+    **How to use this algorithm:**
 
-.. code-block::
+    .. code-block::
 
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_de(population_size="large", ...)
-    )
-    
-or
-    
-.. code-block::
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_de(population_size="large", ...)
+        )
 
-    om.minimize(
-      ...,
-      algorithm="nevergrad_de",
-      algo_options={"population_size": "large", ...}
-    )
+    or
 
-**Description and available options:**
+    .. code-block::
 
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradDifferentialEvolution
+        om.minimize(
+          ...,
+          algorithm="nevergrad_de",
+          algo_options={"population_size": "large", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradDifferentialEvolution
 ```
 
 ```{eval-rst}
 .. dropdown::  nevergrad_bo
 
-  .. note::
-  
-    Using this optimizer requires the `bayes-optim` package to be installed as well. 
-    This can be done with `pip install bayes-optim`.
+    .. note::
+
+        Using this optimizer requires the `bayes-optim` package to be installed as well.
+        This can be done with `pip install bayes-optim`.
 
     **How to use this algorithm:**
 
@@ -4107,9 +4107,9 @@ or
           ...,
           algorithm=om.algos.nevergrad_bo(stopping_maxfun=1_000, ...)
         )
-        
+
     or
-        
+
     .. code-block::
 
         om.minimize(
@@ -4121,231 +4121,230 @@ or
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradBayesOptim
-
 ```
 
+```{eval-rst}
 .. dropdown:: nevergrad_emna
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_emna(noise_handling=False, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_emna",
+          algo_options={"noise_handling": False, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEMNA
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_emna(noise_handling=False, ...)
-    )
-
-or
-
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_emna",
-      algo_options={"noise_handling": False, ...}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEMNA
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_cga
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_cga(stopping_maxfun=10_000)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_cga",
+          algo_options={"stopping_maxfun": 10_000}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradCGA
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_cga(stopping_maxfun=10_000)
-    )
-    
-or
-    
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_cga",
-      algo_options={"stopping_maxfun": 10_000}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradCGA
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_eda
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_eda(stopping_maxfun=10_000)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_eda",
+          algo_options={"stopping_maxfun": 10_000}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEDA
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_eda(stopping_maxfun=10_000)
-    )
-    
-or
-    
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_eda",
-      algo_options={"stopping_maxfun": 10_000}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEDA
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_tbpsa
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_tbpsa(noise_handling=False, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_tbpsa",
+          algo_options={"noise_handling": False, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradTBPSA
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_tbpsa(noise_handling=False, ...)
-    )
-
-or
-
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_tbpsa",
-      algo_options={"noise_handling": False, ...}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradTBPSA
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_randomsearch
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_randomsearch(opposition_mode="quasi", ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_randomsearch",
+          algo_options={"opposition_mode": "quasi", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradRandomSearch
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_randomsearch(opposition_mode="quasi", ...)
-    )
-
-or
-
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_randomsearch",
-      algo_options={"opposition_mode": "quasi", ...}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradRandomSearch
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_samplingsearch
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_samplingsearch(sampler="Hammersley", scrambled=True)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_samplingsearch",
+          algo_options={"sampler": "Hammersley", "scrambled": True}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradSamplingSearch
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_samplingsearch(sampler="Hammersley", scrambled=True)
-    )
-
-or
-
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_samplingsearch",
-      algo_options={"sampler": "Hammersley", "scrambled": True}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradSamplingSearch
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_NGOpt
 
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_NGOpt(optimizer="NGOptRW", ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_NGOpt",
+          algo_options={"optimizer": "NGOptRW", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradNGOpt
 ```
-**How to use this algorithm:**
 
-.. code-block::
-
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_NGOpt(optimizer="NGOptRW", ...)
-    )
-
-or
-
-.. code-block::
-
-    om.minimize(
-      ...,
-      algorithm="nevergrad_NGOpt",
-      algo_options={"optimizer": "NGOptRW", ...}
-    )
-
-**Description and available options:**
-
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradNGOpt
-```
-
+```{eval-rst}
 .. dropdown:: nevergrad_meta
 
-```
-**How to use this algorithm:**
+    **How to use this algorithm:**
 
-.. code-block::
+    .. code-block::
 
-    import optimagic as om
-    om.minimize(
-      ...,
-      algorithm=om.algos.nevergrad_meta(optimizer="BFGSCMAPlus", ...)
-    )
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_meta(optimizer="BFGSCMAPlus", ...)
+        )
 
-or
+    or
 
-.. code-block::
+    .. code-block::
 
-    om.minimize(
-      ...,
-      algorithm="nevergrad_meta",
-      algo_options={"optimizer": "BFGSCMAPlus", ...}
-    )
+        om.minimize(
+          ...,
+          algorithm="nevergrad_meta",
+          algo_options={"optimizer": "BFGSCMAPlus", ...}
+        )
 
-**Description and available options:**
+    **Description and available options:**
 
-.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradMeta
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradMeta
 ```
 
 ## Bayesian Optimization

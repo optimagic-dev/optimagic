@@ -335,8 +335,8 @@ class NevergradCMAES(Algorithm):
     """Seed used by the internal random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -533,8 +533,8 @@ class NevergradOnePlusOne(Algorithm):
     """Number of cores to use for parallel computation."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ if
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)if bounds are not
+    provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -659,8 +659,8 @@ class NevergradDifferentialEvolution(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ if
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)if bounds are not
+    provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -748,8 +748,8 @@ class NevergradBayesOptim(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: int | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -842,8 +842,8 @@ class NevergradEMNA(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -911,8 +911,8 @@ class NevergradCGA(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -974,8 +974,8 @@ class NevergradEDA(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1052,8 +1052,8 @@ class NevergradTBPSA(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1144,8 +1144,8 @@ class NevergradRandomSearch(Algorithm):
     """Number of cores to use for parallel function evaluation."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1246,8 +1246,8 @@ class NevergradSamplingSearch(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1375,8 +1375,8 @@ class NevergradNGOpt(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1482,8 +1482,8 @@ class NevergradMeta(Algorithm):
     """Seed for the random number generator for reproducibility."""
 
     sigma: float | None = None
-    r"""Standard deviation for sampling initial population from $N(0, \sigma^2)$ in case
-    bounds are not provided."""
+    """Standard deviation for sampling initial population from N(0, σ²) in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
