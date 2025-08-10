@@ -4292,6 +4292,34 @@ or
 .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradSamplingSearch
 ```
 
+.. dropdown:: nevergrad_NGOpt
+
+```
+**How to use this algorithm:**
+
+.. code-block::
+
+    import optimagic as om
+    om.minimize(
+      ...,
+      algorithm=om.algos.nevergrad_NGOpt(optimizer="NGOptRW", ...)
+    )
+
+or
+
+.. code-block::
+
+    om.minimize(
+      ...,
+      algorithm="nevergrad_NGOpt",
+      algo_options={"optimizer": "NGOptRW", ...}
+    )
+
+**Description and available options:**
+
+.. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradNGOpt
+```
+
 ## Bayesian Optimization
 
 We wrap the
