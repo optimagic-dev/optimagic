@@ -21,9 +21,8 @@ from optimagic.optimization.internal_optimization_problem import (
 )
 from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 
-# use pyensmallen_experimental for testing purpose
 if IS_PYENSMALLEN_INSTALLED:
-    import pyensmallen_experimental as pye
+    import pyensmallen as pye
 
 MIN_LINE_SEARCH_STEPS = 1e-20
 """The minimum step of the line search."""
@@ -92,17 +91,11 @@ class EnsmallenLBFGS(Algorithm):
             grad[:] = jac
             return np.float64(fun)
 
-        # Passing a Report class to the optimizer allows us to retrieve additional info
-        ens_res: dict[str, Any] = dict()
-        report = pye.Report(resultIn=ens_res, disableOutput=True)
         best_x = optimizer.optimize(objective_function, x0, report)
 
         res = InternalOptimizeResult(
             x=best_x,
-            fun=ens_res["objective_value"],
-            n_iterations=ens_res["iterations"],
-            n_fun_evals=ens_res["evaluate_calls"],
-            n_jac_evals=ens_res["gradient_calls"],
+            fun=problem.fun(best_x),
         )
 
         return res
