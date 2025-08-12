@@ -15,7 +15,7 @@ from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimizers.bayesian_optimizer import BayesOpt
 from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
-from optimagic.optimizers.gradient_free_optimizers import (
+from optimagic.optimizers.gfo_optimizers import (
     GFODownhillSimplex,
     GFOHillClimbing,
     GFORandomRestartHillClimbing,

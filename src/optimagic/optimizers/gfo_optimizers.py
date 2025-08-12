@@ -591,16 +591,16 @@ class GFODownhillSimplex(Algorithm, GFOCommonOptions):
 
     """
 
-    alpha: PositiveFloat = 1
+    simplex_reflection: PositiveFloat = 1
     """The reflection parameter of the simplex algorithm."""
 
-    gamma: PositiveFloat = 2
+    simplex_expansion: PositiveFloat = 2
     """The expansion parameter of the simplex algorithm."""
 
-    beta: PositiveFloat = 0.5
+    simplex_contraction: PositiveFloat = 0.5
     """The contraction parameter of the simplex algorithm."""
 
-    sigma: PositiveFloat = 0.5
+    simplex_shrinking: PositiveFloat = 0.5
     """The shrinking parameter of the simplex algorithm."""
 
     def _solve_internal_problem(
@@ -611,10 +611,10 @@ class GFODownhillSimplex(Algorithm, GFOCommonOptions):
         opt = gfo.DownhillSimplexOptimizer
         optimizer = partial(
             opt,
-            alpha=self.alpha,
-            gamma=self.gamma,
-            beta=self.beta,
-            sigma=self.sigma,
+            alpha=self.simplex_reflection,
+            gamma=self.simplex_expansion,
+            beta=self.simplex_contraction,
+            sigma=self.simplex_shrinking,
         )
         res = _gfo_internal(
             problem=problem,
