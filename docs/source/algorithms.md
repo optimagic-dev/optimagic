@@ -4701,6 +4701,39 @@ package. To use it, you need to have
     - **seed**: Seed for the random number generator for reproducibility.
 ```
 
+## Optimizers from the Ensmallen C++ library
+
+optimagic supports some optimizers from the Ensmallen C++ library. Optimizers from this
+library are made available in Python through the pyensmallen python wrapper. To use
+optimizers from Ensmallen, you need to have
+[pyensmallen](https://pypi.org/project/pyensmallen-experimental/) installed (pip install
+pyensmallen_experimental).
+
+````{eval-rst}
+.. dropdown:: ensmallen_lbfgs
+
+    .. code-block::
+
+        "ensmallen_lbfgs"
+
+    Minimize a scalar function using the “LBFGS” algorithm.
+
+    L-BFGS is an optimization algorithm in the family of quasi-Newton methods that approximates the Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm using a limited amount of computer memory.
+
+    Detailed description of the algorithm is given in :cite:`Matthies1979`.
+
+    - **limited_memory_storage_length** (int): Maximum number of saved gradients used to approximate the hessian matrix..
+    - **stopping.maxiter** (int): Maximum number of iterations for the optimization (0 means no limit and may run indefinitely).
+    - **armijo_constant** (float): Controls the accuracy of the line search routine for determining the Armijo condition. default is 1e-4.
+    - **wolfe_condition** (float): Parameter for detecting the Wolfe condition. default is 0.9.
+    - **convergence.gtol_abs** (float): Stop when the absolute gradient norm is smaller than this.
+    - **convergence.ftol_rel** (float): Stop when the relative improvement between two iterations is below this.
+    - **max_line_search_trials** (int): The maximum number of trials for the line search (before giving up). default is 50.
+    - **min_step_for_line_search** (float): The minimum step of the line search. default is 1e-20.
+    - **max_step_for_line_search** (float): The maximum step of the line search. default is 1e20.
+
+
+
 ## References
 
 ```{eval-rst}
@@ -4709,3 +4742,4 @@ package. To use it, you need to have
     :filter: docname in docnames
     :style: unsrt
 ```
+````
