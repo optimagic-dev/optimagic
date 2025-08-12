@@ -619,8 +619,9 @@ def _gfo_internal(
         return -problem.fun(x)
 
     # negate in case of minimize
-    if common.stopping_funval is not None:
-        stopping_funval = -1 * common.stopping_funval
+    stopping_funval = (
+        -1 * common.stopping_funval if common.stopping_funval is not None else None
+    )
 
     # run optimization
     opt.search(
@@ -679,7 +680,7 @@ def _process_result_gfo(opt: "BaseOptimizer") -> InternalOptimizeResult:
     """
     res = InternalOptimizeResult(
         x=np.array(opt.best_value),
-        fun=opt.best_score,
+        fun=-opt.best_score,  # negate once again
         success=True,
         n_fun_evals=len(opt.eval_times),
         n_jac_evals=0,
