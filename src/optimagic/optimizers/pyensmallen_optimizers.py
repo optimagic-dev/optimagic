@@ -1,7 +1,6 @@
 """Implement ensmallen optimizers."""
 
 from dataclasses import dataclass
-from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
