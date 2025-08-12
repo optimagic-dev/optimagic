@@ -5,7 +5,8 @@ from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.internal_optimization_problem import (
     SphereExampleInternalOptimizationProblemWithConverter,
 )
-from optimagic.optimizers.gradient_free_optimizers import (
+from optimagic.optimizers.gfo_optimizers import (
+    GFOCommonOptions,
     _get_gfo_constraints,
     _get_initialize_gfo,
     _get_search_space_gfo,
@@ -67,21 +68,10 @@ def test_gfo_internal():
     from gradient_free_optimizers import DownhillSimplexOptimizer
 
     res = _gfo_internal(
+        common_options=GFOCommonOptions(),
         problem=problem,
         x0=np.full(10, 2),
         optimizer=DownhillSimplexOptimizer,
-        warm_start=None,
-        n_init=5,
-        n_grid_points=20,
-        stopping_maxiter=1000,
-        stopping_maxtime=None,
-        stopping_funval=None,
-        convergence_iter_noimprove=100,
-        convergence_ftol_abs=None,
-        convergence_ftol_rel=None,
-        caching=False,
-        verbosity=False,
-        seed=12345,
     )
 
     assert np.all(res.x == np.full(10, 0))

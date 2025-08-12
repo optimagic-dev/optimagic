@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -82,6 +82,15 @@ class GFOCommonOptions:
     seed: int | None = None
     """Random seed for reproducibility."""
 
+    def common_options(self) -> GFOCommonOptions:
+        """Return a GFOCommonOptions instance with only the common options."""
+        return GFOCommonOptions(
+            **{
+                field.name: getattr(self, field.name)
+                for field in fields(GFOCommonOptions)
+            }
+        )
+
 
 @mark.minimizer(
     name="gfo_hillclimbing",
@@ -154,21 +163,10 @@ class GFOHillClimbing(Algorithm, GFOCommonOptions):
             n_neighbours=self.n_neighbours,
         )
         res = _gfo_internal(
+            common_options=self.common_options(),
             problem=problem,
             x0=x0,
             optimizer=optimizer,
-            warm_start=self.warm_start,
-            n_init=self.n_init,
-            n_grid_points=self.n_grid_points,
-            stopping_maxiter=self.stopping_maxiter,
-            stopping_maxtime=self.stopping_maxtime,
-            stopping_funval=self.stopping_funval,
-            convergence_iter_noimprove=self.convergence_iter_noimprove,
-            convergence_ftol_abs=self.convergence_ftol_abs,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            caching=self.caching,
-            verbosity=self.verbosity,
-            seed=self.seed,
         )
 
         return res
@@ -259,21 +257,10 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
             p_accept=self.p_accept,
         )
         res = _gfo_internal(
+            common_options=self.common_options(),
             problem=problem,
             x0=x0,
             optimizer=optimizer,
-            warm_start=self.warm_start,
-            n_init=self.n_init,
-            n_grid_points=self.n_grid_points,
-            stopping_maxiter=self.stopping_maxiter,
-            stopping_maxtime=self.stopping_maxtime,
-            stopping_funval=self.stopping_funval,
-            convergence_iter_noimprove=self.convergence_iter_noimprove,
-            convergence_ftol_abs=self.convergence_ftol_abs,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            caching=self.caching,
-            verbosity=self.verbosity,
-            seed=self.seed,
         )
 
         return res
@@ -349,21 +336,10 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
             repulsion_factor=self.repulsion_factor,
         )
         res = _gfo_internal(
+            common_options=self.common_options(),
             problem=problem,
             x0=x0,
             optimizer=optimizer,
-            warm_start=self.warm_start,
-            n_init=self.n_init,
-            n_grid_points=self.n_grid_points,
-            stopping_maxiter=self.stopping_maxiter,
-            stopping_maxtime=self.stopping_maxtime,
-            stopping_funval=self.stopping_funval,
-            convergence_iter_noimprove=self.convergence_iter_noimprove,
-            convergence_ftol_abs=self.convergence_ftol_abs,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            caching=self.caching,
-            verbosity=self.verbosity,
-            seed=self.seed,
         )
 
         return res
@@ -442,21 +418,10 @@ class GFORandomRestartHillClimbing(Algorithm, GFOCommonOptions):
             n_iter_restart=self.n_iter_restart,
         )
         res = _gfo_internal(
+            common_options=self.common_options(),
             problem=problem,
             x0=x0,
             optimizer=optimizer,
-            warm_start=self.warm_start,
-            n_init=self.n_init,
-            n_grid_points=self.n_grid_points,
-            stopping_maxiter=self.stopping_maxiter,
-            stopping_maxtime=self.stopping_maxtime,
-            stopping_funval=self.stopping_funval,
-            convergence_iter_noimprove=self.convergence_iter_noimprove,
-            convergence_ftol_abs=self.convergence_ftol_abs,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            caching=self.caching,
-            verbosity=self.verbosity,
-            seed=self.seed,
         )
 
         return res
@@ -541,21 +506,10 @@ class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
             annealing_rate=self.annealing_rate,
         )
         res = _gfo_internal(
+            common_options=self.common_options(),
             problem=problem,
             x0=x0,
             optimizer=optimizer,
-            warm_start=self.warm_start,
-            n_init=self.n_init,
-            n_grid_points=self.n_grid_points,
-            stopping_maxiter=self.stopping_maxiter,
-            stopping_maxtime=self.stopping_maxtime,
-            stopping_funval=self.stopping_funval,
-            convergence_iter_noimprove=self.convergence_iter_noimprove,
-            convergence_ftol_abs=self.convergence_ftol_abs,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            caching=self.caching,
-            verbosity=self.verbosity,
-            seed=self.seed,
         )
         return res
 
@@ -617,41 +571,19 @@ class GFODownhillSimplex(Algorithm, GFOCommonOptions):
             sigma=self.simplex_shrinking,
         )
         res = _gfo_internal(
+            common_options=self.common_options(),
             problem=problem,
             x0=x0,
             optimizer=optimizer,
-            warm_start=self.warm_start,
-            n_init=self.n_init,
-            n_grid_points=self.n_grid_points,
-            stopping_maxiter=self.stopping_maxiter,
-            stopping_maxtime=self.stopping_maxtime,
-            stopping_funval=self.stopping_funval,
-            convergence_iter_noimprove=self.convergence_iter_noimprove,
-            convergence_ftol_abs=self.convergence_ftol_abs,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            caching=self.caching,
-            verbosity=self.verbosity,
-            seed=self.seed,
         )
         return res
 
 
 def _gfo_internal(
+    common_options: GFOCommonOptions,
     problem: InternalOptimizationProblem,
     x0: NDArray[np.float64],
     optimizer: BaseOptimizer,
-    warm_start: list[PyTree] | None,
-    n_init: PositiveInt,
-    n_grid_points: PositiveInt | PyTree,
-    stopping_maxiter: PositiveInt,
-    stopping_maxtime: NonNegativeFloat | None,
-    stopping_funval: float | None,
-    convergence_iter_noimprove: PositiveInt | None,
-    convergence_ftol_abs: NonNegativeFloat | None,
-    convergence_ftol_rel: NonNegativeFloat | None,
-    caching: bool,
-    verbosity: Literal["progress_bar", "print_results", "print_times"] | bool,
-    seed: int | None,
 ) -> InternalOptimizeResult:
     """Internal helper function.
 
@@ -659,21 +591,26 @@ def _gfo_internal(
     optimization.
 
     """
+    # Use common options from GFOCommonOptions
+    common = common_options
+
     # set early stopping criterion
     early_stopping = {
-        "n_iter_no_change": convergence_iter_noimprove,
-        "tol_abs": convergence_ftol_abs,
-        "tol_rel": convergence_ftol_rel,
+        "n_iter_no_change": common.convergence_iter_noimprove,
+        "tol_abs": common.convergence_ftol_abs,
+        "tol_rel": common.convergence_ftol_rel,
     }
 
     # define search space, initial params, population, constraints
     opt = optimizer(
         search_space=_get_search_space_gfo(
-            problem.bounds, n_grid_points, problem.converter
+            problem.bounds, common.n_grid_points, problem.converter
         ),
-        initialize=_get_initialize_gfo(x0, n_init, warm_start, problem.converter),
+        initialize=_get_initialize_gfo(
+            x0, common.n_init, common.warm_start, problem.converter
+        ),
         constraints=_get_gfo_constraints(),
-        random_state=seed,
+        random_state=common.seed,
     )
 
     # define objective function, negate to perform minimize
@@ -682,19 +619,19 @@ def _gfo_internal(
         return -problem.fun(x)
 
     # negate in case of minimize
-    if stopping_funval is not None:
-        stopping_funval = -1 * stopping_funval
+    if common.stopping_funval is not None:
+        stopping_funval = -1 * common.stopping_funval
 
     # run optimization
     opt.search(
         objective_function=objective_function,
-        n_iter=stopping_maxiter,
-        max_time=stopping_maxtime,
+        n_iter=common.stopping_maxiter,
+        max_time=common.stopping_maxtime,
         max_score=stopping_funval,
         early_stopping=early_stopping,
-        memory=caching,
+        memory=common.caching,
         memory_warm_start=None,
-        verbosity=verbosity,
+        verbosity=common.verbosity,
     )
 
     return _process_result_gfo(opt)
