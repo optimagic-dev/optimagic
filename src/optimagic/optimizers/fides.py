@@ -29,9 +29,6 @@ from optimagic.typing import (
     PositiveInt,
 )
 
-if IS_FIDES_INSTALLED:
-    from fides import Optimizer, hessian_approximation
-
 
 @mark.minimizer(
     name="fides",
@@ -40,8 +37,10 @@ if IS_FIDES_INSTALLED:
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -161,6 +160,8 @@ def fides_internal(
             "You can install it with `pip install fides>=0.7.4`."
         )
 
+    from fides import Optimizer
+
     fides_options = {
         "delta_init": trustregion_initial_radius,
         "eta": trustregion_increase_threshold,
@@ -180,6 +181,9 @@ def fides_internal(
     }
 
     hessian_instance = _create_hessian_updater_from_user_input(hessian_update_strategy)
+
+    lower_bounds = np.full(len(x), -np.inf) if lower_bounds is None else lower_bounds
+    upper_bounds = np.full(len(x), np.inf) if upper_bounds is None else upper_bounds
 
     opt = Optimizer(
         fun=fun_and_jac,
@@ -246,6 +250,8 @@ def _process_exitflag(exitflag):
 
 
 def _create_hessian_updater_from_user_input(hessian_update_strategy):
+    from fides import hessian_approximation
+
     hessians_needing_residuals = (
         hessian_approximation.FX,
         hessian_approximation.SSM,

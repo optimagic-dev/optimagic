@@ -4,7 +4,12 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from optimagic.exceptions import InvalidBoundsError
-from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
+from optimagic.parameters.bounds import (
+    Bounds,
+    _get_fast_path_bounds,
+    get_internal_bounds,
+    pre_process_bounds,
+)
 
 
 @pytest.fixture()
@@ -81,10 +86,9 @@ def test_get_bounds_no_arguments(pytree_params):
     got_lower, got_upper = get_internal_bounds(pytree_params)
 
     expected_lower = np.array([-np.inf] + 3 * [0] + 4 * [-np.inf])
-    expected_upper = np.full(8, np.inf)
 
     assert_array_equal(got_lower, expected_lower)
-    assert_array_equal(got_upper, expected_upper)
+    assert got_upper is None
 
 
 def test_get_bounds_with_lower_bounds(pytree_params):
@@ -95,10 +99,9 @@ def test_get_bounds_with_lower_bounds(pytree_params):
     got_lower, got_upper = get_internal_bounds(pytree_params, bounds=bounds)
 
     expected_lower = np.array([0.1] + 3 * [0] + 4 * [-np.inf])
-    expected_upper = np.full(8, np.inf)
 
     assert_array_equal(got_lower, expected_lower)
-    assert_array_equal(got_upper, expected_upper)
+    assert got_upper is None
 
 
 def test_get_bounds_with_upper_bounds(pytree_params):
@@ -118,10 +121,8 @@ def test_get_bounds_with_upper_bounds(pytree_params):
 def test_get_bounds_numpy(array_params):
     got_lower, got_upper = get_internal_bounds(array_params)
 
-    expected = np.array([np.inf, np.inf])
-
-    assert_array_equal(got_lower, -expected)
-    assert_array_equal(got_upper, expected)
+    assert got_lower is None
+    assert got_upper is None
 
 
 def test_get_bounds_numpy_error(array_params):
@@ -132,3 +133,17 @@ def test_get_bounds_numpy_error(array_params):
             array_params,
             bounds=bounds,
         )
+
+
+def test_get_fast_path_bounds_both_none():
+    got_lower, got_upper = _get_fast_path_bounds(Bounds(lower=None, upper=None))
+    assert got_lower is None
+    assert got_upper is None
+
+
+def test_get_fast_path_bounds_lower_none():
+    got_lower, got_upper = _get_fast_path_bounds(
+        bounds=Bounds(lower=None, upper=np.array([1, 2, 3])),
+    )
+    assert_array_equal(got_lower, None)
+    assert_array_equal(got_upper, np.array([1, 2, 3]))

@@ -14,7 +14,7 @@ from typing import (
 )
 
 import numpy as np
-from annotated_types import Ge, Gt, Lt
+from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
 
 PyTree = Any
@@ -115,15 +115,28 @@ class BatchEvaluator(Protocol):
 
 
 PositiveInt = Annotated[int, Gt(0)]
+"""Type alias for positive integers (greater than 0)."""
 NonNegativeInt = Annotated[int, Ge(0)]
+"""Type alias for non-negative integers (greater than or equal to 0)."""
 PositiveFloat = Annotated[float, Gt(0)]
+"""Type alias for positive floats (greater than 0)."""
 NonNegativeFloat = Annotated[float, Ge(0)]
+"""Type alias for non-negative floats (greater than or equal to 0)."""
 NegativeFloat = Annotated[float, Lt(0)]
+"""Type alias for negative floats (less than 0)."""
 GtOneFloat = Annotated[float, Gt(1)]
+"""Type alias for floats greater than 1."""
+UnitIntervalFloat = Annotated[float, Gt(0), Le(1)]
+"""Type alias for floats in (0, 1]."""
 YesNoBool = Literal["yes", "no"] | bool
+"""Type alias for boolean values represented as 'yes' or 'no' strings or as boolean
+values."""
 DirectionLiteral = Literal["minimize", "maximize"]
-BatchEvaluatorLiteral = Literal["joblib", "pathos"]
+"""Type alias for optimization direction, either 'minimize' or 'maximize'."""
+BatchEvaluatorLiteral = Literal["joblib", "pathos", "threading"]
+"""Type alias for batch evaluator types, can be 'joblib', 'pathos', or 'threading'."""
 ErrorHandlingLiteral = Literal["raise", "continue"]
+"""Type alias for error handling strategies, can be 'raise' or 'continue'."""
 
 
 @dataclass(frozen=True)

@@ -48,7 +48,6 @@ extensions = [
     "sphinx_copybutton",
     "myst_nb",
     "sphinxcontrib.bibtex",
-    "sphinx_panels",
     "sphinx_design",
     "sphinxcontrib.mermaid",
 ]
@@ -67,6 +66,28 @@ copybutton_only_copy_prompt_lines = False
 bibtex_bibfiles = ["refs.bib"]
 
 autodoc_member_order = "bysource"
+autodoc_class_signature = "separated"
+autodoc_default_options = {
+    "exclude-members": "__init__",
+    "members": True,
+    "undoc-members": True,
+    "member-order": "bysource",
+    "class-doc-from": "class",
+}
+autodoc_preserve_defaults = True
+autodoc_type_aliases = {
+    "PositiveInt": "optimagic.typing.PositiveInt",
+    "NonNegativeInt": "optimagic.typing.NonNegativeInt",
+    "PositiveFloat": "optimagic.typing.PositiveFloat",
+    "NonNegativeFloat": "optimagic.typing.NonNegativeFloat",
+    "NegativeFloat": "optimagic.typing.NegativeFloat",
+    "GtOneFloat": "optimagic.typing.GtOneFloat",
+    "UnitIntervalFloat": "optimagic.typing.UnitIntervalFloat",
+    "YesNoBool": "optimagic.typing.YesNoBool",
+    "DirectionLiteral": "optimagic.typing.DirectionLiteral",
+    "BatchEvaluatorLiteral": "optimagic.typing.BatchEvaluatorLiteral",
+    "ErrorHandlingLiteral": "optimagic.typing.ErrorHandlingLiteral",
+}
 
 autodoc_mock_imports = [
     "bokeh",
@@ -86,8 +107,8 @@ autodoc_mock_imports = [
 ]
 
 extlinks = {
-    "ghuser": ("https://github.com/%s", "@"),
-    "gh": ("https://github.com/optimagic-dev/optimagic/pulls/%s", "#"),
+    "ghuser": ("https://github.com/%s", "%s"),
+    "gh": ("https://github.com/optimagic-dev/optimagic/pull/%s", "%s"),
 }
 
 intersphinx_mapping = get_intersphinx_mapping(
@@ -126,7 +147,7 @@ version = ".".join(release.split(".")[:2])
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -145,7 +166,7 @@ else:
     todo_emit_warnings = True
 
 # -- Options for myst-nb  ----------------------------------------
-nb_execution_mode = "force"
+nb_execution_mode = "force"  # "off", "force", "cache", "auto"
 nb_execution_allow_errors = False
 nb_merge_streams = True
 
@@ -171,7 +192,11 @@ html_theme = "furo"
 # "default.css" will overwrite the built-in "default.css".
 html_css_files = ["css/termynal.css", "css/termynal_custom.css", "css/custom.css"]
 
-html_js_files = ["js/termynal.js", "js/custom.js"]
+html_js_files = [
+    "js/termynal.js",
+    "js/custom.js",
+    "js/require.js",
+]
 
 
 # Add any paths that contain custom static files (such as style sheets) here, relative
@@ -188,8 +213,11 @@ html_use_index = True
 # If true, the index is split into individual pages for each letter.
 html_split_index = False
 
+# If true, links to the source (either copied by sphinx on on github)
+html_copy_source = True
+
 # If true, links to the reST sources are added to the pages.
-html_show_sourcelink = False
+html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 html_show_sphinx = True
@@ -212,4 +240,29 @@ html_theme_options = {
         "color-brand-primary": "#f04f43",
         "color-brand-content": "#f04f43",
     },
+    "source_repository": "https://github.com/optimagic-dev/optimagic",
+    "source_branch": "main",
+    "source_directory": "docs/source/",
+    "footer_icons": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/optimagic-dev/optimagic",
+            "html": """
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            """,
+            "class": "",
+        },
+        {
+            "name": "Zulip",
+            "url": "https://ose.zulipchat.com/#narrow/channel/221432-optimagic",
+            "html": """
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" role="img" viewBox="0 0 24 24" height="1em" width="1em"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.767 3.589c0 1.209-.543 2.283-1.37 2.934l-8.034 7.174c-.149.128-.343-.078-.235-.25l2.946-5.9c.083-.165-.024-.368-.194-.368H4.452c-1.77 0-3.219-1.615-3.219-3.59C1.233 1.616 2.682 0 4.452 0h15.096c1.77-.001 3.219 1.614 3.219 3.589zM4.452 24h15.096c1.77 0 3.219-1.616 3.219-3.59 0-1.974-1.449-3.59-3.219-3.59H8.12c-.17 0-.277-.202-.194-.367l2.946-5.9c.108-.172-.086-.378-.235-.25l-8.033 7.173c-.828.65-1.37 1.725-1.37 2.934 0 1.974 1.448 3.59 3.218 3.59z"></path></svg>
+            """,
+            "class": "",
+        },
+    ],
 }

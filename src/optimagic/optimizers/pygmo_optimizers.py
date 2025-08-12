@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import Any, List, Literal
+from typing import TYPE_CHECKING, Any, List, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -47,10 +47,8 @@ from optimagic.typing import (
 
 STOPPING_MAX_ITERATIONS_GENETIC = 250
 
-try:
+if TYPE_CHECKING:
     import pygmo as pg
-except ImportError:
-    pass
 
 
 @mark.minimizer(
@@ -60,8 +58,10 @@ except ImportError:
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -126,8 +126,10 @@ class PygmoGaco(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -172,8 +174,10 @@ class PygmoBeeColony(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -255,8 +259,10 @@ class PygmoDe(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -301,8 +307,10 @@ class PygmoSea(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -445,8 +453,10 @@ class PygmoSga(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -541,8 +551,10 @@ class PygmoSade(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -613,8 +625,10 @@ class PygmoCmaes(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -672,8 +686,10 @@ class PygmoSimulatedAnnealing(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -777,8 +793,10 @@ class PygmoPso(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -882,8 +900,10 @@ class PygmoPsoGen(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -933,8 +953,10 @@ class PygmoMbh(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1010,8 +1032,10 @@ class PygmoXnes(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1052,8 +1076,10 @@ class PygmoGwo(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1112,8 +1138,10 @@ class PygmoCompassSearch(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1171,8 +1199,10 @@ class PygmoIhs(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1290,6 +1320,8 @@ def _minimize_pygmo(
 def _create_pygmo_problem(
     problem: InternalOptimizationProblem, dim: int, n_cores: int
 ) -> pg.problem:
+    import pygmo as pg
+
     class Problem:
         def fitness(self, x):
             return [problem.fun(x)]
@@ -1314,6 +1346,8 @@ def _create_algorithm(
     method: str, algo_options: dict[str, Any], n_cores: int
 ) -> pg.algorithm:
     """Create a pygmo algorithm."""
+    import pygmo as pg
+
     pygmo_uda = getattr(pg, method)
     algo = pygmo_uda(**algo_options)
     try:
@@ -1335,6 +1369,8 @@ def _create_population(
     seed: int | None,
     discard_start_params: bool,
 ) -> pg.population:
+    import pygmo as pg
+
     if not discard_start_params:
         population_size = population_size - 1
 

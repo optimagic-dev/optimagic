@@ -80,6 +80,7 @@ def test_multistart_optimization_with_sum_of_squares_at_defaults(
     assert hasattr(res, "multistart_info")
     ms_info = res.multistart_info
     assert len(ms_info.exploration_sample) == 400
+    assert isinstance(ms_info.exploration_results, list)
     assert len(ms_info.exploration_results) == 400
     assert all(isinstance(entry, float) for entry in ms_info.exploration_results)
     assert all(isinstance(entry, OptimizeResult) for entry in ms_info.local_optima)
@@ -309,4 +310,16 @@ def test_with_ackley_using_dict_options():
             "stopping_maxopt": 20,
             "convergence_max_discoveries": 10,
         },
+    )
+
+
+@pytest.mark.slow
+def test_with_batch_evaluator(params):
+    options = om.MultistartOptions(batch_evaluator="threading")
+
+    minimize(
+        fun=sos_scalar,
+        params=params,
+        algorithm="scipy_lbfgsb",
+        multistart=options,
     )

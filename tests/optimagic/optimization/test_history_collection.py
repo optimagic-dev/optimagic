@@ -33,12 +33,18 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
 
     path = tmp_path / "log.db"
 
+    algo_options = {"n_cores": 2}
+    if algorithm == "nevergrad_pso":
+        algo_options["stopping_maxfun"] = 15
+    else:
+        algo_options["stopping_maxiter"] = 3
+
     collected_hist = minimize(
         fun=mark.least_squares(lambda x: x),
         params=np.arange(5),
         algorithm=algorithm,
         bounds=Bounds(lower=lb, upper=ub),
-        algo_options={"n_cores": 2, "stopping_maxiter": 3},
+        algo_options=algo_options,
         logging=SQLiteLogOptions(path=path, if_database_exists="replace"),
     ).history
 
@@ -57,8 +63,10 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,

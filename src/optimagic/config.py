@@ -1,3 +1,4 @@
+import importlib.util
 from pathlib import Path
 
 import pandas as pd
@@ -15,88 +16,31 @@ DEFAULT_N_CORES = 1
 CRITERION_PENALTY_SLOPE = 0.1
 CRITERION_PENALTY_CONSTANT = 100
 
+
+def _is_installed(module_name: str) -> bool:
+    """Return True if the given module is installed, otherwise False."""
+    return importlib.util.find_spec(module_name) is not None
+
+
 # ======================================================================================
 # Check Available Packages
 # ======================================================================================
 
-try:
-    from petsc4py import PETSc  # noqa: F401
-except ImportError:
-    IS_PETSC4PY_INSTALLED = False
-else:
-    IS_PETSC4PY_INSTALLED = True
+IS_PETSC4PY_INSTALLED = _is_installed("petsc4py")
+IS_NLOPT_INSTALLED = _is_installed("nlopt")
+IS_PYBOBYQA_INSTALLED = _is_installed("pybobyqa")
+IS_DFOLS_INSTALLED = _is_installed("dfols")
+IS_PYGMO_INSTALLED = _is_installed("pygmo")
+IS_CYIPOPT_INSTALLED = _is_installed("cyipopt")
+IS_FIDES_INSTALLED = _is_installed("fides")
+IS_JAX_INSTALLED = _is_installed("jax")
+IS_TRANQUILO_INSTALLED = _is_installed("tranquilo")
+IS_NUMBA_INSTALLED = _is_installed("numba")
+IS_IMINUIT_INSTALLED = _is_installed("iminuit")
+IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
+IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
+IS_PYENSMALLEN_INSTALLED = _is_installed("pyensmallen")
 
-try:
-    import nlopt  # noqa: F401
-except ImportError:
-    IS_NLOPT_INSTALLED = False
-else:
-    IS_NLOPT_INSTALLED = True
-
-try:
-    import pybobyqa  # noqa: F401
-except ImportError:
-    IS_PYBOBYQA_INSTALLED = False
-else:
-    IS_PYBOBYQA_INSTALLED = True
-
-try:
-    import dfols  # noqa: F401
-except ImportError:
-    IS_DFOLS_INSTALLED = False
-else:
-    IS_DFOLS_INSTALLED = True
-
-try:
-    import pygmo  # noqa: F401
-except ImportError:
-    IS_PYGMO_INSTALLED = False
-else:
-    IS_PYGMO_INSTALLED = True
-
-try:
-    import cyipopt  # noqa: F401
-except ImportError:
-    IS_CYIPOPT_INSTALLED = False
-else:
-    IS_CYIPOPT_INSTALLED = True
-
-try:
-    import fides  # noqa: F401
-except ImportError:
-    IS_FIDES_INSTALLED = False
-else:
-    IS_FIDES_INSTALLED = True
-
-try:
-    import jax  # noqa: F401
-except ImportError:
-    IS_JAX_INSTALLED = False
-else:
-    IS_JAX_INSTALLED = True
-
-
-try:
-    import tranquilo  # noqa: F401
-except ImportError:
-    IS_TRANQUILO_INSTALLED = False
-else:
-    IS_TRANQUILO_INSTALLED = True
-
-
-try:
-    import numba  # noqa: F401
-except ImportError:
-    IS_NUMBA_INSTALLED = False
-else:
-    IS_NUMBA_INSTALLED = True
-
-try:
-    import pyensmallen  # noqa: F401
-except ImportError:
-    IS_PYENSMALLEN_INSTALLED = False
-else:
-    IS_PYENSMALLEN_INSTALLED = True
 
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0

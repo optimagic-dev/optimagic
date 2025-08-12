@@ -45,8 +45,10 @@ from optimagic.typing import (
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -244,9 +246,9 @@ def internal_solve_pounders(
         conjugate_gradient_method_sub (str): Method for computing the conjugate
             gradient step ("bntr").
             Available conjugate gradient methods are:
-                - "cg"
-                - "steihaug_toint"
-                - "trsbox" (default)
+            - "cg"
+            - "steihaug_toint"
+            - "trsbox" (default)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
         maxiter_gradient_descent_sub (int): Maximum number of gradient descent
             iterations to perform ("bntr").

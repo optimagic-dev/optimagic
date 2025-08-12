@@ -61,10 +61,12 @@ def get_space_converter(
         SpaceConverter: The space converter.
         InternalParams: Dataclass with entries:
             - value (np.ndarray): Internal parameter values.
-            - lower_bounds (np.ndarray): Lower bounds on the internal params.
-            - upper_bounds (np.ndarray): Upper bounds on the internal params.
-            - soft_lower_bounds (np.ndarray): Soft lower bounds on the internal params.
-            - soft_upper_bounds (np.ndarray): Soft upper bounds on the internal params.
+            - lower_bounds (np.ndarray | None): Lower bounds on the internal params.
+            - upper_bounds (np.ndarray | None): Upper bounds on the internal params.
+            - soft_lower_bounds (np.ndarray | None): Soft lower bounds on the internal
+              params.
+            - soft_upper_bounds (np.ndarray | None): Soft upper bounds on the internal
+              params.
             - name (list): List of names of the external parameters.
             - free_mask (np.ndarray): Boolean mask representing which external parameter
               is free.
@@ -145,7 +147,6 @@ def get_space_converter(
         soft_lower_bounds=_soft_lower,
         soft_upper_bounds=_soft_upper,
     )
-
     return converter, params
 
 
@@ -514,8 +515,8 @@ def post_replace_jacobian(post_replacements):
 @dataclass(frozen=True)
 class InternalParams:
     values: np.ndarray
-    lower_bounds: np.ndarray
-    upper_bounds: np.ndarray
+    lower_bounds: np.ndarray | None
+    upper_bounds: np.ndarray | None
     soft_lower_bounds: np.ndarray | None = None
     soft_upper_bounds: np.ndarray | None = None
     names: list | None = None

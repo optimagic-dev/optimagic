@@ -10,7 +10,7 @@ dependencies = [
     "joblib",
     "numpy",
     "pandas",
-    "plotly<6.0.0",
+    "plotly",
     "pybaum>=0.1.2",
     "scipy>=1.2.1",
     "sqlalchemy>=1.3",
@@ -334,7 +334,7 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-    "pyensmallen",
+    "pyensmallen_experimental",
     "pybaum",
     "scipy",
     "scipy.linalg",
@@ -379,5 +379,8 @@ module = [
     "optimagic._version",
     "annotated_types",
     "pdbp",
+    "iminuit",
+    "nevergrad",
+    "yaml",
   ]
 ignore_missing_imports = true

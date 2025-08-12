@@ -33,9 +33,11 @@ The following arguments are not supported as part of ``algo_options``:
 
 """
 
+from __future__ import annotations
+
 import functools
 from dataclasses import dataclass
-from typing import Any, Callable, List, Literal, Tuple
+from typing import Any, Callable, List, Literal, SupportsInt, Tuple
 
 import numpy as np
 import scipy
@@ -74,6 +76,7 @@ from optimagic.parameters.nonlinear_constraints import (
 from optimagic.typing import (
     AggregationLevel,
     BatchEvaluator,
+    BatchEvaluatorLiteral,
     NegativeFloat,
     NonNegativeFloat,
     NonNegativeInt,
@@ -90,20 +93,78 @@ from optimagic.utilities import calculate_trustregion_initial_radius
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
 )
 @dataclass(frozen=True)
 class ScipyLBFGSB(Algorithm):
+    """Minimize a scalar differentiable function using the L-BFGS-B algorithm.
+
+    The optimizer is taken from scipy, which calls the Fortran code written by the
+    original authors of the algorithm. The Fortran code includes the corrections
+    and improvements that were introduced in a follow up paper.
+
+    lbfgsb is a limited memory version of the original bfgs algorithm, that deals with
+    lower and upper bounds via an active set approach.
+
+    The lbfgsb algorithm is well suited for differentiable scalar optimization problems
+    with up to several hundred parameters.
+
+    It is a quasi-newton line search algorithm. At each trial point it evaluates the
+    criterion function and its gradient to find a search direction. It then approximates
+    the hessian using the stored history of gradients and uses the hessian to calculate
+    a candidate step size. Then it uses a gradient based line search algorithm to
+    determine the actual step length. Since the algorithm always evaluates the gradient
+    and criterion function jointly, the user should provide a ``fun_and_jac`` function
+    that exploits the synergies in the calculation of criterion and gradient.
+
+    The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
+    to scale the parameters.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    r"""Converge if the relative change in the objective function is less than this
+    value. More formally, this is expressed as.
+
+    .. math::
+
+        \frac{f^k - f^{k+1}}{\max\{{|f^k|, |f^{k+1}|, 1}\}} \leq
+        \textsf{convergence_ftol_rel}.
+
+    """
+
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    """Converge if the absolute values in the gradient of the objective function are
+    less than this value."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of function evaluations."""
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations."""
+
     limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
+    """The maximum number of variable metric corrections used to define the limited
+    memory matrix. This is the 'maxcor' parameter in the SciPy documentation.
+
+    The default value is taken from SciPy's L-BFGS-B implementation. Larger values use
+    more memory but may converge faster for some problems.
+
+    """
+
     max_line_search_steps: PositiveInt = MAX_LINE_SEARCH_STEPS
+    """The maximum number of line search steps. This is the 'maxls' parameter in the
+    SciPy documentation.
+
+    The default value is taken from SciPy's L-BFGS-B implementation.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -135,8 +196,10 @@ class ScipyLBFGSB(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -145,6 +208,7 @@ class ScipyLBFGSB(Algorithm):
 class ScipySLSQP(Algorithm):
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -152,6 +216,7 @@ class ScipySLSQP(Algorithm):
         options = {
             "maxiter": self.stopping_maxiter,
             "ftol": self.convergence_ftol_abs,
+            "disp": self.display,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
@@ -173,8 +238,10 @@ class ScipySLSQP(Algorithm):
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -186,6 +253,7 @@ class ScipyNelderMead(Algorithm):
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_XTOL_ABS
     adaptive: bool = False
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -197,6 +265,7 @@ class ScipyNelderMead(Algorithm):
             "fatol": self.convergence_ftol_abs,
             # TODO: Benchmark if adaptive = True works better
             "adaptive": self.adaptive,
+            "disp": self.display,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun,
@@ -216,8 +285,10 @@ class ScipyNelderMead(Algorithm):
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -228,6 +299,7 @@ class ScipyPowell(Algorithm):
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -237,6 +309,7 @@ class ScipyPowell(Algorithm):
             "ftol": self.convergence_ftol_rel,
             "maxfev": self.stopping_maxfun,
             "maxiter": self.stopping_maxiter,
+            "disp": self.display,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun,
@@ -256,8 +329,10 @@ class ScipyPowell(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -267,6 +342,10 @@ class ScipyBFGS(Algorithm):
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     norm: NonNegativeFloat = np.inf
+    convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    display: bool = False
+    armijo_condition: NonNegativeFloat = 1e-4
+    curvature_condition: NonNegativeFloat = 0.9
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -275,6 +354,10 @@ class ScipyBFGS(Algorithm):
             "gtol": self.convergence_gtol_abs,
             "maxiter": self.stopping_maxiter,
             "norm": self.norm,
+            "xrtol": self.convergence_xtol_rel,
+            "disp": self.display,
+            "c1": self.armijo_condition,
+            "c2": self.curvature_condition,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac, x0=x0, method="BFGS", jac=True, options=options
@@ -290,8 +373,10 @@ class ScipyBFGS(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -301,6 +386,7 @@ class ScipyConjugateGradient(Algorithm):
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     norm: NonNegativeFloat = np.inf
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -309,6 +395,7 @@ class ScipyConjugateGradient(Algorithm):
             "gtol": self.convergence_gtol_abs,
             "maxiter": self.stopping_maxiter,
             "norm": self.norm,
+            "disp": self.display,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac, x0=x0, method="CG", jac=True, options=options
@@ -324,8 +411,10 @@ class ScipyConjugateGradient(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -334,6 +423,7 @@ class ScipyConjugateGradient(Algorithm):
 class ScipyNewtonCG(Algorithm):
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -341,6 +431,7 @@ class ScipyNewtonCG(Algorithm):
         options = {
             "xtol": self.convergence_xtol_rel,
             "maxiter": self.stopping_maxiter,
+            "disp": self.display,
         }
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
@@ -360,8 +451,10 @@ class ScipyNewtonCG(Algorithm):
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -371,6 +464,7 @@ class ScipyCOBYLA(Algorithm):
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     trustregion_initial_radius: PositiveFloat | None = None
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -384,6 +478,7 @@ class ScipyCOBYLA(Algorithm):
         options = {
             "maxiter": self.stopping_maxiter,
             "rhobeg": radius,
+            "disp": self.display,
         }
 
         # cannot handle equality constraints
@@ -410,8 +505,10 @@ class ScipyCOBYLA(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -433,12 +530,15 @@ class ScipyLSTRF(Algorithm):
         else:
             tr_solver_options = self.tr_solver_options
 
+        lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
+        upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
             # This optimizer does not work with fun_and_jac
             jac=problem.jac,
-            bounds=(problem.bounds.lower, problem.bounds.upper),
+            bounds=(lower_bounds, upper_bounds),
             method="trf",
             max_nfev=self.stopping_maxfun,
             ftol=self.convergence_ftol_rel,
@@ -458,8 +558,10 @@ class ScipyLSTRF(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -481,12 +583,15 @@ class ScipyLSDogbox(Algorithm):
         else:
             tr_solver_options = self.tr_solver_options
 
+        lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
+        upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
             # This optimizer does not work with fun_and_jac
             jac=problem.jac,
-            bounds=(problem.bounds.lower, problem.bounds.upper),
+            bounds=(lower_bounds, upper_bounds),
             method="dogbox",
             max_nfev=self.stopping_maxfun,
             ftol=self.convergence_ftol_rel,
@@ -506,8 +611,10 @@ class ScipyLSDogbox(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=False,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -544,8 +651,10 @@ class ScipyLSLM(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -563,6 +672,7 @@ class ScipyTruncatedNewton(Algorithm):
     criterion_rescale_factor: float = -1
     # TODO: Check type hint for `func_min_estimate`
     func_min_estimate: float = 0
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -578,6 +688,7 @@ class ScipyTruncatedNewton(Algorithm):
             "eta": self.line_search_severity,
             "accuracy": self.finite_difference_precision,
             "rescale": self.criterion_rescale_factor,
+            "disp": self.display,
         }
 
         raw_res = scipy.optimize.minimize(
@@ -599,8 +710,10 @@ class ScipyTruncatedNewton(Algorithm):
     is_global=False,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -612,6 +725,7 @@ class ScipyTrustConstr(Algorithm):
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     trustregion_initial_radius: PositiveFloat | None = None
+    display: bool = False
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -626,6 +740,7 @@ class ScipyTrustConstr(Algorithm):
             "maxiter": self.stopping_maxiter,
             "xtol": self.convergence_xtol_rel,
             "initial_tr_radius": trustregion_initial_radius,
+            "disp": self.display,
         }
 
         # cannot handle equality constraints
@@ -652,10 +767,10 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         fun=scipy_res.fun,
         success=bool(scipy_res.success),
         message=str(scipy_res.message),
-        n_fun_evals=scipy_res.get("nfev"),
-        n_jac_evals=scipy_res.get("njev"),
-        n_hess_evals=scipy_res.get("nhev"),
-        n_iterations=scipy_res.get("nit"),
+        n_fun_evals=_int_if_not_none(scipy_res.get("nfev")),
+        n_jac_evals=_int_if_not_none(scipy_res.get("njev")),
+        n_hess_evals=_int_if_not_none(scipy_res.get("nhev")),
+        n_iterations=_int_if_not_none(scipy_res.get("nit")),
         # TODO: Pass on more things once we can convert them to external
         status=None,
         jac=None,
@@ -666,6 +781,12 @@ def process_scipy_result(scipy_res: ScipyOptimizeResult) -> InternalOptimizeResu
         history=None,
     )
     return res
+
+
+def _int_if_not_none(value: SupportsInt | None) -> int | None:
+    if value is None:
+        return None
+    return int(value)
 
 
 def _get_scipy_constraints(constraints):
@@ -695,8 +816,10 @@ def _internal_to_scipy_constraint(c):
     is_global=True,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -775,8 +898,10 @@ class ScipyBasinhopping(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=True,
@@ -786,7 +911,7 @@ class ScipyBrute(Algorithm):
     n_grid_points: PositiveInt = 20
     polishing_function: Callable | None = None
     n_cores: PositiveInt = 1
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -824,8 +949,10 @@ class ScipyBrute(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=True,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=True,
@@ -866,7 +993,7 @@ class ScipyDifferentialEvolution(Algorithm):
     ) = "latinhypercube"
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
     n_cores: PositiveInt = 1
-    batch_evaluator: Literal["joblib", "pathos"] | BatchEvaluator = "joblib"
+    batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -900,8 +1027,10 @@ class ScipyDifferentialEvolution(Algorithm):
     is_global=True,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=True,
     disable_history=False,
@@ -1006,8 +1135,10 @@ class ScipySHGO(Algorithm):
     is_global=True,
     needs_jac=True,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1086,8 +1217,10 @@ class ScipyDualAnnealing(Algorithm):
     is_global=True,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -1135,8 +1268,13 @@ def _get_workers(n_cores, batch_evaluator):
     return out
 
 
-def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds:
-    return ScipyBounds(lb=bounds.lower, ub=bounds.upper)
+def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds | None:
+    if bounds.lower is None and bounds.upper is None:
+        return None
+
+    lower = bounds.lower if bounds.lower is not None else -np.inf
+    upper = bounds.upper if bounds.upper is not None else np.inf
+    return ScipyBounds(lb=lower, ub=upper)
 
 
 def process_scipy_result_old(scipy_results_obj):

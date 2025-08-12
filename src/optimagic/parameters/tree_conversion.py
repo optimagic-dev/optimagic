@@ -179,8 +179,8 @@ class TreeConverter(NamedTuple):
 
 class FlatParams(NamedTuple):
     values: np.ndarray
-    lower_bounds: np.ndarray
-    upper_bounds: np.ndarray
+    lower_bounds: np.ndarray | None
+    upper_bounds: np.ndarray | None
     soft_lower_bounds: np.ndarray | None = None
     soft_upper_bounds: np.ndarray | None = None
     names: list | None = None

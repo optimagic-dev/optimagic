@@ -31,13 +31,6 @@ from optimagic.typing import (
 )
 from optimagic.utilities import calculate_trustregion_initial_radius
 
-if IS_PYBOBYQA_INSTALLED:
-    import pybobyqa
-
-if IS_DFOLS_INSTALLED:
-    import dfols
-
-
 CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE = 1e-8
 """float: Stop when the lower trust region radius falls below this value."""
 
@@ -342,8 +335,10 @@ r"""dict: Options to start the optimization while building the full trust region
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -484,6 +479,8 @@ def nag_dfols_internal(
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
         )
+    import dfols
+
     if trustregion_method_to_replace_extra_points == "momentum":
         trustregion_use_momentum = True
     elif trustregion_method_to_replace_extra_points in ["geometry_improving", None]:
@@ -643,8 +640,10 @@ def nag_dfols_internal(
     is_global=False,
     needs_jac=False,
     needs_hess=False,
+    needs_bounds=False,
     supports_parallelism=False,
     supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -784,6 +783,7 @@ def nag_pybobyqa_internal(
             r"https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/"
             "install.html",
         )
+    import pybobyqa
 
     if convergence_criterion_value is None:
         convergence_criterion_value = -np.inf
