@@ -41,7 +41,6 @@ IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
 IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
 IS_PYENSMALLEN_INSTALLED = _is_installed("pyensmallen")
 
-
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0
 # ======================================================================================
