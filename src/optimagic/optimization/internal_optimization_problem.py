@@ -1057,11 +1057,14 @@ class SphereExampleInternalOptimizationProblemWithConverter(
         if binding_bounds:
             lb = np.arange(10, dtype=np.float64) - 7.0
             ub = np.arange(10, dtype=np.float64) - 3.0
-            self._x_opt = np.array([-3, -2, -1, 0, 0, 0, 0, 0, 1, 2.0])
+            self._x_opt = {
+                f"x{i}": x
+                for i, x in enumerate(np.array([-3, -2, -1, 0, 0, 0, 0, 0, 1, 2.0]))
+            }
         else:
             lb = np.full(10, -10, dtype=np.float64)
             ub = np.full(10, 10, dtype=np.float64)
-            self._x_opt = np.zeros(10)
+            self._x_opt = {f"x{i}": x for i, x in enumerate(np.zeros(10))}
 
         bounds = InternalBounds(lb, ub)
 
