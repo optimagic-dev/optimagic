@@ -109,12 +109,15 @@ class GeneConstraintFunction(Protocol):
 
 
 @dataclass(frozen=True)
-class BaseMutation:
-    """Base class for all PyGAD mutation configurations.
+class _BuiltinMutation:
+    """Base class for all built-in PyGAD mutation configurations.
 
-    Provides default implementation for converting mutation configurations to PyGAD
-    parameters. Simple mutations can use this directly, while complex mutations can
-    override it.
+    Note:
+        This is an internal base class. Users should not inherit from it
+        directly. To configure a built-in mutation, use one of its subclasses
+        (e.g., `RandomMutation`, `AdaptiveMutation`). To define a custom
+        mutation, provide a function that conforms to the `MutationFunction`
+        protocol.
 
     """
 
@@ -140,7 +143,7 @@ class BaseMutation:
 
 
 @dataclass(frozen=True)
-class RandomMutation(BaseMutation):
+class RandomMutation(_BuiltinMutation):
     """Configuration for the random mutation in PyGAD.
 
     The random mutation selects a subset of genes in each solution and either
@@ -202,7 +205,7 @@ class RandomMutation(BaseMutation):
 
 
 @dataclass(frozen=True)
-class SwapMutation(BaseMutation):
+class SwapMutation(_BuiltinMutation):
     """Configuration for the swap mutation in PyGAD.
 
     The swap mutation selects two random genes and exchanges their values. This
@@ -217,7 +220,7 @@ class SwapMutation(BaseMutation):
 
 
 @dataclass(frozen=True)
-class InversionMutation(BaseMutation):
+class InversionMutation(_BuiltinMutation):
     """Configuration for the inversion mutation in PyGAD.
 
     The inversion mutation selects a contiguous segment of genes and reverses their
@@ -232,7 +235,7 @@ class InversionMutation(BaseMutation):
 
 
 @dataclass(frozen=True)
-class ScrambleMutation(BaseMutation):
+class ScrambleMutation(_BuiltinMutation):
     """Configuration for the scramble mutation in PyGAD.
 
     The scramble mutation randomly shuffles the genes within a contiguous segment. This
@@ -246,14 +249,14 @@ class ScrambleMutation(BaseMutation):
 
 
 @dataclass(frozen=True)
-class AdaptiveMutation(BaseMutation):
+class AdaptiveMutation(_BuiltinMutation):
     """Configuration for the adaptive mutation in PyGAD.
 
-    The adaptive mutation dynamically adjusts the mutation rate based on the
-    fitness of solutions. Typically, solutions with below-average fitness
-    (bad fitness solutions) receive a higher mutation rate to encourage
-    exploration, while above-average solutions (good fitness solutions)
-    receive a lower rate to preserve good solutions.
+    The adaptive mutation dynamically adjusts the mutation rate based on
+    solution quality. Solutions whose objective value is worse than the
+    current population median receive a higher mutation rate to encourage
+    exploration, while better-than-median solutions receive a lower rate
+    to preserve promising traits.
 
     If no mutation rate parameters are specified, this mutation defaults to using
     probabilities, with a 10% rate for bad solutions (`probability_bad=0.1`)
@@ -488,8 +491,8 @@ class Pygad(Algorithm):
 
     mutation: (
         Literal["random", "swap", "inversion", "scramble", "adaptive"]
-        | type[BaseMutation]
-        | BaseMutation
+        | type[_BuiltinMutation]
+        | _BuiltinMutation
         | MutationFunction
         | None
     ) = "random"
@@ -515,7 +518,7 @@ class Pygad(Algorithm):
 
     * Any mutation instance (e.g., ``RandomMutation(...)``,
       ``SwapMutation()``, etc.)
-    * All mutation classes inherit from ``BaseMutation``
+    * All mutation classes inherit from ``_BuiltinMutation``
 
     **Custom function:**
 
@@ -554,11 +557,10 @@ class Pygad(Algorithm):
 
     Supported criteria:
 
-    * ``"reach_{value}"``: Stop when fitness reaches the specified value, e.g.
-      ``"reach_0.01"``
-    * ``"saturate_{generations}"``: Stop if fitness doesn't improve for the given number
-      of generations, e.g. ``"saturate_10"``
-
+    * ``"reach_{value}"``: Stop when the objective value reaches the specified
+      threshold, e.g. ``"reach_0.01"``
+    * ``"saturate_{generations}"``: Stop if the objective value has not improved
+      for the given number of generations, e.g. ``"saturate_10"``
     Multiple criteria can be specified as a list.
 
     """
@@ -714,11 +716,11 @@ def _convert_mutation_to_pygad_params(mutation: Any) -> dict[str, Any]:
         mutation_instance = _create_mutation_from_string(mutation)
         params = mutation_instance.to_pygad_params()
 
-    elif isinstance(mutation, type) and issubclass(mutation, BaseMutation):
+    elif isinstance(mutation, type) and issubclass(mutation, _BuiltinMutation):
         mutation_instance = mutation()
         params = mutation_instance.to_pygad_params()
 
-    elif isinstance(mutation, BaseMutation):
+    elif isinstance(mutation, _BuiltinMutation):
         params = mutation.to_pygad_params()
 
     elif isinstance(mutation, MutationFunction):
@@ -741,7 +743,7 @@ def _get_default_mutation_params(mutation_type: Any = "random") -> dict[str, Any
     }
 
 
-def _create_mutation_from_string(mutation_type: str) -> BaseMutation:
+def _create_mutation_from_string(mutation_type: str) -> _BuiltinMutation:
     """Create a mutation instance from a string type.
 
     Args:
