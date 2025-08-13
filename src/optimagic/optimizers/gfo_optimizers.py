@@ -10,7 +10,8 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.algo_options import (
-    STOPPING_MAXFUN_GLOBAL,
+    CONVERGENCE_FTOL_ABS,
+    STOPPING_MAXITER,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 class GFOCommonOptions:
     """Common options for all optimizers from GFO."""
 
-    n_grid_points: PositiveInt | PyTree = 200
+    n_grid_points: PositiveInt | PyTree = 50
     """Number of grid points per dimension.
 
     If an integer is provided, it will be used for all dimensions.
@@ -49,7 +50,7 @@ class GFOCommonOptions:
 
     """
 
-    stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
     stopping_maxtime: NonNegativeFloat | None = None
@@ -58,10 +59,10 @@ class GFOCommonOptions:
     stopping_funval: float | None = None
     """"Stop the optimization if the objective function is less than this value."""
 
-    convergence_iter_noimprove: PositiveInt = 1000  # need to set high
+    convergence_iter_noimprove: PositiveInt = 10000  # do not want to trigger this
     """Number of iterations without improvement before termination."""
 
-    convergence_ftol_abs: NonNegativeFloat | None = None
+    convergence_ftol_abs: NonNegativeFloat | None = CONVERGENCE_FTOL_ABS
     """Converge if the absolute change in the objective function is less than this
     value."""
 
@@ -199,7 +200,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    epsilon: PositiveFloat = 0.027
+    epsilon: PositiveFloat = 0.03
     """The step-size of the hill climbing algorithm.If step_size is too large the newly
     selected positions will be at the edge of the search space.
 
@@ -293,7 +294,7 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    epsilon: PositiveFloat = 0.003
+    epsilon: PositiveFloat = 0.03
     """The step-size of the hill climbing algorithm. If step_size is too large the newly
     selected positions will be at the edge of the search space.
 
@@ -312,7 +313,7 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
     """The number of positions the algorithm explores from its current position before
     setting its current position to the best of those neighbour positions."""
 
-    repulsion_factor: PositiveFloat = 2
+    repulsion_factor: PositiveFloat = 5
     """The algorithm increases the step size by multiplying it with the repulsion_factor
     for the next iteration. This way the algorithm escapes the region that does not
     offer better positions.
@@ -373,7 +374,7 @@ class GFORandomRestartHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    epsilon: PositiveFloat = 0.022
+    epsilon: PositiveFloat = 0.03
     """The step-size of the hill climbing algorithm.If step_size is too large the newly
     selected positions will be at the edge of the search space.
 
@@ -482,7 +483,7 @@ class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
 
     """
 
-    annealing_rate: PositiveFloat = 0.215
+    annealing_rate: PositiveFloat = 0.97
     """Rate at which the temperatur-value of the algorithm decreases. An annealing rate
     above 1 increases the temperature over time.
 
