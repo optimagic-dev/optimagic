@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -83,15 +83,6 @@ class GFOCommonOptions:
     seed: int | None = None
     """Random seed for reproducibility."""
 
-    def common_options(self) -> GFOCommonOptions:
-        """Return a GFOCommonOptions instance with only the common options."""
-        return GFOCommonOptions(
-            **{
-                field.name: getattr(self, field.name)
-                for field in fields(GFOCommonOptions)
-            }
-        )
-
 
 @mark.minimizer(
     name="gfo_hillclimbing",
@@ -164,7 +155,7 @@ class GFOHillClimbing(Algorithm, GFOCommonOptions):
             n_neighbours=self.n_neighbours,
         )
         res = _gfo_internal(
-            common_options=self.common_options(),
+            common_options=self,
             problem=problem,
             x0=x0,
             optimizer=optimizer,
@@ -258,7 +249,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
             p_accept=self.p_accept,
         )
         res = _gfo_internal(
-            common_options=self.common_options(),
+            common_options=self,
             problem=problem,
             x0=x0,
             optimizer=optimizer,
@@ -337,7 +328,7 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
             repulsion_factor=self.repulsion_factor,
         )
         res = _gfo_internal(
-            common_options=self.common_options(),
+            common_options=self,
             problem=problem,
             x0=x0,
             optimizer=optimizer,
@@ -419,7 +410,7 @@ class GFORandomRestartHillClimbing(Algorithm, GFOCommonOptions):
             n_iter_restart=self.n_iter_restart,
         )
         res = _gfo_internal(
-            common_options=self.common_options(),
+            common_options=self,
             problem=problem,
             x0=x0,
             optimizer=optimizer,
@@ -507,7 +498,7 @@ class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
             annealing_rate=self.annealing_rate,
         )
         res = _gfo_internal(
-            common_options=self.common_options(),
+            common_options=self,
             problem=problem,
             x0=x0,
             optimizer=optimizer,
@@ -572,7 +563,7 @@ class GFODownhillSimplex(Algorithm, GFOCommonOptions):
             sigma=self.simplex_shrinking,
         )
         res = _gfo_internal(
-            common_options=self.common_options(),
+            common_options=self,
             problem=problem,
             x0=x0,
             optimizer=optimizer,
