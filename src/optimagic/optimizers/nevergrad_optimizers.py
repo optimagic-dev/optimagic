@@ -1542,19 +1542,16 @@ def _nevergrad_internal(
 
     param = ng.p.Array(
         init=x0,
-    )
-
-    param.set_bounds(
         lower=problem.bounds.lower,
         upper=problem.bounds.upper,
     )
 
+    instrum = ng.p.Instrumentation(param)
+
     # In case bounds are not provided, the initial population is sampled
-    # from a gaussian with mean = 0 and sigma = 1,
+    # from a gaussian with mean = 0 and sd = 1,
     # which can be set through this method.
     param.set_mutation(sigma=sigma)
-
-    instrum = ng.p.Instrumentation(param)
 
     if seed is not None:
         instrum.random_state.seed(seed)

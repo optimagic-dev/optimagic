@@ -1,5 +1,6 @@
 """Test helper functions for nevergrad optimizers."""
 
+import warnings
 from typing import get_args
 
 import numpy as np
@@ -12,7 +13,11 @@ from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
 if IS_NEVERGRAD_INSTALLED:
+    import cma
     import nevergrad as ng
+
+## Skip warnings during tests
+warnings.simplefilter("ignore", cma.evolution_strategy.InjectionWarning)
 
 
 @mark.least_squares
