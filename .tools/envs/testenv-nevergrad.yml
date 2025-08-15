@@ -32,7 +32,6 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido>=1.0  # dev, tests
-      - bayes_optim  # dev, tests
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
@@ -40,5 +39,5 @@ dependencies:
       - sqlalchemy-stubs  # dev, tests
       - sphinxcontrib-mermaid  # dev, tests, docs
       - -e ../../
-      - bayesian_optimization==1.4.0
       - nevergrad
+      - bayesian_optimization==1.4.0
