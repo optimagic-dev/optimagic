@@ -1,3 +1,7 @@
+"""Implement PyGAD genetic algorithm optimizer."""
+
+from __future__ import annotations
+
 import warnings
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, Protocol, runtime_checkable
