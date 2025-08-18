@@ -3,13 +3,15 @@
 This module provides easy access to PyGAD mutation classes and Protocols.
 
 Example:
-    >>> import optimagic as om
-    >>> mutation = om.pygad.RandomMutation(probability=0.15, by_replacement=True)
-    >>> result = om.minimize(
-    ...     fun=lambda x: x @ x,
-    ...     params=[1.0, 2.0, 3.0],
-    ...     algorithm=om.algos.pygad(mutation=mutation)
-    ... )
+    # >>> import optimagic as om
+    # >>> mutation = om.optimizers.pygad.RandomMutation(
+    # ...     probability=0.15,
+    # ...     by_replacement=True,
+    # ... )
+    # >>> result = om.minimize(
+    # ...     ...,
+    # ...     algorithm=om.algos.pygad(mutation=mutation),
+    # ... )
 
 """
 
