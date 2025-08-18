@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from optimagic import constraints, mark, timing, utilities, pygad
+from optimagic import constraints, mark, pygad, timing, utilities
 from optimagic.algorithms import algos
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
