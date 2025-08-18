@@ -12,13 +12,19 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.config import IS_PYGAD_INSTALLED
 from optimagic.exceptions import NotInstalledError
-from optimagic.optimization.algo_options import get_population_size
+from optimagic.optimization.algo_options import (
+    CONVERGENCE_SATURATE_GENERATIONS,
+    CONVERGENCE_TARGET_CRITERION,
+    STOPPING_MAXITER,
+    get_population_size,
+)
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
 from optimagic.typing import (
     AggregationLevel,
+    Direction,
     PositiveFloat,
     PositiveInt,
     ProbabilityFloat,
@@ -416,6 +422,13 @@ class Pygad(Algorithm):
     num_generations: PositiveInt | None = 50
     """Number of generations to evolve the population."""
 
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations (generations) to run.
+
+    This corresponds to PyGAD's num_generations parameter.
+
+    """
+
     initial_population: list[PyTree] | None = None
     """Optional initial population as a list of parameter PyTrees.
 
@@ -554,18 +567,19 @@ class Pygad(Algorithm):
 
     """
 
-    stop_criteria: str | list[str] | None = None
-    """Stopping criteria for the genetic algorithm.
+    convergence_target_criterion: PositiveFloat | None = CONVERGENCE_TARGET_CRITERION
+    """Target criterion value for early stopping.
 
-    Can be a string or list of strings.
+    Default: None.
 
-    Supported criteria:
+    """
 
-    * ``"reach_{value}"``: Stop when the objective value reaches the specified
-      threshold, e.g. ``"reach_0.01"``
-    * ``"saturate_{generations}"``: Stop if the objective value has not improved
-      for the given number of generations, e.g. ``"saturate_10"``
-    Multiple criteria can be specified as a list.
+    convergence_saturate_generations: PositiveInt | None = (
+        CONVERGENCE_SATURATE_GENERATIONS
+    )
+    """Maximum generations without fitness improvement before stopping.
+
+    Default: None.
 
     """
 
@@ -668,6 +682,13 @@ class Pygad(Algorithm):
         # Convert mutation parameter to PyGAD parameters
         mutation_params = _convert_mutation_to_pygad_params(self.mutation)
 
+        # Build stop criteria from convergence parameters
+        stop_criteria = _build_stop_criteria(
+            self.convergence_target_criterion,
+            self.convergence_saturate_generations,
+            direction=problem.direction,
+        )
+
         ga_instance = pygad.GA(
             num_generations=self.num_generations,
             num_parents_mating=num_parents_mating,
@@ -689,7 +710,7 @@ class Pygad(Algorithm):
             allow_duplicate_genes=self.allow_duplicate_genes,
             gene_constraint=self.gene_constraint,
             sample_size=self.sample_size,
-            stop_criteria=self.stop_criteria,
+            stop_criteria=stop_criteria,
             parallel_processing=None,
             random_seed=self.seed,
         )
@@ -809,6 +830,36 @@ def _determine_effective_batch_size(batch_size: int | None, n_cores: int) -> int
         result = n_cores
 
     return result
+
+
+def _build_stop_criteria(
+    target_criterion: float | None,
+    saturate_generations: int | None,
+    direction: Direction,
+) -> str | list[str] | None:
+    """Build PyGAD stop criteria from optimagic convergence parameters.
+
+    Args:
+        target_criterion: Target value that the objective function should reach.
+        saturate_generations: Max generations without improvement before stopping.
+        direction: Direction of optimization (Direction.MINIMIZE or Direction.MAXIMIZE).
+
+    Returns:
+        PyGAD stop criteria string, list of strings, or None.
+
+    """
+    criteria = []
+
+    if target_criterion is not None:
+        pygad_target_fitness = (
+            -target_criterion if direction is Direction.MINIMIZE else target_criterion
+        )
+        criteria.append(f"reach_{pygad_target_fitness}")
+
+    if saturate_generations is not None:
+        criteria.append(f"saturate_{saturate_generations}")
+
+    return criteria[0] if len(criteria) == 1 else (criteria or None)
 
 
 def _process_pygad_result(ga_instance: Any) -> InternalOptimizeResult:
