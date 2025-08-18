@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import Any, ClassVar, Literal, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    Protocol,
+    runtime_checkable,
+)
 
 import numpy as np
 from numpy.typing import NDArray
@@ -32,6 +39,7 @@ from optimagic.typing import (
 )
 
 
+@runtime_checkable
 class ParentSelectionFunction(Protocol):
     """Protocol for user-defined parent selection functions.
 
@@ -52,6 +60,7 @@ class ParentSelectionFunction(Protocol):
     ) -> tuple[NDArray[np.float64], NDArray[np.int_]]: ...
 
 
+@runtime_checkable
 class CrossoverFunction(Protocol):
     """Protocol for user-defined crossover functions.
 
@@ -92,6 +101,7 @@ class MutationFunction(Protocol):
     ) -> NDArray[np.float64]: ...
 
 
+@runtime_checkable
 class GeneConstraintFunction(Protocol):
     """Protocol for user-defined gene constraint functions.
 
@@ -598,6 +608,11 @@ class Pygad(Algorithm):
                 "installed. You can install it with 'pip install pygad'."
             )
 
+        _validate_user_defined_functions(
+            parent_selection_type=self.parent_selection_type,
+            crossover_type=self.crossover_type,
+            gene_constraint=self.gene_constraint,
+        )
         import pygad
 
         if (
@@ -860,6 +875,87 @@ def _build_stop_criteria(
         criteria.append(f"saturate_{saturate_generations}")
 
     return criteria[0] if len(criteria) == 1 else (criteria or None)
+
+
+def _validate_user_defined_functions(
+    parent_selection_type: str | Callable[..., object] | None,
+    crossover_type: str | Callable[..., object] | None,
+    gene_constraint: list[GeneConstraintFunction | None] | None,
+) -> None:
+    """Validate user-provided functions for selection, crossover, and constraints."""
+
+    if parent_selection_type is None:
+        pass
+    elif isinstance(parent_selection_type, str):
+        _validate_string_choice(
+            parent_selection_type,
+            ["sss", "rws", "sus", "rank", "random", "tournament"],
+            "parent_selection_type",
+        )
+    elif callable(parent_selection_type):
+        _validate_protocol_function(
+            parent_selection_type,
+            ParentSelectionFunction,
+            "parent_selection_type",
+        )
+    else:
+        raise ValueError(
+            "parent_selection_type must be a string, callable, or None, "
+            f"got {type(parent_selection_type)}"
+        )
+
+    if crossover_type is None:
+        pass
+    elif isinstance(crossover_type, str):
+        _validate_string_choice(
+            crossover_type,
+            ["single_point", "two_points", "uniform", "scattered"],
+            "crossover_type",
+        )
+    elif callable(crossover_type):
+        _validate_protocol_function(
+            crossover_type,
+            CrossoverFunction,
+            "crossover_type",
+        )
+    else:
+        raise ValueError(
+            "crossover_type must be a string, callable, or None, "
+            f"got {type(crossover_type)}"
+        )
+
+    if gene_constraint is not None:
+        if not isinstance(gene_constraint, list):
+            raise ValueError(
+                f"gene_constraint must be a list or None, got {type(gene_constraint)}"
+            )
+        for i, constraint_func in enumerate(gene_constraint):
+            if constraint_func is not None:
+                if not callable(constraint_func):
+                    raise TypeError(
+                        f"gene_constraint[{i}] must be callable, or None, "
+                        f"got {type(constraint_func)}"
+                    )
+                _validate_protocol_function(
+                    constraint_func,
+                    GeneConstraintFunction,
+                    f"gene_constraint[{i}]",
+                )
+
+
+def _validate_string_choice(value: str, valid_choices: list[str], name: str) -> None:
+    """Ensure a string parameter is one of the allowed choices."""
+    if value not in valid_choices:
+        raise ValueError(f"{name} must be one of {valid_choices}, got '{value}'.")
+
+
+def _validate_protocol_function(
+    func: Callable[..., Any], protocol: Any, name: str
+) -> None:
+    """Ensure a callable satisfies the expected protocol interface."""
+
+    if not isinstance(func, protocol):
+        raise TypeError(f"{name} must implement {protocol.__name__}.")
 
 
 def _process_pygad_result(ga_instance: Any) -> InternalOptimizeResult:
