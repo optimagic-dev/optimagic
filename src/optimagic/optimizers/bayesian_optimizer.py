@@ -431,7 +431,24 @@ def _process_acquisition_function(
     elif isinstance(acquisition_function, type) and issubclass(
         acquisition_function, acquisition.AcquisitionFunction
     ):
-        return acquisition_function()
+        if issubclass(
+            acquisition_function, acquisition.ExpectedImprovement
+        ) or issubclass(acquisition_function, acquisition.ProbabilityOfImprovement):
+            return acquisition_function(
+                xi=xi,
+                exploration_decay=exploration_decay,
+                exploration_decay_delay=exploration_decay_delay,
+                random_state=random_seed,
+            )
+        elif issubclass(acquisition_function, acquisition.UpperConfidenceBound):
+            return acquisition_function(
+                kappa=kappa,
+                exploration_decay=exploration_decay,
+                exploration_decay_delay=exploration_decay_delay,
+                random_state=random_seed,
+            )
+        else:
+            return acquisition_function()
 
     else:
         raise TypeError(
