@@ -394,11 +394,12 @@ class AdaptiveMutation(_BuiltinMutation):
 class Pygad(Algorithm):
     """Minimize a scalar function using the PyGAD genetic algorithm.
 
-    This optimizer wraps the PyGAD genetic algorithm, a population-based evolutionary
-    method for global optimization. It maintains a population of candidate solutions and
-    evolves them over generations using biologically inspired operations: selection
-    (choosing parents based on fitness), crossover (combining genes from parents), and
-    mutation (introducing random variations).
+    This optimizer wraps the PyGAD genetic algorithm package :cite:`gad2023pygad`,
+    a population-based evolutionary method for global optimization. It maintains a
+    population of candidate solutions and evolves them over generations using
+    biologically inspired operations: selection (choosing parents based on fitness),
+    crossover (combining genes from parents), and mutation (introducing random
+    variations).
 
     The algorithm is well-suited for global optimization problems with multiple local
     optima, black-box optimization where gradients are unavailable or difficult to
