@@ -1,7 +1,5 @@
-import abc
-from typing import Any
+from typing import Any, Literal, Protocol, runtime_checkable
 
-import plotly.express as px
 import plotly.graph_objects as go
 
 from optimagic.config import IS_MATPLOTLIB_INSTALLED
@@ -20,126 +18,156 @@ if IS_MATPLOTLIB_INSTALLED:
         plt.ioff()
 
 
-class PlotBackend(abc.ABC):
-    is_available: bool
-    default_template: str
-
-    @classmethod
-    @abc.abstractmethod
-    def get_default_palette(cls) -> list:
-        pass
-
-    @abc.abstractmethod
-    def __init__(self, template: str | None):
-        if template is None:
-            template = self.default_template
-
-        self.template = template
-        self.figure: Any = None
-
-    @abc.abstractmethod
-    def add_lines(self, lines: list[LineData]) -> None:
-        pass
-
-    @abc.abstractmethod
-    def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
-        pass
-
-    @abc.abstractmethod
-    def set_legend_properties(self, legend_properties: dict[str, Any]) -> None:
-        pass
+@runtime_checkable
+class LinePlotFunction(Protocol):
+    def __call__(
+        self,
+        lines: list[LineData],
+        *,
+        title: str | None,
+        xlabel: str | None,
+        ylabel: str | None,
+        template: str | None,
+        height: int | None,
+        width: int | None,
+        legend_properties: dict[str, Any] | None,
+    ) -> Any: ...
 
 
-class PlotlyBackend(PlotBackend):
-    is_available: bool = True
-    default_template: str = "simple_white"
+def _line_plot_plotly(
+    lines: list[LineData],
+    *,
+    title: str | None,
+    xlabel: str | None,
+    ylabel: str | None,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+) -> go.Figure:
+    fig = go.Figure()
 
-    @classmethod
-    def get_default_palette(cls) -> list:
-        return px.colors.qualitative.Set2
+    for line in lines:
+        trace = go.Scatter(
+            x=line.x,
+            y=line.y,
+            name=line.name,
+            line_color=line.color,
+            mode="lines",
+        )
+        fig.add_trace(trace)
 
-    def __init__(self, template: str | None):
-        super().__init__(template)
-        self._fig = go.Figure()
-        self._fig.update_layout(template=self.template)
-        self.figure = self._fig
+    fig.update_layout(
+        title=title,
+        xaxis_title=xlabel,
+        yaxis_title=ylabel,
+        template=template,
+        height=height,
+        width=width,
+    )
 
-    def add_lines(self, lines: list[LineData]) -> None:
-        for line in lines:
-            trace = go.Scatter(
-                x=line.x,
-                y=line.y,
-                name=line.name,
-                mode="lines",
-                line_color=line.color,
-                showlegend=line.show_in_legend,
-                connectgaps=True,
-            )
-            self._fig.add_trace(trace)
+    if legend_properties:
+        fig.update_layout(legend=legend_properties)
 
-    def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
-        self._fig.update_layout(xaxis_title_text=xlabel, yaxis_title_text=ylabel)
-
-    def set_legend_properties(self, legend_properties: dict[str, Any]) -> None:
-        self._fig.update_layout(legend=legend_properties)
-
-
-class MatplotlibBackend(PlotBackend):
-    is_available: bool = IS_MATPLOTLIB_INSTALLED
-    default_template: str = "default"
-
-    @classmethod
-    def get_default_palette(cls) -> list:
-        return [mpl.colormaps["Set2"](i) for i in range(mpl.colormaps["Set2"].N)]
-
-    def __init__(self, template: str | None):
-        super().__init__(template)
-        plt.style.use(self.template)
-        self._fig, self._ax = plt.subplots()
-        self.figure = self._fig
-
-    def add_lines(self, lines: list[LineData]) -> None:
-        for line in lines:
-            self._ax.plot(
-                line.x,
-                line.y,
-                color=line.color,
-                label=line.name if line.show_in_legend else None,
-            )
-
-    def set_labels(self, xlabel: str | None = None, ylabel: str | None = None) -> None:
-        self._ax.set(xlabel=xlabel, ylabel=ylabel)
-
-    def set_legend_properties(self, legend_properties: dict[str, Any]) -> None:
-        self._ax.legend(**legend_properties)
+    return fig
 
 
-PLOT_BACKEND_CLASSES = {
-    "plotly": PlotlyBackend,
-    "matplotlib": MatplotlibBackend,
+def _line_plot_matplotlib(
+    lines: list[LineData],
+    *,
+    title: str | None,
+    xlabel: str | None,
+    ylabel: str | None,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+) -> "plt.Figure":
+    if template is not None:
+        plt.style.use(template)
+    fig, ax = plt.subplots(figsize=(width, height) if width and height else None)
+
+    for line in lines:
+        ax.plot(
+            line.x,
+            line.y,
+            label=line.name if line.show_in_legend else None,
+            color=line.color,
+        )
+
+    ax.set(title=title, xlabel=xlabel, ylabel=ylabel)
+    if legend_properties:
+        ax.legend(**legend_properties)
+
+    return fig
+
+
+BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[
+    str, tuple[bool, LinePlotFunction]
+] = {
+    "plotly": (True, _line_plot_plotly),
+    "matplotlib": (IS_MATPLOTLIB_INSTALLED, _line_plot_matplotlib),
 }
 
 
-def get_plot_backend_class(backend_name: str) -> type[PlotBackend]:
-    if backend_name not in PLOT_BACKEND_CLASSES:
+def line_plot(
+    lines: list[LineData],
+    backend: Literal["plotly", "matplotlib"] = "plotly",
+    *,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    template: str | None = None,
+    height: int | None = None,
+    width: int | None = None,
+    legend_properties: dict[str, Any] | None = None,
+) -> Any:
+    """Create a line plot corresponding to the specified backend.
+
+    Args:
+        lines: List of objects each containing data for a line in the plot.
+        backend: The backend to use for plotting.
+        title: Title of the plot.
+        xlabel: Label for the x-axis.
+        ylabel: Label for the y-axis.
+        template: Backend-specific template for styling the plot.
+        height: Height of the plot (in pixels).
+        width: Width of the plot (in pixels).
+        legend_properties: Backend-specific properties for the legend.
+
+    Returns:
+        A figure object corresponding to the specified backend.
+
+    """
+    if backend not in BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION:
         msg = (
-            f"Invalid backend name '{backend_name}'. "
-            f"Supported backends are: {', '.join(PLOT_BACKEND_CLASSES.keys())}."
+            f"Invalid plotting backend '{backend}'. "
+            f"Available backends: "
+            f"{', '.join(BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())}"
         )
         raise InvalidPlottingBackendError(msg)
 
-    return _get_backend_if_installed(backend_name)
+    _is_backend_available, _line_plot_backend_function = (
+        BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION[backend]
+    )
 
-
-def _get_backend_if_installed(backend_name: str) -> type[PlotBackend]:
-    plot_cls = PLOT_BACKEND_CLASSES[backend_name]
-
-    if not plot_cls.is_available:
+    if not _is_backend_available:
         msg = (
-            f"The '{backend_name}' backend is not installed. "
-            f"Install the package using either 'pip install {backend_name}' or "
-            f"'conda install -c conda-forge {backend_name}'"
+            f"The {backend} backend is not installed. "
+            f"Install the package using either 'pip install {backend}' or "
+            f"'conda install -c conda-forge {backend}'"
         )
         raise NotInstalledError(msg)
 
-    return plot_cls
+    fig = _line_plot_backend_function(
+        lines,
+        title=title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        template=template,
+        height=height,
+        width=width,
+        legend_properties=legend_properties,
+    )
+
+    return fig

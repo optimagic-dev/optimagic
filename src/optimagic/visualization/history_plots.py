@@ -8,14 +8,14 @@ import numpy as np
 import plotly.graph_objects as go
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
-from optimagic.config import PLOTLY_TEMPLATE
+from optimagic.config import DEFAULT_PALETTE, PLOTLY_TEMPLATE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import IterationHistory, PyTree
-from optimagic.visualization.backends import get_plot_backend_class
+from optimagic.visualization.backends import line_plot
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
 BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
@@ -40,7 +40,7 @@ def criterion_plot(
     max_evaluations: int | None = None,
     backend: Literal["plotly", "matplotlib"] = "plotly",
     template: str | None = None,
-    palette: list[str] | str | None = None,
+    palette: list[str] | str = DEFAULT_PALETTE,
     stack_multistart: bool = False,
     monotone: bool = False,
     show_exploration: bool = False,
@@ -67,15 +67,8 @@ def criterion_plot(
 
     """
     # ==================================================================================
-    # Get Plot Backend class
-
-    plot_cls = get_plot_backend_class(backend)
-
-    # ==================================================================================
     # Process inputs
 
-    if palette is None:
-        palette = plot_cls.get_default_palette()
     palette_cycle = get_palette_cycle(palette)
 
     dict_of_optimize_results_or_paths = _harmonize_inputs_to_dict(results, names)
@@ -100,13 +93,16 @@ def criterion_plot(
     # ==================================================================================
     # Generate the figure
 
-    plot = plot_cls(template)
+    fig = line_plot(
+        lines=lines + multistart_lines,
+        backend=backend,
+        xlabel="No. of criterion evaluations",
+        ylabel="Criterion value",
+        template=template,
+        legend_properties=BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES[backend],
+    )
 
-    plot.add_lines(lines + multistart_lines)
-    plot.set_labels(xlabel="No. of criterion evaluations", ylabel="Criterion value")
-    plot.set_legend_properties(BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES[backend])
-
-    return plot.figure
+    return fig
 
 
 def _harmonize_inputs_to_dict(
