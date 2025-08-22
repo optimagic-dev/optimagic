@@ -18,7 +18,7 @@ from optimagic import mark
 from optimagic.config import IS_PYSWARMS_INSTALLED
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
-    STOPPING_MAXFUN_GLOBAL,
+    CONVERGENCE_FTOL_REL,
     STOPPING_MAXITER,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
@@ -144,7 +144,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
     """
 
-    convergence_ftol_rel: NonNegativeFloat = -np.inf
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     """Relative tolerance for convergence based on function value changes."""
 
     convergence_ftol_iter: PositiveInt = 1
