@@ -132,12 +132,16 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
     algorithm through the gradient_free_optimizers package.
 
     Particle Swarm Optimization is a global population based algorithm.
-    The algorithm simulates a swarm of particles across the search space.
+
+    The algorithm simulates a swarm of particles which move according to their own
+    inertia across the search space.
     Each particle adjusts its position based on its own experience (cognitive weight)
     and the experiences of its neighbors or the swarm (social weight), using
     velocity updates.
     The algorithm iteratively guides the swarm toward promising regions of the
-    search space. The velocity of a particle is calculated by the following
+    search space.
+
+    The velocity of a particle is calculated by the following
     equation:
 
     .. math::
@@ -219,23 +223,24 @@ class GFOParallelTempering(Algorithm, GFOCommonOptions):
     algorithm through the gradient_free_optimizers package.
 
     Parallel Tempering is a global optimization algorithm that is inspired by
-    metallurgical annealing. It runs multiple optimization chains at different
-    "temperatures" in parallel. Periodically, swaps between these chains are
-    attempted. Swaps between chains at different temperatures allow the optimizer
-    to overcome local optima.
+    metallurgical annealing.
+    It runs multiple optimizer instances at different
+    "starting temperatures" in parallel. Periodically, swaps between these runs are
+    attempted. Swaps between optimization runs at different temperatures allow the
+    optimizer to overcome local optima.
 
-    The acceptance probability of a new position :math:`p_{new}` over an old one
-    :math:`p_{old}` is given by:
+    The probability of swapping temperatures for any combination of optimizer instances
+    is given by.
 
     .. math::
-        AP = e^{-\\frac{f(p_{new}) - f(p_{old})}{T}}
 
-    where :math:`T` is the current temperature.
+        p = \\min \\left( 1, \\exp\\left[{(\\text{score}_i-
+        \\text{score}_j)\\left(\\frac{1}{T_i}-\\frac{1}{T_j}\\right)}\\right] \\right)
 
     """
 
     population_size: PositiveInt = 10
-    """Size of the population, i.e., number of parallel chains."""
+    """Size of the population."""
 
     initial_population: list[PyTree] | None = None
     """The user-provided inital population."""
@@ -297,18 +302,31 @@ class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
     This algorithm is a Python implementation of the Spiral Optimization
     algorithm through the gradient_free_optimizers package.
 
-    Spiral Optimization is a global optimization algorithm inspired by the dynamics
-    of spiral phenomena. It uses a multi-point search strategy that moves towards
-    the current best solution in a logarithmic spiral trajectory.
+    Spiral Optimization is a population-based algorithm, in which a number of particles
+    move in a spiral-like pattern to explore the search space and converge to the
+    best known position as the spiral decays.
 
-    The spiral model for a two-dimensional search space is defined as:
+    The position of each particle is updated according to the following equation:
 
     .. math::
-        x_{i}(k+1) = S_n(r, \\theta) x_{i}(k) - (S_n(r, \\theta) - I_n) x^{*}
 
-    where :math:`x^{*}` is the current center of the spiral (best solution),
-    :math:`S_n(r, \\theta)` is a spiral rotation-scaling matrix, :math:`r` is the
-    convergence rate, and :math:`\\theta` is the angle of rotation.
+        x_i (k+1) = x^* (k) + r(k) \\cdot R(\\theta) \\cdot (x_i(k)- x^*(k))
+
+    where:
+        - `k` = k-th iteration
+        - `x_i(k)` = current position.
+        - `x*(k)` = center position (known best position of all particles)
+        - `r(k)` = decay rate ,
+        - `R` = rotation matrix.
+
+    and rotation matrix R is given by
+
+    .. math::
+
+        R(\\theta) = \\begin{bmatrix}
+            0^{\\top}_{n-1} & -1 \\\\
+            I_{n-1} & 0_{n-1}
+        \\end{bmatrix}
 
     """
 
@@ -328,15 +346,18 @@ class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
     """The user-provided inital population."""
 
     decay_rate: NonNegativeFloat = 0.99
-    """The `r` is called in the spiral-optimization equation and is usually referred to
-    as a step-size, but behaves more like a modification factor of the radius of the
-    spiral movement of the particles in this implementation.
+    """The decay rate `r` is a factor, by which the radius of the spiral movement of the
+    particles decays during their spiral movement.
 
     Lower values accelerate the convergence of the particles to the best known position,
     while values above 1 eventually lead to a movement where the particles spiral away
     from each other. Typical range: 0.85 to 1.15.
 
     """
+
+    rand_rest_p: NonNegativeFloat = 0
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -388,7 +409,8 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
 
     The Genetic Algorithm is an evolutionary algorithm inspired by the process of
     natural selection. It evolves a population of candidate solutions over generations
-    using mechanisms like selection, crossover, and mutation to find the best solution.
+    using mechanisms like selection, crossover, and mutation of genes(bits) to find the
+    best solution.
 
     """
 
@@ -399,14 +421,56 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
     """The user-provided inital population."""
 
     mutation_rate: ProbabilityFloat = 0.5
-    """Probability of a mutation event occurring in an individual."""
+    """Probability of a mutation event occurring in an individual of the population.
+    Mutation helps in maintaining genetic diversity within the population and prevents
+    the algorithm from getting stuck in local optima. Bits are randomly altered with.
+
+    .. math::
+
+        x'_i =
+        \\begin{cases}
+            x_i & \\text{if } \\text{rand} > p_m \\\\
+            1 - x_i & \\text{if } \\text{rand} \\leq p_m
+        \\end{cases}
+
+    where p_m is mutation_rate.
+
+    """
 
     crossover_rate: ProbabilityFloat = 0.5
-    """Probability of a crossover event occurring between two parents."""
+    """Probability of a crossover event occurring between two parents. A higher
+    crossover rate increases the diversity of the offspring, which can help in exploring
+    the search space more effectively. Crossover happens with.
+
+    .. math::
+
+        u_{i,j}^{(g)} =
+        \\begin{cases}
+            v_{i,j}^{(g)} & \\text{if } \\text{rand}_j \\leq C_r \\text{ or } j =
+            j_{\\text{rand}} \\\\
+            x_{i,j}^{(g)} & \\text{otherwise}
+        \\end{cases}
+
+    where C_r is crossover_rate .
+
+    """
 
     n_parents: PositiveInt = 2
+    """The number of parents selected from the current population to participate in the
+    crossover process to produce offspring.
 
-    offspring: PositiveInt = 10
+    By default, pairs of parents are selected to generate new offspring.
+
+    """
+
+    n_offsprings: PositiveInt = 10
+    """The number of offsprings generated in each generation through the processes of
+    crossover and mutation.
+
+    Typically, the number of offspring is equal to the population size, ensuring that
+    the population size remains constant over generations.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -424,7 +488,7 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
             mutation_rate=self.mutation_rate,
             crossover_rate=self.crossover_rate,
             n_parents=self.n_parents,
-            offspring=self.offspring,
+            offspring=self.n_offsprings,
         )
 
         res = _gfo_internal(
@@ -459,10 +523,29 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
     This algorithm is a Python implementation of the Evolution Strategy algorithm
     through the gradient_free_optimizers package.
 
-    Evolution Strategy is another type of evolutionary algorithm. It primarily relies on
-    mutation to explore the search space. A population of parents generates offspring,
-    and the fittest individuals from both parents and offspring are selected to form the
-    next generation.
+    Evolution Strategy is a evolutionary algorithm inspired by natural evolution and
+    work by iteratively improving a population of candidate solutions through mutation,
+    crossover, and selection.
+    A population of parents generates offspring, and only the fittest individuals
+    from both parents and offspring are selected to form the next generation.
+
+    The algorithm uses both mutation and crossover to create new candidate solutions.
+    The choice between mutation and crossover is determined probabilistically based on
+    their respective rates in the following way.
+
+    .. math::
+
+        \\text{total_rate} = \\text{mutation_rate} + \\text{crossover_rate}
+    .. math::
+
+        R = \\text{random_float} (0 ... \\text{total_rate})
+
+    .. code-block::
+
+        if R <= mutation-rate:
+            do mutation
+        else:
+            do crossover
 
     """
 
@@ -479,7 +562,8 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
     """Probability of a mutation event occurring in an individual."""
 
     crossover_rate: ProbabilityFloat = 0.3
-    """Probability of a crossover event occurring between two parents."""
+    """Probability of an individual to perform a crossover with the best individual in
+    the population."""
 
     rand_rest_p: NonNegativeFloat = 0
     """Probability for the optimization algorithm to jump to a random position in an
@@ -536,17 +620,21 @@ class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
     algorithm through the gradient_free_optimizers package.
 
     Differential Evolution is a population-based optimization algorithm that
-    creates new candidate solutions by combining existing ones. It creates new
-    positions in the search space by adding the weighted difference between
-    two population members to a third member.
+    creates iteratively improves a population of candidate solutions by combining and
+    perturbing them based on their differences.
+    It creates new
+    positions in the search space by adding the weighted difference between two
+    individuals in the population  to a third individual creating trial solutions that
+    are evaluated for their fitness and if a trial solution is better than the target
+    it replaces, ensures continual improvement.
 
-    A new trial vector is generated according to:
+    A new trial solution is generated according to:
 
     .. math::
         x_{trial} = x_{r1} + F \\cdot (x_{r2} - x_{r3})
 
     where :math:`r1, r2, r3` are random individuals from the population, and
-    :math:`F` is the differential weight.
+    :math:`F` is the differential weight or mutation_rate.
 
     """
 
@@ -557,10 +645,38 @@ class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
     """The user-provided inital population."""
 
     mutation_rate: ProbabilityFloat = 0.9
-    """Probability of a mutation event occurring in an individual."""
+    r"""Probability of a mutation event occurring in an individual.
+
+    The mutation rate influences the algorithm's ability to explore the search space.
+    A higher value of mutation_rate also called the differential weight `F` increases
+    the diversity of the mutant individuals, leading to broader exploration,
+    while a lower value encourages convergence by making smaller adjustments.
+
+    .. math::
+
+        \mathbf{v}_{i,G+1} = \mathbf{x}_{r1,G} + F \cdot (\mathbf{x}_{r2,G} -
+        \mathbf{x}_{r3,G})
+
+    """
 
     crossover_rate: ProbabilityFloat = 0.9
-    """Probability of a crossover event occurring between two parents."""
+    """Probability of a crossover event occurring between two parents. It determines how
+    much of the trial vector inherits its components from the mutant individual versus
+    the target individual. A high crossover rate means that more components will come
+    from the mutant individual, promoting exploration of new solutions. Conversely, a
+    low crossover rate results in more components being taken from the target
+    individual, which can help maintain existing solutions and refine them.
+
+    .. math::
+
+        u_{i,j,G+1} =
+        \\begin{cases}
+            v_{i,j,G+1} & \\text{if } \\text{rand}_j(0,1) \\leq CR \\text{ or } j =
+              j_{\\text{rand}} \\\\
+            x_{i,j,G} & \\text{otherwise}
+        \\end{cases}
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
