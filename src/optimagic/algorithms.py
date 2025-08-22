@@ -16,28 +16,12 @@ from optimagic.optimizers.bayesian_optimizer import BayesOpt
 from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
 from optimagic.optimizers.gfo_optimizers import (
-    GFOBayesianOptimization,
-    GFODifferentialEvolution,
-    GFODirectAlgorithm,
     GFODownhillSimplex,
-    GFOEvolutionStrategy,
-    GFOForestOptimization,
-    GFOGeneticAlgorithm,
-    GFOGridSearch,
     GFOHillClimbing,
-    GFOLipschitzOptimization,
-    GFOParallelTempering,
-    GFOParticleSwarmOptimization,
-    GFOPatternSearch,
     GFOPowellsMethod,
-    GFORandomAnnealing,
-    GFORandomRestartHillClimbing,
-    GFORandomSearch,
     GFORepulsingHillClimbing,
     GFOSimulatedAnnealing,
-    GFOSpiralOptimization,
     GFOStochasticHillClimbing,
-    GFOTreeStructuredParzenEstimators,
 )
 from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
@@ -418,29 +402,13 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -604,14 +572,6 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -1177,29 +1137,13 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1278,29 +1222,13 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1395,14 +1323,6 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1452,14 +1372,6 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalScalarAlgorithms(AlgoSelection):
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
@@ -1552,37 +1464,13 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -1845,29 +1733,13 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -2071,14 +1943,6 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -2538,29 +2402,13 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -2620,14 +2468,6 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
 
 @dataclass(frozen=True)
 class GradientFreeLocalAlgorithms(AlgoSelection):
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -2669,37 +2509,13 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -2811,37 +2627,13 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -2991,29 +2783,13 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -3110,29 +2886,13 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -3239,14 +2999,6 @@ class GlobalParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedLocalAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3330,14 +3082,6 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class LocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3490,37 +3234,13 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
 class BoundedScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -3870,37 +3590,13 @@ class GradientBasedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3989,29 +3685,13 @@ class GradientFreeAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
     )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -4084,14 +3764,6 @@ class GlobalAlgorithms(AlgoSelection):
 class LocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
-    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
-    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
-        GFOStochasticHillClimbing
-    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -4164,37 +3836,13 @@ class LocalAlgorithms(AlgoSelection):
 class BoundedAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -4346,37 +3994,13 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
 class ScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -4580,37 +4204,13 @@ class Algorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
-    gfo_bayesian_optimization: Type[GFOBayesianOptimization] = GFOBayesianOptimization
-    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
-        GFODifferentialEvolution
-    )
-    gfo_direct_algorithm: Type[GFODirectAlgorithm] = GFODirectAlgorithm
     gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
-    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
-    gfo_forest_optimization: Type[GFOForestOptimization] = GFOForestOptimization
-    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
-    gfo_grid_search: Type[GFOGridSearch] = GFOGridSearch
     gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
-    gfo_lipschitz_optimization: Type[GFOLipschitzOptimization] = (
-        GFOLipschitzOptimization
-    )
-    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
-    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
-    gfo_pattern_search: Type[GFOPatternSearch] = GFOPatternSearch
     gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
-    gfo_random_annealing: Type[GFORandomAnnealing] = GFORandomAnnealing
-    gfo_randomrestarthillclimbing: Type[GFORandomRestartHillClimbing] = (
-        GFORandomRestartHillClimbing
-    )
-    gfo_random_search: Type[GFORandomSearch] = GFORandomSearch
     gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
     gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
-    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
-    )
-    gfo_tree_structured_parzen_estimators: Type[GFOTreeStructuredParzenEstimators] = (
-        GFOTreeStructuredParzenEstimators
     )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt

@@ -36,7 +36,8 @@ def test_get_initialize_gfo():
             {"x0": 1, "x1": 0, "x2": 1},  # x0
             {"x0": 1, "x1": 2, "x2": 3},
         ],  # x1
-        "vertices": n_init,
+        "vertices": n_init // 2,
+        "grid": n_init // 2,
     }
     assert got == expected
 
@@ -44,13 +45,13 @@ def test_get_initialize_gfo():
 def test_get_search_space_gfo():
     bounds = Bounds(lower=np.array([-10, -10]), upper=np.array([10, 10]))
     n_grid_points = {
-        "x0": 4,
-        "x1": 4,
+        "x0": 5,
+        "x1": 5,
     }
     got = _get_search_space_gfo(bounds, n_grid_points, problem.converter)
     expected = {
-        "x0": np.array([-10.0, -5.0, 0.0, 5.0]),
-        "x1": np.array([-10.0, -5.0, 0.0, 5.0]),
+        "x0": np.array([-10.0, -5.0, 0.0, 5.0, 10.0]),
+        "x1": np.array([-10.0, -5.0, 0.0, 5.0, 10.0]),
     }
     assert len(got.keys()) == 2
     assert np.all(got["x0"] == expected["x0"])
