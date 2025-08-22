@@ -246,6 +246,173 @@ class PySwarmsGlobalBestPSO(Algorithm):
             n_iterations_run=self.stopping_maxiter,
         )
 
+@mark.minimizer(
+    name="pyswarms_local_best",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_PYSWARMS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=True,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=True,
+)
+@dataclass(frozen=True)
+class PySwarmsLocalBestPSO(Algorithm):
+    r"""Minimize a scalar function using Local Best Particle Swarm Optimization.
+
+    This algorithm uses local neighborhoods instead of a global best position.
+    Each particle is influenced only by the best position found within its local
+    neighborhood, promoting diversity and helping avoid premature convergence
+    on multimodal problems.
+
+    The velocity update is:
+
+    .. math::
+
+        v_{ij}(t+1) = w \cdot v_{ij}(t) + c_1 r_{1j}(t)[y_{ij}(t) - x_{ij}(t)]
+                      + c_2 r_{2j}(t)[\hat{y}_{lj}(t) - x_{ij}(t)]
+
+    where :math:`\hat{y}_{lj}(t)` is the best position within the local neighborhood
+    of particle :math:`i`, defined by the :math:`k` nearest neighbors using
+    Minkowski p-norm distance.
+
+    """
+
+    n_particles: PositiveInt = 50
+    """Number of particles in the swarm."""
+
+    cognitive_parameter: PositiveFloat = 0.5
+    r"""Cognitive parameter :math:`c_1` controlling attraction to personal best."""
+
+    social_parameter: PositiveFloat = 0.3
+    r"""Social parameter :math:`c_2` controlling attraction to local best."""
+
+    inertia_weight: PositiveFloat = 0.9
+    r"""Inertia weight :math:`w` controlling momentum."""
+
+    k_neighbors: PositiveInt = 3
+    r"""Number of neighbors :math:`k` defining local neighborhood.
+
+    Larger values increase information sharing but may reduce diversity.
+
+    """
+
+    p_norm: Literal[1, 2] = 2
+    """Distance metric: 1 (Manhattan), 2 (Euclidean). """
+
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Relative tolerance for convergence based on function value changes."""
+
+    convergence_ftol_iter: PositiveInt = 1
+    """Number of iterations to check for convergence."""
+
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations."""
+
+    boundary_strategy: Literal[
+        "periodic", "reflective", "shrink", "random", "intermediate"
+    ] = "periodic"
+    """Strategy for out-of-bounds particles: 'periodic', 'reflective', 'shrink',
+    'random', 'intermediate'."""
+
+    velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
+    """Strategy for out-of-bounds velocities:
+    'unmodified', 'adjust', 'invert', 'zero'."""
+
+    velocity_clamp_min: float | None = None
+    """Minimum velocity value for clamping.
+
+    None to disable.
+
+    """
+
+    velocity_clamp_max: float | None = None
+    """Maximum velocity value for clamping.
+
+    None to disable.
+
+    """
+
+    n_processes: PositiveInt | None = None
+    """Number of processes for parallel evaluation.
+
+    None to disable.
+
+    """
+
+    center_init: PositiveFloat = 1.0
+    """Scaling factor for initial particle positions."""
+
+    static_topology: bool = False
+    """Whether to use static topology."""
+
+    verbose: bool = False
+    """Print verbose output."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if not IS_PYSWARMS_INSTALLED:
+            raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
+
+        import pyswarms as ps
+
+        # Build structured options using dataclass
+        pso_options = LocalBestPSOOptions(
+            cognitive_parameter=self.cognitive_parameter,
+            social_parameter=self.social_parameter,
+            inertia_weight=self.inertia_weight,
+            k_neighbors=self.k_neighbors,
+            p_norm=self.p_norm,
+        )
+        options = _build_pso_options_dict(pso_options)
+
+        velocity_clamp = _build_velocity_clamp(
+            self.velocity_clamp_min, self.velocity_clamp_max
+        )
+
+        bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
+
+        init_pos = _create_initial_population(
+            x0=x0, n_particles=self.n_particles, bounds=bounds
+        )
+
+        optimizer = ps.single.LocalBestPSO(
+            n_particles=self.n_particles,
+            dimensions=len(x0),
+            options=options,
+            bounds=bounds,
+            bh_strategy=self.boundary_strategy,
+            velocity_clamp=velocity_clamp,
+            vh_strategy=self.velocity_strategy,
+            center=self.center_init,
+            ftol=self.convergence_ftol_rel,
+            ftol_iter=self.convergence_ftol_iter,
+            init_pos=init_pos,
+            static=self.static_topology,
+        )
+
+        objective_wrapper = _create_objective_wrapper(problem)
+
+        result = optimizer.optimize(
+            objective_func=objective_wrapper,
+            iters=self.stopping_maxiter,
+            n_processes=self.n_processes,
+            verbose=self.verbose,
+        )
+
+        return _process_pyswarms_result(
+            result=result,
+            n_particles=self.n_particles,
+            n_iterations_run=self.stopping_maxiter,
+        )
+
+
 def _build_pso_options_dict(options: BasePSOOptions) -> dict[str, float | int]:
     """Convert structured PSO options to PySwarms format."""
     base_options = {
