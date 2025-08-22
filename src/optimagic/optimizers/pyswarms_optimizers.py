@@ -240,11 +240,13 @@ class PySwarmsGlobalBestPSO(Algorithm):
             verbose=self.verbose,
         )
 
-        return _process_pyswarms_result(
+        res = _process_pyswarms_result(
             result=result,
             n_particles=self.n_particles,
             n_iterations_run=self.stopping_maxiter,
         )
+
+        return res
 
 @mark.minimizer(
     name="pyswarms_local_best",
@@ -406,11 +408,13 @@ class PySwarmsLocalBestPSO(Algorithm):
             verbose=self.verbose,
         )
 
-        return _process_pyswarms_result(
+        res = _process_pyswarms_result(
             result=result,
             n_particles=self.n_particles,
             n_iterations_run=self.stopping_maxiter,
         )
+
+        return res
 
 
 def _build_pso_options_dict(options: BasePSOOptions) -> dict[str, float | int]:
