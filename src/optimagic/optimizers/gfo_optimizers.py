@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
@@ -11,7 +12,9 @@ from optimagic import mark
 from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
+    STOPPING_MAXFUN_GLOBAL,
     STOPPING_MAXITER,
+    get_population_size,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -22,10 +25,10 @@ from optimagic.parameters.conversion import Converter
 from optimagic.typing import (
     AggregationLevel,
     NonNegativeFloat,
-    PositiveFloat,
     PositiveInt,
     PyTree,
 )
+from optimagic.typing import UnitIntervalFloat as ProbabilityFloat
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -102,12 +105,12 @@ class GFOCommonOptions:
 
 
 # ==================================================================================
-# Local optimizers
+# Population Based
 # ==================================================================================
 
 
 @mark.minimizer(
-    name="gfo_hillclimbing",
+    name="gfo_pso",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
     is_global=True,
@@ -122,60 +125,308 @@ class GFOCommonOptions:
     disable_history=False,
 )
 @dataclass(frozen=True)
-class GFOHillClimbing(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the HillClimbing algorithm.
+class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Particle Swarm Optimization algorithm.
 
-    This algorithm is a Python implementation of the HillClimbing algorithm through the
+    This algorithm is a Python implementation of the Particle Swarm Optimization
+    algorithm through the gradient_free_optimizers package.
+
+    Particle Swarm Optimization is a global population based algorithm.
+    The algorithm simulates a swarm of particles across the search space.
+    Each particle adjusts its position based on its own experience (cognitive weight)
+    and the experiences of its neighbors or the swarm (social weight), using
+    velocity updates.
+    The algorithm iteratively guides the swarm toward promising regions of the
+    search space. The velocity of a particle is calculated by the following
+    equation:
+
+    .. math::
+        v_{n+1} = \\omega \\cdot v_n + c_k \\cdot r_1 \\cdot (p_{best}-p_n)
+        + c_s \\cdot r_2 \\cdot (g_{best} - p_n)
+
+    """
+
+    population_size: PositiveInt = 10
+    """Size of the population."""
+
+    initial_population: list[PyTree] | None = None
+    """The user-provided inital population."""
+
+    inertia: NonNegativeFloat = 0.5 / math.log(2.0)
+    """The inertia of the movement of the individual particles in the population."""
+
+    cognitive_weight: NonNegativeFloat = 0.5 + math.log(2.0)
+    """A factor of the movement towards the personal best position of the individual
+    particles in the population."""
+
+    social_weight: NonNegativeFloat = 0.5 + math.log(2.0)
+    """A factor of the movement towards the global best position of the individual
+    particles in the population."""
+
+    rand_rest_p: NonNegativeFloat = 0.01
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=20
+        )
+
+        opt = gfo.ParticleSwarmOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            inertia=self.inertia,
+            cognitive_weight=self.cognitive_weight,
+            social_weight=self.social_weight,
+            rand_rest_p=self.rand_rest_p,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_parallel_tempering",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOParallelTempering(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Parallel Tempering algorithm.
+
+    This algorithm is a Python implementation of the Parallel Tempering
+    algorithm through the gradient_free_optimizers package.
+
+    Parallel Tempering is a global optimization algorithm that is inspired by
+    metallurgical annealing. It runs multiple optimization chains at different
+    "temperatures" in parallel. Periodically, swaps between these chains are
+    attempted. Swaps between chains at different temperatures allow the optimizer
+    to overcome local optima.
+
+    The acceptance probability of a new position :math:`p_{new}` over an old one
+    :math:`p_{old}` is given by:
+
+    .. math::
+        AP = e^{-\\frac{f(p_{new}) - f(p_{old})}{T}}
+
+    where :math:`T` is the current temperature.
+
+    """
+
+    population_size: PositiveInt = 10
+    """Size of the population, i.e., number of parallel chains."""
+
+    initial_population: list[PyTree] | None = None
+    """The user-provided inital population."""
+
+    n_iter_swap: PositiveInt = 10
+    """The number of iterations the algorithm performs before switching temperatures of
+    the individual optimizers in the population."""
+
+    rand_rest_p: NonNegativeFloat = 0
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=20
+        )
+
+        opt = gfo.ParallelTemperingOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            n_iter_swap=self.n_iter_swap,
+            rand_rest_p=self.rand_rest_p,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_spiral_optimization",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Spiral Optimization algorithm.
+
+    This algorithm is a Python implementation of the Spiral Optimization
+    algorithm through the gradient_free_optimizers package.
+
+    Spiral Optimization is a global optimization algorithm inspired by the dynamics
+    of spiral phenomena. It uses a multi-point search strategy that moves towards
+    the current best solution in a logarithmic spiral trajectory.
+
+    The spiral model for a two-dimensional search space is defined as:
+
+    .. math::
+        x_{i}(k+1) = S_n(r, \\theta) x_{i}(k) - (S_n(r, \\theta) - I_n) x^{*}
+
+    where :math:`x^{*}` is the current center of the spiral (best solution),
+    :math:`S_n(r, \\theta)` is a spiral rotation-scaling matrix, :math:`r` is the
+    convergence rate, and :math:`\\theta` is the angle of rotation.
+
+    """
+
+    population_size: PositiveInt = 10
+    """Size of the population for population-based optimization algorithms.
+
+    Each
+    member of the population is a separate optimizer. All population based
+    optimizers in this package calculate the new positions one member at a time.
+    So if the optimizer performs 10 iterations and has a population size of 10,
+    then each member of the population would move once to a new position.
+    Typical range: 4 to 25.
+
+    """
+
+    initial_population: list[PyTree] | None = None
+    """The user-provided inital population."""
+
+    decay_rate: NonNegativeFloat = 0.99
+    """The `r` is called in the spiral-optimization equation and is usually referred to
+    as a step-size, but behaves more like a modification factor of the radius of the
+    spiral movement of the particles in this implementation.
+
+    Lower values accelerate the convergence of the particles to the best known position,
+    while values above 1 eventually lead to a movement where the particles spiral away
+    from each other. Typical range: 0.85 to 1.15.
+
+    """
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=20
+        )
+
+        opt = gfo.SpiralOptimization
+        optimizer = partial(
+            opt,
+            population=population_size,
+            decay_rate=self.decay_rate,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_genetic_algorithm",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Genetic Algorithm.
+
+    This algorithm is a Python implementation of the Genetic Algorithm through the
     gradient_free_optimizers package.
 
-    Hill climbing is a local search algorithm suited for exploring combinatorial search
-    spaces.
-
-    It starts at an initial point, which is often chosen randomly and continues to move
-    to positions within its neighbourhood with a better solution. It has no method
-    against getting stuck in local optima.
+    The Genetic Algorithm is an evolutionary algorithm inspired by the process of
+    natural selection. It evolves a population of candidate solutions over generations
+    using mechanisms like selection, crossover, and mutation to find the best solution.
 
     """
 
-    epsilon: PositiveFloat = 0.03
-    """The step-size of the hill climbing algorithm. If step_size is too large the newly
-    selected positions will be at the edge of the search space.
+    population_size: PositiveInt = 10
+    """Size of the population."""
 
-    If its value is very low it might not find new positions.
+    initial_population: list[PyTree] | None = None
+    """The user-provided inital population."""
 
-    """
+    mutation_rate: ProbabilityFloat = 0.5
+    """Probability of a mutation event occurring in an individual."""
 
-    distribution: Literal["normal", "laplace", "logistic", "gumbel"] = "normal"
-    """The mathematical distribution the algorithm draws samples from.
+    crossover_rate: ProbabilityFloat = 0.5
+    """Probability of a crossover event occurring between two parents."""
 
-    All available distributions are taken from the numpy-package.
+    n_parents: PositiveInt = 2
 
-    """
-
-    n_neighbours: PositiveInt = 3
-    """The number of positions the algorithm explores from its current postion before
-    setting its current position to the best of those neighbour positions.
-
-    If the value of n_neighbours is large the hill-climbing-based algorithm will take a
-    lot of time to choose the next position to move to, but the choice will probably be
-    a good one. It might be a prudent approach to increase n_neighbours of the search-
-    space has a lot of dimensions, because there are more possible directions to move
-    to.
-
-    """
+    offspring: PositiveInt = 10
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         import gradient_free_optimizers as gfo
 
-        opt = gfo.HillClimbingOptimizer
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=20
+        )
+
+        opt = gfo.GeneticAlgorithmOptimizer
         optimizer = partial(
             opt,
-            epsilon=self.epsilon,
-            distribution=self.distribution,
-            n_neighbours=self.n_neighbours,
+            population=population_size,
+            mutation_rate=self.mutation_rate,
+            crossover_rate=self.crossover_rate,
+            n_parents=self.n_parents,
+            offspring=self.offspring,
         )
+
         res = _gfo_internal(
             common_options=self,
             problem=problem,
@@ -187,7 +438,7 @@ class GFOHillClimbing(Algorithm, GFOCommonOptions):
 
 
 @mark.minimizer(
-    name="gfo_stochastichillclimbing",
+    name="gfo_evolution_strategy",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
     is_global=True,
@@ -202,361 +453,54 @@ class GFOHillClimbing(Algorithm, GFOCommonOptions):
     disable_history=False,
 )
 @dataclass(frozen=True)
-class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Stochastic Hill Climbing algorithm.
+class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Evolution Strategy algorithm.
 
-    This algorithm is a Python implementation of the StochasticHillClimbing algorithm
+    This algorithm is a Python implementation of the Evolution Strategy algorithm
     through the gradient_free_optimizers package.
 
-    Stochastic hill climbing extends the normal hill climbing by a simple method against
-    getting stuck in local optima.
+    Evolution Strategy is another type of evolutionary algorithm. It primarily relies on
+    mutation to explore the search space. A population of parents generates offspring,
+    and the fittest individuals from both parents and offspring are selected to form the
+    next generation.
 
     """
 
-    epsilon: PositiveFloat = 0.03
-    """The step-size of the hill climbing algorithm.If step_size is too large the newly
-    selected positions will be at the edge of the search space.
+    population_size: PositiveInt = 10
+    """Size of the population."""
 
-    If its value is very low it might not find new positions.
-
-    """
-
-    distribution: Literal["normal", "laplace", "logistic", "gumbel"] = "normal"
-    """The mathematical distribution the algorithm draws samples from.
-
-    All available distributions are taken from the numpy-package.
-
-    """
-
-    n_neighbours: PositiveInt = 3
-    """The number of positions the algorithm explores from its current postion before
-    setting its current position to the best of those neighbour positions.
-
-    If the value of n_neighbours is large the hill-climbing-based algorithm will take a
-    lot of time to choose the next position to move to, but the choice will probably be
-    a good one. It might be a prudent approach to increase n_neighbours of the search-
-    space has a lot of dimensions, because there are more possible directions to move
-    to.
-
-    """
-
-    p_accept: NonNegativeFloat = 0.5
-    """The probability factor used in the equation to calculate if a worse position is
-    accepted as the new position.
-
-    If the new score is not better than the previous one the algorithm accepts worse
-    positions with probability p_accept.
-
-    .. math::
-        score_{normalized} = norm * \\frac{score_{current} - score_{new}}
-        {score_{current} + score_{new}}
-    .. math::
-        p = \\exp^{-score_{normalized}}
-
-    If p is less than p_accept the new position gets accepted anyways.
-
-    """
-
-    def _solve_internal_problem(
-        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
-    ) -> InternalOptimizeResult:
-        import gradient_free_optimizers as gfo
-
-        opt = gfo.StochasticHillClimbingOptimizer
-        optimizer = partial(
-            opt,
-            epsilon=self.epsilon,
-            distribution=self.distribution,
-            n_neighbours=self.n_neighbours,
-            p_accept=self.p_accept,
-        )
-        res = _gfo_internal(
-            common_options=self,
-            problem=problem,
-            x0=x0,
-            optimizer=optimizer,
-        )
-
-        return res
-
-
-@mark.minimizer(
-    name="gfo_repulsinghillclimbing",
-    solver_type=AggregationLevel.SCALAR,
-    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
-    is_global=True,
-    needs_jac=False,
-    needs_hess=False,
-    needs_bounds=True,
-    supports_parallelism=False,
-    supports_bounds=True,
-    supports_infinite_bounds=False,
-    supports_linear_constraints=False,
-    supports_nonlinear_constraints=False,
-    disable_history=False,
-)
-@dataclass(frozen=True)
-class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Repulsing Hill Climbing algorithm.
-
-    This algorithm is a Python implementation of the Repulsing Hill Climbing algorithm
-    through the gradient_free_optimizers package.
-
-    The algorithm inherits from the Hill climbing which is a local search algorithm but
-    always activates its methods to espace local optima.
-
-    """
-
-    epsilon: PositiveFloat = 0.03
-    """The step-size of the hill climbing algorithm. If step_size is too large the newly
-    selected positions will be at the edge of the search space.
-
-    If its value is very low it might not find new positions.
-
-    """
-
-    distribution: Literal["normal", "laplace", "logistic", "gumbel"] = "normal"
-    """The mathematical distribution the algorithm draws samples from.
-
-    All available distributions are taken from the numpy-package.
-
-    """
-
-    n_neighbours: PositiveInt = 3
-    """The number of positions the algorithm explores from its current position before
-    setting its current position to the best of those neighbour positions."""
-
-    repulsion_factor: PositiveFloat = 5
-    """The algorithm increases the step size by multiplying it with the repulsion_factor
-    for the next iteration. This way the algorithm escapes the region that does not
-    offer better positions.
-
-    .. math::
-        \\epsilon = \\epsilon * {repulsion factor}
-
-    """
-
-    def _solve_internal_problem(
-        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
-    ) -> InternalOptimizeResult:
-        import gradient_free_optimizers as gfo
-
-        opt = gfo.RepulsingHillClimbingOptimizer
-        optimizer = partial(
-            opt,
-            epsilon=self.epsilon,
-            distribution=self.distribution,
-            n_neighbours=self.n_neighbours,
-            repulsion_factor=self.repulsion_factor,
-        )
-        res = _gfo_internal(
-            common_options=self,
-            problem=problem,
-            x0=x0,
-            optimizer=optimizer,
-        )
-
-        return res
-
-
-@mark.minimizer(
-    name="gfo_simulatedannealing",
-    solver_type=AggregationLevel.SCALAR,
-    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
-    is_global=True,
-    needs_jac=False,
-    needs_hess=False,
-    needs_bounds=True,
-    supports_parallelism=False,
-    supports_bounds=True,
-    supports_infinite_bounds=False,
-    supports_linear_constraints=False,
-    supports_nonlinear_constraints=False,
-    disable_history=False,
-)
-@dataclass(frozen=True)
-class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Simulated Annealing algorithm.
-
-    This algorithm is a Python implementation of Simulated Annealing through the
-    gradient_free_optimizers package.
-
-    Simulated annealing chooses its next possible position similar to hill climbing, but
-    it accepts worse results with a probability that decreases with time. It simulates a
-    temperature that decreases with each iteration, similar to a material cooling down.
-
-    """
-
-    epsilon: PositiveFloat = 0.03
-    """The step-size of the algorithm.
-
-    If step_size is too large the newly selected positions will be at the edge of the
-    search space. If its value is very low it might not find new positions.
-
-    """
-
-    distribution: Literal["normal", "laplace", "logistic", "gumbel"] = "normal"
-    """The mathematical distribution the algorithm draws samples from.
-
-    All available distributions are taken from the numpy-package.
-
-    """
-
-    n_neighbours: PositiveInt = 3
-    """The number of positions the algorithm explores from its current position before
-    setting its current position to the best of those neighbour positions."""
-
-    start_temp: PositiveFloat = 1
-    """The start_temp is a factor for the probability p of accepting a worse position.
-
-    .. math::
-        p = \\exp^{-\\frac{score_{normalized}}{temp}}
-
-    """
-
-    annealing_rate: PositiveFloat = 0.97
-    """Rate at which the temperatur-value of the algorithm decreases. An annealing rate
-    above 1 increases the temperature over time.
-
-    .. math::
-        start\\_temp \\leftarrow start\\_temp * annealing\\_rate
-
-    """
-
-    def _solve_internal_problem(
-        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
-    ) -> InternalOptimizeResult:
-        import gradient_free_optimizers as gfo
-
-        opt = gfo.SimulatedAnnealingOptimizer
-        optimizer = partial(
-            opt,
-            epsilon=self.epsilon,
-            distribution=self.distribution,
-            n_neighbours=self.n_neighbours,
-            start_temp=self.start_temp,
-            annealing_rate=self.annealing_rate,
-        )
-        res = _gfo_internal(
-            common_options=self,
-            problem=problem,
-            x0=x0,
-            optimizer=optimizer,
-        )
-        return res
-
-
-@mark.minimizer(
-    name="gfo_downhillsimplex",  # nelder_mead
-    solver_type=AggregationLevel.SCALAR,
-    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
-    is_global=True,
-    needs_jac=False,
-    needs_hess=False,
-    needs_bounds=True,
-    supports_parallelism=False,
-    supports_bounds=True,
-    supports_infinite_bounds=False,
-    supports_linear_constraints=False,
-    supports_nonlinear_constraints=False,
-    disable_history=False,
-)
-@dataclass(frozen=True)
-class GFODownhillSimplex(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Downhill Simplex algorithm.
-
-    This algorithm is a Python implementation of the Downhill Simplex algorithm through
-    the gradient_free_optimizers package.
-
-    The Downhill simplex or Nelder mead algorithm works by grouping `number of
-    dimensions + 1` positions into a simplex, which can explore the search-space by
-    changing shape. The simplex changes shape by reflecting, expanding, contracting or
-    shrinking via the alpha, gamma, beta or sigma parameters. It needs at least `number
-    of dimensions + 1` initial positions to form a simplex in the search-space and the
-    movement of the positions in the simplex are affected by each other.
-
-    """
-
-    simplex_reflection: PositiveFloat = 1
-    """The reflection parameter of the simplex algorithm."""
-
-    simplex_expansion: PositiveFloat = 2
-    """The expansion parameter of the simplex algorithm."""
-
-    simplex_contraction: PositiveFloat = 0.5
-    """The contraction parameter of the simplex algorithm."""
-
-    simplex_shrinking: PositiveFloat = 0.5
-    """The shrinking parameter of the simplex algorithm."""
-
-    def _solve_internal_problem(
-        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
-    ) -> InternalOptimizeResult:
-        import gradient_free_optimizers as gfo
-
-        opt = gfo.DownhillSimplexOptimizer
-        optimizer = partial(
-            opt,
-            alpha=self.simplex_reflection,
-            gamma=self.simplex_expansion,
-            beta=self.simplex_contraction,
-            sigma=self.simplex_shrinking,
-        )
-        res = _gfo_internal(
-            common_options=self,
-            problem=problem,
-            x0=x0,
-            optimizer=optimizer,
-        )
-        return res
-
-
-@mark.minimizer(
-    name="gfo_powells_method",
-    solver_type=AggregationLevel.SCALAR,
-    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
-    is_global=True,
-    needs_jac=False,
-    needs_hess=False,
-    needs_bounds=True,
-    supports_parallelism=False,
-    supports_bounds=True,
-    supports_infinite_bounds=False,
-    supports_linear_constraints=False,
-    supports_nonlinear_constraints=False,
-    disable_history=False,
-)
-@dataclass(frozen=True)
-class GFOPowellsMethod(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using Powell's Method.
-
-    This powell's method implementation works by optimizing each search space dimension
-    at a time with a hill climbing algorithm. It works by setting the search space range
-    for all dimensions except one to a single value. The hill climbing algorithms
-    searches the best position within this dimension.
-
-    """
-
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
     """Maximum number of iterations."""
 
-    iters_p_dim: PositiveInt = 10
-    """Number of iterations the algorithm will let the hill-climbing algorithm search to
-    find the best position before it changes to the next dimension of the search space.
+    initial_population: list[PyTree] | None = None
+    """The user-provided inital population."""
 
-    Typical range: 5 to 15.
+    mutation_rate: ProbabilityFloat = 0.7
+    """Probability of a mutation event occurring in an individual."""
 
-    """
+    crossover_rate: ProbabilityFloat = 0.3
+    """Probability of a crossover event occurring between two parents."""
+
+    rand_rest_p: NonNegativeFloat = 0
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         import gradient_free_optimizers as gfo
 
-        opt = gfo.PowellsMethod
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=20
+        )
+
+        opt = gfo.EvolutionStrategyOptimizer
         optimizer = partial(
             opt,
-            iters_p_dim=self.iters_p_dim,
+            population=population_size,
+            mutation_rate=self.mutation_rate,
+            crossover_rate=self.crossover_rate,
+            rand_rest_p=self.rand_rest_p,
         )
 
         res = _gfo_internal(
@@ -565,6 +509,83 @@ class GFOPowellsMethod(Algorithm, GFOCommonOptions):
             x0=x0,
             optimizer=optimizer,
         )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_differential_evolution",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Differential Evolution algorithm.
+
+    This algorithm is a Python implementation of the Differential Evolution
+    algorithm through the gradient_free_optimizers package.
+
+    Differential Evolution is a population-based optimization algorithm that
+    creates new candidate solutions by combining existing ones. It creates new
+    positions in the search space by adding the weighted difference between
+    two population members to a third member.
+
+    A new trial vector is generated according to:
+
+    .. math::
+        x_{trial} = x_{r1} + F \\cdot (x_{r2} - x_{r3})
+
+    where :math:`r1, r2, r3` are random individuals from the population, and
+    :math:`F` is the differential weight.
+
+    """
+
+    population_size: PositiveInt = 10
+    """Size of the population."""
+
+    initial_population: list[PyTree] | None = None
+    """The user-provided inital population."""
+
+    mutation_rate: ProbabilityFloat = 0.9
+    """Probability of a mutation event occurring in an individual."""
+
+    crossover_rate: ProbabilityFloat = 0.9
+    """Probability of a crossover event occurring between two parents."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=4
+        )
+
+        opt = gfo.DifferentialEvolutionOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            mutation_rate=self.mutation_rate,
+            crossover_rate=self.crossover_rate,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
         return res
 
 
