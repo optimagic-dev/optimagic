@@ -188,6 +188,9 @@ class PySwarmsGlobalBestPSO(Algorithm):
     center_init: PositiveFloat = 1.0
     """Scaling factor for initial particle positions around search space center."""
 
+    verbose: bool = False
+    """Print verbose output."""
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -234,7 +237,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
             objective_func=objective_wrapper,
             iters=self.stopping_maxiter,
             n_processes=self.n_processes,
-            verbose=False,
+            verbose=self.verbose,
         )
 
         return _process_pyswarms_result(
