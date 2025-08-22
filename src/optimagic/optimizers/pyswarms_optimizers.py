@@ -9,7 +9,7 @@ support for different topologies.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Callable, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,7 +17,10 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.config import IS_PYSWARMS_INSTALLED
 from optimagic.exceptions import NotInstalledError
-from optimagic.optimization.algo_options import STOPPING_MAXFUN_GLOBAL, STOPPING_MAXITER
+from optimagic.optimization.algo_options import (
+    STOPPING_MAXFUN_GLOBAL,
+    STOPPING_MAXITER,
+)
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
@@ -141,21 +144,14 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
     """
 
-    convergence_ftol_rel: float = -np.inf
-    """Relative tolerance for convergence based on function value changes.
-
-    Set to -np.inf to disable.
-
-    """
+    convergence_ftol_rel: NonNegativeFloat = -np.inf
+    """Relative tolerance for convergence based on function value changes."""
 
     convergence_ftol_iter: PositiveInt = 1
     """Number of iterations to check for convergence."""
 
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
-
-    stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
-    """Maximum number of function evaluations."""
 
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
