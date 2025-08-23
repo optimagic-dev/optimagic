@@ -4712,7 +4712,7 @@ package are available in optimagic. To use it, you need to have
 ```{eval-rst}
 .. dropdown:: Common options across all optimizers
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFOCommonOptions
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOCommonOptions
 
 ```
 
@@ -4745,7 +4745,7 @@ package are available in optimagic. To use it, you need to have
 
   **Description and available options:**
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFOHillClimbing
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOHillClimbing
 
 ```
 
@@ -4778,7 +4778,7 @@ package are available in optimagic. To use it, you need to have
 
   **Description and available options:**
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFOStochasticHillClimbing
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOStochasticHillClimbing
 
 ```
 
@@ -4811,7 +4811,7 @@ package are available in optimagic. To use it, you need to have
 
   **Description and available options:**
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFORepulsingHillClimbing
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFORepulsingHillClimbing
 
 ```
 
@@ -4844,7 +4844,7 @@ package are available in optimagic. To use it, you need to have
 
   **Description and available options:**
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFORandomRestartHillClimbing
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFORandomRestartHillClimbing
 
 ```
 
@@ -4877,7 +4877,7 @@ package are available in optimagic. To use it, you need to have
 
   **Description and available options:**
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFOSimulatedAnnealing
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSimulatedAnnealing
 
 ```
 
@@ -4910,12 +4910,12 @@ package are available in optimagic. To use it, you need to have
 
   **Description and available options:**
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFODownhillSimplex
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODownhillSimplex
 
 ```
 
 ```{eval-rst}
-.. dropdown:: gfo_pso
+.. dropdown:: gfo_powells_method
 
   **How to use this algorithm.**
 
@@ -4925,7 +4925,7 @@ package are available in optimagic. To use it, you need to have
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
-      algorithm=om.algos.gfo_pso(stopping_maxiter=1_000, ...),
+      algorithm=om.algos.gfo_powells_method(stopping_maxiter=1_000, ...),
       bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
     )
 
@@ -4936,14 +4936,14 @@ package are available in optimagic. To use it, you need to have
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
-      algorithm="gfo_pso",
+      algorithm="gfo_powells_method",
       algo_options={"stopping_maxiter": 1_000, ...},
       bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
     )
 
   **Description and available options:**
 
-  .. autoclass:: optimagic.optimizers.gradient_free_optimizers.GFOParticleSwarmOptimization
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOPowellsMethod
 
 ```
 

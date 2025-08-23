@@ -100,6 +100,10 @@ class GFOCommonOptions:
     seed: int | None = None
     """Random seed for reproducibility."""
 
+    rand_rest_p: NonNegativeFloat = 0
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
+
 
 # ==================================================================================
 # Local optimizers
@@ -373,6 +377,7 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
+    experimental=True,
 )
 @dataclass(frozen=True)
 class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
@@ -447,7 +452,7 @@ class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
 
 
 @mark.minimizer(
-    name="gfo_downhillsimplex",  # nelder_mead
+    name="gfo_downhillsimplex",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
     is_global=True,
@@ -460,6 +465,7 @@ class GFOSimulatedAnnealing(Algorithm, GFOCommonOptions):
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
+    experimental=True,
 )
 @dataclass(frozen=True)
 class GFODownhillSimplex(Algorithm, GFOCommonOptions):
@@ -530,15 +536,18 @@ class GFODownhillSimplex(Algorithm, GFOCommonOptions):
 class GFOPowellsMethod(Algorithm, GFOCommonOptions):
     """Minimize a scalar function using Powell's Method.
 
+    This algorithm is a Python implementation of the Powell's Method algorithm through
+    the gradient_free_optimizers package.
+
     This powell's method implementation works by optimizing each search space dimension
-    at a time with a hill climbing algorithm. It works by setting the search space range
-    for all dimensions except one to a single value. The hill climbing algorithms
-    searches the best position within this dimension.
+    at a time with the hill climbing algorithm. It works by setting the search space
+    range for all dimensions except one to a single value. The hill climbing algorithms
+    searches the best position within this dimension. After `iters_p_dim` iterations the
+    next dimension is searched, while the search space range from the
+    previously searched dimension is set to the best position,
+    This way the algorithm finds new best positions one dimension at a time.
 
     """
-
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    """Maximum number of iterations."""
 
     iters_p_dim: PositiveInt = 10
     """Number of iterations the algorithm will let the hill-climbing algorithm search to

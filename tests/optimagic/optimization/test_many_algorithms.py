@@ -36,12 +36,23 @@ def algo(algorithm):
     return AVAILABLE_ALGORITHMS[algorithm]
 
 
-def _get_seed(algo):
+def _get_options(algo):
+    options = {}
+    "Max time before termination"
+    if hasattr(algo, "stopping_maxtime"):
+        options.update({"stopping_maxtime": 200})
+
     "Fix seed if algorithm is stochastic"
-    return {"seed": 12345} if hasattr(algo, "seed") else {}
+    if hasattr(algo, "seed"):
+        options.update({"seed": 12345})
+    return options
 
 
 def _get_required_decimals(algorithm, algo):
+    # Do not expect solution if algorithm is experimental
+    if algo.algo_info.experimental:
+        return 0
+
     if algorithm in PRECISION_LOOKUP:
         return PRECISION_LOOKUP[algorithm]
     else:
@@ -69,7 +80,7 @@ def _get_params_and_binding_bounds(algo):
 @pytest.mark.parametrize("algorithm", AVAILABLE_BOUNDED_ALGORITHMS)
 def test_sum_of_squares_with_binding_bounds(algorithm, algo):
     params, bounds, expected = _get_params_and_binding_bounds(algo)
-    algo_options = _get_seed(algo)
+    algo_options = _get_options(algo)
     decimal = _get_required_decimals(algorithm, algo)
 
     res = minimize(
@@ -98,7 +109,7 @@ def _get_params_and_bounds_on_local(algo):
 @pytest.mark.parametrize("algorithm", AVAILABLE_LOCAL_ALGORITHMS)
 def test_sum_of_squares_on_local_algorithms(algorithm, algo):
     params, bounds, expected = _get_params_and_bounds_on_local(algo)
-    algo_options = _get_seed(algo)
+    algo_options = _get_options(algo)
     decimal = _get_required_decimals(algorithm, algo)
 
     res = minimize(
@@ -137,7 +148,7 @@ skip_msg = (
 @pytest.mark.parametrize("algorithm", AVAILABLE_BOUNDED_ALGORITHMS)
 def test_sum_of_squares_on_global_and_bounded_algorithms(algorithm, algo):
     params, bounds, expected = _get_params_and_bounds_on_global_and_bounded(algo)
-    algo_options = _get_seed(algo)
+    algo_options = _get_options(algo)
     decimal = _get_required_decimals(algorithm, algo)
 
     res = minimize(
