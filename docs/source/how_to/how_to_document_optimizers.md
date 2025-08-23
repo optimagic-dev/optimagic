@@ -160,15 +160,20 @@ more memory but may converge faster for some problems.
 - **Explain performance implications** when they matter
 - **Use proper type annotations** that match the parameter's constraints
 
-> **Note:** If your optimizer module uses type hints (e.g., `PositiveInt`,
-> `NonNegativeInt`), include the following at the top of your optimizer module:
+```{eval-rst}
 
-```python
-from __future__ import annotations
+.. warning::
+    If your optimizer module uses type hints (e.g., ``PositiveInt``,
+    ``NonNegativeInt``), include the following at the top of your optimizer module:
+
+    .. code-block:: python
+
+        from __future__ import annotations
+
+    Without this, type hints such as ``PositiveInt`` may appear decomposed in the
+    documentation (e.g., as ``Annotated[int, Gt(gt=0)]``).
+
 ```
-
-Without this, type hints such as `PositiveInt` may appear decomposed in the
-documentation (e.g., as `Annotated[int, Gt(gt=0)]`).
 
 ### Step 4: Integrate into `algorithms.md`
 
