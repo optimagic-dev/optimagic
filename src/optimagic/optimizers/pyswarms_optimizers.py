@@ -417,9 +417,16 @@ class PySwarmsGeneralPSO(Algorithm):
     r"""Minimize a scalar function using General Particle Swarm Optimization with custom
     topologies.
 
-    This algorithm provides flexible PSO with different neighborhood topologies:
-    Star, Ring, Von Neumann, and Random. The topology choice affects the balance
-    between exploration and exploitation during optimization.
+    A flexible PSO implementation that allows selection of different neighborhood 
+    topologies, providing control over the balance between exploration and exploitation. 
+    The topology determines how particles communicate and share information, directly 
+    affecting the algorithm's search behavior.
+
+    The position update follows:
+
+    .. math::
+
+        x_{i}(t+1) = x_{i}(t) + v_{i}(t+1)
 
     The velocity update follows:
 
@@ -428,15 +435,21 @@ class PySwarmsGeneralPSO(Algorithm):
         v_{ij}(t+1) = w \cdot v_{ij}(t) + c_1 r_{1j}(t)[y_{ij}(t) - x_{ij}(t)]
                       + c_2 r_{2j}(t)[\hat{y}_{nj}(t) - x_{ij}(t)]
 
-    where :math:`\hat{y}_{nj}(t)` is the best position in the neighborhood defined
-    by the selected topology.
+    Where:
+        - :math:`w`: inertia weight controlling momentum
+        - :math:`c_1`: cognitive parameter for attraction to personal best
+        - :math:`c_2`: social parameter for attraction to neighborhood best
+        - :math:`r_{1j}, r_{2j}`: random numbers in [0,1]
+        - :math:`y_{ij}(t)`: personal best position of particle i
+        - :math:`\hat{y}_{nj}(t)`: neighborhood best position
 
     **Topology Options:**
 
-    - **Star**: All particles connected to global best (fast convergence)
-    - **Ring**: Ring arrangement with k neighbors (balanced exploration/exploitation)
-    - **Von Neumann**: 2D grid topology (good diversity maintenance)
-    - **Random**: Dynamic random connections (enhanced exploration)
+    - **Star**: All particles connected to global best
+    - **Ring**: Ring arrangement with k neighbors
+    - **Von Neumann**: 2D grid topology
+    - **Random**: Dynamic random connections
+    - **Pyramid**: Hierarchical pyramid-like network of connected particles
 
     """
 
@@ -453,28 +466,19 @@ class PySwarmsGeneralPSO(Algorithm):
     r"""Inertia weight :math:`w` controlling momentum."""
 
     topology_type: Literal["star", "ring", "vonneumann", "random", "pyramid"] = "star"
-    """Topology: 'star' (fast convergence), 'ring' (balanced), 'vonneumann'
-    (diversity), 'random' (exploration)."""
+    """Topology structure for particle communication."""
 
     k_neighbors: PositiveInt = 3
-    """Number of neighbors for ring, vonneumann, and random topologies."""
+    """Number of neighbors for ring and random topologies."""
 
     p_norm: Literal[1, 2] = 2
     """Distance metric for neighbor selection: 1 (Manhattan), 2 (Euclidean)."""
 
     vonneumann_range: PositiveInt = 1
-    r"""Range parameter :math:`r` for Von Neumann topology.
-
-    Higher values create larger neighborhoods. Only used with 'vonneumann' topology.
-
-    """
+    r"""Range parameter :math:`r` for Von Neumann topology."""
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Relative tolerance for convergence.
-
-    Set to -np.inf to disable.
-
-    """
+    """Stop when relative change in objective function is less than this value."""
 
     convergence_ftol_iter: PositiveInt = 1
     """Number of iterations to check for convergence."""
@@ -485,42 +489,28 @@ class PySwarmsGeneralPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for out-of-bounds particles: 'periodic', 'reflective', 'shrink',
-    'random', 'intermediate'."""
+    """Strategy for handling out-of-bounds particles."""
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for out-of-bounds velocities:
-    'unmodified', 'adjust', 'invert', 'zero'."""
+    """Strategy for handling out-of-bounds velocities."""
 
     velocity_clamp_min: float | None = None
-    """Minimum velocity value for clamping.
-
-    None to disable.
-
-    """
+    """Minimum velocity limit for particles."""
 
     velocity_clamp_max: float | None = None
-    """Maximum velocity value for clamping.
-
-    None to disable.
-
-    """
+    """Maximum velocity limit for particles."""
 
     n_processes: PositiveInt | None = None
-    """Number of processes for parallel evaluation.
-
-    None to disable.
-
-    """
+    """Number of processes for parallel evaluation."""
 
     center_init: PositiveFloat = 1.0
-    """Scaling factor for initial particle positions."""
-
-    verbose: bool = False
-    """Print verbose output."""
+    """Scaling factor for initial particle positions."""                                          
 
     static_topology: bool = False
-    """Whether to use static topology."""
+    """Whether to use static or dynamic topology."""
+
+    verbose: bool = False
+    """Enable or disable the logs and progress bar."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
