@@ -72,6 +72,7 @@ from optimagic.optimizers.pygmo_optimizers import (
     PygmoXnes,
 )
 from optimagic.optimizers.pyswarms_optimizers import (
+    PySwarmsGeneralPSO,
     PySwarmsGlobalBestPSO,
     PySwarmsLocalBestPSO,
 )
@@ -206,6 +207,7 @@ class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -433,6 +435,7 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -469,6 +472,7 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -539,6 +543,7 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -701,6 +706,7 @@ class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -810,6 +816,7 @@ class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1170,6 +1177,7 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1249,6 +1257,7 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1289,6 +1298,7 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1493,6 +1503,7 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1557,6 +1568,7 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1652,6 +1664,7 @@ class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1754,6 +1767,7 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
@@ -1799,6 +1813,7 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -1882,6 +1897,7 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2131,6 +2147,7 @@ class BoundedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2423,6 +2440,7 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2532,6 +2550,7 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2644,6 +2663,7 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2716,6 +2736,7 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -2788,6 +2809,7 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
@@ -2885,6 +2907,7 @@ class GlobalScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
@@ -2934,6 +2957,7 @@ class GlobalParallelAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3243,6 +3267,7 @@ class BoundedScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
@@ -3330,6 +3355,7 @@ class BoundedParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3445,6 +3471,7 @@ class ParallelScalarAlgorithms(AlgoSelection):
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3593,6 +3620,7 @@ class GradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -3672,6 +3700,7 @@ class GlobalAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
@@ -3833,6 +3862,7 @@ class BoundedAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
@@ -3985,6 +4015,7 @@ class ScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
@@ -4099,6 +4130,7 @@ class ParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -4193,6 +4225,7 @@ class Algorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
     pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
     pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
