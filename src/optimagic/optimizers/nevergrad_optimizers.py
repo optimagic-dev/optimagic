@@ -670,8 +670,6 @@ class NevergradDifferentialEvolution(Algorithm):
 
         import nevergrad as ng
 
-        # The nevergrad implementation has `popsize` but we use `population_size`
-        # for consistency.
         configured_optimizer = ng.optimizers.DifferentialEvolution(
             initialization=self.initialization,
             scale=self.scale,
@@ -853,8 +851,6 @@ class NevergradEMNA(Algorithm):
 
         import nevergrad as ng
 
-        # The nevergrad implementation has `naive` but we use `noise_handling`
-        # for clarity. naive=True -> returns best point; naive=False -> returns mean.
         configured_optimizer = ng.optimizers.EMNA(
             isotropic=self.isotropic,
             naive=self.noise_handling,
@@ -1063,8 +1059,6 @@ class NevergradTBPSA(Algorithm):
 
         import nevergrad as ng
 
-        # The nevergrad implementation has `naive` but we use `noise_handling`
-        # for clarity. naive=True -> returns best point; naive=False -> returns mean.
         configured_optimizer = ng.optimizers.ParametrizedTBPSA(
             naive=self.noise_handling,
             initial_popsize=self.initial_popsize,
