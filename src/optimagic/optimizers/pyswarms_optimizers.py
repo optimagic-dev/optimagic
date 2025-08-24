@@ -43,7 +43,7 @@ PYSWARMS_NOT_INSTALLED_ERROR = (
 
 @dataclass(frozen=True)
 class BasePSOOptions:
-    """Base PSO parameters shared across all variants."""
+    """Common PSO parameters used by all PSO variants."""
 
     cognitive_parameter: PositiveFloat
     """Cognitive parameter (c1) - attraction to personal best."""
@@ -99,36 +99,41 @@ class GeneralPSOOptions(BasePSOOptions):
 class PySwarmsGlobalBestPSO(Algorithm):
     r"""Minimize a scalar function using Global Best Particle Swarm Optimization.
 
-    This algorithm uses a swarm of particles that move through the search space,
-    where each particle is attracted to both its personal best position and the
-    global best position found by the entire swarm. It uses a star topology where
-    all particles are connected to the global best particle.
+    A population-based stochastic, global optimization optimization algorithm that
+    simulates the social behavior of bird flocking or fish schooling. Particles
+    (candidate solutions) move through the search space, adjusting their positions
+    based on their own experience (cognitive component) and the experience of their
+    neighbors or the entire swarm (social component).
+
+    This implementation uses a star topology where all particles are connected to
+    each other, making each particle aware of the global best solution found by the
+    entire swarm.
 
     The position update follows:
 
     .. math::
 
-        x_i(t+1) = x_i(t) + v_i(t+1)
+        x_{i}(t+1) = x_{i}(t) + v_{i}(t+1)
 
-    where the velocity update is:
+    The velocity update follows:
 
     .. math::
 
         v_{ij}(t+1) = w \cdot v_{ij}(t) + c_1 r_{1j}(t)[y_{ij}(t) - x_{ij}(t)]
                       + c_2 r_{2j}(t)[\hat{y}_j(t) - x_{ij}(t)]
 
-    Here :math:`c_1` and :math:`c_2` control the balance between personal experience
-    and swarm knowledge, :math:`w` controls momentum, and :math:`r_{1j}`, :math:`r_{2j}`
-    are random numbers from [0,1].
+    Where:
+        - :math:`w`: inertia weight controlling momentum
+        - :math:`c_1`: cognitive parameter for attraction to personal best
+        - :math:`c_2`: social parameter for attraction to global best
+        - :math:`r_{1j}, r_{2j}`: random numbers in [0,1]
+        - :math:`y_{ij}(t)`: personal best position of particle i
+        - :math:`\hat{y}_j(t)`: global best position
 
     """
 
     n_particles: PositiveInt = 50
-    """Number of particles in the swarm.
-
-    Typical values: 20-100.
-
-    """
+    """Number of particles in the swarm."""
 
     cognitive_parameter: PositiveFloat = 0.5
     r"""Cognitive parameter :math:`c_1` controlling attraction to personal best."""
@@ -137,15 +142,10 @@ class PySwarmsGlobalBestPSO(Algorithm):
     r"""Social parameter :math:`c_2` controlling attraction to global best."""
 
     inertia_weight: PositiveFloat = 0.9
-    r"""Inertia weight :math:`w` controlling momentum.
-
-    Higher values promote exploration, lower values promote exploitation. Typical range:
-    0.1-0.9.
-
-    """
+    r"""Inertia weight :math:`w` controlling momentum."""
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Relative tolerance for convergence based on function value changes."""
+    """Stop when relative change in objective function is less than this value."""
 
     convergence_ftol_iter: PositiveInt = 1
     """Number of iterations to check for convergence."""
@@ -156,40 +156,25 @@ class PySwarmsGlobalBestPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for handling out-of-bounds particles: 'periodic' (wrap around),
-    'reflective' (bounce), 'shrink' (move to boundary), 'random' (reposition),
-    'intermediate' (place between current and boundary)."""
+    """Strategy for handling out-of-bounds particles."""
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for out-of-bounds velocities: 'unmodified' (keep), 'adjust' (scale),
-    'invert' (reverse), 'zero' (set to zero)."""
+    """Strategy for handling out-of-bounds velocities."""
 
     velocity_clamp_min: float | None = None
-    """Minimum velocity value for clamping.
-
-    None to disable.
-
-    """
+    """Minimum velocity limit for particles."""
 
     velocity_clamp_max: float | None = None
-    """Maximum velocity value for clamping.
-
-    None to disable.
-
-    """
+    """Maximum velocity limit for particles."""
 
     n_processes: PositiveInt | None = None
-    """Number of processes for parallel evaluation.
-
-    None to disable parallelization.
-
-    """
+    """Number of processes for parallel evaluation."""
 
     center_init: PositiveFloat = 1.0
-    """Scaling factor for initial particle positions around search space center."""
+    """Scaling factor for initial particle positions."""
 
     verbose: bool = False
-    """Print verbose output."""
+    """Enable or disable the logs and progress bar."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
