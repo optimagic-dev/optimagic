@@ -252,21 +252,34 @@ class PySwarmsGlobalBestPSO(Algorithm):
 class PySwarmsLocalBestPSO(Algorithm):
     r"""Minimize a scalar function using Local Best Particle Swarm Optimization.
 
-    This algorithm uses local neighborhoods instead of a global best position.
+    A variant of PSO that uses local neighborhoods instead of a single global best.
     Each particle is influenced only by the best position found within its local
-    neighborhood, promoting diversity and helping avoid premature convergence
-    on multimodal problems.
+    neighborhood, which is determined by the k-nearest neighbors using distance metrics.
 
-    The velocity update is:
+    This approach uses a ring topology where particles are connected to their local
+    neighbors, making each particle aware of only the best solution found within its
+    neighborhood.
+
+    The position update follows:
+
+    .. math::
+
+        x_{i}(t+1) = x_{i}(t) + v_{i}(t+1)
+
+    The velocity update follows:
 
     .. math::
 
         v_{ij}(t+1) = w \cdot v_{ij}(t) + c_1 r_{1j}(t)[y_{ij}(t) - x_{ij}(t)]
                       + c_2 r_{2j}(t)[\hat{y}_{lj}(t) - x_{ij}(t)]
 
-    where :math:`\hat{y}_{lj}(t)` is the best position within the local neighborhood
-    of particle :math:`i`, defined by the :math:`k` nearest neighbors using
-    Minkowski p-norm distance.
+    Where:
+        - :math:`w`: inertia weight controlling momentum
+        - :math:`c_1`: cognitive parameter for attraction to personal best
+        - :math:`c_2`: social parameter for attraction to local best
+        - :math:`r_{1j}, r_{2j}`: random numbers in [0,1]
+        - :math:`y_{ij}(t)`: personal best position of particle i
+        - :math:`\hat{y}_{lj}(t)`: local best position in particle i's neighborhood
 
     """
 
@@ -283,17 +296,13 @@ class PySwarmsLocalBestPSO(Algorithm):
     r"""Inertia weight :math:`w` controlling momentum."""
 
     k_neighbors: PositiveInt = 3
-    r"""Number of neighbors :math:`k` defining local neighborhood.
-
-    Larger values increase information sharing but may reduce diversity.
-
-    """
+    r"""Number of neighbors :math:`k` defining local neighborhood."""
 
     p_norm: Literal[1, 2] = 2
     """Distance metric: 1 (Manhattan), 2 (Euclidean). """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Relative tolerance for convergence based on function value changes."""
+    """Stop when relative change in objective function is less than this value."""
 
     convergence_ftol_iter: PositiveInt = 1
     """Number of iterations to check for convergence."""
@@ -304,42 +313,28 @@ class PySwarmsLocalBestPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for out-of-bounds particles: 'periodic', 'reflective', 'shrink',
-    'random', 'intermediate'."""
+    """Strategy for handling out-of-bounds particles."""
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for out-of-bounds velocities:
-    'unmodified', 'adjust', 'invert', 'zero'."""
+    """Strategy for handling out-of-bounds velocities."""
 
     velocity_clamp_min: float | None = None
-    """Minimum velocity value for clamping.
-
-    None to disable.
-
-    """
+    """Minimum velocity limit for particles."""
 
     velocity_clamp_max: float | None = None
-    """Maximum velocity value for clamping.
-
-    None to disable.
-
-    """
+    """Maximum velocity limit for particles."""
 
     n_processes: PositiveInt | None = None
-    """Number of processes for parallel evaluation.
-
-    None to disable.
-
-    """
+    """Number of processes for parallel evaluation."""
 
     center_init: PositiveFloat = 1.0
     """Scaling factor for initial particle positions."""
 
     static_topology: bool = False
-    """Whether to use static topology."""
+    """Whether to use static or dynamic ring topology."""
 
     verbose: bool = False
-    """Print verbose output."""
+    """Enable or disable the logs and progress bar."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
