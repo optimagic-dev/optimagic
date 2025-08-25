@@ -199,7 +199,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
         bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
 
         init_pos = _create_initial_population(
-            x0=x0, n_particles=self.n_particles, bounds=bounds
+            x0=x0, n_particles=self.n_particles, bounds=bounds, center=self.center_init
         )
 
         optimizer = ps.single.GlobalBestPSO(
@@ -210,7 +210,6 @@ class PySwarmsGlobalBestPSO(Algorithm):
             bh_strategy=self.boundary_strategy,
             velocity_clamp=velocity_clamp,
             vh_strategy=self.velocity_strategy,
-            center=self.center_init,
             ftol=self.convergence_ftol_rel,
             ftol_iter=self.convergence_ftol_iter,
             init_pos=init_pos,
@@ -232,6 +231,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
         )
 
         return res
+
 
 @mark.minimizer(
     name="pyswarms_local_best",
@@ -361,7 +361,7 @@ class PySwarmsLocalBestPSO(Algorithm):
         bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
 
         init_pos = _create_initial_population(
-            x0=x0, n_particles=self.n_particles, bounds=bounds
+            x0=x0, n_particles=self.n_particles, bounds=bounds, center=self.center_init
         )
 
         optimizer = ps.single.LocalBestPSO(
@@ -372,7 +372,6 @@ class PySwarmsLocalBestPSO(Algorithm):
             bh_strategy=self.boundary_strategy,
             velocity_clamp=velocity_clamp,
             vh_strategy=self.velocity_strategy,
-            center=self.center_init,
             ftol=self.convergence_ftol_rel,
             ftol_iter=self.convergence_ftol_iter,
             init_pos=init_pos,
@@ -417,9 +416,9 @@ class PySwarmsGeneralPSO(Algorithm):
     r"""Minimize a scalar function using General Particle Swarm Optimization with custom
     topologies.
 
-    A flexible PSO implementation that allows selection of different neighborhood 
-    topologies, providing control over the balance between exploration and exploitation. 
-    The topology determines how particles communicate and share information, directly 
+    A flexible PSO implementation that allows selection of different neighborhood
+    topologies, providing control over the balance between exploration and exploitation.
+    The topology determines how particles communicate and share information, directly
     affecting the algorithm's search behavior.
 
     The position update follows:
@@ -504,7 +503,7 @@ class PySwarmsGeneralPSO(Algorithm):
     """Number of processes for parallel evaluation."""
 
     center_init: PositiveFloat = 1.0
-    """Scaling factor for initial particle positions."""                                          
+    """Scaling factor for initial particle positions."""
 
     static_topology: bool = False
     """Whether to use static or dynamic topology."""
@@ -526,11 +525,7 @@ class PySwarmsGeneralPSO(Algorithm):
             if self.topology_type in ["ring", "vonneumann", "random"]
             else None
         )
-        p_norm = (
-            self.p_norm
-            if self.topology_type in ["ring", "vonneumann"]
-            else None
-        )
+        p_norm = self.p_norm if self.topology_type in ["ring", "vonneumann"] else None
         vonneumann_range = (
             self.vonneumann_range if self.topology_type == "vonneumann" else None
         )
@@ -554,7 +549,7 @@ class PySwarmsGeneralPSO(Algorithm):
         bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
 
         init_pos = _create_initial_population(
-            x0=x0, n_particles=self.n_particles, bounds=bounds
+            x0=x0, n_particles=self.n_particles, bounds=bounds, center=self.center_init
         )
 
         optimizer = ps.single.GeneralOptimizerPSO(
@@ -566,7 +561,6 @@ class PySwarmsGeneralPSO(Algorithm):
             bh_strategy=self.boundary_strategy,
             velocity_clamp=velocity_clamp,
             vh_strategy=self.velocity_strategy,
-            center=self.center_init,
             ftol=self.convergence_ftol_rel,
             ftol_iter=self.convergence_ftol_iter,
             init_pos=init_pos,
@@ -708,16 +702,29 @@ def _create_initial_population(
     x0: NDArray[np.float64],
     n_particles: int,
     bounds: tuple[NDArray[np.float64], NDArray[np.float64]],
+    center: float = 1.0,
 ) -> NDArray[np.float64]:
-    """Create initial population with x0 as first particle."""
+    """Create initial population with x0 as first particle.
+
+    Args:
+        x0: Initial parameter vector
+        n_particles: Number of particles in the swarm
+        bounds: Tuple of (lower_bounds, upper_bounds) arrays
+        center: Scaling factor for initial particle positions around bounds
+
+    Returns:
+        Initial population array of shape (n_particles, n_dimensions)
+
+    """
     n_dimensions = len(x0)
     lower_bounds, upper_bounds = bounds
 
-    # Generate random initial positions within the bounds
-    init_pos = np.random.uniform(
+    # Generate random initial positions within the bounds, scaled by center
+    init_pos = center * np.random.uniform(
         low=lower_bounds, high=upper_bounds, size=(n_particles, n_dimensions)
     )
 
+    init_pos = np.clip(init_pos, lower_bounds, upper_bounds)
     init_pos[0] = np.clip(x0, lower_bounds, upper_bounds)
 
     return init_pos
