@@ -9,7 +9,7 @@ support for different topologies.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -39,6 +39,106 @@ PYSWARMS_NOT_INSTALLED_ERROR = (
     "Visit https://pyswarms.readthedocs.io/en/latest/installation.html "
     "for more detailed installation instructions."
 )
+
+
+# ======================================================================================
+# 1. Topology Dataclasses
+# ======================================================================================
+
+
+@dataclass(frozen=True)
+class BaseTopology:
+    """Base class for all topology configurations."""
+
+
+@dataclass(frozen=True)
+class StarTopology(BaseTopology):
+    """Star topology configuration.
+
+    All particles are connected to the global best.
+
+    """
+
+
+@dataclass(frozen=True)
+class RingTopology(BaseTopology):
+    """Ring topology configuration.
+
+    Particles are connected in a ring structure.
+
+    """
+
+    k_neighbors: PositiveInt = 3
+    """Number of neighbors for each particle."""
+
+    p_norm: Literal[1, 2] = 2
+    """Distance metric for neighbor selection: 1 (Manhattan), 2 (Euclidean)."""
+
+    static: bool = False
+    """Whether to use a static or dynamic ring topology.
+
+    When True, the neighborhood structure is fixed throughout optimization. When False,
+    neighbors are recomputed at each iteration based on current particle positions.
+
+    """
+
+
+@dataclass(frozen=True)
+class VonNeumannTopology(BaseTopology):
+    """Von Neumann topology configuration.
+
+    Particles are arranged on a 2D grid.
+
+    """
+
+    p_norm: Literal[1, 2] = 2
+    """Distance metric for neighbor selection: 1 (Manhattan), 2 (Euclidean)."""
+
+    range: PositiveInt = 1
+    r"""Range parameter :math:`r` for neighborhood size."""
+
+
+@dataclass(frozen=True)
+class PyramidTopology(BaseTopology):
+    """Pyramid topology configuration."""
+
+    static: bool = False
+    """Whether to use a static or dynamic pyramid topology.
+
+    When True, the neighborhood structure is fixed throughout optimization. When False,
+    neighbors are recomputed at each iteration based on current particle positions.
+
+    """
+
+
+@dataclass(frozen=True)
+class RandomTopology(BaseTopology):
+    """Random topology configuration.
+
+    Particles are connected to random neighbors.
+
+    """
+
+    k_neighbors: PositiveInt = 3
+    """Number of neighbors for each particle."""
+
+    static: bool = False
+    """Whether to use a static or dynamic random topology.
+
+    When True, the neighborhood structure is fixed throughout optimization. When False,
+    neighbors are recomputed at each iteration based on current particle positions.
+
+    """
+
+
+TopologyConfig = Union[
+    Literal["star", "ring", "vonneumann", "random", "pyramid"],
+    BaseTopology,
+]
+
+# ======================================================================================
+# 2. PSO Options Classes
+# ======================================================================================
 
 
 @dataclass(frozen=True)
@@ -462,17 +562,12 @@ class PySwarmsGeneralPSO(Algorithm):
     inertia_weight: PositiveFloat = 0.9
     r"""Inertia weight :math:`w` controlling momentum."""
 
-    topology_type: Literal["star", "ring", "vonneumann", "random", "pyramid"] = "star"
-    """Topology structure for particle communication."""
+    topology: TopologyConfig = "star"
+    """Topology structure for particle communication.
 
-    k_neighbors: PositiveInt = 3
-    """Number of neighbors for ring and random topologies."""
+    Can be a string name or a topology dataclass instance.
 
-    p_norm: Literal[1, 2] = 2
-    """Distance metric for neighbor selection: 1 (Manhattan), 2 (Euclidean)."""
-
-    vonneumann_range: PositiveInt = 1
-    r"""Range parameter :math:`r` for Von Neumann topology."""
+    """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     """Stop when relative change in objective function is less than this value."""
@@ -503,9 +598,6 @@ class PySwarmsGeneralPSO(Algorithm):
     center_init: PositiveFloat = 1.0
     """Scaling factor for initial particle positions."""
 
-    static_topology: bool = False
-    """Whether to use static or dynamic topology."""
-
     verbose: bool = False
     """Enable or disable the logs and progress bar."""
 
@@ -517,35 +609,20 @@ class PySwarmsGeneralPSO(Algorithm):
 
         import pyswarms as ps
 
-        # Build structured options using dataclass
-        k_neighbors = (
-            self.k_neighbors
-            if self.topology_type in ["ring", "vonneumann", "random"]
-            else None
-        )
-        p_norm = self.p_norm if self.topology_type in ["ring", "vonneumann"] else None
-        vonneumann_range = (
-            self.vonneumann_range if self.topology_type == "vonneumann" else None
-        )
+        # Resolve topology config to PySwarms topology instance and options
+        pyswarms_topology, topology_options = _resolve_topology_config(self.topology)
 
-        pso_options = GeneralPSOOptions(
-            cognitive_parameter=self.cognitive_parameter,
-            social_parameter=self.social_parameter,
-            inertia_weight=self.inertia_weight,
-            k_neighbors=k_neighbors,
-            p_norm=p_norm,
-            vonneumann_range=vonneumann_range,
-        )
-        options = _build_pso_options_dict(pso_options)
-
-        topology = _create_topology_instance(self.topology_type, self.static_topology)
+        base_options = {
+            "c1": self.cognitive_parameter,
+            "c2": self.social_parameter,
+            "w": self.inertia_weight,
+        }
+        options = {**base_options, **topology_options}
 
         velocity_clamp = _build_velocity_clamp(
             self.velocity_clamp_min, self.velocity_clamp_max
         )
-
         bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
-
         init_pos = _create_initial_population(
             x0=x0, n_particles=self.n_particles, bounds=bounds, center=self.center_init
         )
@@ -554,7 +631,7 @@ class PySwarmsGeneralPSO(Algorithm):
             n_particles=self.n_particles,
             dimensions=len(x0),
             options=options,
-            topology=topology,
+            topology=pyswarms_topology,
             bounds=bounds,
             bh_strategy=self.boundary_strategy,
             velocity_clamp=velocity_clamp,
@@ -579,6 +656,47 @@ class PySwarmsGeneralPSO(Algorithm):
         )
 
         return res
+
+
+def _resolve_topology_config(
+    config: TopologyConfig,
+) -> tuple[Any, dict[str, float | int]]:
+    """Resolves the topology config into a pyswarms topology instance and options
+    dict."""
+    from pyswarms.backend.topology import Pyramid, Random, Ring, Star, VonNeumann
+
+    if isinstance(config, str):
+        default_topologies = {
+            "star": StarTopology(),
+            "ring": RingTopology(),
+            "vonneumann": VonNeumannTopology(),
+            "random": RandomTopology(),
+            "pyramid": PyramidTopology(),
+        }
+        if config not in default_topologies:
+            raise ValueError(f"Unknown topology string: '{config}'")
+        config = default_topologies[config]
+
+    topology_instance: Any
+    options: dict[str, float | int] = {}
+
+    if isinstance(config, StarTopology):
+        topology_instance = Star()
+    elif isinstance(config, RingTopology):
+        topology_instance = Ring(static=config.static)
+        options = {"k": config.k_neighbors, "p": config.p_norm}
+    elif isinstance(config, VonNeumannTopology):
+        topology_instance = VonNeumann()
+        options = {"p": config.p_norm, "r": config.range}
+    elif isinstance(config, RandomTopology):
+        topology_instance = Random(static=config.static)
+        options = {"k": config.k_neighbors}
+    elif isinstance(config, PyramidTopology):
+        topology_instance = Pyramid(static=config.static)
+    else:
+        raise TypeError(f"Unsupported topology configuration type: {type(config)}")
+
+    return topology_instance, options
 
 
 def _build_pso_options_dict(options: BasePSOOptions) -> dict[str, float | int]:
@@ -616,27 +734,6 @@ def _build_velocity_clamp(
     if velocity_clamp_min is not None and velocity_clamp_max is not None:
         clamp = (velocity_clamp_min, velocity_clamp_max)
     return clamp
-
-
-def _create_topology_instance(topology_type: str, static: bool) -> Any:
-    """Create PySwarms topology instance from string identifier."""
-    if not IS_PYSWARMS_INSTALLED:
-        raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
-
-    from pyswarms.backend.topology import Pyramid, Random, Ring, Star, VonNeumann
-
-    topology_map = {
-        "star": Star(),
-        "ring": Ring(static=static),
-        "vonneumann": VonNeumann(),
-        "random": Random(static=static),
-        "pyramid": Pyramid(static=static),
-    }
-
-    if topology_type not in topology_map:
-        raise ValueError(f"Unknown topology type: {topology_type}")
-
-    return topology_map[topology_type]
 
 
 def _process_pyswarms_result(
