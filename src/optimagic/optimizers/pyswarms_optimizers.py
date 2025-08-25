@@ -93,7 +93,7 @@ class GeneralPSOOptions(BasePSOOptions):
     supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
-    disable_history=True,
+    disable_history=False,
 )
 @dataclass(frozen=True)
 class PySwarmsGlobalBestPSO(Algorithm):
@@ -167,8 +167,8 @@ class PySwarmsGlobalBestPSO(Algorithm):
     velocity_clamp_max: float | None = None
     """Maximum velocity limit for particles."""
 
-    n_processes: PositiveInt | None = None
-    """Number of processes for parallel evaluation."""
+    n_cores: PositiveInt = 1
+    """Number of cores for parallel evaluation."""
 
     center_init: PositiveFloat = 1.0
     """Scaling factor for initial particle positions."""
@@ -215,12 +215,11 @@ class PySwarmsGlobalBestPSO(Algorithm):
             init_pos=init_pos,
         )
 
-        objective_wrapper = _create_objective_wrapper(problem)
+        objective_wrapper = _create_batch_objective(problem, self.n_cores)
 
         result = optimizer.optimize(
             objective_func=objective_wrapper,
             iters=self.stopping_maxiter,
-            n_processes=self.n_processes,
             verbose=self.verbose,
         )
 
@@ -246,7 +245,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
     supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
-    disable_history=True,
+    disable_history=False,
 )
 @dataclass(frozen=True)
 class PySwarmsLocalBestPSO(Algorithm):
@@ -324,8 +323,8 @@ class PySwarmsLocalBestPSO(Algorithm):
     velocity_clamp_max: float | None = None
     """Maximum velocity limit for particles."""
 
-    n_processes: PositiveInt | None = None
-    """Number of processes for parallel evaluation."""
+    n_cores: PositiveInt = 1
+    """Number of cores for parallel evaluation."""
 
     center_init: PositiveFloat = 1.0
     """Scaling factor for initial particle positions."""
@@ -378,12 +377,11 @@ class PySwarmsLocalBestPSO(Algorithm):
             static=self.static_topology,
         )
 
-        objective_wrapper = _create_objective_wrapper(problem)
+        objective_wrapper = _create_batch_objective(problem, self.n_cores)
 
         result = optimizer.optimize(
             objective_func=objective_wrapper,
             iters=self.stopping_maxiter,
-            n_processes=self.n_processes,
             verbose=self.verbose,
         )
 
@@ -409,7 +407,7 @@ class PySwarmsLocalBestPSO(Algorithm):
     supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
-    disable_history=True,
+    disable_history=False,
 )
 @dataclass(frozen=True)
 class PySwarmsGeneralPSO(Algorithm):
@@ -499,8 +497,8 @@ class PySwarmsGeneralPSO(Algorithm):
     velocity_clamp_max: float | None = None
     """Maximum velocity limit for particles."""
 
-    n_processes: PositiveInt | None = None
-    """Number of processes for parallel evaluation."""
+    n_cores: PositiveInt = 1
+    """Number of cores for parallel evaluation."""
 
     center_init: PositiveFloat = 1.0
     """Scaling factor for initial particle positions."""
@@ -566,12 +564,11 @@ class PySwarmsGeneralPSO(Algorithm):
             init_pos=init_pos,
         )
 
-        objective_wrapper = _create_objective_wrapper(problem)
+        objective_wrapper = _create_batch_objective(problem, self.n_cores)
 
         result = optimizer.optimize(
             objective_func=objective_wrapper,
             iters=self.stopping_maxiter,
-            n_processes=self.n_processes,
             verbose=self.verbose,
         )
 
@@ -660,13 +657,14 @@ def _process_pyswarms_result(
     )
 
 
-def _create_objective_wrapper(
+def _create_batch_objective(
     problem: InternalOptimizationProblem,
+    n_cores: int,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-    """Create objective function wrapper for PySwarms 2D input format."""
+    """Return an batch objective function."""
 
-    def objective_wrapper(x: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Objective wrapper for PySwarms format.
+    def batch_objective(x: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Compute objective values for all particles in x.
 
         Args:
             x: 2D array of shape (n_particles, n_dimensions) with particle positions.
@@ -675,9 +673,12 @@ def _create_objective_wrapper(
             1D array of shape (n_particles,) with objective values.
 
         """
-        return np.array([problem.fun(xi) for xi in x])
+        arguments = [xi for xi in x]
+        results = problem.batch_fun(arguments, n_cores=n_cores)
 
-    return objective_wrapper
+        return np.array(results)
+
+    return batch_objective
 
 
 def _convert_bounds_to_pyswarms(
