@@ -256,10 +256,12 @@ class PySwarmsGlobalBestPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for handling out-of-bounds particles."""
+    """Strategy for handling out-of-bounds particles. Available options: periodic (default),
+    reflective, shrink, random, intermediate."""
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities."""
+    """Strategy for handling out-of-bounds velocities. Available options: unmodified (default),
+    adjust, invert, zero."""
 
     velocity_clamp_min: float | None = None
     """Minimum velocity limit for particles."""
@@ -412,10 +414,12 @@ class PySwarmsLocalBestPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for handling out-of-bounds particles."""
+    """Strategy for handling out-of-bounds particles. Available options: periodic (default),
+    reflective, shrink, random, intermediate."""
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities."""
+    """Strategy for handling out-of-bounds velocities. Available options: unmodified (default),
+    adjust, invert, zero."""
 
     velocity_clamp_min: float | None = None
     """Minimum velocity limit for particles."""
@@ -430,7 +434,9 @@ class PySwarmsLocalBestPSO(Algorithm):
     """Scaling factor for initial particle positions."""
 
     static_topology: bool = False
-    """Whether to use static or dynamic ring topology."""
+    """Whether to use static or dynamic ring topology. When True, the neighborhood
+    structure is fixed throughout optimization. When False, neighbors are recomputed
+    at each iteration based on current particle positions."""
 
     verbose: bool = False
     """Enable or disable the logs and progress bar."""
@@ -581,10 +587,12 @@ class PySwarmsGeneralPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for handling out-of-bounds particles."""
+    """Strategy for handling out-of-bounds particles. Available options: periodic (default),
+    reflective, shrink, random, intermediate."""
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities."""
+    """Strategy for handling out-of-bounds velocities. Available options: unmodified (default),
+    adjust, invert, zero."""
 
     velocity_clamp_min: float | None = None
     """Minimum velocity limit for particles."""
