@@ -166,20 +166,6 @@ class LocalBestPSOOptions(BasePSOOptions):
     """Distance metric for neighbor selection (1=Manhattan, 2=Euclidean)."""
 
 
-@dataclass(frozen=True)
-class GeneralPSOOptions(BasePSOOptions):
-    """General PSO parameters with topology support."""
-
-    k_neighbors: PositiveInt | None = None
-    """Number of neighbors for topologies requiring neighborhoods."""
-
-    p_norm: Literal[1, 2] | None = None
-    """Distance metric for neighbor selection (1=Manhattan, 2=Euclidean)."""
-
-    vonneumann_range: PositiveInt | None = None
-    """Range parameter for Von Neumann topology."""
-
-
 @mark.minimizer(
     name="pyswarms_global_best",
     solver_type=AggregationLevel.SCALAR,
@@ -725,19 +711,8 @@ def _build_pso_options_dict(options: BasePSOOptions) -> dict[str, float | int]:
 
     # Add topology-specific options if present
     if isinstance(options, LocalBestPSOOptions):
-        base_options.update(
-            {
-                "k": options.k_neighbors,
-                "p": options.p_norm,
-            }
-        )
-    elif isinstance(options, GeneralPSOOptions):
-        if options.k_neighbors is not None:
-            base_options["k"] = options.k_neighbors
-        if options.p_norm is not None:
-            base_options["p"] = options.p_norm
-        if options.vonneumann_range is not None:
-            base_options["r"] = options.vonneumann_range
+        base_options["k"] = options.k_neighbors
+        base_options["p"] = options.p_norm
 
     return base_options
 
