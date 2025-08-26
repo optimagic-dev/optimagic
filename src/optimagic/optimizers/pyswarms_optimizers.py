@@ -274,7 +274,6 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
         import pyswarms as ps
 
-        # Build structured options using dataclass
         pso_options = BasePSOOptions(
             cognitive_parameter=self.cognitive_parameter,
             social_parameter=self.social_parameter,
@@ -439,7 +438,6 @@ class PySwarmsLocalBestPSO(Algorithm):
 
         import pyswarms as ps
 
-        # Build structured options using dataclass
         pso_options = LocalBestPSOOptions(
             cognitive_parameter=self.cognitive_parameter,
             social_parameter=self.social_parameter,
@@ -536,14 +534,6 @@ class PySwarmsGeneralPSO(Algorithm):
         - :math:`y_{ij}(t)`: personal best position of particle i
         - :math:`\hat{y}_{nj}(t)`: neighborhood best position
 
-    **Topology Options:**
-
-    - **Star**: All particles connected to global best
-    - **Ring**: Ring arrangement with k neighbors
-    - **Von Neumann**: 2D grid topology
-    - **Random**: Dynamic random connections
-    - **Pyramid**: Hierarchical pyramid-like network of connected particles
-
     This algorithm is based on the original Particle Swarm Optimization method by
     :cite:`Kennedy1995` with configurable topology structures. For topology references,
     see :cite:`Lane2008SpatialPSO, Ni2013`.
@@ -565,8 +555,15 @@ class PySwarmsGeneralPSO(Algorithm):
     topology: TopologyConfig = "star"
     """Topology structure for particle communication.
 
-    Can be a string name or a topology dataclass instance.
+    The `topology` can be specified in two ways:
 
+    1.  **By name (string):** e.g., ``"star"``, ``"ring"``. This uses the default
+        parameters for that topology.
+    2.  **By dataclass instance:** e.g., ``RingTopology(k_neighbors=5, p_norm=1)``.
+        This allows for detailed configuration of topology-specific parameters.
+
+    Available topologies: ``StarTopology``, ``RingTopology``, ``VonNeumannTopology``,
+    ``RandomTopology``, ``PyramidTopology``.
     """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
@@ -709,7 +706,7 @@ def _build_pso_options_dict(options: BasePSOOptions) -> dict[str, float | int]:
         "w": options.inertia_weight,
     }
 
-    # Add topology-specific options if present
+    # Add topology-specific options for local-best PSO
     if isinstance(options, LocalBestPSOOptions):
         base_options["k"] = options.k_neighbors
         base_options["p"] = options.p_norm
