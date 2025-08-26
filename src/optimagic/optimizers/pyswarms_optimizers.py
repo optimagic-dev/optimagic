@@ -218,6 +218,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
     This algorithm is an adaptation of the original Particle Swarm Optimization method
     by :cite:`Kennedy1995`
+
     """
 
     n_particles: PositiveInt = 50
@@ -244,12 +245,20 @@ class PySwarmsGlobalBestPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for handling out-of-bounds particles. Available options: periodic (default),
-    reflective, shrink, random, intermediate."""
+    """Strategy for handling out-of-bounds particles.
+
+    Available options: periodic (default),
+    reflective, shrink, random, intermediate.
+
+    """
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities. Available options: unmodified (default),
-    adjust, invert, zero."""
+    """Strategy for handling out-of-bounds velocities.
+
+    Available options: unmodified (default),
+    adjust, invert, zero.
+
+    """
 
     velocity_clamp_min: float | None = None
     """Minimum velocity limit for particles."""
@@ -370,7 +379,9 @@ class PySwarmsLocalBestPSO(Algorithm):
         - :math:`\hat{y}_{lj}(t)`: local best position in particle i's neighborhood
 
     The algorithm is based on the original Particle Swarm Optimization method by
-    :cite:`Kennedy1995` and the local best concept introduced in :cite:`EberhartKennedy1995`.
+    :cite:`Kennedy1995` and the local best concept introduced in
+    :cite:`EberhartKennedy1995`.
+
     """
 
     n_particles: PositiveInt = 50
@@ -403,12 +414,20 @@ class PySwarmsLocalBestPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for handling out-of-bounds particles. Available options: periodic (default),
-    reflective, shrink, random, intermediate."""
+    """Strategy for handling out-of-bounds particles.
+
+    Available options: periodic (default),
+    reflective, shrink, random, intermediate.
+
+    """
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities. Available options: unmodified (default),
-    adjust, invert, zero."""
+    """Strategy for handling out-of-bounds velocities.
+
+    Available options: unmodified (default),
+    adjust, invert, zero.
+
+    """
 
     velocity_clamp_min: float | None = None
     """Minimum velocity limit for particles."""
@@ -423,9 +442,12 @@ class PySwarmsLocalBestPSO(Algorithm):
     """Scaling factor for initial particle positions."""
 
     static_topology: bool = False
-    """Whether to use static or dynamic ring topology. When True, the neighborhood
-    structure is fixed throughout optimization. When False, neighbors are recomputed
-    at each iteration based on current particle positions."""
+    """Whether to use static or dynamic ring topology.
+
+    When True, the neighborhood structure is fixed throughout optimization. When False,
+    neighbors are recomputed at each iteration based on current particle positions.
+
+    """
 
     verbose: bool = False
     """Enable or disable the logs and progress bar."""
@@ -564,6 +586,7 @@ class PySwarmsGeneralPSO(Algorithm):
 
     Available topologies: ``StarTopology``, ``RingTopology``, ``VonNeumannTopology``,
     ``RandomTopology``, ``PyramidTopology``.
+
     """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
@@ -578,12 +601,20 @@ class PySwarmsGeneralPSO(Algorithm):
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
-    """Strategy for handling out-of-bounds particles. Available options: periodic (default),
-    reflective, shrink, random, intermediate."""
+    """Strategy for handling out-of-bounds particles.
+
+    Available options: periodic (default),
+    reflective, shrink, random, intermediate.
+
+    """
 
     velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities. Available options: unmodified (default),
-    adjust, invert, zero."""
+    """Strategy for handling out-of-bounds velocities.
+
+    Available options: unmodified (default),
+    adjust, invert, zero.
+
+    """
 
     velocity_clamp_min: float | None = None
     """Minimum velocity limit for particles."""
