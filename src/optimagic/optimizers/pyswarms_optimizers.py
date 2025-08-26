@@ -230,6 +230,8 @@ class PySwarmsGlobalBestPSO(Algorithm):
         - :math:`y_{ij}(t)`: personal best position of particle i
         - :math:`\hat{y}_j(t)`: global best position
 
+    This algorithm is an adaptation of the original Particle Swarm Optimization method
+    by :cite:`Kennedy1995`
     """
 
     n_particles: PositiveInt = 50
@@ -382,6 +384,8 @@ class PySwarmsLocalBestPSO(Algorithm):
         - :math:`y_{ij}(t)`: personal best position of particle i
         - :math:`\hat{y}_{lj}(t)`: local best position in particle i's neighborhood
 
+    The algorithm is based on the original Particle Swarm Optimization method by
+    :cite:`Kennedy1995` and the local best concept introduced in :cite:`EberhartKennedy1995`.
     """
 
     n_particles: PositiveInt = 50
@@ -553,6 +557,10 @@ class PySwarmsGeneralPSO(Algorithm):
     - **Von Neumann**: 2D grid topology
     - **Random**: Dynamic random connections
     - **Pyramid**: Hierarchical pyramid-like network of connected particles
+
+    This algorithm is based on the original Particle Swarm Optimization method by
+    :cite:`Kennedy1995` with configurable topology structures. For topology references,
+    see :cite:`Lane2008SpatialPSO, Ni2013`.
 
     """
 
