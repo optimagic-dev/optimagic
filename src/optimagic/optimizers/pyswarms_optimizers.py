@@ -286,11 +286,17 @@ class PySwarmsGlobalBestPSO(Algorithm):
     verbose: bool = False
     """Enable or disable the logs and progress bar."""
 
+    seed: int | None = None
+    """Random seed for reproducibility."""
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         if not IS_PYSWARMS_INSTALLED:
             raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         import pyswarms as ps
 
@@ -477,11 +483,17 @@ class PySwarmsLocalBestPSO(Algorithm):
     verbose: bool = False
     """Enable or disable the logs and progress bar."""
 
+    seed: int | None = None
+    """Random seed for reproducibility."""
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         if not IS_PYSWARMS_INSTALLED:
             raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         import pyswarms as ps
 
@@ -670,11 +682,17 @@ class PySwarmsGeneralPSO(Algorithm):
     verbose: bool = False
     """Enable or disable the logs and progress bar."""
 
+    seed: int | None = None
+    """Random seed for reproducibility."""
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         if not IS_PYSWARMS_INSTALLED:
             raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
 
         import pyswarms as ps
 
