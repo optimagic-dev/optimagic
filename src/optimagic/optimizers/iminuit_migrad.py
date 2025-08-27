@@ -42,8 +42,44 @@ if TYPE_CHECKING:
 )
 @dataclass(frozen=True)
 class IminuitMigrad(Algorithm):
+    """Minimize a scalar differentiable function using the MIGRAD algorithm from
+    iminuit.
+
+    This optimizer wraps the MIGRAD algorithm from the iminuit package, which provides a
+    Python interface to the Minuit2 C++ library developed and maintained by CERN.
+
+    MIGRAD is a local optimization method in the quasi-Newton family. It iteratively
+    builds an approximation of the inverse Hessian matrix using the DFP variable-metric
+    method to efficiently navigate optimization landscapes.
+
+    At each iteration, the algorithm attempts a Newton step, using gradient and Hessian
+    approximations to move toward the function’s minimum. If this step fails to reduce
+    the objective function, MIGRAD conducts a line search along the gradient direction
+    to maintain progress. This continues until the convergence criteria, such as the
+    Estimated Distance to Minimum (EDM) are met, that is, they fall below preset
+    thresholds.
+
+    MIGRAD is designed for statistical optimization problems where accurate parameter
+    uncertainty estimates are essential. It excels at maximum-likelihood and least-
+    squares fits common in scientific computing, and is best suited for smooth,
+    differentiable cost functions.
+
+    For best performance, supply analytical gradients. Convergence and solution will
+    depend on your starting values. Bound constraints (limits) supported.
+
+    """
+
     stopping_maxfun: int = STOPPING_MAXFUN
+    """Maximum number of function evaluations."""
+
     n_restarts: int = N_RESTARTS
+    """Number of times to restart the optimizer if convergence is not reached.
+
+    A value of 1 (the default) indicates that the optimizer will only run once,
+    disabling the restart feature. Values greater than 1 specify the maximum number of
+    restart attempts.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, params: NDArray[np.float64]
