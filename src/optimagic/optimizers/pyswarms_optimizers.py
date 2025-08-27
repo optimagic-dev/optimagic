@@ -305,7 +305,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
             self.velocity_clamp_min, self.velocity_clamp_max
         )
 
-        bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
+        bounds = _get_pyswarms_bounds(problem.bounds)
 
         if self.initial_population is not None:
             init_pos = self.initial_population
@@ -502,7 +502,7 @@ class PySwarmsLocalBestPSO(Algorithm):
             self.velocity_clamp_min, self.velocity_clamp_max
         )
 
-        bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
+        bounds = _get_pyswarms_bounds(problem.bounds)
 
         if self.initial_population is not None:
             init_pos = self.initial_population
@@ -699,7 +699,7 @@ class PySwarmsGeneralPSO(Algorithm):
         velocity_clamp = _build_velocity_clamp(
             self.velocity_clamp_min, self.velocity_clamp_max
         )
-        bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
+        bounds = _get_pyswarms_bounds(problem.bounds)
 
         if self.initial_population is not None:
             init_pos = self.initial_population
@@ -852,22 +852,21 @@ def _create_batch_objective(
     return batch_objective
 
 
-def _convert_bounds_to_pyswarms(
-    bounds: InternalBounds, n_dimensions: int
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+def _get_pyswarms_bounds(
+    bounds: InternalBounds,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]] | None:
     """Convert optimagic bounds to PySwarms format."""
-    lower_bounds_arr = (
-        bounds.lower if bounds.lower is not None else np.zeros(n_dimensions)
-    )
-    upper_bounds_arr = (
-        bounds.upper if bounds.upper is not None else np.ones(n_dimensions)
-    )
-    if not np.all(np.isfinite(lower_bounds_arr)) or not np.all(
-        np.isfinite(upper_bounds_arr)
-    ):
-        raise ValueError("PySwarms does not support infinite bounds.")
+    pyswarms_bounds = None
 
-    return (lower_bounds_arr, upper_bounds_arr)
+    if bounds.lower is not None and bounds.upper is not None:
+        if not np.all(np.isfinite(bounds.lower)) or not np.all(
+            np.isfinite(bounds.upper)
+        ):
+            raise ValueError("PySwarms does not support infinite bounds.")
+
+        pyswarms_bounds = (bounds.lower, bounds.upper)
+
+    return pyswarms_bounds
 
 
 def _create_initial_population(
