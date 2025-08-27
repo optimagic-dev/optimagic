@@ -20,8 +20,8 @@ from optimagic import mark
 from optimagic.config import IS_PYGAD_INSTALLED
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
-    CONVERGENCE_SATURATE_GENERATIONS,
-    CONVERGENCE_TARGET_CRITERION,
+    CONVERGENCE_GENERATIONS_NOIMPROVE,
+    CONVERGENCE_TARGET_VALUE,
     STOPPING_MAXITER,
     get_population_size,
 )
@@ -578,15 +578,15 @@ class Pygad(Algorithm):
 
     """
 
-    convergence_target_criterion: PositiveFloat | None = CONVERGENCE_TARGET_CRITERION
-    """Target criterion value for early stopping.
+    convergence_target_value: PositiveFloat | None = CONVERGENCE_TARGET_VALUE
+    """Target value for early stopping.
 
     Default: None.
 
     """
 
-    convergence_saturate_generations: PositiveInt | None = (
-        CONVERGENCE_SATURATE_GENERATIONS
+    convergence_generations_noimprove: PositiveInt | None = (
+        CONVERGENCE_GENERATIONS_NOIMPROVE
     )
     """Maximum generations without fitness improvement before stopping.
 
