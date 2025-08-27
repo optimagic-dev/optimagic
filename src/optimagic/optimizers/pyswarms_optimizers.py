@@ -339,11 +339,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
             verbose=self.verbose,
         )
 
-        res = _process_pyswarms_result(
-            result=result,
-            n_particles=self.n_particles,
-            n_iterations_run=self.stopping_maxiter,
-        )
+        res = _process_pyswarms_result(result=result, optimizer=optimizer)
 
         return res
 
@@ -537,11 +533,7 @@ class PySwarmsLocalBestPSO(Algorithm):
             verbose=self.verbose,
         )
 
-        res = _process_pyswarms_result(
-            result=result,
-            n_particles=self.n_particles,
-            n_iterations_run=self.stopping_maxiter,
-        )
+        res = _process_pyswarms_result(result=result, optimizer=optimizer)
 
         return res
 
@@ -734,11 +726,7 @@ class PySwarmsGeneralPSO(Algorithm):
             verbose=self.verbose,
         )
 
-        res = _process_pyswarms_result(
-            result=result,
-            n_particles=self.n_particles,
-            n_iterations_run=self.stopping_maxiter,
-        )
+        res = _process_pyswarms_result(result=result, optimizer=optimizer)
 
         return res
 
@@ -811,20 +799,22 @@ def _build_velocity_clamp(
 
 
 def _process_pyswarms_result(
-    result: tuple[float, NDArray[np.float64]], n_particles: int, n_iterations_run: int
+    result: tuple[float, NDArray[np.float64]], optimizer: Any
 ) -> InternalOptimizeResult:
     """Convert PySwarms result to optimagic format."""
     best_cost, best_position = result
+    n_iterations = len(optimizer.cost_history)
+    n_particles = optimizer.n_particles
 
     return InternalOptimizeResult(
         x=best_position,
         fun=best_cost,
         success=True,
         message="PySwarms optimization completed",
-        n_fun_evals=n_particles * n_iterations_run,
+        n_fun_evals=n_particles * n_iterations,
         n_jac_evals=0,
         n_hess_evals=0,
-        n_iterations=n_iterations_run,
+        n_iterations=n_iterations,
     )
 
 
