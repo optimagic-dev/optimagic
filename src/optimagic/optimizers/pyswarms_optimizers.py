@@ -242,6 +242,17 @@ class PySwarmsGlobalBestPSO(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
+    initial_population: NDArray[np.float64] | None = None
+    """Option to set the initial particle positions.
+
+    If None, the population is generated randomly within the given bounds , or within
+    [0, 1] if bounds are not specified.
+
+    """
+
+    oh_strategy: dict[str, str] | None = None
+    """Dictionary of strategies for time-varying options."""
+
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
@@ -296,15 +307,22 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
         bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
 
-        init_pos = _create_initial_population(
-            x0=x0, n_particles=self.n_particles, bounds=bounds, center=self.center_init
-        )
+        if self.initial_population is not None:
+            init_pos = self.initial_population
+        else:
+            init_pos = _create_initial_population(
+                x0=x0,
+                n_particles=self.n_particles,
+                bounds=bounds,
+                center=self.center_init,
+            )
 
         optimizer = ps.single.GlobalBestPSO(
             n_particles=self.n_particles,
             dimensions=len(x0),
             options=options,
             bounds=bounds,
+            oh_strategy=self.oh_strategy,
             bh_strategy=self.boundary_strategy,
             velocity_clamp=velocity_clamp,
             vh_strategy=self.velocity_strategy,
@@ -411,6 +429,17 @@ class PySwarmsLocalBestPSO(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
+    initial_population: NDArray[np.float64] | None = None
+    """Option to set the initial particle positions.
+
+    If None, the population is generated randomly within the given bounds , or within
+    [0, 1] if bounds are not specified.
+
+    """
+
+    oh_strategy: dict[str, str] | None = None
+    """Dictionary of strategies for time-varying options."""
+
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
@@ -475,15 +504,22 @@ class PySwarmsLocalBestPSO(Algorithm):
 
         bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
 
-        init_pos = _create_initial_population(
-            x0=x0, n_particles=self.n_particles, bounds=bounds, center=self.center_init
-        )
+        if self.initial_population is not None:
+            init_pos = self.initial_population
+        else:
+            init_pos = _create_initial_population(
+                x0=x0,
+                n_particles=self.n_particles,
+                bounds=bounds,
+                center=self.center_init,
+            )
 
         optimizer = ps.single.LocalBestPSO(
             n_particles=self.n_particles,
             dimensions=len(x0),
             options=options,
             bounds=bounds,
+            oh_strategy=self.oh_strategy,
             bh_strategy=self.boundary_strategy,
             velocity_clamp=velocity_clamp,
             vh_strategy=self.velocity_strategy,
@@ -598,6 +634,17 @@ class PySwarmsGeneralPSO(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
+    initial_population: NDArray[np.float64] | None = None
+    """Option to set the initial particle positions.
+
+    If None, the population is generated randomly within the given bounds , or within
+    [0, 1] if bounds are not specified.
+
+    """
+
+    oh_strategy: dict[str, str] | None = None
+    """Dictionary of strategies for time-varying options."""
+
     boundary_strategy: Literal[
         "periodic", "reflective", "shrink", "random", "intermediate"
     ] = "periodic"
@@ -653,9 +700,16 @@ class PySwarmsGeneralPSO(Algorithm):
             self.velocity_clamp_min, self.velocity_clamp_max
         )
         bounds = _convert_bounds_to_pyswarms(problem.bounds, len(x0))
-        init_pos = _create_initial_population(
-            x0=x0, n_particles=self.n_particles, bounds=bounds, center=self.center_init
-        )
+
+        if self.initial_population is not None:
+            init_pos = self.initial_population
+        else:
+            init_pos = _create_initial_population(
+                x0=x0,
+                n_particles=self.n_particles,
+                bounds=bounds,
+                center=self.center_init,
+            )
 
         optimizer = ps.single.GeneralOptimizerPSO(
             n_particles=self.n_particles,
@@ -663,6 +717,7 @@ class PySwarmsGeneralPSO(Algorithm):
             options=options,
             topology=pyswarms_topology,
             bounds=bounds,
+            oh_strategy=self.oh_strategy,
             bh_strategy=self.boundary_strategy,
             velocity_clamp=velocity_clamp,
             vh_strategy=self.velocity_strategy,
@@ -818,15 +873,15 @@ def _convert_bounds_to_pyswarms(
 def _create_initial_population(
     x0: NDArray[np.float64],
     n_particles: int,
-    bounds: tuple[NDArray[np.float64], NDArray[np.float64]],
+    bounds: tuple[NDArray[np.float64], NDArray[np.float64]] | None,
     center: float = 1.0,
 ) -> NDArray[np.float64]:
-    """Create initial population with x0 as first particle.
+    """Create an initial swarm population.
 
     Args:
         x0: Initial parameter vector
         n_particles: Number of particles in the swarm
-        bounds: Tuple of (lower_bounds, upper_bounds) arrays
+        bounds: Tuple of (lower_bounds, upper_bounds) arrays or None.
         center: Scaling factor for initial particle positions around bounds
 
     Returns:
@@ -834,7 +889,11 @@ def _create_initial_population(
 
     """
     n_dimensions = len(x0)
-    lower_bounds, upper_bounds = bounds
+    if bounds is None:
+        lower_bounds: NDArray[np.float64] = np.zeros(n_dimensions, dtype=np.float64)
+        upper_bounds: NDArray[np.float64] = np.ones(n_dimensions, dtype=np.float64)
+    else:
+        lower_bounds, upper_bounds = bounds
 
     # Generate random initial positions within the bounds, scaled by center
     init_pos = center * np.random.uniform(
