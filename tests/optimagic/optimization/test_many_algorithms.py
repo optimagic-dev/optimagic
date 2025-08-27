@@ -28,7 +28,10 @@ AVAILABLE_BOUNDED_ALGORITHMS = [
     if algo.algo_info.supports_bounds
 ]
 
-PRECISION_LOOKUP = {"scipy_trust_constr": 3}
+PRECISION_LOOKUP = {
+    "scipy_trust_constr": 3,
+    "iminuit_migrad": 2,
+}
 
 
 @pytest.fixture
@@ -61,14 +64,22 @@ def sos(x):
 
 
 def _get_params_and_binding_bounds(algo):
-    params = np.array([3, 2, -3])
-    if algo.algo_info.supports_infinite_bounds:
-        bounds = Bounds(
-            lower=np.array([1, -np.inf, -np.inf]), upper=np.array([np.inf, np.inf, -1])
-        )
+    if algo.algo_info.is_global:
+        params = np.array([0.5, -0.5])
+        bounds = Bounds(lower=np.array([0.25, -1]), upper=np.array([1, -0.25]))
+        expected = np.array([0.25, -0.25])
+
     else:
-        bounds = Bounds(lower=np.array([1, -10, -10]), upper=np.array([10, 10, -1]))
-    expected = np.array([1, 0, -1])
+        params = np.array([3, 2, -3])
+        if algo.algo_info.supports_infinite_bounds:
+            bounds = Bounds(
+                lower=np.array([1, -np.inf, -np.inf]),
+                upper=np.array([np.inf, np.inf, -1]),
+            )
+        else:
+            bounds = Bounds(lower=np.array([1, -10, -10]), upper=np.array([10, 10, -1]))
+        expected = np.array([1, 0, -1])
+
     return params, bounds, expected
 
 
@@ -124,8 +135,8 @@ def test_sum_of_squares_on_local_algorithms(algorithm, algo):
 def _get_params_and_bounds_on_global_and_bounded(algo):
     if algo.algo_info.is_global:
         params = np.array([0.35, 0.35])
-        bounds = Bounds(lower=np.array([0.2, -0.5]), upper=np.array([1, 0.5]))
-        expected = np.array([0.2, 0])
+        bounds = Bounds(lower=np.array([-0.2, -0.5]), upper=np.array([1, 0.5]))
+        expected = np.array([0, 0])
     else:
         params = np.arange(3)
         bounds = Bounds(lower=np.full(3, -10), upper=np.full(3, 10))
