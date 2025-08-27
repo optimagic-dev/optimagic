@@ -155,7 +155,7 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
 
     """
 
-    population_size: PositiveInt = 10
+    population_size: PositiveInt | None = None
     """Size of the population."""
 
     inertia: NonNegativeFloat = 0.5 / math.log(2.0)
@@ -241,7 +241,7 @@ class GFOParallelTempering(Algorithm, GFOCommonOptions):
 
     """
 
-    population_size: PositiveInt = 10
+    population_size: PositiveInt | None = None
     """Size of the population."""
 
     n_iter_swap: PositiveInt = 10
@@ -329,17 +329,8 @@ class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
 
     """
 
-    population_size: PositiveInt = 10
-    """Size of the population for population-based optimization algorithms.
-
-    Each
-    member of the population is a separate optimizer. All population based
-    optimizers in this package calculate the new positions one member at a time.
-    So if the optimizer performs 10 iterations and has a population size of 10,
-    then each member of the population would move once to a new position.
-    Typical range: 4 to 25.
-
-    """
+    population_size: PositiveInt | None = None
+    """Size of the population."""
 
     decay_rate: NonNegativeFloat = 0.99
     """The decay rate `r` is a factor, by which the radius of the spiral movement of the
@@ -410,7 +401,7 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
 
     """
 
-    population_size: PositiveInt = 10
+    population_size: PositiveInt | None = None
     """Size of the population."""
 
     mutation_rate: ProbabilityFloat = 0.5
@@ -542,7 +533,7 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
 
     """
 
-    population_size: PositiveInt = 10
+    population_size: PositiveInt | None = None
     """Size of the population."""
 
     stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
@@ -628,7 +619,7 @@ class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
 
     """
 
-    population_size: PositiveInt = 10
+    population_size: PositiveInt | None = None
     """Size of the population."""
 
     mutation_rate: ProbabilityFloat = 0.9
