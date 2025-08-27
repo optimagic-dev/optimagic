@@ -60,7 +60,7 @@ class GFOCommonOptions:
     stopping_maxtime: NonNegativeFloat | None = None
     """Maximum time in seconds before termination."""
 
-    stopping_funval: float | None = None
+    convergence_target_value: float | None = None
     """"Stop the optimization if the objective function is less than this value."""
 
     convergence_iter_noimprove: PositiveInt = 1000000  # do not want to trigger this
@@ -80,8 +80,13 @@ class GFOCommonOptions:
     """Whether to cache evaluated param and function values in a dictionary for
     lookup."""
 
-    extra_start_points: list[PyTree] | None = None
-    """List of additional start points for the optimization run."""
+    extra_start_params: list[PyTree] | None = None
+    """List of additional start points for the optimization run.
+
+    In case of population based optimizers, the initial_population can be provided
+    via `extra_start_params`
+
+    """
 
     warm_start: pd.DataFrame | None = None
     """Pandas dataframe that contains score and paramter information that will be
@@ -153,9 +158,6 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
     population_size: PositiveInt = 10
     """Size of the population."""
 
-    initial_population: list[PyTree] | None = None
-    """The user-provided inital population."""
-
     inertia: NonNegativeFloat = 0.5 / math.log(2.0)
     """The inertia of the movement of the individual particles in the population."""
 
@@ -177,7 +179,7 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
         import gradient_free_optimizers as gfo
 
         population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=20
+            population_size=self.population_size, x=x0, lower_bound=10
         )
 
         opt = gfo.ParticleSwarmOptimizer
@@ -242,9 +244,6 @@ class GFOParallelTempering(Algorithm, GFOCommonOptions):
     population_size: PositiveInt = 10
     """Size of the population."""
 
-    initial_population: list[PyTree] | None = None
-    """The user-provided inital population."""
-
     n_iter_swap: PositiveInt = 10
     """The number of iterations the algorithm performs before switching temperatures of
     the individual optimizers in the population."""
@@ -259,7 +258,7 @@ class GFOParallelTempering(Algorithm, GFOCommonOptions):
         import gradient_free_optimizers as gfo
 
         population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=20
+            population_size=self.population_size, x=x0, lower_bound=10
         )
 
         opt = gfo.ParallelTemperingOptimizer
@@ -342,9 +341,6 @@ class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
 
     """
 
-    initial_population: list[PyTree] | None = None
-    """The user-provided inital population."""
-
     decay_rate: NonNegativeFloat = 0.99
     """The decay rate `r` is a factor, by which the radius of the spiral movement of the
     particles decays during their spiral movement.
@@ -365,7 +361,7 @@ class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
         import gradient_free_optimizers as gfo
 
         population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=20
+            population_size=self.population_size, x=x0, lower_bound=10
         )
 
         opt = gfo.SpiralOptimization
@@ -416,9 +412,6 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
 
     population_size: PositiveInt = 10
     """Size of the population."""
-
-    initial_population: list[PyTree] | None = None
-    """The user-provided inital population."""
 
     mutation_rate: ProbabilityFloat = 0.5
     """Probability of a mutation event occurring in an individual of the population.
@@ -478,7 +471,7 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
         import gradient_free_optimizers as gfo
 
         population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=20
+            population_size=self.population_size, x=x0, lower_bound=10
         )
 
         opt = gfo.GeneticAlgorithmOptimizer
@@ -555,9 +548,6 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
     stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
     """Maximum number of iterations."""
 
-    initial_population: list[PyTree] | None = None
-    """The user-provided inital population."""
-
     mutation_rate: ProbabilityFloat = 0.7
     """Probability of a mutation event occurring in an individual."""
 
@@ -575,7 +565,7 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
         import gradient_free_optimizers as gfo
 
         population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=20
+            population_size=self.population_size, x=x0, lower_bound=10
         )
 
         opt = gfo.EvolutionStrategyOptimizer
@@ -641,9 +631,6 @@ class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
     population_size: PositiveInt = 10
     """Size of the population."""
 
-    initial_population: list[PyTree] | None = None
-    """The user-provided inital population."""
-
     mutation_rate: ProbabilityFloat = 0.9
     r"""Probability of a mutation event occurring in an individual.
 
@@ -684,7 +671,7 @@ class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
         import gradient_free_optimizers as gfo
 
         population_size = get_population_size(
-            population_size=self.population_size, x=x0, lower_bound=4
+            population_size=self.population_size, x=x0, lower_bound=10
         )
 
         opt = gfo.DifferentialEvolutionOptimizer
@@ -732,7 +719,7 @@ def _gfo_internal(
         "tol_rel": common.convergence_ftol_rel,
     }
 
-    # define search space, initial params, population, constraints
+    # define search space, initial params, initial_population and constraints
     opt = optimizer(
         search_space=_get_search_space_gfo(
             problem.bounds,
@@ -740,7 +727,7 @@ def _gfo_internal(
             problem.converter,
         ),
         initialize=_get_initialize_gfo(
-            x0, common.n_init, common.extra_start_points, problem.converter
+            x0, common.n_init, common.extra_start_params, problem.converter
         ),
         constraints=_get_gfo_constraints(),
         random_state=common.seed,
@@ -752,8 +739,10 @@ def _gfo_internal(
         return -problem.fun(x)
 
     # negate in case of minimize
-    stopping_funval = (
-        -1 * common.stopping_funval if common.stopping_funval is not None else None
+    convergence_target_value = (
+        -1 * common.convergence_target_value
+        if common.convergence_target_value is not None
+        else None
     )
 
     # run optimization
@@ -761,7 +750,7 @@ def _gfo_internal(
         objective_function=objective_function,
         n_iter=common.stopping_maxiter,
         max_time=common.stopping_maxtime,
-        max_score=stopping_funval,
+        max_score=convergence_target_value,
         early_stopping=early_stopping,
         memory=common.caching,
         memory_warm_start=common.warm_start,
@@ -811,8 +800,8 @@ def _get_initialize_gfo(
     extra_start_points: list[PyTree] | None,
     converter: Converter,
 ) -> dict[str, Any]:
-    """Set initial params x0, additional start points for the optimization run or the
-    initial_population. Here, warm_start is actually extra_start_points.
+    """Set initial params x0, additional start params for the optimization run or the
+    initial_population. Here, warm_start is actually extra_start_params.
 
     Args:
     x0: initial param
