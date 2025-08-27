@@ -381,6 +381,7 @@ module = [
     "iminuit",
     "nevergrad",
     "pyswarms",
+    "pyswarms.backend.topology",
     "yaml",
   ]
 ignore_missing_imports = true
