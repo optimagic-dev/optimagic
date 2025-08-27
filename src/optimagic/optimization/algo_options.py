@@ -108,6 +108,25 @@ criterion apart from max iterations etc. is available. This is taken from pyboby
 
 """
 
+CONVERGENCE_TARGET_VALUE = None
+"""float or None: Stop when the criterion value is better than or equal to
+    this target. The definition of "better" depends on the optimization direction.
+
+    - Minimization: criterion <= target
+    - Maximization: criterion >= target
+
+    Used in population-based algorithms like genetic algorithms.
+    To disable, set to None.
+"""
+
+CONVERGENCE_GENERATIONS_NOIMPROVE = None
+"""int or None: Stop when the best criterion value has not improved for this
+    many consecutive generations.
+
+    Used in population-based algorithms like genetic algorithms.
+    To disable, set to None.
+"""
+
 
 MAX_LINE_SEARCH_STEPS = 20
 """int: Inspired by scipy L-BFGS-B."""
