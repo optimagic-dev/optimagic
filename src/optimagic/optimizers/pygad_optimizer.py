@@ -700,8 +700,8 @@ class Pygad(Algorithm):
 
         # Build stop criteria from convergence parameters
         stop_criteria = _build_stop_criteria(
-            self.convergence_target_criterion,
-            self.convergence_saturate_generations,
+            self.convergence_target_value,
+            self.convergence_generations_noimprove,
             direction=problem.direction,
         )
 
