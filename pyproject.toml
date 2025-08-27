@@ -380,6 +380,7 @@ module = [
     "pdbp",
     "iminuit",
     "nevergrad",
+    "pyswarms"
     "yaml",
   ]
 ignore_missing_imports = true
