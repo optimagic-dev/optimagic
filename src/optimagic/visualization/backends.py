@@ -7,15 +7,7 @@ from optimagic.exceptions import InvalidPlottingBackendError, NotInstalledError
 from optimagic.visualization.plotting_utilities import LineData
 
 if IS_MATPLOTLIB_INSTALLED:
-    import matplotlib as mpl
     import matplotlib.pyplot as plt
-
-    # Handle the case where matplotlib is used in notebooks (inline backend)
-    # to ensure that interactive mode is disabled to avoid double plotting.
-    # (See: https://github.com/matplotlib/matplotlib/issues/26221)
-    if mpl.get_backend() == "module://matplotlib_inline.backend_inline":
-        plt.install_repl_displayhook()
-        plt.ioff()
 
 
 @runtime_checkable
@@ -45,6 +37,9 @@ def _line_plot_plotly(
     width: int | None,
     legend_properties: dict[str, Any] | None,
 ) -> go.Figure:
+    if template is None:
+        template = "plotly"
+
     fig = go.Figure()
 
     for line in lines:
@@ -82,9 +77,11 @@ def _line_plot_matplotlib(
     height: int | None,
     width: int | None,
     legend_properties: dict[str, Any] | None,
-) -> "plt.Figure":
-    if template is not None:
-        plt.style.use(template)
+) -> "plt.Axes":
+    if template is None:
+        template = "default"
+
+    plt.style.use(template)
     fig, ax = plt.subplots(figsize=(width, height) if width and height else None)
 
     for line in lines:
@@ -99,7 +96,7 @@ def _line_plot_matplotlib(
     if legend_properties:
         ax.legend(**legend_properties)
 
-    return fig
+    return ax
 
 
 BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[

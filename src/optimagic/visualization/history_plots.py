@@ -53,8 +53,9 @@ def criterion_plot(
             legend.
         max_evaluations: Clip the criterion history after that many entries.
         backend: The backend to use for plotting. Default is "plotly".
-        template: The template for the figure. Default is "plotly_white".
-        palette: The coloring palette for traces. Default is "qualitative.Set2".
+        template: The template for the figure. If not specified, the default template of
+            the backend is used.
+        palette: The coloring palette for traces. Default is the D3 qualitative palette.
         stack_multistart: Whether to combine multistart histories into a single history.
             Default is False.
         monotone: If True, the criterion plot becomes monotone in the sense that at each
@@ -108,7 +109,7 @@ def criterion_plot(
 def _harmonize_inputs_to_dict(
     results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None,
-) -> dict[str, OptimizeResult | str | Path]:
+) -> dict[str, ResultOrPath]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
     # convert scalar case to list case
     if not isinstance(names, list) and names is not None:
@@ -259,7 +260,7 @@ class _PlottingMultistartHistory:
 
 
 def _retrieve_optimization_data(
-    results: dict[str, OptimizeResult | str | Path],
+    results: dict[str, ResultOrPath],
     stack_multistart: bool,
     show_exploration: bool,
 ) -> list[_PlottingMultistartHistory]:

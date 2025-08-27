@@ -9,6 +9,9 @@ import optimagic as om
 from optimagic.logging import SQLiteLogOptions
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
+from optimagic.visualization.backends import (
+    BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION,
+)
 from optimagic.visualization.history_plots import (
     LineData,
     _extract_criterion_plot_lines,
@@ -145,7 +148,7 @@ def test_criterion_plot_wrong_inputs():
         criterion_plot(["bla", "bla"], names="blub")
 
 
-@pytest.mark.parametrize("backend", ["plotly", "matplotlib"])
+@pytest.mark.parametrize("backend", BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())
 def test_criterion_plot_different_backends(minimize_result, backend):
     res = minimize_result[False][0]
     criterion_plot(res, backend=backend)
