@@ -4642,6 +4642,214 @@ package. To use it, you need to have
       aligned structures and enhancing search performance in rotated coordinate systems. (Default:
       `False`)
     - **seed**: Seed for the random number generator for reproducibility.
+
+```
+
+## Gradient Free Optimizers
+
+Optimizers from the
+[gradient_free_optimizers](https://github.com/SimonBlanke/Gradient-Free-Optimizers?tab=readme-ov-file)
+package are available in optimagic. To use it, you need to have
+[gradient_free_optimizers](https://pypi.org/project/gradient_free_optimizers) installed.
+
+```{eval-rst}
+.. dropdown:: gfo_pso
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_pso(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_pso",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParticleSwarmOptimization
+
+```
+
+```{eval-rst}
+
+.. dropdown:: gfo_parallel_tempering
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_parallel_tempering(population_size=15, n_iter_swap=5),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_parallel_tempering",
+      algo_options={"population_size": 15, "n_iter_swap": 5},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParallelTempering
+```
+
+```{eval-rst}
+.. dropdown:: gfo_spiral_optimization
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_spiral_optimization(population_size=15, decay_rate=0.95),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_spiral_optimization",
+      algo_options={"population_size": 15, "decay_rate": 0.95},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSpiralOptimization
+```
+
+```{eval-rst}
+.. dropdown:: gfo_genetic_algorithm
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_genetic_algorithm(population_size=20, mutation_rate=0.6),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_genetic_algorithm",
+      algo_options={"population_size": 20, "mutation_rate": 0.6},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOGeneticAlgorithm
+```
+
+```{eval-rst}
+.. dropdown:: gfo_evolution_strategy
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_evolution_strategy(population_size=15, crossover_rate=0.4),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_evolution_strategy",
+      algo_options={"population_size": 15, "crossover_rate": 0.4},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOEvolutionStrategy
+```
+
+```{eval-rst}
+.. dropdown:: gfo_differential_evolution
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_differential_evolution(population_size=20, mutation_rate=0.8),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_differential_evolution",
+      algo_options={"population_size": 20, "mutation_rate": 0.8},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODifferentialEvolution
+
 ```
 
 ## Pygad Optimizer
