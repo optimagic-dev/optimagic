@@ -382,5 +382,7 @@ module = [
     "nevergrad",
     "pygad",
     "yaml",
+    "gradient_free_optimizers",
+    "gradient_free_optimizers.optimizers.base_optimizer",
   ]
 ignore_missing_imports = true

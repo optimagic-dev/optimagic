@@ -37,6 +37,7 @@ dependencies:
       - fides==0.7.4  # dev, tests
       - kaleido>=1.0  # dev, tests
       - bayes_optim  # dev, tests
+      - gradient_free_optimizers  # dev, tests
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
       - types-openpyxl  # dev, tests
