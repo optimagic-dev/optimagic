@@ -52,6 +52,10 @@ def _get_options(algo):
 
 
 def _get_required_decimals(algorithm, algo):
+    # if algo is experimental, do not expect solution
+    if algo.algo_info.experimental:
+        return 0
+
     if algorithm in PRECISION_LOOKUP:
         return PRECISION_LOOKUP[algorithm]
     else:
