@@ -43,7 +43,7 @@ def _get_options(algo):
     options = {}
     "Max time before termination"
     if hasattr(algo, "stopping_maxtime"):
-        options.update({"stopping_maxtime": 10})
+        options.update({"stopping_maxtime": 1})
 
     "Fix seed if algorithm is stochastic"
     if hasattr(algo, "seed"):
@@ -52,6 +52,10 @@ def _get_options(algo):
 
 
 def _get_required_decimals(algorithm, algo):
+    # if algo is experimental, do not expect solution
+    if algo.algo_info.experimental:
+        return 0
+
     if algorithm in PRECISION_LOOKUP:
         return PRECISION_LOOKUP[algorithm]
     else:

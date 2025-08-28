@@ -4653,6 +4653,211 @@ package are available in optimagic. To use it, you need to have
 [gradient_free_optimizers](https://pypi.org/project/gradient_free_optimizers) installed.
 
 ```{eval-rst}
+.. dropdown:: Common options across all optimizers
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOCommonOptions
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_hillclimbing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_hillclimbing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_hillclimbing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOHillClimbing
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_stochastichillclimbing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_stochastichillclimbing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_stochastichillclimbing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOStochasticHillClimbing
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_repulsinghillclimbing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_repulsinghillclimbing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_repulsinghillclimbing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFORepulsingHillClimbing
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_simulatedannealing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_simulatedannealing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_simulatedannealing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSimulatedAnnealing
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_downhillsimplex
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_downhillsimplex(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_downhillsimplex",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODownhillSimplex
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_powells_method
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_powells_method(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_powells_method",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOPowellsMethod
+
+```
+
+```{eval-rst}
 .. dropdown:: gfo_pso
 
   **How to use this algorithm.**
