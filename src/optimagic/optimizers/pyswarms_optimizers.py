@@ -47,12 +47,12 @@ PYSWARMS_NOT_INSTALLED_ERROR = (
 
 
 @dataclass(frozen=True)
-class BaseTopology:
+class Topology:
     """Base class for all topology configurations."""
 
 
 @dataclass(frozen=True)
-class StarTopology(BaseTopology):
+class StarTopology(Topology):
     """Star topology configuration.
 
     All particles are connected to the global best.
@@ -61,7 +61,7 @@ class StarTopology(BaseTopology):
 
 
 @dataclass(frozen=True)
-class RingTopology(BaseTopology):
+class RingTopology(Topology):
     """Ring topology configuration.
 
     Particles are connected in a ring structure.
@@ -84,7 +84,7 @@ class RingTopology(BaseTopology):
 
 
 @dataclass(frozen=True)
-class VonNeumannTopology(BaseTopology):
+class VonNeumannTopology(Topology):
     """Von Neumann topology configuration.
 
     Particles are arranged on a 2D grid.
@@ -99,7 +99,7 @@ class VonNeumannTopology(BaseTopology):
 
 
 @dataclass(frozen=True)
-class PyramidTopology(BaseTopology):
+class PyramidTopology(Topology):
     """Pyramid topology configuration."""
 
     static: bool = False
@@ -112,7 +112,7 @@ class PyramidTopology(BaseTopology):
 
 
 @dataclass(frozen=True)
-class RandomTopology(BaseTopology):
+class RandomTopology(Topology):
     """Random topology configuration.
 
     Particles are connected to random neighbors.
@@ -133,7 +133,7 @@ class RandomTopology(BaseTopology):
 
 TopologyConfig = Union[
     Literal["star", "ring", "vonneumann", "random", "pyramid"],
-    BaseTopology,
+    Topology,
 ]
 
 # ======================================================================================
@@ -142,27 +142,27 @@ TopologyConfig = Union[
 
 
 @dataclass(frozen=True)
-class BasePSOOptions:
+class PSOOptions:
     """Common PSO parameters used by all PSO variants."""
 
-    cognitive_parameter: PositiveFloat
+    cognitive_parameter: PositiveFloat = 0.5
     """Cognitive parameter (c1) - attraction to personal best."""
 
-    social_parameter: PositiveFloat
+    social_parameter: PositiveFloat = 0.3
     """Social parameter (c2) - attraction to neighborhood/global best."""
 
-    inertia_weight: PositiveFloat
+    inertia_weight: PositiveFloat = 0.9
     """Inertia weight (w) - momentum control."""
 
 
 @dataclass(frozen=True)
-class LocalBestPSOOptions(BasePSOOptions):
+class LocalBestPSOOptions(PSOOptions):
     """Local Best PSO specific parameters."""
 
-    k_neighbors: PositiveInt
+    k_neighbors: PositiveInt = 3
     """Number of neighbors in local neighborhood."""
 
-    p_norm: Literal[1, 2]
+    p_norm: Literal[1, 2] = 2
     """Distance metric for neighbor selection (1=Manhattan, 2=Euclidean)."""
 
 
@@ -224,14 +224,8 @@ class PySwarmsGlobalBestPSO(Algorithm):
     n_particles: PositiveInt = 50
     """Number of particles in the swarm."""
 
-    cognitive_parameter: PositiveFloat = 0.5
-    r"""Cognitive parameter :math:`c_1` controlling attraction to personal best."""
-
-    social_parameter: PositiveFloat = 0.3
-    r"""Social parameter :math:`c_2` controlling attraction to global best."""
-
-    inertia_weight: PositiveFloat = 0.9
-    r"""Inertia weight :math:`w` controlling momentum."""
+    options: PSOOptions = PSOOptions()
+    """PSO hyperparameters controlling particle behavior."""
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     """Stop when relative change in objective function is less than this value."""
@@ -300,12 +294,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
         import pyswarms as ps
 
-        pso_options = BasePSOOptions(
-            cognitive_parameter=self.cognitive_parameter,
-            social_parameter=self.social_parameter,
-            inertia_weight=self.inertia_weight,
-        )
-        options = _build_pso_options_dict(pso_options)
+        pso_options_dict = _pso_options_to_dict(self.options)
 
         velocity_clamp = _build_velocity_clamp(
             self.velocity_clamp_min, self.velocity_clamp_max
@@ -326,7 +315,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
         optimizer = ps.single.GlobalBestPSO(
             n_particles=self.n_particles,
             dimensions=len(x0),
-            options=options,
+            options=pso_options_dict,
             bounds=bounds,
             oh_strategy=self.oh_strategy,
             bh_strategy=self.boundary_strategy,
@@ -407,20 +396,8 @@ class PySwarmsLocalBestPSO(Algorithm):
     n_particles: PositiveInt = 50
     """Number of particles in the swarm."""
 
-    cognitive_parameter: PositiveFloat = 0.5
-    r"""Cognitive parameter :math:`c_1` controlling attraction to personal best."""
-
-    social_parameter: PositiveFloat = 0.3
-    r"""Social parameter :math:`c_2` controlling attraction to local best."""
-
-    inertia_weight: PositiveFloat = 0.9
-    r"""Inertia weight :math:`w` controlling momentum."""
-
-    k_neighbors: PositiveInt = 3
-    r"""Number of neighbors :math:`k` defining local neighborhood."""
-
-    p_norm: Literal[1, 2] = 2
-    """Distance metric: 1 (Manhattan), 2 (Euclidean). """
+    options: LocalBestPSOOptions = LocalBestPSOOptions()
+    """"PSO hyperparameters controlling particle behavior."""
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     """Stop when relative change in objective function is less than this value."""
@@ -497,14 +474,7 @@ class PySwarmsLocalBestPSO(Algorithm):
 
         import pyswarms as ps
 
-        pso_options = LocalBestPSOOptions(
-            cognitive_parameter=self.cognitive_parameter,
-            social_parameter=self.social_parameter,
-            inertia_weight=self.inertia_weight,
-            k_neighbors=self.k_neighbors,
-            p_norm=self.p_norm,
-        )
-        options = _build_pso_options_dict(pso_options)
+        pso_options_dict = _pso_options_to_dict(self.options)
 
         velocity_clamp = _build_velocity_clamp(
             self.velocity_clamp_min, self.velocity_clamp_max
@@ -525,7 +495,7 @@ class PySwarmsLocalBestPSO(Algorithm):
         optimizer = ps.single.LocalBestPSO(
             n_particles=self.n_particles,
             dimensions=len(x0),
-            options=options,
+            options=pso_options_dict,
             bounds=bounds,
             oh_strategy=self.oh_strategy,
             bh_strategy=self.boundary_strategy,
@@ -605,14 +575,8 @@ class PySwarmsGeneralPSO(Algorithm):
     n_particles: PositiveInt = 50
     """Number of particles in the swarm."""
 
-    cognitive_parameter: PositiveFloat = 0.5
-    r"""Cognitive parameter :math:`c_1` controlling attraction to personal best."""
-
-    social_parameter: PositiveFloat = 0.3
-    r"""Social parameter :math:`c_2` controlling attraction to neighborhood best."""
-
-    inertia_weight: PositiveFloat = 0.9
-    r"""Inertia weight :math:`w` controlling momentum."""
+    options: PSOOptions = PSOOptions()
+    """PSO hyperparameters controlling particle behavior."""
 
     topology: TopologyConfig = "star"
     """Topology structure for particle communication.
@@ -699,12 +663,8 @@ class PySwarmsGeneralPSO(Algorithm):
         # Resolve topology config to PySwarms topology instance and options
         pyswarms_topology, topology_options = _resolve_topology_config(self.topology)
 
-        base_options = {
-            "c1": self.cognitive_parameter,
-            "c2": self.social_parameter,
-            "w": self.inertia_weight,
-        }
-        options = {**base_options, **topology_options}
+        base_options = _pso_options_to_dict(self.options)
+        pso_options_dict = {**base_options, **topology_options}
 
         velocity_clamp = _build_velocity_clamp(
             self.velocity_clamp_min, self.velocity_clamp_max
@@ -724,7 +684,7 @@ class PySwarmsGeneralPSO(Algorithm):
         optimizer = ps.single.GeneralOptimizerPSO(
             n_particles=self.n_particles,
             dimensions=len(x0),
-            options=options,
+            options=pso_options_dict,
             topology=pyswarms_topology,
             bounds=bounds,
             oh_strategy=self.oh_strategy,
@@ -790,9 +750,9 @@ def _resolve_topology_config(
     return topology_instance, options
 
 
-def _build_pso_options_dict(options: BasePSOOptions) -> dict[str, float | int]:
-    """Convert structured PSO options to PySwarms format."""
-    base_options = {
+def _pso_options_to_dict(options: PSOOptions) -> dict[str, float | int]:
+    """Convert option parameters to PySwarms format."""
+    pso_options = {
         "c1": options.cognitive_parameter,
         "c2": options.social_parameter,
         "w": options.inertia_weight,
@@ -800,10 +760,10 @@ def _build_pso_options_dict(options: BasePSOOptions) -> dict[str, float | int]:
 
     # Add topology-specific options for local-best PSO
     if isinstance(options, LocalBestPSOOptions):
-        base_options["k"] = options.k_neighbors
-        base_options["p"] = options.p_norm
+        pso_options["k"] = options.k_neighbors
+        pso_options["p"] = options.p_norm
 
-    return base_options
+    return pso_options
 
 
 def _build_velocity_clamp(
