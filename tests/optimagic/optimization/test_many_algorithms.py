@@ -43,7 +43,7 @@ def _get_options(algo):
     options = {}
     "Max time before termination"
     if hasattr(algo, "stopping_maxtime"):
-        options.update({"stopping_maxtime": 10})
+        options.update({"stopping_maxtime": 1})
 
     "Fix seed if algorithm is stochastic"
     if hasattr(algo, "seed"):
