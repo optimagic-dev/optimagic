@@ -38,7 +38,11 @@ IS_TRANQUILO_INSTALLED = _is_installed("tranquilo")
 IS_NUMBA_INSTALLED = _is_installed("numba")
 IS_IMINUIT_INSTALLED = _is_installed("iminuit")
 IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
-IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
+IS_BAYESOPTIM_INSTALLED = _is_installed("bayes-optim")
+IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2 = (
+    _is_installed("bayes_opt")
+    and importlib.metadata.version("bayesian_optimization") > "2.0.0"
+)
 IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED = _is_installed("gradient_free_optimizers")
 IS_PYGAD_INSTALLED = _is_installed("pygad")
 
