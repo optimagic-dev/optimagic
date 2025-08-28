@@ -199,10 +199,10 @@ class NevergradCMAES(Algorithm):
     function's shape by estimating a positive-definite covariance matrix, akin to the
     inverse Hessian in convex-quadratic problems, but without requiring derivatives.
 
-    Original paper can be accessed at :cma:`
-    https://cma-es.github.io/`.
-     This    implementation is a python wrapper over the original code    :pycma:`
-    https://cma-es.github.io/`.
+    This implementation is a python wrapper over the original code.
+
+    Original paper can be accessed at `cma-es
+    <https://cma-es.github.io/>`_.
 
     """
 
@@ -1275,7 +1275,7 @@ class NevergradSamplingSearch(Algorithm):
 
 
 @mark.minimizer(
-    name="nevergrad_NGOpt",
+    name="nevergrad_ngopt",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_NEVERGRAD_INSTALLED,
     is_global=True,

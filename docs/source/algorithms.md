@@ -4280,7 +4280,7 @@ and hence imprecise.\
 ```
 
 ```{eval-rst}
-.. dropdown:: nevergrad_NGOpt
+.. dropdown:: nevergrad_ngopt
 
     **How to use this algorithm:**
 
@@ -4289,7 +4289,7 @@ and hence imprecise.\
         import optimagic as om
         om.minimize(
           ...,
-          algorithm=om.algos.nevergrad_NGOpt(optimizer="NGOptRW", ...)
+          algorithm=om.algos.nevergrad_ngopt(optimizer="NGOptRW", ...)
         )
 
     or
@@ -4298,7 +4298,7 @@ and hence imprecise.\
 
         om.minimize(
           ...,
-          algorithm="nevergrad_NGOpt",
+          algorithm="nevergrad_ngopt",
           algo_options={"optimizer": "NGOptRW", ...}
         )
 
