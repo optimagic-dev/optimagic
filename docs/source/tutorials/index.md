@@ -60,7 +60,7 @@ click-parent:
 ref-type: ref
 class: stretched-link index-card-link sd-text-primary
 ---
-Bayesian Optimizer
+bayes_opt Optimizer
 ```
 
 Tutorial on the "bayes_opt" optimizer in optimagic.
