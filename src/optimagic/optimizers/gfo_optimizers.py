@@ -108,7 +108,7 @@ class GFOCommonOptions:
 
     seed: int | None = None
     """Random seed for reproducibility."""
-    
+
     rand_rest_p: NonNegativeFloat = 0
     """Probability for the optimization algorithm to jump to a random position in an
     iteration step."""
