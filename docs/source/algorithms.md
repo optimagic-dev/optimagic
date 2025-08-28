@@ -4644,6 +4644,39 @@ package. To use it, you need to have
     - **seed**: Seed for the random number generator for reproducibility.
 ```
 
+## Pygad Optimizer
+
+We wrap the pygad optimizer. To use it you need to have
+[pygad](https://pygad.readthedocs.io/en/latest/) installed.
+
+```{eval-rst}
+.. dropdown::  pygad
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pygad(num_generations=100, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pygad",
+          algo_options={"num_generations": 100, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pygad_optimizer.Pygad
+```
+
 ## References
 
 ```{eval-rst}
