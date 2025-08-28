@@ -380,7 +380,7 @@ module = [
     "pdbp",
     "iminuit",
     "nevergrad",
-    "nevergrad.optimization.base.ConfiguredOptimizer",
+    "nevergrad.optimization.base",
     "pygad",
     "yaml",
     "gradient_free_optimizers",
