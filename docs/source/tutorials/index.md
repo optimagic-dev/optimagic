@@ -54,7 +54,7 @@ Learn numerical differentiation with estimagic.
 :class-img-top: index-card-image
 :shadow: md
 
-```{button-link} bayesian_optimizer_tutorial.html
+```{button-link} bayes_opt_tutorial.html
 ---
 click-parent:
 ref-type: ref
@@ -63,7 +63,7 @@ class: stretched-link index-card-link sd-text-primary
 Bayesian Optimizer
 ```
 
-Tutorial on bayesian-optimizer in opimagic.
+Tutorial on the "bayes_opt" optimizer in optimagic.
 
 ````
 
@@ -76,5 +76,5 @@ maxdepth: 1
 ---
 optimization_overview
 numdiff_overview
-bayesian_optimizer_tutorial
+bayes_opt_tutorial
 ```
