@@ -63,7 +63,7 @@ class: stretched-link index-card-link sd-text-primary
 bayes_opt Optimizer
 ```
 
-Tutorial on the "bayes_opt" optimizer in optimagic.
+Tutorial on the bayes_opt optimizer in optimagic.
 
 ````
 
