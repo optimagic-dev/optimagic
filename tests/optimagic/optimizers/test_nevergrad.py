@@ -16,8 +16,8 @@ if IS_NEVERGRAD_INSTALLED:
     import cma
     import nevergrad as ng
 
-## Skip warnings during tests
-warnings.simplefilter("ignore", cma.evolution_strategy.InjectionWarning)
+    ## Skip warnings during tests
+    warnings.simplefilter("ignore", cma.evolution_strategy.InjectionWarning)
 
 
 @mark.least_squares

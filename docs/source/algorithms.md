@@ -3920,48 +3920,36 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
 
 optimagic supports the [IMINUIT MIGRAD Optimizer](https://iminuit.readthedocs.io/). To
 use MIGRAD, you need to have
-[the iminuit package](https://github.com/scikit-hep/iminuit) installed (pip install
-iminuit).
+[the iminuit package](https://github.com/scikit-hep/iminuit) installed
+(`pip install iminuit`).
 
 ```{eval-rst}
 .. dropdown::  iminuit_migrad
 
+    **How to use this algorithm:**
+
     .. code-block::
 
-        "iminuit_migrad"
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.iminuit_migrad(stopping_maxfun=10_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
 
-    `MIGRAD <https://iminuit.readthedocs.io/en/stable/reference.html#iminuit.Minuit.migrad>`_ is 
-    the workhorse algorithm of the MINUIT optimization suite, which has been widely used in the 
-    high-energy physics community since 1975. The IMINUIT package is a Python interface to the 
-    Minuit2 C++ library developed by CERN.
+        om.minimize(
+          ...,
+          algorithm="iminuit_migrad",
+          algo_options={"stopping_maxfun=10_000, ...}
+        )
 
-    Migrad uses a quasi-Newton method, updating the Hessian matrix iteratively
-    to guide the optimization. The algorithm adapts dynamically to challenging landscapes
-    using several key techniques:
+    **Description and available options:**
 
-    - **Quasi-Newton updates**: The Hessian is updated iteratively rather than recalculated at 
-      each step, improving efficiency.
-    - **Steepest descent fallback**: When the Hessian update fails, Migrad falls back to steepest
-      descent with line search.
-    - **Box constraints handling**: Parameters with bounds are transformed internally to ensure 
-      they remain within allowed limits.
-    - **Heuristics for numerical stability**: Special cases such as flat gradients or singular 
-      Hessians are managed using pre-defined heuristics.
-    - **Stopping criteria based on Estimated Distance to Minimum (EDM)**: The optimization halts 
-      when the predicted improvement becomes sufficiently small.
-              
-    For details see :cite:`JAMES1975343`.
+    .. autoclass:: optimagic.optimizers.iminuit_migrad.IminuitMigrad
 
-    **Optimizer Parameters:**  
-
-    - **stopping.maxfun** (int): Maximum number of function evaluations. If reached, the optimization stops 
-      but this is not counted as successful convergence. Function evaluations used for numerical gradient 
-      calculations do not count toward this limit. Default is 1,000,000.
-
-    - **n_restarts** (int): Number of times to restart the optimizer if convergence is not reached.
-
-      - A value of 1 (the default) indicates that the optimizer will only run once, disabling the restart feature.  
-      - Values greater than 1 specify the maximum number of restart attempts.  
 ```
 
 ## Nevergrad Optimizers
@@ -4359,75 +4347,270 @@ incompatible with `nevergrad > 1.0.3`.
 ```{eval-rst}
 .. dropdown::  bayes_opt
 
+    **How to use this algorithm:**
+
     .. code-block::
 
-        "bayes_opt"
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.bayes_opt(n_iter=50, ...)
+        )
+        
+    or
+        
+    .. code-block::
 
-    Minimize a scalar function using Bayesian Optimization with Gaussian Processes.
+        om.minimize(
+          ...,
+          algorithm="bayes_opt",
+          algo_options={"n_iter": 50, ...}
+        )
 
-    This optimizer wraps the BayesianOptimization package (:cite:`Nogueira2014`), which 
-    implements Bayesian optimization using Gaussian processes to build probabilistic 
-    models of the objective function. Bayesian optimization is particularly effective 
-    for expensive black-box functions where gradient information is not available.
+    **Description and available options:**
 
-    The algorithm requires finite bounds for all parameters.
+    .. autoclass:: optimagic.optimizers.bayesian_optimizer.BayesOpt
 
-    The bayes_opt wrapper preserves the default parameter values from the underlying 
-    BayesianOptimization package where appropriate.
+```
 
-    bayes_opt supports the following options:
+## Gradient Free Optimizers
 
-    - **init_points** (PositiveInt): Number of random exploration points to evaluate before 
-      starting optimization. Default is 5.
+Optimizers from the
+[gradient_free_optimizers](https://github.com/SimonBlanke/Gradient-Free-Optimizers?tab=readme-ov-file)
+package are available in optimagic. To use it, you need to have
+[gradient_free_optimizers](https://pypi.org/project/gradient_free_optimizers) installed.
 
-    - **n_iter** (PositiveInt): Number of Bayesian optimization iterations to perform after 
-      the initial random exploration. Default is 25.
+```{eval-rst}
+.. dropdown:: gfo_pso
 
-    - **verbose** (Literal[0, 1, 2]): Verbosity level from 0 (silent) to 2 (most verbose). Default is 0.
+  **How to use this algorithm.**
 
-    - **kappa** (NonNegativeFloat): Parameter to balance exploration versus exploitation trade-off 
-      for the Upper Confidence Bound acquisition function. Higher values mean more exploration. 
-      This parameter is only used if the acquisition function is set to "ucb" or "upper_confidence_bound" 
-      and when a configured instance of an AcquisitionFunction object is not passed. Default is 2.576.
+  .. code-block:: python
 
-    - **xi** (PositiveFloat): Parameter to balance exploration versus exploitation trade-off 
-      for the Expected Improvement or Probability of Improvement acquisition functions. 
-      Higher values mean more exploration. This parameter is only used if the acquisition function 
-      is set to "ei", "expected_improvement", "poi", or "probability_of_improvement" 
-      and when a configured instance of an AcquisitionFunction object is not passed. Default is 0.01.
+    import optimagic as om
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_pso(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
 
-    - **exploration_decay** (float | None): Rate at which exploration decays over time.
-      Default is None (no decay).
+  or using the string interface:
+      
+  .. code-block:: python
 
-    - **exploration_decay_delay** (NonNegativeInt | None): Delay for decay. If None, 
-      decay is applied from the start. Default is None.
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_pso",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
 
-    - **random_state** (int | None): Random seed for reproducible results. Default is None.
+  **Description and available options:**
 
-    - **acquisition_function** (str | AcquisitionFunction | Type[AcquisitionFunction] | None): Strategy for selecting 
-      the next evaluation point. Options include:
-      - "ucb" or "upper_confidence_bound": Upper Confidence Bound 
-      - "ei" or "expected_improvement": Expected Improvement 
-      - "poi" or "probability_of_improvement": Probability of Improvement
-      Default is None (uses package default).
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParticleSwarmOptimization
 
-    - **allow_duplicate_points** (bool): Whether to allow re-evaluation of the same point.
-      Default is False.
+```
 
-    - **enable_sdr** (bool): Enable Sequential Domain Reduction, which progressively 
-      narrows the search space around promising regions. Default is False.
+```{eval-rst}
 
-    - **sdr_gamma_osc** (float): Oscillation parameter for SDR. Default is 0.7.
+.. dropdown:: gfo_parallel_tempering
 
-    - **sdr_gamma_pan** (float): Panning parameter for SDR. Default is 1.0.
+  **How to use this algorithm.**
 
-    - **sdr_eta** (float): Zooming parameter for SDR. Default is 0.9.
+  .. code-block:: python
 
-    - **sdr_minimum_window** (NonNegativeFloat): Minimum window size for SDR. Default is 0.0.
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_parallel_tempering(population_size=15, n_iter_swap=5),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
 
-    - **alpha** (float): Noise parameter for the Gaussian Process. Default is 1e-6.
+  or using the string interface:
+      
+  .. code-block:: python
 
-    - **n_restarts** (int): Number of times to restart the optimizer. Default is 1.
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_parallel_tempering",
+      algo_options={"population_size": 15, "n_iter_swap": 5},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParallelTempering
+```
+
+```{eval-rst}
+.. dropdown:: gfo_spiral_optimization
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_spiral_optimization(population_size=15, decay_rate=0.95),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_spiral_optimization",
+      algo_options={"population_size": 15, "decay_rate": 0.95},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSpiralOptimization
+```
+
+```{eval-rst}
+.. dropdown:: gfo_genetic_algorithm
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_genetic_algorithm(population_size=20, mutation_rate=0.6),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_genetic_algorithm",
+      algo_options={"population_size": 20, "mutation_rate": 0.6},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOGeneticAlgorithm
+```
+
+```{eval-rst}
+.. dropdown:: gfo_evolution_strategy
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_evolution_strategy(population_size=15, crossover_rate=0.4),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_evolution_strategy",
+      algo_options={"population_size": 15, "crossover_rate": 0.4},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOEvolutionStrategy
+```
+
+```{eval-rst}
+.. dropdown:: gfo_differential_evolution
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_differential_evolution(population_size=20, mutation_rate=0.8),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_differential_evolution",
+      algo_options={"population_size": 20, "mutation_rate": 0.8},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODifferentialEvolution
+
+```
+
+## Pygad Optimizer
+
+We wrap the pygad optimizer. To use it you need to have
+[pygad](https://pygad.readthedocs.io/en/latest/) installed.
+
+```{eval-rst}
+.. dropdown::  pygad
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pygad(num_generations=100, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pygad",
+          algo_options={"num_generations": 100, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pygad_optimizer.Pygad
 ```
 
 ## References
