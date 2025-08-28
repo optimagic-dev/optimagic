@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
@@ -11,7 +12,9 @@ from optimagic import mark
 from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
+    STOPPING_MAXFUN_GLOBAL,
     STOPPING_MAXITER,
+    get_population_size,
 )
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -26,6 +29,7 @@ from optimagic.typing import (
     PositiveInt,
     PyTree,
 )
+from optimagic.typing import UnitIntervalFloat as ProbabilityFloat
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -104,7 +108,7 @@ class GFOCommonOptions:
 
     seed: int | None = None
     """Random seed for reproducibility."""
-
+    
     rand_rest_p: NonNegativeFloat = 0
     """Probability for the optimization algorithm to jump to a random position in an
     iteration step."""
@@ -579,6 +583,580 @@ class GFOPowellsMethod(Algorithm, GFOCommonOptions):
             x0=x0,
             optimizer=optimizer,
         )
+        return res
+
+
+# ==================================================================================
+# Population Based
+# ==================================================================================
+
+
+@mark.minimizer(
+    name="gfo_pso",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Particle Swarm Optimization algorithm.
+
+    This algorithm is a Python implementation of the Particle Swarm Optimization
+    algorithm through the gradient_free_optimizers package.
+
+    Particle Swarm Optimization is a global population based algorithm.
+
+    The algorithm simulates a swarm of particles which move according to their own
+    inertia across the search space.
+    Each particle adjusts its position based on its own experience (cognitive weight)
+    and the experiences of its neighbors or the swarm (social weight), using
+    velocity updates.
+    The algorithm iteratively guides the swarm toward promising regions of the
+    search space.
+
+    The velocity of a particle is calculated by the following
+    equation:
+
+    .. math::
+        v_{n+1} = \\omega \\cdot v_n + c_k \\cdot r_1 \\cdot (p_{best}-p_n)
+        + c_s \\cdot r_2 \\cdot (g_{best} - p_n)
+
+    """
+
+    population_size: PositiveInt | None = None
+    """Size of the population."""
+
+    inertia: NonNegativeFloat = 0.5 / math.log(2.0)
+    """The inertia of the movement of the individual particles in the population."""
+
+    cognitive_weight: NonNegativeFloat = 0.5 + math.log(2.0)
+    """A factor of the movement towards the personal best position of the individual
+    particles in the population."""
+
+    social_weight: NonNegativeFloat = 0.5 + math.log(2.0)
+    """A factor of the movement towards the global best position of the individual
+    particles in the population."""
+
+    rand_rest_p: NonNegativeFloat = 0.01
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        opt = gfo.ParticleSwarmOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            inertia=self.inertia,
+            cognitive_weight=self.cognitive_weight,
+            social_weight=self.social_weight,
+            rand_rest_p=self.rand_rest_p,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_parallel_tempering",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOParallelTempering(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Parallel Tempering algorithm.
+
+    This algorithm is a Python implementation of the Parallel Tempering
+    algorithm through the gradient_free_optimizers package.
+
+    Parallel Tempering is a global optimization algorithm that is inspired by
+    metallurgical annealing.
+    It runs multiple optimizer instances at different
+    "starting temperatures" in parallel. Periodically, swaps between these runs are
+    attempted. Swaps between optimization runs at different temperatures allow the
+    optimizer to overcome local optima.
+
+    The probability of swapping temperatures for any combination of optimizer instances
+    is given by.
+
+    .. math::
+
+        p = \\min \\left( 1, \\exp\\left[{(\\text{score}_i-
+        \\text{score}_j)\\left(\\frac{1}{T_i}-\\frac{1}{T_j}\\right)}\\right] \\right)
+
+    """
+
+    population_size: PositiveInt | None = None
+    """Size of the population."""
+
+    n_iter_swap: PositiveInt = 10
+    """The number of iterations the algorithm performs before switching temperatures of
+    the individual optimizers in the population."""
+
+    rand_rest_p: NonNegativeFloat = 0
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        opt = gfo.ParallelTemperingOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            n_iter_swap=self.n_iter_swap,
+            rand_rest_p=self.rand_rest_p,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_spiral_optimization",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Spiral Optimization algorithm.
+
+    This algorithm is a Python implementation of the Spiral Optimization
+    algorithm through the gradient_free_optimizers package.
+
+    Spiral Optimization is a population-based algorithm, in which a number of particles
+    move in a spiral-like pattern to explore the search space and converge to the
+    best known position as the spiral decays.
+
+    The position of each particle is updated according to the following equation:
+
+    .. math::
+
+        x_i (k+1) = x^* (k) + r(k) \\cdot R(\\theta) \\cdot (x_i(k)- x^*(k))
+
+    where:
+        - `k` = k-th iteration
+        - `x_i(k)` = current position.
+        - `x*(k)` = center position (known best position of all particles)
+        - `r(k)` = decay rate ,
+        - `R` = rotation matrix.
+
+    and rotation matrix R is given by
+
+    .. math::
+
+        R(\\theta) = \\begin{bmatrix}
+            0^{\\top}_{n-1} & -1 \\\\
+            I_{n-1} & 0_{n-1}
+        \\end{bmatrix}
+
+    """
+
+    population_size: PositiveInt | None = None
+    """Size of the population."""
+
+    decay_rate: NonNegativeFloat = 0.99
+    """The decay rate `r` is a factor, by which the radius of the spiral movement of the
+    particles decays during their spiral movement.
+
+    Lower values accelerate the convergence of the particles to the best known position,
+    while values above 1 eventually lead to a movement where the particles spiral away
+    from each other. Typical range: 0.85 to 1.15.
+
+    """
+
+    rand_rest_p: NonNegativeFloat = 0
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        opt = gfo.SpiralOptimization
+        optimizer = partial(
+            opt,
+            population=population_size,
+            decay_rate=self.decay_rate,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_genetic_algorithm",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Genetic Algorithm.
+
+    This algorithm is a Python implementation of the Genetic Algorithm through the
+    gradient_free_optimizers package.
+
+    The Genetic Algorithm is an evolutionary algorithm inspired by the process of
+    natural selection. It evolves a population of candidate solutions over generations
+    using mechanisms like selection, crossover, and mutation of genes(bits) to find the
+    best solution.
+
+    """
+
+    population_size: PositiveInt | None = None
+    """Size of the population."""
+
+    mutation_rate: ProbabilityFloat = 0.5
+    """Probability of a mutation event occurring in an individual of the population.
+    Mutation helps in maintaining genetic diversity within the population and prevents
+    the algorithm from getting stuck in local optima. Bits are randomly altered with.
+
+    .. math::
+
+        x'_i =
+        \\begin{cases}
+            x_i & \\text{if } \\text{rand} > p_m \\\\
+            1 - x_i & \\text{if } \\text{rand} \\leq p_m
+        \\end{cases}
+
+    where p_m is mutation_rate.
+
+    """
+
+    crossover_rate: ProbabilityFloat = 0.5
+    """Probability of a crossover event occurring between two parents. A higher
+    crossover rate increases the diversity of the offspring, which can help in exploring
+    the search space more effectively. Crossover happens with.
+
+    .. math::
+
+        u_{i,j}^{(g)} =
+        \\begin{cases}
+            v_{i,j}^{(g)} & \\text{if } \\text{rand}_j \\leq C_r \\text{ or } j =
+            j_{\\text{rand}} \\\\
+            x_{i,j}^{(g)} & \\text{otherwise}
+        \\end{cases}
+
+    where C_r is crossover_rate .
+
+    """
+
+    n_parents: PositiveInt = 2
+    """The number of parents selected from the current population to participate in the
+    crossover process to produce offspring.
+
+    By default, pairs of parents are selected to generate new offspring.
+
+    """
+
+    n_offsprings: PositiveInt = 10
+    """The number of offsprings generated in each generation through the processes of
+    crossover and mutation.
+
+    Typically, the number of offspring is equal to the population size, ensuring that
+    the population size remains constant over generations.
+
+    """
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        opt = gfo.GeneticAlgorithmOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            mutation_rate=self.mutation_rate,
+            crossover_rate=self.crossover_rate,
+            n_parents=self.n_parents,
+            offspring=self.n_offsprings,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_evolution_strategy",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Evolution Strategy algorithm.
+
+    This algorithm is a Python implementation of the Evolution Strategy algorithm
+    through the gradient_free_optimizers package.
+
+    Evolution Strategy is a evolutionary algorithm inspired by natural evolution and
+    work by iteratively improving a population of candidate solutions through mutation,
+    crossover, and selection.
+    A population of parents generates offspring, and only the fittest individuals
+    from both parents and offspring are selected to form the next generation.
+
+    The algorithm uses both mutation and crossover to create new candidate solutions.
+    The choice between mutation and crossover is determined probabilistically based on
+    their respective rates in the following way.
+
+    .. math::
+
+        \\text{total_rate} = \\text{mutation_rate} + \\text{crossover_rate}
+    .. math::
+
+        R = \\text{random_float} (0 ... \\text{total_rate})
+
+    .. code-block::
+
+        if R <= mutation-rate:
+            do mutation
+        else:
+            do crossover
+
+    """
+
+    population_size: PositiveInt | None = None
+    """Size of the population."""
+
+    stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of iterations."""
+
+    mutation_rate: ProbabilityFloat = 0.7
+    """Probability of a mutation event occurring in an individual."""
+
+    crossover_rate: ProbabilityFloat = 0.3
+    """Probability of an individual to perform a crossover with the best individual in
+    the population."""
+
+    rand_rest_p: NonNegativeFloat = 0
+    """Probability for the optimization algorithm to jump to a random position in an
+    iteration step."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        opt = gfo.EvolutionStrategyOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            mutation_rate=self.mutation_rate,
+            crossover_rate=self.crossover_rate,
+            rand_rest_p=self.rand_rest_p,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
+        return res
+
+
+@mark.minimizer(
+    name="gfo_differential_evolution",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED,
+    is_global=True,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=True,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
+    """Minimize a scalar function using the Differential Evolution algorithm.
+
+    This algorithm is a Python implementation of the Differential Evolution
+    algorithm through the gradient_free_optimizers package.
+
+    Differential Evolution is a population-based optimization algorithm that
+    creates iteratively improves a population of candidate solutions by combining and
+    perturbing them based on their differences.
+    It creates new
+    positions in the search space by adding the weighted difference between two
+    individuals in the population  to a third individual creating trial solutions that
+    are evaluated for their fitness and if a trial solution is better than the target
+    it replaces, ensures continual improvement.
+
+    A new trial solution is generated according to:
+
+    .. math::
+        x_{trial} = x_{r1} + F \\cdot (x_{r2} - x_{r3})
+
+    where :math:`r1, r2, r3` are random individuals from the population, and
+    :math:`F` is the differential weight or mutation_rate.
+
+    """
+
+    population_size: PositiveInt | None = None
+    """Size of the population."""
+
+    mutation_rate: ProbabilityFloat = 0.9
+    r"""Probability of a mutation event occurring in an individual.
+
+    The mutation rate influences the algorithm's ability to explore the search space.
+    A higher value of mutation_rate also called the differential weight `F` increases
+    the diversity of the mutant individuals, leading to broader exploration,
+    while a lower value encourages convergence by making smaller adjustments.
+
+    .. math::
+
+        \mathbf{v}_{i,G+1} = \mathbf{x}_{r1,G} + F \cdot (\mathbf{x}_{r2,G} -
+        \mathbf{x}_{r3,G})
+
+    """
+
+    crossover_rate: ProbabilityFloat = 0.9
+    """Probability of a crossover event occurring between two parents. It determines how
+    much of the trial vector inherits its components from the mutant individual versus
+    the target individual. A high crossover rate means that more components will come
+    from the mutant individual, promoting exploration of new solutions. Conversely, a
+    low crossover rate results in more components being taken from the target
+    individual, which can help maintain existing solutions and refine them.
+
+    .. math::
+
+        u_{i,j,G+1} =
+        \\begin{cases}
+            v_{i,j,G+1} & \\text{if } \\text{rand}_j(0,1) \\leq CR \\text{ or } j =
+              j_{\\text{rand}} \\\\
+            x_{i,j,G} & \\text{otherwise}
+        \\end{cases}
+
+    """
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        import gradient_free_optimizers as gfo
+
+        population_size = get_population_size(
+            population_size=self.population_size, x=x0, lower_bound=10
+        )
+
+        opt = gfo.DifferentialEvolutionOptimizer
+        optimizer = partial(
+            opt,
+            population=population_size,
+            mutation_rate=self.mutation_rate,
+            crossover_rate=self.crossover_rate,
+        )
+
+        res = _gfo_internal(
+            common_options=self,
+            problem=problem,
+            x0=x0,
+            optimizer=optimizer,
+        )
+
         return res
 
 

@@ -23,6 +23,14 @@ from optimagic.optimizers.gfo_optimizers import (
     GFOSimulatedAnnealing,
     GFOStochasticHillClimbing,
 )
+from optimagic.optimizers.gfo_optimizers import (
+    GFODifferentialEvolution,
+    GFOEvolutionStrategy,
+    GFOGeneticAlgorithm,
+    GFOParallelTempering,
+    GFOParticleSwarmOptimization,
+    GFOSpiralOptimization,
+)
 from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
 from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
@@ -412,6 +420,14 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1152,6 +1168,14 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1238,6 +1262,14 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1482,6 +1514,14 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1754,6 +1794,14 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2427,6 +2475,14 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2535,6 +2591,14 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2654,6 +2718,14 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2812,6 +2884,14 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2916,6 +2996,14 @@ class GlobalScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3266,6 +3354,14 @@ class BoundedScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3625,6 +3721,14 @@ class GradientFreeAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3721,6 +3825,14 @@ class GlobalAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3873,6 +3985,14 @@ class BoundedAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -4032,6 +4152,14 @@ class ScalarAlgorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -4244,6 +4372,14 @@ class Algorithms(AlgoSelection):
     gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
         GFOStochasticHillClimbing
     )
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
