@@ -31,6 +31,7 @@ from optimagic.typing import (
     NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
+    PyTree,
 )
 
 PYSWARMS_NOT_INSTALLED_ERROR = (
@@ -236,11 +237,11 @@ class PySwarmsGlobalBestPSO(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
-    initial_population: NDArray[np.float64] | None = None
+    initial_positions: list[PyTree] | None = None
     """Option to set the initial particle positions.
 
-    If None, the population is generated randomly within the given bounds , or within
-    [0, 1] if bounds are not specified.
+    If None, positions are generated randomly within the given bounds, or within [0, 1]
+    if bounds are not specified.
 
     """
 
@@ -302,10 +303,15 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
         bounds = _get_pyswarms_bounds(problem.bounds)
 
-        if self.initial_population is not None:
-            init_pos = self.initial_population
+        if self.initial_positions is not None:
+            init_pos = np.array(
+                [
+                    problem.converter.params_to_internal(position)
+                    for position in self.initial_positions
+                ]
+            )
         else:
-            init_pos = _create_initial_population(
+            init_pos = _create_initial_positions(
                 x0=x0,
                 n_particles=self.n_particles,
                 bounds=bounds,
@@ -408,11 +414,11 @@ class PySwarmsLocalBestPSO(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
-    initial_population: NDArray[np.float64] | None = None
+    initial_positions: list[PyTree] | None = None
     """Option to set the initial particle positions.
 
-    If None, the population is generated randomly within the given bounds , or within
-    [0, 1] if bounds are not specified.
+    If None, positions are generated randomly within the given bounds, or within [0, 1]
+    if bounds are not specified.
 
     """
 
@@ -482,10 +488,15 @@ class PySwarmsLocalBestPSO(Algorithm):
 
         bounds = _get_pyswarms_bounds(problem.bounds)
 
-        if self.initial_population is not None:
-            init_pos = self.initial_population
+        if self.initial_positions is not None:
+            init_pos = np.array(
+                [
+                    problem.converter.params_to_internal(position)
+                    for position in self.initial_positions
+                ]
+            )
         else:
-            init_pos = _create_initial_population(
+            init_pos = _create_initial_positions(
                 x0=x0,
                 n_particles=self.n_particles,
                 bounds=bounds,
@@ -602,11 +613,11 @@ class PySwarmsGeneralPSO(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
-    initial_population: NDArray[np.float64] | None = None
+    initial_positions: list[PyTree] | None = None
     """Option to set the initial particle positions.
 
-    If None, the population is generated randomly within the given bounds , or within
-    [0, 1] if bounds are not specified.
+    If None, positions are generated randomly within the given bounds, or within [0, 1]
+    if bounds are not specified.
 
     """
 
@@ -671,10 +682,15 @@ class PySwarmsGeneralPSO(Algorithm):
         )
         bounds = _get_pyswarms_bounds(problem.bounds)
 
-        if self.initial_population is not None:
-            init_pos = self.initial_population
+        if self.initial_positions is not None:
+            init_pos = np.array(
+                [
+                    problem.converter.params_to_internal(position)
+                    for position in self.initial_positions
+                ]
+            )
         else:
-            init_pos = _create_initial_population(
+            init_pos = _create_initial_positions(
                 x0=x0,
                 n_particles=self.n_particles,
                 bounds=bounds,
@@ -802,17 +818,18 @@ def _create_batch_objective(
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Return an batch objective function."""
 
-    def batch_objective(x: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Compute objective values for all particles in x.
+    def batch_objective(positions: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Compute objective values for all particles in positions.
 
         Args:
-            x: 2D array of shape (n_particles, n_dimensions) with particle positions.
+            positions: 2D array of shape (n_particles, n_dimensions) with
+            particle positions.
 
         Returns:
             1D array of shape (n_particles,) with objective values.
 
         """
-        arguments = [xi for xi in x]
+        arguments = [position for position in positions]
         results = problem.batch_fun(arguments, n_cores=n_cores)
 
         return np.array(results)
@@ -837,13 +854,13 @@ def _get_pyswarms_bounds(
     return pyswarms_bounds
 
 
-def _create_initial_population(
+def _create_initial_positions(
     x0: NDArray[np.float64],
     n_particles: int,
     bounds: tuple[NDArray[np.float64], NDArray[np.float64]] | None,
     center: float = 1.0,
 ) -> NDArray[np.float64]:
-    """Create an initial swarm population.
+    """Create an initial swarm positions.
 
     Args:
         x0: Initial parameter vector
@@ -852,7 +869,8 @@ def _create_initial_population(
         center: Scaling factor for initial particle positions around bounds
 
     Returns:
-        Initial population array of shape (n_particles, n_dimensions)
+        Initial positions array of shape (n_particles, n_dimensions)
+        where each row represents one particle's starting position.
 
     """
     n_dimensions = len(x0)
