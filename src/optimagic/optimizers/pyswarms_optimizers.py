@@ -156,17 +156,6 @@ class PSOOptions:
     """Inertia weight (w) - momentum control."""
 
 
-@dataclass(frozen=True)
-class LocalBestPSOOptions(PSOOptions):
-    """Local Best PSO specific parameters."""
-
-    k_neighbors: PositiveInt = 3
-    """Number of neighbors in local neighborhood."""
-
-    p_norm: Literal[1, 2] = 2
-    """Distance metric for neighbor selection (1=Manhattan, 2=Euclidean)."""
-
-
 @mark.minimizer(
     name="pyswarms_global_best",
     solver_type=AggregationLevel.SCALAR,
@@ -376,8 +365,17 @@ class PySwarmsLocalBestPSO(Algorithm):
     n_particles: PositiveInt = 50
     """Number of particles in the swarm."""
 
-    options: LocalBestPSOOptions = LocalBestPSOOptions()
+    options: PSOOptions = PSOOptions()
     """"PSO hyperparameters controlling particle behavior."""
+
+    topology: RingTopology = RingTopology()
+    """Configuration for the Ring topology.
+
+    This algorithm uses a fixed ring topology where particles are connected to their
+    local neighbors. This parameter allows customization of the number of neighbors,
+    distance metric, and whether the topology remains static throughout optimization.
+
+    """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     """Stop when relative change in objective function is less than this value."""
@@ -429,14 +427,6 @@ class PySwarmsLocalBestPSO(Algorithm):
     center_init: PositiveFloat = 1.0
     """Scaling factor for initial particle positions."""
 
-    static_topology: bool = False
-    """Whether to use static or dynamic ring topology.
-
-    When True, the neighborhood structure is fixed throughout optimization. When False,
-    neighbors are recomputed at each iteration based on current particle positions.
-
-    """
-
     verbose: bool = False
     """Enable or disable the logs and progress bar."""
 
@@ -451,10 +441,16 @@ class PySwarmsLocalBestPSO(Algorithm):
 
         import pyswarms as ps
 
-        pso_options_dict = _pso_options_to_dict(self.options)
+        base_options = _pso_options_to_dict(self.options)
+        topology_options = {
+            "k": self.topology.k_neighbors,
+            "p": self.topology.p_norm,
+        }
+        pso_options_dict = {**base_options, **topology_options}
+
         optimizer_kwargs = {
             "options": pso_options_dict,
-            "static": self.static_topology,
+            "static": self.topology.static,
         }
 
         res = _pyswarms_internal(
@@ -793,11 +789,6 @@ def _pso_options_to_dict(options: PSOOptions) -> dict[str, float | int]:
         "c2": options.social_parameter,
         "w": options.inertia_weight,
     }
-
-    # Add topology-specific options for local-best PSO
-    if isinstance(options, LocalBestPSOOptions):
-        pso_options["k"] = options.k_neighbors
-        pso_options["p"] = options.p_norm
 
     return pso_options
 
