@@ -290,57 +290,31 @@ class PySwarmsGlobalBestPSO(Algorithm):
         if not IS_PYSWARMS_INSTALLED:
             raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
 
-        if self.seed is not None:
-            np.random.seed(self.seed)
-
         import pyswarms as ps
 
         pso_options_dict = _pso_options_to_dict(self.options)
+        optimizer_kwargs = {"options": pso_options_dict}
 
-        velocity_clamp = _build_velocity_clamp(
-            self.velocity_clamp_min, self.velocity_clamp_max
-        )
-
-        bounds = _get_pyswarms_bounds(problem.bounds)
-
-        if self.initial_positions is not None:
-            init_pos = np.array(
-                [
-                    problem.converter.params_to_internal(position)
-                    for position in self.initial_positions
-                ]
-            )
-        else:
-            init_pos = _create_initial_positions(
-                x0=x0,
-                n_particles=self.n_particles,
-                bounds=bounds,
-                center=self.center_init,
-            )
-
-        optimizer = ps.single.GlobalBestPSO(
+        res = _pyswarms_internal(
+            problem=problem,
+            x0=x0,
+            optimizer_class=ps.single.GlobalBestPSO,
+            optimizer_kwargs=optimizer_kwargs,
             n_particles=self.n_particles,
-            dimensions=len(x0),
-            options=pso_options_dict,
-            bounds=bounds,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_iter=self.convergence_ftol_iter,
+            stopping_maxiter=self.stopping_maxiter,
+            initial_positions=self.initial_positions,
             oh_strategy=self.oh_strategy,
-            bh_strategy=self.boundary_strategy,
-            velocity_clamp=velocity_clamp,
-            vh_strategy=self.velocity_strategy,
-            ftol=self.convergence_ftol_rel,
-            ftol_iter=self.convergence_ftol_iter,
-            init_pos=init_pos,
-        )
-
-        objective_wrapper = _create_batch_objective(problem, self.n_cores)
-
-        result = optimizer.optimize(
-            objective_func=objective_wrapper,
-            iters=self.stopping_maxiter,
+            boundary_strategy=self.boundary_strategy,
+            velocity_strategy=self.velocity_strategy,
+            velocity_clamp_min=self.velocity_clamp_min,
+            velocity_clamp_max=self.velocity_clamp_max,
+            n_cores=self.n_cores,
+            center_init=self.center_init,
             verbose=self.verbose,
+            seed=self.seed,
         )
-
-        res = _process_pyswarms_result(result=result, optimizer=optimizer)
 
         return res
 
@@ -475,58 +449,34 @@ class PySwarmsLocalBestPSO(Algorithm):
         if not IS_PYSWARMS_INSTALLED:
             raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
 
-        if self.seed is not None:
-            np.random.seed(self.seed)
-
         import pyswarms as ps
 
         pso_options_dict = _pso_options_to_dict(self.options)
+        optimizer_kwargs = {
+            "options": pso_options_dict,
+            "static": self.static_topology,
+        }
 
-        velocity_clamp = _build_velocity_clamp(
-            self.velocity_clamp_min, self.velocity_clamp_max
-        )
-
-        bounds = _get_pyswarms_bounds(problem.bounds)
-
-        if self.initial_positions is not None:
-            init_pos = np.array(
-                [
-                    problem.converter.params_to_internal(position)
-                    for position in self.initial_positions
-                ]
-            )
-        else:
-            init_pos = _create_initial_positions(
-                x0=x0,
-                n_particles=self.n_particles,
-                bounds=bounds,
-                center=self.center_init,
-            )
-
-        optimizer = ps.single.LocalBestPSO(
+        res = _pyswarms_internal(
+            problem=problem,
+            x0=x0,
+            optimizer_class=ps.single.LocalBestPSO,
+            optimizer_kwargs=optimizer_kwargs,
             n_particles=self.n_particles,
-            dimensions=len(x0),
-            options=pso_options_dict,
-            bounds=bounds,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_iter=self.convergence_ftol_iter,
+            stopping_maxiter=self.stopping_maxiter,
+            initial_positions=self.initial_positions,
             oh_strategy=self.oh_strategy,
-            bh_strategy=self.boundary_strategy,
-            velocity_clamp=velocity_clamp,
-            vh_strategy=self.velocity_strategy,
-            ftol=self.convergence_ftol_rel,
-            ftol_iter=self.convergence_ftol_iter,
-            init_pos=init_pos,
-            static=self.static_topology,
-        )
-
-        objective_wrapper = _create_batch_objective(problem, self.n_cores)
-
-        result = optimizer.optimize(
-            objective_func=objective_wrapper,
-            iters=self.stopping_maxiter,
+            boundary_strategy=self.boundary_strategy,
+            velocity_strategy=self.velocity_strategy,
+            velocity_clamp_min=self.velocity_clamp_min,
+            velocity_clamp_max=self.velocity_clamp_max,
+            n_cores=self.n_cores,
+            center_init=self.center_init,
             verbose=self.verbose,
+            seed=self.seed,
         )
-
-        res = _process_pyswarms_result(result=result, optimizer=optimizer)
 
         return res
 
@@ -666,63 +616,133 @@ class PySwarmsGeneralPSO(Algorithm):
         if not IS_PYSWARMS_INSTALLED:
             raise NotInstalledError(PYSWARMS_NOT_INSTALLED_ERROR)
 
-        if self.seed is not None:
-            np.random.seed(self.seed)
-
         import pyswarms as ps
 
-        # Resolve topology config to PySwarms topology instance and options
         pyswarms_topology, topology_options = _resolve_topology_config(self.topology)
-
         base_options = _pso_options_to_dict(self.options)
         pso_options_dict = {**base_options, **topology_options}
 
-        velocity_clamp = _build_velocity_clamp(
-            self.velocity_clamp_min, self.velocity_clamp_max
-        )
-        bounds = _get_pyswarms_bounds(problem.bounds)
+        optimizer_kwargs = {
+            "options": pso_options_dict,
+            "topology": pyswarms_topology,
+        }
 
-        if self.initial_positions is not None:
-            init_pos = np.array(
-                [
-                    problem.converter.params_to_internal(position)
-                    for position in self.initial_positions
-                ]
-            )
-        else:
-            init_pos = _create_initial_positions(
-                x0=x0,
-                n_particles=self.n_particles,
-                bounds=bounds,
-                center=self.center_init,
-            )
-
-        optimizer = ps.single.GeneralOptimizerPSO(
+        res = _pyswarms_internal(
+            problem=problem,
+            x0=x0,
+            optimizer_class=ps.single.GeneralOptimizerPSO,
+            optimizer_kwargs=optimizer_kwargs,
             n_particles=self.n_particles,
-            dimensions=len(x0),
-            options=pso_options_dict,
-            topology=pyswarms_topology,
-            bounds=bounds,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_iter=self.convergence_ftol_iter,
+            stopping_maxiter=self.stopping_maxiter,
+            initial_positions=self.initial_positions,
             oh_strategy=self.oh_strategy,
-            bh_strategy=self.boundary_strategy,
-            velocity_clamp=velocity_clamp,
-            vh_strategy=self.velocity_strategy,
-            ftol=self.convergence_ftol_rel,
-            ftol_iter=self.convergence_ftol_iter,
-            init_pos=init_pos,
-        )
-
-        objective_wrapper = _create_batch_objective(problem, self.n_cores)
-
-        result = optimizer.optimize(
-            objective_func=objective_wrapper,
-            iters=self.stopping_maxiter,
+            boundary_strategy=self.boundary_strategy,
+            velocity_strategy=self.velocity_strategy,
+            velocity_clamp_min=self.velocity_clamp_min,
+            velocity_clamp_max=self.velocity_clamp_max,
+            n_cores=self.n_cores,
+            center_init=self.center_init,
             verbose=self.verbose,
+            seed=self.seed,
         )
-
-        res = _process_pyswarms_result(result=result, optimizer=optimizer)
 
         return res
+
+
+def _pyswarms_internal(
+    problem: InternalOptimizationProblem,
+    x0: NDArray[np.float64],
+    optimizer_class: Any,
+    optimizer_kwargs: dict[str, Any],
+    n_particles: int,
+    convergence_ftol_rel: float,
+    convergence_ftol_iter: int,
+    stopping_maxiter: int,
+    initial_positions: list[PyTree] | None,
+    oh_strategy: dict[str, str] | None,
+    boundary_strategy: str,
+    velocity_strategy: str,
+    velocity_clamp_min: float | None,
+    velocity_clamp_max: float | None,
+    n_cores: int,
+    center_init: float,
+    verbose: bool,
+    seed: int | None,
+) -> InternalOptimizeResult:
+    """Internal function for PySwarms optimization.
+
+    Args:
+        problem: Internal optimization problem
+        x0: Initial parameter vector
+        optimizer_class: PySwarms optimizer class to use
+        optimizer_kwargs: Arguments for optimizer class
+        n_particles: Number of particles in the swarm
+        convergence_ftol_rel: Relative tolerance for convergence detection
+        convergence_ftol_iter: Number of iterations for convergence check
+        stopping_maxiter: Maximum number of iterations before stopping
+        initial_positions: User-provided initial positions for particles
+        oh_strategy: Options handling strategy
+        boundary_strategy: Strategy for handling boundary constraints
+        velocity_strategy: Strategy for velocity updates
+        velocity_clamp_min: Minimum velocity bound
+        velocity_clamp_max: Maximum velocity bound
+        n_cores: Number of cores for parallel evaluation
+        center_init: Scaling factor for initial particle positions
+        verbose: Enable verbose output during optimization
+        seed: Random seed for reproducibility
+
+    Returns:
+        InternalOptimizeResult: Internal optimization result
+
+    """
+    if seed is not None:
+        np.random.seed(seed)
+
+    velocity_clamp = _build_velocity_clamp(velocity_clamp_min, velocity_clamp_max)
+    bounds = _get_pyswarms_bounds(problem.bounds)
+
+    if initial_positions is not None:
+        init_pos = np.array(
+            [
+                problem.converter.params_to_internal(position)
+                for position in initial_positions
+            ]
+        )
+    else:
+        init_pos = _create_initial_positions(
+            x0=x0,
+            n_particles=n_particles,
+            bounds=bounds,
+            center=center_init,
+        )
+
+    optimizer = optimizer_class(
+        n_particles=n_particles,
+        dimensions=len(x0),
+        bounds=bounds,
+        velocity_clamp=velocity_clamp,
+        init_pos=init_pos,
+        ftol=convergence_ftol_rel,
+        ftol_iter=convergence_ftol_iter,
+        bh_strategy=boundary_strategy,
+        vh_strategy=velocity_strategy,
+        oh_strategy=oh_strategy,
+        **optimizer_kwargs,
+    )
+
+    objective_wrapper = _create_batch_objective(problem, n_cores)
+
+    result = optimizer.optimize(
+        objective_func=objective_wrapper,
+        iters=stopping_maxiter,
+        verbose=verbose,
+    )
+
+    res = _process_pyswarms_result(result=result, optimizer=optimizer)
+
+    return res
 
 
 def _resolve_topology_config(
