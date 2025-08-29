@@ -11,6 +11,20 @@ OPTIMAGIC_ROOT = Path(__file__).parent
 PLOTLY_TEMPLATE = "simple_white"
 PLOTLY_PALETTE = px.colors.qualitative.Set2
 
+# The hex strings are obtained from the Plotly D3 qualitative palette.
+DEFAULT_PALETTE = [
+    "#1F77B4",
+    "#FF7F0E",
+    "#2CA02C",
+    "#D62728",
+    "#9467BD",
+    "#8C564B",
+    "#E377C2",
+    "#7F7F7F",
+    "#BCBD22",
+    "#17BECF",
+]
+
 DEFAULT_N_CORES = 1
 
 CRITERION_PENALTY_SLOPE = 0.1
@@ -23,7 +37,7 @@ def _is_installed(module_name: str) -> bool:
 
 
 # ======================================================================================
-# Check Available Packages
+# Check Available Optimization Packages
 # ======================================================================================
 
 IS_PETSC4PY_INSTALLED = _is_installed("petsc4py")
@@ -41,6 +55,12 @@ IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
 IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
 IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED = _is_installed("gradient_free_optimizers")
 IS_PYGAD_INSTALLED = _is_installed("pygad")
+
+# ======================================================================================
+# Check Available Visualization Packages
+# ======================================================================================
+
+IS_MATPLOTLIB_INSTALLED = _is_installed("matplotlib")
 
 
 # ======================================================================================
