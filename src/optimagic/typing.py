@@ -122,6 +122,8 @@ PositiveFloat = Annotated[float, Gt(0)]
 """Type alias for positive floats (greater than 0)."""
 NonNegativeFloat = Annotated[float, Ge(0)]
 """Type alias for non-negative floats (greater than or equal to 0)."""
+ProbabilityFloat = Annotated[float, Ge(0), Le(1)]
+"""Type alias for probability floats (between 0 and 1, inclusive)."""
 NegativeFloat = Annotated[float, Lt(0)]
 """Type alias for negative floats (less than 0)."""
 GtOneFloat = Annotated[float, Gt(1)]

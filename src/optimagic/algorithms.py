@@ -15,6 +15,14 @@ from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimizers.bayesian_optimizer import BayesOpt
 from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
+from optimagic.optimizers.gfo_optimizers import (
+    GFODifferentialEvolution,
+    GFOEvolutionStrategy,
+    GFOGeneticAlgorithm,
+    GFOParallelTempering,
+    GFOParticleSwarmOptimization,
+    GFOSpiralOptimization,
+)
 from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
 from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
@@ -53,6 +61,7 @@ from optimagic.optimizers.nlopt_optimizers import (
     NloptVAR,
 )
 from optimagic.optimizers.pounders import Pounders
+from optimagic.optimizers.pygad_optimizer import Pygad
 from optimagic.optimizers.pygmo_optimizers import (
     PygmoBeeColony,
     PygmoCmaes,
@@ -205,6 +214,7 @@ class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -402,6 +412,14 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -419,6 +437,7 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -470,6 +489,7 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -541,6 +561,7 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -704,6 +725,7 @@ class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -814,6 +836,7 @@ class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -1144,6 +1167,14 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1161,6 +1192,7 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1224,6 +1256,14 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1241,6 +1281,7 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1296,6 +1337,7 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -1464,6 +1506,14 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1487,6 +1537,7 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1566,6 +1617,7 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -1662,6 +1714,7 @@ class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -1734,6 +1787,14 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1751,6 +1812,7 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -1811,6 +1873,7 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -1895,6 +1958,7 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -2145,6 +2209,7 @@ class BoundedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -2407,6 +2472,14 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2424,6 +2497,7 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2509,6 +2583,14 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2534,6 +2616,7 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2622,6 +2705,14 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2647,6 +2738,7 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
     nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2734,6 +2826,7 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -2776,6 +2869,14 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2793,6 +2894,7 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2874,6 +2976,14 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2891,6 +3001,7 @@ class GlobalScalarAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -2955,6 +3066,7 @@ class GlobalParallelAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -3220,6 +3332,14 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
 class BoundedScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3251,6 +3371,7 @@ class BoundedScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3353,6 +3474,7 @@ class BoundedParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -3469,6 +3591,7 @@ class ParallelScalarAlgorithms(AlgoSelection):
     nevergrad_randomsearch: Type[NevergradRandomSearch] = NevergradRandomSearch
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -3577,6 +3700,14 @@ class GradientBasedAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3604,6 +3735,7 @@ class GradientFreeAlgorithms(AlgoSelection):
     nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3667,6 +3799,14 @@ class GradientFreeAlgorithms(AlgoSelection):
 @dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3684,6 +3824,7 @@ class GlobalAlgorithms(AlgoSelection):
     nlopt_direct: Type[NloptDirect] = NloptDirect
     nlopt_esch: Type[NloptESCH] = NloptESCH
     nlopt_isres: Type[NloptISRES] = NloptISRES
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3813,6 +3954,14 @@ class LocalAlgorithms(AlgoSelection):
 class BoundedAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3846,6 +3995,7 @@ class BoundedAlgorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -3966,6 +4116,14 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
 class ScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3999,6 +4157,7 @@ class ScalarAlgorithms(AlgoSelection):
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch
@@ -4128,6 +4287,7 @@ class ParallelAlgorithms(AlgoSelection):
     nevergrad_samplingsearch: Type[NevergradSamplingSearch] = NevergradSamplingSearch
     nevergrad_tbpsa: Type[NevergradTBPSA] = NevergradTBPSA
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
     pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
@@ -4174,6 +4334,14 @@ class Algorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
+    gfo_differential_evolution: Type[GFODifferentialEvolution] = (
+        GFODifferentialEvolution
+    )
+    gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
+    gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
+    gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -4209,6 +4377,7 @@ class Algorithms(AlgoSelection):
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
     nlopt_var: Type[NloptVAR] = NloptVAR
     pounders: Type[Pounders] = Pounders
+    pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
     pygmo_cmaes: Type[PygmoCmaes] = PygmoCmaes
     pygmo_compass_search: Type[PygmoCompassSearch] = PygmoCompassSearch

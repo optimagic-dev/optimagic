@@ -29,6 +29,7 @@ dependencies:
   - annotated-types  # dev, tests
   - iminuit  # dev, tests
   - cma  # dev, tests
+  - pygad  # dev, tests
   - pip:  # dev, tests, docs
       - bayesian-optimization>=2.0.4  # dev, tests
       - DFO-LS>=1.5.3  # dev, tests
@@ -36,6 +37,7 @@ dependencies:
       - fides==0.7.4  # dev, tests
       - kaleido>=1.0  # dev, tests
       - bayes_optim  # dev, tests
+      - gradient_free_optimizers  # dev, tests
       - pyswarms  # dev, tests
       - pandas-stubs  # dev, tests
       - types-cffi  # dev, tests
