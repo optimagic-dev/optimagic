@@ -1,10 +1,15 @@
+import numpy as np
 import pytest
 
+from optimagic import mark
+from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.nag_optimizers import (
     _build_options_dict,
     _change_evals_per_point_interface,
     _get_fast_start_method,
 )
+from optimagic.parameters.bounds import Bounds
+from tests.estimagic.test_bootstrap import aaae
 
 
 def test_change_evals_per_point_interface_none():
@@ -67,3 +72,20 @@ def test_build_options_dict_invalid_key():
     user_input = {"other_key": 0}
     with pytest.raises(ValueError):
         _build_options_dict(user_input, default)
+
+
+@mark.least_squares
+def sos(x):
+    return x
+
+
+def test_nag_dfols_starting_at_optimum():
+    # From issue: https://github.com/optimagic-dev/optimagic/issues/538
+    params = np.zeros(2, dtype=float)
+    res = minimize(
+        fun=sos,
+        params=params,
+        algorithm="nag_dfols",
+        bounds=Bounds(-1 * np.ones_like(params), np.ones_like(params)),
+    )
+    aaae(res.params, params)

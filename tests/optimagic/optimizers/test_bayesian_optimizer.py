@@ -58,7 +58,7 @@ def test_process_acquisition_function_none():
         xi=0.01,
         exploration_decay=None,
         exploration_decay_delay=None,
-        random_state=None,
+        random_seed=None,
     )
     assert result is None
 
@@ -83,7 +83,7 @@ def test_process_acquisition_function_string(acq_name, expected_class):
         xi=0.01,
         exploration_decay=None,
         exploration_decay_delay=None,
-        random_state=None,
+        random_seed=None,
     )
     assert isinstance(result, expected_class)
 
@@ -98,7 +98,7 @@ def test_process_acquisition_function_invalid_string():
             xi=0.01,
             exploration_decay=None,
             exploration_decay_delay=None,
-            random_state=None,
+            random_seed=None,
         )
 
 
@@ -112,7 +112,7 @@ def test_process_acquisition_function_instance():
         xi=0.01,
         exploration_decay=None,
         exploration_decay_delay=None,
-        random_state=None,
+        random_seed=None,
     )
     assert result is acq_instance
 
@@ -126,7 +126,7 @@ def test_process_acquisition_function_class():
         xi=0.01,
         exploration_decay=None,
         exploration_decay_delay=None,
-        random_state=None,
+        random_seed=None,
     )
     assert isinstance(result, acquisition.UpperConfidenceBound)
 
@@ -141,5 +141,5 @@ def test_process_acquisition_function_invalid_type():
             xi=0.01,
             exploration_decay=None,
             exploration_decay_delay=None,
-            random_state=None,
+            random_seed=None,
         )

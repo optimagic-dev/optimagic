@@ -17,6 +17,7 @@ from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
     InternalOptimizationProblem,
     SphereExampleInternalOptimizationProblem,
+    SphereExampleInternalOptimizationProblemWithConverter,
 )
 from optimagic.parameters.conversion import Converter
 from optimagic.typing import AggregationLevel, Direction, ErrorHandling, EvalTask
@@ -716,6 +717,15 @@ def test_error_in_exploration_fun_maximize(error_max_problem):
 
 def test_sphere_example_internal_optimization_problem():
     problem = SphereExampleInternalOptimizationProblem()
+    assert problem.fun(np.array([1, 2, 3])) == 14
+    aaae(problem.jac(np.array([1, 2, 3])), np.array([2, 4, 6]))
+    f, j = problem.fun_and_jac(np.array([1, 2, 3]))
+    assert f == 14
+    aaae(j, np.array([2, 4, 6]))
+
+
+def test_sphere_example_internal_optimization_problem_with_converter():
+    problem = SphereExampleInternalOptimizationProblemWithConverter()
     assert problem.fun(np.array([1, 2, 3])) == 14
     aaae(problem.jac(np.array([1, 2, 3])), np.array([2, 4, 6]))
     f, j = problem.fun_and_jac(np.array([1, 2, 3]))
