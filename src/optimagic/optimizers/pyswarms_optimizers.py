@@ -95,7 +95,7 @@ class VonNeumannTopology(Topology):
     p_norm: Literal[1, 2] = 2
     """Distance metric for neighbor selection: 1 (Manhattan), 2 (Euclidean)."""
 
-    range: PositiveInt = 1
+    range_param: PositiveInt = 1
     r"""Range parameter :math:`r` for neighborhood size."""
 
 
@@ -770,7 +770,7 @@ def _resolve_topology_config(
         options = {"k": config.k_neighbors, "p": config.p_norm}
     elif isinstance(config, VonNeumannTopology):
         topology_instance = VonNeumann()
-        options = {"p": config.p_norm, "r": config.range}
+        options = {"p": config.p_norm, "r": config.range_param}
     elif isinstance(config, RandomTopology):
         topology_instance = Random(static=config.static)
         options = {"k": config.k_neighbors}
