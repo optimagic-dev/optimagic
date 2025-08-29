@@ -217,12 +217,6 @@ class PySwarmsGlobalBestPSO(Algorithm):
     options: PSOOptions = PSOOptions()
     """PSO hyperparameters controlling particle behavior."""
 
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Stop when relative change in objective function is less than this value."""
-
-    convergence_ftol_iter: PositiveInt = 1
-    """Number of iterations to check for convergence."""
-
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
@@ -261,6 +255,12 @@ class PySwarmsGlobalBestPSO(Algorithm):
     velocity_clamp_max: float | None = None
     """Maximum velocity limit for particles."""
 
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when relative change in objective function is less than this value."""
+
+    convergence_ftol_iter: PositiveInt = 1
+    """Number of iterations to check for convergence."""
+
     n_cores: PositiveInt = 1
     """Number of cores for parallel evaluation."""
 
@@ -290,8 +290,6 @@ class PySwarmsGlobalBestPSO(Algorithm):
             optimizer_class=ps.single.GlobalBestPSO,
             optimizer_kwargs=optimizer_kwargs,
             n_particles=self.n_particles,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            convergence_ftol_iter=self.convergence_ftol_iter,
             stopping_maxiter=self.stopping_maxiter,
             initial_positions=self.initial_positions,
             oh_strategy=self.oh_strategy,
@@ -299,6 +297,8 @@ class PySwarmsGlobalBestPSO(Algorithm):
             velocity_strategy=self.velocity_strategy,
             velocity_clamp_min=self.velocity_clamp_min,
             velocity_clamp_max=self.velocity_clamp_max,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_iter=self.convergence_ftol_iter,
             n_cores=self.n_cores,
             center_init=self.center_init,
             verbose=self.verbose,
@@ -366,7 +366,7 @@ class PySwarmsLocalBestPSO(Algorithm):
     """Number of particles in the swarm."""
 
     options: PSOOptions = PSOOptions()
-    """"PSO hyperparameters controlling particle behavior."""
+    """PSO hyperparameters controlling particle behavior."""
 
     topology: RingTopology = RingTopology()
     """Configuration for the Ring topology.
@@ -376,12 +376,6 @@ class PySwarmsLocalBestPSO(Algorithm):
     distance metric, and whether the topology remains static throughout optimization.
 
     """
-
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Stop when relative change in objective function is less than this value."""
-
-    convergence_ftol_iter: PositiveInt = 1
-    """Number of iterations to check for convergence."""
 
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
@@ -421,6 +415,12 @@ class PySwarmsLocalBestPSO(Algorithm):
     velocity_clamp_max: float | None = None
     """Maximum velocity limit for particles."""
 
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when relative change in objective function is less than this value."""
+
+    convergence_ftol_iter: PositiveInt = 1
+    """Number of iterations to check for convergence."""
+
     n_cores: PositiveInt = 1
     """Number of cores for parallel evaluation."""
 
@@ -459,8 +459,6 @@ class PySwarmsLocalBestPSO(Algorithm):
             optimizer_class=ps.single.LocalBestPSO,
             optimizer_kwargs=optimizer_kwargs,
             n_particles=self.n_particles,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            convergence_ftol_iter=self.convergence_ftol_iter,
             stopping_maxiter=self.stopping_maxiter,
             initial_positions=self.initial_positions,
             oh_strategy=self.oh_strategy,
@@ -468,6 +466,8 @@ class PySwarmsLocalBestPSO(Algorithm):
             velocity_strategy=self.velocity_strategy,
             velocity_clamp_min=self.velocity_clamp_min,
             velocity_clamp_max=self.velocity_clamp_max,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_iter=self.convergence_ftol_iter,
             n_cores=self.n_cores,
             center_init=self.center_init,
             verbose=self.verbose,
@@ -550,12 +550,6 @@ class PySwarmsGeneralPSO(Algorithm):
 
     """
 
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Stop when relative change in objective function is less than this value."""
-
-    convergence_ftol_iter: PositiveInt = 1
-    """Number of iterations to check for convergence."""
-
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations."""
 
@@ -594,6 +588,12 @@ class PySwarmsGeneralPSO(Algorithm):
     velocity_clamp_max: float | None = None
     """Maximum velocity limit for particles."""
 
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when relative change in objective function is less than this value."""
+
+    convergence_ftol_iter: PositiveInt = 1
+    """Number of iterations to check for convergence."""
+
     n_cores: PositiveInt = 1
     """Number of cores for parallel evaluation."""
 
@@ -629,8 +629,6 @@ class PySwarmsGeneralPSO(Algorithm):
             optimizer_class=ps.single.GeneralOptimizerPSO,
             optimizer_kwargs=optimizer_kwargs,
             n_particles=self.n_particles,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            convergence_ftol_iter=self.convergence_ftol_iter,
             stopping_maxiter=self.stopping_maxiter,
             initial_positions=self.initial_positions,
             oh_strategy=self.oh_strategy,
@@ -638,6 +636,8 @@ class PySwarmsGeneralPSO(Algorithm):
             velocity_strategy=self.velocity_strategy,
             velocity_clamp_min=self.velocity_clamp_min,
             velocity_clamp_max=self.velocity_clamp_max,
+            convergence_ftol_rel=self.convergence_ftol_rel,
+            convergence_ftol_iter=self.convergence_ftol_iter,
             n_cores=self.n_cores,
             center_init=self.center_init,
             verbose=self.verbose,
@@ -653,8 +653,6 @@ def _pyswarms_internal(
     optimizer_class: Any,
     optimizer_kwargs: dict[str, Any],
     n_particles: int,
-    convergence_ftol_rel: float,
-    convergence_ftol_iter: int,
     stopping_maxiter: int,
     initial_positions: list[PyTree] | None,
     oh_strategy: dict[str, str] | None,
@@ -662,6 +660,8 @@ def _pyswarms_internal(
     velocity_strategy: str,
     velocity_clamp_min: float | None,
     velocity_clamp_max: float | None,
+    convergence_ftol_rel: float,
+    convergence_ftol_iter: int,
     n_cores: int,
     center_init: float,
     verbose: bool,
@@ -675,8 +675,6 @@ def _pyswarms_internal(
         optimizer_class: PySwarms optimizer class to use
         optimizer_kwargs: Arguments for optimizer class
         n_particles: Number of particles in the swarm
-        convergence_ftol_rel: Relative tolerance for convergence detection
-        convergence_ftol_iter: Number of iterations for convergence check
         stopping_maxiter: Maximum number of iterations before stopping
         initial_positions: User-provided initial positions for particles
         oh_strategy: Options handling strategy
@@ -684,6 +682,8 @@ def _pyswarms_internal(
         velocity_strategy: Strategy for velocity updates
         velocity_clamp_min: Minimum velocity bound
         velocity_clamp_max: Maximum velocity bound
+        convergence_ftol_rel: Relative tolerance for convergence detection
+        convergence_ftol_iter: Number of iterations for convergence check
         n_cores: Number of cores for parallel evaluation
         center_init: Scaling factor for initial particle positions
         verbose: Enable verbose output during optimization
@@ -693,8 +693,7 @@ def _pyswarms_internal(
         InternalOptimizeResult: Internal optimization result
 
     """
-    if seed is not None:
-        np.random.seed(seed)
+    rng = np.random.default_rng(seed)
 
     velocity_clamp = _build_velocity_clamp(velocity_clamp_min, velocity_clamp_max)
     bounds = _get_pyswarms_bounds(problem.bounds)
@@ -712,6 +711,7 @@ def _pyswarms_internal(
             n_particles=n_particles,
             bounds=bounds,
             center=center_init,
+            rng=rng,
         )
 
     optimizer = optimizer_class(
@@ -803,24 +803,60 @@ def _build_velocity_clamp(
     return clamp
 
 
-def _process_pyswarms_result(
-    result: tuple[float, NDArray[np.float64]], optimizer: Any
-) -> InternalOptimizeResult:
-    """Convert PySwarms result to optimagic format."""
-    best_cost, best_position = result
-    n_iterations = len(optimizer.cost_history)
-    n_particles = optimizer.n_particles
+def _get_pyswarms_bounds(
+    bounds: InternalBounds,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]] | None:
+    """Convert optimagic bounds to PySwarms format."""
+    pyswarms_bounds = None
 
-    return InternalOptimizeResult(
-        x=best_position,
-        fun=best_cost,
-        success=True,
-        message="PySwarms optimization completed",
-        n_fun_evals=n_particles * n_iterations,
-        n_jac_evals=0,
-        n_hess_evals=0,
-        n_iterations=n_iterations,
+    if bounds.lower is not None and bounds.upper is not None:
+        if not np.all(np.isfinite(bounds.lower)) or not np.all(
+            np.isfinite(bounds.upper)
+        ):
+            raise ValueError("PySwarms does not support infinite bounds.")
+
+        pyswarms_bounds = (bounds.lower, bounds.upper)
+
+    return pyswarms_bounds
+
+
+def _create_initial_positions(
+    x0: NDArray[np.float64],
+    n_particles: int,
+    bounds: tuple[NDArray[np.float64], NDArray[np.float64]] | None,
+    center: float,
+    rng: np.random.Generator,
+) -> NDArray[np.float64]:
+    """Create an initial swarm positions.
+
+    Args:
+        x0: Initial parameter vector.
+        n_particles: Number of particles in the swarm.
+        bounds: Tuple of (lower_bounds, upper_bounds) arrays or None.
+        center: Scaling factor for initial particle positions around bounds.
+        rng: NumPy random number generator instance.
+
+    Returns:
+        Initial positions array of shape (n_particles, n_dimensions)
+        where each row represents one particle's starting position.
+
+    """
+    n_dimensions = len(x0)
+    if bounds is None:
+        lower_bounds: NDArray[np.float64] = np.zeros(n_dimensions, dtype=np.float64)
+        upper_bounds: NDArray[np.float64] = np.ones(n_dimensions, dtype=np.float64)
+    else:
+        lower_bounds, upper_bounds = bounds
+
+    # Generate random initial positions within the bounds, scaled by center
+    init_pos = center * rng.uniform(
+        low=lower_bounds, high=upper_bounds, size=(n_particles, n_dimensions)
     )
+
+    init_pos = np.clip(init_pos, lower_bounds, upper_bounds)
+    init_pos[0] = np.clip(x0, lower_bounds, upper_bounds)
+
+    return init_pos
 
 
 def _create_batch_objective(
@@ -848,55 +884,21 @@ def _create_batch_objective(
     return batch_objective
 
 
-def _get_pyswarms_bounds(
-    bounds: InternalBounds,
-) -> tuple[NDArray[np.float64], NDArray[np.float64]] | None:
-    """Convert optimagic bounds to PySwarms format."""
-    pyswarms_bounds = None
+def _process_pyswarms_result(
+    result: tuple[float, NDArray[np.float64]], optimizer: Any
+) -> InternalOptimizeResult:
+    """Convert PySwarms result to optimagic format."""
+    best_cost, best_position = result
+    n_iterations = len(optimizer.cost_history)
+    n_particles = optimizer.n_particles
 
-    if bounds.lower is not None and bounds.upper is not None:
-        if not np.all(np.isfinite(bounds.lower)) or not np.all(
-            np.isfinite(bounds.upper)
-        ):
-            raise ValueError("PySwarms does not support infinite bounds.")
-
-        pyswarms_bounds = (bounds.lower, bounds.upper)
-
-    return pyswarms_bounds
-
-
-def _create_initial_positions(
-    x0: NDArray[np.float64],
-    n_particles: int,
-    bounds: tuple[NDArray[np.float64], NDArray[np.float64]] | None,
-    center: float = 1.0,
-) -> NDArray[np.float64]:
-    """Create an initial swarm positions.
-
-    Args:
-        x0: Initial parameter vector
-        n_particles: Number of particles in the swarm
-        bounds: Tuple of (lower_bounds, upper_bounds) arrays or None.
-        center: Scaling factor for initial particle positions around bounds
-
-    Returns:
-        Initial positions array of shape (n_particles, n_dimensions)
-        where each row represents one particle's starting position.
-
-    """
-    n_dimensions = len(x0)
-    if bounds is None:
-        lower_bounds: NDArray[np.float64] = np.zeros(n_dimensions, dtype=np.float64)
-        upper_bounds: NDArray[np.float64] = np.ones(n_dimensions, dtype=np.float64)
-    else:
-        lower_bounds, upper_bounds = bounds
-
-    # Generate random initial positions within the bounds, scaled by center
-    init_pos = center * np.random.uniform(
-        low=lower_bounds, high=upper_bounds, size=(n_particles, n_dimensions)
+    return InternalOptimizeResult(
+        x=best_position,
+        fun=best_cost,
+        success=True,
+        message="PySwarms optimization completed",
+        n_fun_evals=n_particles * n_iterations,
+        n_jac_evals=0,
+        n_hess_evals=0,
+        n_iterations=n_iterations,
     )
-
-    init_pos = np.clip(init_pos, lower_bounds, upper_bounds)
-    init_pos[0] = np.clip(x0, lower_bounds, upper_bounds)
-
-    return init_pos
