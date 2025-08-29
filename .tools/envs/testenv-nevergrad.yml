@@ -41,7 +41,7 @@ dependencies:
       - types-openpyxl  # dev, tests
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
-      - sphinxcontrib-mermaid  # dev, tests, docs
       - bayesian_optimization==1.4.0
       - nevergrad
+      - sphinxcontrib-mermaid  # dev, tests, docs
       - -e ../../
