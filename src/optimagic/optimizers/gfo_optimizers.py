@@ -135,7 +135,7 @@ class GFOCommonOptions:
     disable_history=False,
 )
 @dataclass(frozen=True)
-class GFOHillClimbing(Algorithm, GFOCommonOptions):
+class GFOHillClimbing(GFOCommonOptions, Algorithm):
     """Minimize a scalar function using the HillClimbing algorithm.
 
     This algorithm is a Python implementation of the HillClimbing algorithm through the

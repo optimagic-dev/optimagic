@@ -4653,13 +4653,6 @@ package are available in optimagic. To use it, you need to have
 [gradient_free_optimizers](https://pypi.org/project/gradient_free_optimizers) installed.
 
 ```{eval-rst}
-.. dropdown:: Common options across all optimizers
-
-  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOCommonOptions
-
-```
-
-```{eval-rst}
 .. dropdown:: gfo_hillclimbing
 
   **How to use this algorithm.**
@@ -4689,6 +4682,8 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOHillClimbing
+    :members:
+    :inherited-members: Algorithm, object
 
 ```
 
@@ -4722,6 +4717,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOStochasticHillClimbing
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 
 ```
 
@@ -4755,6 +4753,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFORepulsingHillClimbing
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 
 ```
 
@@ -4788,6 +4789,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSimulatedAnnealing
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 
 ```
 
@@ -4821,6 +4825,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODownhillSimplex
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 
 ```
 
@@ -4854,6 +4861,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOPowellsMethod
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 
 ```
 
@@ -4887,6 +4897,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParticleSwarmOptimization
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 
 ```
 
@@ -4922,6 +4935,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParallelTempering
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -4955,6 +4971,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSpiralOptimization
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -4988,6 +5007,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOGeneticAlgorithm
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -5021,6 +5043,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOEvolutionStrategy
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -5054,6 +5079,9 @@ package are available in optimagic. To use it, you need to have
   **Description and available options:**
 
   .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODifferentialEvolution
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
 
 ```
 
