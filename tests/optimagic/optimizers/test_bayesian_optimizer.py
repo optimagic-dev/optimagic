@@ -50,7 +50,8 @@ def test_process_bounds_infinite():
 
 
 @pytest.mark.skipif(
-    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2, reason="bayes_opt not installed"
+    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2,
+    reason="bayes_opt is not installed in a recent enough version >= 2.0.0.",
 )
 def test_process_acquisition_function_none():
     """Test processing None acquisition function."""
