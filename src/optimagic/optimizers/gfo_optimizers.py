@@ -109,7 +109,7 @@ class GFOCommonOptions:
     seed: int | None = None
     """Random seed for reproducibility."""
 
-    rand_rest_p: NonNegativeFloat = 0
+    rand_rest_p: ProbabilityFloat = 0
     """Probability for the optimization algorithm to jump to a random position in an
     iteration step."""
 
@@ -144,9 +144,9 @@ class GFOHillClimbing(Algorithm, GFOCommonOptions):
     Hill climbing is a local search algorithm suited for exploring combinatorial search
     spaces.
 
-    It starts at an initial point, which is often chosen randomly and continues to move
-    to positions within its neighbourhood with a better solution. It has no method
-    against getting stuck in local optima.
+    It starts at an initial point, and continues to move to positions within its
+    neighbourhood with a better solution. It has no method against getting stuck in
+    local optima.
 
     """
 
@@ -253,7 +253,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    p_accept: NonNegativeFloat = 0.5
+    p_accept: ProbabilityFloat = 0.5
     """The probability factor used in the equation to calculate if a worse position is
     accepted as the new position.
 
@@ -316,7 +316,7 @@ class GFORepulsingHillClimbing(Algorithm, GFOCommonOptions):
     through the gradient_free_optimizers package.
 
     The algorithm inherits from the Hill climbing which is a local search algorithm but
-    always activates its methods to espace local optima.
+    always activates its methods to escape local optima.
 
     """
 
@@ -646,10 +646,6 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
     """A factor of the movement towards the global best position of the individual
     particles in the population."""
 
-    rand_rest_p: NonNegativeFloat = 0.01
-    """Probability for the optimization algorithm to jump to a random position in an
-    iteration step."""
-
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -724,10 +720,6 @@ class GFOParallelTempering(Algorithm, GFOCommonOptions):
     n_iter_swap: PositiveInt = 10
     """The number of iterations the algorithm performs before switching temperatures of
     the individual optimizers in the population."""
-
-    rand_rest_p: NonNegativeFloat = 0
-    """Probability for the optimization algorithm to jump to a random position in an
-    iteration step."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -818,10 +810,6 @@ class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
     from each other. Typical range: 0.85 to 1.15.
 
     """
-
-    rand_rest_p: NonNegativeFloat = 0
-    """Probability for the optimization algorithm to jump to a random position in an
-    iteration step."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -1022,10 +1010,6 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
     crossover_rate: ProbabilityFloat = 0.3
     """Probability of an individual to perform a crossover with the best individual in
     the population."""
-
-    rand_rest_p: NonNegativeFloat = 0
-    """Probability for the optimization algorithm to jump to a random position in an
-    iteration step."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
