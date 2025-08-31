@@ -144,7 +144,8 @@ class GFOHillClimbing(GFOCommonOptions, Algorithm):
     Hill climbing is a local search algorithm suited for exploring combinatorial search
     spaces.
 
-    It starts at an initial point, and continues to move to positions within its
+    “It starts at an initial point, which is the best point chosen from `n_init`
+    initialization runs, and continues to move to positions within its
     neighbourhood with a better solution. It has no method against getting stuck in
     local optima.
 
@@ -221,13 +222,14 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
     This algorithm is a Python implementation of the StochasticHillClimbing algorithm
     through the gradient_free_optimizers package.
 
-    Stochastic hill climbing extends the normal hill climbing by a simple method against
-    getting stuck in local optima.
+    Stochastic hill climbing extends the normal hill climbing by accepting worse
+    positions with a probability `p_accept` as a next position helping against getting
+    stuck in local optima.
 
     """
 
     epsilon: PositiveFloat = 0.03
-    """The step-size of the hill climbing algorithm.If step_size is too large the newly
+    """The step-size of the hill climbing algorithm. If step_size is too large the newly
     selected positions will be at the edge of the search space.
 
     If its value is very low it might not find new positions.
