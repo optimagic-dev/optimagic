@@ -81,20 +81,20 @@ def _line_plot_matplotlib(
     if template is None:
         template = "default"
 
-    plt.style.use(template)
-    fig, ax = plt.subplots(figsize=(width, height) if width and height else None)
+    with plt.style.context(template):
+        fig, ax = plt.subplots(figsize=(width, height) if width and height else None)
 
-    for line in lines:
-        ax.plot(
-            line.x,
-            line.y,
-            label=line.name if line.show_in_legend else None,
-            color=line.color,
-        )
+        for line in lines:
+            ax.plot(
+                line.x,
+                line.y,
+                label=line.name if line.show_in_legend else None,
+                color=line.color,
+            )
 
-    ax.set(title=title, xlabel=xlabel, ylabel=ylabel)
-    if legend_properties:
-        ax.legend(**legend_properties)
+        ax.set(title=title, xlabel=xlabel, ylabel=ylabel)
+        if legend_properties:
+            ax.legend(**legend_properties)
 
     return ax
 

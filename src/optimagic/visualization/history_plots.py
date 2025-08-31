@@ -100,7 +100,9 @@ def criterion_plot(
         xlabel="No. of criterion evaluations",
         ylabel="Criterion value",
         template=template,
-        legend_properties=BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES[backend],
+        legend_properties=BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES.get(
+            backend, None
+        ),
     )
 
     return fig
