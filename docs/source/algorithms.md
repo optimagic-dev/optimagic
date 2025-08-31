@@ -4660,6 +4660,7 @@ package are available in optimagic. To use it, you need to have
   .. code-block:: python
 
     import optimagic as om
+    import numpy as np
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
@@ -4695,6 +4696,7 @@ package are available in optimagic. To use it, you need to have
   .. code-block:: python
 
     import optimagic as om
+    import numpy as np
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
@@ -4731,6 +4733,7 @@ package are available in optimagic. To use it, you need to have
   .. code-block:: python
 
     import optimagic as om
+    import numpy as np
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
@@ -4767,6 +4770,7 @@ package are available in optimagic. To use it, you need to have
   .. code-block:: python
 
     import optimagic as om
+    import numpy as np
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
@@ -4803,6 +4807,7 @@ package are available in optimagic. To use it, you need to have
   .. code-block:: python
 
     import optimagic as om
+    import numpy as np
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
@@ -4839,6 +4844,7 @@ package are available in optimagic. To use it, you need to have
   .. code-block:: python
 
     import optimagic as om
+    import numpy as np
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
@@ -4875,6 +4881,7 @@ package are available in optimagic. To use it, you need to have
   .. code-block:: python
 
     import optimagic as om
+    import numpy as np
     om.minimize(
       fun=lambda x: x @ x,
       params=[1.0, 2.0, 3.0],
