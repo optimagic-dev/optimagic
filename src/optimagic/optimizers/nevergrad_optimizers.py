@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -1274,8 +1275,72 @@ class NevergradSamplingSearch(Algorithm):
         return res
 
 
+# TODO https://facebookresearch.github.io/nevergrad/optimizers_ref.html#nevergrad.families.EvolutionStrategy
+
+
+class Wizard(str, Enum):
+    """Available portfolio optimizers from Nevergrad."""
+
+    # REF https://openreview.net/pdf/bcf18ffaccd27991ddf707a37b164dbab4ec4771.pdf
+    NGOpt = "NGOpt"
+    NGOpt4 = "NGOpt4"
+    NGOpt8 = "NGOpt8"
+    NGOpt10 = "NGOpt10"
+    NGOpt12 = "NGOpt12"
+    NGOpt13 = "NGOpt13"
+    NGOpt14 = "NGOpt14"
+    NGOpt15 = "NGOpt15"
+    NGOpt16 = "NGOpt16"
+    NGOpt21 = "NGOpt21"
+    NGOpt36 = "NGOpt36"
+    NGOpt38 = "NGOpt38"
+    NGOpt39 = "NGOpt39"
+    NGOptRW = "NGOptRW"
+    NGOptF = "NGOptF"
+    NGOptF2 = "NGOptF2"
+    NGOptF3 = "NGOptF3"
+    NGOptF5 = "NGOptF5"
+
+    NgIoh2 = "NgIoh2"
+    NgIoh3 = "NgIoh3"
+    NgIoh4 = "NgIoh4"
+    NgIoh5 = "NgIoh5"
+    NgIoh6 = "NgIoh6"
+    NgIoh7 = "NgIoh7"
+    NgIoh11 = "NgIoh11"
+    NgIoh14 = "NgIoh14"
+    NgIoh13 = "NgIoh13"
+    NgIoh15 = "NgIoh15"
+    NgIoh12 = "NgIoh12"
+    NgIoh16 = "NgIoh16"
+    NgIoh17 = "NgIoh17"
+    NgIoh21 = "NgIoh21"
+    NgIoh20 = "NgIoh20"
+    NgIoh19 = "NgIoh19"
+    NgIoh18 = "NgIoh18"
+    NgIoh10 = "NgIoh10"
+    NgIoh9 = "NgIoh9"
+    NgIoh8 = "NgIoh8"
+    NgIoh12b = "NgIoh12b"
+    NgIoh13b = "NgIoh13b"
+    NgIoh14b = "NgIoh14b"
+    NgIoh15b = "NgIoh15b"
+
+    NgDS = "NgDS"
+    NgDS2 = "NgDS2"
+    NGDSRW = "NGDSRW"
+    NGO = "NGO"
+    NgIohRW2 = "NgIohRW2"
+    NgIohTuned = "NgIohTuned"
+
+    CSEC = "CSEC"
+    CSEC10 = "CSEC10"
+    CSEC11 = "CSEC11"
+    Wiz = "Wiz"
+
+
 @mark.minimizer(
-    name="nevergrad_ngopt",
+    name="nevergrad_wizard",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_NEVERGRAD_INSTALLED,
     is_global=True,
@@ -1290,7 +1355,7 @@ class NevergradSamplingSearch(Algorithm):
     disable_history=False,
 )
 @dataclass(frozen=True)
-class NevergradNGOpt(Algorithm):
+class NevergradWizard(Algorithm):
     """Minimize a scalar function using a Meta Optimizer from Nevergrad.
 
     These are meta-optimizers that intelligently combine multiple different
@@ -1299,60 +1364,7 @@ class NevergradNGOpt(Algorithm):
 
     """
 
-    optimizer: Literal[
-        "NGOpt",
-        "NGOpt4",
-        "NGOpt8",
-        "NGOpt10",
-        "NGOpt12",
-        "NGOpt13",
-        "NGOpt14",
-        "NGOpt15",
-        "NGOpt16",
-        "NGOpt21",
-        "NGOpt36",
-        "NGOpt38",
-        "NGOpt39",
-        "NGOptRW",
-        "NGOptF",
-        "NGOptF2",
-        "NGOptF3",
-        "NGOptF5",
-        "NgIoh2",
-        "NgIoh3",
-        "NgIoh4",
-        "NgIoh5",
-        "NgIoh6",
-        "NgIoh7",
-        "NgIoh11",
-        "NgIoh14",
-        "NgIoh13",
-        "NgIoh15",
-        "NgIoh12",
-        "NgIoh16",
-        "NgIoh17",
-        "NgIoh21",
-        "NgIoh20",
-        "NgIoh19",
-        "NgIoh18",
-        "NgIoh10",
-        "NgIoh9",
-        "NgIoh8",
-        "NgIoh12b",
-        "NgIoh13b",
-        "NgIoh14b",
-        "NgIoh15b",
-        "NgDS",
-        "NgDS2",
-        "NGDSRW",
-        "NGO",
-        "NgIohRW2",
-        "NgIohTuned",
-        "CSEC",
-        "CSEC10",
-        "CSEC11",
-        "Wiz",
-    ] = "NGOpt"
+    optimizer: Wizard = Wizard.NgIoh10  # rename algorithm_selection maybe
     """The specific Nevergrad meta-optimizer to use.
 
     Each option is a portfolio of different algorithms.
@@ -1396,8 +1408,68 @@ class NevergradNGOpt(Algorithm):
         return res
 
 
+class Portfolio(str, Enum):
+    """Available meta optimizers in Nevergrad."""
+
+    MultiBFGSPlus = "MultiBFGSPlus"
+    LogMultiBFGSPlus = "LogMultiBFGSPlus"
+    SqrtMultiBFGSPlus = "SqrtMultiBFGSPlus"
+    MultiCobylaPlus = "MultiCobylaPlus"
+    MultiSQPPlus = "MultiSQPPlus"
+    BFGSCMAPlus = "BFGSCMAPlus"
+    LogBFGSCMAPlus = "LogBFGSCMAPlus"
+    SqrtBFGSCMAPlus = "SqrtBFGSCMAPlus"
+    SQPCMAPlus = "SQPCMAPlus"
+    LogSQPCMAPlus = "LogSQPCMAPlus"
+    SqrtSQPCMAPlus = "SqrtSQPCMAPlus"
+
+    MultiBFGS = "MultiBFGS"
+    LogMultiBFGS = "LogMultiBFGS"
+    SqrtMultiBFGS = "SqrtMultiBFGS"
+    MultiCobyla = "MultiCobyla"
+    ForceMultiCobyla = "ForceMultiCobyla"
+    MultiSQP = "MultiSQP"
+    BFGSCMA = "BFGSCMA"
+    LogBFGSCMA = "LogBFGSCMA"
+    SqrtBFGSCMA = "SqrtBFGSCMA"
+    SQPCMA = "SQPCMA"
+    LogSQPCMA = "LogSQPCMA"
+    SqrtSQPCMA = "SqrtSQPCMA"
+    FSQPCMA = "FSQPCMA"
+    F2SQPCMA = "F2SQPCMA"
+    F3SQPCMA = "F3SQPCMA"
+
+    MultiDiscrete = "MultiDiscrete"
+    CMandAS2 = "CMandAS2"
+    CMandAS3 = "CMandAS3"
+    MetaCMA = "MetaCMA"
+    CMA = "CMA"
+    PCEDA = "PCEDA"
+    MPCEDA = "MPCEDA"
+    MEDA = "MEDA"
+    NoisyBandit = "NoisyBandit"
+    Shiwa = "Shiwa"
+
+    Carola1 = "Carola1"
+    """Cost-effective Asymptotic Randomized Optimization with Limited Access Apply
+    Cobyla with budget b/2.
+
+    Apply CMA with Meta Model with budget b/2 and initial point the best point so far.
+
+    """
+    Carola2 = "Carola2"
+    """ Fast approximation: apply Cobyla with budget b/3.
+        Robust local search: Apply CMA with
+        MetaModel with budget b/3 and initial point the best point so far.
+        Fast local search: Apply SQP with initial point the best point so far and budget
+    b/3."""
+    Carola3 = "Carola3"
+    """Carola3 is an adaptation of Carola2 for the parallel case, see Carola, Apply w
+    copies of Carola2 in parallel, with budget b/w."""
+
+
 @mark.minimizer(
-    name="nevergrad_meta",
+    name="nevergrad_portfolio",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_NEVERGRAD_INSTALLED,
     is_global=True,
@@ -1412,7 +1484,7 @@ class NevergradNGOpt(Algorithm):
     disable_history=False,
 )
 @dataclass(frozen=True)
-class NevergradMeta(Algorithm):
+class NevergradPortfolio(Algorithm):
     """Minimize a scalar function using a Meta Optimizer from Nevergrad.
 
     This algorithm utilizes a combination of local and global optimizers to find
@@ -1421,45 +1493,7 @@ class NevergradMeta(Algorithm):
 
     """
 
-    optimizer: Literal[
-        "MultiBFGSPlus",
-        "LogMultiBFGSPlus",
-        "SqrtMultiBFGSPlus",
-        "MultiCobylaPlus",
-        "MultiSQPPlus",
-        "BFGSCMAPlus",
-        "LogBFGSCMAPlus",
-        "SqrtBFGSCMAPlus",
-        "SQPCMAPlus",
-        "LogSQPCMAPlus",
-        "SqrtSQPCMAPlus",
-        "MultiBFGS",
-        "LogMultiBFGS",
-        "SqrtMultiBFGS",
-        "MultiCobyla",
-        "ForceMultiCobyla",
-        "MultiSQP",
-        "BFGSCMA",
-        "LogBFGSCMA",
-        "SqrtBFGSCMA",
-        "SQPCMA",
-        "LogSQPCMA",
-        "SqrtSQPCMA",
-        "FSQPCMA",
-        "F2SQPCMA",
-        "F3SQPCMA",
-        "MultiDiscrete",
-        "CMandAS2",
-        "CMandAS3",
-        "MetaCMA",
-        "CMA",
-        "PCEDA",
-        "MPCEDA",
-        "MEDA",
-        "NoisyBandit",
-        "Shiwa",
-        "Carola3",
-    ] = "Shiwa"
+    optimizer: Portfolio = Portfolio.BFGSCMA
     """The specific Nevergrad meta-optimizer to use.
 
     Each option is a portfolio of different local and global algorithms.
