@@ -4280,16 +4280,17 @@ and hence imprecise.\
 ```
 
 ```{eval-rst}
-.. dropdown:: nevergrad_ngopt
+.. dropdown:: nevergrad_wizard
 
     **How to use this algorithm:**
 
     .. code-block::
 
         import optimagic as om
+        from optimagic.optimizers.nevergrad_optimizers import Wizard
         om.minimize(
           ...,
-          algorithm=om.algos.nevergrad_ngopt(optimizer="NGOptRW", ...)
+          algorithm=om.algos.nevergrad_wizard(optimizer= Wizard.NGOptRW, ...)
         )
 
     or
@@ -4298,26 +4299,28 @@ and hence imprecise.\
 
         om.minimize(
           ...,
-          algorithm="nevergrad_ngopt",
+          algorithm="nevergrad_wizard",
           algo_options={"optimizer": "NGOptRW", ...}
         )
 
     **Description and available options:**
 
-    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradNGOpt
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradWizard
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.Wizard
 ```
 
 ```{eval-rst}
-.. dropdown:: nevergrad_meta
+.. dropdown:: nevergrad_portfolio
 
     **How to use this algorithm:**
 
     .. code-block::
 
         import optimagic as om
+        from optimagic.optimizers.nevergrad_optimizers import Portfolio
         om.minimize(
           ...,
-          algorithm=om.algos.nevergrad_meta(optimizer="BFGSCMAPlus", ...)
+          algorithm=om.algos.nevergrad_portfolio(optimizer= Portfolio.BFGSCMAPlus, ...)
         )
 
     or
@@ -4326,13 +4329,14 @@ and hence imprecise.\
 
         om.minimize(
           ...,
-          algorithm="nevergrad_meta",
+          algorithm="nevergrad_portfolio",
           algo_options={"optimizer": "BFGSCMAPlus", ...}
         )
 
     **Description and available options:**
 
-    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradMeta
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradPortfolio
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.Portfolio
 ```
 
 ## Bayesian Optimization

@@ -1409,7 +1409,35 @@ class NevergradWizard(Algorithm):
 
 
 class Portfolio(str, Enum):
-    """Available meta optimizers in Nevergrad."""
+    """Available portfolio optimizers in Nevergrad."""
+
+    Carola1 = "Carola1"
+    """
+    CAROLA1 - Cost-effective Asymptotic Randomized Optimization with Limited Access.
+
+    Method:
+
+    1. COBYLA (budget b/2).
+    2. CMA with Meta Model (budget b/2), starting from COBYLA’s best solution,
+    """
+    Carola2 = "Carola2"
+    """
+    CAROLA2 - see Carola1
+
+    Method
+
+    1. COBYLA (budget b/3) for fast approximation.
+    2. CMA with meta-model (budget b/3), starting from COBYLA’s best solution,
+        for robust local search.
+    3. SQP (budget b/3), starting from the best solution so far,
+        for fast refinement.
+    """
+    Carola3 = "Carola3"
+    """
+    CAROLA3 - CAROLA2 for the parallel case. see Carola2,
+
+    Method
+    1. Apply w copies of Carola2 in parallel, with budget b/w."""
 
     MultiBFGSPlus = "MultiBFGSPlus"
     LogMultiBFGSPlus = "LogMultiBFGSPlus"
@@ -1449,23 +1477,6 @@ class Portfolio(str, Enum):
     MEDA = "MEDA"
     NoisyBandit = "NoisyBandit"
     Shiwa = "Shiwa"
-
-    Carola1 = "Carola1"
-    """Cost-effective Asymptotic Randomized Optimization with Limited Access Apply
-    Cobyla with budget b/2.
-
-    Apply CMA with Meta Model with budget b/2 and initial point the best point so far.
-
-    """
-    Carola2 = "Carola2"
-    """ Fast approximation: apply Cobyla with budget b/3.
-        Robust local search: Apply CMA with
-        MetaModel with budget b/3 and initial point the best point so far.
-        Fast local search: Apply SQP with initial point the best point so far and budget
-    b/3."""
-    Carola3 = "Carola3"
-    """Carola3 is an adaptation of Carola2 for the parallel case, see Carola, Apply w
-    copies of Carola2 in parallel, with budget b/w."""
 
 
 @mark.minimizer(
