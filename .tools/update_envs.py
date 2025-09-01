@@ -29,7 +29,8 @@ def main() -> None:
     ## linux
     test_env_linux = deepcopy(test_env)
     test_env_linux.insert(_insert_idx, "  - jax")
-    test_env_linux.insert(_insert_idx, "  - petsc4py")
+    # pinned petsc4py due to failing test on python 3.11 , revert later
+    test_env_linux.insert(_insert_idx, "  - petsc4py<=3.23.4")
 
     ## test environment others
     test_env_others = deepcopy(test_env)
