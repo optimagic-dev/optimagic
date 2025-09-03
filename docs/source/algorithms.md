@@ -4919,6 +4919,8 @@ LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGlobalBestPSO
+      :members:
+      :inherited-members: Algorithm, object
 
 ```
 
@@ -4948,6 +4950,8 @@ LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsLocalBestPSO
+      :members:
+      :inherited-members: Algorithm, object
 
 ```
 
@@ -4977,6 +4981,8 @@ LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGeneralPSO
+      :members:
+      :inherited-members: Algorithm, object
 
 ```
 
