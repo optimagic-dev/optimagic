@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - petsc4py
+  - petsc4py<=3.23.4
   - jax
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests, docs
