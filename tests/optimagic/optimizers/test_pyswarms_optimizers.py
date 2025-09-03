@@ -7,7 +7,6 @@ from numpy.testing import assert_array_equal
 from optimagic.config import IS_PYSWARMS_INSTALLED
 from optimagic.optimization.internal_optimization_problem import InternalBounds
 from optimagic.optimizers.pyswarms_optimizers import (
-    PSOOptions,
     PyramidTopology,
     RandomTopology,
     RingTopology,
@@ -16,42 +15,10 @@ from optimagic.optimizers.pyswarms_optimizers import (
     _build_velocity_clamp,
     _create_initial_positions,
     _get_pyswarms_bounds,
-    _pso_options_to_dict,
     _resolve_topology_config,
 )
 
 RNG = np.random.default_rng(12345)
-
-
-# Test _pso_options_to_dict
-def test_pso_options_to_dict_default():
-    """Test PSO options conversion with default values."""
-    options = PSOOptions()
-    result = _pso_options_to_dict(options)
-
-    expected = {
-        "c1": 0.5,
-        "c2": 0.3,
-        "w": 0.9,
-    }
-    assert result == expected
-
-
-def test_pso_options_to_dict_custom():
-    """Test PSO options conversion with custom values."""
-    options = PSOOptions(
-        cognitive_parameter=1.5,
-        social_parameter=2.0,
-        inertia_weight=0.7,
-    )
-    result = _pso_options_to_dict(options)
-
-    expected = {
-        "c1": 1.5,
-        "c2": 2.0,
-        "w": 0.7,
-    }
-    assert result == expected
 
 
 # Test _build_velocity_clamp
