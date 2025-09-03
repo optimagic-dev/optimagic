@@ -9,7 +9,7 @@ support for different topologies.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Literal, Union
+from typing import Any, Callable, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -132,19 +132,17 @@ class RandomTopology(Topology):
     """
 
 
-TopologyConfig = Union[
-    Literal["star", "ring", "vonneumann", "random", "pyramid"],
-    Topology,
-]
-
 # ======================================================================================
-# 2. PSO Options Classes
+# Common PSO Options
 # ======================================================================================
 
 
 @dataclass(frozen=True)
-class PSOOptions:
-    """Common PSO parameters used by all PSO variants."""
+class PSOCommonOptions:
+    """Common options for PySwarms optimizers."""
+
+    n_particles: PositiveInt = 50
+    """Number of particles in the swarm."""
 
     cognitive_parameter: PositiveFloat = 0.5
     """Cognitive parameter (c1) - attraction to personal best."""
@@ -154,6 +152,67 @@ class PSOOptions:
 
     inertia_weight: PositiveFloat = 0.9
     """Inertia weight (w) - momentum control."""
+
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations."""
+
+    initial_positions: list[PyTree] | None = None
+    """Option to set the initial particle positions.
+
+    If None, positions are generated randomly within the given bounds, or within [0, 1]
+    if bounds are not specified.
+
+    """
+
+    oh_strategy: dict[str, str] | None = None
+    """Dictionary of strategies for time-varying options."""
+
+    boundary_strategy: Literal[
+        "periodic", "reflective", "shrink", "random", "intermediate"
+    ] = "periodic"
+    """Strategy for handling out-of-bounds particles.
+
+    Available options: periodic (default),
+    reflective, shrink, random, intermediate.
+
+    """
+
+    velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
+    """Strategy for handling out-of-bounds velocities.
+
+    Available options: unmodified (default),
+    adjust, invert, zero.
+
+    """
+
+    velocity_clamp_min: float | None = None
+    """Minimum velocity limit for particles."""
+
+    velocity_clamp_max: float | None = None
+    """Maximum velocity limit for particles."""
+
+    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when relative change in objective function is less than this value."""
+
+    convergence_ftol_iter: PositiveInt = 1
+    """Number of iterations to check for convergence."""
+
+    n_cores: PositiveInt = 1
+    """Number of cores for parallel evaluation."""
+
+    center_init: PositiveFloat = 1.0
+    """Scaling factor for initial particle positions."""
+
+    verbose: bool = False
+    """Enable or disable the logs and progress bar."""
+
+    seed: int | None = None
+    """Random seed for reproducibility."""
+
+
+# ======================================================================================
+# Algorithm Classes
+# ======================================================================================
 
 
 @mark.minimizer(
@@ -172,7 +231,7 @@ class PSOOptions:
     disable_history=False,
 )
 @dataclass(frozen=True)
-class PySwarmsGlobalBestPSO(Algorithm):
+class PySwarmsGlobalBestPSO(Algorithm, PSOCommonOptions):
     r"""Minimize a scalar function using Global Best Particle Swarm Optimization.
 
     A population-based stochastic, global optimization optimization algorithm that
@@ -211,68 +270,6 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
     """
 
-    n_particles: PositiveInt = 50
-    """Number of particles in the swarm."""
-
-    options: PSOOptions = PSOOptions()
-    """PSO hyperparameters controlling particle behavior."""
-
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    """Maximum number of iterations."""
-
-    initial_positions: list[PyTree] | None = None
-    """Option to set the initial particle positions.
-
-    If None, positions are generated randomly within the given bounds, or within [0, 1]
-    if bounds are not specified.
-
-    """
-
-    oh_strategy: dict[str, str] | None = None
-    """Dictionary of strategies for time-varying options."""
-
-    boundary_strategy: Literal[
-        "periodic", "reflective", "shrink", "random", "intermediate"
-    ] = "periodic"
-    """Strategy for handling out-of-bounds particles.
-
-    Available options: periodic (default),
-    reflective, shrink, random, intermediate.
-
-    """
-
-    velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities.
-
-    Available options: unmodified (default),
-    adjust, invert, zero.
-
-    """
-
-    velocity_clamp_min: float | None = None
-    """Minimum velocity limit for particles."""
-
-    velocity_clamp_max: float | None = None
-    """Maximum velocity limit for particles."""
-
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Stop when relative change in objective function is less than this value."""
-
-    convergence_ftol_iter: PositiveInt = 1
-    """Number of iterations to check for convergence."""
-
-    n_cores: PositiveInt = 1
-    """Number of cores for parallel evaluation."""
-
-    center_init: PositiveFloat = 1.0
-    """Scaling factor for initial particle positions."""
-
-    verbose: bool = False
-    """Enable or disable the logs and progress bar."""
-
-    seed: int | None = None
-    """Random seed for reproducibility."""
-
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -281,7 +278,11 @@ class PySwarmsGlobalBestPSO(Algorithm):
 
         import pyswarms as ps
 
-        pso_options_dict = _pso_options_to_dict(self.options)
+        pso_options_dict = {
+            "c1": self.cognitive_parameter,
+            "c2": self.social_parameter,
+            "w": self.inertia_weight,
+        }
         optimizer_kwargs = {"options": pso_options_dict}
 
         res = _pyswarms_internal(
@@ -289,20 +290,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
             x0=x0,
             optimizer_class=ps.single.GlobalBestPSO,
             optimizer_kwargs=optimizer_kwargs,
-            n_particles=self.n_particles,
-            stopping_maxiter=self.stopping_maxiter,
-            initial_positions=self.initial_positions,
-            oh_strategy=self.oh_strategy,
-            boundary_strategy=self.boundary_strategy,
-            velocity_strategy=self.velocity_strategy,
-            velocity_clamp_min=self.velocity_clamp_min,
-            velocity_clamp_max=self.velocity_clamp_max,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            convergence_ftol_iter=self.convergence_ftol_iter,
-            n_cores=self.n_cores,
-            center_init=self.center_init,
-            verbose=self.verbose,
-            seed=self.seed,
+            algo_options=self,
         )
 
         return res
@@ -324,7 +312,7 @@ class PySwarmsGlobalBestPSO(Algorithm):
     disable_history=False,
 )
 @dataclass(frozen=True)
-class PySwarmsLocalBestPSO(Algorithm):
+class PySwarmsLocalBestPSO(Algorithm, PSOCommonOptions):
     r"""Minimize a scalar function using Local Best Particle Swarm Optimization.
 
     A variant of PSO that uses local neighborhoods instead of a single global best.
@@ -362,12 +350,6 @@ class PySwarmsLocalBestPSO(Algorithm):
 
     """
 
-    n_particles: PositiveInt = 50
-    """Number of particles in the swarm."""
-
-    options: PSOOptions = PSOOptions()
-    """PSO hyperparameters controlling particle behavior."""
-
     topology: RingTopology = RingTopology()
     """Configuration for the Ring topology.
 
@@ -377,62 +359,6 @@ class PySwarmsLocalBestPSO(Algorithm):
 
     """
 
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    """Maximum number of iterations."""
-
-    initial_positions: list[PyTree] | None = None
-    """Option to set the initial particle positions.
-
-    If None, positions are generated randomly within the given bounds, or within [0, 1]
-    if bounds are not specified.
-
-    """
-
-    oh_strategy: dict[str, str] | None = None
-    """Dictionary of strategies for time-varying options."""
-
-    boundary_strategy: Literal[
-        "periodic", "reflective", "shrink", "random", "intermediate"
-    ] = "periodic"
-    """Strategy for handling out-of-bounds particles.
-
-    Available options: periodic (default),
-    reflective, shrink, random, intermediate.
-
-    """
-
-    velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities.
-
-    Available options: unmodified (default),
-    adjust, invert, zero.
-
-    """
-
-    velocity_clamp_min: float | None = None
-    """Minimum velocity limit for particles."""
-
-    velocity_clamp_max: float | None = None
-    """Maximum velocity limit for particles."""
-
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Stop when relative change in objective function is less than this value."""
-
-    convergence_ftol_iter: PositiveInt = 1
-    """Number of iterations to check for convergence."""
-
-    n_cores: PositiveInt = 1
-    """Number of cores for parallel evaluation."""
-
-    center_init: PositiveFloat = 1.0
-    """Scaling factor for initial particle positions."""
-
-    verbose: bool = False
-    """Enable or disable the logs and progress bar."""
-
-    seed: int | None = None
-    """Random seed for reproducibility."""
-
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -441,12 +367,13 @@ class PySwarmsLocalBestPSO(Algorithm):
 
         import pyswarms as ps
 
-        base_options = _pso_options_to_dict(self.options)
-        topology_options = {
+        pso_options_dict = {
+            "c1": self.cognitive_parameter,
+            "c2": self.social_parameter,
+            "w": self.inertia_weight,
             "k": self.topology.k_neighbors,
             "p": self.topology.p_norm,
         }
-        pso_options_dict = {**base_options, **topology_options}
 
         optimizer_kwargs = {
             "options": pso_options_dict,
@@ -458,20 +385,7 @@ class PySwarmsLocalBestPSO(Algorithm):
             x0=x0,
             optimizer_class=ps.single.LocalBestPSO,
             optimizer_kwargs=optimizer_kwargs,
-            n_particles=self.n_particles,
-            stopping_maxiter=self.stopping_maxiter,
-            initial_positions=self.initial_positions,
-            oh_strategy=self.oh_strategy,
-            boundary_strategy=self.boundary_strategy,
-            velocity_strategy=self.velocity_strategy,
-            velocity_clamp_min=self.velocity_clamp_min,
-            velocity_clamp_max=self.velocity_clamp_max,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            convergence_ftol_iter=self.convergence_ftol_iter,
-            n_cores=self.n_cores,
-            center_init=self.center_init,
-            verbose=self.verbose,
-            seed=self.seed,
+            algo_options=self,
         )
 
         return res
@@ -493,7 +407,7 @@ class PySwarmsLocalBestPSO(Algorithm):
     disable_history=False,
 )
 @dataclass(frozen=True)
-class PySwarmsGeneralPSO(Algorithm):
+class PySwarmsGeneralPSO(Algorithm, PSOCommonOptions):
     r"""Minimize a scalar function using General Particle Swarm Optimization with custom
     topologies.
 
@@ -529,19 +443,15 @@ class PySwarmsGeneralPSO(Algorithm):
 
     """
 
-    n_particles: PositiveInt = 50
-    """Number of particles in the swarm."""
-
-    options: PSOOptions = PSOOptions()
-    """PSO hyperparameters controlling particle behavior."""
-
-    topology: TopologyConfig = "star"
+    topology: Literal["star", "ring", "vonneumann", "random", "pyramid"] | Topology = (
+        "star"
+    )
     """Topology structure for particle communication.
 
     The `topology` can be specified in two ways:
 
     1.  **By name (string):** e.g., ``"star"``, ``"ring"``. This uses the default
-        parameters for that topology.
+        parameter values for that topology.
     2.  **By dataclass instance:** e.g., ``RingTopology(k_neighbors=5, p_norm=1)``.
         This allows for detailed configuration of topology-specific parameters.
 
@@ -549,62 +459,6 @@ class PySwarmsGeneralPSO(Algorithm):
     ``RandomTopology``, ``PyramidTopology``.
 
     """
-
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    """Maximum number of iterations."""
-
-    initial_positions: list[PyTree] | None = None
-    """Option to set the initial particle positions.
-
-    If None, positions are generated randomly within the given bounds, or within [0, 1]
-    if bounds are not specified.
-
-    """
-
-    oh_strategy: dict[str, str] | None = None
-    """Dictionary of strategies for time-varying options."""
-
-    boundary_strategy: Literal[
-        "periodic", "reflective", "shrink", "random", "intermediate"
-    ] = "periodic"
-    """Strategy for handling out-of-bounds particles.
-
-    Available options: periodic (default),
-    reflective, shrink, random, intermediate.
-
-    """
-
-    velocity_strategy: Literal["unmodified", "adjust", "invert", "zero"] = "unmodified"
-    """Strategy for handling out-of-bounds velocities.
-
-    Available options: unmodified (default),
-    adjust, invert, zero.
-
-    """
-
-    velocity_clamp_min: float | None = None
-    """Minimum velocity limit for particles."""
-
-    velocity_clamp_max: float | None = None
-    """Maximum velocity limit for particles."""
-
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-    """Stop when relative change in objective function is less than this value."""
-
-    convergence_ftol_iter: PositiveInt = 1
-    """Number of iterations to check for convergence."""
-
-    n_cores: PositiveInt = 1
-    """Number of cores for parallel evaluation."""
-
-    center_init: PositiveFloat = 1.0
-    """Scaling factor for initial particle positions."""
-
-    verbose: bool = False
-    """Enable or disable the logs and progress bar."""
-
-    seed: int | None = None
-    """Random seed for reproducibility."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -615,7 +469,11 @@ class PySwarmsGeneralPSO(Algorithm):
         import pyswarms as ps
 
         pyswarms_topology, topology_options = _resolve_topology_config(self.topology)
-        base_options = _pso_options_to_dict(self.options)
+        base_options = {
+            "c1": self.cognitive_parameter,
+            "c2": self.social_parameter,
+            "w": self.inertia_weight,
+        }
         pso_options_dict = {**base_options, **topology_options}
 
         optimizer_kwargs = {
@@ -628,20 +486,7 @@ class PySwarmsGeneralPSO(Algorithm):
             x0=x0,
             optimizer_class=ps.single.GeneralOptimizerPSO,
             optimizer_kwargs=optimizer_kwargs,
-            n_particles=self.n_particles,
-            stopping_maxiter=self.stopping_maxiter,
-            initial_positions=self.initial_positions,
-            oh_strategy=self.oh_strategy,
-            boundary_strategy=self.boundary_strategy,
-            velocity_strategy=self.velocity_strategy,
-            velocity_clamp_min=self.velocity_clamp_min,
-            velocity_clamp_max=self.velocity_clamp_max,
-            convergence_ftol_rel=self.convergence_ftol_rel,
-            convergence_ftol_iter=self.convergence_ftol_iter,
-            n_cores=self.n_cores,
-            center_init=self.center_init,
-            verbose=self.verbose,
-            seed=self.seed,
+            algo_options=self,
         )
 
         return res
@@ -652,88 +497,64 @@ def _pyswarms_internal(
     x0: NDArray[np.float64],
     optimizer_class: Any,
     optimizer_kwargs: dict[str, Any],
-    n_particles: int,
-    stopping_maxiter: int,
-    initial_positions: list[PyTree] | None,
-    oh_strategy: dict[str, str] | None,
-    boundary_strategy: str,
-    velocity_strategy: str,
-    velocity_clamp_min: float | None,
-    velocity_clamp_max: float | None,
-    convergence_ftol_rel: float,
-    convergence_ftol_iter: int,
-    n_cores: int,
-    center_init: float,
-    verbose: bool,
-    seed: int | None,
+    algo_options: PSOCommonOptions,
 ) -> InternalOptimizeResult:
     """Internal function for PySwarms optimization.
 
     Args:
-        problem: Internal optimization problem
-        x0: Initial parameter vector
-        optimizer_class: PySwarms optimizer class to use
-        optimizer_kwargs: Arguments for optimizer class
-        n_particles: Number of particles in the swarm
-        stopping_maxiter: Maximum number of iterations before stopping
-        initial_positions: User-provided initial positions for particles
-        oh_strategy: Options handling strategy
-        boundary_strategy: Strategy for handling boundary constraints
-        velocity_strategy: Strategy for velocity updates
-        velocity_clamp_min: Minimum velocity bound
-        velocity_clamp_max: Maximum velocity bound
-        convergence_ftol_rel: Relative tolerance for convergence detection
-        convergence_ftol_iter: Number of iterations for convergence check
-        n_cores: Number of cores for parallel evaluation
-        center_init: Scaling factor for initial particle positions
-        verbose: Enable verbose output during optimization
-        seed: Random seed for reproducibility
+        problem: Internal optimization problem.
+        x0: Initial parameter vector.
+        optimizer_class: PySwarms optimizer class to use.
+        optimizer_kwargs: Arguments for optimizer class.
+        algo_options: The PySwarms common options.
 
     Returns:
-        InternalOptimizeResult: Internal optimization result
+        InternalOptimizeResult: Internal optimization result.
 
     """
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(algo_options.seed)
 
-    velocity_clamp = _build_velocity_clamp(velocity_clamp_min, velocity_clamp_max)
+    velocity_clamp = _build_velocity_clamp(
+        algo_options.velocity_clamp_min, algo_options.velocity_clamp_max
+    )
     bounds = _get_pyswarms_bounds(problem.bounds)
 
-    if initial_positions is not None:
+    if algo_options.initial_positions is not None:
         init_pos = np.array(
             [
                 problem.converter.params_to_internal(position)
-                for position in initial_positions
+                for position in algo_options.initial_positions
             ]
         )
     else:
         init_pos = _create_initial_positions(
             x0=x0,
-            n_particles=n_particles,
+            n_particles=algo_options.n_particles,
             bounds=bounds,
-            center=center_init,
+            center=algo_options.center_init,
             rng=rng,
         )
 
     optimizer = optimizer_class(
-        n_particles=n_particles,
+        n_particles=algo_options.n_particles,
         dimensions=len(x0),
         bounds=bounds,
-        velocity_clamp=velocity_clamp,
         init_pos=init_pos,
-        ftol=convergence_ftol_rel,
-        ftol_iter=convergence_ftol_iter,
-        bh_strategy=boundary_strategy,
-        vh_strategy=velocity_strategy,
-        oh_strategy=oh_strategy,
+        velocity_clamp=velocity_clamp,
+        oh_strategy=algo_options.oh_strategy,
+        bh_strategy=algo_options.boundary_strategy,
+        vh_strategy=algo_options.velocity_strategy,
+        ftol=algo_options.convergence_ftol_rel,
+        ftol_iter=algo_options.convergence_ftol_iter,
         **optimizer_kwargs,
     )
 
-    objective_wrapper = _create_batch_objective(problem, n_cores)
+    objective_wrapper = _create_batch_objective(problem, algo_options.n_cores)
 
     result = optimizer.optimize(
         objective_func=objective_wrapper,
-        iters=stopping_maxiter,
-        verbose=verbose,
+        iters=algo_options.stopping_maxiter,
+        verbose=algo_options.verbose,
     )
 
     res = _process_pyswarms_result(result=result, optimizer=optimizer)
@@ -742,7 +563,7 @@ def _pyswarms_internal(
 
 
 def _resolve_topology_config(
-    config: TopologyConfig,
+    config: Literal["star", "ring", "vonneumann", "random", "pyramid"] | Topology,
 ) -> tuple[Any, dict[str, float | int]]:
     """Resolves the topology config into a pyswarms topology instance and options
     dict."""
@@ -780,17 +601,6 @@ def _resolve_topology_config(
         raise TypeError(f"Unsupported topology configuration type: {type(config)}")
 
     return topology_instance, options
-
-
-def _pso_options_to_dict(options: PSOOptions) -> dict[str, float | int]:
-    """Convert option parameters to PySwarms format."""
-    pso_options = {
-        "c1": options.cognitive_parameter,
-        "c2": options.social_parameter,
-        "w": options.inertia_weight,
-    }
-
-    return pso_options
 
 
 def _build_velocity_clamp(
