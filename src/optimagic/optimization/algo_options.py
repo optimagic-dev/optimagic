@@ -95,6 +95,14 @@ STOPPING_MAXITER = 1_000_000
 
 """
 
+STOPPING_MAXITER_GLOBAL = 1000
+"""int:
+    The maximum number of iterations for global optimizers. This is set to a lower
+    default for global optimizers than for local ones, as they typically run
+    until this limit is reached.
+
+"""
+
 CONVERGENCE_SECOND_BEST_FTOL_ABS = 1e-08
 """float: absolute criterion tolerance optimagic requires if no other stopping
 criterion apart from max iterations etc. is available
@@ -117,6 +125,7 @@ CONVERGENCE_TARGET_VALUE = None
 
     Used in population-based algorithms like genetic algorithms.
     To disable, set to None.
+
 """
 
 CONVERGENCE_GENERATIONS_NOIMPROVE = None
@@ -125,6 +134,7 @@ CONVERGENCE_GENERATIONS_NOIMPROVE = None
 
     Used in population-based algorithms like genetic algorithms.
     To disable, set to None.
+
 """
 
 

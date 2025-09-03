@@ -17,10 +17,7 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.config import IS_PYSWARMS_INSTALLED
 from optimagic.exceptions import NotInstalledError
-from optimagic.optimization.algo_options import (
-    CONVERGENCE_FTOL_REL,
-    STOPPING_MAXITER,
-)
+from optimagic.optimization.algo_options import STOPPING_MAXITER_GLOBAL
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
@@ -141,7 +138,7 @@ class RandomTopology(Topology):
 class PSOCommonOptions:
     """Common options for PySwarms optimizers."""
 
-    n_particles: PositiveInt = 50
+    n_particles: PositiveInt = 10
     """Number of particles in the swarm."""
 
     cognitive_parameter: PositiveFloat = 0.5
@@ -153,7 +150,7 @@ class PSOCommonOptions:
     inertia_weight: PositiveFloat = 0.9
     """Inertia weight (w) - momentum control."""
 
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER_GLOBAL
     """Maximum number of iterations."""
 
     initial_positions: list[PyTree] | None = None
@@ -191,7 +188,7 @@ class PSOCommonOptions:
     velocity_clamp_max: float | None = None
     """Maximum velocity limit for particles."""
 
-    convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    convergence_ftol_rel: NonNegativeFloat = 0
     """Stop when relative change in objective function is less than this value."""
 
     convergence_ftol_iter: PositiveInt = 1
