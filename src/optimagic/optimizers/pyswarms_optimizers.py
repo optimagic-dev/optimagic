@@ -17,7 +17,6 @@ from numpy.typing import NDArray
 from optimagic import mark
 from optimagic.config import IS_PYSWARMS_INSTALLED
 from optimagic.exceptions import NotInstalledError
-from optimagic.optimization.algo_options import STOPPING_MAXITER_GLOBAL
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
@@ -150,7 +149,7 @@ class PSOCommonOptions:
     inertia_weight: PositiveFloat = 0.9
     """Inertia weight (w) - momentum control."""
 
-    stopping_maxiter: PositiveInt = STOPPING_MAXITER_GLOBAL
+    stopping_maxiter: PositiveInt = 1000
     """Maximum number of iterations."""
 
     initial_positions: list[PyTree] | None = None

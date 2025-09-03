@@ -95,13 +95,6 @@ STOPPING_MAXITER = 1_000_000
 
 """
 
-STOPPING_MAXITER_GLOBAL = 1000
-"""int:
-    The maximum number of iterations for global optimizers. This is set to a lower
-    default for global optimizers than for local ones, as they typically run
-    until this limit is reached.
-
-"""
 
 CONVERGENCE_SECOND_BEST_FTOL_ABS = 1e-08
 """float: absolute criterion tolerance optimagic requires if no other stopping
