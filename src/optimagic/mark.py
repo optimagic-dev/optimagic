@@ -80,6 +80,7 @@ def minimizer(
     supports_linear_constraints: bool,
     supports_nonlinear_constraints: bool,
     disable_history: bool = False,
+    experimental: bool = False,
 ) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
     """Mark an algorithm as a optimagic minimizer and add AlgoInfo.
 
@@ -115,6 +116,7 @@ def minimizer(
             constraints. This needs to be True if the algorithm previously took
             `nonlinear_constraints` as an argument.
         disable_history: Whether the algorithm should disable history collection.
+        experimental: Whether the algorithm is experimental and should skip tests.
 
     """
 
@@ -133,6 +135,7 @@ def minimizer(
             supports_linear_constraints=supports_linear_constraints,
             supports_nonlinear_constraints=supports_nonlinear_constraints,
             disable_history=disable_history,
+            experimental=experimental,
         )
         cls.__algo_info__ = algo_info  # type: ignore
         return cls
