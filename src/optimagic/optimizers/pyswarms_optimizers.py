@@ -8,6 +8,7 @@ support for different topologies.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Any, Callable, Literal
 
@@ -203,7 +204,11 @@ class PSOCommonOptions:
     """Enable or disable the logs and progress bar."""
 
     seed: int | None = None
-    """Random seed for reproducibility."""
+    """Random seed for initial positions.
+
+    For full reproducibility, set a global seed with `np.random.seed()`.
+
+    """
 
 
 # ======================================================================================
@@ -508,6 +513,15 @@ def _pyswarms_internal(
         InternalOptimizeResult: Internal optimization result.
 
     """
+    if algo_options.seed is not None:
+        warnings.warn(
+            "The 'seed' parameter only makes initial particle positions reproducible. "
+            "For fully deterministic results, set a global seed with "
+            "'np.random.seed()' before running the optimizer, as other stochastic "
+            "parts of PySwarms rely on the global numpy random state.",
+            UserWarning,
+        )
+
     rng = np.random.default_rng(algo_options.seed)
 
     velocity_clamp = _build_velocity_clamp(
