@@ -79,6 +79,10 @@ class InvalidAlgoInfoError(OptimagicError):
     """Exception for invalid user provided algorithm information."""
 
 
+class InvalidPlottingBackendError(OptimagicError):
+    """Exception for invalid user provided plotting backend."""
+
+
 class StopOptimizationError(OptimagicError):
     def __init__(self, message, current_status):
         super().__init__(message)

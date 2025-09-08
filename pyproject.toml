@@ -290,6 +290,7 @@ module = [
 
     "optimagic.visualization",
     "optimagic.visualization.convergence_plot",
+    "optimagic.visualization.backends",
     "optimagic.visualization.deviation_plot",
     "optimagic.visualization.history_plots",
     "optimagic.visualization.plotting_utilities",
@@ -346,6 +347,8 @@ module = [
     "plotly.graph_objects",
     "plotly.express",
     "plotly.subplots",
+    "matplotlib",
+    "matplotlib.pyplot",
     "cyipopt",
     "nlopt",
     "bokeh",
