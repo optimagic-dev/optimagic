@@ -40,7 +40,7 @@ repos:
           - hatchling
           - ruff
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args:
@@ -89,7 +89,7 @@ repos:
           - --blank
         exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.2
+    rev: v0.12.11
     hooks:
       # Run the linter.
       - id: ruff
