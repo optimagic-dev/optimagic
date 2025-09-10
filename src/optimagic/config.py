@@ -55,6 +55,7 @@ IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
 IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
 IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED = _is_installed("gradient_free_optimizers")
 IS_PYGAD_INSTALLED = _is_installed("pygad")
+IS_PYSWARMS_INSTALLED = _is_installed("pyswarms")
 
 # ======================================================================================
 # Check Available Visualization Packages

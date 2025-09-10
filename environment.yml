@@ -51,6 +51,7 @@ dependencies:
       - pre-commit>=4  # dev
       - bayes_optim  # dev, tests
       - gradient_free_optimizers  # dev, tests
+      - pyswarms  # dev, tests
       - -e .  # dev
       # type stubs
       - pandas-stubs  # dev, tests
