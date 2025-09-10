@@ -15,9 +15,11 @@ from optimagic.visualization.backends import (
 from optimagic.visualization.history_plots import (
     LineData,
     _extract_criterion_plot_lines,
+    _extract_params_plot_lines,
     _harmonize_inputs_to_dict,
     _PlottingMultistartHistory,
-    _retrieve_optimization_data,
+    _retrieve_optimization_data_from_results,
+    _retrieve_optimization_data_from_single_result,
     criterion_plot,
     params_plot,
 )
@@ -154,6 +156,12 @@ def test_criterion_plot_different_backends(minimize_result, backend):
     criterion_plot(res, backend=backend)
 
 
+@pytest.mark.parametrize("backend", BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())
+def test_params_plot_different_backends(minimize_result, backend):
+    res = minimize_result[False][0]
+    params_plot(res, backend=backend)
+
+
 def test_harmonize_inputs_to_dict_single_result():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
     assert _harmonize_inputs_to_dict(results=res, names=None) == {"0": res}
@@ -218,7 +226,7 @@ def test_retrieve_data_from_result(minimize_result):
     res = minimize_result[False][0]
     results = {"bla": res}
 
-    data = _retrieve_optimization_data(
+    data = _retrieve_optimization_data_from_results(
         results=results, stack_multistart=False, show_exploration=False
     )
 
@@ -238,7 +246,7 @@ def test_retrieve_data_from_logged_result(tmp_path):
     )
     results = {"logged": tmp_path / "test.db"}
 
-    data = _retrieve_optimization_data(
+    data = _retrieve_optimization_data_from_results(
         results=results, stack_multistart=False, show_exploration=False
     )
 
@@ -254,7 +262,7 @@ def test_retrieve_data_from_multistart_result(minimize_result, stack_multistart)
     res = minimize_result[True][0]
     results = {"multistart": res}
 
-    data = _retrieve_optimization_data(
+    data = _retrieve_optimization_data_from_results(
         results=results, stack_multistart=stack_multistart, show_exploration=False
     )
 
@@ -275,7 +283,7 @@ def test_retrieve_data_from_multistart_result(minimize_result, stack_multistart)
 def test_extract_criterion_plot_lines(minimize_result):
     res = minimize_result[True][0]
     results = {"multistart": res}
-    data = _retrieve_optimization_data(
+    data = _retrieve_optimization_data_from_results(
         results=results, stack_multistart=False, show_exploration=False
     )
 
@@ -301,3 +309,32 @@ def test_extract_criterion_plot_lines(minimize_result):
         isinstance(line, LineData) for line in multistart_lines
     )
     assert len(multistart_lines) == 5
+
+
+def test_extract_params_plot_lines(minimize_result):
+    res = minimize_result[False][0]
+    data = _retrieve_optimization_data_from_single_result(
+        result=res,
+        stack_multistart=False,
+        show_exploration=False,
+        plot_name="params_plot",
+    )
+
+    palette_cycle = itertools.cycle(["red", "green", "blue"])
+
+    lines = _extract_params_plot_lines(
+        data=data,
+        selector=None,
+        max_evaluations=None,
+        palette_cycle=palette_cycle,
+    )
+
+    params = np.array(res.history.params)
+    num_params = params.shape[1]
+
+    assert isinstance(lines, list) and len(lines) == num_params
+    assert all(isinstance(line, LineData) for line in lines)
+
+    for i, line in enumerate(lines):
+        assert_array_equal(line.x, np.arange(len(params)))
+        assert_array_equal(line.y, params[:, i])
