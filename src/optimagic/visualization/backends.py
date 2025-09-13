@@ -38,7 +38,7 @@ def _line_plot_plotly(
     legend_properties: dict[str, Any] | None,
 ) -> go.Figure:
     if template is None:
-        template = "plotly"
+        template = "simple_white"
 
     fig = go.Figure()
 

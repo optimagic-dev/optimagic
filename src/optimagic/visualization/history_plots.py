@@ -80,6 +80,7 @@ def criterion_plot(
         results=dict_of_optimize_results_or_paths,
         stack_multistart=stack_multistart,
         show_exploration=show_exploration,
+        plot_name="criterion_plot",
     )
 
     lines, multistart_lines = _extract_criterion_plot_lines(
@@ -235,29 +236,18 @@ def _retrieve_optimization_data_from_results(
     results: dict[str, ResultOrPath],
     stack_multistart: bool,
     show_exploration: bool,
+    plot_name: str,
 ) -> list[_PlottingMultistartHistory]:
-    """Retrieve data for criterion plot from results (OptimizeResult or database).
+    # Retrieves data from multiple results by iterating over the results dictionary
+    # and calling the single result retrieval function.
 
-    Args:
-        results: A dict of optimization results with collected history.
-            The key is used as the name in a legend.
-        stack_multistart: Whether to combine multistart histories into a single history.
-            Default is False.
-        show_exploration: If True, exploration samples of a multistart optimization are
-            visualized. Default is False.
-
-    Returns:
-        A list of objects containing the history, metadata, and local histories of each
-            optimization result.
-
-    """
     data = []
     for name, res in results.items():
         _data = _retrieve_optimization_data_from_single_result(
             result=res,
             stack_multistart=stack_multistart,
             show_exploration=show_exploration,
-            plot_name="criterion_plot",  # called only by `criterion_plot`
+            plot_name=plot_name,
             res_name=name,
         )
 

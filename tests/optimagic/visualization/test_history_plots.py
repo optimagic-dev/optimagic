@@ -227,7 +227,7 @@ def test_retrieve_data_from_result(minimize_result):
     results = {"bla": res}
 
     data = _retrieve_optimization_data_from_results(
-        results=results, stack_multistart=False, show_exploration=False
+        results=results, stack_multistart=False, show_exploration=False, plot_name="bla"
     )
 
     assert isinstance(data, list) and len(data) == 1
@@ -247,7 +247,7 @@ def test_retrieve_data_from_logged_result(tmp_path):
     results = {"logged": tmp_path / "test.db"}
 
     data = _retrieve_optimization_data_from_results(
-        results=results, stack_multistart=False, show_exploration=False
+        results=results, stack_multistart=False, show_exploration=False, plot_name="bla"
     )
 
     assert isinstance(data, list) and len(data) == 1
@@ -263,7 +263,10 @@ def test_retrieve_data_from_multistart_result(minimize_result, stack_multistart)
     results = {"multistart": res}
 
     data = _retrieve_optimization_data_from_results(
-        results=results, stack_multistart=stack_multistart, show_exploration=False
+        results=results,
+        stack_multistart=stack_multistart,
+        show_exploration=False,
+        plot_name="bla",
     )
 
     assert isinstance(data, list) and len(data) == 1
@@ -284,7 +287,7 @@ def test_extract_criterion_plot_lines(minimize_result):
     res = minimize_result[True][0]
     results = {"multistart": res}
     data = _retrieve_optimization_data_from_results(
-        results=results, stack_multistart=False, show_exploration=False
+        results=results, stack_multistart=False, show_exploration=False, plot_name="bla"
     )
 
     palette_cycle = itertools.cycle(["red", "green", "blue"])
