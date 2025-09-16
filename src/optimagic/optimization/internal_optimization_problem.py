@@ -960,3 +960,140 @@ class SphereExampleInternalOptimizationProblem(InternalOptimizationProblem):
             nonlinear_constraints=nonlinear_constraints,
             logger=logger,
         )
+
+
+class SphereExampleInternalOptimizationProblemWithConverter(
+    InternalOptimizationProblem
+):
+    """Super simple example of an internal optimization problem with PyTree Converter.
+    Note: params should be a dict with key-value pairs `"x{i}" : val .
+    eg. `{'x0': 1, 'x1': 2, ...}`.
+
+    The converter.params_to_internal method converts tree like
+    `{'x0': 1, 'x1': 2, 'x2': 3 ...}` to flat array `[1,2,3 ...]` .
+
+    The converter.params_from_internal method converts flat array `[1,2,3 ...]`
+    to tree like `{'x0': 1, 'x1': 2, 'x2': 3 ...}`.
+
+    The converter.derivative_to_internal converts derivative trees
+    {'x0': 2,'x1': 4, } to flat arrays [2,4] and jacobian tree
+    `{  "x0": {"x0": 1, "x1": 0, },
+        "x1": {"x0": 0, "x1": 1, }`
+    to NDArray [[1, 0,], [0, 1, ],]. }.
+    This can be used to test algorithm wrappers or to familiarize yourself
+    with the internal optimization problem interface.
+
+    Args:
+
+    """
+
+    def __init__(
+        self,
+        solver_type: AggregationLevel = AggregationLevel.SCALAR,
+        binding_bounds: bool = False,
+    ) -> None:
+        def sphere(params: PyTree) -> SpecificFunctionValue:
+            out = sum([params[f"x{i}"] ** 2 for i in range(len(params))])
+            return ScalarFunctionValue(out)
+
+        def ls_sphere(params: PyTree) -> SpecificFunctionValue:
+            out = [params[f"x{i}"] for i in range(len(params))]
+            return LeastSquaresFunctionValue(out)
+
+        def likelihood_sphere(params: PyTree) -> SpecificFunctionValue:
+            out = [params[f"x{i}"] ** 2 for i in range(len(params))]
+            return LikelihoodFunctionValue(out)
+
+        _fun_dict = {
+            AggregationLevel.SCALAR: sphere,
+            AggregationLevel.LIKELIHOOD: likelihood_sphere,
+            AggregationLevel.LEAST_SQUARES: ls_sphere,
+        }
+
+        def sphere_gradient(params: PyTree) -> PyTree:
+            return {params[f"x{i}"]: 2 * v for i, v in enumerate(params.values())}
+
+        def likelihood_sphere_gradient(params: PyTree) -> PyTree:
+            return {params[f"x{i}"]: 2 * v for i, v in enumerate(params.values())}
+
+        def ls_sphere_jac(params: PyTree) -> PyTree:
+            return {
+                f"x{i}": {f"x{j}": 1 if i == j else 0 for j in range(len(params))}
+                for i in range(len(params))
+            }
+
+        _jac_dict = {
+            AggregationLevel.SCALAR: sphere_gradient,
+            AggregationLevel.LIKELIHOOD: likelihood_sphere_gradient,
+            AggregationLevel.LEAST_SQUARES: ls_sphere_jac,
+        }
+
+        fun = _fun_dict[solver_type]
+        jac = _jac_dict[solver_type]
+        fun_and_jac = lambda x: (fun(x), jac(x))
+
+        def params_flatten(params: PyTree) -> NDArray[np.float64]:
+            return np.array([v for v in params.values()]).astype(float)
+
+        def params_unflatten(x: NDArray[np.float64]) -> PyTree:
+            return {f"x{i}": v for i, v in enumerate(x)}
+
+        def derivative_flatten(tree: PyTree, x: NDArray[np.float64]) -> Any:
+            if solver_type == AggregationLevel.LEAST_SQUARES:
+                out = [list(row.values()) for row in tree.values()]
+                return np.array(out)
+            else:
+                return params_flatten(tree)
+
+        converter = Converter(
+            params_to_internal=params_flatten,
+            params_from_internal=params_unflatten,
+            derivative_to_internal=derivative_flatten,
+            has_transforming_constraints=False,
+        )
+
+        direction = Direction.MINIMIZE
+
+        if binding_bounds:
+            lb = np.arange(10, dtype=np.float64) - 7.0
+            ub = np.arange(10, dtype=np.float64) - 3.0
+            self._x_opt = {
+                f"x{i}": x
+                for i, x in enumerate(np.array([-3, -2, -1, 0, 0, 0, 0, 0, 1, 2.0]))
+            }
+        else:
+            lb = np.full(10, -10, dtype=np.float64)
+            ub = np.full(10, 10, dtype=np.float64)
+            self._x_opt = {f"x{i}": x for i, x in enumerate(np.zeros(10))}
+
+        bounds = InternalBounds(lb, ub)
+
+        numdiff_options = NumdiffOptions()
+
+        error_handling = ErrorHandling.RAISE
+
+        error_penalty_func = fun_and_jac
+
+        batch_evaluator = process_batch_evaluator("joblib")
+
+        linear_constraints = None
+        nonlinear_constraints = None
+
+        logger = None
+
+        super().__init__(
+            fun=fun,
+            jac=jac,
+            fun_and_jac=fun_and_jac,
+            converter=converter,
+            solver_type=solver_type,
+            direction=direction,
+            bounds=bounds,
+            numdiff_options=numdiff_options,
+            error_handling=error_handling,
+            error_penalty_func=error_penalty_func,
+            batch_evaluator=batch_evaluator,
+            linear_constraints=linear_constraints,
+            nonlinear_constraints=nonlinear_constraints,
+            logger=logger,
+        )

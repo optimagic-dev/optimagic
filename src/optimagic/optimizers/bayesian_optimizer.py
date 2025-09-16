@@ -49,25 +49,158 @@ if TYPE_CHECKING:
 )
 @dataclass(frozen=True)
 class BayesOpt(Algorithm):
+    """Minimize a scalar function using Bayesian Optimization with Gaussian Process.
+
+    This optimizer wraps the BayesianOptimization package :cite:`Nogueira2014`,
+    which implements a surrogate model-based global optimization algorithm.
+    It works by constructing a posterior distribution over the objective function
+    via a Gaussian process that best approximates it. Instead of directly optimizing
+    the expensive original function, it uses a proxy optimization problem by finding
+    the maximum of an acquisition function, which is computationally cheaper than
+    evaluating the original function.
+
+    The algorithm starts by sampling a few initial points (init_points) to gather
+    observations of the objective function. These observations are used to fit a
+    Gaussian process surrogate model that learns about the function's behavior. The
+    optimizer then uses an acquisition function to iteratively select promising new
+    points to evaluate, updates its model, and this continues for n_iter iterations.
+
+    This optimizer is well-suited for expensive functions where each evaluation is
+    costly (simulations, experiments, model training), black-box optimization where
+    gradients are unavailable, and problems with a limited evaluation budget.
+
+    Default parameter values match those of the underlying BayesianOptimization package
+    where appropriate. Nonlinear constraints are currently not supported.
+
+    """
+
     init_points: PositiveInt = 5
+    """Number of random points sampled before optimization.
+
+    More points improve initial GP fit but increase evaluation cost. Default = 5.
+
+    """
+
     n_iter: PositiveInt = 25
+    """Number of Bayesian optimization iterations to perform after initial
+    exploration."""
+
     verbose: Literal[0, 1, 2] = 0
+    """Verbosity level (0 for silent, 1 for brief, 2 for detailed output)."""
+
     kappa: NonNegativeFloat = 2.576
+    """Exploration-exploitation trade-off parameter for Upper Confidence Bound
+    acquisition.
+
+    Controls the balance between exploration and exploitation when using the Upper
+    Confidence Bound (UCB) acquisition function. Higher values favor exploration over
+    exploitation . This parameter is only used when the acquisition function is "ucb" or
+    "upper_confidence_bound". The default value of 2.576 corresponds to a 99% confidence
+    interval.
+
+    """
+
     xi: PositiveFloat = 0.01
+    """Exploration-exploitation trade-off parameter for Expected/Probability of
+    Improvement.
+
+    Controls the balance between exploration and exploitation for Expected Improvement
+    (EI) and Probability of Improvement (POI) acquisition functions. Higher values favor
+    exploration over exploitation . This parameter is only used when the acquisition
+    function is "ei", "expected_improvement", "poi", or "probability_of_improvement".
+    The default value is 0.01.
+
+    """
+
     exploration_decay: UnitIntervalFloat | None = None
+    """Rate at which exploration decays over time during optimization.
+
+    If specified, the exploration parameters (kappa or xi) are multiplied by this factor
+    after each iteration, gradually shifting from exploration to exploitation. Must be
+    between 0 and 1 (range: (0, 1]) If None, no decay is applied and exploration remains
+    constant.
+
+    """
+
     exploration_decay_delay: NonNegativeInt | None = None
-    random_state: int | None = None
+    """Number of iterations to delay before applying exploration decay.
+
+    If specified, exploration decay only begins after this many iterations have
+    completed. If None, decay is applied from the first iteration.
+
+    """
+
+    seed: int | None = None
+    """Random seed for reproducible results."""
+
     acquisition_function: (
         str | AcquisitionFunction | Type[AcquisitionFunction] | None
     ) = None
+    """Strategy for selecting the next evaluation point during optimization.
+
+    The acquisition function determines how to balance exploration and exploitation when
+    selecting the next point to evaluate. Supported options:
+
+    - String: "ucb"/"upper_confidence_bound", "ei"/"expected_improvement",
+        "poi"/"probability_of_improvement"
+    - AcquisitionFunction instance: Pre-configured acquisition function object
+    - AcquisitionFunction class: Class that will be instantiated with default parameters
+    - None: Uses package default (UCB for unconstrained, EI for constrained problems)
+
+    """
+
     allow_duplicate_points: bool = False
+    """Whether to allow repeated evaluation of the same point."""
+
     enable_sdr: bool = False
+    """Enable Sequential Domain Reduction (SDR).
+
+    When True, the search domain is iteratively shrunk around promising regions
+    using SDR parameters (`sdr_gamma_osc`, `sdr_gamma_pan`, `sdr_eta`,
+    `sdr_minimum_window`).
+
+    """
+
     sdr_gamma_osc: float = 0.7
+    """Oscillation shrinkage parameter for SDR.
+
+    Controls how aggressively the search space shrinks in oscillating fashion. Only used
+    when enable_sdr is True. Typical range: [0.5, 0.7]. Default = 0.7.
+
+    """
+
     sdr_gamma_pan: float = 1.0
+    """Panning parameter for SDR.
+
+    Controls the panning behavior during domain reduction. Only used when enable_sdr is
+    True. Typical value: 1.0. Default = 1.0.
+
+    """
+
     sdr_eta: float = 0.9
+    """Zoom parameter for SDR.
+
+    Only used when enable_sdr is True. Default = 0.9.
+
+    """
+
     sdr_minimum_window: NonNegativeFloat = 0.0
+    """Minimum window size for Sequential Domain Reduction.
+
+    Only used when enable_sdr is True. Default = 0.0.
+
+    """
+
     alpha: float = 1e-6
+    """Noise parameter for the Gaussian Process model.
+
+    Controls the amount of noise assumed in the objective function observations. Default
+    is 1e-6.
+
+    """
+
     n_restarts: int = N_RESTARTS
+    """Number of times to restart the optimization."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -90,7 +223,7 @@ class BayesOpt(Algorithm):
             xi=self.xi,
             exploration_decay=self.exploration_decay,
             exploration_decay_delay=self.exploration_decay_delay,
-            random_state=self.random_state,
+            random_seed=self.seed,
         )
 
         constraint = None
@@ -118,7 +251,7 @@ class BayesOpt(Algorithm):
             pbounds=pbounds,
             acquisition_function=acq,
             constraint=constraint,
-            random_state=self.random_state,
+            random_state=self.seed,
             verbose=self.verbose,
             bounds_transformer=bounds_transformer,
             allow_duplicate_points=self.allow_duplicate_points,
@@ -208,7 +341,7 @@ def _process_acquisition_function(
     xi: PositiveFloat,
     exploration_decay: float | None,
     exploration_decay_delay: NonNegativeInt | None,
-    random_state: int | None,
+    random_seed: int | None,
 ) -> AcquisitionFunction | None:
     """Create and return the appropriate acquisition function.
 
@@ -229,7 +362,7 @@ def _process_acquisition_function(
             over time. None means no decay is applied.
         exploration_decay_delay: Number of iterations before starting the decay.
             None means decay is applied from the start.
-        random_state: Random seed for reproducibility.
+        random_seed: Random seed for reproducibility.
 
     Returns:
         The configured acquisition function instance or None for default.
@@ -271,21 +404,21 @@ def _process_acquisition_function(
                 kappa=kappa,
                 exploration_decay=exploration_decay,
                 exploration_decay_delay=exploration_decay_delay,
-                random_state=random_state,
+                random_state=random_seed,
             )
         elif canonical_name == "ei":
             return acquisition.ExpectedImprovement(
                 xi=xi,
                 exploration_decay=exploration_decay,
                 exploration_decay_delay=exploration_decay_delay,
-                random_state=random_state,
+                random_state=random_seed,
             )
         elif canonical_name == "poi":
             return acquisition.ProbabilityOfImprovement(
                 xi=xi,
                 exploration_decay=exploration_decay,
                 exploration_decay_delay=exploration_decay_delay,
-                random_state=random_state,
+                random_state=random_seed,
             )
         else:
             raise ValueError(f"Unhandled canonical name: {canonical_name}")
@@ -298,7 +431,24 @@ def _process_acquisition_function(
     elif isinstance(acquisition_function, type) and issubclass(
         acquisition_function, acquisition.AcquisitionFunction
     ):
-        return acquisition_function()
+        if issubclass(
+            acquisition_function, acquisition.ExpectedImprovement
+        ) or issubclass(acquisition_function, acquisition.ProbabilityOfImprovement):
+            return acquisition_function(
+                xi=xi,
+                exploration_decay=exploration_decay,
+                exploration_decay_delay=exploration_decay_delay,
+                random_state=random_seed,
+            )
+        elif issubclass(acquisition_function, acquisition.UpperConfidenceBound):
+            return acquisition_function(
+                kappa=kappa,
+                exploration_decay=exploration_decay,
+                exploration_decay_delay=exploration_decay_delay,
+                random_state=random_seed,
+            )
+        else:
+            return acquisition_function()
 
     else:
         raise TypeError(

@@ -2,44 +2,60 @@ import inspect
 import itertools
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import plotly.graph_objects as go
 from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
-from optimagic.config import PLOTLY_PALETTE, PLOTLY_TEMPLATE
+from optimagic.config import DEFAULT_PALETTE, PLOTLY_TEMPLATE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import IterationHistory, PyTree
+from optimagic.visualization.backends import line_plot
+from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
-OptimizeResultOrPath = OptimizeResult | str | Path
+BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
+    "plotly": {
+        "yanchor": "top",
+        "xanchor": "right",
+        "y": 0.95,
+        "x": 0.95,
+    },
+    "matplotlib": {
+        "loc": "upper right",
+    },
+}
+
+
+ResultOrPath = OptimizeResult | str | Path
 
 
 def criterion_plot(
-    results: OptimizeResultOrPath
-    | list[OptimizeResultOrPath]
-    | dict[str, OptimizeResultOrPath],
+    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
-    template: str = PLOTLY_TEMPLATE,
-    palette: list[str] | str = PLOTLY_PALETTE,
+    backend: Literal["plotly", "matplotlib"] = "plotly",
+    template: str | None = None,
+    palette: list[str] | str = DEFAULT_PALETTE,
     stack_multistart: bool = False,
     monotone: bool = False,
     show_exploration: bool = False,
-) -> go.Figure:
+) -> Any:
     """Plot the criterion history of an optimization.
 
     Args:
-        results: A (list or dict of) optimization results with collected history.
-            If dict, then the key is used as the name in a legend.
-        names: Names corresponding to res or entries in res.
+        results: An optimization result (or list of, or dict of results) with collected
+            history, or path(s) to it. If dict, then the key is used as the name in the
+            legend.
         max_evaluations: Clip the criterion history after that many entries.
-        template: The template for the figure. Default is "plotly_white".
-        palette: The coloring palette for traces. Default is "qualitative.Set2".
+        backend: The backend to use for plotting. Default is "plotly".
+        template: The template for the figure. If not specified, the default template of
+            the backend is used.
+        palette: The coloring palette for traces. Default is the D3 qualitative palette.
         stack_multistart: Whether to combine multistart histories into a single history.
             Default is False.
         monotone: If True, the criterion plot becomes monotone in the sense that at each
@@ -54,9 +70,7 @@ def criterion_plot(
     # ==================================================================================
     # Process inputs
 
-    if not isinstance(palette, list):
-        palette = [palette]
-    palette_cycle = itertools.cycle(palette)
+    palette_cycle = get_palette_cycle(palette)
 
     dict_of_optimize_results_or_paths = _harmonize_inputs_to_dict(results, names)
 
@@ -78,23 +92,26 @@ def criterion_plot(
     )
 
     # ==================================================================================
-    # Generate the plotly figure
+    # Generate the figure
 
-    plot_config = PlotConfig(
+    fig = line_plot(
+        lines=lines + multistart_lines,
+        backend=backend,
+        xlabel="No. of criterion evaluations",
+        ylabel="Criterion value",
         template=template,
-        legend={"yanchor": "top", "xanchor": "right", "y": 0.95, "x": 0.95},
+        legend_properties=BACKEND_TO_CRITERION_PLOT_LEGEND_PROPERTIES.get(
+            backend, None
+        ),
     )
 
-    fig = _plotly_line_plot(lines + multistart_lines, plot_config)
     return fig
 
 
 def _harmonize_inputs_to_dict(
-    results: OptimizeResultOrPath
-    | list[OptimizeResultOrPath]
-    | dict[str, OptimizeResultOrPath],
+    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None,
-) -> dict[str, OptimizeResult | str | Path]:
+) -> dict[str, ResultOrPath]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
     # convert scalar case to list case
     if not isinstance(names, list) and names is not None:
@@ -245,7 +262,7 @@ class _PlottingMultistartHistory:
 
 
 def _retrieve_optimization_data(
-    results: dict[str, OptimizeResult | str | Path],
+    results: dict[str, ResultOrPath],
     stack_multistart: bool,
     show_exploration: bool,
 ) -> list[_PlottingMultistartHistory]:
@@ -462,26 +479,6 @@ def _get_stacked_local_histories(
     )
 
 
-@dataclass(frozen=True)
-class LineData:
-    """Data of a single line.
-
-    Attributes:
-        x: The x-coordinates of the points.
-        y: The y-coordinates of the points.
-        color: The color of the line. Default is None.
-        name: The name of the line. Default is None.
-        show_in_legend: Whether to show the line in the legend. Default is True.
-
-    """
-
-    x: np.ndarray
-    y: np.ndarray
-    color: str | None = None
-    name: str | None = None
-    show_in_legend: bool = True
-
-
 def _extract_criterion_plot_lines(
     data: list[_PlottingMultistartHistory],
     max_evaluations: int | None,
@@ -543,69 +540,13 @@ def _extract_criterion_plot_lines(
         if max_evaluations is not None and len(history) > max_evaluations:
             history = history[:max_evaluations]
 
-        _color = next(palette_cycle)
-        if not isinstance(_color, str):
-            msg = "highlight_palette needs to be a string or list of strings, but its "
-            f"entry is of type {type(_color)}."
-            raise TypeError(msg)
-
         line_data = LineData(
             x=np.arange(len(history)),
             y=history,
-            color=_color,
+            color=next(palette_cycle),
             name="best result" if plot_multistart else _data.name,
             show_in_legend=not plot_multistart,
         )
         lines.append(line_data)
 
     return lines, multistart_lines
-
-
-@dataclass(frozen=True)
-class PlotConfig:
-    """Configuration settings for figure.
-
-    Attributes:
-        template: The template for the figure.
-        legend: Configuration for the legend.
-
-    """
-
-    template: str
-    legend: dict[str, Any]
-
-
-def _plotly_line_plot(lines: list[LineData], plot_config: PlotConfig) -> go.Figure:
-    """Create a plotly line plot from the given lines and plot configuration.
-
-    Args:
-        lines: Data for lines to be plotted.
-        plot_config: Configuration for the plot.
-
-    Returns:
-        The figure object containing the lines.
-
-    """
-
-    fig = go.Figure()
-
-    for line in lines:
-        trace = go.Scatter(
-            x=line.x,
-            y=line.y,
-            name=line.name,
-            mode="lines",
-            line_color=line.color,
-            showlegend=line.show_in_legend,
-            connectgaps=True,
-        )
-        fig.add_trace(trace)
-
-    fig.update_layout(
-        template=plot_config.template,
-        xaxis_title_text="No. of criterion evaluations",
-        yaxis_title_text="Criterion value",
-        legend=plot_config.legend,
-    )
-
-    return fig
