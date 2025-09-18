@@ -49,6 +49,7 @@ def _line_plot_plotly(
             name=line.name,
             line_color=line.color,
             mode="lines",
+            showlegend=line.show_in_legend,
         )
         fig.add_trace(trace)
 
