@@ -19,6 +19,7 @@ how_to_constraints
 how_to_globalization
 how_to_multistart
 how_to_visualize_histories
+how_to_change_plotting_backend
 how_to_scaling
 how_to_logging
 how_to_errors_during_optimization
