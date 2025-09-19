@@ -1011,10 +1011,10 @@ class SphereExampleInternalOptimizationProblemWithConverter(
         }
 
         def sphere_gradient(params: PyTree) -> PyTree:
-            return {params[f"x{i}"]: 2 * v for i, v in enumerate(params.values())}
+            return {f"x{i}": 2 * v for i, v in enumerate(params.values())}
 
         def likelihood_sphere_gradient(params: PyTree) -> PyTree:
-            return {params[f"x{i}"]: 2 * v for i, v in enumerate(params.values())}
+            return {f"x{i}": 2 * v for i, v in enumerate(params.values())}
 
         def ls_sphere_jac(params: PyTree) -> PyTree:
             return {

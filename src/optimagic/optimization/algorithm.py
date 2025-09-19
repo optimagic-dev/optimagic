@@ -33,6 +33,7 @@ class AlgoInfo:
     supports_linear_constraints: bool
     supports_nonlinear_constraints: bool
     disable_history: bool = False
+    experimental: bool = False
 
     def __post_init__(self) -> None:
         report: list[str] = []
