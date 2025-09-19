@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - petsc4py
+  - petsc4py<=3.23.4
   - jax
   - cyipopt>=1.4.0  # dev, tests
   - pygmo>=2.19.0  # dev, tests, docs
@@ -19,6 +19,7 @@ dependencies:
   - numpy >= 2  # run, tests
   - pandas  # run, tests
   - plotly>=6.2  # run, tests
+  - matplotlib  # tests
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests

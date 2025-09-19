@@ -152,7 +152,11 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+exclude_patterns = [
+    "_build",
+    "**.ipynb_checkpoints",
+    "how_to/how_to_slice_plot_3d.ipynb",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -179,6 +183,7 @@ nb_execution_excludepatterns = [
     "estimation_tables_overview.ipynb",
     # too long runtime
     "bootstrap_montecarlo_comparison.ipynb",
+    "how_to_slice_plot_3d.ipynb",
 ]
 
 # -- Options for HTML output ----------------------------------------------
