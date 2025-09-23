@@ -38,7 +38,7 @@ def _line_plot_plotly(
     legend_properties: dict[str, Any] | None,
 ) -> go.Figure:
     if template is None:
-        template = "plotly"
+        template = "simple_white"
 
     fig = go.Figure()
 
@@ -49,6 +49,7 @@ def _line_plot_plotly(
             name=line.name,
             line_color=line.color,
             mode="lines",
+            showlegend=line.show_in_legend,
         )
         fig.add_trace(trace)
 
@@ -123,6 +124,8 @@ def line_plot(
 
     Args:
         lines: List of objects each containing data for a line in the plot.
+            The order of lines in the list determines the order in which they are
+            plotted, with later lines being rendered on top of earlier ones.
         backend: The backend to use for plotting.
         title: Title of the plot.
         xlabel: Label for the x-axis.
