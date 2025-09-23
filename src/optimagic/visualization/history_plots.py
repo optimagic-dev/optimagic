@@ -95,7 +95,7 @@ def criterion_plot(
     # Generate the figure
 
     fig = line_plot(
-        lines=lines + multistart_lines,
+        lines=multistart_lines + lines,
         backend=backend,
         xlabel="No. of criterion evaluations",
         ylabel="Criterion value",
