@@ -9,6 +9,12 @@ from optimagic.visualization.plotting_utilities import LineData
 if IS_MATPLOTLIB_INSTALLED:
     import matplotlib.pyplot as plt
 
+    # If running in an interactive environment, enable interactive mode
+    # to ensure that all figures are displayed correctly.
+    # See: https://github.com/matplotlib/matplotlib/issues/26716
+    if plt.get_backend() == "module://matplotlib_inline.backend_inline":
+        plt.ion()
+
 
 @runtime_checkable
 class LinePlotFunction(Protocol):
