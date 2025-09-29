@@ -1,4 +1,4 @@
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
 import plotly.graph_objects as go
 
@@ -6,14 +6,8 @@ from optimagic.config import IS_MATPLOTLIB_INSTALLED
 from optimagic.exceptions import InvalidPlottingBackendError, NotInstalledError
 from optimagic.visualization.plotting_utilities import LineData
 
-if IS_MATPLOTLIB_INSTALLED:
+if TYPE_CHECKING:
     import matplotlib.pyplot as plt
-
-    # If running in an interactive environment, enable interactive mode
-    # to ensure that all figures are displayed correctly.
-    # See: https://github.com/matplotlib/matplotlib/issues/26716
-    if plt.get_backend() == "module://matplotlib_inline.backend_inline":
-        plt.ion()
 
 
 @runtime_checkable
@@ -85,6 +79,16 @@ def _line_plot_matplotlib(
     width: int | None,
     legend_properties: dict[str, Any] | None,
 ) -> "plt.Axes":
+    import matplotlib.pyplot as plt
+
+    # In interactive environments (like Jupyter), explicitly enable matplotlib's
+    # interactive mode. If it is not enabled, matplotlib's context manager will
+    # revert to non-interactive mode after creating the first figure, causing
+    # subsequent figures to not display inline.
+    # See: https://github.com/matplotlib/matplotlib/issues/26716
+    if plt.get_backend() == "module://matplotlib_inline.backend_inline":
+        plt.ion()
+
     if template is None:
         template = "default"
 
