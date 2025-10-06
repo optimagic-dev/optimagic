@@ -30,7 +30,12 @@ PROFILE_PLOT_XLABELS: dict[str, dict[bool, str]] = {
 }
 
 BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
-    "matplotlib": {"bbox_to_anchor": (1.02, 1), "loc": "upper left"},
+    "matplotlib": {
+        "bbox_to_anchor": (1.02, 1),
+        "loc": "upper left",
+        "fontsize": "x-small",
+        "title": "algorithm",
+    },
     "plotly": {"title": {"text": "algorithm"}},
 }
 

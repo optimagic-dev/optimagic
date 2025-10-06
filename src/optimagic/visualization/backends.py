@@ -58,15 +58,11 @@ def _line_plot_plotly(
     )
 
     if horizontal_line is not None:
-        hline = go.Scatter(
-            x=[min(min(line.x) for line in lines), max(max(line.x) for line in lines)],
-            y=[horizontal_line, horizontal_line],
-            mode="lines",
-            line_color=fig.layout.yaxis.linecolor or "#444444",
-            showlegend=False,
-            hoverinfo="skip",
+        fig.add_hline(
+            y=horizontal_line,
+            line_width=fig.layout.yaxis.linewidth or 1,
+            opacity=1.0,
         )
-        fig.add_trace(hline)
 
     for line in lines:
         trace = go.Scatter(
@@ -116,7 +112,9 @@ def _line_plot_matplotlib(
 
         if horizontal_line is not None:
             ax.axhline(
-                y=horizontal_line, color=ax.spines["left"].get_edgecolor() or "#444444"
+                y=horizontal_line,
+                color=ax.spines["left"].get_edgecolor() or "gray",
+                linewidth=ax.spines["left"].get_linewidth() or 1.0,
             )
 
         for line in lines:
