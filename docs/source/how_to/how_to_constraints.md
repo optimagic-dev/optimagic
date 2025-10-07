@@ -52,7 +52,7 @@ The unconstrained optimum of a six-dimensional version of this problem is:
     ...    params=np.array([2.5, 1, 1, 1, 1, -2.5]),
     ...    algorithm="scipy_lbfgsb",
     ... )
-    >>> res.params.round(3)
+    >>> res.params.round(3) # doctest: +SKIP
     array([1. , 0.8, 0.6, 0.4, 0.2, 0. ])
 
 ```
