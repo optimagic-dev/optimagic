@@ -1,4 +1,4 @@
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
 import plotly.graph_objects as go
 
@@ -6,7 +6,7 @@ from optimagic.config import IS_MATPLOTLIB_INSTALLED
 from optimagic.exceptions import InvalidPlottingBackendError, NotInstalledError
 from optimagic.visualization.plotting_utilities import LineData
 
-if IS_MATPLOTLIB_INSTALLED:
+if TYPE_CHECKING:
     import matplotlib.pyplot as plt
 
 
@@ -38,7 +38,7 @@ def _line_plot_plotly(
     legend_properties: dict[str, Any] | None,
 ) -> go.Figure:
     if template is None:
-        template = "plotly"
+        template = "simple_white"
 
     fig = go.Figure()
 
@@ -49,6 +49,7 @@ def _line_plot_plotly(
             name=line.name,
             line_color=line.color,
             mode="lines",
+            showlegend=line.show_in_legend,
         )
         fig.add_trace(trace)
 
@@ -78,6 +79,16 @@ def _line_plot_matplotlib(
     width: int | None,
     legend_properties: dict[str, Any] | None,
 ) -> "plt.Axes":
+    import matplotlib.pyplot as plt
+
+    # In interactive environments (like Jupyter), explicitly enable matplotlib's
+    # interactive mode. If it is not enabled, matplotlib's context manager will
+    # revert to non-interactive mode after creating the first figure, causing
+    # subsequent figures to not display inline.
+    # See: https://github.com/matplotlib/matplotlib/issues/26716
+    if plt.get_backend() == "module://matplotlib_inline.backend_inline":
+        plt.ion()
+
     if template is None:
         template = "default"
 
@@ -123,6 +134,8 @@ def line_plot(
 
     Args:
         lines: List of objects each containing data for a line in the plot.
+            The order of lines in the list determines the order in which they are
+            plotted, with later lines being rendered on top of earlier ones.
         backend: The backend to use for plotting.
         title: Title of the plot.
         xlabel: Label for the x-axis.
