@@ -271,14 +271,22 @@ def _find_switch_points(solution_times: pd.DataFrame) -> NDArray[np.float64]:
 
 
 def _get_profile_plot_xlabel(runtime_measure: str, normalize_runtime: bool) -> str:
+    # The '{linebreak}' placeholder is replaced with the backend-specific line break
+    # in the corresponding plotting function.
+
     if normalize_runtime:
         runtime_measure_to_xlabel = {
-            "walltime": "Multiple of Minimal Wall Time"
-            "{linebreak}Needed to Solve the Problem",
-            "n_evaluations": "Multiple of Minimal Number of Function Evaluations"
-            "{linebreak}Needed to Solve the Problem",
-            "n_batches": "Multiple of Minimal Number of Batches"
-            "{linebreak}Needed to Solve the Problem",
+            "walltime": (
+                "Multiple of Minimal Wall Time{linebreak}Needed to Solve the Problem"
+            ),
+            "n_evaluations": (
+                "Multiple of Minimal Number of Function Evaluations"
+                "{linebreak}Needed to Solve the Problem"
+            ),
+            "n_batches": (
+                "Multiple of Minimal Number of Batches"
+                "{linebreak}Needed to Solve the Problem"
+            ),
         }
     else:
         runtime_measure_to_xlabel = {
