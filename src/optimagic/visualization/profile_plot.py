@@ -12,35 +12,19 @@ from optimagic.config import DEFAULT_PALETTE
 from optimagic.visualization.backends import line_plot
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
-PROFILE_PLOT_XLABELS: dict[str, dict[bool, str]] = {
-    "walltime": {
-        True: "Multiple of Minimal Wall Time{linebreak}Needed to Solve the Problem",
-        False: "Wall Time Needed to Solve the Problem",
-    },
-    "n_evaluations": {
-        True: "Multiple of Minimal Number of Function Evaluations{linebreak}"
-        "Needed to Solve the Problem",
-        False: "Number of Function Evaluations",
-    },
-    "n_batches": {
-        True: "Multiple of Minimal Number of Batches{linebreak}"
-        "Needed to Solve the Problem",
-        False: "Number of Batches",
-    },
-}
-
 BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
+    "plotly": {"title": {"text": "algorithm"}},
     "matplotlib": {
         "bbox_to_anchor": (1.02, 1),
         "loc": "upper left",
         "fontsize": "x-small",
         "title": "algorithm",
     },
-    "plotly": {"title": {"text": "algorithm"}},
 }
 
 BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, Any]] = {
     "plotly": {"l": 10, "r": 10, "t": 30, "b": 30},
+    # "matplotlib": handles margins automatically via tight_layout()
 }
 
 
@@ -151,7 +135,7 @@ def profile_plot(
     fig = line_plot(
         lines,
         backend=backend,
-        xlabel=PROFILE_PLOT_XLABELS[runtime_measure][normalize_runtime],
+        xlabel=_get_profile_plot_xlabel(runtime_measure, normalize_runtime),
         ylabel="Share of Problems Solved",
         template=template,
         height=300,
@@ -284,3 +268,23 @@ def _find_switch_points(solution_times: pd.DataFrame) -> NDArray[np.float64]:
         switch_points += 1e-10
     switch_points = switch_points[np.isfinite(switch_points)]
     return switch_points
+
+
+def _get_profile_plot_xlabel(runtime_measure: str, normalize_runtime: bool) -> str:
+    if normalize_runtime:
+        runtime_measure_to_xlabel = {
+            "walltime": "Multiple of Minimal Wall Time"
+            "{linebreak}Needed to Solve the Problem",
+            "n_evaluations": "Multiple of Minimal Number of Function Evaluations"
+            "{linebreak}Needed to Solve the Problem",
+            "n_batches": "Multiple of Minimal Number of Batches"
+            "{linebreak}Needed to Solve the Problem",
+        }
+    else:
+        runtime_measure_to_xlabel = {
+            "walltime": "Wall Time Needed to Solve the Problem",
+            "n_evaluations": "Number of Function Evaluations",
+            "n_batches": "Number of Batches",
+        }
+
+    return runtime_measure_to_xlabel[runtime_measure]
