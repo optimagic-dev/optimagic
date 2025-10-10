@@ -23,6 +23,8 @@ class LinePlotFunction(Protocol):
         height: int | None,
         width: int | None,
         legend_properties: dict[str, Any] | None,
+        margin_properties: dict[str, Any] | None,
+        horizontal_line: float | None,
     ) -> Any: ...
 
 
@@ -36,11 +38,31 @@ def _line_plot_plotly(
     height: int | None,
     width: int | None,
     legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+    horizontal_line: float | None,
 ) -> go.Figure:
     if template is None:
         template = "simple_white"
 
     fig = go.Figure()
+
+    fig.update_layout(
+        title=title,
+        xaxis_title=xlabel.format(linebreak="<br>") if xlabel else None,
+        yaxis_title=ylabel,
+        template=template,
+        height=height,
+        width=width,
+        legend=legend_properties,
+        margin=margin_properties,
+    )
+
+    if horizontal_line is not None:
+        fig.add_hline(
+            y=horizontal_line,
+            line_width=fig.layout.yaxis.linewidth or 1,
+            opacity=1.0,
+        )
 
     for line in lines:
         trace = go.Scatter(
@@ -52,18 +74,6 @@ def _line_plot_plotly(
             showlegend=line.show_in_legend,
         )
         fig.add_trace(trace)
-
-    fig.update_layout(
-        title=title,
-        xaxis_title=xlabel,
-        yaxis_title=ylabel,
-        template=template,
-        height=height,
-        width=width,
-    )
-
-    if legend_properties:
-        fig.update_layout(legend=legend_properties)
 
     return fig
 
@@ -78,6 +88,8 @@ def _line_plot_matplotlib(
     height: int | None,
     width: int | None,
     legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+    horizontal_line: float | None,
 ) -> "plt.Axes":
     import matplotlib.pyplot as plt
 
@@ -93,7 +105,17 @@ def _line_plot_matplotlib(
         template = "default"
 
     with plt.style.context(template):
-        fig, ax = plt.subplots(figsize=(width, height) if width and height else None)
+        px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
+        fig, ax = plt.subplots(
+            figsize=(width * px, height * px) if width and height else None
+        )
+
+        if horizontal_line is not None:
+            ax.axhline(
+                y=horizontal_line,
+                color=ax.spines["left"].get_edgecolor() or "gray",
+                linewidth=ax.spines["left"].get_linewidth() or 1.0,
+            )
 
         for line in lines:
             ax.plot(
@@ -103,9 +125,17 @@ def _line_plot_matplotlib(
                 color=line.color,
             )
 
-        ax.set(title=title, xlabel=xlabel, ylabel=ylabel)
-        if legend_properties:
-            ax.legend(**legend_properties)
+        ax.set(
+            title=title,
+            xlabel=xlabel.format(linebreak="\n") if xlabel else None,
+            ylabel=ylabel,
+        )
+
+        if legend_properties is None:
+            legend_properties = {}
+        ax.legend(**legend_properties)
+
+        fig.tight_layout()
 
     return ax
 
@@ -129,6 +159,8 @@ def line_plot(
     height: int | None = None,
     width: int | None = None,
     legend_properties: dict[str, Any] | None = None,
+    margin_properties: dict[str, Any] | None = None,
+    horizontal_line: float | None = None,
 ) -> Any:
     """Create a line plot corresponding to the specified backend.
 
@@ -144,6 +176,9 @@ def line_plot(
         height: Height of the plot (in pixels).
         width: Width of the plot (in pixels).
         legend_properties: Backend-specific properties for the legend.
+        margin_properties: Backend-specific properties for the plot margins.
+        horizontal_line: If provided, a horizontal line is drawn at the specified
+            y-value.
 
     Returns:
         A figure object corresponding to the specified backend.
@@ -178,6 +213,8 @@ def line_plot(
         height=height,
         width=width,
         legend_properties=legend_properties,
+        margin_properties=margin_properties,
+        horizontal_line=horizontal_line,
     )
 
     return fig
