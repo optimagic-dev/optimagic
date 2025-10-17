@@ -1,5 +1,7 @@
-from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
+import itertools
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast, runtime_checkable
 
+import numpy as np
 import plotly.graph_objects as go
 
 from optimagic.config import IS_MATPLOTLIB_INSTALLED
@@ -25,6 +27,26 @@ class LinePlotFunction(Protocol):
         legend_properties: dict[str, Any] | None,
         margin_properties: dict[str, Any] | None,
         horizontal_line: float | None,
+        subplot: Any | None = None,
+    ) -> Any: ...
+
+
+@runtime_checkable
+class GridLinePlotFunction(Protocol):
+    def __call__(
+        self,
+        lines_list: list[list[LineData]],
+        *,
+        n_rows: int,
+        n_cols: int,
+        titles: list[str] | None,
+        xlabel: str | None,
+        ylabel: str | None,
+        template: str | None,
+        height: int | None,
+        width: int | None,
+        legend_properties: dict[str, Any] | None,
+        margin_properties: dict[str, Any] | None,
     ) -> Any: ...
 
 
@@ -40,16 +62,20 @@ def _line_plot_plotly(
     legend_properties: dict[str, Any] | None,
     margin_properties: dict[str, Any] | None,
     horizontal_line: float | None,
+    subplot: tuple[go.Figure, int, int] | None = None,
 ) -> go.Figure:
     if template is None:
         template = "simple_white"
 
-    fig = go.Figure()
+    if subplot is None:
+        fig = go.Figure()
+        row, col = None, None
+
+    else:
+        fig, row, col = subplot
 
     fig.update_layout(
         title=title,
-        xaxis_title=xlabel.format(linebreak="<br>") if xlabel else None,
-        yaxis_title=ylabel,
         template=template,
         height=height,
         width=width,
@@ -62,6 +88,8 @@ def _line_plot_plotly(
             y=horizontal_line,
             line_width=fig.layout.yaxis.linewidth or 1,
             opacity=1.0,
+            row=row,
+            col=col,
         )
 
     for line in lines:
@@ -72,8 +100,60 @@ def _line_plot_plotly(
             line_color=line.color,
             mode="lines",
             showlegend=line.show_in_legend,
+            legendgroup=line.name,
         )
-        fig.add_trace(trace)
+        fig.add_trace(trace, row=row, col=col)
+
+    fig.update_xaxes(
+        title=xlabel.format(linebreak="<br>") if xlabel else None, row=row, col=col
+    )
+    fig.update_yaxes(
+        title=ylabel.format(linebreak="<br>") if ylabel else None, row=row, col=col
+    )
+
+    return fig
+
+
+def _grid_line_plot_plotly(
+    lines_list: list[list[LineData]],
+    *,
+    n_rows: int,
+    n_cols: int,
+    titles: list[str] | None,
+    xlabel: str | None,
+    ylabel: str | None,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+) -> go.Figure:
+    from plotly.subplots import make_subplots
+
+    fig = make_subplots(
+        rows=n_rows,
+        cols=n_cols,
+        subplot_titles=titles,
+    )
+
+    for lines, (row, col) in zip(
+        lines_list,
+        itertools.product(range(1, n_rows + 1), range(1, n_cols + 1)),
+        strict=False,
+    ):
+        _line_plot_plotly(
+            lines,
+            title=None,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            template=template,
+            height=height,
+            width=width,
+            legend_properties=legend_properties,
+            margin_properties=margin_properties,
+            horizontal_line=None,
+            subplot=(fig, row, col),
+        )
 
     return fig
 
@@ -90,6 +170,7 @@ def _line_plot_matplotlib(
     legend_properties: dict[str, Any] | None,
     margin_properties: dict[str, Any] | None,
     horizontal_line: float | None,
+    subplot: "plt.Axes | None" = None,
 ) -> "plt.Axes":
     import matplotlib.pyplot as plt
 
@@ -105,10 +186,14 @@ def _line_plot_matplotlib(
         template = "default"
 
     with plt.style.context(template):
-        px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
-        fig, ax = plt.subplots(
-            figsize=(width * px, height * px) if width and height else None
-        )
+        if subplot is None:
+            px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
+            fig, ax = plt.subplots(
+                figsize=(width * px, height * px) if width and height else None,
+                layout="constrained",
+            )
+        else:
+            ax = subplot
 
         if horizontal_line is not None:
             ax.axhline(
@@ -128,23 +213,69 @@ def _line_plot_matplotlib(
         ax.set(
             title=title,
             xlabel=xlabel.format(linebreak="\n") if xlabel else None,
-            ylabel=ylabel,
+            ylabel=ylabel.format(linebreak="\n") if ylabel else None,
         )
 
-        if legend_properties is None:
-            legend_properties = {}
-        ax.legend(**legend_properties)
-
-        fig.tight_layout()
+        if legend_properties is not None:
+            ax.legend(**legend_properties)
 
     return ax
 
 
+def _grid_line_plot_matplotlib(
+    lines_list: list[list[LineData]],
+    *,
+    n_rows: int,
+    n_cols: int,
+    titles: list[str] | None,
+    xlabel: str | None,
+    ylabel: str | None,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+) -> np.ndarray:
+    import matplotlib.pyplot as plt
+
+    px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
+    fig, axes = plt.subplots(
+        nrows=n_rows,
+        ncols=n_cols,
+        squeeze=False,
+        figsize=(width * px, height * px) if width and height else None,
+        layout="constrained",
+    )
+
+    for i, (ax, lines) in enumerate(zip(axes.ravel(), lines_list, strict=False)):
+        _line_plot_matplotlib(
+            lines,
+            title=titles[i] if titles else None,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            template=template,
+            height=None,
+            width=None,
+            legend_properties=None,
+            margin_properties=None,
+            horizontal_line=None,
+            subplot=ax,
+        )
+
+    fig.legend(**legend_properties or {})
+
+    return axes
+
+
 BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[
-    str, tuple[bool, LinePlotFunction]
+    str, tuple[bool, LinePlotFunction, GridLinePlotFunction]
 ] = {
-    "plotly": (True, _line_plot_plotly),
-    "matplotlib": (IS_MATPLOTLIB_INSTALLED, _line_plot_matplotlib),
+    "plotly": (True, _line_plot_plotly, _grid_line_plot_plotly),
+    "matplotlib": (
+        IS_MATPLOTLIB_INSTALLED,
+        _line_plot_matplotlib,
+        _grid_line_plot_matplotlib,
+    ),
 }
 
 
@@ -184,25 +315,9 @@ def line_plot(
         A figure object corresponding to the specified backend.
 
     """
-    if backend not in BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION:
-        msg = (
-            f"Invalid plotting backend '{backend}'. "
-            f"Available backends: "
-            f"{', '.join(BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())}"
-        )
-        raise InvalidPlottingBackendError(msg)
-
-    _is_backend_available, _line_plot_backend_function = (
-        BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION[backend]
+    _line_plot_backend_function = cast(
+        LinePlotFunction, _get_plot_function(backend, grid_plot=False)
     )
-
-    if not _is_backend_available:
-        msg = (
-            f"The {backend} backend is not installed. "
-            f"Install the package using either 'pip install {backend}' or "
-            f"'conda install -c conda-forge {backend}'"
-        )
-        raise NotInstalledError(msg)
 
     fig = _line_plot_backend_function(
         lines,
@@ -218,3 +333,69 @@ def line_plot(
     )
 
     return fig
+
+
+def grid_line_plot(
+    lines_list: list[list[LineData]],
+    backend: Literal["plotly", "matplotlib"] = "plotly",
+    *,
+    n_rows: int,
+    n_cols: int,
+    titles: list[str] | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    template: str | None = None,
+    height: int | None = None,
+    width: int | None = None,
+    legend_properties: dict[str, Any] | None = None,
+    margin_properties: dict[str, Any] | None = None,
+) -> Any:
+    _grid_line_plot_backend_function = cast(
+        GridLinePlotFunction, _get_plot_function(backend, grid_plot=True)
+    )
+    fig = _grid_line_plot_backend_function(
+        lines_list,
+        n_rows=n_rows,
+        n_cols=n_cols,
+        titles=titles,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        template=template,
+        height=height,
+        width=width,
+        legend_properties=legend_properties,
+        margin_properties=margin_properties,
+    )
+
+    return fig
+
+
+def _get_plot_function(
+    backend: str, grid_plot: bool
+) -> LinePlotFunction | GridLinePlotFunction:
+    if backend not in BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION:
+        msg = (
+            f"Invalid plotting backend '{backend}'. "
+            f"Available backends: "
+            f"{', '.join(BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())}"
+        )
+        raise InvalidPlottingBackendError(msg)
+
+    (
+        _is_backend_available,
+        _line_plot_backend_function,
+        _grid_line_plot_backend_function,
+    ) = BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION[backend]
+
+    if not _is_backend_available:
+        msg = (
+            f"The {backend} backend is not installed. "
+            f"Install the package using either 'pip install {backend}' or "
+            f"'conda install -c conda-forge {backend}'"
+        )
+        raise NotInstalledError(msg)
+
+    if grid_plot:
+        return _grid_line_plot_backend_function
+    else:
+        return _line_plot_backend_function
