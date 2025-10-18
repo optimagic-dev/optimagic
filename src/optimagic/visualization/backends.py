@@ -70,7 +70,6 @@ def _line_plot_plotly(
     if subplot is None:
         fig = go.Figure()
         row, col = None, None
-
     else:
         fig, row, col = subplot
 
@@ -241,7 +240,7 @@ def _grid_line_plot_matplotlib(
     fig, axes = plt.subplots(
         nrows=n_rows,
         ncols=n_cols,
-        squeeze=False,
+        squeeze=False,  # always return a 2D array of axes
         figsize=(width * px, height * px) if width and height else None,
         layout="constrained",
     )

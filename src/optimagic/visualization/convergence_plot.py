@@ -79,7 +79,7 @@ def convergence_plot(
     This creates a grid of plots, showing the convergence of the different
     algorithms on each problem. The faster a line falls, the faster the algorithm
     improved on the problem. The algorithm converged where its line reaches 0
-    (if normalize_distance is True) or the horizontal blue line labeled "true solution".
+    (if normalize_distance is True) or the horizontal line labeled "true solution".
 
     Each plot shows on the x axis the runtime_measure, which can be walltime, number
     of evaluations or number of batches. Each algorithm's convergence is a line in the
@@ -171,8 +171,6 @@ def convergence_plot(
         problems=problems,
         runtime_measure=runtime_measure,
         outcome=outcome,
-        distance_measure=distance_measure,
-        normalize_distance=normalize_distance,
         palette=palette,
     )
 
@@ -235,24 +233,22 @@ def _extract_convergence_plot_lines(
     problems: dict[str, dict[str, Any]],
     runtime_measure: str,
     outcome: str,
-    distance_measure: str,
-    normalize_distance: bool,
     palette: list[str] | str,
 ) -> tuple[list[list[LineData]], list[str]]:
     lines_list = []  # container for all subplots
     titles = []
 
-    for i, (_prob_name, prob_data) in enumerate(df.groupby("problem", sort=False)):
+    for i, (_prob_name, _prob_data) in enumerate(df.groupby("problem", sort=False)):
         prob_name = str(_prob_name)
         subplot_lines = []  # container for data of traces in individual subplot
         palette_cycle = get_palette_cycle(palette)
 
         if runtime_measure == "n_batches":
             to_plot = (
-                prob_data.groupby(["algorithm", runtime_measure]).min().reset_index()
+                _prob_data.groupby(["algorithm", runtime_measure]).min().reset_index()
             )
         else:
-            to_plot = prob_data
+            to_plot = _prob_data
 
         for alg, group in to_plot.groupby("algorithm", sort=False):
             line_data = LineData(
@@ -266,7 +262,7 @@ def _extract_convergence_plot_lines(
             )
             subplot_lines.append(line_data)
 
-        if distance_measure == "criterion" and not normalize_distance:
+        if outcome in ("criterion", "monotone_criterion"):
             f_opt = problems[prob_name]["solution"]["value"]
             line_data = LineData(
                 x=to_plot[runtime_measure].to_numpy(),
@@ -285,25 +281,27 @@ def _extract_convergence_plot_lines(
     return lines_list, titles
 
 
-def _check_only_allowed_subset_provided(subset, allowed, name):
+def _check_only_allowed_subset_provided(
+    subset: list[str] | None, allowed: pd.Series | list[str], name: str
+) -> None:
     """Check if all entries of a proposed subset are in a Series.
 
     Args:
-        subset (iterable or None): If None, no checks are performed. Else a ValueError
-            is raised listing all entries that are not in the provided Series.
-        allowed (iterable): allowed entries.
-        name (str): name of the provided entries to use for the ValueError.
+        subset: If None, no checks are performed. Else a ValueError is raised listing
+            all entries that are not in the provided Series.
+        allowed: allowed entries.
+        name: name of the provided entries to use for the ValueError.
 
     Raises:
         ValueError
 
     """
-    allowed = set(allowed)
+    allowed_set = set(allowed)
     if subset is not None:
-        missing = [entry for entry in subset if entry not in allowed]
+        missing = [entry for entry in subset if entry not in allowed_set]
         if missing:
             missing_msg = ""
             for entry in missing:
-                proposed = propose_alternatives(entry, allowed)
+                proposed = propose_alternatives(entry, allowed_set)
                 missing_msg += f"Invalid {name}: {entry}. Did you mean {proposed}?\n"
             raise ValueError(missing_msg)
