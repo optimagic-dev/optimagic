@@ -1,33 +1,17 @@
 import pytest
 
 from optimagic import get_benchmark_problems
+from optimagic.benchmarking.process_benchmark_results import process_benchmark_results
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.visualization.convergence_plot import (
     _check_only_allowed_subset_provided,
+    _extract_convergence_plot_lines,
     convergence_plot,
 )
 
-# integration test to make sure non default argument do not throw Errors
-profile_options = [
-    {"n_cols": 3},
-    {"distance_measure": "parameter_distance"},
-    {"monotone": False},
-    {"normalize_distance": False},
-    {"runtime_measure": "walltime"},
-    {"runtime_measure": "n_batches"},
-    {"stopping_criterion": None},
-    {"stopping_criterion": "x"},
-    {"stopping_criterion": "x_and_y"},
-    {"stopping_criterion": "x_or_y"},
-    {"x_precision": 1e-5},
-    {"y_precision": 1e-5},
-]
 
-
-@pytest.mark.parametrize(
-    "options, grid", zip(profile_options, [True, False], strict=False)
-)
-def test_convergence_plot_options(options, grid):
+@pytest.fixture()
+def benchmark_results():
     problems = get_benchmark_problems("example")
     stop_after_10 = {
         "stopping_max_criterion_evaluations": 10,
@@ -42,6 +26,31 @@ def test_convergence_plot_options(options, grid):
         optimizers,
         n_cores=1,  # must be 1 for the test to work
     )
+    return problems, results
+
+
+# integration test to make sure non default argument do not throw Errors
+profile_options = [
+    {"n_cols": 3},
+    {"distance_measure": "parameter_distance"},
+    {"monotone": False},
+    {"normalize_distance": False},
+    {"runtime_measure": "walltime"},
+    {"runtime_measure": "n_batches"},
+    # {"stopping_criterion": None},
+    {"stopping_criterion": "x"},
+    {"stopping_criterion": "x_and_y"},
+    {"stopping_criterion": "x_or_y"},
+    {"x_precision": 1e-5},
+    {"y_precision": 1e-5},
+    {"backend": "matplotlib"},
+]
+
+
+@pytest.mark.parametrize("options", profile_options)
+@pytest.mark.parametrize("grid", [True, False])
+def test_convergence_plot_options(options, grid, benchmark_results):
+    problems, results = benchmark_results
 
     convergence_plot(
         problems=problems,
@@ -66,3 +75,29 @@ def test_check_only_allowed_subset_provided_missing():
     allowed = ["a", "b", "c"]
     with pytest.raises(ValueError):
         _check_only_allowed_subset_provided(["d"], allowed, "name")
+
+
+def test_extract_convergence_plot_lines(benchmark_results):
+    problems, results = benchmark_results
+
+    df, _ = process_benchmark_results(
+        problems=problems, results=results, stopping_criterion="y"
+    )
+
+    lines_list, titles = _extract_convergence_plot_lines(
+        df=df,
+        problems=problems,
+        runtime_measure="n_evaluations",
+        outcome="criterion_normalized",
+        palette=["red", "green", "blue"],
+    )
+
+    assert isinstance(lines_list, list) and isinstance(titles, list)
+    assert len(lines_list) == len(titles) == len(problems)
+
+    for subplot_lines in lines_list:
+        assert isinstance(subplot_lines, list) and len(subplot_lines) == 2
+        assert subplot_lines[0].name == "lbfgsb"
+        assert subplot_lines[1].name == "nm"
+        assert subplot_lines[0].color == "red"
+        assert subplot_lines[1].color == "green"
