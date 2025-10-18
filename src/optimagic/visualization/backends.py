@@ -82,6 +82,12 @@ def _line_plot_plotly(
         legend=legend_properties,
         margin=margin_properties,
     )
+    fig.update_xaxes(
+        title=xlabel.format(linebreak="<br>") if xlabel else None, row=row, col=col
+    )
+    fig.update_yaxes(
+        title=ylabel.format(linebreak="<br>") if ylabel else None, row=row, col=col
+    )
 
     if horizontal_line is not None:
         fig.add_hline(
@@ -103,13 +109,6 @@ def _line_plot_plotly(
             legendgroup=line.name,
         )
         fig.add_trace(trace, row=row, col=col)
-
-    fig.update_xaxes(
-        title=xlabel.format(linebreak="<br>") if xlabel else None, row=row, col=col
-    )
-    fig.update_yaxes(
-        title=ylabel.format(linebreak="<br>") if ylabel else None, row=row, col=col
-    )
 
     return fig
 
@@ -217,7 +216,7 @@ def _line_plot_matplotlib(
         )
 
         if legend_properties is not None:
-            ax.legend(**legend_properties)
+            fig.legend(**legend_properties)
 
     return ax
 
@@ -247,9 +246,13 @@ def _grid_line_plot_matplotlib(
         layout="constrained",
     )
 
-    for i, (ax, lines) in enumerate(zip(axes.ravel(), lines_list, strict=False)):
+    for i, (row, col) in enumerate(itertools.product(range(n_rows), range(n_cols))):
+        if i >= len(lines_list):
+            axes[row, col].set_visible(False)
+            continue
+
         _line_plot_matplotlib(
-            lines,
+            lines_list[i],
             title=titles[i] if titles else None,
             xlabel=xlabel,
             ylabel=ylabel,
@@ -259,24 +262,12 @@ def _grid_line_plot_matplotlib(
             legend_properties=None,
             margin_properties=None,
             horizontal_line=None,
-            subplot=ax,
+            subplot=axes[row, col],
         )
 
     fig.legend(**legend_properties or {})
 
     return axes
-
-
-BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[
-    str, tuple[bool, LinePlotFunction, GridLinePlotFunction]
-] = {
-    "plotly": (True, _line_plot_plotly, _grid_line_plot_plotly),
-    "matplotlib": (
-        IS_MATPLOTLIB_INSTALLED,
-        _line_plot_matplotlib,
-        _grid_line_plot_matplotlib,
-    ),
-}
 
 
 def line_plot(
@@ -350,9 +341,33 @@ def grid_line_plot(
     legend_properties: dict[str, Any] | None = None,
     margin_properties: dict[str, Any] | None = None,
 ) -> Any:
+    """Create a grid of line plots corresponding to the specified backend.
+
+    Args:
+        lines_list: A list where each element is a list of objects containing data
+            for the lines in a subplot. The order of sublists determines the order
+            of subplots in the grid (row-wise), and the order of lines within each
+            sublist determines the order of lines in that subplot.
+        backend: The backend to use for plotting.
+        n_rows: Number of rows in the grid.
+        n_cols: Number of columns in the grid.
+        titles: Titles for each subplot in the grid.
+        xlabel: Label for the x-axis of each subplot.
+        ylabel: Label for the y-axis of each subplot.
+        template: Backend-specific template for styling the plots.
+        height: Height of the entire grid plot (in pixels).
+        width: Width of the entire grid plot (in pixels).
+        legend_properties: Backend-specific properties for the legend.
+        margin_properties: Backend-specific properties for the plot margins.
+
+    Returns:
+        A figure object corresponding to the specified backend.
+
+    """
     _grid_line_plot_backend_function = cast(
         GridLinePlotFunction, _get_plot_function(backend, grid_plot=True)
     )
+
     fig = _grid_line_plot_backend_function(
         lines_list,
         n_rows=n_rows,
@@ -368,6 +383,18 @@ def grid_line_plot(
     )
 
     return fig
+
+
+BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[
+    str, tuple[bool, LinePlotFunction, GridLinePlotFunction]
+] = {
+    "plotly": (True, _line_plot_plotly, _grid_line_plot_plotly),
+    "matplotlib": (
+        IS_MATPLOTLIB_INSTALLED,
+        _line_plot_matplotlib,
+        _grid_line_plot_matplotlib,
+    ),
+}
 
 
 def _get_plot_function(
