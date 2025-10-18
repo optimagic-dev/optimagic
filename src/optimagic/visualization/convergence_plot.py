@@ -11,8 +11,8 @@ from optimagic.utilities import propose_alternatives
 from optimagic.visualization.backends import grid_line_plot, line_plot
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
-BACKEND_TO_CONVERGENCE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any] | None] = {
-    "plotly": None,
+BACKEND_TO_CONVERGENCE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
+    "plotly": {},
     "matplotlib": {"loc": "outside right upper", "fontsize": "x-small"},
 }
 
@@ -172,6 +172,7 @@ def convergence_plot(
         runtime_measure=runtime_measure,
         outcome=outcome,
         palette=palette,
+        combine_plots_in_grid=combine_plots_in_grid,
     )
 
     n_rows = int(np.ceil(len(lines_list) / n_cols))
@@ -204,9 +205,9 @@ def convergence_plot(
     else:
         fig_dict = {}
 
-        for i, lines in enumerate(lines_list):
+        for i, subplot_lines in enumerate(lines_list):
             fig = line_plot(
-                lines,
+                subplot_lines,
                 backend=backend,
                 title=titles[i],
                 xlabel=RUNTIME_MEASURE_TO_CONVERGENCE_PLOT_XLABEL[runtime_measure],
@@ -234,6 +235,7 @@ def _extract_convergence_plot_lines(
     runtime_measure: str,
     outcome: str,
     palette: list[str] | str,
+    combine_plots_in_grid: bool = True,
 ) -> tuple[list[list[LineData]], list[str]]:
     lines_list = []  # container for all subplots
     titles = []
@@ -257,8 +259,8 @@ def _extract_convergence_plot_lines(
                 name=str(alg),
                 color=next(palette_cycle),
                 show_in_legend=(
-                    i == 0
-                ),  # show legend only in first subplot to avoid duplicate entries
+                    (not combine_plots_in_grid) or (i == 0)
+                ),  # if combining plots, only show legend in first subplot
             )
             subplot_lines.append(line_data)
 
@@ -270,8 +272,8 @@ def _extract_convergence_plot_lines(
                 name="true solution",
                 color=next(palette_cycle),
                 show_in_legend=(
-                    i == 0
-                ),  # show legend only in first subplot to avoid duplicate entries
+                    (not combine_plots_in_grid) or (i == 0)
+                ),  # if combining plots, only show legend in first subplot
             )
             subplot_lines.append(line_data)
 

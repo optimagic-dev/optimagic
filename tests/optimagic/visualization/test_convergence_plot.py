@@ -29,6 +29,16 @@ def benchmark_results():
     return problems, results
 
 
+def test_convergence_plot_default_options(benchmark_results):
+    problems, results = benchmark_results
+
+    convergence_plot(
+        problems=problems,
+        results=results,
+        problem_subset=["bard_good_start"],
+    )
+
+
 # integration test to make sure non default argument do not throw Errors
 profile_options = [
     {"n_cols": 3},
@@ -37,7 +47,6 @@ profile_options = [
     {"normalize_distance": False},
     {"runtime_measure": "walltime"},
     {"runtime_measure": "n_batches"},
-    # {"stopping_criterion": None},
     {"stopping_criterion": "x"},
     {"stopping_criterion": "x_and_y"},
     {"stopping_criterion": "x_or_y"},
@@ -59,6 +68,18 @@ def test_convergence_plot_options(options, grid, benchmark_results):
         combine_plots_in_grid=grid,
         **options,
     )
+
+
+def test_convergence_plot_stopping_criterion_none(benchmark_results):
+    problems, results = benchmark_results
+
+    with pytest.raises(UnboundLocalError):
+        convergence_plot(
+            problems=problems,
+            results=results,
+            problem_subset=["bard_good_start"],
+            stopping_criterion=None,
+        )
 
 
 def test_check_only_allowed_subset_provided_none():

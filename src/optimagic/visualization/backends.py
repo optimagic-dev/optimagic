@@ -1,5 +1,5 @@
 import itertools
-from typing import TYPE_CHECKING, Any, Literal, Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
 
 import numpy as np
 import plotly.graph_objects as go
@@ -28,7 +28,16 @@ class LinePlotFunction(Protocol):
         margin_properties: dict[str, Any] | None,
         horizontal_line: float | None,
         subplot: Any | None = None,
-    ) -> Any: ...
+    ) -> Any:
+        ...
+        """Protocol of the line_plot function used for type checking.
+
+        Args:
+            subplot: The subplot to which the lines should be plotted. The type of this
+                argument depends on the backend used. If not provided, a new figure is
+                created.
+
+        """
 
 
 @runtime_checkable
@@ -64,6 +73,17 @@ def _line_plot_plotly(
     horizontal_line: float | None,
     subplot: tuple[go.Figure, int, int] | None = None,
 ) -> go.Figure:
+    """Create a line plot using Plotly.
+
+    Args:
+        subplot: A tuple specifying the subplot to which the lines should be plotted.
+            The tuple contains the Plotly `Figure` object, the row index, and the column
+            index of the subplot. If not provided, a new `Figure` object is created.
+
+    Returns:
+        A Plotly Figure object.
+
+    """
     if template is None:
         template = "simple_white"
 
@@ -170,6 +190,17 @@ def _line_plot_matplotlib(
     horizontal_line: float | None,
     subplot: "plt.Axes | None" = None,
 ) -> "plt.Axes":
+    """Create a line plot using Matplotlib.
+
+    Args:
+        subplot: A Matplotlib `Axes` object to which the lines should be plotted.
+            If provided, the plot is drawn on the given `Axes`. If not provided,
+            a new `Figure` and `Axes` are created.
+
+    Returns:
+        A Matplotlib Axes object.
+
+    """
     import matplotlib.pyplot as plt
 
     # In interactive environments (like Jupyter), explicitly enable matplotlib's
@@ -214,7 +245,7 @@ def _line_plot_matplotlib(
             ylabel=ylabel.format(linebreak="\n") if ylabel else None,
         )
 
-        if legend_properties is not None:
+        if subplot is None and legend_properties is not None:
             fig.legend(**legend_properties)
 
     return ax
@@ -305,9 +336,7 @@ def line_plot(
         A figure object corresponding to the specified backend.
 
     """
-    _line_plot_backend_function = cast(
-        LinePlotFunction, _get_plot_function(backend, grid_plot=False)
-    )
+    _line_plot_backend_function = _get_plot_function(backend, grid_plot=False)
 
     fig = _line_plot_backend_function(
         lines,
@@ -363,9 +392,7 @@ def grid_line_plot(
         A figure object corresponding to the specified backend.
 
     """
-    _grid_line_plot_backend_function = cast(
-        GridLinePlotFunction, _get_plot_function(backend, grid_plot=True)
-    )
+    _grid_line_plot_backend_function = _get_plot_function(backend, grid_plot=True)
 
     fig = _grid_line_plot_backend_function(
         lines_list,
@@ -394,6 +421,18 @@ BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[
         _grid_line_plot_matplotlib,
     ),
 }
+
+
+@overload
+def _get_plot_function(
+    backend: Literal["plotly", "matplotlib"], grid_plot: Literal[False]
+) -> LinePlotFunction: ...
+
+
+@overload
+def _get_plot_function(
+    backend: Literal["plotly", "matplotlib"], grid_plot: Literal[True]
+) -> GridLinePlotFunction: ...
 
 
 def _get_plot_function(
