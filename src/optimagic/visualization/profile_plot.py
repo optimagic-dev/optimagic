@@ -15,8 +15,7 @@ from optimagic.visualization.plotting_utilities import LineData, get_palette_cyc
 BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
     "plotly": {"title": {"text": "algorithm"}},
     "matplotlib": {
-        "bbox_to_anchor": (1.02, 1),
-        "loc": "upper left",
+        "loc": "outside right upper",
         "fontsize": "x-small",
         "title": "algorithm",
     },
@@ -24,7 +23,7 @@ BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
 
 BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, Any]] = {
     "plotly": {"l": 10, "r": 10, "t": 30, "b": 30},
-    # "matplotlib": handles margins automatically via tight_layout()
+    # "matplotlib": handles margins automatically via constrained layout
 }
 
 
