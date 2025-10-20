@@ -258,9 +258,8 @@ def _extract_convergence_plot_lines(
                 y=group[outcome].to_numpy(),
                 name=str(alg),
                 color=next(palette_cycle),
-                show_in_legend=(
-                    (not combine_plots_in_grid) or (i == 0)
-                ),  # if combining plots, only show legend in first subplot
+                # if combining plots, only show legend in first subplot
+                show_in_legend=(not combine_plots_in_grid) or (i == 0),
             )
             subplot_lines.append(line_data)
 
@@ -271,9 +270,8 @@ def _extract_convergence_plot_lines(
                 y=np.full(to_plot[runtime_measure].shape, f_opt),
                 name="true solution",
                 color=next(palette_cycle),
-                show_in_legend=(
-                    (not combine_plots_in_grid) or (i == 0)
-                ),  # if combining plots, only show legend in first subplot
+                # if combining plots, only show legend in first subplot
+                show_in_legend=(not combine_plots_in_grid) or (i == 0),
             )
             subplot_lines.append(line_data)
 

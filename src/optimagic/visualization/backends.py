@@ -33,6 +33,8 @@ class LinePlotFunction(Protocol):
         """Protocol of the line_plot function used for type checking.
 
         Args:
+            ...: All other argument descriptions can be found in the docstring of the
+                `line_plot` function.
             subplot: The subplot to which the lines should be plotted. The type of this
                 argument depends on the backend used. If not provided, a new figure is
                 created.
@@ -76,6 +78,8 @@ def _line_plot_plotly(
     """Create a line plot using Plotly.
 
     Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `line_plot` function.
         subplot: A tuple specifying the subplot to which the lines should be plotted.
             The tuple contains the Plotly `Figure` object, the row index, and the column
             index of the subplot. If not provided, a new `Figure` object is created.
@@ -152,6 +156,7 @@ def _grid_line_plot_plotly(
         rows=n_rows,
         cols=n_cols,
         subplot_titles=titles,
+        horizontal_spacing=0.3 / n_cols,
     )
 
     for lines, (row, col) in zip(
@@ -193,6 +198,8 @@ def _line_plot_matplotlib(
     """Create a line plot using Matplotlib.
 
     Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `line_plot` function.
         subplot: A Matplotlib `Axes` object to which the lines should be plotted.
             If provided, the plot is drawn on the given `Axes`. If not provided,
             a new `Figure` and `Axes` are created.
