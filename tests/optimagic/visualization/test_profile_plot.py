@@ -1,11 +1,15 @@
+import itertools
+
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_allclose
 
 from optimagic import get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.visualization.profile_plot import (
     _determine_alpha_grid,
+    _extract_profile_plot_lines,
     _find_switch_points,
     create_solution_times,
     profile_plot,
@@ -134,11 +138,49 @@ def test_create_solution_times_walltime():
     pd.testing.assert_frame_equal(res, expected)
 
 
+def test_extract_profile_plot_lines():
+    solution_times = pd.DataFrame(
+        {
+            "algo1": [1.0, 5],
+            "algo2": [3.0, np.inf],
+        },
+        index=["prob1", "prob2"],
+    )
+    solution_times.columns.name = "algorithm"
+
+    info = pd.DataFrame(
+        {
+            "algo1": [True, True],
+            "algo2": [True, False],
+        },
+        index=["prob1", "prob2"],
+    )
+
+    palette_cycle = itertools.cycle(["red", "green", "blue"])
+    lines = _extract_profile_plot_lines(
+        solution_times=solution_times,
+        normalize_runtime=False,
+        converged_info=info,
+        palette_cycle=palette_cycle,
+    )
+
+    assert isinstance(lines, list) and len(lines) == 2
+
+    assert_allclose(lines[0].x, np.array([1.0, 2.0, 3.0, 4.0, 5.0, 5.125, 5.25]))
+    assert_allclose(lines[0].y, np.array([0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0]))
+    assert lines[0].name == "algo1"
+
+    assert_allclose(lines[1].x, np.array([1.0, 2.0, 3.0, 4.0, 5.0, 5.125, 5.25]))
+    assert_allclose(lines[1].y, np.array([0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.5]))
+    assert lines[1].name == "algo2"
+
+
 # integration test to make sure non default argument do not throw Errors
 profile_options = [
     {"runtime_measure": "walltime"},
     {"runtime_measure": "n_batches"},
     {"stopping_criterion": "x_or_y"},
+    {"backend": "matplotlib"},
 ]
 
 
