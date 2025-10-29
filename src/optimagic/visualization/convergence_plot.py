@@ -187,8 +187,11 @@ def convergence_plot(
             n_rows=n_rows,
             n_cols=n_cols,
             titles=titles,
-            xlabel=RUNTIME_MEASURE_TO_CONVERGENCE_PLOT_XLABEL[runtime_measure],
-            ylabel=OUTCOME_TO_CONVERGENCE_PLOT_YLABEL[outcome],
+            xlabels=(
+                [RUNTIME_MEASURE_TO_CONVERGENCE_PLOT_XLABEL[runtime_measure]]
+                * len(lines_list)
+            ),
+            ylabels=[OUTCOME_TO_CONVERGENCE_PLOT_YLABEL[outcome]] * len(lines_list),
             template=template,
             height=320 * n_rows,
             width=500 * n_cols,

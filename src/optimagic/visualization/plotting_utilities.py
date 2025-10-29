@@ -32,6 +32,26 @@ class LineData:
     show_in_legend: bool = True
 
 
+@dataclass(frozen=True)
+class MarkerData:
+    """Data of a single marker.
+
+    Attributes:
+        x: The x-coordinate of the marker.
+        y: The y-coordinate of the marker.
+        color: The color of the marker. Default is None.
+        name: The name of the marker. Default is None.
+        show_in_legend: Whether to show the marker in the legend. Default is True.
+
+    """
+
+    x: float
+    y: float
+    color: str | None = None
+    name: str | None = None
+    show_in_legend: bool = True
+
+
 def combine_plots(
     plots,
     plots_per_row=2,

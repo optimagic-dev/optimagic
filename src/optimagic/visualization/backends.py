@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 
 from optimagic.config import IS_MATPLOTLIB_INSTALLED
 from optimagic.exceptions import InvalidPlottingBackendError, NotInstalledError
-from optimagic.visualization.plotting_utilities import LineData
+from optimagic.visualization.plotting_utilities import LineData, MarkerData
 
 if TYPE_CHECKING:
     import matplotlib.pyplot as plt
@@ -20,13 +20,16 @@ class LinePlotFunction(Protocol):
         *,
         title: str | None,
         xlabel: str | None,
+        xrange: tuple[float, float] | None,
         ylabel: str | None,
+        yrange: tuple[float, float] | None,
         template: str | None,
         height: int | None,
         width: int | None,
         legend_properties: dict[str, Any] | None,
         margin_properties: dict[str, Any] | None,
         horizontal_line: float | None,
+        marker: MarkerData | None,
         subplot: Any | None = None,
     ) -> Any:
         ...
@@ -51,13 +54,19 @@ class GridLinePlotFunction(Protocol):
         n_rows: int,
         n_cols: int,
         titles: list[str] | None,
-        xlabel: str | None,
-        ylabel: str | None,
+        xlabels: list[str] | None,
+        xrange: tuple[float, float] | None,
+        share_x: bool,
+        ylabels: list[str] | None,
+        yrange: tuple[float, float] | None,
+        share_y: bool,
         template: str | None,
         height: int | None,
         width: int | None,
         legend_properties: dict[str, Any] | None,
         margin_properties: dict[str, Any] | None,
+        plot_title: str | None,
+        marker_list: list[MarkerData] | None,
     ) -> Any: ...
 
 
@@ -66,13 +75,16 @@ def _line_plot_plotly(
     *,
     title: str | None,
     xlabel: str | None,
+    xrange: tuple[float, float] | None,
     ylabel: str | None,
+    yrange: tuple[float, float] | None,
     template: str | None,
     height: int | None,
     width: int | None,
     legend_properties: dict[str, Any] | None,
     margin_properties: dict[str, Any] | None,
     horizontal_line: float | None,
+    marker: MarkerData | None,
     subplot: tuple[go.Figure, int, int] | None = None,
 ) -> go.Figure:
     """Create a line plot using Plotly.
@@ -106,10 +118,16 @@ def _line_plot_plotly(
         margin=margin_properties,
     )
     fig.update_xaxes(
-        title=xlabel.format(linebreak="<br>") if xlabel else None, row=row, col=col
+        title=xlabel.format(linebreak="<br>") if xlabel else None,
+        range=xrange,
+        row=row,
+        col=col,
     )
     fig.update_yaxes(
-        title=ylabel.format(linebreak="<br>") if ylabel else None, row=row, col=col
+        title=ylabel.format(linebreak="<br>") if ylabel else None,
+        range=yrange,
+        row=row,
+        col=col,
     )
 
     if horizontal_line is not None:
@@ -133,6 +151,16 @@ def _line_plot_plotly(
         )
         fig.add_trace(trace, row=row, col=col)
 
+    if marker is not None:
+        trace = go.Scatter(
+            x=[marker.x],
+            y=[marker.y],
+            name=marker.name,
+            marker_color=marker.color,
+            showlegend=marker.show_in_legend,
+        )
+        fig.add_trace(trace, row=row, col=col)
+
     return fig
 
 
@@ -142,41 +170,66 @@ def _grid_line_plot_plotly(
     n_rows: int,
     n_cols: int,
     titles: list[str] | None,
-    xlabel: str | None,
-    ylabel: str | None,
+    xlabels: list[str] | None,
+    xrange: tuple[float, float] | None,
+    share_x: bool,
+    ylabels: list[str] | None,
+    yrange: tuple[float, float] | None,
+    share_y: bool,
     template: str | None,
     height: int | None,
     width: int | None,
     legend_properties: dict[str, Any] | None,
     margin_properties: dict[str, Any] | None,
+    plot_title: str | None,
+    marker_list: list[MarkerData] | None,
 ) -> go.Figure:
+    """Create a grid of line plots using Plotly.
+
+    Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `grid_line_plot` function.
+
+    Returns:
+        A Plotly Figure object.
+
+    """
     from plotly.subplots import make_subplots
 
     fig = make_subplots(
         rows=n_rows,
         cols=n_cols,
         subplot_titles=titles,
+        shared_yaxes=share_y,
+        shared_xaxes=share_x,
         horizontal_spacing=0.3 / n_cols,
     )
 
-    for lines, (row, col) in zip(
-        lines_list,
-        itertools.product(range(1, n_rows + 1), range(1, n_cols + 1)),
-        strict=False,
+    for i, (row, col) in enumerate(
+        itertools.product(range(1, n_rows + 1), range(1, n_cols + 1))
     ):
+        if i >= len(lines_list):
+            break
+
         _line_plot_plotly(
-            lines,
+            lines_list[i],
             title=None,
-            xlabel=xlabel,
-            ylabel=ylabel,
+            xlabel=xlabels[i] if xlabels else None,
+            xrange=xrange,
+            ylabel=ylabels[i] if ylabels else None,
+            yrange=yrange,
             template=template,
             height=height,
             width=width,
             legend_properties=legend_properties,
             margin_properties=margin_properties,
             horizontal_line=None,
+            marker=marker_list[i] if marker_list else None,
             subplot=(fig, row, col),
         )
+
+    if plot_title is not None:
+        fig.update_layout(title=plot_title)
 
     return fig
 
@@ -186,13 +239,16 @@ def _line_plot_matplotlib(
     *,
     title: str | None,
     xlabel: str | None,
+    xrange: tuple[float, float] | None,
     ylabel: str | None,
+    yrange: tuple[float, float] | None,
     template: str | None,
     height: int | None,
     width: int | None,
     legend_properties: dict[str, Any] | None,
     margin_properties: dict[str, Any] | None,
     horizontal_line: float | None,
+    marker: MarkerData | None,
     subplot: "plt.Axes | None" = None,
 ) -> "plt.Axes":
     """Create a line plot using Matplotlib.
@@ -246,10 +302,20 @@ def _line_plot_matplotlib(
                 color=line.color,
             )
 
+        if marker is not None:
+            ax.scatter(
+                [marker.x],
+                [marker.y],
+                color=marker.color,
+                label=marker.name if marker.show_in_legend else None,
+            )
+
         ax.set(
             title=title,
             xlabel=xlabel.format(linebreak="\n") if xlabel else None,
+            xlim=xrange,
             ylabel=ylabel.format(linebreak="\n") if ylabel else None,
+            ylim=yrange,
         )
 
         if subplot is None and legend_properties is not None:
@@ -264,14 +330,30 @@ def _grid_line_plot_matplotlib(
     n_rows: int,
     n_cols: int,
     titles: list[str] | None,
-    xlabel: str | None,
-    ylabel: str | None,
+    xlabels: list[str] | None,
+    xrange: tuple[float, float] | None,
+    share_x: bool,
+    ylabels: list[str] | None,
+    yrange: tuple[float, float] | None,
+    share_y: bool,
     template: str | None,
     height: int | None,
     width: int | None,
     legend_properties: dict[str, Any] | None,
     margin_properties: dict[str, Any] | None,
+    plot_title: str | None,
+    marker_list: list[MarkerData] | None,
 ) -> np.ndarray:
+    """Create a grid of line plots using Matplotlib.
+
+    Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `grid_line_plot` function.
+
+    Returns:
+        A 2D numpy array of Matplotlib Axes objects.
+
+    """
     import matplotlib.pyplot as plt
 
     px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
@@ -288,21 +370,36 @@ def _grid_line_plot_matplotlib(
             axes[row, col].set_visible(False)
             continue
 
+        if share_x and row < n_rows - 1:
+            # Share x-axis with bottom subplot in the same column
+            axes[row, col].sharex(axes[-1, col])
+            axes[row, col].xaxis.set_tick_params(labelbottom=False)
+        if share_y and col > 0:
+            # Share y-axis with left subplot in the same row
+            axes[row, col].sharey(axes[row, 0])
+            axes[row, col].yaxis.set_tick_params(labelleft=False)
+
         _line_plot_matplotlib(
             lines_list[i],
             title=titles[i] if titles else None,
-            xlabel=xlabel,
-            ylabel=ylabel,
+            xlabel=xlabels[i] if xlabels else None,
+            xrange=xrange,
+            ylabel=ylabels[i] if ylabels else None,
+            yrange=yrange,
             template=template,
             height=None,
             width=None,
             legend_properties=None,
             margin_properties=None,
             horizontal_line=None,
+            marker=marker_list[i] if marker_list else None,
             subplot=axes[row, col],
         )
 
-    fig.legend(**legend_properties or {})
+    if legend_properties is not None:
+        fig.legend(**legend_properties)
+    if plot_title is not None:
+        fig.suptitle(plot_title)
 
     return axes
 
@@ -313,13 +410,16 @@ def line_plot(
     *,
     title: str | None = None,
     xlabel: str | None = None,
+    xrange: tuple[float, float] | None = None,
     ylabel: str | None = None,
+    yrange: tuple[float, float] | None = None,
     template: str | None = None,
     height: int | None = None,
     width: int | None = None,
     legend_properties: dict[str, Any] | None = None,
     margin_properties: dict[str, Any] | None = None,
     horizontal_line: float | None = None,
+    marker: MarkerData | None = None,
 ) -> Any:
     """Create a line plot corresponding to the specified backend.
 
@@ -330,7 +430,9 @@ def line_plot(
         backend: The backend to use for plotting.
         title: Title of the plot.
         xlabel: Label for the x-axis.
+        xrange: View limits for the x-axis.
         ylabel: Label for the y-axis.
+        yrange: View limits for the y-axis.
         template: Backend-specific template for styling the plot.
         height: Height of the plot (in pixels).
         width: Width of the plot (in pixels).
@@ -338,6 +440,7 @@ def line_plot(
         margin_properties: Backend-specific properties for the plot margins.
         horizontal_line: If provided, a horizontal line is drawn at the specified
             y-value.
+        marker: An object containing data for a marker in the plot.
 
     Returns:
         A figure object corresponding to the specified backend.
@@ -349,13 +452,16 @@ def line_plot(
         lines,
         title=title,
         xlabel=xlabel,
+        xrange=xrange,
         ylabel=ylabel,
+        yrange=yrange,
         template=template,
         height=height,
         width=width,
         legend_properties=legend_properties,
         margin_properties=margin_properties,
         horizontal_line=horizontal_line,
+        marker=marker,
     )
 
     return fig
@@ -368,13 +474,19 @@ def grid_line_plot(
     n_rows: int,
     n_cols: int,
     titles: list[str] | None = None,
-    xlabel: str | None = None,
-    ylabel: str | None = None,
+    xlabels: list[str] | None = None,
+    xrange: tuple[float, float] | None = None,
+    share_x: bool = False,
+    ylabels: list[str] | None = None,
+    yrange: tuple[float, float] | None = None,
+    share_y: bool = False,
     template: str | None = None,
     height: int | None = None,
     width: int | None = None,
     legend_properties: dict[str, Any] | None = None,
     margin_properties: dict[str, Any] | None = None,
+    plot_title: str | None = None,
+    marker_list: list[MarkerData] | None = None,
 ) -> Any:
     """Create a grid of line plots corresponding to the specified backend.
 
@@ -387,13 +499,23 @@ def grid_line_plot(
         n_rows: Number of rows in the grid.
         n_cols: Number of columns in the grid.
         titles: Titles for each subplot in the grid.
-        xlabel: Label for the x-axis of each subplot.
-        ylabel: Label for the y-axis of each subplot.
+        xlabels: Labels for the x-axis of each subplot.
+        xrange: View limits for the x-axis of each subplot.
+        share_x: If True, all subplots share the same x-axis limits and each subplot in
+            a column actually share the x-axis.
+        ylabels: Labels for the y-axis of each subplot.
+        yrange: View limits for the y-axis of each subplot.
+        share_y: If True, all subplots share the same y-axis limits and each subplot in
+            a row actually share the y-axis.
         template: Backend-specific template for styling the plots.
         height: Height of the entire grid plot (in pixels).
         width: Width of the entire grid plot (in pixels).
         legend_properties: Backend-specific properties for the legend.
         margin_properties: Backend-specific properties for the plot margins.
+        plot_title: Title for the entire grid plot.
+        marker_list: A list where where each element is an object containing data
+            for a marker in a subplot. The order of objects in the list determines
+            the subplot on which the marker is plotted.
 
     Returns:
         A figure object corresponding to the specified backend.
@@ -406,13 +528,19 @@ def grid_line_plot(
         n_rows=n_rows,
         n_cols=n_cols,
         titles=titles,
-        xlabel=xlabel,
-        ylabel=ylabel,
+        xlabels=xlabels,
+        xrange=xrange,
+        share_x=share_x,
+        ylabels=ylabels,
+        yrange=yrange,
+        share_y=share_y,
         template=template,
         height=height,
         width=width,
         legend_properties=legend_properties,
         margin_properties=margin_properties,
+        plot_title=plot_title,
+        marker_list=marker_list,
     )
 
     return fig
