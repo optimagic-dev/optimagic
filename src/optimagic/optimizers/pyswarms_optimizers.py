@@ -516,9 +516,10 @@ def _pyswarms_internal(
     if algo_options.seed is not None:
         warnings.warn(
             "The 'seed' parameter only makes initial particle positions reproducible. "
-            "For fully deterministic results, set a global seed with "
-            "'np.random.seed()' before running the optimizer, as other stochastic "
-            "parts of PySwarms rely on the global numpy random state.",
+            "PySwarms still uses NumPy's global random functions for generating "
+            "velocities, updating coefficients, and handling other stochastic "
+            "operations. For fully deterministic results, set a global seed with "
+            "'np.random.seed()' before running the optimizer.",
             UserWarning,
         )
 
@@ -673,8 +674,8 @@ def _create_initial_positions(
         low=lower_bounds, high=upper_bounds, size=(n_particles, n_dimensions)
     )
 
+    init_pos[0] = x0
     init_pos = np.clip(init_pos, lower_bounds, upper_bounds)
-    init_pos[0] = np.clip(x0, lower_bounds, upper_bounds)
 
     return init_pos
 
