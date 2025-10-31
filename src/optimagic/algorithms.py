@@ -80,6 +80,11 @@ from optimagic.optimizers.pygmo_optimizers import (
     PygmoSimulatedAnnealing,
     PygmoXnes,
 )
+from optimagic.optimizers.pyswarms_optimizers import (
+    PySwarmsGeneralPSO,
+    PySwarmsGlobalBestPSO,
+    PySwarmsLocalBestPSO,
+)
 from optimagic.optimizers.scipy_optimizers import (
     ScipyBasinhopping,
     ScipyBFGS,
@@ -212,6 +217,9 @@ class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -446,6 +454,9 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -481,6 +492,9 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -550,6 +564,9 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -711,6 +728,9 @@ class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -819,6 +839,9 @@ class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1186,6 +1209,9 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1272,6 +1298,9 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1311,6 +1340,9 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1522,6 +1554,9 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1585,6 +1620,9 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1679,6 +1717,9 @@ class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1788,6 +1829,9 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1832,6 +1876,9 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1914,6 +1961,9 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2162,6 +2212,9 @@ class BoundedParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2461,6 +2514,9 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2577,6 +2633,9 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2696,6 +2755,9 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -2767,6 +2829,9 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2846,6 +2911,9 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -2950,6 +3018,9 @@ class GlobalScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -2998,6 +3069,9 @@ class GlobalParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3314,6 +3388,9 @@ class BoundedScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3400,6 +3477,9 @@ class BoundedParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3514,6 +3594,9 @@ class ParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3669,6 +3752,9 @@ class GradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3755,6 +3841,9 @@ class GlobalAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3923,6 +4012,9 @@ class BoundedAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -4082,6 +4174,9 @@ class ScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -4195,6 +4290,9 @@ class ParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -4296,6 +4394,9 @@ class Algorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
