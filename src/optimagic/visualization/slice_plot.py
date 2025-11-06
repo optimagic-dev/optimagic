@@ -145,24 +145,9 @@ def slice_plot(
     # ==================================================================================
     # Generate the figure
 
-    # Determine y-axis view limits
-    if share_y:
-        lb = plot_data["Function Value"].min()
-        ub = plot_data["Function Value"].max()
-        y_range = ub - lb
-        ub += y_range * expand_yrange
-        lb -= y_range * expand_yrange
-        yrange = (lb, ub)
-    else:
-        yrange = None
-
-    # Determine x-axis view limits
-    if share_x:
-        lb = plot_data["Parameter Value"].min()
-        ub = plot_data["Parameter Value"].max()
-        xrange = (lb, ub)
-    else:
-        xrange = None
+    xrange, yrange = _get_axis_limits(
+        plot_data, share_y=share_y, share_x=share_x, expand_yrange=expand_yrange
+    )
 
     if return_dict:
         fig_dict = {}
@@ -379,3 +364,26 @@ def _extract_slice_plot_lines_and_labels(
         ylabels.append("Function Value")
 
     return lines_list, marker_list, xlabels, ylabels
+
+
+def _get_axis_limits(
+    plot_data: pd.DataFrame, share_y: bool, share_x: bool, expand_yrange: float
+) -> tuple[tuple[float, float] | None, tuple[float, float] | None]:
+    if share_y:
+        lb = plot_data["Function Value"].min()
+        ub = plot_data["Function Value"].max()
+        y_range = ub - lb
+        ub += y_range * expand_yrange
+        lb -= y_range * expand_yrange
+        yrange = (lb, ub)
+    else:
+        yrange = None
+
+    if share_x:
+        lb = plot_data["Parameter Value"].min()
+        ub = plot_data["Parameter Value"].max()
+        xrange = (lb, ub)
+    else:
+        xrange = None
+
+    return xrange, yrange
