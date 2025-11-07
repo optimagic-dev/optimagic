@@ -4,11 +4,12 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_chec
 import numpy as np
 import plotly.graph_objects as go
 
-from optimagic.config import IS_MATPLOTLIB_INSTALLED
+from optimagic.config import IS_BOKEH_INSTALLED, IS_MATPLOTLIB_INSTALLED
 from optimagic.exceptions import InvalidPlottingBackendError, NotInstalledError
 from optimagic.visualization.plotting_utilities import LineData, MarkerData
 
 if TYPE_CHECKING:
+    import bokeh
     import matplotlib.pyplot as plt
 
 
@@ -409,9 +410,189 @@ def _grid_line_plot_matplotlib(
     return axes
 
 
+def _line_plot_bokeh(
+    lines: list[LineData],
+    *,
+    title: str | None,
+    xlabel: str | None,
+    xrange: tuple[float, float] | None,
+    ylabel: str | None,
+    yrange: tuple[float, float] | None,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+    horizontal_line: float | None,
+    marker: MarkerData | None,
+    subplot: Any | None = None,
+) -> "bokeh.plotting.figure":
+    from bokeh.io import curdoc
+    from bokeh.models import Legend, LegendItem, Scatter, Span
+    from bokeh.plotting import figure
+
+    if template is None:
+        template = "light_minimal"
+    curdoc().theme = template
+
+    if subplot is not None:
+        p = subplot
+    else:
+        p = figure()
+
+    if title is not None:
+        p.title.text = title
+    if xlabel is not None:
+        p.xaxis.axis_label = xlabel.format(linebreak="\n")
+    if xrange is not None:
+        p.x_range.start, p.x_range.end = xrange
+    if ylabel is not None:
+        p.yaxis.axis_label = ylabel.format(linebreak="\n")
+    if yrange is not None:
+        p.y_range.start, p.y_range.end = yrange
+    if height is not None:
+        p.height = height
+    if width is not None:
+        p.width = width
+
+    _legend_items = []
+    for line in lines:
+        glyph = p.line(
+            line.x,
+            line.y,
+            line_color=line.color,
+            line_width=2,
+        )
+
+        if line.show_in_legend:
+            _legend_items.append(LegendItem(label=line.name, renderers=[glyph]))
+
+    if horizontal_line is not None:
+        glyph = Span(
+            location=horizontal_line,
+            dimension="width",
+            line_color=p.yaxis.axis_line_color or "gray",
+            line_width=p.yaxis.axis_line_width or 2,
+        )
+        p.add_layout(glyph)
+
+    if marker is not None:
+        glyph = Scatter(
+            x=marker.x,
+            y=marker.y,
+            marker="dot",
+            fill_color=marker.color,
+            line_color=marker.color,
+            size=30,
+        )
+        p.add_glyph(glyph)
+
+    if _legend_items:
+        legend_kwargs = legend_properties.copy() if legend_properties else {}
+        place = legend_kwargs.pop("place", "center")
+        text = legend_kwargs.pop("title", None)
+
+        legend = Legend(items=_legend_items, **(legend_kwargs))
+        p.add_layout(legend, place=place)
+        p.legend.title = text
+
+    return p
+
+
+def _grid_line_plot_bokeh(
+    lines_list: list[list[LineData]],
+    *,
+    n_rows: int,
+    n_cols: int,
+    titles: list[str] | None,
+    xlabels: list[str] | None,
+    xrange: tuple[float, float] | None,
+    share_x: bool,
+    ylabels: list[str] | None,
+    yrange: tuple[float, float] | None,
+    share_y: bool,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+    plot_title: str | None,
+    marker_list: list[MarkerData] | None,
+    make_subplot_kwargs: dict[str, Any] | None = None,
+) -> "bokeh.models.GridPlot":
+    """Create a grid of line plots using Bokeh.
+
+    Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `grid_line_plot` function.
+
+    Returns:
+        A Bokeh gridplot object.
+
+    """
+
+    from bokeh.layouts import gridplot
+    from bokeh.plotting import figure
+
+    plots: list[list[figure]] = []
+
+    for row in range(n_rows):
+        subplot_row: list[figure] = []
+        for col in range(n_cols):
+            idx = row * n_cols + col
+            if idx >= len(lines_list):
+                break
+
+            p = figure()
+
+            if share_x:
+                if row > 0:
+                    # Share x-range with the top-most subplot in the same column
+                    p.x_range = plots[0][col].x_range
+                if row < n_rows - 1:
+                    # Hide tick labels except for subplots in the last row
+                    p.xaxis.major_label_text_font_size = "0pt"
+            if share_y:
+                if col > 0:
+                    # Share y-range with the left-most subplot in the same row
+                    p.y_range = subplot_row[0].y_range
+
+                    # Hide tick labels except for subplots in the first column
+                    p.yaxis.major_label_text_font_size = "0pt"
+
+            _line_plot_bokeh(
+                lines_list[idx],
+                title=titles[idx] if titles else None,
+                xlabel=xlabels[idx] if xlabels else None,
+                xrange=xrange,
+                ylabel=ylabels[idx] if ylabels else None,
+                yrange=yrange,
+                template=template,
+                height=None,
+                width=None,
+                legend_properties=legend_properties,
+                margin_properties=None,
+                horizontal_line=None,
+                marker=marker_list[idx] if marker_list else None,
+                subplot=p,
+            )
+
+            subplot_row.append(p)
+        plots.append(subplot_row)
+
+    grid = gridplot(
+        plots,
+        height=height // n_rows if height else None,
+        width=width // n_cols if width else None,
+        toolbar_location="right",
+    )
+
+    return grid
+
+
 def line_plot(
     lines: list[LineData],
-    backend: Literal["plotly", "matplotlib"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
     *,
     title: str | None = None,
     xlabel: str | None = None,
@@ -474,7 +655,7 @@ def line_plot(
 
 def grid_line_plot(
     lines_list: list[list[LineData]],
-    backend: Literal["plotly", "matplotlib"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
     *,
     n_rows: int,
     n_cols: int,
@@ -562,18 +743,23 @@ BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[
         _line_plot_matplotlib,
         _grid_line_plot_matplotlib,
     ),
+    "bokeh": (
+        IS_BOKEH_INSTALLED,
+        _line_plot_bokeh,
+        _grid_line_plot_bokeh,
+    ),
 }
 
 
 @overload
 def _get_plot_function(
-    backend: Literal["plotly", "matplotlib"], grid_plot: Literal[False]
+    backend: Literal["plotly", "matplotlib", "bokeh"], grid_plot: Literal[False]
 ) -> LinePlotFunction: ...
 
 
 @overload
 def _get_plot_function(
-    backend: Literal["plotly", "matplotlib"], grid_plot: Literal[True]
+    backend: Literal["plotly", "matplotlib", "bokeh"], grid_plot: Literal[True]
 ) -> GridLinePlotFunction: ...
 
 

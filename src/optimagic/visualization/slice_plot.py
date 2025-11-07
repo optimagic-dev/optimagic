@@ -44,7 +44,7 @@ def slice_plot(
     share_y: bool = True,
     expand_yrange: float = 0.02,
     share_x: bool = False,
-    backend: Literal["plotly", "matplotlib"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
     template: str | None = None,
     color: str | None = DEFAULT_PALETTE[0],
     title: str | None = None,
@@ -91,9 +91,11 @@ def slice_plot(
             x axis for all plots in one column.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used.
+            the backend is used. For the 'bokeh' backend, this changes the global theme,
+            which affects all Bokeh plots in the session.
         color: The line color.
-        title: The figure title.
+        title: The figure title. This is not used for the `bokeh` backend, as it does
+            not support title for grid plot.
         return_dict: If True, return dictionary with individual plots of each parameter,
             else, combine individual plots into a figure with subplots.
         batch_evaluator: See :ref:`batch_evaluators`.
