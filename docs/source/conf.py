@@ -173,6 +173,7 @@ else:
 nb_execution_mode = "force"  # "off", "force", "cache", "auto"
 nb_execution_allow_errors = False
 nb_merge_streams = True
+nb_scroll_outputs = True
 
 # Notebook cell execution timeout; defaults to 30.
 nb_execution_timeout = 1000

@@ -5125,6 +5125,107 @@ We wrap the pygad optimizer. To use it you need to have
     .. autoclass:: optimagic.optimizers.pygad_optimizer.Pygad
 ```
 
+## PySwarms Optimizers
+
+optimagic supports the following continuous algorithms from the
+[PySwarms](https://pyswarms.readthedocs.io/en/latest/) library: (GlobalBestPSO,
+LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
+[the pyswarms package](https://github.com/ljvmiranda921/pyswarms) installed.
+(`pip install pyswarms`).
+
+```{eval-rst}
+.. dropdown::  pyswarms_global_best
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pyswarms_global_best(n_particles=50, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pyswarms_global_best",
+          algo_options={"n_particles": 50, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGlobalBestPSO
+      :members:
+      :inherited-members: Algorithm, object
+
+```
+
+```{eval-rst}
+.. dropdown::  pyswarms_local_best
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pyswarms_local_best(n_particles=50, k_neighbors=3, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pyswarms_local_best",
+          algo_options={"n_particles": 50, "k_neighbors": 3, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsLocalBestPSO
+      :members:
+      :inherited-members: Algorithm, object
+
+```
+
+```{eval-rst}
+.. dropdown::  pyswarms_general
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pyswarms_general(n_particles=50, topology_type="star", ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pyswarms_general",
+          algo_options={"n_particles": 50, "topology_type": "star", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGeneralPSO
+      :members:
+      :inherited-members: Algorithm, object
+
+```
+
 ## References
 
 ```{eval-rst}

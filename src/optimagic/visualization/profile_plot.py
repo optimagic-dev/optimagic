@@ -1,24 +1,47 @@
+import itertools
+from typing import Any, Literal
+
 import numpy as np
 import pandas as pd
-import plotly.express as px
+from numpy.typing import NDArray
 
 from optimagic.benchmarking.process_benchmark_results import (
     process_benchmark_results,
 )
-from optimagic.config import PLOTLY_TEMPLATE
+from optimagic.config import DEFAULT_PALETTE
+from optimagic.visualization.backends import line_plot
+from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
+
+BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
+    "plotly": {"title": {"text": "algorithm"}},
+    "matplotlib": {
+        "loc": "outside right upper",
+        "fontsize": "x-small",
+        "title": "algorithm",
+    },
+}
+
+BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, Any]] = {
+    "plotly": {"l": 10, "r": 10, "t": 30, "b": 30},
+    # "matplotlib": handles margins automatically via constrained layout
+}
 
 
 def profile_plot(
-    problems,
-    results,
+    problems: dict[str, dict[str, Any]],
+    results: dict[tuple[str, str], dict[str, Any]],
     *,
-    runtime_measure="n_evaluations",
-    normalize_runtime=False,
-    stopping_criterion="y",
-    x_precision=1e-4,
-    y_precision=1e-4,
-    template=PLOTLY_TEMPLATE,
-):
+    runtime_measure: Literal[
+        "walltime", "n_evaluations", "n_batches"
+    ] = "n_evaluations",
+    normalize_runtime: bool = False,
+    stopping_criterion: Literal["x", "y", "x_and_y", "x_or_y"] = "y",
+    x_precision: float = 1e-4,
+    y_precision: float = 1e-4,
+    backend: Literal["plotly", "matplotlib"] = "plotly",
+    template: str | None = None,
+    palette: list[str] | str = DEFAULT_PALETTE,
+) -> Any:
     """Compare optimizers over a problem set.
 
     This plot answers the question: What percentage of problems can each algorithm
@@ -39,44 +62,50 @@ def profile_plot(
     Moré and Wild (2009).
 
     Args:
-        problems (dict): optimagic benchmarking problems dictionary. Keys are the
-            problem names. Values contain information on the problem, including the
-            solution value.
-        results (dict): optimagic benchmarking results dictionary. Keys are
-            tuples of the form (problem, algorithm), values are dictionaries of the
-            collected information on the benchmark run, including 'criterion_history'
-            and 'time_history'.
-        runtime_measure (str): "n_evaluations", "n_batches" or "walltime".
-            This is the runtime until the desired convergence was reached by an
-            algorithm. This is called performance measure by Moré and Wild (2009).
-        normalize_runtime (bool): If True the runtime each algorithm needed for each
-            problem is scaled by the time the fastest algorithm needed. If True, the
-            resulting plot is what Moré and Wild (2009) called data profiles.
-        stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y". Determines
-            how convergence is determined from the two precisions.
-        x_precision (float or None): how close an algorithm must have gotten to the
-            true parameter values (as percent of the Euclidean distance between start
-            and solution parameters) before the criterion for clipping and convergence
-            is fulfilled.
-        y_precision (float or None): how close an algorithm must have gotten to the
-            true criterion values (as percent of the distance between start
-            and solution criterion value) before the criterion for clipping and
-            convergence is fulfilled.
-        template (str): The template for the figure. Default is "plotly_white".
+        problems: A dictionary where keys are the problem names. Values contain
+            information on the problem, including the solution value.
+        results: A dictionary where keys are tuples of the form (problem, algorithm),
+            values are dictionaries of the collected information on the benchmark
+            run, including 'criterion_history' and 'time_history'.
+        runtime_measure: This is the runtime until the desired convergence was reached
+            by an algorithm. This is called performance measure by Moré and Wild (2009).
+        normalize_runtime: If True the runtime each algorithm needed for each problem is
+            scaled by the time the fastest algorithm needed. If True, the resulting plot
+            is what Moré and Wild (2009) called data profiles.
+        stopping_criterion: Determines how convergence is determined from the two
+            precisions.
+        x_precision: How close an algorithm must have gotten to the true parameter
+            values (as percent of the Euclidean distance between start and solution
+            parameters) before the criterion for clipping and convergence is fulfilled.
+        y_precision: How close an algorithm must have gotten to the true criterion
+            values (as percent of the distance between start and solution criterion
+            value) before the criterion for clipping and convergence is fulfilled.
+        backend: The backend to use for plotting. Default is "plotly".
+        template: The template for the figure. If not specified, the default template of
+            the backend is used.
+        palette: The coloring palette for traces. Default is the D3 qualitative palette.
 
     Returns:
-        plotly.Figure
+        The figure object containing the profile plot.
 
     """
+    # ==================================================================================
+    # Process inputs
+
+    palette_cycle = get_palette_cycle(palette)
+
     if stopping_criterion is None:
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
         )
     if runtime_measure not in ["walltime", "n_evaluations", "n_batches"]:
         raise ValueError(
-            "Only 'walltime' or 'n_evaluations' are allowed as "
-            f"runtime_measure. You specified {runtime_measure}."
+            "Only 'walltime', 'n_evaluations' or 'n_batches' are allowed as "
+            f"runtime_measure. You specified '{runtime_measure}'."
         )
+
+    # ==================================================================================
+    # Extract backend-agnostic plotting data from benchmark results
 
     df, converged_info = process_benchmark_results(
         problems=problems,
@@ -92,6 +121,54 @@ def profile_plot(
         converged_info=converged_info,
     )
 
+    lines = _extract_profile_plot_lines(
+        solution_times=solution_times,
+        normalize_runtime=normalize_runtime,
+        converged_info=converged_info,
+        palette_cycle=palette_cycle,
+    )
+
+    # ==================================================================================
+    # Generate the figure
+
+    fig = line_plot(
+        lines,
+        backend=backend,
+        xlabel=_get_profile_plot_xlabel(runtime_measure, normalize_runtime),
+        ylabel="Share of Problems Solved",
+        template=template,
+        height=300,
+        width=500,
+        legend_properties=BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES.get(backend, None),
+        margin_properties=BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES.get(backend, None),
+        horizontal_line=1.0,
+    )
+
+    return fig
+
+
+def _extract_profile_plot_lines(
+    solution_times: pd.DataFrame,
+    normalize_runtime: bool,
+    converged_info: pd.DataFrame,
+    palette_cycle: "itertools.cycle[str]",
+) -> list[LineData]:
+    """Extract lines for profile plot from data.
+
+    Args:
+        solution_times: A DataFrame where columns are the names of the algorithms,
+            indexes are the problems. Values are performance measures.
+        normalize_runtime: If True the runtime each algorithm needed for each problem is
+            scaled by the time the fastest algorithm needed.
+        converged_info: A DataFrame where columns are the names of the algorithms,
+            indexes are the problems. The values are boolean and True when the algorithm
+            arrived at the solution with the desired precision.
+        palette_cycle: Cycle of colors for plotting.
+
+    Returns:
+        A list of data objects containing data for each line of the profile plot.
+
+    """
     if normalize_runtime:
         solution_times = solution_times.divide(solution_times.min(axis=1), axis=0)
         solution_times[~converged_info] = np.inf
@@ -103,67 +180,52 @@ def profile_plot(
     )
     performance_profiles = for_each_alpha.groupby("alpha").mean().stack().reset_index()
 
-    fig = px.line(performance_profiles, x="alpha", y=0, color="algorithm")
+    lines: list[LineData] = []
 
-    xlabels = {
-        (
-            "n_evaluations",
-            True,
-        ): "Multiple of Minimal Number of Function Evaluations<br>"
-        "Needed to Solve the Problem",
-        (
-            "walltime",
-            True,
-        ): "Multiple of Minimal Wall Time<br>Needed to Solve the Problem",
-        (
-            "n_batches",
-            True,
-        ): "Multiple of Minimal Number of Batches<br>Needed to Solve the Problem",
-        ("n_evaluations", False): "Number of Function Evaluations",
-        ("walltime", False): "Wall Time Needed to Solve the Problem",
-        ("n_batches", False): "Number of Batches",
-    }
+    for algorithm, data in performance_profiles.groupby("algorithm"):
+        line_data = LineData(
+            x=data["alpha"].to_numpy(),
+            y=data[0].to_numpy(),
+            name=str(algorithm),
+            color=next(palette_cycle),
+        )
+        lines.append(line_data)
 
-    fig.update_layout(
-        xaxis_title=xlabels[(runtime_measure, normalize_runtime)],
-        yaxis_title="Share of Problems Solved",
-        title=None,
-        height=300,
-        width=500,
-        margin={"l": 10, "r": 10, "t": 30, "b": 10},
-        template=template,
-    )
-
-    fig.add_hline(y=1)
-    return fig
+    return lines
 
 
-def create_solution_times(df, runtime_measure, converged_info, return_tidy=True):
+def create_solution_times(
+    df: pd.DataFrame,
+    runtime_measure: Literal["walltime", "n_evaluations", "n_batches"],
+    converged_info: pd.DataFrame,
+    return_tidy: bool = True,
+) -> pd.DataFrame:
     """Find the solution time for each algorithm and problem.
 
     Args:
-        df (pandas.DataFrame): contains 'problem', 'algorithm' and 'runtime_measure'
+        df: A DataFrame which contains 'problem', 'algorithm' and 'runtime_measure'
             as columns.
-        runtime_measure (str): 'walltime', 'n_batches' or 'n_evaluations'.
-        converged_info (pandas.DataFrame): columns are the algorithms, indexes are the
-            problems. The values are boolean and True when the algorithm arrived at
-            the solution with the desired precision.
-        return_tidy (bool): If True, the resulting DataFrame will be a tidy DataFrame
+        runtime_measure: This is the runtime until the desired convergence was reached
+            by an algorithm. This is called performance measure by Moré and Wild (2009).
+        converged_info: A DataFrame where columns are the names of the algorithms,
+            indexes are the problems. The values are boolean and True when the algorithm
+            arrived at the solution with the desired precision.
+        return_tidy: If True, the resulting DataFrame will be a tidy DataFrame
             with problem and algorithm as indexes and runtime_measure as column.
             If False, the resulting DataFrame will have problem, algorithm and
             runtime_measure as columns.
 
     Returns:
-        solution_times (pandas.DataFrame): If return_tidy is True, indexes are the
-            problems, columns are the algorithms. If return_tidy is False, columns are
-            problem, algorithm and runtime_measure. The values are either the number
-            of evaluations or the walltime each algorithm needed to achieve the
-            desired precision. If the desired precision was not achieved the value is
-            set to np.inf.
+        A DataFrame. If return_tidy is True, indexes are the problems, columns are the
+            algorithms. If return_tidy is False, columns are problem, algorithm and
+            runtime_measure. The values are either the number of evaluations or the
+            walltime each algorithm needed to achieve the desired precision. If the
+            desired precision was not achieved the value is set to np.inf.
 
     """
-    solution_times = df.groupby(["problem", "algorithm"])[runtime_measure].max()
-    solution_times = solution_times.unstack()
+    solution_times = (
+        df.groupby(["problem", "algorithm"])[runtime_measure].max().unstack()
+    )
     # We convert the dtype to float to support the use of np.inf
     solution_times = solution_times.astype(float).where(converged_info, other=np.inf)
 
@@ -176,7 +238,7 @@ def create_solution_times(df, runtime_measure, converged_info, return_tidy=True)
     return solution_times
 
 
-def _determine_alpha_grid(solution_times):
+def _determine_alpha_grid(solution_times: pd.DataFrame) -> list[np.float64]:
     switch_points = _find_switch_points(solution_times=solution_times)
 
     point_to_right = switch_points[-1] * 1.05
@@ -186,18 +248,18 @@ def _determine_alpha_grid(solution_times):
     return alphas
 
 
-def _find_switch_points(solution_times):
+def _find_switch_points(solution_times: pd.DataFrame) -> NDArray[np.float64]:
     """Determine the switch points of the performance profiles.
 
     Args:
-        solution_times (pandas.DataFrame): columns are the names of the algorithms,
-            the indexes are the problems. Values are performance measures.
-            They can be either float, when normalize_runtime was True or int when the
-            runtime_measure are not normalized function evaluations or datetime when
-            the not normalized walltime is used.
+        solution_times: A DataFrame where columns are the names of the algorithms,
+            indexes are the problems. Values are performance measures. They can be
+            either float, when normalize_runtime was True or int when the
+            runtime_measure are not normalized function evaluations or datetime when the
+            not normalized walltime is used.
 
     Returns:
-        list: sorted switching points
+        A sorted array of switching points.
 
     """
     switch_points = np.unique(solution_times.values)
@@ -205,3 +267,31 @@ def _find_switch_points(solution_times):
         switch_points += 1e-10
     switch_points = switch_points[np.isfinite(switch_points)]
     return switch_points
+
+
+def _get_profile_plot_xlabel(runtime_measure: str, normalize_runtime: bool) -> str:
+    # The '{linebreak}' placeholder is replaced with the backend-specific line break
+    # in the corresponding plotting function.
+
+    if normalize_runtime:
+        runtime_measure_to_xlabel = {
+            "walltime": (
+                "Multiple of Minimal Wall Time{linebreak}Needed to Solve the Problem"
+            ),
+            "n_evaluations": (
+                "Multiple of Minimal Number of Function Evaluations"
+                "{linebreak}Needed to Solve the Problem"
+            ),
+            "n_batches": (
+                "Multiple of Minimal Number of Batches"
+                "{linebreak}Needed to Solve the Problem"
+            ),
+        }
+    else:
+        runtime_measure_to_xlabel = {
+            "walltime": "Wall Time Needed to Solve the Problem",
+            "n_evaluations": "Number of Function Evaluations",
+            "n_batches": "Number of Batches",
+        }
+
+    return runtime_measure_to_xlabel[runtime_measure]

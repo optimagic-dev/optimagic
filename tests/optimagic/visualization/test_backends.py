@@ -31,7 +31,7 @@ def test_line_plot_invalid_backend(sample_lines):
 def test_line_plot_unavailable_backend(sample_lines, monkeypatch):
     # Use monkeypatch to simulate that 'matplotlib' backend is not installed.
     monkeypatch.setitem(
-        BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION, "matplotlib", (False, None)
+        BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION, "matplotlib", (False, None, None)
     )
 
     with pytest.raises(NotInstalledError):
