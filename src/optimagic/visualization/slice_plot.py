@@ -49,9 +49,9 @@ def slice_plot(
     color: str | None = DEFAULT_PALETTE[0],
     title: str | None = None,
     return_dict: bool = False,
-    make_subplot_kwargs: dict | None = None,
     batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib",
     # deprecated
+    make_subplot_kwargs: dict | None = None,
     lower_bounds: None = None,
     upper_bounds: None = None,
 ) -> Any:
@@ -96,11 +96,6 @@ def slice_plot(
         title: The figure title.
         return_dict: If True, return dictionary with individual plots of each parameter,
             else, combine individual plots into a figure with subplots.
-        make_subplot_kwargs: Dictionary of keyword arguments used to instantiate plotly
-            Figure with multiple subplots. Is used to define properties such as, for
-            example, the spacing between subplots (governed by 'horizontal_spacing' and
-            'vertical_spacing'). If None, default arguments defined in the function are
-            used.
         batch_evaluator: See :ref:`batch_evaluators`.
 
     Returns:
@@ -119,6 +114,9 @@ def slice_plot(
     bounds = pre_process_bounds(bounds)
 
     func, func_eval = _get_processed_func_and_func_eval(func, func_kwargs, params)
+
+    if make_subplot_kwargs is not None:
+        deprecations.throw_make_subplot_kwargs_in_slice_plot_future_warning()
 
     # ==================================================================================
     # Extract backend-agnostic plotting data from results
@@ -190,6 +188,7 @@ def slice_plot(
             height=300 * n_rows,
             width=400 * plots_per_row,
             plot_title=title,
+            make_subplot_kwargs=make_subplot_kwargs,
         )
         return fig
 

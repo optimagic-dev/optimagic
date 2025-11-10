@@ -192,6 +192,15 @@ def throw_none_valued_batch_evaluator_warning():
     warnings.warn(msg, FutureWarning)
 
 
+def throw_make_subplot_kwargs_in_slice_plot_future_warning():
+    msg = (
+        "The `make_subplot_kwargs` argument in `slice_plot` is deprecated and will be "
+        "removed in optimagic version 0.6.0. Customization of the subplots can be done "
+        "by modifying the returned figure."
+    )
+    warnings.warn(msg, FutureWarning)
+
+
 def replace_and_warn_about_deprecated_algo_options(algo_options):
     if not isinstance(algo_options, dict):
         return algo_options
