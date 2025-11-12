@@ -427,13 +427,15 @@ def _line_plot_bokeh(
     marker: MarkerData | None,
     subplot: Any | None = None,
 ) -> "bokeh.plotting.figure":
+    from bokeh import themes
     from bokeh.io import curdoc
-    from bokeh.models import Legend, LegendItem, Scatter, Span
+    from bokeh.models import Scatter
+    from bokeh.models.annotations import Legend, LegendItem, Span
     from bokeh.plotting import figure
 
     if template is None:
         template = "light_minimal"
-    curdoc().theme = template
+    curdoc().theme = themes.built_in_themes[template]
 
     if subplot is not None:
         p = subplot
@@ -534,10 +536,10 @@ def _grid_line_plot_bokeh(
     from bokeh.layouts import gridplot
     from bokeh.plotting import figure
 
-    plots: list[list[figure]] = []
+    plots: list[list[Any]] = []
 
     for row in range(n_rows):
-        subplot_row: list[figure] = []
+        subplot_row: list[Any] = []
         for col in range(n_cols):
             idx = row * n_cols + col
             if idx >= len(lines_list):
