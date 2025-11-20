@@ -13,6 +13,8 @@ dependencies:
   - sphinxcontrib-bibtex
   - sphinx-copybutton
   - sphinx-design
+  - sphinx-llm.txt
+  - sphinx-llms-txt
   - ipython
   - ipython_genutils
   - myst-nb
