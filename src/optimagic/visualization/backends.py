@@ -536,7 +536,7 @@ def _grid_line_plot_bokeh(
     from bokeh.layouts import gridplot
     from bokeh.plotting import figure
 
-    plots: list[list[Any]] = []
+    plots: list[list[figure]] = []
 
     for row in range(n_rows):
         subplot_row: list[Any] = []
@@ -582,7 +582,7 @@ def _grid_line_plot_bokeh(
             subplot_row.append(p)
         plots.append(subplot_row)
 
-    grid = gridplot(
+    grid = gridplot(  # type: ignore[call-overload]
         plots,
         height=height // n_rows if height else None,
         width=width // n_cols if width else None,
