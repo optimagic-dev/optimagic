@@ -153,7 +153,13 @@ repos:
           - types-cffi
           - types-openpyxl
           - types-jinja2
+          - bokeh
 ci:
   autoupdate_schedule: monthly
   skip:
     - update-algo-selection-code
+    # Skip mypy stubtest on pre-commit.ci due to maximum size limitations. This is
+    # unlikely to get better in the future as dependencies keep growing. Local runs
+    # of pre-commit would still execute stubtest. For CI, we have a separate GitHub
+    # Action that runs stubtest.
+    - mypy

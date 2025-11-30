@@ -19,6 +19,12 @@ BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
         "fontsize": "x-small",
         "title": "algorithm",
     },
+    "bokeh": {
+        "location": "top_right",
+        "place": "right",
+        "label_text_font_size": "8pt",
+        "title": "algorithm",
+    },
 }
 
 BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, Any]] = {
@@ -38,7 +44,7 @@ def profile_plot(
     stopping_criterion: Literal["x", "y", "x_and_y", "x_or_y"] = "y",
     x_precision: float = 1e-4,
     y_precision: float = 1e-4,
-    backend: Literal["plotly", "matplotlib"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
 ) -> Any:
@@ -82,7 +88,8 @@ def profile_plot(
             value) before the criterion for clipping and convergence is fulfilled.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used.
+            the backend is used. For the 'bokeh' backend, this changes the global theme,
+            which affects all Bokeh plots in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
 
     Returns:

@@ -14,6 +14,11 @@ from optimagic.visualization.plotting_utilities import LineData, get_palette_cyc
 BACKEND_TO_CONVERGENCE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
     "plotly": {},
     "matplotlib": {"loc": "outside right upper", "fontsize": "x-small"},
+    "bokeh": {
+        "location": "top_right",
+        "place": "right",
+        "label_text_font_size": "8pt",
+    },
 }
 
 BACKEND_TO_CONVERGENCE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, int]] = {
@@ -70,7 +75,7 @@ def convergence_plot(
     x_precision: float = 1e-4,
     y_precision: float = 1e-4,
     combine_plots_in_grid: bool = True,
-    backend: Literal["plotly", "matplotlib"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
 ) -> Any:
@@ -124,7 +129,8 @@ def convergence_plot(
             for each factor pair or a dictionary of individual plots. Default is True.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used.
+            the backend is used. For the 'bokeh' backend, this changes the global theme,
+            which affects all Bokeh plots in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
 
     Returns:
@@ -173,6 +179,7 @@ def convergence_plot(
         outcome=outcome,
         palette=palette,
         combine_plots_in_grid=combine_plots_in_grid,
+        backend=backend,
     )
 
     n_rows = int(np.ceil(len(lines_list) / n_cols))
@@ -238,7 +245,8 @@ def _extract_convergence_plot_lines(
     runtime_measure: str,
     outcome: str,
     palette: list[str] | str,
-    combine_plots_in_grid: bool = True,
+    combine_plots_in_grid: bool,
+    backend: str,
 ) -> tuple[list[list[LineData]], list[str]]:
     lines_list = []  # container for all subplots
     titles = []
@@ -255,6 +263,14 @@ def _extract_convergence_plot_lines(
         else:
             to_plot = _prob_data
 
+        show_in_legend = True
+        if combine_plots_in_grid:
+            # If combining plots, only show in legend of first subplot
+            # For 'bokeh' backend, show in legend for all subplots
+            # as it does not support single legend on grid plots.
+            # See: https://github.com/bokeh/bokeh/issues/7607
+            show_in_legend = (i == 0) or (backend == "bokeh")
+
         for alg, group in to_plot.groupby("algorithm", sort=False):
             line_data = LineData(
                 x=group[runtime_measure].to_numpy(),
@@ -262,7 +278,7 @@ def _extract_convergence_plot_lines(
                 name=str(alg),
                 color=next(palette_cycle),
                 # if combining plots, only show legend in first subplot
-                show_in_legend=(not combine_plots_in_grid) or (i == 0),
+                show_in_legend=show_in_legend,
             )
             subplot_lines.append(line_data)
 
@@ -274,7 +290,7 @@ def _extract_convergence_plot_lines(
                 name="true solution",
                 color=next(palette_cycle),
                 # if combining plots, only show legend in first subplot
-                show_in_legend=(not combine_plots_in_grid) or (i == 0),
+                show_in_legend=show_in_legend,
             )
             subplot_lines.append(line_data)
 
