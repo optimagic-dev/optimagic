@@ -53,6 +53,7 @@ profile_options = [
     {"x_precision": 1e-5},
     {"y_precision": 1e-5},
     {"backend": "matplotlib"},
+    {"backend": "bokeh"},
 ]
 
 
@@ -111,6 +112,8 @@ def test_extract_convergence_plot_lines(benchmark_results):
         runtime_measure="n_evaluations",
         outcome="criterion_normalized",
         palette=["red", "green", "blue"],
+        combine_plots_in_grid=True,
+        backend="bla",
     )
 
     assert isinstance(lines_list, list) and isinstance(titles, list)

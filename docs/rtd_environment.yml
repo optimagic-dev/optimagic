@@ -21,6 +21,7 @@ dependencies:
   - furo
   - pybaum
   - matplotlib
+  - bokeh
   - seaborn
   - numpy
   - pandas

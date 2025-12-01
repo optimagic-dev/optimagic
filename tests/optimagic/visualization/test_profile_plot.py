@@ -181,6 +181,7 @@ profile_options = [
     {"runtime_measure": "n_batches"},
     {"stopping_criterion": "x_or_y"},
     {"backend": "matplotlib"},
+    {"backend": "bokeh"},
 ]
 
 
