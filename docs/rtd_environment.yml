@@ -20,6 +20,7 @@ dependencies:
   - pybaum
   - matplotlib
   - bokeh
+  - altair
   - seaborn
   - numpy
   - pandas

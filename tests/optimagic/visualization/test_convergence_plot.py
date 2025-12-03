@@ -54,6 +54,7 @@ profile_options = [
     {"y_precision": 1e-5},
     {"backend": "matplotlib"},
     {"backend": "bokeh"},
+    {"backend": "altair"},
 ]
 
 

@@ -63,6 +63,7 @@ IS_PYSWARMS_INSTALLED = _is_installed("pyswarms")
 
 IS_MATPLOTLIB_INSTALLED = _is_installed("matplotlib")
 IS_BOKEH_INSTALLED = _is_installed("bokeh")
+IS_ALTAIR_INSTALLED = _is_installed("altair")
 
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0

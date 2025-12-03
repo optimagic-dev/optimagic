@@ -19,6 +19,7 @@ dependencies:
   - plotly>=6.2  # run, tests
   - matplotlib  # tests
   - bokeh  # tests
+  - altair  # tests
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests

@@ -44,7 +44,7 @@ def slice_plot(
     share_y: bool = True,
     expand_yrange: float = 0.02,
     share_x: bool = False,
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     color: str | None = DEFAULT_PALETTE[0],
     title: str | None = None,

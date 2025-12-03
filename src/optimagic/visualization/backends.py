@@ -4,11 +4,16 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_chec
 import numpy as np
 import plotly.graph_objects as go
 
-from optimagic.config import IS_BOKEH_INSTALLED, IS_MATPLOTLIB_INSTALLED
+from optimagic.config import (
+    IS_ALTAIR_INSTALLED,
+    IS_BOKEH_INSTALLED,
+    IS_MATPLOTLIB_INSTALLED,
+)
 from optimagic.exceptions import InvalidPlottingBackendError, NotInstalledError
 from optimagic.visualization.plotting_utilities import LineData, MarkerData
 
 if TYPE_CHECKING:
+    import altair as alt
     import bokeh
     import matplotlib.pyplot as plt
 
@@ -592,9 +597,228 @@ def _grid_line_plot_bokeh(
     return grid
 
 
+def _line_plot_altair(
+    lines: list[LineData],
+    *,
+    title: str | None,
+    xlabel: str | None,
+    xrange: tuple[float, float] | None,
+    ylabel: str | None,
+    yrange: tuple[float, float] | None,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+    horizontal_line: float | None,
+    marker: MarkerData | None,
+    subplot: "alt.Chart | None" = None,
+) -> "alt.Chart":
+    """Create a line plot using Altair.
+
+    Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `line_plot` function.
+        subplot: An Altair Chart object to which the lines should be plotted.
+            If provided, the plot is drawn on the given Chart. If not provided,
+            a new Chart is created.
+
+    Returns:
+        An Altair Chart object.
+
+    """
+    import altair as alt
+    import pandas as pd
+
+    alt.data_transformers.disable_max_rows()
+
+    if template is None:
+        template = "default"
+    alt.theme.enable("default")
+
+    dfs = []
+    for line in lines:
+        df = pd.DataFrame(
+            {"x": line.x, "y": line.y, "name": line.name, "color": line.color}
+        )
+        dfs.append(df)
+    source = pd.concat(dfs)
+
+    figure_properties: dict[str, str | int] = {}
+    if title is not None:
+        figure_properties["title"] = title
+    if width is not None:
+        figure_properties["width"] = width
+    if height is not None:
+        figure_properties["height"] = height
+
+    chart = (
+        alt.Chart(source)
+        .mark_line()
+        .encode(
+            x=alt.X(
+                "x",
+                title=xlabel.split("{linebreak}") if xlabel else None,
+                scale=alt.Scale(domain=list(xrange)) if xrange else alt.Undefined,
+            ),
+            y=alt.Y(
+                "y",
+                title=ylabel.split("{linebreak}") if ylabel else None,
+                scale=alt.Scale(domain=list(yrange)) if yrange else alt.Undefined,
+            ),
+            color=alt.Color("color:N", scale=None),
+            detail="name:N",
+        )
+        .properties(**figure_properties)
+    )
+
+    if any(line.show_in_legend for line in lines):
+        legend = (
+            alt.Chart(source)
+            .mark_line()
+            .encode(
+                color=alt.Color(
+                    "name:N",
+                    title=None,
+                    legend=alt.Legend(**(legend_properties or {})),
+                    scale=alt.Scale(
+                        domain=[line.name for line in lines if line.show_in_legend],
+                        range=[
+                            line.color or "" for line in lines if line.show_in_legend
+                        ],
+                    ),
+                )
+            )
+        )
+        chart = chart + legend
+
+    if horizontal_line is not None:
+        hline = (
+            alt.Chart(pd.DataFrame({"y": [horizontal_line]})).mark_rule().encode(y="y")
+        )
+        chart = chart + hline
+
+    if marker is not None:
+        marker_chart = (
+            alt.Chart(pd.DataFrame({"x": [marker.x], "y": [marker.y]}))
+            .mark_point(size=100, shape="circle", color=marker.color, filled=True)
+            .encode(x="x", y="y")
+        )
+        chart = chart + marker_chart
+
+    return chart
+
+
+def _grid_line_plot_altair(
+    lines_list: list[list[LineData]],
+    *,
+    n_rows: int,
+    n_cols: int,
+    titles: list[str] | None,
+    xlabels: list[str] | None,
+    xrange: tuple[float, float] | None,
+    share_x: bool,
+    ylabels: list[str] | None,
+    yrange: tuple[float, float] | None,
+    share_y: bool,
+    template: str | None,
+    height: int | None,
+    width: int | None,
+    legend_properties: dict[str, Any] | None,
+    margin_properties: dict[str, Any] | None,
+    plot_title: str | None,
+    marker_list: list[MarkerData] | None,
+    make_subplot_kwargs: dict[str, Any] | None = None,
+) -> "alt.VConcatChart":
+    """Create a grid of line plots using Altair.
+
+    Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `grid_line_plot` function.
+
+    Returns:
+        An Altair VConcatChart object.
+
+    """
+    import altair as alt
+
+    subplot_height = height // n_rows if height else None
+    subplot_width = width // n_cols if width else None
+
+    charts = []
+    for row_idx in range(n_rows):
+        chart_row = []
+        for col_idx in range(n_cols):
+            i = row_idx * n_cols + col_idx
+            if i >= len(lines_list):
+                break
+
+            chart = _line_plot_altair(
+                lines_list[i],
+                title=titles[i] if titles else None,
+                xlabel=xlabels[i] if xlabels else None,
+                xrange=xrange,
+                ylabel=ylabels[i] if ylabels else None,
+                yrange=yrange,
+                template=template,
+                height=subplot_height,
+                width=subplot_width,
+                legend_properties=legend_properties,
+                margin_properties=None,
+                horizontal_line=None,
+                marker=marker_list[i] if marker_list else None,
+                subplot=None,
+            )
+
+            chart_row.append(chart)
+        charts.append(chart_row)
+
+    row_selections = [
+        alt.selection_interval(bind="scales", encodings=["y"]) for _ in range(n_rows)
+    ]
+    col_selections = [
+        alt.selection_interval(bind="scales", encodings=["x"]) for _ in range(n_cols)
+    ]
+
+    for row_idx, row in enumerate(charts):
+        for col_idx in range(len(row)):
+            chart = row[col_idx]
+
+            params = []
+            if share_y:
+                # Share y-axis for all subplots in the same row
+                params.append(row_selections[row_idx])
+            else:
+                # Use independent y-axes for each subplot
+                params.append(alt.selection_interval(bind="scales", encodings=["y"]))
+            if share_x:
+                # Share x-axis for all subplots in the same column
+                params.append(col_selections[col_idx])
+            else:
+                # Use independent x-axes for each subplot
+                params.append(alt.selection_interval(bind="scales", encodings=["x"]))
+            chart = chart.add_params(*params)
+
+            if share_y and col_idx > 0:
+                # Hide y-axis ticklabels for all subplots except the leftmost column
+                chart = chart.encode(y=alt.Y(axis=alt.Axis(labels=False)))
+            if share_x and row_idx < n_rows - 1:
+                # Hide x-axis ticklabels for all subplots except the bottom row
+                chart = chart.encode(x=alt.X(axis=alt.Axis(labels=False)))
+
+            charts[row_idx][col_idx] = chart
+
+    grid_chart = alt.vconcat(*[alt.hconcat(*row) for row in charts])
+
+    if plot_title is not None:
+        grid_chart = grid_chart.properties(title=plot_title)
+
+    return grid_chart
+
+
 def line_plot(
     lines: list[LineData],
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     *,
     title: str | None = None,
     xlabel: str | None = None,
@@ -657,7 +881,7 @@ def line_plot(
 
 def grid_line_plot(
     lines_list: list[list[LineData]],
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     *,
     n_rows: int,
     n_cols: int,
@@ -750,18 +974,25 @@ BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION: dict[
         _line_plot_bokeh,
         _grid_line_plot_bokeh,
     ),
+    "altair": (
+        IS_ALTAIR_INSTALLED,
+        _line_plot_altair,
+        _grid_line_plot_altair,
+    ),
 }
 
 
 @overload
 def _get_plot_function(
-    backend: Literal["plotly", "matplotlib", "bokeh"], grid_plot: Literal[False]
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"],
+    grid_plot: Literal[False],
 ) -> LinePlotFunction: ...
 
 
 @overload
 def _get_plot_function(
-    backend: Literal["plotly", "matplotlib", "bokeh"], grid_plot: Literal[True]
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"],
+    grid_plot: Literal[True],
 ) -> GridLinePlotFunction: ...
 
 
