@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ./.tools/envs/testenv-linux.yml
           cache-environment: true
@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           micromamba-version: 1.5.6-0
           environment-file: ./.tools/envs/testenv-others.yml
@@ -90,7 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ./.tools/envs/testenv-pandas.yml
           cache-environment: true
@@ -116,7 +116,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ./.tools/envs/testenv-numpy.yml
           cache-environment: true
@@ -135,7 +135,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ./.tools/envs/testenv-plotly.yml
           cache-environment: true
@@ -164,7 +164,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ./.tools/envs/testenv-nevergrad.yml
           cache-environment: true
@@ -181,7 +181,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ./.tools/envs/testenv-linux.yml
           environment-name: optimagic
@@ -202,7 +202,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ./.tools/envs/testenv-linux.yml
           environment-name: optimagic
