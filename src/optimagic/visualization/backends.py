@@ -729,7 +729,7 @@ def _grid_line_plot_altair(
     plot_title: str | None,
     marker_list: list[MarkerData] | None,
     make_subplot_kwargs: dict[str, Any] | None = None,
-) -> "alt.VConcatChart":
+) -> "alt.Chart | alt.HConcatChart | alt.VConcatChart":
     """Create a grid of line plots using Altair.
 
     Args:
@@ -737,7 +737,8 @@ def _grid_line_plot_altair(
             `grid_line_plot` function.
 
     Returns:
-        An Altair VConcatChart object.
+        An Altair Chart if the grid contains only one subplot, an Altair HConcatChart
+            if 'n_rows' is 1, otherwise an Altair VConcatChart.
 
     """
     import altair as alt
@@ -774,10 +775,16 @@ def _grid_line_plot_altair(
         charts.append(chart_row)
 
     row_selections = [
-        alt.selection_interval(bind="scales", encodings=["y"]) for _ in range(n_rows)
+        alt.selection_interval(
+            bind="scales", encodings=["y"], name=f"share_y_row{row_idx}"
+        )
+        for row_idx in range(n_rows)
     ]
     col_selections = [
-        alt.selection_interval(bind="scales", encodings=["x"]) for _ in range(n_cols)
+        alt.selection_interval(
+            bind="scales", encodings=["x"], name=f"share_x_col{col_idx}"
+        )
+        for col_idx in range(n_cols)
     ]
 
     for row_idx, row in enumerate(charts):
@@ -790,13 +797,25 @@ def _grid_line_plot_altair(
                 params.append(row_selections[row_idx])
             else:
                 # Use independent y-axes for each subplot
-                params.append(alt.selection_interval(bind="scales", encodings=["y"]))
+                params.append(
+                    alt.selection_interval(
+                        bind="scales",
+                        encodings=["x", "y"],
+                        name=f"ind_y_row{row_idx}_col{col_idx}",
+                    )
+                )
             if share_x:
                 # Share x-axis for all subplots in the same column
                 params.append(col_selections[col_idx])
             else:
                 # Use independent x-axes for each subplot
-                params.append(alt.selection_interval(bind="scales", encodings=["x"]))
+                params.append(
+                    alt.selection_interval(
+                        bind="scales",
+                        encodings=["x", "y"],
+                        name=f"ind_x_row{row_idx}_col{col_idx}",
+                    )
+                )
             chart = chart.add_params(*params)
 
             if share_y and col_idx > 0:
@@ -808,7 +827,20 @@ def _grid_line_plot_altair(
 
             charts[row_idx][col_idx] = chart
 
-    grid_chart = alt.vconcat(*[alt.hconcat(*row) for row in charts])
+    row_charts = []
+    for row in charts:
+        row_chart: alt.Chart | alt.HConcatChart
+        if len(row) == 1:
+            row_chart = row[0]
+        else:
+            row_chart = alt.hconcat(*row)
+        row_charts.append(row_chart)
+
+    grid_chart: alt.Chart | alt.HConcatChart | alt.VConcatChart
+    if len(row_charts) == 1:
+        grid_chart = row_charts[0]
+    else:
+        grid_chart = alt.vconcat(*row_charts)
 
     if plot_title is not None:
         grid_chart = grid_chart.properties(title=plot_title)
