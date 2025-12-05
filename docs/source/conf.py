@@ -50,6 +50,8 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "sphinxcontrib.mermaid",
+    "sphinx_llm.txt",
+    "sphinx_llms_txt",
 ]
 
 myst_enable_extensions = [
