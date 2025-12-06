@@ -44,7 +44,7 @@ def slice_plot(
     share_y: bool = True,
     expand_yrange: float = 0.02,
     share_x: bool = False,
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     color: str | None = DEFAULT_PALETTE[0],
     title: str | None = None,
@@ -292,7 +292,7 @@ def _get_plot_data(
         metadata.append(meta)
 
     plot_data = pd.DataFrame(metadata)
-    plot_data["Function Value"] = func_values
+    plot_data["Function Value"] = func_values  # type: ignore[assignment]
 
     return plot_data, internal_params
 
