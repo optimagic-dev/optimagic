@@ -42,6 +42,7 @@ dependencies:
   - iminuit  # dev, tests
   - cma  # dev, tests
   - pygad  # dev, tests
+  - pytorch-cpu  # dev, tests
   - pip:  # dev, tests, docs
       - bayesian-optimization>=2.0.4  # dev, tests
     # - nevergrad  # incompatible with bayesian-optimization>=2.0.4
