@@ -292,7 +292,7 @@ def _get_plot_data(
         metadata.append(meta)
 
     plot_data = pd.DataFrame(metadata)
-    plot_data["Function Value"] = func_values
+    plot_data["Function Value"] = func_values  # type: ignore[assignment]
 
     return plot_data, internal_params
 
