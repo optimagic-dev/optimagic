@@ -186,7 +186,7 @@ profile_options = [
 
 
 @pytest.mark.parametrize("options", profile_options)
-def test_profile_plot_options(options):
+def test_profile_plot_options(options, close_mpl_figures):
     problems = get_benchmark_problems("example")
     stop_after_10 = {
         "stopping_max_criterion_evaluations": 10,
