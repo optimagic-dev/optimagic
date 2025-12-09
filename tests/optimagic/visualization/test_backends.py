@@ -19,7 +19,7 @@ def sample_lines():
 
 
 @pytest.mark.parametrize("backend", BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())
-def test_line_plot_all_backends(sample_lines, backend):
+def test_line_plot_all_backends(sample_lines, backend, close_mpl_figures):
     line_plot(sample_lines, backend=backend)
 
 

@@ -151,13 +151,13 @@ def test_criterion_plot_wrong_inputs():
 
 
 @pytest.mark.parametrize("backend", BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())
-def test_criterion_plot_different_backends(minimize_result, backend):
+def test_criterion_plot_different_backends(minimize_result, backend, close_mpl_figures):
     res = minimize_result[False][0]
     criterion_plot(res, backend=backend)
 
 
 @pytest.mark.parametrize("backend", BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())
-def test_params_plot_different_backends(minimize_result, backend):
+def test_params_plot_different_backends(minimize_result, backend, close_mpl_figures):
     res = minimize_result[False][0]
     params_plot(res, backend=backend)
 

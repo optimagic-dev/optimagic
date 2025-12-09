@@ -4,6 +4,8 @@ import pandas as pd
 import pytest
 import statsmodels.api as sm
 
+from optimagic.config import IS_MATPLOTLIB_INSTALLED
+
 
 @pytest.fixture(autouse=True)
 def fresh_directory(tmp_path):  # noqa: PT004
@@ -30,3 +32,13 @@ def logit_object():
     spector_data.exog = sm.add_constant(spector_data.exog)
     logit_mod = sm.Logit(spector_data.endog, spector_data.exog)
     return logit_mod
+
+
+@pytest.fixture()
+def close_mpl_figures():
+    """Close all matplotlib figures after test execution."""
+    yield
+    if IS_MATPLOTLIB_INSTALLED:
+        import matplotlib.pyplot as plt
+
+        plt.close("all")
