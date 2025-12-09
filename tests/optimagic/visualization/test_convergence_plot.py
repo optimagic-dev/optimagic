@@ -59,7 +59,7 @@ profile_options = [
 
 @pytest.mark.parametrize("options", profile_options)
 @pytest.mark.parametrize("grid", [True, False])
-def test_convergence_plot_options(options, grid, benchmark_results):
+def test_convergence_plot_options(options, grid, benchmark_results, close_mpl_figures):
     problems, results = benchmark_results
 
     convergence_plot(
