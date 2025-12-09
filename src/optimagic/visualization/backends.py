@@ -706,7 +706,7 @@ def _line_plot_altair(
         )
         chart = chart + marker_chart
 
-    return chart
+    return chart.interactive()
 
 
 def _grid_line_plot_altair(
@@ -800,7 +800,7 @@ def _grid_line_plot_altair(
                 params.append(
                     alt.selection_interval(
                         bind="scales",
-                        encodings=["x", "y"],
+                        encodings=["y"],
                         name=f"ind_y_row{row_idx}_col{col_idx}",
                     )
                 )
@@ -812,7 +812,7 @@ def _grid_line_plot_altair(
                 params.append(
                     alt.selection_interval(
                         bind="scales",
-                        encodings=["x", "y"],
+                        encodings=["x"],
                         name=f"ind_x_row{row_idx}_col{col_idx}",
                     )
                 )

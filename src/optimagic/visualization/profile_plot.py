@@ -25,7 +25,7 @@ BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
         "label_text_font_size": "8pt",
         "title": "algorithm",
     },
-    "altair": {"orient": "top-right", "title": "algorithm"},
+    "altair": {"orient": "right", "title": "algorithm"},
 }
 
 BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, Any]] = {
