@@ -56,7 +56,7 @@ parametrization = [
 
 @pytest.mark.parametrize("backend", BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())
 @pytest.mark.parametrize("func, kwargs", parametrization)
-def test_slice_plot(fixed_inputs, func, backend, kwargs):
+def test_slice_plot(fixed_inputs, func, backend, kwargs, close_mpl_figures):
     slice_plot(
         func=func,
         backend=backend,

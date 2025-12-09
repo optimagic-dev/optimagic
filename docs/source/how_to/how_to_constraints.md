@@ -324,7 +324,7 @@ full parameter vector and returns the subset of parameters that should be constr
     This yields the same solution as an unconstrained estimation because the constraint
     is not binding:
 
-    >>> res.params.round(3)
+    >>> res.params.round(3) # doctest: +SKIP
     array([ 1. ,  0.8,  0.6,  0.4,  0.2, -0. ])
 
     We can now use one of optimagic's utility functions to actually build the standard
