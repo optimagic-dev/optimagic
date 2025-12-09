@@ -21,6 +21,7 @@ dependencies:
   - matplotlib
   - bokeh
   - altair
+  - anywidget
   - seaborn
   - numpy
   - pandas
