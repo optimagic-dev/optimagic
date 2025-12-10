@@ -182,6 +182,7 @@ profile_options = [
     {"stopping_criterion": "x_or_y"},
     {"backend": "matplotlib"},
     {"backend": "bokeh"},
+    {"backend": "altair"},
 ]
 
 
