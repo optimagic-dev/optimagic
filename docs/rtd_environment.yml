@@ -13,6 +13,8 @@ dependencies:
   - sphinxcontrib-bibtex
   - sphinx-copybutton
   - sphinx-design
+  - sphinx-llm
+  - sphinx-llms-txt
   - ipython
   - ipython_genutils
   - myst-nb
@@ -20,6 +22,8 @@ dependencies:
   - pybaum
   - matplotlib
   - bokeh
+  - altair
+  - anywidget
   - seaborn
   - numpy
   - pandas

@@ -19,6 +19,7 @@ BACKEND_TO_CONVERGENCE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
         "place": "right",
         "label_text_font_size": "8pt",
     },
+    "altair": {"orient": "right"},
 }
 
 BACKEND_TO_CONVERGENCE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, int]] = {
@@ -75,7 +76,7 @@ def convergence_plot(
     x_precision: float = 1e-4,
     y_precision: float = 1e-4,
     combine_plots_in_grid: bool = True,
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
 ) -> Any:
