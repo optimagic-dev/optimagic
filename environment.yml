@@ -35,7 +35,7 @@ dependencies:
   - sphinxcontrib-bibtex  # docs
   - intersphinx-registry  # docs
   - seaborn  # dev, tests
-  - mypy=1.14.1  # dev, tests
+  - mypy=1.19.0  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - furo  # dev, docs
