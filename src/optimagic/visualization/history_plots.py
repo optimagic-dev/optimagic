@@ -30,6 +30,9 @@ BACKEND_TO_HISTORY_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
     "bokeh": {
         "location": "top_right",
     },
+    "altair": {
+        "orient": "top-right",
+    },
 }
 
 
@@ -40,7 +43,7 @@ def criterion_plot(
     results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
     stack_multistart: bool = False,
@@ -158,7 +161,7 @@ def params_plot(
     result: ResultOrPath,
     selector: Callable[[PyTree], PyTree] | None = None,
     max_evaluations: int | None = None,
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
     show_exploration: bool = False,

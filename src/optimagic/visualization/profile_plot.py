@@ -25,6 +25,7 @@ BACKEND_TO_PROFILE_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
         "label_text_font_size": "8pt",
         "title": "algorithm",
     },
+    "altair": {"orient": "right", "title": "algorithm"},
 }
 
 BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, Any]] = {
@@ -44,7 +45,7 @@ def profile_plot(
     stopping_criterion: Literal["x", "y", "x_and_y", "x_or_y"] = "y",
     x_precision: float = 1e-4,
     y_precision: float = 1e-4,
-    backend: Literal["plotly", "matplotlib", "bokeh"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
 ) -> Any:
