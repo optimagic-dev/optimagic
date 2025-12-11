@@ -38,7 +38,6 @@ class LinePlotFunction(Protocol):
         marker: MarkerData | None,
         subplot: Any | None = None,
     ) -> Any:
-        ...
         """Protocol of the line_plot function used for type checking.
 
         Args:
@@ -49,6 +48,7 @@ class LinePlotFunction(Protocol):
                 created.
 
         """
+        ...
 
 
 @runtime_checkable
@@ -74,7 +74,15 @@ class GridLinePlotFunction(Protocol):
         plot_title: str | None,
         marker_list: list[MarkerData] | None,
         make_subplot_kwargs: dict[str, Any] | None = None,
-    ) -> Any: ...
+    ) -> Any:
+        """Protocol of the grid_line_plot function used for type checking.
+
+        Args:
+            ...: All other argument descriptions can be found in the docstring of the
+                `grid_line_plot` function.
+
+        """
+        ...
 
 
 def _line_plot_plotly(
@@ -430,12 +438,25 @@ def _line_plot_bokeh(
     margin_properties: dict[str, Any] | None,
     horizontal_line: float | None,
     marker: MarkerData | None,
-    subplot: Any | None = None,
+    subplot: "bokeh.plotting.figure | None" = None,
 ) -> "bokeh.plotting.figure":
+    """Create a line plot using Bokeh.
+
+    Args:
+        ...: All other argument descriptions can be found in the docstring of the
+            `line_plot` function.
+        subplot: A Bokeh `Figure` object to which the lines should be plotted.
+            If provided, the plot is drawn on the given `Figure`. If not provided,
+            a new `Figure` is created.
+
+    Returns:
+        A Bokeh Figure object.
+
+    """
     from bokeh import themes
     from bokeh.io import curdoc
-    from bokeh.models import Scatter
-    from bokeh.models.annotations import Legend, LegendItem, Span
+    from bokeh.models import Range1d
+    from bokeh.models.annotations import Legend, LegendItem, Span, Title
     from bokeh.plotting import figure
 
     if template is None:
@@ -448,15 +469,15 @@ def _line_plot_bokeh(
         p = figure()
 
     if title is not None:
-        p.title.text = title
+        p.title = Title(text=title)
     if xlabel is not None:
         p.xaxis.axis_label = xlabel.format(linebreak="\n")
     if xrange is not None:
-        p.x_range.start, p.x_range.end = xrange
+        p.x_range = Range1d(*xrange)
     if ylabel is not None:
         p.yaxis.axis_label = ylabel.format(linebreak="\n")
     if yrange is not None:
-        p.y_range.start, p.y_range.end = yrange
+        p.y_range = Range1d(*yrange)
     if height is not None:
         p.height = height
     if width is not None:
@@ -472,27 +493,31 @@ def _line_plot_bokeh(
         )
 
         if line.show_in_legend:
-            _legend_items.append(LegendItem(label=line.name, renderers=[glyph]))
+            _legend_items.append(LegendItem(label=line.name, renderers=[glyph]))  # type: ignore[list-item]
 
     if horizontal_line is not None:
-        glyph = Span(
+        span = Span(
             location=horizontal_line,
             dimension="width",
             line_color=p.yaxis.axis_line_color or "gray",
             line_width=p.yaxis.axis_line_width or 2,
         )
-        p.add_layout(glyph)
+        p.add_layout(span)
 
     if marker is not None:
-        glyph = Scatter(
-            x=marker.x,
-            y=marker.y,
-            marker="dot",
+        marker_glyph = p.scatter(
+            x=[marker.x],
+            y=[marker.y],
+            marker="circle",
             fill_color=marker.color,
             line_color=marker.color,
-            size=30,
+            size=10,
         )
-        p.add_glyph(glyph)
+
+        if marker.show_in_legend:
+            _legend_items.append(
+                LegendItem(label=marker.name, renderers=[marker_glyph])  # type: ignore[list-item]
+            )
 
     if _legend_items:
         legend_kwargs = legend_properties.copy() if legend_properties else {}
@@ -552,21 +577,6 @@ def _grid_line_plot_bokeh(
 
             p = figure()
 
-            if share_x:
-                if row > 0:
-                    # Share x-range with the top-most subplot in the same column
-                    p.x_range = plots[0][col].x_range
-                if row < n_rows - 1:
-                    # Hide tick labels except for subplots in the last row
-                    p.xaxis.major_label_text_font_size = "0pt"
-            if share_y:
-                if col > 0:
-                    # Share y-range with the left-most subplot in the same row
-                    p.y_range = subplot_row[0].y_range
-
-                    # Hide tick labels except for subplots in the first column
-                    p.yaxis.major_label_text_font_size = "0pt"
-
             _line_plot_bokeh(
                 lines_list[idx],
                 title=titles[idx] if titles else None,
@@ -583,6 +593,21 @@ def _grid_line_plot_bokeh(
                 marker=marker_list[idx] if marker_list else None,
                 subplot=p,
             )
+
+            if share_x:
+                if row > 0:
+                    # Share x-range with the top-most subplot in the same column
+                    p.x_range = plots[0][col].x_range
+                if row < n_rows - 1:
+                    # Hide tick labels except for subplots in the last row
+                    p.xaxis.major_label_text_font_size = "0pt"
+            if share_y:
+                if col > 0:
+                    # Share y-range with the left-most subplot in the same row
+                    p.y_range = subplot_row[0].y_range
+
+                    # Hide tick labels except for subplots in the first column
+                    p.yaxis.major_label_text_font_size = "0pt"
 
             subplot_row.append(p)
         plots.append(subplot_row)
@@ -612,16 +637,14 @@ def _line_plot_altair(
     margin_properties: dict[str, Any] | None,
     horizontal_line: float | None,
     marker: MarkerData | None,
-    subplot: "alt.Chart | None" = None,
+    subplot: None = None,
 ) -> "alt.Chart":
     """Create a line plot using Altair.
 
     Args:
         ...: All other argument descriptions can be found in the docstring of the
             `line_plot` function.
-        subplot: An Altair Chart object to which the lines should be plotted.
-            If provided, the plot is drawn on the given Chart. If not provided,
-            a new Chart is created.
+        subplot: Unused by Altair.
 
     Returns:
         An Altair Chart object.
@@ -634,7 +657,7 @@ def _line_plot_altair(
 
     if template is None:
         template = "default"
-    alt.theme.enable("default")
+    alt.theme.enable(template)
 
     dfs = []
     for line in lines:
