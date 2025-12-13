@@ -357,7 +357,6 @@ def _extract_slice_plot_lines_and_labels(
                 x=float(internal_params.values[pos]),
                 y=float(func_eval.internal_value(AggregationLevel.SCALAR)),
                 color=color,
-                show_in_legend=False,
             )
             marker_list.append(marker_data)
 

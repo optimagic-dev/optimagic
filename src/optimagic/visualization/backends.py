@@ -172,7 +172,7 @@ def _line_plot_plotly(
             y=[marker.y],
             name=marker.name,
             marker_color=marker.color,
-            showlegend=marker.show_in_legend,
+            showlegend=False,
         )
         fig.add_trace(trace, row=row, col=col)
 
@@ -305,13 +305,6 @@ def _line_plot_matplotlib(
         else:
             ax = subplot
 
-        if horizontal_line is not None:
-            ax.axhline(
-                y=horizontal_line,
-                color=ax.spines["left"].get_edgecolor() or "gray",
-                linewidth=ax.spines["left"].get_linewidth() or 1.0,
-            )
-
         for line in lines:
             ax.plot(
                 line.x,
@@ -320,12 +313,19 @@ def _line_plot_matplotlib(
                 color=line.color,
             )
 
+        if horizontal_line is not None:
+            ax.axhline(
+                y=horizontal_line,
+                color=ax.spines["left"].get_edgecolor() or "gray",
+                linewidth=ax.spines["left"].get_linewidth() or 1.0,
+            )
+
         if marker is not None:
             ax.scatter(
                 [marker.x],
                 [marker.y],
                 color=marker.color,
-                label=marker.name if marker.show_in_legend else None,
+                label=None,
             )
 
         ax.set(
@@ -505,7 +505,7 @@ def _line_plot_bokeh(
         p.add_layout(span)
 
     if marker is not None:
-        marker_glyph = p.scatter(
+        p.scatter(
             x=[marker.x],
             y=[marker.y],
             marker="circle",
@@ -513,11 +513,6 @@ def _line_plot_bokeh(
             line_color=marker.color,
             size=10,
         )
-
-        if marker.show_in_legend:
-            _legend_items.append(
-                LegendItem(label=marker.name, renderers=[marker_glyph])  # type: ignore[list-item]
-            )
 
     if _legend_items:
         legend_kwargs = legend_properties.copy() if legend_properties else {}

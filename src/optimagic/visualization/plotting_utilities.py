@@ -41,7 +41,6 @@ class MarkerData:
         y: The y-coordinate of the marker.
         color: The color of the marker. Default is None.
         name: The name of the marker. Default is None.
-        show_in_legend: Whether to show the marker in the legend. Default is True.
 
     """
 
@@ -49,7 +48,6 @@ class MarkerData:
     y: float
     color: str | None = None
     name: str | None = None
-    show_in_legend: bool = True
 
 
 def combine_plots(
