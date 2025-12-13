@@ -91,8 +91,8 @@ def slice_plot(
             x axis for all plots in one column.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used. For the 'bokeh' backend, this changes the global theme,
-            which affects all Bokeh plots in the session.
+            the backend is used. For the 'bokeh' and 'altair' backends, this changes the
+            global theme, which affects all plots from that backend in the session.
         color: The line color.
         title: The figure title. This is not used for the `bokeh` backend, as it does
             not support title for grid plot.
@@ -357,7 +357,6 @@ def _extract_slice_plot_lines_and_labels(
                 x=float(internal_params.values[pos]),
                 y=float(func_eval.internal_value(AggregationLevel.SCALAR)),
                 color=color,
-                show_in_legend=False,
             )
             marker_list.append(marker_data)
 

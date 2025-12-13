@@ -37,18 +37,18 @@ OUTCOME_TO_CONVERGENCE_PLOT_YLABEL: dict[str, str] = {
     "monotone_criterion_normalized": (
         "Share of Function Distance to Optimum{linebreak}Missing From Best So Far"
     ),
-    "parameter_distance": "Distance Between Current and Optimal Parameters",
+    "parameter_distance": "Distance Between Current and{linebreak}Optimal Parameters",
     "parameter_distance_normalized": (
         "Share of Parameter Distance to Optimum{linebreak}"
         "Missing From Current Parameters"
     ),
     "monotone_parameter_distance_normalized": (
-        "Share of the Parameter Distance to Optimum{linebreak}"
+        "Share of Parameter Distance to Optimum{linebreak}"
         "Missing From the Best Parameters So Far"
     ),
     "monotone_parameter_distance": (
-        "Distance Between the Best Parameters So Far{linebreak}"
-        "and the Optimal Parameters"
+        "Distance Between the Best Parameters{linebreak}"
+        "So Far and the Optimal Parameters"
     ),
 }
 
@@ -130,8 +130,8 @@ def convergence_plot(
             for each factor pair or a dictionary of individual plots. Default is True.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used. For the 'bokeh' backend, this changes the global theme,
-            which affects all Bokeh plots in the session.
+            the backend is used. For the 'bokeh' and 'altair' backends, this changes the
+            global theme, which affects all plots from that backend in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
 
     Returns:
