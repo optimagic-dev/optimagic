@@ -59,8 +59,8 @@ def criterion_plot(
         max_evaluations: Clip the criterion history after that many entries.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used. For the 'bokeh' backend, this changes the global theme,
-            which affects all Bokeh plots in the session.
+            the backend is used. For the 'bokeh' and 'altair' backends, this changes the
+            global theme, which affects all plots from that backend in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
         stack_multistart: Whether to combine multistart histories into a single history.
             Default is False.
@@ -176,8 +176,8 @@ def params_plot(
         max_evaluations: Clip the criterion history after that many entries.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used. For the 'bokeh' backend, this changes the global theme,
-            which affects all Bokeh plots in the session.
+            the backend is used. For the 'bokeh' and 'altair' backends, this changes the
+            global theme, which affects all plots from that backend in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
         show_exploration: If True, exploration samples of a multistart optimization are
             visualized. Default is False.

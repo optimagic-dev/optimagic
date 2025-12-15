@@ -89,8 +89,8 @@ def profile_plot(
             value) before the criterion for clipping and convergence is fulfilled.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used. For the 'bokeh' backend, this changes the global theme,
-            which affects all Bokeh plots in the session.
+            the backend is used. For the 'bokeh' and 'altair' backends, this changes the
+            global theme, which affects all plots from that backend in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
 
     Returns:
