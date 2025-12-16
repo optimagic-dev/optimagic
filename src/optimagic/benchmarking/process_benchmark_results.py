@@ -129,7 +129,9 @@ def _process_one_result(
     }
 
     # calculate at which iteration the problem has been solved
-    if stopping_criterion is not None:
+    if stopping_criterion is None:
+        is_converged = False
+    else:
         is_converged_x, x_idx = _check_convergence(params_dist_normalized, x_precision)
         is_converged_y, y_idx = _check_convergence(normalized_crit_hist, y_precision)
 
