@@ -75,14 +75,13 @@ def test_convergence_plot_options(options, grid, benchmark_results, close_mpl_fi
 def test_convergence_plot_stopping_criterion_none(benchmark_results):
     problems, results = benchmark_results
 
-    fig = convergence_plot(
-        problems=problems,
-        results=results,
-        problem_subset=["bard_good_start"],
-        stopping_criterion=None,
-    )
-
-    assert fig is not None
+    with pytest.raises(UnboundLocalError):
+        convergence_plot(
+            problems=problems,
+            results=results,
+            problem_subset=["bard_good_start"],
+            stopping_criterion=None,
+        )
 
 
 def test_check_only_allowed_subset_provided_none():

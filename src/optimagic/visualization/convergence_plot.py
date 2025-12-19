@@ -72,7 +72,7 @@ def convergence_plot(
     runtime_measure: Literal[
         "n_evaluations", "walltime", "n_batches"
     ] = "n_evaluations",
-    stopping_criterion: Literal["x", "y", "x_and_y", "x_or_y"] | None = "y",
+    stopping_criterion: Literal["x", "y", "x_and_y", "x_or_y"] = "y",
     x_precision: float = 1e-4,
     y_precision: float = 1e-4,
     combine_plots_in_grid: bool = True,
@@ -118,8 +118,9 @@ def convergence_plot(
             the solution value.
         runtime_measure: This is the runtime until the desired convergence was reached
             by an algorithm.
-        stopping_criterion: Determines how convergence is determined from the two
-            precisions. If None, no convergence criterion is applied.
+        stopping_criterion: Determines how convergence is determined from the two precisions.
+            To effectively disable convergence, set `x_precision` and/or `y_precision`
+            to very small values (or 0).
         x_precision: how close an algorithm must have gotten to the true parameter
             values (as percent of the Euclidean distance between start and solution
             parameters) before the criterion for clipping and convergence is fulfilled.
