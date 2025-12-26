@@ -63,7 +63,8 @@ class BayesOpt(Algorithm):
     observations of the objective function. These observations are used to fit a
     Gaussian process surrogate model that learns about the function's behavior. The
     optimizer then uses an acquisition function to iteratively select promising new
-    points to evaluate, updates its model, and this continues for n_iter iterations.
+    points to evaluate, updates its model, and this continues for stopping_maxiter
+    iterations.
 
     This optimizer is well-suited for expensive functions where each evaluation is
     costly (simulations, experiments, model training), black-box optimization where
@@ -81,7 +82,7 @@ class BayesOpt(Algorithm):
 
     """
 
-    n_iter: PositiveInt = 25
+    stopping_maxiter: PositiveInt = 25
     """Number of Bayesian optimization iterations to perform after initial
     exploration."""
 
@@ -268,7 +269,7 @@ class BayesOpt(Algorithm):
         )
         optimizer.maximize(
             init_points=self.init_points,
-            n_iter=self.n_iter,
+            n_iter=self.stopping_maxiter,
         )
 
         res = _process_bayes_opt_result(optimizer=optimizer, x0=x0, problem=problem)
