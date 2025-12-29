@@ -14,9 +14,6 @@ coverage:
       default:
         target: 90%
 ignore:
-  - setup.py
   # Uses numba
   - src/optimagic/benchmarking/cartis_roberts.py
-  # not installed on CI
-  - src/optimagic/optimizers/tranquilo.py
   - tests/**/*

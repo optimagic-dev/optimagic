@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Callable, Literal
 
 import numpy as np
 from numpy.typing import NDArray
+from packaging import version
 
 from optimagic import mark
 from optimagic.config import IS_TRANQUILO_INSTALLED
@@ -34,6 +35,20 @@ if TYPE_CHECKING:
         VarianceEstimatorOptions,
     )
 
+if IS_TRANQUILO_INSTALLED:
+    import tranquilo
+
+    IS_TRANQUILO_VERSION_NEWER_OR_EQUAL_TO_0_1_0 = version.parse(
+        tranquilo.__version__
+    ) >= version.parse("0.1.0")
+else:
+    IS_TRANQUILO_VERSION_NEWER_OR_EQUAL_TO_0_1_0 = False
+
+TRANQUILO_INSTALLATION_INSTRUCTIONS = (
+    "The 'tranquilo' algorithm requires the tranquilo package version 0.1.0 or newer "
+    "to be installed. Install it with 'conda -c conda-forge install tranquilo>=0.1.0'."
+)
+
 
 @mark.minimizer(
     name="tranquilo",
@@ -48,7 +63,7 @@ if TYPE_CHECKING:
     supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
-    disable_history=True,
+    disable_history=False,
 )
 @dataclass(frozen=True)
 class Tranquilo(Algorithm):
@@ -164,17 +179,13 @@ class Tranquilo(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if not IS_TRANQUILO_INSTALLED:
-            raise NotInstalledError(
-                "The 'tranquilo-ls' algorithm requires the tranquilo package "
-                "to be installed. You can install it with "
-                "'conda install -c conda-forge tranquilo'."
-            )
+        if not IS_TRANQUILO_VERSION_NEWER_OR_EQUAL_TO_0_1_0:
+            raise NotInstalledError(TRANQUILO_INSTALLATION_INSTRUCTIONS)
         from tranquilo.tranquilo import _tranquilo
 
         raw_res = _tranquilo(
             functype="scalar",
-            criterion=problem.fun,
+            batch_fun=problem.batch_fun,
             x=x0,
             lower_bounds=problem.bounds.lower,
             upper_bounds=problem.bounds.upper,
@@ -190,7 +201,6 @@ class Tranquilo(Algorithm):
             stopping_max_criterion_evaluations=self.stopping_maxfun,
             stopping_max_iterations=self.stopping_maxiter,
             stopping_max_time=self.stopping_maxtime,
-            batch_evaluator=self.batch_evaluator,
             n_cores=self.n_cores,
             batch_size=self.batch_size,
             sample_size=self.sample_size,
@@ -242,7 +252,7 @@ class Tranquilo(Algorithm):
     supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
-    disable_history=True,
+    disable_history=False,
 )
 @dataclass(frozen=True)
 class TranquiloLS(Algorithm):
@@ -356,17 +366,13 @@ class TranquiloLS(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if not IS_TRANQUILO_INSTALLED:
-            raise NotInstalledError(
-                "The 'tranquilo-ls' algorithm requires the tranquilo package "
-                "to be installed. You can install it with "
-                "'conda install -c conda-forge tranquilo'."
-            )
+        if not IS_TRANQUILO_VERSION_NEWER_OR_EQUAL_TO_0_1_0:
+            raise NotInstalledError(TRANQUILO_INSTALLATION_INSTRUCTIONS)
         from tranquilo.tranquilo import _tranquilo
 
         raw_res = _tranquilo(
             functype="least_squares",
-            criterion=problem.fun,
+            batch_fun=problem.batch_fun,
             x=x0,
             lower_bounds=problem.bounds.lower,
             upper_bounds=problem.bounds.upper,
@@ -382,7 +388,6 @@ class TranquiloLS(Algorithm):
             stopping_max_criterion_evaluations=self.stopping_maxfun,
             stopping_max_iterations=self.stopping_maxiter,
             stopping_max_time=self.stopping_maxtime,
-            batch_evaluator=self.batch_evaluator,
             n_cores=self.n_cores,
             batch_size=self.batch_size,
             sample_size=self.sample_size,
