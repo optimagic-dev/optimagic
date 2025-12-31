@@ -207,7 +207,7 @@ class History:
         """
         wide = pd.DataFrame(self.flat_params, columns=self.flat_param_names)
         wide["task"] = _task_to_categorical(self.task)
-        wide["fun"] = self.fun  # type: ignore[assignment]
+        wide["fun"] = self.fun
 
         # If requested, we collapse the batches and only keep the parameters that led to
         # the minimal (or maximal) function value in each batch.
