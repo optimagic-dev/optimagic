@@ -28,6 +28,7 @@ dependencies:
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
+  - tranquilo>=0.1.0  # tests
   - iminuit  # dev, tests
   - cma  # dev, tests
   - pygad  # dev, tests
