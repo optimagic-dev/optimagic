@@ -17,11 +17,17 @@ from optimagic.optimizers.bhhh import BHHH
 from optimagic.optimizers.fides import Fides
 from optimagic.optimizers.gfo_optimizers import (
     GFODifferentialEvolution,
+    GFODownhillSimplex,
     GFOEvolutionStrategy,
     GFOGeneticAlgorithm,
+    GFOHillClimbing,
     GFOParallelTempering,
     GFOParticleSwarmOptimization,
+    GFOPowellsMethod,
+    GFORepulsingHillClimbing,
+    GFOSimulatedAnnealing,
     GFOSpiralOptimization,
+    GFOStochasticHillClimbing,
 )
 from optimagic.optimizers.iminuit_migrad import IminuitMigrad
 from optimagic.optimizers.ipopt import Ipopt
@@ -79,6 +85,11 @@ from optimagic.optimizers.pygmo_optimizers import (
     PygmoSga,
     PygmoSimulatedAnnealing,
     PygmoXnes,
+)
+from optimagic.optimizers.pyswarms_optimizers import (
+    PySwarmsGeneralPSO,
+    PySwarmsGlobalBestPSO,
+    PySwarmsLocalBestPSO,
 )
 from optimagic.optimizers.scipy_optimizers import (
     ScipyBasinhopping,
@@ -212,6 +223,9 @@ class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -407,11 +421,19 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -446,6 +468,9 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -481,6 +506,9 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -550,6 +578,9 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -711,6 +742,9 @@ class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -819,6 +853,9 @@ class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1147,11 +1184,19 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1186,6 +1231,9 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1233,11 +1281,19 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1272,6 +1328,9 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1311,6 +1370,9 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1477,11 +1539,19 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1522,6 +1592,9 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1585,6 +1658,9 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1679,6 +1755,9 @@ class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1749,11 +1828,19 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -1788,6 +1875,9 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1832,6 +1922,9 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1914,6 +2007,9 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2162,6 +2258,9 @@ class BoundedParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2422,11 +2521,19 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2461,6 +2568,9 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2530,11 +2640,19 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2577,6 +2695,9 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2649,11 +2770,19 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2696,6 +2825,9 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -2767,6 +2899,9 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2807,11 +2942,19 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2846,6 +2989,9 @@ class BoundedGlobalAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -2911,11 +3057,19 @@ class GlobalScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -2950,6 +3104,9 @@ class GlobalScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -2998,6 +3155,9 @@ class GlobalParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3261,11 +3421,19 @@ class BoundedScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -3314,6 +3482,9 @@ class BoundedScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3400,6 +3571,9 @@ class BoundedParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3514,6 +3688,9 @@ class ParallelScalarAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3620,11 +3797,19 @@ class GradientFreeAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -3669,6 +3854,9 @@ class GradientFreeAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3716,11 +3904,19 @@ class GlobalAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
     nevergrad_cmaes: Type[NevergradCMAES] = NevergradCMAES
@@ -3755,6 +3951,9 @@ class GlobalAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3868,11 +4067,19 @@ class BoundedAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -3923,6 +4130,9 @@ class BoundedAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -4027,11 +4237,19 @@ class ScalarAlgorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -4082,6 +4300,9 @@ class ScalarAlgorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute
@@ -4195,6 +4416,9 @@ class ParallelAlgorithms(AlgoSelection):
     pygad: Type[Pygad] = Pygad
     pygmo_gaco: Type[PygmoGaco] = PygmoGaco
     pygmo_pso_gen: Type[PygmoPsoGen] = PygmoPsoGen
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_brute: Type[ScipyBrute] = ScipyBrute
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -4239,11 +4463,19 @@ class Algorithms(AlgoSelection):
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
     )
+    gfo_downhillsimplex: Type[GFODownhillSimplex] = GFODownhillSimplex
     gfo_evolution_strategy: Type[GFOEvolutionStrategy] = GFOEvolutionStrategy
     gfo_genetic_algorithm: Type[GFOGeneticAlgorithm] = GFOGeneticAlgorithm
+    gfo_hillclimbing: Type[GFOHillClimbing] = GFOHillClimbing
     gfo_parallel_tempering: Type[GFOParallelTempering] = GFOParallelTempering
     gfo_pso: Type[GFOParticleSwarmOptimization] = GFOParticleSwarmOptimization
+    gfo_powells_method: Type[GFOPowellsMethod] = GFOPowellsMethod
+    gfo_repulsinghillclimbing: Type[GFORepulsingHillClimbing] = GFORepulsingHillClimbing
+    gfo_simulatedannealing: Type[GFOSimulatedAnnealing] = GFOSimulatedAnnealing
     gfo_spiral_optimization: Type[GFOSpiralOptimization] = GFOSpiralOptimization
+    gfo_stochastichillclimbing: Type[GFOStochasticHillClimbing] = (
+        GFOStochasticHillClimbing
+    )
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
     nag_dfols: Type[NagDFOLS] = NagDFOLS
@@ -4296,6 +4528,9 @@ class Algorithms(AlgoSelection):
     pygmo_sga: Type[PygmoSga] = PygmoSga
     pygmo_simulated_annealing: Type[PygmoSimulatedAnnealing] = PygmoSimulatedAnnealing
     pygmo_xnes: Type[PygmoXnes] = PygmoXnes
+    pyswarms_general: Type[PySwarmsGeneralPSO] = PySwarmsGeneralPSO
+    pyswarms_global_best: Type[PySwarmsGlobalBestPSO] = PySwarmsGlobalBestPSO
+    pyswarms_local_best: Type[PySwarmsLocalBestPSO] = PySwarmsLocalBestPSO
     scipy_bfgs: Type[ScipyBFGS] = ScipyBFGS
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_brute: Type[ScipyBrute] = ScipyBrute

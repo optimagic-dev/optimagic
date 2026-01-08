@@ -22,6 +22,8 @@ dependencies:
   - pandas  # run, tests
   - plotly>=6.2  # run, tests
   - matplotlib  # tests
+  - bokeh  # tests
+  - altair  # tests
   - pybaum>=0.1.2  # run, tests
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
@@ -33,7 +35,7 @@ dependencies:
   - sphinxcontrib-bibtex  # docs
   - intersphinx-registry  # docs
   - seaborn  # dev, tests
-  - mypy=1.14.1  # dev, tests
+  - mypy=1.19.1  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - furo  # dev, docs
@@ -41,6 +43,7 @@ dependencies:
   - iminuit  # dev, tests
   - cma  # dev, tests
   - pygad  # dev, tests
+  - pytorch-cpu  # dev, tests
   - pip:  # dev, tests, docs
       - bayesian-optimization>=2.0.4  # dev, tests
     # - nevergrad  # incompatible with bayesian-optimization>=2.0.4
@@ -50,6 +53,7 @@ dependencies:
       - kaleido>=1.0  # dev, tests
       - pre-commit>=4  # dev
       - gradient_free_optimizers  # dev, tests
+      - pyswarms  # dev, tests
       - -e .  # dev
       # type stubs
       - pandas-stubs  # dev, tests

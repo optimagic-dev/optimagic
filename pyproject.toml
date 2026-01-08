@@ -385,6 +385,8 @@ module = [
     "nevergrad",
     "nevergrad.optimization.base",
     "pygad",
+    "pyswarms",
+    "pyswarms.backend.topology",
     "yaml",
     "gradient_free_optimizers",
     "gradient_free_optimizers.optimizers.base_optimizer",

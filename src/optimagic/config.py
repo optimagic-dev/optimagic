@@ -65,13 +65,15 @@ IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2 = (
 )
 IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED = _is_installed("gradient_free_optimizers")
 IS_PYGAD_INSTALLED = _is_installed("pygad")
+IS_PYSWARMS_INSTALLED = _is_installed("pyswarms")
 
 # ======================================================================================
 # Check Available Visualization Packages
 # ======================================================================================
 
 IS_MATPLOTLIB_INSTALLED = _is_installed("matplotlib")
-
+IS_BOKEH_INSTALLED = _is_installed("bokeh")
+IS_ALTAIR_INSTALLED = _is_installed("altair")
 
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0

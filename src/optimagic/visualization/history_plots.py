@@ -27,6 +27,12 @@ BACKEND_TO_HISTORY_PLOT_LEGEND_PROPERTIES: dict[str, dict[str, Any]] = {
     "matplotlib": {
         "loc": "upper right",
     },
+    "bokeh": {
+        "location": "top_right",
+    },
+    "altair": {
+        "orient": "top-right",
+    },
 }
 
 
@@ -37,7 +43,7 @@ def criterion_plot(
     results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
-    backend: Literal["plotly", "matplotlib"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
     stack_multistart: bool = False,
@@ -53,7 +59,8 @@ def criterion_plot(
         max_evaluations: Clip the criterion history after that many entries.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used.
+            the backend is used. For the 'bokeh' and 'altair' backends, this changes the
+            global theme, which affects all plots from that backend in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
         stack_multistart: Whether to combine multistart histories into a single history.
             Default is False.
@@ -154,7 +161,7 @@ def params_plot(
     result: ResultOrPath,
     selector: Callable[[PyTree], PyTree] | None = None,
     max_evaluations: int | None = None,
-    backend: Literal["plotly", "matplotlib"] = "plotly",
+    backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
     template: str | None = None,
     palette: list[str] | str = DEFAULT_PALETTE,
     show_exploration: bool = False,
@@ -169,7 +176,8 @@ def params_plot(
         max_evaluations: Clip the criterion history after that many entries.
         backend: The backend to use for plotting. Default is "plotly".
         template: The template for the figure. If not specified, the default template of
-            the backend is used.
+            the backend is used. For the 'bokeh' and 'altair' backends, this changes the
+            global theme, which affects all plots from that backend in the session.
         palette: The coloring palette for traces. Default is the D3 qualitative palette.
         show_exploration: If True, exploration samples of a multistart optimization are
             visualized. Default is False.

@@ -13,12 +13,17 @@ dependencies:
   - sphinxcontrib-bibtex
   - sphinx-copybutton
   - sphinx-design
+  - sphinx-llm
+  - sphinx-llms-txt
   - ipython
   - ipython_genutils
   - myst-nb
   - furo
   - pybaum
   - matplotlib
+  - bokeh
+  - altair
+  - anywidget
   - seaborn
   - numpy
   - pandas

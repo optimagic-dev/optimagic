@@ -340,7 +340,12 @@ def slice_plot_3d(  # type: ignore[no-untyped-def]
                             )
                         else:
                             fig = plot_contour(
-                                x, y, z, scatter_point, plot_kwargs, layout_kwargs
+                                x,
+                                y,
+                                z,  # type: ignore[arg-type]
+                                scatter_point,
+                                plot_kwargs,
+                                layout_kwargs,
                             )
                     else:
                         fig = go.Figure()

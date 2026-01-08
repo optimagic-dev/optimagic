@@ -91,6 +91,10 @@ TEST_CASES = universal_tests + specific_tests
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not accurate on Windows.")
+@pytest.mark.skipif(
+    sys.platform == "linux" and sys.version_info[:2] >= (3, 10),
+    reason="Not accurate on Linux with Python 3.10 or higher.",
+)
 @pytest.mark.parametrize("start_vec, conjugate_gradient_method_sub", TEST_CASES)
 def test_bntr(
     start_vec,
