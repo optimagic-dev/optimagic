@@ -52,7 +52,17 @@ IS_TRANQUILO_INSTALLED = _is_installed("tranquilo")
 IS_NUMBA_INSTALLED = _is_installed("numba")
 IS_IMINUIT_INSTALLED = _is_installed("iminuit")
 IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
-IS_BAYESOPT_INSTALLED = _is_installed("bayes_opt")
+# despite the similar names, the bayes_opt and bayes_optim packages are
+# completely unrelated. However, both of them are dependencies of nevergrad.
+IS_BAYESOPTIM_INSTALLED = _is_installed("bayes-optim")
+# Note: There is a dependancy conflict with nevergrad and bayesian_optimization
+# installing nevergrad pins bayesian_optimization to 1.4.0,
+# but "bayes_opt" requires bayesian_optimization>=2.0.0 to work.
+# so if nevergrad is installed, bayes_opt will not work and vice-versa.
+IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2 = (
+    _is_installed("bayes_opt")
+    and importlib.metadata.version("bayesian_optimization") > "2.0.0"
+)
 IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED = _is_installed("gradient_free_optimizers")
 IS_PYGAD_INSTALLED = _is_installed("pygad")
 IS_PYSWARMS_INSTALLED = _is_installed("pyswarms")

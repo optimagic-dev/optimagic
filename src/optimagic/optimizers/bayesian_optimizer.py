@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from scipy.optimize import NonlinearConstraint
 
 from optimagic import mark
-from optimagic.config import IS_BAYESOPT_INSTALLED
+from optimagic.config import IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import N_RESTARTS
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 @mark.minimizer(
     name="bayes_opt",
     solver_type=AggregationLevel.SCALAR,
-    is_available=IS_BAYESOPT_INSTALLED,
+    is_available=IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2,
     is_global=True,
     needs_jac=False,
     needs_hess=False,
@@ -206,7 +206,7 @@ class BayesOpt(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if not IS_BAYESOPT_INSTALLED:
+        if not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2:
             raise NotInstalledError(
                 "To use the 'bayes_opt' optimizer you need to install bayes_opt. "
                 "Use 'pip install bayesian-optimization'. "
