@@ -4,10 +4,10 @@ import pytest
 from optimagic import mark
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.nag_optimizers import (
+    IS_DFOLS_INSTALLED,
     _build_options_dict,
     _change_evals_per_point_interface,
     _get_fast_start_method,
-    IS_DFOLS_INSTALLED,
 )
 from optimagic.parameters.bounds import Bounds
 from tests.estimagic.test_bootstrap import aaae
@@ -93,4 +93,3 @@ def test_nag_dfols_starting_at_optimum():
         bounds=Bounds(-1 * np.ones_like(params), np.ones_like(params)),
     )
     aaae(res.params, params)
-
