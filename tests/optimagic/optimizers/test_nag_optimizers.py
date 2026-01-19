@@ -7,6 +7,7 @@ from optimagic.optimizers.nag_optimizers import (
     _build_options_dict,
     _change_evals_per_point_interface,
     _get_fast_start_method,
+    IS_DFOLS_INSTALLED,
 )
 from optimagic.parameters.bounds import Bounds
 from tests.estimagic.test_bootstrap import aaae
@@ -80,6 +81,9 @@ def sos(x):
 
 
 def test_nag_dfols_starting_at_optimum():
+    if not IS_DFOLS_INSTALLED:
+        pytest.skip("DFO-LS is not installed")
+
     # From issue: https://github.com/optimagic-dev/optimagic/issues/538
     params = np.zeros(2, dtype=float)
     res = minimize(
@@ -89,3 +93,4 @@ def test_nag_dfols_starting_at_optimum():
         bounds=Bounds(-1 * np.ones_like(params), np.ones_like(params)),
     )
     aaae(res.params, params)
+
