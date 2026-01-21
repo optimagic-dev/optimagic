@@ -125,27 +125,30 @@ select = [
 ]
 
 extend-ignore = [
-
+  # For calls to warnings.warn(): No explicit `stacklevel` keyword argument found
+  "B028",
   # allow module import not at top of file, important for notebooks
   "E402",
   # do not assign a lambda expression, use a def
   "E731",
-  # Too many arguments to function call
-  "PLR0913",
+  # Incompatible with formatting
+  "ISC001",
   # Too many returns
   "PLR0911",
   # Too many branches
   "PLR0912",
+  # Too many arguments to function call
+  "PLR0913",
   # Too many statements
   "PLR0915",
   # Magic number
   "PLR2004",
   # Consider `elif` instead of `else` then `if` to remove indentation level
   "PLR5501",
-  # For calls to warnings.warn(): No explicit `stacklevel` keyword argument found
-  "B028",
-  # Incompatible with formatting
-  "ISC001",
+  # Move third-party import into a type-checking block
+  "TC002",
+  # Move standard library import into a type-checking block
+  "TC003",
 ]
 
 [tool.ruff.lint.per-file-ignores]
