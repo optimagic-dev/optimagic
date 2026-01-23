@@ -79,6 +79,7 @@ def test_build_options_dict_invalid_key():
 def sos(x):
     return x
 
+
 @pytest.mark.skipif(
     not IS_DFOLS_INSTALLED,
     reason="DFO-LS is not installed",
