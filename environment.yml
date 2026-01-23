@@ -52,7 +52,6 @@ dependencies:
       - fides==0.7.4  # dev, tests
       - kaleido>=1.0  # dev, tests
       - pre-commit>=4  # dev
-      - bayes_optim  # dev, tests
       - gradient_free_optimizers  # dev, tests
       - pyswarms  # dev, tests
       - -e .  # dev

@@ -1,5 +1,7 @@
 """Implement optimizers from the nevergrad package."""
 
+from __future__ import annotations
+
 import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
@@ -8,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from optimagic import mark
-from optimagic.config import IS_NEVERGRAD_INSTALLED
+from optimagic.config import IS_BAYESOPTIM_INSTALLED, IS_NEVERGRAD_INSTALLED
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
@@ -30,7 +32,7 @@ from optimagic.typing import (
 )
 
 if TYPE_CHECKING:
-    import nevergrad as ng
+    from nevergrad.optimization.base import ConfiguredOptimizer
 
 
 NEVERGRAD_NOT_INSTALLED_ERROR = (
@@ -58,18 +60,84 @@ NEVERGRAD_NOT_INSTALLED_ERROR = (
 )
 @dataclass(frozen=True)
 class NevergradPSO(Algorithm):
+    """Minimize a scalar function using the Particle Swarm Optimization algorithm.
+
+    The Particle Swarm Optimization algorithm was originally proposed by
+    :cite:`Kennedy1995`.The implementation in Nevergrad is based on
+    :cite:`Zambrano2013`.
+
+    PSO solves an optimization problem by evolving a swarm of particles
+    (candidate solutions) across the search space. Each particle adjusts its position
+    based on its own experience (cognitive component) and the experiences
+    of its neighbors or the swarm (social component), using velocity updates. The
+    algorithm iteratively guides the swarm toward promising regions of the search
+    space.
+
+    """
+
     transform: Literal["arctan", "gaussian", "identity"] = "arctan"
+    """The transform used to map from PSO optimization space to real space."""
+
     population_size: int | None = None
+    """The number of particles in the swarm."""
+
     n_cores: int = 1
+    """The number of CPU cores to use for parallel computation."""
+
     seed: int | None = None
+    """Random seed for reproducibility."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations."""
+
     inertia: float = 0.5 / math.log(2.0)
+    r"""Inertia weight ω.
+
+    Controls the influence of a particle's previous velocity. Must be less than 1 to
+    avoid divergence.
+
+    """
+
     cognitive: float = 0.5 + math.log(2.0)
+    r"""Cognitive coefficient :math:`\phi_p`.
+
+    Controls the influence of a particle's own best known position. Typical values: 1.0
+    to 3.0.
+
+    """
+
     social: float = 0.5 + math.log(2.0)
+    r"""Social coefficient.
+
+    Denoted by :math:`\phi_g`. Controls the influence of the swarm's best known
+    position. Typical values: 1.0 to 3.0.
+
+    """
+
     quasi_opp_init: bool = False
+    """Whether to use quasi-opposition initialization.
+
+    Default is False.
+
+    """
+
     speed_quasi_opp_init: bool = False
+    """Whether to apply quasi-opposition initialization to speed.
+
+    Default is False.
+
+    """
+
     special_speed_quasi_opp_init: bool = False
+    """Whether to use special quasi-opposition initialization for speed.
+
+    Default is False.
+
+    """
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²) in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -121,40 +189,154 @@ class NevergradPSO(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradCMAES(Algorithm):
+    """Minimize a scalar function using the Covariance Matrix Adaptation Evolution
+    Strategy (CMA-ES) algorithm.
+
+    The CMA-ES is a state-of-the-art evolutionary algorithm for difficult non-linear,
+    non-convex, black-box optimization problems in continuous domains. It is typically
+    applied to unconstrained or bounded problems with dimensionality between 3 and 100.
+    CMA-ES adapts a multivariate normal distribution to approximate the objective
+    function's shape by estimating a positive-definite covariance matrix, akin to the
+    inverse Hessian in convex-quadratic problems, but without requiring derivatives.
+
+    This implementation is a python wrapper over the original code.
+
+    Original paper can be accessed at `cma-es
+    <https://cma-es.github.io/>`_.
+
+    """
+
     scale: NonNegativeFloat = 1.0
+    """Scale of the search."""
+
     elitist: bool = False
+    """Whether to switch to elitist mode (also known as (μ,λ)-CMA-ES).
+
+    In elitist mode, the best point in the population is always retained.
+
+    """
+
     population_size: int | None = None
+    """Population size."""
+
     diagonal: bool = False
+    """Use the diagonal version of CMA, which is more efficient for high-dimensional
+    problems."""
+
     high_speed: bool = False
+    """Use a metamodel for recommendation to speed up optimization."""
+
     fast_cmaes: bool = False
+    """Use the fast CMA-ES implementation.
+
+    Cannot be used with diagonal=True. Produces equivalent results and is preferable for
+    high dimensions or when objective function evaluations are fast.
+
+    """
+
     random_init: bool = False
+    """If True, initialize the optimizer with random parameters."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     step_size_adaptive: bool | str = True
+    """Whether to adapt the step size.
+
+    Can be a boolean or a string specifying the adaptation strategy.
+
+    """
+
     CSA_dampfac: PositiveFloat = 1.0
+    """Damping factor for step size adaptation."""
+
     CMA_dampsvec_fade: PositiveFloat = 0.1
+    """Damping rate for step size adaptation."""
+
     CSA_squared: bool = False
+    """Whether to use squared step sizes in updates."""
+
     CMA_on: float = 1.0
+    """Learning rate for the covariance matrix update."""
+
     CMA_rankone: float = 1.0
+    """Multiplier for the rank-one update learning rate of the covariance matrix."""
+
     CMA_rankmu: float = 1.0
+    """Multiplier for the rank-mu update learning rate of the covariance matrix."""
+
     CMA_cmean: float = 1.0
+    """Learning rate for the mean update."""
+
     CMA_diagonal_decoding: float = 0.0
+    """Learning rate for the diagonal update."""
+
     num_parents: int | None = None
+    """Number of parents (μ) for recombination."""
+
     CMA_active: bool = True
+    """Whether to use negative updates for the covariance matrix."""
+
     CMA_mirrormethod: Literal[0, 1, 2] = 2
+    """Strategy for mirror sampling.
+
+    0: Unconditional, 1: Selective, 2: Selective
+    with delay.
+
+    """
+
     CMA_const_trace: bool | Literal["arithm", "geom", "aeig", "geig"] = False
+    """How to normalize the trace of the covariance matrix.
+
+    False: No normalization,
+    True: Normalize to 1. Other options: 'arithm', 'geom', 'aeig', 'geig'.
+
+    """
+
     CMA_diagonal: int | bool = False
+    """Number of iterations to use diagonal covariance matrix before switching to full
+    matrix.
+
+    If False, always use full matrix.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations before termination."""
+
     stopping_maxtime: PositiveFloat = float("inf")
+    """Maximum time in seconds before termination."""
+
     stopping_cov_mat_cond: NonNegativeFloat = 1e14
+    """Maximum condition number of the covariance matrix before termination."""
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Absolute tolerance on function value changes for convergence."""
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Relative tolerance on function value changes for convergence."""
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Absolute tolerance on parameter changes for convergence."""
+
     convergence_iter_noimprove: PositiveInt | None = None
+    """Number of iterations without improvement before termination."""
+
     invariant_path: bool = False
+    """Whether evolution path (pc) should be invariant to transformations."""
+
     eval_final_mean: bool = True
+    """Whether to evaluate the final mean solution."""
+
     seed: int | None = None
+    """Seed used by the internal random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -231,11 +413,34 @@ class NevergradCMAES(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradOnePlusOne(Algorithm):
+    """Minimize a scalar function using the One-Plus-One Evolutionary algorithm.
+
+    The One-Plus-One evolutionary algorithm iterates to find a set of parameters
+    that minimizes the loss function. It does this by perturbing, or mutating,
+    the parameters from the last iteration (the parent). If the new (child)
+    parameters yield a better result, the child becomes the new parent whose
+    parameters are perturbed, perhaps more aggressively. If the parent yields a
+    better result, it remains the parent and the next perturbation is less
+    aggressive.
+
+    Originally proposed by :cite:`Rechenberg1973`. The implementation in
+    Nevergrad is based on the one-fifth adaptation rule from :cite:`Schumer1968`.
+
+    """
+
     noise_handling: (
         Literal["random", "optimistic"]
         | tuple[Literal["random", "optimistic"], float]
         | None
     ) = None
+    """Method for handling noise.
+
+    'random' reevaluates a random point, while 'optimistic' reevaluates the best
+    optimistic point. A float coefficient can be provided to tune the regularity of
+    these reevaluations.
+
+    """
+
     mutation: Literal[
         "gaussian",
         "cauchy",
@@ -261,27 +466,75 @@ class NevergradOnePlusOne(Algorithm):
         "biglognormal",
         "hugelognormal",
     ] = "gaussian"
+    """Type of mutation to apply.
+
+    'gaussian' is the default. Other options include 'cauchy', 'discrete', 'fastga',
+    'rls', and 'portfolio'.
+
+    """
+
     annealing: (
         Literal[
             "none", "Exp0.9", "Exp0.99", "Exp0.9Auto", "Lin100.0", "Lin1.0", "LinAuto"
         ]
         | None
     ) = None
+    """Annealing schedule for mutation amplitude.
+
+    Can be 'none', exponential (e.g., 'Exp0.9'), or linear (e.g., 'Lin100.0').
+
+    """
+
     sparse: bool = False
+    """Whether to apply random mutations that set variables to zero."""
+
     super_radii: bool = False
+    """Whether to apply extended radii beyond standard bounds for candidate generation,
+    enabling broader exploration."""
+
     smoother: bool = False
+    """Whether to suggest smooth mutations."""
+
     roulette_size: PositiveInt = 64
+    """Size of the roulette wheel used for selection, affecting sampling diversity from
+    past candidates."""
+
     antismooth: NonNegativeInt = 4
+    """Degree of anti-smoothing to prevent premature convergence by penalizing overly
+    smooth improvements."""
+
     crossover: bool = False
+    """Whether to include a genetic crossover step every other iteration."""
+
     crossover_type: (
         Literal["none", "rand", "max", "min", "onepoint", "twopoint"] | None
     ) = None
+    """Method for genetic crossover.
+
+    Options include 'rand', 'onepoint', and 'twopoint'.
+
+    """
+
     tabu_length: NonNegativeInt = 1000
+    """Length of the tabu list to prevent revisiting recent candidates and help escape
+    local minima."""
+
     rotation: bool = False
+    """Whether to apply rotational transformations to the search space to enhance search
+    performance."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel computation."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)if bounds are not
+    provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -336,13 +589,32 @@ class NevergradOnePlusOne(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradDifferentialEvolution(Algorithm):
+    """Minimize a scalar function using the Differential Evolution optimizer.
+
+    Differential Evolution is typically used for continuous optimization. It uses
+    differences between points in the population for performing mutations in fruitful
+    directions. It is a kind of covariance adaptation without any explicit covariance,
+    making it very fast in high dimensions.
+
+    """
+
     initialization: Literal["parametrization", "LHS", "QR", "QO", "SO"] = (
         "parametrization"
     )
+    """Algorithm for initialization.
+
+    'LHS' is Latin Hypercube Sampling, 'QR' is Quasi-Random.
+
+    """
+
     scale: float | str = 1.0
+    """Scale of random component of updates."""
+
     recommendation: Literal["pessimistic", "optimistic", "mean", "noisy"] = (
         "pessimistic"
     )
+    """Criterion for selecting the best point to recommend."""
+
     crossover: (
         float
         | Literal[
@@ -354,14 +626,41 @@ class NevergradDifferentialEvolution(Algorithm):
             "parametrization",
         ]
     ) = 0.5
+    """Crossover rate or strategy.
+
+    Can be a float, 'dimension' (1/dim), 'random', 'onepoint', or 'twopoints'.
+
+    """
+
     F1: PositiveFloat = 0.8
+    """Differential weight #1 (scaling factor)."""
+
     F2: PositiveFloat = 0.8
+    """Differential weight #2 (scaling factor)."""
+
     population_size: int | Literal["standard", "dimension", "large"] = "standard"
+    """Population size.
+
+    Can be an integer or a string like 'standard', 'dimension', or 'large' to set it
+    automatically.
+
+    """
+
     high_speed: bool = False
+    """If True, uses a metamodel for recommendations to speed up optimization."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)if bounds are not
+    provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -372,6 +671,7 @@ class NevergradDifferentialEvolution(Algorithm):
         import nevergrad as ng
 
         configured_optimizer = ng.optimizers.DifferentialEvolution(
+            initialization=self.initialization,
             scale=self.scale,
             recommendation=self.recommendation,
             crossover=self.crossover,
@@ -397,7 +697,7 @@ class NevergradDifferentialEvolution(Algorithm):
 @mark.minimizer(
     name="nevergrad_bo",
     solver_type=AggregationLevel.SCALAR,
-    is_available=IS_NEVERGRAD_INSTALLED,
+    is_available=IS_NEVERGRAD_INSTALLED and IS_BAYESOPTIM_INSTALLED,
     is_global=True,
     needs_jac=False,
     needs_hess=False,
@@ -411,14 +711,43 @@ class NevergradDifferentialEvolution(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradBayesOptim(Algorithm):
+    """Minimize a scalar function using the Bayesian Optimization (BO) algorithm.
+
+    This wrapper uses the BO and PCA-BO algorithms from the `bayes_optim` package
+    :cite:`bayesoptimimpl`. PCA-BO (Principal Component Analysis for Bayesian
+    Optimization) is a dimensionality reduction technique for black-box
+    optimization. It applies PCA to the input space before performing Bayesian
+    optimization, improving efficiency in high dimensions by focusing on
+    directions of greatest variance.
+
+    """
+
     init_budget: int | None = None
+    """Number of initialization algorithm steps."""
+
     pca: bool = False
+    """Whether to use the PCA transformation, defining PCA-BO rather than standard
+    BO."""
+
     n_components: NonNegativeFloat = 0.95
+    """Number of principal axes, representing the percentage of explained variance
+    (e.g., 0.95 means 95% variance retained)."""
+
     prop_doe_factor: NonNegativeFloat | None = 1
+    """Percentage of the initial budget used for Design of Experiments (DoE)."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: int | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -465,14 +794,54 @@ class NevergradBayesOptim(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradEMNA(Algorithm):
+    """Minimize a scalar function using the Estimation of Multivariate Normal Algorithm.
+
+    EMNA is a distribution-based evolutionary algorithm that models the search
+    space using a multivariate Gaussian. It learns the full covariance matrix,
+    resulting in a cubic time complexity with respect to each sampling. It is
+    efficient in parallel settings but other methods should be considered first.
+    See :cite:`emnaimpl`.
+
+    """
+
     isotropic: bool = True
+    """If True, uses an isotropic (identity covariance) Gaussian.
+
+    If False, uses a separable (diagonal covariance) Gaussian.
+
+    """
+
     noise_handling: bool = True
+    """If True, returns the best individual found.
+
+    If False (recommended for noisy problems), returns the average of the final
+    population.
+
+    """
+
     population_size_adaptation: bool = False
+    """If True, the population size is adjusted automatically based on the optimization
+    landscape and noise level."""
+
     initial_popsize: int | None = None
+    """Initial population size.
+
+    Defaults to 4 times the problem dimension.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -519,10 +888,27 @@ class NevergradEMNA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradCGA(Algorithm):
+    """Minimize a scalar function using the Compact Genetic Algorithm.
+
+    The Compact Genetic Algorithm (cGA) is a memory-efficient genetic algorithm
+    that represents the population as a probability vector over gene values. It
+    simulates the behavior of a simple GA with uniform crossover by updating
+    probabilities instead of maintaining an explicit population. See :cite:`cgaimpl`.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -564,10 +950,28 @@ class NevergradCGA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradEDA(Algorithm):
+    """Minimize a scalar function using the Estimation of Distribution Algorithm.
+
+    Estimation of Distribution Algorithms (EDAs) optimize by building and sampling
+    a probabilistic model of promising solutions. Instead of using traditional
+    variation operators like crossover or mutation, EDAs update a distribution
+    based on selected individuals and sample new candidates from it.
+    Refer to :cite:`edaimpl`.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -609,12 +1013,43 @@ class NevergradEDA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradTBPSA(Algorithm):
+    """Minimize a scalar function using the Test-based Population Size Adaptation
+    algorithm.
+
+    TBPSA adapts population size based on fitness trend detection using linear
+    regression. If no significant improvement is found (via hypothesis testing),
+    the population size is increased to improve robustness, making it effective
+    for noisy optimization problems. For more details, refer to :cite:`tbpsaimpl`.
+
+    """
+
     noise_handling: bool = True
+    """If True, returns the best individual.
+
+    If False (recommended for noisy problems), returns the average of the final
+    population to reduce noise.
+
+    """
+
     initial_popsize: int | None = None
+    """Initial population size.
+
+    If not specified, defaults to 4 times the problem dimension.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -659,16 +1094,52 @@ class NevergradTBPSA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradRandomSearch(Algorithm):
+    """Minimize a scalar function using the Random Search algorithm.
+
+    This is a one-shot optimization method that provides random suggestions and serves
+    as a simple baseline for other optimizers.
+
+    """
+
     middle_point: bool = False
+    """Enforces that the first suggested point is the zero vector."""
+
     opposition_mode: Literal["opposite", "quasi"] | None = None
+    """Symmetrizes exploration with respect to the center.
+
+    'opposite' enables full symmetry, while 'quasi' applies randomized symmetry.
+
+    """
+
     sampler: Literal["parametrization", "gaussian", "cauchy"] = "parametrization"
+    """The probability distribution for sampling points.
+
+    'gaussian' and 'cauchy' are available alternatives.
+
+    """
+
     scale: PositiveFloat | Literal["random", "auto", "autotune"] = "auto"
+    """Scalar used to multiply suggested point values.
+
+    Can be a float or a string for auto-scaling ('random', 'auto', 'autotune').
+
+    """
+
     recommendation_rule: Literal[
         "average_of_best", "pessimistic", "average_of_exp_best"
     ] = "pessimistic"
+    """Specifies how the final recommendation is chosen, e.g., 'pessimistic' (default)
+    or 'average_of_best'."""
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -717,17 +1188,60 @@ class NevergradRandomSearch(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradSamplingSearch(Algorithm):
+    """Minimize a scalar function using SamplingSearch.
+
+    This is a one-shot optimization method that is better than random search because it
+    uses low-discrepancy sequences to ensure more uniform coverage of the search space.
+    It is recommended to use "Hammersley" as the sampler if the budget is known, and to
+    set `scrambled=True` in high dimensions.
+
+    """
+
     sampler: Literal["Halton", "LHS", "Hammersley"] = "Halton"
+    """Choice of the low-discrepancy sampler used for generating points.
+
+    'LHS' is Latin Hypercube Sampling.
+
+    """
+
     scrambled: bool = False
+    """If True, adds scrambling to the search sequence, which is highly recommended for
+    high-dimensional problems."""
+
     middle_point: bool = False
+    """If True, the first suggested point is the zero vector, useful for initializing at
+    the center of the search space."""
+
     cauchy: bool = False
+    """If True, uses the inverse Cauchy distribution instead of Gaussian when projecting
+    samples to a real-valued space."""
+
     scale: bool | NonNegativeFloat = 1.0
+    """A float multiplier to scale all generated points."""
+
     rescaled: bool = False
+    """If True, rescales the sampling pattern to ensure better coverage of the
+    boundaries."""
+
     recommendation_rule: Literal["average_of_best", "pessimistic"] = "pessimistic"
+    """How the final recommendation is chosen.
+
+    'pessimistic' is the default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -753,7 +1267,7 @@ class NevergradSamplingSearch(Algorithm):
             configured_optimizer=configured_optimizer,
             stopping_maxfun=self.stopping_maxfun,
             n_cores=self.n_cores,
-            seed=None,
+            seed=self.seed,
             sigma=self.sigma,
             nonlinear_constraints=problem.nonlinear_constraints,
         )
@@ -761,7 +1275,7 @@ class NevergradSamplingSearch(Algorithm):
 
 
 @mark.minimizer(
-    name="nevergrad_NGOpt",
+    name="nevergrad_ngopt",
     solver_type=AggregationLevel.SCALAR,
     is_available=IS_NEVERGRAD_INSTALLED,
     is_global=True,
@@ -777,6 +1291,14 @@ class NevergradSamplingSearch(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradNGOpt(Algorithm):
+    """Minimize a scalar function using a Meta Optimizer from Nevergrad.
+
+    These are meta-optimizers that intelligently combine multiple different
+    optimization algorithms to solve a problem. The specific portfolio of
+    optimizers can be selected via the `optimizer` parameter.
+
+    """
+
     optimizer: Literal[
         "NGOpt",
         "NGOpt4",
@@ -831,10 +1353,24 @@ class NevergradNGOpt(Algorithm):
         "CSEC11",
         "Wiz",
     ] = "NGOpt"
+    """The specific Nevergrad meta-optimizer to use.
+
+    Each option is a portfolio of different algorithms.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²)in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -877,6 +1413,14 @@ class NevergradNGOpt(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradMeta(Algorithm):
+    """Minimize a scalar function using a Meta Optimizer from Nevergrad.
+
+    This algorithm utilizes a combination of local and global optimizers to find
+    the best solution. The specific portfolio of optimizers can be selected via
+    the `optimizer` parameter.
+
+    """
+
     optimizer: Literal[
         "MultiBFGSPlus",
         "LogMultiBFGSPlus",
@@ -916,10 +1460,24 @@ class NevergradMeta(Algorithm):
         "Shiwa",
         "Carola3",
     ] = "Shiwa"
+    """The specific Nevergrad meta-optimizer to use.
+
+    Each option is a portfolio of different local and global algorithms.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of function evaluations before termination."""
+
     n_cores: PositiveInt = 1
+    """Number of cores to use for parallel function evaluation."""
+
     seed: int | None = None
+    """Seed for the random number generator for reproducibility."""
+
     sigma: float | None = None
+    """Standard deviation for sampling initial population from N(0, σ²) in case bounds
+    are not provided."""
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -949,7 +1507,7 @@ def _nevergrad_internal(
     problem: InternalOptimizationProblem,
     x0: NDArray[np.float64],
     n_cores: int,
-    configured_optimizer: "ng.optimization.base.ConfiguredOptimizer",
+    configured_optimizer: ConfiguredOptimizer,
     stopping_maxfun: int,
     seed: int | None,
     sigma: float | None,
@@ -978,19 +1536,16 @@ def _nevergrad_internal(
 
     param = ng.p.Array(
         init=x0,
-    )
-
-    param.set_bounds(
         lower=problem.bounds.lower,
         upper=problem.bounds.upper,
     )
 
+    instrum = ng.p.Instrumentation(param)
+
     # In case bounds are not provided, the initial population is sampled
-    # from a gaussian with mean = 0 and sigma = 1,
+    # from a gaussian with mean = 0 and sd = 1,
     # which can be set through this method.
     param.set_mutation(sigma=sigma)
-
-    instrum = ng.p.Instrumentation(param)
 
     if seed is not None:
         instrum.random_state.seed(seed)
