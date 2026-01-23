@@ -4,6 +4,7 @@ import pytest
 from optimagic import mark
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.nag_optimizers import (
+    IS_DFOLS_INSTALLED,
     _build_options_dict,
     _change_evals_per_point_interface,
     _get_fast_start_method,
@@ -79,6 +80,10 @@ def sos(x):
     return x
 
 
+@pytest.mark.skipif(
+    not IS_DFOLS_INSTALLED,
+    reason="DFO-LS is not installed.",
+)
 def test_nag_dfols_starting_at_optimum():
     # From issue: https://github.com/optimagic-dev/optimagic/issues/538
     params = np.zeros(2, dtype=float)
