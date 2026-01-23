@@ -82,7 +82,7 @@ def sos(x):
 
 @pytest.mark.skipif(
     not IS_DFOLS_INSTALLED,
-    reason="DFO-LS is not installed",
+    reason="DFO-LS is not installed.",
 )
 def test_nag_dfols_starting_at_optimum():
     # From issue: https://github.com/optimagic-dev/optimagic/issues/538
