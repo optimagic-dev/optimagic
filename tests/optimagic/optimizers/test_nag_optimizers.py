@@ -79,11 +79,11 @@ def test_build_options_dict_invalid_key():
 def sos(x):
     return x
 
-
+@pytest.mark.skipif(
+    not IS_DFOLS_INSTALLED,
+    reason="DFO-LS is not installed",
+)
 def test_nag_dfols_starting_at_optimum():
-    if not IS_DFOLS_INSTALLED:
-        pytest.skip("DFO-LS is not installed")
-
     # From issue: https://github.com/optimagic-dev/optimagic/issues/538
     params = np.zeros(2, dtype=float)
     res = minimize(
