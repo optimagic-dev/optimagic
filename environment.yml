@@ -35,7 +35,7 @@ dependencies:
   - sphinxcontrib-bibtex  # docs
   - intersphinx-registry  # docs
   - seaborn  # dev, tests
-  - mypy=1.19.0  # dev, tests
+  - mypy=1.19.1  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - furo  # dev, docs
@@ -52,7 +52,6 @@ dependencies:
       - fides==0.7.4  # dev, tests
       - kaleido>=1.0  # dev, tests
       - pre-commit>=4  # dev
-      - bayes_optim  # dev, tests
       - gradient_free_optimizers  # dev, tests
       - pyswarms  # dev, tests
       - -e .  # dev

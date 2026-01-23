@@ -26,7 +26,7 @@ dependencies:
   - scipy>=1.2.1  # run, tests
   - sqlalchemy  # run, tests
   - seaborn  # dev, tests
-  - mypy=1.19.0  # dev, tests
+  - mypy=1.19.1  # dev, tests
   - pyyaml  # dev, tests
   - jinja2  # dev, tests
   - annotated-types  # dev, tests
@@ -40,7 +40,6 @@ dependencies:
       - Py-BOBYQA  # dev, tests
       - fides==0.7.4  # dev, tests
       - kaleido>=1.0  # dev, tests
-      - bayes_optim  # dev, tests
       - gradient_free_optimizers  # dev, tests
       - pyswarms  # dev, tests
       - pandas-stubs  # dev, tests
