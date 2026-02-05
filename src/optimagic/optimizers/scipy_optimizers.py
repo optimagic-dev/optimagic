@@ -49,6 +49,7 @@ from scipy.optimize import OptimizeResult as ScipyOptimizeResult
 
 from optimagic import mark
 from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic.config import IS_SCIPY_GE_1_14
 from optimagic.optimization.algo_options import (
     CONVERGENCE_FTOL_ABS,
     CONVERGENCE_FTOL_REL,
@@ -493,6 +494,135 @@ class ScipyCOBYLA(Algorithm):
             constraints=nonlinear_constraints,
             options=options,
             tol=self.convergence_xtol_rel,
+        )
+        res = process_scipy_result(raw_res)
+        return res
+
+
+@mark.minimizer(
+    name="scipy_cobyqa",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=IS_SCIPY_GE_1_14,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=False,
+    supports_bounds=True,
+    supports_infinite_bounds=True,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=True,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class ScipyCOBYQA(Algorithm):
+    """Minimize a scalar function using the COBYQA algorithm.
+
+    COBYQA (Constrained Optimization BY Quadratic Approximations) is a
+    derivative-free optimization algorithm for constrained problems. It is the
+    successor to COBYLA and was developed by the same research group.
+
+    The algorithm builds quadratic models of the objective function and constraints
+    using interpolation. It then solves a trust-region subproblem to find the next
+    iterate. Unlike COBYLA, which uses linear approximations, COBYQA's quadratic
+    models generally provide better convergence properties.
+
+    COBYQA is well suited for optimization problems where derivatives are unavailable
+    or expensive to compute, and where the number of variables is moderate (up to a
+    few hundred). It can handle bound constraints and general nonlinear constraints.
+
+    Key advantages over COBYLA:
+
+    - Supports bound constraints directly (COBYLA does not support bounds)
+    - Uses quadratic models instead of linear, improving convergence
+    - Generally requires fewer function evaluations to reach the same accuracy
+
+    The algorithm treats bounds as unrelaxable constraints, meaning it will never
+    evaluate the objective function outside the specified bounds.
+
+    This algorithm requires scipy >= 1.14.0.
+
+    """
+
+    stopping_maxfun: PositiveInt | None = None
+    """Maximum number of function evaluations.
+
+    Defaults to 500 * n, where n is the number of variables.
+
+    """
+
+    stopping_maxiter: PositiveInt | None = None
+    """Maximum number of iterations.
+
+    Defaults to 1000 * n, where n is the number of variables.
+
+    """
+
+    convergence_ftol_abs: NonNegativeFloat | None = None
+    """Tolerance for the objective function value.
+
+    The algorithm stops when the objective function value is below this threshold.
+
+    """
+
+    feasibility_tol: NonNegativeFloat = 1e-8
+    """Tolerance for the constraint violation."""
+
+    trustregion_initial_radius: PositiveFloat | None = None
+    """Initial trust-region radius.
+
+    If not specified, it is calculated based on the starting point.
+
+    """
+
+    trustregion_final_radius: PositiveFloat = 1e-6
+    """Final trust-region radius, indicating the required accuracy in the variables."""
+
+    scale: bool = False
+    """Whether to scale the variables to the bounds.
+
+    If True and all bounds are finite, the variables are scaled to the range [-1, 1].
+
+    """
+
+    display: bool = False
+    """Whether to print information about the optimization progress."""
+
+    def _solve_internal_problem(
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
+        if self.trustregion_initial_radius is None:
+            radius = calculate_trustregion_initial_radius(x0)
+        else:
+            radius = self.trustregion_initial_radius
+
+        options: dict[str, Any] = {
+            "initial_tr_radius": radius,
+            "final_tr_radius": self.trustregion_final_radius,
+            "feasibility_tol": self.feasibility_tol,
+            "scale": self.scale,
+            "disp": self.display,
+        }
+
+        if self.stopping_maxfun is not None:
+            options["maxfev"] = self.stopping_maxfun
+        if self.stopping_maxiter is not None:
+            options["maxiter"] = self.stopping_maxiter
+        if self.convergence_ftol_abs is not None:
+            options["f_target"] = self.convergence_ftol_abs
+
+        # COBYQA uses NonlinearConstraint format like trust-constr
+        nonlinear_constraints = _get_scipy_constraints(
+            equality_as_inequality_constraints(problem.nonlinear_constraints)
+        )
+
+        raw_res = scipy.optimize.minimize(
+            fun=problem.fun,
+            x0=x0,
+            method="COBYQA",
+            bounds=_get_scipy_bounds(problem.bounds),
+            constraints=nonlinear_constraints,
+            options=options,
         )
         res = process_scipy_result(raw_res)
         return res
