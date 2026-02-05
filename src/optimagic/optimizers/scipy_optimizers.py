@@ -544,24 +544,17 @@ class ScipyCOBYQA(Algorithm):
 
     """
 
-    stopping_maxfun: PositiveInt | None = None
-    """Maximum number of function evaluations.
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of function evaluations."""
 
-    Defaults to 500 * n, where n is the number of variables.
-
-    """
-
-    stopping_maxiter: PositiveInt | None = None
-    """Maximum number of iterations.
-
-    Defaults to 1000 * n, where n is the number of variables.
-
-    """
+    stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations."""
 
     convergence_ftol_abs: NonNegativeFloat | None = None
-    """Tolerance for the objective function value.
+    """Target objective function value.
 
     The algorithm stops when the objective function value is below this threshold.
+    Disabled by default.
 
     """
 
@@ -597,6 +590,8 @@ class ScipyCOBYQA(Algorithm):
             radius = self.trustregion_initial_radius
 
         options: dict[str, Any] = {
+            "maxfev": self.stopping_maxfun,
+            "maxiter": self.stopping_maxiter,
             "initial_tr_radius": radius,
             "final_tr_radius": self.trustregion_final_radius,
             "feasibility_tol": self.feasibility_tol,
@@ -604,10 +599,6 @@ class ScipyCOBYQA(Algorithm):
             "disp": self.display,
         }
 
-        if self.stopping_maxfun is not None:
-            options["maxfev"] = self.stopping_maxfun
-        if self.stopping_maxiter is not None:
-            options["maxiter"] = self.stopping_maxiter
         if self.convergence_ftol_abs is not None:
             options["f_target"] = self.convergence_ftol_abs
 
