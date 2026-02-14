@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
+import scipy
 from packaging import version
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
@@ -79,6 +80,10 @@ IS_ALTAIR_INSTALLED = _is_installed("altair")
 # Check if pandas version is newer or equal to version 2.1.0
 # ======================================================================================
 
-IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0 = version.parse(
-    pd.__version__
-) >= version.parse("2.1.0")
+IS_PANDAS_VERSION_GE_2_1 = version.parse(pd.__version__) >= version.parse("2.1.0")
+
+# ======================================================================================
+# Check SciPy Version for COBYQA support (added in scipy 1.14.0)
+# ======================================================================================
+
+IS_SCIPY_GE_1_14 = version.parse(scipy.__version__) >= version.parse("1.14.0")

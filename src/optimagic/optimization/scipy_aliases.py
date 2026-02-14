@@ -14,6 +14,7 @@ def map_method_to_algorithm(method):
         "L-BFGS-B": "scipy_lbfgsb",
         "TNC": "scipy_truncated_newton",
         "COBYLA": "scipy_cobyla",
+        "COBYQA": "scipy_cobyqa",
         "SLSQP": "scipy_slsqp",
         "trust-constr": "scipy_trust_constr",
     }
@@ -23,7 +24,6 @@ def map_method_to_algorithm(method):
         "trust-ncg": "scipy_trust_ncg",
         "trust-exact": "scipy_trust_exact",
         "trust-krylov": "scipy_trust_krylov",
-        "COBYQA": "scipy_cobyqa",
     }
 
     if method in implemented:
