@@ -5,6 +5,56 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
 
+## 0.6.0
+
+This release introduces **multi-backend plotting** with support for matplotlib, bokeh,
+and altair backends (in addition to the existing plotly backend), **3D visualizations**
+of optimization problems, and several **new optimizer libraries** including PySwarms,
+PyGAD, and gradient-free-optimizers. It also adds **lazy loading** for optional
+dependencies to improve import times. Many contributions in this release were made by
+Google Summer of Code (GSoC) 2025 contributors.
+
+- {gh}`665` Skips nag_dfols tests when DFO-LS is not installed ({ghuser}`Swayam-maurya`).
+- {gh}`664` Adds `from __future__ import annotations` to constraints.py to fix
+  annotations issue with Python 3.13 and NumPy 2.4 ({ghuser}`timmens`).
+- {gh}`660` Renames the `bayes_opt` parameter `n_iter` to `stopping_maxiter`
+  ({ghuser}`spline2hg`).
+- {gh}`659` Fixes `UnboundLocalError` when `stopping_criterion=None` in
+  `convergence_plot` ({ghuser}`szd5654125`).
+- {gh}`658` Enhances documentation and minor fixes in backend plotting
+  ({ghuser}`r3kste`).
+- {gh}`654` Implements the altair plotting backend ({ghuser}`r3kste`).
+- {gh}`653` Adds `llms.txt` and `llms-full.txt` to documentation
+  ({ghuser}`mostafafaheem`).
+- {gh}`652` Implements the bokeh plotting backend ({ghuser}`r3kste`).
+- {gh}`649` Implements backend plotting for `slice_plot` ({ghuser}`r3kste`).
+- {gh}`647` Implements backend plotting for `convergence_plot` ({ghuser}`r3kste`).
+- {gh}`645` Implements backend plotting for `profile_plot` ({ghuser}`r3kste`).
+- {gh}`644` Adds a how-to guide for changing plotting backends ({ghuser}`r3kste`).
+- {gh}`643` Skips doctest that fails due to negative signed zero handling
+  ({ghuser}`r3kste`).
+- {gh}`641` Implements backend plotting for `params_plot` ({ghuser}`r3kste`).
+- {gh}`639` Adds optimizers from PySwarms ({ghuser}`spline2hg`).
+- {gh}`637` Adds note about `__future__` import ({ghuser}`spline2hg`).
+- {gh}`636` Wraps population-based optimizers from gradient-free-optimizers
+  ({ghuser}`gauravmanmode`).
+- {gh}`633` Migrates bayesian-optimizer docs to new documentation style
+  ({ghuser}`spline2hg`).
+- {gh}`632` Migrates nevergrad optimizers to new documentation style
+  ({ghuser}`gauravmanmode`).
+- {gh}`631` Migrates iminuit docs to new documentation style ({ghuser}`spline2hg`).
+- {gh}`624` Wraps local optimizers from gradient-free-optimizers
+  ({ghuser}`gauravmanmode`).
+- {gh}`621` Implements lazy loading for optional dependencies ({ghuser}`spline2hg`).
+- {gh}`619` Adopts the NumFOCUS code of conduct ({ghuser}`timmens`).
+- {gh}`616` Adds optimizers from PyGAD ({ghuser}`spline2hg`).
+- {gh}`600` Separates data preparation and plotting for `criterion_plot()`
+  ({ghuser}`r3kste`).
+- {gh}`599` Implements the matplotlib backend for `criterion_plot()` ({ghuser}`r3kste`).
+- {gh}`581` Adds 3D visualizations of optimization problems ({ghuser}`shammeer-s`).
+- {gh}`554` Improves documentation of algorithm options ({ghuser}`janosg`).
+
+
 ## 0.5.2
 
 This minor release adds support for two additional optimizer libraries:
