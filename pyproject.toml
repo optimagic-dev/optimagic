@@ -293,6 +293,7 @@ module = [
 
     "optimagic.visualization",
     "optimagic.visualization.convergence_plot",
+    "optimagic.visualization.backends",
     "optimagic.visualization.deviation_plot",
     "optimagic.visualization.history_plots",
     "optimagic.visualization.plotting_utilities",
@@ -349,6 +350,8 @@ module = [
     "plotly.graph_objects",
     "plotly.express",
     "plotly.subplots",
+    "matplotlib",
+    "matplotlib.pyplot",
     "cyipopt",
     "nlopt",
     "bokeh",
@@ -381,5 +384,14 @@ module = [
     "optimagic._version",
     "annotated_types",
     "pdbp",
+    "iminuit",
+    "nevergrad",
+    "nevergrad.optimization.base",
+    "pygad",
+    "pyswarms",
+    "pyswarms.backend.topology",
+    "yaml",
+    "gradient_free_optimizers",
+    "gradient_free_optimizers.optimizers.base_optimizer",
   ]
 ignore_missing_imports = true

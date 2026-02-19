@@ -3,6 +3,8 @@ from typing import NamedTuple
 
 import numpy as np
 
+from optimagic.utilities import fast_numpy_full
+
 
 class Steps(NamedTuple):
     pos: np.ndarray
@@ -90,12 +92,21 @@ def generate_steps(
     )
     min_steps = base_steps if min_steps is None else min_steps
 
-    assert (
-        bounds.upper - bounds.lower >= 2 * min_steps
-    ).all(), "min_steps is too large to fit into bounds."
+    lower_bounds = bounds.lower
+    upper_bounds = bounds.upper
+    # None-valued bounds are handled by instantiating them as an -inf and inf array. In
+    # the future, this should be handled more gracefully.
+    if lower_bounds is None:
+        lower_bounds = fast_numpy_full(len(x), fill_value=-np.inf)
+    if upper_bounds is None:
+        upper_bounds = fast_numpy_full(len(x), fill_value=np.inf)
 
-    upper_step_bounds = bounds.upper - x
-    lower_step_bounds = bounds.lower - x
+    assert (upper_bounds - lower_bounds >= 2 * min_steps).all(), (
+        "min_steps is too large to fit into bounds."
+    )
+
+    upper_step_bounds = upper_bounds - x
+    lower_step_bounds = lower_bounds - x
 
     pos = step_ratio ** np.arange(n_steps) * base_steps.reshape(-1, 1)
     neg = -pos.copy()
@@ -105,7 +116,7 @@ def generate_steps(
             x, pos, neg, method, lower_step_bounds, upper_step_bounds
         )
 
-    if np.isfinite(bounds.lower).any() or np.isfinite(bounds.upper).any():
+    if np.isfinite(lower_bounds).any() or np.isfinite(upper_bounds).any():
         pos, neg = _rescale_to_accomodate_bounds(
             base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
         )

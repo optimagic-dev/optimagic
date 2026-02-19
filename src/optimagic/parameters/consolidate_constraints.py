@@ -11,7 +11,10 @@ import numpy as np
 import pandas as pd
 
 from optimagic.exceptions import InvalidConstraintError
-from optimagic.utilities import number_of_triangular_elements_to_dimension
+from optimagic.utilities import (
+    fast_numpy_full,
+    number_of_triangular_elements_to_dimension,
+)
 
 
 def consolidate_constraints(
@@ -25,8 +28,8 @@ def consolidate_constraints(
             constraints have been rewritten as linear constraints and
             pairwise_equality constraints have been rewritten as equality constraints.
         parvec (np.ndarray): 1d numpy array with parameters.
-        lower_bounds (np.ndarray): 1d numpy array with lower_bounds
-        upper_bounds (np.ndarray): 1d numpy array wtih upper_bounds
+        lower_bounds (np.ndarray | None): 1d numpy array with lower_bounds
+        upper_bounds (np.ndarray | None): 1d numpy array with upper_bounds
         param_names (list): Names of parameters. Used for error messages.
 
     Returns:
@@ -37,6 +40,13 @@ def consolidate_constraints(
             constraints.
 
     """
+    # None-valued bounds are handled by instantiating them as an -inf and inf array. In
+    # the future, this should be handled more gracefully.
+    if lower_bounds is None:
+        lower_bounds = fast_numpy_full(len(parvec), fill_value=-np.inf)
+    if upper_bounds is None:
+        upper_bounds = fast_numpy_full(len(parvec), fill_value=np.inf)
+
     raw_eq, other_constraints = _split_constraints(constraints, "equality")
     equality_constraints = _consolidate_equality_constraints(raw_eq)
 
@@ -205,9 +215,9 @@ def _consolidate_fixes_with_equality_constraints(
     for eq in equality_constraints:
         if np.isfinite(fixed_value[eq["index"]]).any():
             valcounts = _unique_values(fixed_value[eq["index"]])
-            assert (
-                len(valcounts) == 1
-            ), "Equality constrained parameters cannot be fixed to different values."
+            assert len(valcounts) == 1, (
+                "Equality constrained parameters cannot be fixed to different values."
+            )
             fixed_value[eq["index"]] = valcounts[0]
 
     return fixed_value

@@ -14,7 +14,9 @@ advantages and drawbacks of each of them.
 Again, we use the simple `sphere` function you know from other tutorials as an example.
 
 ```{eval-rst}
-.. tabbed:: Array
+.. tab-set::
+
+  .. tab-item:: Array
 
     A frequent choice of ``params`` is a one-dimensional numpy array. This is
     because one-dimensional numpy arrays are all that is supported by most optimizer
@@ -42,10 +44,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
             algorithm="scipy_lbfgsb",
         )
 
-```
-
-```{eval-rst}
-.. tabbed:: DataFrame
+  .. tab-item:: DataFrame
 
     Originally, pandas DataFrames were the mandatory format for ``params`` in optimagic.
     They are still highly recommended and have a few special features. For example,
@@ -88,11 +87,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     A drawback of DataFrames is that they are not JAX compatible. Another one is that
     they are a bit slower than numpy arrays.
 
-
-```
-
-```{eval-rst}
-.. tabbed:: Dict
+  .. tab-item:: Dict
 
     ``params`` can also be a (nested) dictionary containing all of the above and more.
 
@@ -116,10 +111,7 @@ Again, we use the simple `sphere` function you know from other tutorials as an e
     nested dictionaries makes it hard to visualize results and/or even to compare two
     estimation results.
 
-```
-
-```{eval-rst}
-.. tabbed:: Scalar
+  .. tab-item:: Scalar
 
     If you have a one-dimensional optimization problem, the natural way to represent
     your params is a float:

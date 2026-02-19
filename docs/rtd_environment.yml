@@ -4,34 +4,38 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.10
+  - python=3.12
   - typing-extensions
   - pip
   - setuptools_scm
   - toml
-  - sphinx
+  - sphinx>=8.2.3
   - sphinxcontrib-bibtex
   - sphinx-copybutton
   - sphinx-design
-  - sphinx-panels
+  - sphinx-llm
+  - sphinx-llms-txt
   - ipython
   - ipython_genutils
   - myst-nb
   - furo
   - pybaum
   - matplotlib
+  - bokeh
+  - altair
+  - anywidget
   - seaborn
   - numpy
   - pandas
   - scipy
   - patsy
   - joblib
-  - plotly
+  - plotly>=6.2
   - nlopt
   - annotated-types
+  - pygmo>=2.19.0
   - pip:
-      - ../
-      - kaleido
+      - -e ../
       - Py-BOBYQA
       - DFO-LS
       - pandas-stubs  # dev, tests
@@ -40,4 +44,6 @@ dependencies:
       - types-jinja2  # dev, tests
       - sqlalchemy-stubs  # dev, tests
       - sphinxcontrib-mermaid  # dev, tests, docs
+      - intersphinx-registry  # docs
       - fides==0.7.4  # dev, tests
+      - bayesian-optimization  # dev, tests

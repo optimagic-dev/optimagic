@@ -24,11 +24,13 @@ def main() -> None:
 
     # find index to insert additional dependencies
     _insert_idx = [i for i, line in enumerate(lines) if "dependencies:" in line][0] + 1
+    _insert_idx_pip = [i for i, line in enumerate(lines) if "  - pip:" in line][0] + 1
 
     ## linux
     test_env_linux = deepcopy(test_env)
     test_env_linux.insert(_insert_idx, "  - jax")
-    test_env_linux.insert(_insert_idx, "  - petsc4py")
+    # pinned petsc4py due to failing test on python 3.11 , revert later
+    test_env_linux.insert(_insert_idx, "  - petsc4py<=3.23.4")
 
     ## test environment others
     test_env_others = deepcopy(test_env)
@@ -46,14 +48,36 @@ def main() -> None:
     test_env_numpy.insert(_insert_idx, "  - numpy<2")
     test_env_numpy.insert(_insert_idx, "  - pandas>=2")
 
+    ## test environment for plotly < 6, kaleido < 1.0
+    test_env_plotly = deepcopy(test_env)
+    for pkg in ["plotly", "kaleido"]:
+        test_env_plotly = [line for line in test_env_plotly if pkg not in line]
+    test_env_plotly.insert(_insert_idx, "  - plotly<6")
+    test_env_plotly.insert(_insert_idx_pip, "      - kaleido<0.3")
+
+    test_env_nevergrad = deepcopy(test_env)
+    for pkg in ["bayesian-optimization"]:
+        test_env_nevergrad = [line for line in test_env_nevergrad if pkg not in line]
+        test_env_nevergrad.insert(_insert_idx_pip, "      - nevergrad")
+        test_env_nevergrad.insert(
+            _insert_idx_pip, "      - bayesian_optimization==1.4.0"
+        )
+
     # test environment for documentation
     docs_env = [line for line in lines if _keep_line(line, "docs")]
     docs_env.append("      - -e ../../")  # add local installation
 
     # write environments
     for name, env in zip(
-        ["linux", "others", "pandas", "numpy"],
-        [test_env_linux, test_env_others, test_env_pandas, test_env_numpy],
+        ["linux", "others", "pandas", "numpy", "plotly", "nevergrad"],
+        [
+            test_env_linux,
+            test_env_others,
+            test_env_pandas,
+            test_env_numpy,
+            test_env_plotly,
+            test_env_nevergrad,
+        ],
         strict=False,
     ):
         # Specify newline to avoid wrong line endings on Windows.

@@ -1,3 +1,4 @@
+import importlib.util
 from pathlib import Path
 
 import pandas as pd
@@ -10,87 +11,69 @@ OPTIMAGIC_ROOT = Path(__file__).parent
 PLOTLY_TEMPLATE = "simple_white"
 PLOTLY_PALETTE = px.colors.qualitative.Set2
 
+# The hex strings are obtained from the Plotly D3 qualitative palette.
+DEFAULT_PALETTE = [
+    "#1F77B4",
+    "#FF7F0E",
+    "#2CA02C",
+    "#D62728",
+    "#9467BD",
+    "#8C564B",
+    "#E377C2",
+    "#7F7F7F",
+    "#BCBD22",
+    "#17BECF",
+]
+
 DEFAULT_N_CORES = 1
 
 CRITERION_PENALTY_SLOPE = 0.1
 CRITERION_PENALTY_CONSTANT = 100
 
+
+def _is_installed(module_name: str) -> bool:
+    """Return True if the given module is installed, otherwise False."""
+    return importlib.util.find_spec(module_name) is not None
+
+
 # ======================================================================================
-# Check Available Packages
+# Check Available Optimization Packages
 # ======================================================================================
 
-try:
-    from petsc4py import PETSc  # noqa: F401
-except ImportError:
-    IS_PETSC4PY_INSTALLED = False
-else:
-    IS_PETSC4PY_INSTALLED = True
+IS_PETSC4PY_INSTALLED = _is_installed("petsc4py")
+IS_NLOPT_INSTALLED = _is_installed("nlopt")
+IS_PYBOBYQA_INSTALLED = _is_installed("pybobyqa")
+IS_DFOLS_INSTALLED = _is_installed("dfols")
+IS_PYGMO_INSTALLED = _is_installed("pygmo")
+IS_CYIPOPT_INSTALLED = _is_installed("cyipopt")
+IS_FIDES_INSTALLED = _is_installed("fides")
+IS_JAX_INSTALLED = _is_installed("jax")
+IS_TRANQUILO_INSTALLED = _is_installed("tranquilo")
+IS_NUMBA_INSTALLED = _is_installed("numba")
+IS_IMINUIT_INSTALLED = _is_installed("iminuit")
+IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
+# despite the similar names, the bayes_opt and bayes_optim packages are
+# completely unrelated. However, both of them are dependencies of nevergrad.
+IS_BAYESOPTIM_INSTALLED = _is_installed("bayes-optim")
+# Note: There is a dependancy conflict with nevergrad and bayesian_optimization
+# installing nevergrad pins bayesian_optimization to 1.4.0,
+# but "bayes_opt" requires bayesian_optimization>=2.0.0 to work.
+# so if nevergrad is installed, bayes_opt will not work and vice-versa.
+IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2 = (
+    _is_installed("bayes_opt")
+    and importlib.metadata.version("bayesian_optimization") > "2.0.0"
+)
+IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED = _is_installed("gradient_free_optimizers")
+IS_PYGAD_INSTALLED = _is_installed("pygad")
+IS_PYSWARMS_INSTALLED = _is_installed("pyswarms")
 
-try:
-    import nlopt  # noqa: F401
-except ImportError:
-    IS_NLOPT_INSTALLED = False
-else:
-    IS_NLOPT_INSTALLED = True
+# ======================================================================================
+# Check Available Visualization Packages
+# ======================================================================================
 
-try:
-    import pybobyqa  # noqa: F401
-except ImportError:
-    IS_PYBOBYQA_INSTALLED = False
-else:
-    IS_PYBOBYQA_INSTALLED = True
-
-try:
-    import dfols  # noqa: F401
-except ImportError:
-    IS_DFOLS_INSTALLED = False
-else:
-    IS_DFOLS_INSTALLED = True
-
-try:
-    import pygmo  # noqa: F401
-except ImportError:
-    IS_PYGMO_INSTALLED = False
-else:
-    IS_PYGMO_INSTALLED = True
-
-try:
-    import cyipopt  # noqa: F401
-except ImportError:
-    IS_CYIPOPT_INSTALLED = False
-else:
-    IS_CYIPOPT_INSTALLED = True
-
-try:
-    import fides  # noqa: F401
-except ImportError:
-    IS_FIDES_INSTALLED = False
-else:
-    IS_FIDES_INSTALLED = True
-
-try:
-    import jax  # noqa: F401
-except ImportError:
-    IS_JAX_INSTALLED = False
-else:
-    IS_JAX_INSTALLED = True
-
-
-try:
-    import tranquilo  # noqa: F401
-except ImportError:
-    IS_TRANQUILO_INSTALLED = False
-else:
-    IS_TRANQUILO_INSTALLED = True
-
-
-try:
-    import numba  # noqa: F401
-except ImportError:
-    IS_NUMBA_INSTALLED = False
-else:
-    IS_NUMBA_INSTALLED = True
-
+IS_MATPLOTLIB_INSTALLED = _is_installed("matplotlib")
+IS_BOKEH_INSTALLED = _is_installed("bokeh")
+IS_ALTAIR_INSTALLED = _is_installed("altair")
 
 # ======================================================================================
 # Check if pandas version is newer or equal to version 2.1.0

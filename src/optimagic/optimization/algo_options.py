@@ -95,6 +95,7 @@ STOPPING_MAXITER = 1_000_000
 
 """
 
+
 CONVERGENCE_SECOND_BEST_FTOL_ABS = 1e-08
 """float: absolute criterion tolerance optimagic requires if no other stopping
 criterion apart from max iterations etc. is available
@@ -105,6 +106,27 @@ this is taken from scipy (SLSQP's value, smaller than Nelder-Mead).
 CONVERGENCE_SECOND_BEST_XTOL_ABS = 1e-08
 """float: The absolute parameter tolerance optimagic requires if no other stopping
 criterion apart from max iterations etc. is available. This is taken from pybobyqa.
+
+"""
+
+CONVERGENCE_TARGET_VALUE = None
+"""float or None: Stop when the criterion value is better than or equal to
+    this target. The definition of "better" depends on the optimization direction.
+
+    - Minimization: criterion <= target
+    - Maximization: criterion >= target
+
+    Used in population-based algorithms like genetic algorithms.
+    To disable, set to None.
+
+"""
+
+CONVERGENCE_GENERATIONS_NOIMPROVE = None
+"""int or None: Stop when the best criterion value has not improved for this
+    many consecutive generations.
+
+    Used in population-based algorithms like genetic algorithms.
+    To disable, set to None.
 
 """
 
@@ -120,6 +142,19 @@ CONSTRAINTS_ABSOLUTE_TOLERANCE = 1e-5
 """float: Allowed tolerance of the equality and inequality constraints for values to be
 considered 'feasible'.
 
+"""
+
+N_RESTARTS = 1
+"""int: Number of times to restart the optimizer if convergence is not reached.
+    This parameter controls how many times the optimization process is restarted
+    in an attempt to achieve convergence.
+
+    - A value of 1 (the default) indicates that the optimizer will only run once,
+      disabling the restart feature.
+    - Values greater than 1 specify the maximum number of restart attempts.
+
+    Note: This is distinct from `STOPPING_MAXITER`, which limits the number of
+    iterations within a single optimizer run, not the number of restarts.
 """
 
 

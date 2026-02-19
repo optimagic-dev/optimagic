@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from optimagic import constraints, mark, utilities
+from optimagic import constraints, mark, sandbox, timing, utilities
 from optimagic.algorithms import algos
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
@@ -43,6 +43,7 @@ from optimagic.optimization.history import History
 from optimagic.optimization.multistart_options import MultistartOptions
 from optimagic.optimization.optimize import maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
+from optimagic.optimizers import pygad
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.constraint_tools import check_constraints, count_free_params
 from optimagic.parameters.scaling import ScalingOptions
@@ -102,4 +103,7 @@ __all__ = [
     "History",
     "__version__",
     "algos",
+    "pygad",
+    "timing",
+    "sandbox",
 ]

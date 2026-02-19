@@ -47,6 +47,10 @@ class InvalidBoundsError(OptimagicError):
     """Exception for invalid user provided bounds."""
 
 
+class IncompleteBoundsError(OptimagicError):
+    """Exception when user provided bounds are incomplete."""
+
+
 class InvalidScalingError(OptimagicError):
     """Exception for invalid user provided scaling."""
 
@@ -73,6 +77,10 @@ class InvalidAlgoOptionError(OptimagicError):
 
 class InvalidAlgoInfoError(OptimagicError):
     """Exception for invalid user provided algorithm information."""
+
+
+class InvalidPlottingBackendError(OptimagicError):
+    """Exception for invalid user provided plotting backend."""
 
 
 class StopOptimizationError(OptimagicError):

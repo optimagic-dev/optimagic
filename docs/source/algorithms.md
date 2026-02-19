@@ -3,62 +3,42 @@
 # Optimizers
 
 Check out {ref}`how-to-select-algorithms` to see how to select an algorithm and specify
-`algo_options` when using `maximize` or `minimize`.
+`algo_options` when using `maximize` or `minimize`. The default algorithm options are
+discussed in {ref}`algo_options` and their type hints are documented in {ref}`typing`.
 
-## Optimizers from scipy
+## Optimizers from SciPy
 
 (scipy-algorithms)=
 
-optimagic supports most `scipy` algorithms and scipy is automatically installed when you
-install optimagic.
+optimagic supports most [SciPy](https://scipy.org/) algorithms and SciPy is
+automatically installed when you install optimagic.
 
 ```{eval-rst}
 .. dropdown::  scipy_lbfgsb
 
+    **How to use this algorithm:**
+
     .. code-block::
 
-        "scipy_lbfgsb"
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.scipy_lbfgsb(stopping_maxiter=1_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
 
-    Minimize a scalar function of one or more variables using the L-BFGS-B algorithm.
+        om.minimize(
+          ...,
+          algorithm="scipy_lbfgsb",
+          algo_options={"stopping_maxiter": 1_000, ...}
+        )
 
-    The optimizer is taken from scipy, which calls the Fortran code written by the
-    original authors of the algorithm. The Fortran code includes the corrections
-    and improvements that were introduced in a follow up paper.
+    **Description and available options:**
 
-    lbfgsb is a limited memory version of the original bfgs algorithm, that deals with
-    lower and upper bounds via an active set approach.
-
-    The lbfgsb algorithm is well suited for differentiable scalar optimization problems
-    with up to several hundred parameters.
-
-    It is a quasi-newton line search algorithm. At each trial point it evaluates the
-    criterion function and its gradient to find a search direction. It then approximates
-    the hessian using the stored history of gradients and uses the hessian to calculate
-    a candidate step size. Then it uses a gradient based line search algorithm to
-    determine the actual step length. Since the algorithm always evaluates the gradient
-    and criterion function jointly, the user should provide a
-    ``criterion_and_derivative`` function that exploits the synergies in the
-    calculation of criterion and gradient.
-
-    The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
-    to scale the parameters.
-
-    - **convergence.ftol_rel** (float): Stop when the relative improvement
-      between two iterations is smaller than this. More formally, this is expressed as
-
-    .. math::
-
-        \frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \leq
-        \text{relative_criterion_tolerance}
-
-
-    - **convergence.gtol_abs** (float): Stop if all elements of the projected
-      gradient are smaller than this.
-    - **stopping.maxfun** (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this as convergence.
-    - **stopping.maxiter** (int): If the maximum number of iterations is reached,
-      the optimization stops, but we do not count this as convergence.
-    - **limited_memory_storage_length** (int): Maximum number of saved gradients used to approximate the hessian matrix.
+    .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLBFGSB
 
 ```
 
@@ -86,6 +66,7 @@ install optimagic.
       f in the stopping criterion.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. Scipy name: **disp**.
 
 ```
 
@@ -122,6 +103,7 @@ install optimagic.
     - **convergence.ftol_abs** (float): Absolute difference in the criterion value between
       iterations that is tolerated to declare convergence. As no relative tolerances can be passed to Nelder-Mead,
       optimagic sets a non zero default for this.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
     - **adaptive** (bool): Adapt algorithm parameters to dimensionality of problem.
       Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277). scipy's default is False.
 
@@ -165,6 +147,7 @@ install optimagic.
       the optimization stops but we do not count thisas convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached, the optimization stops,
       but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -190,7 +173,22 @@ install optimagic.
     - **norm** (float): Order of the vector norm that is used to calculate the gradient's "score" that
       is compared to the gradient tolerance to determine convergence. Default is infinite which means that
       the largest entry of the gradient vector is compared to the gradient tolerance.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
+    - **convergence_xtol_rel** (float): Relative tolerance for `x`. Terminate successfully if step size is less than `xk * xrtol` where `xk` is the current parameter vector. Default is 1e-5. SciPy name: **xrtol**.
+    - **armijo_condition** (float): Parameter for Armijo condition rule. Default is 1e-4. Ensures 
 
+        .. math::
+
+            f(x_k+\alpha p_k) \le f(x_k) \;+\mathrm{armijo\_condition}\,\cdot\,\alpha\,\nabla f(x_k)^\top p_k, 
+        
+      so each step yields at least a fraction **armijo_condition** of the predicted decrease. Smaller ⇒ more aggressive steps, larger ⇒ more conservative ones. SciPy name: **c1**.
+    - **curvature_condition** (float): Parameter for curvature condition rule. Default is 0.9. Ensures 
+      
+        .. math::
+
+            \nabla f(x_k+\alpha p_k)^\top p_k \ge \mathrm{curvature\_condition}\,\cdot\,\nabla f(x_k)^\top p_k, 
+        
+      so the new slope isn’t too negative. Smaller ⇒ stricter curvature reduction (smaller steps), larger ⇒ looser (bigger steps). SciPy name: **c2**.
 ```
 
 ```{eval-rst}
@@ -225,6 +223,7 @@ install optimagic.
       "score" that is compared to the gradient tolerance to determine convergence.
       Default is infinite which means that the largest entry of the gradient vector
       is compared to the gradient tolerance.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -271,6 +270,7 @@ install optimagic.
       relative change in the parameters for determining the convergence.
     - **stopping.maxiter** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 
@@ -309,6 +309,7 @@ install optimagic.
     RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
     the `trustregion.initial_radius`. In this way COBYLA's iterations behave
     like a trust region algorithm.
+  - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -376,6 +377,7 @@ install optimagic.
       criterion rescaling. If 0, rescale at each iteration. If a large value,
       never rescale. If < 0, rescale is set to 1.3. optimagic defaults to scipy's
       default.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 
 ```
@@ -436,6 +438,7 @@ install optimagic.
       valid only close to the current point it should be a small one.
       The trust radius is automatically updated throughout the optimization
       process, with ``trustregion_initial_radius`` being its initial value.
+    - **display** (bool): Set to True to print convergence messages. Default is False. SciPy name: **disp**.
 
 ```
 
@@ -3911,6 +3914,1048 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
       convergence.
     - **population_size** (int): Size of the population. If None, it's set to be
       10 * (number of parameters + 1).
+```
+
+## Optimizers from iminuit
+
+optimagic supports the [IMINUIT MIGRAD Optimizer](https://iminuit.readthedocs.io/). To
+use MIGRAD, you need to have
+[the iminuit package](https://github.com/scikit-hep/iminuit) installed
+(`pip install iminuit`).
+
+```{eval-rst}
+.. dropdown::  iminuit_migrad
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.iminuit_migrad(stopping_maxfun=10_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="iminuit_migrad",
+          algo_options={"stopping_maxfun=10_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.iminuit_migrad.IminuitMigrad
+
+```
+
+## Nevergrad Optimizers
+
+optimagic supports following algorithms from the
+[Nevergrad](https://facebookresearch.github.io/nevergrad/index.html) library. To use
+these optimizers, you need to have
+[the nevergrad package](https://github.com/facebookresearch/nevergrad) installed.
+(`pip install nevergrad`).\
+Two algorithms from nevergrad are not available in optimagic.\
+`SPSA (Simultaneous Perturbation Stochastic Approximation)` - This is WIP in nevergrad
+and hence imprecise.\
+`AXP (AX-platfofm)` - Very slow and not recommended.
+
+```{eval-rst}
+.. dropdown::  nevergrad_pso
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_pso(stopping_maxfun=1_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_pso",
+          algo_options={"stopping_maxfun": 1_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradPSO
+
+```
+
+```{eval-rst}
+.. dropdown::  nevergrad_cmaes
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_cmaes(stopping_maxfun=1_000, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_cmaes",
+          algo_options={"stopping_maxfun": 1_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradCMAES
+
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_oneplusone
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_oneplusone(stopping_maxfun=1_000, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_oneplusone",
+          algo_options={"stopping_maxfun": 1_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradOnePlusOne
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_de
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_de(population_size="large", ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_de",
+          algo_options={"population_size": "large", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradDifferentialEvolution
+```
+
+```{eval-rst}
+.. dropdown::  nevergrad_bo
+
+    .. note::
+
+        Using this optimizer requires the `bayes-optim` package to be installed as well.
+        This can be done with `pip install bayes-optim`.
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_bo(stopping_maxfun=1_000, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_bo",
+          algo_options={"stopping_maxfun": 1_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradBayesOptim
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_emna
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_emna(noise_handling=False, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_emna",
+          algo_options={"noise_handling": False, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEMNA
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_cga
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_cga(stopping_maxfun=10_000)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_cga",
+          algo_options={"stopping_maxfun": 10_000}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradCGA
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_eda
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_eda(stopping_maxfun=10_000)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_eda",
+          algo_options={"stopping_maxfun": 10_000}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEDA
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_tbpsa
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_tbpsa(noise_handling=False, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_tbpsa",
+          algo_options={"noise_handling": False, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradTBPSA
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_randomsearch
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_randomsearch(opposition_mode="quasi", ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_randomsearch",
+          algo_options={"opposition_mode": "quasi", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradRandomSearch
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_samplingsearch
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_samplingsearch(sampler="Hammersley", scrambled=True)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_samplingsearch",
+          algo_options={"sampler": "Hammersley", "scrambled": True}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradSamplingSearch
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_wizard
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        from optimagic.optimizers.nevergrad_optimizers import Wizard
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_wizard(optimizer= Wizard.NGOptRW, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_wizard",
+          algo_options={"optimizer": "NGOptRW", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradWizard
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.Wizard
+```
+
+```{eval-rst}
+.. dropdown:: nevergrad_portfolio
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        from optimagic.optimizers.nevergrad_optimizers import Portfolio
+        om.minimize(
+          ...,
+          algorithm=om.algos.nevergrad_portfolio(optimizer= Portfolio.BFGSCMAPlus, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="nevergrad_portfolio",
+          algo_options={"optimizer": "BFGSCMAPlus", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradPortfolio
+    .. autoclass:: optimagic.optimizers.nevergrad_optimizers.Portfolio
+```
+
+## Bayesian Optimization
+
+We wrap the
+[BayesianOptimization](https://github.com/bayesian-optimization/BayesianOptimization)
+package. To use it, you need to have
+[bayesian-optimization](https://pypi.org/project/bayesian-optimization/) installed.
+Note: This optimizer requires `bayesian_optimization > 2.0.0` to be installed which is
+incompatible with `nevergrad > 1.0.3`.
+
+```{eval-rst}
+.. dropdown::  bayes_opt
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.bayes_opt(n_iter=50, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="bayes_opt",
+          algo_options={"n_iter": 50, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.bayesian_optimizer.BayesOpt
+
+```
+
+## Gradient Free Optimizers
+
+Optimizers from the
+[gradient_free_optimizers](https://github.com/SimonBlanke/Gradient-Free-Optimizers?tab=readme-ov-file)
+package are available in optimagic. To use it, you need to have
+[gradient_free_optimizers](https://pypi.org/project/gradient_free_optimizers) installed.
+
+```{eval-rst}
+.. dropdown:: gfo_hillclimbing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_hillclimbing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_hillclimbing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOHillClimbing
+    :members:
+    :inherited-members: Algorithm, object
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_stochastichillclimbing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_stochastichillclimbing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_stochastichillclimbing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOStochasticHillClimbing
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_repulsinghillclimbing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_repulsinghillclimbing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_repulsinghillclimbing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFORepulsingHillClimbing
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_simulatedannealing
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_simulatedannealing(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_simulatedannealing",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSimulatedAnnealing
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_downhillsimplex
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_downhillsimplex(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_downhillsimplex",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODownhillSimplex
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_powells_method
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_powells_method(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_powells_method",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOPowellsMethod
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+
+```
+
+```{eval-rst}
+.. dropdown:: gfo_pso
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm=om.algos.gfo_pso(stopping_maxiter=1_000, ...),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=[1.0, 2.0, 3.0],
+      algorithm="gfo_pso",
+      algo_options={"stopping_maxiter": 1_000, ...},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParticleSwarmOptimization
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+
+```
+
+```{eval-rst}
+
+.. dropdown:: gfo_parallel_tempering
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_parallel_tempering(population_size=15, n_iter_swap=5),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_parallel_tempering",
+      algo_options={"population_size": 15, "n_iter_swap": 5},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParallelTempering
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+```
+
+```{eval-rst}
+.. dropdown:: gfo_spiral_optimization
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_spiral_optimization(population_size=15, decay_rate=0.95),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_spiral_optimization",
+      algo_options={"population_size": 15, "decay_rate": 0.95},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSpiralOptimization
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+```
+
+```{eval-rst}
+.. dropdown:: gfo_genetic_algorithm
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_genetic_algorithm(population_size=20, mutation_rate=0.6),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_genetic_algorithm",
+      algo_options={"population_size": 20, "mutation_rate": 0.6},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOGeneticAlgorithm
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+```
+
+```{eval-rst}
+.. dropdown:: gfo_evolution_strategy
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_evolution_strategy(population_size=15, crossover_rate=0.4),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_evolution_strategy",
+      algo_options={"population_size": 15, "crossover_rate": 0.4},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOEvolutionStrategy
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+```
+
+```{eval-rst}
+.. dropdown:: gfo_differential_evolution
+
+  **How to use this algorithm.**
+
+  .. code-block:: python
+
+    import optimagic as om
+    import numpy as np
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm=om.algos.gfo_differential_evolution(population_size=20, mutation_rate=0.8),
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  or using the string interface:
+      
+  .. code-block:: python
+
+    om.minimize(
+      fun=lambda x: x @ x,
+      params=np.array([1.0, 2.0, 3.0]),
+      algorithm="gfo_differential_evolution",
+      algo_options={"population_size": 20, "mutation_rate": 0.8},
+      bounds = om.Bounds(lower = np.array([1,1,1]), upper=np.array([5,5,5]))
+    )
+
+  **Description and available options:**
+
+  .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODifferentialEvolution
+    :members:
+    :inherited-members: Algorithm, object  
+    :member-order: bysource
+
+```
+
+## Pygad Optimizer
+
+We wrap the pygad optimizer. To use it you need to have
+[pygad](https://pygad.readthedocs.io/en/latest/) installed.
+
+```{eval-rst}
+.. dropdown::  pygad
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pygad(num_generations=100, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pygad",
+          algo_options={"num_generations": 100, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pygad_optimizer.Pygad
+```
+
+## PySwarms Optimizers
+
+optimagic supports the following continuous algorithms from the
+[PySwarms](https://pyswarms.readthedocs.io/en/latest/) library: (GlobalBestPSO,
+LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
+[the pyswarms package](https://github.com/ljvmiranda921/pyswarms) installed.
+(`pip install pyswarms`).
+
+```{eval-rst}
+.. dropdown::  pyswarms_global_best
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pyswarms_global_best(n_particles=50, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pyswarms_global_best",
+          algo_options={"n_particles": 50, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGlobalBestPSO
+      :members:
+      :inherited-members: Algorithm, object
+
+```
+
+```{eval-rst}
+.. dropdown::  pyswarms_local_best
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pyswarms_local_best(n_particles=50, k_neighbors=3, ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pyswarms_local_best",
+          algo_options={"n_particles": 50, "k_neighbors": 3, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsLocalBestPSO
+      :members:
+      :inherited-members: Algorithm, object
+
+```
+
+```{eval-rst}
+.. dropdown::  pyswarms_general
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.pyswarms_general(n_particles=50, topology_type="star", ...)
+        )
+        
+    or
+        
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="pyswarms_general",
+          algo_options={"n_particles": 50, "topology_type": "star", ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGeneralPSO
+      :members:
+      :inherited-members: Algorithm, object
+
 ```
 
 ## References
