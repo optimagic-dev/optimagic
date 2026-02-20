@@ -5,7 +5,7 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
 
-## 0.6.0
+## 0.5.3
 
 This release introduces **multi-backend plotting** with support for matplotlib, bokeh,
 and altair backends (in addition to the existing plotly backend), **3D visualizations**
@@ -19,8 +19,8 @@ Google Summer of Code (GSoC) 2025 contributors.
   annotations issue with Python 3.13 and NumPy 2.4 ({ghuser}`timmens`).
 - {gh}`660` Renames the `bayes_opt` parameter `n_iter` to `stopping_maxiter`
   ({ghuser}`spline2hg`).
-- {gh}`659` Fixes `UnboundLocalError` when `stopping_criterion=None` in
-  `convergence_plot` ({ghuser}`szd5654125`).
+- {gh}`659` Removes `None` as a valid option for `stopping_criterion` in
+  `convergence_plot` and updates the docstring ({ghuser}`szd5654125`).
 - {gh}`658` Enhances documentation and minor fixes in backend plotting
   ({ghuser}`r3kste`).
 - {gh}`654` Implements the altair plotting backend ({ghuser}`r3kste`).
