@@ -383,6 +383,7 @@ module = [
     "pdbp",
     "iminuit",
     "nevergrad",
+    "nevergrad.optimization.base",
     "pygad",
     "pyswarms",
     "pyswarms.backend.topology",

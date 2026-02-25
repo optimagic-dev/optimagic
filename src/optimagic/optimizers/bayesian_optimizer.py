@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from scipy.optimize import NonlinearConstraint
 
 from optimagic import mark
-from optimagic.config import IS_BAYESOPT_INSTALLED
+from optimagic.config import IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimization.algo_options import N_RESTARTS
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 @mark.minimizer(
     name="bayes_opt",
     solver_type=AggregationLevel.SCALAR,
-    is_available=IS_BAYESOPT_INSTALLED,
+    is_available=IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2,
     is_global=True,
     needs_jac=False,
     needs_hess=False,
@@ -63,7 +63,8 @@ class BayesOpt(Algorithm):
     observations of the objective function. These observations are used to fit a
     Gaussian process surrogate model that learns about the function's behavior. The
     optimizer then uses an acquisition function to iteratively select promising new
-    points to evaluate, updates its model, and this continues for n_iter iterations.
+    points to evaluate, updates its model, and this continues for stopping_maxiter
+    iterations.
 
     This optimizer is well-suited for expensive functions where each evaluation is
     costly (simulations, experiments, model training), black-box optimization where
@@ -81,7 +82,7 @@ class BayesOpt(Algorithm):
 
     """
 
-    n_iter: PositiveInt = 25
+    stopping_maxiter: PositiveInt = 25
     """Number of Bayesian optimization iterations to perform after initial
     exploration."""
 
@@ -205,7 +206,7 @@ class BayesOpt(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if not IS_BAYESOPT_INSTALLED:
+        if not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2:
             raise NotInstalledError(
                 "To use the 'bayes_opt' optimizer you need to install bayes_opt. "
                 "Use 'pip install bayesian-optimization'. "
@@ -268,7 +269,7 @@ class BayesOpt(Algorithm):
         )
         optimizer.maximize(
             init_points=self.init_points,
-            n_iter=self.n_iter,
+            n_iter=self.stopping_maxiter,
         )
 
         res = _process_bayes_opt_result(optimizer=optimizer, x0=x0, problem=problem)
