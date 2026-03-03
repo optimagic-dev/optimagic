@@ -157,7 +157,7 @@ def test_documentation_example(algorithm):
         params=np.ones(6),
         algorithm=algorithm,
         constraints=om.NonlinearConstraint(
-            func=lambda x: np.prod(x),
+            func=np.prod,
             selector=lambda x: x[:-1],
             value=1.0,
         ),

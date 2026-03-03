@@ -898,7 +898,7 @@ class SphereExampleInternalOptimizationProblem(InternalOptimizationProblem):
         _fun_dict = {
             AggregationLevel.SCALAR: lambda x: ScalarFunctionValue(x @ x),
             AggregationLevel.LIKELIHOOD: lambda x: LikelihoodFunctionValue(x**2),
-            AggregationLevel.LEAST_SQUARES: lambda x: LeastSquaresFunctionValue(x),
+            AggregationLevel.LEAST_SQUARES: lambda x: LeastSquaresFunctionValue(x),  # noqa: PLW0108
         }
 
         _jac_dict = {

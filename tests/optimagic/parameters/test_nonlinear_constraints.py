@@ -157,7 +157,7 @@ def test_check_validity_nonlinear_constraint(constraint, params):
 def test_check_validity_nonlinear_constraint_correct_example():
     constr = {
         "func": lambda x: x,
-        "derivative": lambda x: np.ones_like(x),
+        "derivative": np.ones_like,
         "lower_bounds": np.arange(4),
         "selector": lambda x: x[:1],
     }
