@@ -127,7 +127,7 @@ def test_exception_for_callback():
             fun=lambda x: x @ x,
             x0=np.arange(3),
             algorithm="scipy_lbfgsb",
-            callback=lambda x: print(x),
+            callback=print,
         )
 
 

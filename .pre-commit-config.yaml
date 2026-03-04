@@ -89,7 +89,7 @@ repos:
           - --blank
         exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.4
     hooks:
       # Run the linter.
       - id: ruff
@@ -130,7 +130,7 @@ repos:
         files: (docs/.)
         exclude: docs/source/how_to/how_to_specify_algorithm_and_algo_options.md
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.9.0
+    rev: 0.9.1
     hooks:
       - id: nbstripout
         exclude: |
