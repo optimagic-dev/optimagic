@@ -5,7 +5,7 @@ external libraries.
 
 """
 
-from optimagic.config import IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0
+from optimagic.config import IS_PANDAS_VERSION_GE_2_1
 
 
 def pd_df_map(df, func, na_action=None, **kwargs):
@@ -26,7 +26,7 @@ def pd_df_map(df, func, na_action=None, **kwargs):
         pd.DataFrame: Transformed DataFrame.
 
     """
-    if IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0:
+    if IS_PANDAS_VERSION_GE_2_1:
         out = df.map(func, na_action=na_action, **kwargs)
     else:
         out = df.applymap(func, na_action=na_action, **kwargs)

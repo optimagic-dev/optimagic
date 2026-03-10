@@ -314,6 +314,35 @@ automatically installed when you install optimagic.
 ```
 
 ```{eval-rst}
+.. dropdown::  scipy_cobyqa
+
+    **How to use this algorithm:**
+
+    .. code-block::
+
+        import optimagic as om
+        om.minimize(
+          ...,
+          algorithm=om.algos.scipy_cobyqa(stopping_maxfun=1_000, ...)
+        )
+
+    or
+
+    .. code-block::
+
+        om.minimize(
+          ...,
+          algorithm="scipy_cobyqa",
+          algo_options={"stopping_maxfun": 1_000, ...}
+        )
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyCOBYQA
+
+```
+
+```{eval-rst}
 .. dropdown::  scipy_truncated_newton
 
     .. code-block::
