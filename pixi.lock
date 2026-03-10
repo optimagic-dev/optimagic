@@ -19483,8 +19483,8 @@ packages:
   timestamp: 1733688053334
 - pypi: ./
   name: optimagic
-  version: 0.5.4.dev14+g7af637e58
-  sha256: 6e9a1c1d5431af5665db8c9891263b9d43bcdbcf28078dec6b45730e18fe2729
+  version: 0.5.4.dev18+g835ad723d
+  sha256: 1cf23607e851a487eec134f359acb31bb979f572dc6955dfd3d210948deaecaa
   requires_dist:
   - annotated-types>=0.4
   - cloudpickle>=2.2
