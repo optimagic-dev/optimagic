@@ -163,7 +163,7 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: test-linux-py310
+          environments: typecheck
       - name: Run mypy
         shell: bash -el {0}
-        run: pixi run -e test-linux-py310 mypy
+        run: pixi run -e typecheck mypy

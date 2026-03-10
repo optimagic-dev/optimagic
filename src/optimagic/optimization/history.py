@@ -517,7 +517,7 @@ def _apply_reduction_to_batches(
             )
             raise ValueError(msg)
 
-        batch_results.append(reduced)
+        batch_results.append(float(reduced))  # type: ignore[arg-type]
 
     return np.array(batch_results, dtype=np.float64)
 

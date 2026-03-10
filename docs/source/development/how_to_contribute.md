@@ -44,12 +44,21 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
    local optimagic repository:
 
    ```console
-   $ pixi install
-   $ pixi run lint  # verify pre-commit hooks work
+   $ pre-commit install
    ```
 
-   These commands install optimagic in editable mode and activate pre-commit hooks for
-   linting and style formatting.
+   This activates pre-commit hooks for linting and style formatting.
+
+   ```{note}
+   `pre-commit` is not managed by pixi and must be installed globally. We recommend
+   installing it globally using pixi or uv.
+   ```
+
+   You can then run the test suite with:
+
+   ```console
+   $ pixi run tests
+   ```
 
 1. Implement your fix or feature. Use git to add, commit, and push your changes to the
    remote repository. For more on git and how to stage and commit your work, refer to
@@ -85,7 +94,7 @@ Skip the next paragraph if you haven't worked on the documentation.
    up the optimagic-docs environment:
 
    ```console
-   $ pixi run -e docs docs
+   $ pixi run build-docs
    ```
 
    This command builds the HTML documentation, saving all files in the `build/html`
