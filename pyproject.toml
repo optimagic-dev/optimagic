@@ -449,9 +449,9 @@ pytest-cov = ">=4.0"
 pytest-xdist = ">=3.2"
 
 [tool.pixi.feature.test.tasks]
-tests = "pytest"
-tests-fast = "pytest -m 'not slow and not jax'"
-tests-with-cov = "pytest --cov-report=xml --cov=./"
+tests = { cmd = "pytest", description = "Run the full test suite" }
+tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
+tests-with-cov = { cmd = "pytest --cov-report=xml --cov=./", description = "Run tests with XML coverage report" }
 
 # --- Feature: typecheck (mypy + type stubs) ------------------------------------------
 [tool.pixi.feature.typecheck.dependencies]
@@ -465,7 +465,7 @@ types-jinja2 = "*"
 sqlalchemy-stubs = "*"
 
 [tool.pixi.feature.typecheck.tasks]
-mypy = "mypy"
+mypy = { cmd = "mypy", description = "Run mypy type checker" }
 
 # --- Feature: linux (Linux-only deps) ------------------------------------------------
 [tool.pixi.feature.linux]
@@ -494,7 +494,7 @@ sphinxcontrib-mermaid = "*"
 intersphinx-registry = "*"
 
 [tool.pixi.feature.docs.tasks]
-build-docs = { cmd = "make html", cwd = "docs" }
+build-docs = { cmd = "make html", cwd = "docs", description = "Build the HTML documentation" }
 
 # --- Compat features (version overrides for backward-compat CI) ---------------------
 [tool.pixi.feature.old-plotly.dependencies]

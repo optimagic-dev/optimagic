@@ -54,6 +54,12 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
    installing it globally using pixi or uv.
    ```
 
+   To see all available pixi tasks, run:
+
+   ```console
+   $ pixi task list
+   ```
+
    You can then run the test suite with:
 
    ```console
