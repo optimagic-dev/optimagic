@@ -20427,19 +20427,19 @@ packages:
   timestamp: 1733688053334
 - pypi: ./
   name: optimagic
-  version: 0.5.4.dev9+g834fc6dbe
-  sha256: 11cdcae11bf4d31f009816d107251ddb7c266c8202315ab4b15e6b53afdc4368
+  version: 0.5.4.dev10+g4debf378c.d20260310
+  sha256: a4c500ceab415140096168b0525f785260672f69c12d997e38c8bb08e0b52297
   requires_dist:
-  - annotated-types
-  - cloudpickle
-  - joblib
-  - numpy
-  - pandas
-  - plotly
+  - annotated-types>=0.4
+  - cloudpickle>=2.2
+  - joblib>=1.1
+  - numpy>=1.26
+  - pandas>=2.1
+  - plotly>=5.14
   - pybaum>=0.1.2
-  - scipy>=1.2.1
-  - sqlalchemy>=1.3
-  - typing-extensions
+  - scipy>=1.11
+  - sqlalchemy>=2.0
+  - typing-extensions>=4.5
   requires_python: '>=3.12'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/optree-0.19.0-py312hd9148b4_0.conda
   sha256: e5cb326247948543cc2b0495e5da4d9b724ebd6e6b6907c9ed6adc1b969aeb2a
