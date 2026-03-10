@@ -12,8 +12,7 @@ coverage:
         target: 80%
     project:
       default:
-        target: auto
-        threshold: 1%
+        target: 90%
 ignore:
   # Uses numba
   - src/optimagic/benchmarking/cartis_roberts.py
