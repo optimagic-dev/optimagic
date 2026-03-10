@@ -407,7 +407,7 @@ python = ">=3.10,<3.14"
 # Prefer conda-forge builds for compiled scientific packages
 numpy = "*"
 scipy = ">=1.2.1"
-pandas = "*"
+pandas = "<3"
 jupyterlab = "*"
 cyipopt = ">=1.4.0"
 pygmo = ">=2.19.0"
@@ -432,7 +432,7 @@ dfo-ls = ">=1.5.3"
 py-bobyqa = "*"
 fides = "==0.7.4"
 kaleido = "*"
-gradient-free-optimizers = "*"
+gradient-free-optimizers = ">=1.6.0"
 pyswarms = "*"
 
 # --- Python version features --------------------------------------------------------
