@@ -4,7 +4,7 @@
 [project]
 name = "optimagic"
 description = "Tools to solve difficult numerical optimization problems."
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "cloudpickle",
     "joblib",
@@ -40,10 +40,9 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
 ]
 authors = [
@@ -96,7 +95,7 @@ allow-direct-references = true
 # Ruff configuration
 # ======================================================================================
 [tool.ruff]
-target-version = "py310"
+target-version = "py312"
 fix = true
 
 [tool.ruff.lint]
@@ -403,7 +402,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 # --- Base dependencies (all environments) -------------------------------------------
 [tool.pixi.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.12,<3.15"
 # Prefer conda-forge builds for compiled scientific packages
 numpy = "*"
 scipy = ">=1.2.1"
@@ -436,14 +435,12 @@ gradient-free-optimizers = ">=1.6.0"
 pyswarms = "*"
 
 # --- Python version features --------------------------------------------------------
-[tool.pixi.feature.py310.dependencies]
-python = "~=3.10.0"
-[tool.pixi.feature.py311.dependencies]
-python = "~=3.11.0"
 [tool.pixi.feature.py312.dependencies]
 python = "~=3.12.0"
 [tool.pixi.feature.py313.dependencies]
 python = "~=3.13.0"
+[tool.pixi.feature.py314.dependencies]
+python = "~=3.14.0"
 
 # --- Feature: test (test infrastructure) ---------------------------------------------
 [tool.pixi.feature.test.dependencies]
@@ -475,7 +472,7 @@ mypy = "mypy"
 platforms = ["linux-64"]
 [tool.pixi.feature.linux.dependencies]
 jax = ">=0.4.1"
-petsc4py = "<=3.23.4"
+petsc4py = "*"
 
 # --- Feature: docs -------------------------------------------------------------------
 [tool.pixi.feature.docs.dependencies]
@@ -500,10 +497,6 @@ intersphinx-registry = "*"
 build-docs = { cmd = "make html", cwd = "docs" }
 
 # --- Compat features (version overrides for backward-compat CI) ---------------------
-[tool.pixi.feature.old-pandas.dependencies]
-numpy = "<2"
-pandas = "<2"
-
 [tool.pixi.feature.old-numpy.dependencies]
 numpy = "<2"
 pandas = ">=2"
@@ -520,28 +513,24 @@ nevergrad = "*"
 
 # --- Environments --------------------------------------------------------------------
 [tool.pixi.environments]
-# Default dev environment (Python 3.12, everything)
-default = { features = ["test", "py312"], solve-group = "py312" }
+# Default dev environment (Python 3.14, everything)
+default = { features = ["test", "py314"], solve-group = "py314" }
 # Linux CI (with JAX + PETSc)
-test-linux-py310 = { features = ["test", "linux", "py310"], solve-group = "linux-py310" }
-test-linux-py311 = { features = ["test", "linux", "py311"], solve-group = "linux-py311" }
 test-linux-py312 = { features = ["test", "linux", "py312"], solve-group = "linux-py312" }
 test-linux-py313 = { features = ["test", "linux", "py313"], solve-group = "linux-py313" }
+test-linux-py314 = { features = ["test", "linux", "py314"], solve-group = "linux-py314" }
 # macOS/Windows CI
-test-py310 = { features = ["test", "py310"], solve-group = "py310" }
-test-py311 = { features = ["test", "py311"], solve-group = "py311" }
 test-py312 = { features = ["test", "py312"], solve-group = "py312" }
 test-py313 = { features = ["test", "py313"], solve-group = "py313" }
-# Backward-compat CI (Python 3.10 only)
-test-old-pandas = { features = ["test", "old-pandas", "py310"] }
-test-old-numpy = { features = ["test", "old-numpy", "py310"] }
-test-old-plotly = { features = ["test", "old-plotly", "py310"] }
+test-py314 = { features = ["test", "py314"], solve-group = "py314" }
+# Backward-compat CI (Python 3.12, lowest supported)
+test-old-numpy = { features = ["test", "old-numpy", "py312"] }
+test-old-plotly = { features = ["test", "old-plotly", "py312"] }
 # Nevergrad CI (bayesian-optimization==1.4.0)
-test-nevergrad-py310 = { features = ["test", "nevergrad", "py310"] }
-test-nevergrad-py311 = { features = ["test", "nevergrad", "py311"] }
 test-nevergrad-py312 = { features = ["test", "nevergrad", "py312"] }
 test-nevergrad-py313 = { features = ["test", "nevergrad", "py313"] }
+test-nevergrad-py314 = { features = ["test", "nevergrad", "py314"] }
 # Type checking
-typecheck = { features = ["typecheck", "py310"], solve-group = "py310" }
+typecheck = { features = ["typecheck", "py314"], solve-group = "py314" }
 # Docs
-docs = { features = ["docs", "py312"], solve-group = "py312" }
+docs = { features = ["docs", "py314"], solve-group = "py314" }
