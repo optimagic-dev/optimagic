@@ -9,11 +9,7 @@ build:
       - asdf plugin add pixi
       - asdf install pixi latest
       - asdf global pixi latest
-    build:
-      - pixi run -e docs build-docs
     post_build:
+      - pixi run -e docs build-docs
       - mkdir --parents $READTHEDOCS_OUTPUT/html/
       - cp -a docs/build/html/. "$READTHEDOCS_OUTPUT/html" && rm -r docs/build
-sphinx:
-  configuration: docs/source/conf.py
-  fail_on_warning: false
