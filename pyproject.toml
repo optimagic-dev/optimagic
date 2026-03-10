@@ -451,7 +451,7 @@ pytest-xdist = ">=3.2"
 [tool.pixi.feature.test.tasks]
 tests = { cmd = "pytest", description = "Run the full test suite" }
 tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
-tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src/optimagic", description = "Run tests with XML coverage report" }
+tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src", description = "Run tests with XML coverage report" }
 
 # --- Feature: typecheck (mypy + type stubs) ------------------------------------------
 [tool.pixi.feature.typecheck.dependencies]
