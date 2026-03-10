@@ -392,3 +392,168 @@ module = [
     "gradient_free_optimizers.optimizers.base_optimizer",
   ]
 ignore_missing_imports = true
+
+
+# ======================================================================================
+# Pixi configuration
+# ======================================================================================
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+# --- Base dependencies (all environments) -------------------------------------------
+[tool.pixi.dependencies]
+python = ">=3.10,<3.14"
+# Prefer conda-forge builds for compiled scientific packages
+numpy = "*"
+scipy = ">=1.2.1"
+pandas = "*"
+jupyterlab = "*"
+
+[tool.pixi.pypi-dependencies]
+optimagic = { path = ".", editable = true }
+pdbp = "*"
+pre-commit = ">=4"
+
+# --- Python version features --------------------------------------------------------
+[tool.pixi.feature.py310.dependencies]
+python = "~=3.10.0"
+[tool.pixi.feature.py311.dependencies]
+python = "~=3.11.0"
+[tool.pixi.feature.py312.dependencies]
+python = "~=3.12.0"
+[tool.pixi.feature.py313.dependencies]
+python = "~=3.13.0"
+
+# --- Feature: test (test infrastructure + optional optimizer backends) ---------------
+[tool.pixi.feature.test.dependencies]
+pytest = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
+cyipopt = ">=1.4.0"
+pygmo = ">=2.19.0"
+nlopt = "*"
+statsmodels = "*"
+matplotlib = "*"
+bokeh = "*"
+altair = "*"
+seaborn = "*"
+mypy = "==1.19.1"
+pyyaml = "*"
+jinja2 = "*"
+tranquilo = ">=0.1.1"
+iminuit = "*"
+cma = "*"
+pygad = "*"
+pytorch-cpu = "*"
+
+[tool.pixi.feature.test.pypi-dependencies]
+bayesian-optimization = "*"
+dfo-ls = ">=1.5.3"
+py-bobyqa = "*"
+fides = "==0.7.4"
+kaleido = "*"
+gradient-free-optimizers = "*"
+pyswarms = "*"
+pandas-stubs = "*"
+types-cffi = "*"
+types-openpyxl = "*"
+types-jinja2 = "*"
+sqlalchemy-stubs = "*"
+sphinxcontrib-mermaid = "*"
+
+[tool.pixi.feature.test.tasks]
+tests = "pytest"
+tests-fast = "pytest -m 'not slow and not jax'"
+tests-with-cov = "pytest --cov-report=xml --cov=./"
+mypy = "mypy"
+lint = "pre-commit run --all-files"
+
+# --- Feature: linux (Linux-only test deps) ------------------------------------------
+[tool.pixi.feature.linux]
+platforms = ["linux-64"]
+[tool.pixi.feature.linux.dependencies]
+jax = "*"
+petsc4py = "<=3.23.4"
+
+# --- Feature: docs ------------------------------------------------------------------
+[tool.pixi.feature.docs.dependencies]
+sphinx = ">=8.2.3"
+sphinxcontrib-bibtex = "*"
+sphinx-copybutton = "*"
+sphinx-design = "*"
+sphinx-llm = "*"
+sphinx-llms-txt = "*"
+ipython = "*"
+ipython_genutils = "*"
+myst-nb = "*"
+furo = "*"
+anywidget = "*"
+patsy = "*"
+nlopt = "*"
+pygmo = ">=2.19.0"
+matplotlib = "*"
+bokeh = "*"
+altair = "*"
+seaborn = "*"
+
+[tool.pixi.feature.docs.pypi-dependencies]
+py-bobyqa = "*"
+dfo-ls = "*"
+sphinxcontrib-mermaid = "*"
+intersphinx-registry = "*"
+fides = "==0.7.4"
+bayesian-optimization = "*"
+pandas-stubs = "*"
+types-cffi = "*"
+types-openpyxl = "*"
+types-jinja2 = "*"
+sqlalchemy-stubs = "*"
+
+[tool.pixi.feature.docs.tasks]
+docs = { cmd = "make html", cwd = "docs" }
+
+# --- Compat features (version overrides for backward-compat CI) ---------------------
+[tool.pixi.feature.old-pandas.dependencies]
+numpy = "<2"
+pandas = "<2"
+
+[tool.pixi.feature.old-numpy.dependencies]
+numpy = "<2"
+pandas = ">=2"
+
+[tool.pixi.feature.old-plotly.dependencies]
+plotly = "<6"
+
+[tool.pixi.feature.old-plotly.pypi-dependencies]
+kaleido = "<0.3"
+
+[tool.pixi.feature.nevergrad.pypi-dependencies]
+bayesian-optimization = "==1.4.0"
+nevergrad = "*"
+
+# --- Environments --------------------------------------------------------------------
+[tool.pixi.environments]
+# Default dev environment (Python 3.12, everything)
+default = { features = ["test", "docs", "py312"], solve-group = "py312" }
+# Linux CI (with JAX + PETSc)
+test-linux-py310 = { features = ["test", "linux", "py310"], solve-group = "linux-py310" }
+test-linux-py311 = { features = ["test", "linux", "py311"], solve-group = "linux-py311" }
+test-linux-py312 = { features = ["test", "linux", "py312"], solve-group = "linux-py312" }
+test-linux-py313 = { features = ["test", "linux", "py313"], solve-group = "linux-py313" }
+# macOS/Windows CI
+test-py310 = { features = ["test", "py310"], solve-group = "py310" }
+test-py311 = { features = ["test", "py311"], solve-group = "py311" }
+test-py312 = { features = ["test", "py312"], solve-group = "py312" }
+test-py313 = { features = ["test", "py313"], solve-group = "py313" }
+# Backward-compat CI (Python 3.10 only)
+test-old-pandas = { features = ["test", "old-pandas", "py310"] }
+test-old-numpy = { features = ["test", "old-numpy", "py310"] }
+test-old-plotly = { features = ["test", "old-plotly", "py310"] }
+# Nevergrad CI (bayesian-optimization==1.4.0)
+test-nevergrad-py310 = { features = ["test", "nevergrad", "py310"] }
+test-nevergrad-py311 = { features = ["test", "nevergrad", "py311"] }
+test-nevergrad-py312 = { features = ["test", "nevergrad", "py312"] }
+test-nevergrad-py313 = { features = ["test", "nevergrad", "py313"] }
+# Docs
+docs = { features = ["docs", "py312"], solve-group = "py312" }

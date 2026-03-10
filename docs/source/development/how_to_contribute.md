@@ -44,9 +44,8 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
    local optimagic repository:
 
    ```console
-   $ conda env create -f environment.yml
-   $ conda activate optimagic
-   $ pre-commit install
+   $ pixi install
+   $ pixi run lint  # verify pre-commit hooks work
    ```
 
    These commands install optimagic in editable mode and activate pre-commit hooks for
@@ -86,14 +85,7 @@ Skip the next paragraph if you haven't worked on the documentation.
    up the optimagic-docs environment:
 
    ```console
-   $ conda env create -f rtd_environment.yml
-   $ conda activate optimagic-docs
-   ```
-
-   Inside the `docs` folder, run:
-
-   ```console
-   $ make html
+   $ pixi run -e docs docs
    ```
 
    This command builds the HTML documentation, saving all files in the `build/html`

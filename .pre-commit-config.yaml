@@ -12,16 +12,8 @@ repos:
         exclude: tests/optimagic/optimizers/_pounders/fixtures
   - repo: local
     hooks:
-      - id: update-environment-files
-        name: check environment file updates
-        entry: python .tools/update_envs.py
-        language: python
-        always_run: true
-        require_serial: true
-  - repo: local
-    hooks:
       - id: check-mypy-versions
-        name: verify that pre-commits and dev env use the same mypy version
+        name: verify that pre-commits and pixi use the same mypy version
         entry: python .tools/check_mypy_versions.py
         language: python
         always_run: true
@@ -44,7 +36,7 @@ repos:
     hooks:
       - id: check-added-large-files
         args:
-          - --maxkb=1300
+          - --maxkb=2500
         exclude: tests/optimagic/optimizers/_pounders/fixtures/
       - id: check-case-conflict
       - id: check-merge-conflict
