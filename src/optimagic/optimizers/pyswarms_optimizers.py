@@ -577,7 +577,8 @@ def _resolve_topology_config(
     config: Literal["star", "ring", "vonneumann", "random", "pyramid"] | Topology,
 ) -> tuple[Any, dict[str, float | int]]:
     """Resolves the topology config into a pyswarms topology instance and options
-    dict."""
+    dict.
+    """
     from pyswarms.backend.topology import Pyramid, Random, Ring, Star, VonNeumann
 
     if isinstance(config, str):

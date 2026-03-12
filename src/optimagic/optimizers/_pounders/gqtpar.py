@@ -550,7 +550,7 @@ def _solve_scalar_quadratic_equation(z, d):
         d (float): Smallest singular value of the upper triangular of the
             hessian matrix.
 
-    Returns
+    Returns:
         Tuple: The two values of t, sorted from low to high.
         - (float) Lower value of t.
         - (float) Higher value of t.

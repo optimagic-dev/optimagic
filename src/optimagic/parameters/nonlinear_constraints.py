@@ -94,7 +94,6 @@ def _process_nonlinear_constraint(
     c, constraint_eval, params, bounds, converter, numdiff_options
 ):
     """Process a single nonlinear constraint."""
-
     # ==================================================================================
     # Process selector and evaluate functions if necessary
     # ==================================================================================

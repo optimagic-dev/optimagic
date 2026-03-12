@@ -42,6 +42,7 @@ def minimize_trust_trsbox(
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
         trustregion_radius (float): Radius of the trust-region.
+
     Returns:
         np.ndarray: Solution vector for the quadratic trust-region subproblem
             of shape (n,).

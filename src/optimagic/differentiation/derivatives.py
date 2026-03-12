@@ -413,6 +413,7 @@ def second_derivative(
     key: str | None = None,
 ) -> NumdiffResult:
     """Evaluate second derivative of func at params according to method and step
+
     options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
@@ -482,7 +483,6 @@ def second_derivative(
         NumdiffResult: A numerical differentiation result.
 
     """
-
     # ==================================================================================
     # handle deprecations
     # ==================================================================================
@@ -1122,7 +1122,7 @@ def _nan_skipping_batch_evaluator(
         arguments (list): List with inputs for func.
         n_cores (int): Number of processes.
 
-    Returns
+    Returns:
         evaluations (list): The function evaluations, same length as arguments.
 
     """

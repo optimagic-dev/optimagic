@@ -151,7 +151,6 @@ def traceback_report(problems, results, return_type="dataframe"):
             algorithms for problems where they stopped with an error.
 
     """
-
     if return_type == "text":
         report = []
         for result in results.values():

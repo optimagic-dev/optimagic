@@ -872,7 +872,6 @@ def _process_jac_value(
         The Jacobian value for the algorithm.
 
     """
-
     out_value = converter.derivative_to_internal(value, x)
     if direction == Direction.MAXIMIZE:
         out_value = -out_value
@@ -966,6 +965,7 @@ class SphereExampleInternalOptimizationProblemWithConverter(
     InternalOptimizationProblem
 ):
     """Super simple example of an internal optimization problem with PyTree Converter.
+
     Note: params should be a dict with key-value pairs `"x{i}" : val .
     eg. `{'x0': 1, 'x1': 2, ...}`.
 

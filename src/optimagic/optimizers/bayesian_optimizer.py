@@ -374,7 +374,6 @@ def _process_acquisition_function(
             instance, a class inheriting from AcquisitionFunction, or None.
 
     """
-
     from bayes_opt import acquisition
 
     acquisition_function_aliases = {

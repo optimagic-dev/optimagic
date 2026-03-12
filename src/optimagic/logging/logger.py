@@ -438,6 +438,7 @@ class SQLiteLogOptions(SQLAlchemyConfig, LogOptions):
 
 class SQLiteLogReader(LogReader[SQLiteLogOptions]):
     """A class that manages the retrieving of optimization and exploration data from a
+
     SQLite database.
 
     This class exposes methods to retrieve optimization logging data from stores.
@@ -475,6 +476,7 @@ class SQLiteLogReader(LogReader[SQLiteLogOptions]):
 
 class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
     """A logger class that stores and manages optimization and exploration data using
+
     SQLite.
 
     It supports different strategies for handling existing databases, such as extending,

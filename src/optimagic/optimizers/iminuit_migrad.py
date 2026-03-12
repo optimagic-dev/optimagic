@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 )
 @dataclass(frozen=True)
 class IminuitMigrad(Algorithm):
-    """Minimize a scalar differentiable function using the MIGRAD algorithm from
+    r"""Minimize a scalar differentiable function using the MIGRAD algorithm from
     iminuit.
 
     This optimizer wraps the MIGRAD algorithm from the iminuit package, which provides a
@@ -117,7 +117,6 @@ class IminuitMigrad(Algorithm):
 
 def _process_minuit_result(minuit_result: Minuit) -> InternalOptimizeResult:
     """Convert iminuit result to optimagic's internal result format."""
-
     res = InternalOptimizeResult(
         x=np.array(minuit_result.values),
         fun=minuit_result.fval,
@@ -155,14 +154,14 @@ def _convert_bounds_to_minuit_limits(
     upper_bounds : Optional[NDArray[np.float64]]
         Array of upper bounds for parameters.
 
-    Returns
+    Returns:
     -------
     list[tuple[Optional[float], Optional[float]]]
         List of (lower, upper) limit tuples in Minuit format, where:
         - None indicates unbounded (equivalent to infinity)
         - Float values represent actual bounds
 
-    Notes
+    Notes:
     -----
     Minuit expects bounds as tuples of (lower, upper) where:
     - `None` indicates no bound (equivalent to -inf or +inf)

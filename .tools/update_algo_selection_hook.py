@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -8,8 +9,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # sys.executable guarantees we stay inside the pre‑commit venv
 PYTHON = [sys.executable]
-# "-m" lets us call std‑lib modules (e.g. pip) the same way
-PYTHON_MINUS_M = [*PYTHON, "-m"]
 
 
 def run(cmd: list[str], **kwargs: Any) -> None:
@@ -17,10 +16,8 @@ def run(cmd: list[str], **kwargs: Any) -> None:
 
 
 def ensure_optimagic_is_locally_installed() -> None:
-    try:
-        run(PYTHON_MINUS_M + ["pip", "show", "optimagic"], stdout=subprocess.DEVNULL)
-    except subprocess.CalledProcessError:
-        run(PYTHON_MINUS_M + ["pip", "install", "-e", "."])
+    if importlib.util.find_spec("optimagic") is None:
+        run(["uv", "pip", "install", "--python", sys.executable, "-e", "."])
 
 
 def main() -> int:

@@ -284,7 +284,7 @@ def hash_array(arr):
 
 
 def calculate_trustregion_initial_radius(x):
-    """Calculate the initial trust region radius.
+    r"""Calculate the initial trust region radius.
 
     It is calculated as :math:`0.1\\max(|x|_{\\infty}, 1)`.
 
@@ -363,7 +363,6 @@ def dict_of_lists_to_list_of_dicts(dict_of_lists):
         list
 
     Examples:
-
         >>> dict_of_lists_to_list_of_dicts({'a': [1, 3], 'b': [2, 4]})
         [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]
 

@@ -413,7 +413,6 @@ def update_convergence_state(
         bool: A bool that indicates if the optimizer has converged.
 
     """
-
     # ==================================================================================
     # unpack some variables
     # ==================================================================================

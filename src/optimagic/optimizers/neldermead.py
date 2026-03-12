@@ -41,7 +41,7 @@ from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral
 )
 @dataclass(frozen=True)
 class NelderMeadParallel(Algorithm):
-    """Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
+    r"""Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
     implementation of the simplex function minimization routine, Computational
     Economics, 2007.
 
@@ -75,7 +75,7 @@ class NelderMeadParallel(Algorithm):
     batch_evaluator (string or callable): See :ref:`batch_evaluators` for
         details. Default "joblib".
 
-    Returns
+    Returns:
     -------
     TYPE
         DESCRIPTION.
