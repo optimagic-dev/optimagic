@@ -44,14 +44,14 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
    local optimagic repository:
 
    ```console
-   $ pre-commit install
+   $ prek install
    ```
 
    This activates pre-commit hooks for linting and style formatting.
 
    ```{note}
-   `pre-commit` is not managed by pixi and must be installed globally. We recommend
-   installing it globally using pixi or uv.
+   `prek` is not managed by pixi and must be installed globally. You can find
+   installation instructions at [github.com/janosg/prek](https://github.com/janosg/prek).
    ```
 
    You can then run the test suite with:
@@ -90,8 +90,8 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
    You can also run the test suite locally for
    [debugging](https://effective-programming-practices.vercel.app/debugging/pdbp/objectives_materials.html).
 
-   With pre-commit installed, linters run before each commit. Commits are rejected if
-   any checks fail. Note that some linters may automatically fix errors by modifying the
+   With prek installed, linters run before each commit. Commits are rejected if any
+   checks fail. Note that some linters may automatically fix errors by modifying the
    code in-place. Remember to re-stage the files after such modifications.
 
 ```{tip}
@@ -109,9 +109,9 @@ Skip the next paragraph if you haven't worked on the documentation.
    `docs/build/html/index.html` or any other file. Similar to the online documentation,
    you can navigate to different pages simply by clicking on the links.
 
-1. Once all tests and pre-commit hooks pass locally, push your changes to your forked
-   repository and create a pull request through GitHub: Go to the Github repository of
-   your fork. A banner on your fork's GitHub repository will prompt you to open a PR.
+1. Once all tests and hooks pass locally, push your changes to your forked repository
+   and create a pull request through GitHub: Go to the Github repository of your fork. A
+   banner on your fork's GitHub repository will prompt you to open a PR.
 
    ```{note}
    Regular contributors with push access can directly push their local branch to the remote optimagic repository and initiate a PR from there.

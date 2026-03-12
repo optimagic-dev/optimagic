@@ -105,9 +105,9 @@ Your contribution should fulfill the criteria provided below.
   refactoring, it is sufficient if the function that calls it is tested. But all
   functions that are exposed to the user must have unit tests.
 
-- Enable pre-commit hooks by executing `pre-commit install` in a terminal in the root of
-  the optimagic repository. This makes sure that your formatting is consistent with what
-  we expect.
+- Enable pre-commit hooks by executing `prek install` in a terminal in the root of the
+  optimagic repository. This makes sure that your formatting is consistent with what we
+  expect.
 
 - Use `pathlib` for all file paths operations. : You can find the pathlib documentation
   [here](https://docs.python.org/3/library/pathlib.html)
